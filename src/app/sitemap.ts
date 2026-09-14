@@ -1,0 +1,2 @@
+import type { MetadataRoute } from "next";
+export default function sitemap():MetadataRoute.Sitemap { const routes=["","/horyzon","/benessere-organizzativo","/benessere-patrimoniale","/benessere-digitale","/umanita","/entra-in-horyzon","/contatti"]; return routes.map(route=>({url:`https://horyzon.it${route}`,lastModified:new Date(),changeFrequency:route===""?"weekly":"monthly",priority:route===""?1:.8})); }
