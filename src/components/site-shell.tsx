@@ -6,6 +6,7 @@ const links=[['Le tre aree','/le-tre-aree'],['Metodo','/metodo'],['Persone','/pe
 export function Wordmark(){return <Link className="wordmark" href="/" aria-label="Horyzon, homepage"><span className="horizon-mark" aria-hidden="true"/><span>HORYZON<small>CONSULTING</small></span></Link>}
 export function SiteHeader(){
  const path=usePathname();const [open,setOpen]=useState(false);const button=useRef<HTMLButtonElement>(null);
+ useEffect(()=>{window.scrollTo({top:0,left:0,behavior:'auto'})},[path]);
  useEffect(()=>{if(!open)return; const close=(e:KeyboardEvent)=>{if(e.key==='Escape'){setOpen(false);button.current?.focus()}};document.addEventListener('keydown',close);return()=>document.removeEventListener('keydown',close)},[open]);
  return <header className="site-header"><a className="skip-link" href="#content">Vai al contenuto</a><Wordmark/><nav id="site-navigation" aria-label="Navigazione principale" className={open?'site-links is-open':'site-links'}>{links.map(([label,url])=><Link key={url} href={url} aria-current={path===url?'page':undefined} onClick={()=>setOpen(false)}>{label}</Link>)}<Link className="join-link" href="/entra-in-horyzon" onClick={()=>setOpen(false)}>Entra in Horyzon ↗</Link></nav><button ref={button} className="menu-toggle" aria-controls="site-navigation" aria-expanded={open} onClick={()=>setOpen(!open)}>{open?'Chiudi ×':'Menu ☰'}</button></header>
 }
