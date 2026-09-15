@@ -1,0 +1,2909 @@
+{
+  "benessere-digitale/competenze": {
+    "title": "Competenze digitali",
+    "intro": "Sviluppiamo la capacità di comprendere, scegliere e governare gli strumenti digitali.",
+    "sections": [
+      {
+        "title": "La vera innovazione aumenta l’autonomia delle persone.",
+        "text": [
+          "Ogni intervento parte dall’ascolto e dalla lettura del contesto reale. Evitiamo soluzioni standard quando persone, obiettivi e organizzazioni richiedono una risposta specifica.",
+          "Traduciamo l’analisi in priorità comprensibili, responsabilità definite e passi verificabili nel tempo.",
+          "Opportunità, limiti e responsabilità.",
+          "Strumenti inseriti in pratiche di lavoro solide.",
+          "Capacità che rimangono nell’organizzazione."
+        ]
+      }
+    ],
+    "points": [
+      "Consapevolezza",
+      "Metodo",
+      "Autonomia"
+    ]
+  },
+  "benessere-digitale/imprese": {
+    "title": "Imprese digitali",
+    "intro": "Portiamo il digitale dentro i processi in modo comprensibile, misurabile e utile.",
+    "sections": [
+      {
+        "title": "La tecnologia funziona quando semplifica il lavoro e migliora le decisioni.",
+        "text": [
+          "Ogni intervento parte dall’ascolto e dalla lettura del contesto reale. Evitiamo soluzioni standard quando persone, obiettivi e organizzazioni richiedono una risposta specifica.",
+          "Traduciamo l’analisi in priorità comprensibili, responsabilità definite e passi verificabili nel tempo.",
+          "Digitalizzare ciò che genera valore.",
+          "Informazioni leggibili per decidere meglio.",
+          "Persone preparate a usare davvero gli strumenti."
+        ]
+      }
+    ],
+    "points": [
+      "Processi",
+      "Dati",
+      "Adozione"
+    ]
+  },
+  "benessere-digitale": {
+    "title": "Benessere digitale",
+    "intro": "Aiutiamo le imprese a recuperare produttività e ridurre inefficienze attraverso tecnologie, automazioni e dati applicati ai processi reali.",
+    "sections": [
+      {
+        "title": "La tecnologia produce progresso quando aumenta capacità, libertà e qualità delle decisioni.",
+        "text": [
+          "La trasformazione digitale non è soltanto adozione di strumenti: richiede cultura, competenze, processi e una direzione comprensibile.",
+          "Partiamo dai risultati già ottenuti nei nostri processi e misuriamo ogni nuovo intervento sul contesto specifico. Le percentuali di miglioramento dipendono dalla situazione iniziale e vengono definite solo dopo l’analisi.",
+          "Strumenti e processi al servizio di produttività e qualità.",
+          "Consapevolezza e capacità per governare il cambiamento.",
+          "Una trasformazione accessibile, responsabile e orientata al bene comune.",
+          "Autovalutazione orientativa"
+        ]
+      },
+      {
+        "title": "Misura il tuo spazio di evoluzione.",
+        "text": [
+          "Diciotto domande, tre dimensioni e una prima lettura concreta. Scopri ciò che oggi è già solido e dove può iniziare il prossimo passo."
+        ]
+      }
+    ],
+    "points": [
+      "Imprese digitali",
+      "Competenze",
+      "Italia digitale"
+    ]
+  },
+  "benessere-digitale/italia-digitale": {
+    "title": "Italia digitale",
+    "intro": "Contribuiamo a una cultura digitale che unisca competitività, inclusione e qualità umana.",
+    "sections": [
+      {
+        "title": "Il progresso è tale solo se lascia il Paese più capace.",
+        "text": [
+          "Ogni intervento parte dall’ascolto e dalla lettura del contesto reale. Evitiamo soluzioni standard quando persone, obiettivi e organizzazioni richiedono una risposta specifica.",
+          "Traduciamo l’analisi in priorità comprensibili, responsabilità definite e passi verificabili nel tempo.",
+          "Innovazione comprensibile e utilizzabile.",
+          "Tecnologia guidata da principi umani.",
+          "Capacità diffuse per un’economia più forte."
+        ]
+      }
+    ],
+    "points": [
+      "Accessibilità",
+      "Responsabilità",
+      "Competitività"
+    ]
+  },
+  "benessere-organizzativo/analisi-organizzativa": {
+    "title": "Analisi organizzativa",
+    "intro": "Rendiamo visibili le cause che frenano persone, processi e risultati.",
+    "sections": [
+      {
+        "title": "La chiarezza viene prima del cambiamento.",
+        "text": [
+          "Ogni intervento parte dall’ascolto e dalla lettura del contesto reale. Evitiamo soluzioni standard quando persone, obiettivi e organizzazioni richiedono una risposta specifica.",
+          "Traduciamo l’analisi in priorità comprensibili, responsabilità definite e passi verificabili nel tempo.",
+          "Ruoli, responsabilità e linee decisionali.",
+          "Passaggi operativi, coordinamento e dispersioni.",
+          "Le leve su cui intervenire per prime."
+        ]
+      }
+    ],
+    "points": [
+      "Struttura",
+      "Flussi",
+      "Priorità"
+    ]
+  },
+  "benessere-organizzativo/human-management": {
+    "title": "Human Management",
+    "intro": "Costruiamo sistemi nei quali le persone comprendono il proprio contributo e possono esprimerlo.",
+    "sections": [
+      {
+        "title": "Le persone crescono quando responsabilità e significato sono chiari.",
+        "text": [
+          "Ogni intervento parte dall’ascolto e dalla lettura del contesto reale. Evitiamo soluzioni standard quando persone, obiettivi e organizzazioni richiedono una risposta specifica.",
+          "Traduciamo l’analisi in priorità comprensibili, responsabilità definite e passi verificabili nel tempo.",
+          "Guidare con direzione, ascolto e coerenza.",
+          "Aspettative chiare e autonomia reale.",
+          "Competenze e potenziale collegati agli obiettivi."
+        ]
+      }
+    ],
+    "points": [
+      "Leadership",
+      "Responsabilità",
+      "Sviluppo"
+    ]
+  },
+  "benessere-organizzativo": {
+    "title": "Benessere organizzativo",
+    "intro": "Aiutiamo le aziende a prosperare e, insieme, a far evolvere e prosperare ogni singola persona che le compone.",
+    "sections": [
+      {
+        "title": "La prosperità dell’impresa e l’evoluzione delle persone sono lo stesso progetto.",
+        "text": [
+          "Un’azienda prospera quando produce risultati solidi e diventa, nello stesso tempo, un luogo nel quale le persone possono sviluppare capacità, responsabilità e consapevolezza.",
+          "Partiamo dall’analisi di struttura, ruoli e potenziale. Costruiamo quindi un percorso operativo che affronta crescita, passaggio generazionale, delega, recruiting e controllo dei costi, integrando quando utile la collaborazione con Performia per selezione e sviluppo organizzativo.",
+          "Una lettura lucida di struttura, ruoli, flussi e criticità.",
+          "Persone, responsabilità e leadership come sistema di crescita.",
+          "Metodo e priorità per trasformare la visione in capacità operativa.",
+          "Autovalutazione orientativa"
+        ]
+      },
+      {
+        "title": "Misura il tuo spazio di evoluzione.",
+        "text": [
+          "Diciotto domande, tre dimensioni e una prima lettura concreta. Scopri ciò che oggi è già solido e dove può iniziare il prossimo passo.",
+          "Tecnologia per persone e organizzazioni"
+        ]
+      },
+      {
+        "title": "Selezionare persone produttive. Costruire squadre più solide.",
+        "text": [
+          "Per i progetti seguiti in Italia e Svizzera collaboriamo con Performia, organizzazione internazionale specializzata esclusivamente nella selezione. Il sistema integra analisi della produttività, personalità, motivazione, conoscenze e attitudini, con strumenti disponibili in oltre 25 lingue.",
+          "Fondata nel 2001, Performia opera attraverso più di 26 uffici internazionali. Il suo fondatore lavora nel recruiting da oltre 39 anni: una competenza consolidata in decenni di esperienza, trasformata in tecnologia e metodo applicabile."
+        ]
+      }
+    ],
+    "points": [
+      "Analisi organizzativa",
+      "Human Management",
+      "Sviluppo imprenditoriale"
+    ]
+  },
+  "benessere-organizzativo/sviluppo-imprenditoriale": {
+    "title": "Sviluppo imprenditoriale",
+    "intro": "Affianchiamo l’imprenditore nel trasformare visione e intuizione in un sistema capace di crescere.",
+    "sections": [
+      {
+        "title": "La crescita diventa solida quando l’impresa non dipende da una sola persona.",
+        "text": [
+          "Ogni intervento parte dall’ascolto e dalla lettura del contesto reale. Evitiamo soluzioni standard quando persone, obiettivi e organizzazioni richiedono una risposta specifica.",
+          "Traduciamo l’analisi in priorità comprensibili, responsabilità definite e passi verificabili nel tempo.",
+          "Direzione, posizionamento e scelte essenziali.",
+          "Organizzazione che sostiene l’ambizione.",
+          "Ritmo, priorità e verifica dei risultati."
+        ]
+      }
+    ],
+    "points": [
+      "Visione",
+      "Sistema",
+      "Esecuzione"
+    ]
+  },
+  "benessere-patrimoniale/imprenditori": {
+    "title": "Imprenditori",
+    "intro": "Creiamo chiarezza tra valore dell’impresa, patrimonio personale e responsabilità familiare.",
+    "sections": [
+      {
+        "title": "Impresa e persona sono connesse, ma non devono essere confuse.",
+        "text": [
+          "Ogni intervento parte dall’ascolto e dalla lettura del contesto reale. Evitiamo soluzioni standard quando persone, obiettivi e organizzazioni richiedono una risposta specifica.",
+          "Traduciamo l’analisi in priorità comprensibili, responsabilità definite e passi verificabili nel tempo.",
+          "Lettura distinta delle diverse sfere.",
+          "Scenari e passaggi da preparare nel tempo.",
+          "Decisioni meno dipendenti dall’urgenza."
+        ]
+      }
+    ],
+    "points": [
+      "Confini",
+      "Continuità",
+      "Libertà"
+    ]
+  },
+  "benessere-patrimoniale": {
+    "title": "Benessere patrimoniale",
+    "intro": "Aiutiamo il patrimonio italiano a lavorare per l’individuo che lo ha creato, affinché non sia soltanto l’individuo a continuare a lavorare per il proprio patrimonio.",
+    "sections": [
+      {
+        "title": "Il patrimonio deve restituire libertà, possibilità e futuro a chi lo ha costruito.",
+        "text": [
+          "L’Italia possiede una grande cultura del lavoro e del risparmio. La nostra missione è aiutare quel patrimonio a diventare una risorsa attiva, capace di sostenere la vita, gli obiettivi e la libertà di chi lo ha generato.",
+          "In partnership con Careisgold approfondiamo anche il ruolo dell’oro fisico da investimento. Per strumenti finanziari, azioni e obbligazioni ci coordiniamo con professionisti abilitati, valutando sempre obiettivi, orizzonte temporale e rischio: nessun investimento è privo di rischi o garantisce risultati.",
+          "Obiettivi e priorità letti come un unico sistema.",
+          "Continuità, protezione e progettualità oltre il reddito corrente.",
+          "Equilibrio tra impresa, patrimonio personale e futuro familiare.",
+          "Autovalutazione orientativa"
+        ]
+      },
+      {
+        "title": "Misura il tuo spazio di evoluzione.",
+        "text": [
+          "Diciotto domande, tre dimensioni e una prima lettura concreta. Scopri ciò che oggi è già solido e dove può iniziare il prossimo passo.",
+          "Oro puro fisico da investimento"
+        ]
+      },
+      {
+        "title": "Rendere il patrimonio più consapevole e accessibile.",
+        "text": [
+          "Collaboriamo con Careisgold per avvicinare famiglie, professionisti e imprenditori alla conoscenza dell’oro puro fisico da investimento, attraverso percorsi personalizzati e un contatto umano diretto.",
+          "Careisgold è una società per azioni, Banco Metalli e Operatore Professionale in Oro iscritto nel registro OAM. Fa parte di Care Holding, gruppo attivo da oltre 15 anni. La collaborazione sostiene la missione Horyzon: aiutare il patrimonio italiano a lavorare per chi lo ha creato, trasformando risparmio, conoscenza e progettualità in maggiore libertà."
+        ]
+      }
+    ],
+    "points": [
+      "Visione patrimoniale",
+      "Professionisti",
+      "Imprenditori"
+    ]
+  },
+  "benessere-patrimoniale/professionisti": {
+    "title": "Professionisti",
+    "intro": "Aiutiamo a leggere il patrimonio oltre la capacità di produrre reddito nel presente.",
+    "sections": [
+      {
+        "title": "Il valore creato dal lavoro merita continuità e prospettiva.",
+        "text": [
+          "Ogni intervento parte dall’ascolto e dalla lettura del contesto reale. Evitiamo soluzioni standard quando persone, obiettivi e organizzazioni richiedono una risposta specifica.",
+          "Traduciamo l’analisi in priorità comprensibili, responsabilità definite e passi verificabili nel tempo.",
+          "Obiettivi che superano il ciclo professionale.",
+          "Responsabilità e fragilità da rendere visibili.",
+          "Risorse coerenti con vita e futuro."
+        ]
+      }
+    ],
+    "points": [
+      "Continuità",
+      "Protezione",
+      "Progetto"
+    ]
+  },
+  "benessere-patrimoniale/visione-patrimoniale": {
+    "title": "Visione patrimoniale",
+    "intro": "Mettiamo in relazione obiettivi personali, professionali e familiari per costruire una mappa leggibile.",
+    "sections": [
+      {
+        "title": "Prima degli strumenti viene la direzione.",
+        "text": [
+          "Ogni intervento parte dall’ascolto e dalla lettura del contesto reale. Evitiamo soluzioni standard quando persone, obiettivi e organizzazioni richiedono una risposta specifica.",
+          "Traduciamo l’analisi in priorità comprensibili, responsabilità definite e passi verificabili nel tempo.",
+          "Ciò che il patrimonio deve rendere possibile.",
+          "Tempi, responsabilità e livelli di rischio.",
+          "Un quadro comune per dialogare con gli specialisti."
+        ]
+      }
+    ],
+    "points": [
+      "Obiettivi",
+      "Equilibri",
+      "Coordinamento"
+    ]
+  },
+  "conoscenza": {
+    "title": "Conoscenza condivisa.Patrimonio comune.",
+    "intro": "Libri, ricerche e strumenti firmati dai professionisti Horyzon e messi a disposizione di chi vuole far evolvere persone e imprese.",
+    "sections": [
+      {
+        "title": "Tre libri. Una ricerca in evoluzione.",
+        "text": [
+          "Le pubblicazioni conservano l’identità dei rispettivi autori e diventano parte del patrimonio culturale condiviso da Horyzon. Tre tappe diverse dello stesso percorso: un libro disponibile, uno in revisione e uno in preparazione.",
+          "Corpo, mente e spirito nella gestione di sé e delle organizzazioni.",
+          "Un percorso personale tra energia, lucidità e libertà imprenditoriale.",
+          "Una ricerca sull’attrattività delle imprese per campioni e talenti.",
+          "Angelo Ria Chetta"
+        ]
+      },
+      {
+        "title": "Management Umano",
+        "text": [
+          "Una filosofia di gestione che parte da sé stessi e integra corpo, mente e spirito per esprimere il potenziale umano e professionale.",
+          "Il libro rivaluta l’idea di umanità e la associa a successo, abbondanza, impresa, evoluzione e salute. È rivolto alle persone e alle organizzazioni che vogliono crescere senza separare efficacia e consapevolezza.",
+          "02 / Edizione cartacea"
+        ]
+      },
+      {
+        "title": "Il libro, nella sua forma più concreta.",
+        "text": [
+          "Prezzo riservato alla community Horyzon. Prezzo di copertina €29. Ordine, pagamento e assistenza continuano sullo shop ufficiale Angeloria."
+        ]
+      },
+      {
+        "title": "Leggere il presente.Preparare il futuro.",
+        "text": []
+      }
+    ],
+    "points": [
+      "Management Umano",
+      "Il digiuno dell’imprenditore",
+      "Aziende attraenti per campioni e talenti",
+      "L’imprenditore in campo: il tennis come medicina per mente, corpo e impresa",
+      "L’ansia in azienda: costo nascosto o opportunità evolutiva?",
+      "Settimana corta: la nuova rivoluzione imprenditoriale",
+      "Quanto è attrattiva la tua azienda?",
+      "Delegare e crescere senza sovraccaricarsi",
+      "Gestione del personale nelle PMI"
+    ]
+  },
+  "contatti": {
+    "title": "Iniziamo una conversazione.",
+    "intro": "Raccontaci il prossimo passo che vuoi costruire per la tua impresa, il tuo progetto o il tuo territorio.",
+    "sections": [
+      {
+        "title": "Ogni evoluzione comincia da una domanda chiara.",
+        "text": [
+          "Scrivici per condividere il contesto, l’obiettivo e ciò che oggi senti necessario cambiare.",
+          "Ti risponderemo per comprendere se e come Horyzon può accompagnarti.",
+          "Partiamo dalla situazione reale.",
+          "Definiamo insieme la domanda.",
+          "Valutiamo il primo passo possibile.",
+          "Italia · Svizzera"
+        ]
+      },
+      {
+        "title": "Una rete di competenze, vicina alle imprese.",
+        "text": [
+          "Operiamo attraverso relazioni e professionalità radicate nei territori. Scegli la città più vicina per iniziare una conversazione.",
+          "I numeri corrispondono all’elenco delle città",
+          "Italia",
+          "Italia",
+          "Svizzera · Ticino",
+          "Svizzera · Ticino",
+          "Italia",
+          "Italia",
+          "Italia",
+          "Italia",
+          "Gli indirizzi territoriali sono alias in fase di attivazione e confluiranno nella gestione centrale Horyzon."
+        ]
+      }
+    ],
+    "points": [
+      "Ascolto",
+      "Chiarezza",
+      "Direzione",
+      "Milano",
+      "Como",
+      "Lugano",
+      "Bellinzona",
+      "Roma",
+      "Bari",
+      "Taranto",
+      "Lecce"
+    ]
+  },
+  "de/benessere-digitale/competenze": {
+    "title": "Digitale Kompetenzen",
+    "intro": "Wir entwickeln die Fähigkeit, digitale Werkzeuge zu verstehen, auszuwählen und zu steuern.",
+    "sections": [
+      {
+        "title": "Echte Innovation erhöht die Autonomie der Menschen.",
+        "text": [
+          "Jede Zusammenarbeit beginnt mit Zuhören und dem Verständnis des realen Kontexts. Wir vermeiden Standardlösungen, wenn Menschen, Ziele und Organisationen eine spezifische Antwort erfordern.",
+          "Wir übersetzen die Analyse in verständliche Prioritäten, klare Verantwortlichkeiten und Schritte, die im Zeitverlauf überprüfbar sind.",
+          "Chancen, Grenzen und Verantwortung.",
+          "Werkzeuge in soliden Arbeitsweisen verankern.",
+          "Fähigkeiten, die in der Organisation bleiben.",
+          "Gemeinsam den nächsten Schritt gestalten"
+        ]
+      },
+      {
+        "title": "Weiter denken.Gemeinsam wachsen.",
+        "text": [
+          "Schildern Sie uns das Problem, das Sie lösen möchten. In einem ersten Gespräch prüfen wir Ziele, Prioritäten und den sinnvollsten nächsten Schritt.",
+          "Unternehmen · Wirtschaft · Menschlichkeit",
+          "Teil von Horyzon werden"
+        ]
+      },
+      {
+        "title": "Selbstständig undberuflich erfüllt.Eine gemeinsame Mission.",
+        "text": [
+          "Eine strukturierte, professionelle und menschliche Gruppe, in der man wachsen, zu Projekten beitragen und mit anderen Fachleuten zusammenarbeiten kann, ohne die eigene Selbstständigkeit aufzugeben."
+        ]
+      }
+    ],
+    "points": [
+      "Bewusstsein",
+      "Methode",
+      "Autonomie"
+    ]
+  },
+  "de/benessere-digitale/imprese": {
+    "title": "Digitale Unternehmen",
+    "intro": "Wir bringen Digitales verständlich, messbar und nützlich in reale Prozesse.",
+    "sections": [
+      {
+        "title": "Technologie funktioniert, wenn sie Arbeit vereinfacht und Entscheidungen verbessert.",
+        "text": [
+          "Jede Zusammenarbeit beginnt mit Zuhören und dem Verständnis des realen Kontexts. Wir vermeiden Standardlösungen, wenn Menschen, Ziele und Organisationen eine spezifische Antwort erfordern.",
+          "Wir übersetzen die Analyse in verständliche Prioritäten, klare Verantwortlichkeiten und Schritte, die im Zeitverlauf überprüfbar sind.",
+          "Digitalisieren, was Wert schafft.",
+          "Verständliche Informationen für bessere Entscheidungen.",
+          "Menschen, die Werkzeuge wirklich nutzen können.",
+          "Gemeinsam den nächsten Schritt gestalten"
+        ]
+      },
+      {
+        "title": "Weiter denken.Gemeinsam wachsen.",
+        "text": [
+          "Schildern Sie uns das Problem, das Sie lösen möchten. In einem ersten Gespräch prüfen wir Ziele, Prioritäten und den sinnvollsten nächsten Schritt.",
+          "Unternehmen · Wirtschaft · Menschlichkeit",
+          "Teil von Horyzon werden"
+        ]
+      },
+      {
+        "title": "Selbstständig undberuflich erfüllt.Eine gemeinsame Mission.",
+        "text": [
+          "Eine strukturierte, professionelle und menschliche Gruppe, in der man wachsen, zu Projekten beitragen und mit anderen Fachleuten zusammenarbeiten kann, ohne die eigene Selbstständigkeit aufzugeben."
+        ]
+      }
+    ],
+    "points": [
+      "Prozesse",
+      "Daten",
+      "Anwendung"
+    ]
+  },
+  "de/benessere-digitale": {
+    "title": "Digitales Wohlbefinden",
+    "intro": "Wir helfen Unternehmen, mit Technologie, Automatisierung und Daten in realen Prozessen Produktivität zurückzugewinnen und Ineffizienz zu senken.",
+    "sections": [
+      {
+        "title": "Technologie schafft Fortschritt, wenn sie Fähigkeiten, Freiheit und Entscheidungsqualität erhöht.",
+        "text": [
+          "Digitale Transformation bedeutet mehr als die Einführung von Werkzeugen: Sie braucht Kultur, Kompetenzen, Prozesse und eine verständliche Richtung.",
+          "Wir beginnen mit den Resultaten aus unseren eigenen Prozessen und messen jeden neuen Eingriff am konkreten Kontext. Verbesserungswerte hängen von der Ausgangslage ab und werden erst nach der Analyse definiert.",
+          "Werkzeuge und Prozesse im Dienst von Produktivität und Qualität.",
+          "Bewusstsein und Fähigkeit, Veränderungen zu steuern.",
+          "Eine zugängliche, verantwortungsvolle Transformation für das Gemeinwohl.",
+          "Orientierende Selbsteinschätzung"
+        ]
+      },
+      {
+        "title": "Messen Sie Ihren Raum für Entwicklung.",
+        "text": [
+          "Achtzehn Fragen, drei Dimensionen und eine erste konkrete Einordnung. Erkennen Sie, was bereits solide ist und wo der nächste Schritt beginnen kann.",
+          "Gemeinsam den nächsten Schritt gestalten"
+        ]
+      },
+      {
+        "title": "Weiter denken.Gemeinsam wachsen.",
+        "text": [
+          "Schildern Sie uns das Problem, das Sie lösen möchten. In einem ersten Gespräch prüfen wir Ziele, Prioritäten und den sinnvollsten nächsten Schritt.",
+          "Unternehmen · Wirtschaft · Menschlichkeit",
+          "Teil von Horyzon werden"
+        ]
+      },
+      {
+        "title": "Selbstständig undberuflich erfüllt.Eine gemeinsame Mission.",
+        "text": [
+          "Eine strukturierte, professionelle und menschliche Gruppe, in der man wachsen, zu Projekten beitragen und mit anderen Fachleuten zusammenarbeiten kann, ohne die eigene Selbstständigkeit aufzugeben."
+        ]
+      }
+    ],
+    "points": [
+      "Digitale Unternehmen",
+      "Kompetenzen",
+      "Digitales Italien"
+    ]
+  },
+  "de/benessere-digitale/italia-digitale": {
+    "title": "Digitales Italien",
+    "intro": "Wir fördern eine digitale Kultur, die Wettbewerbsfähigkeit, Teilhabe und menschliche Qualität verbindet.",
+    "sections": [
+      {
+        "title": "Fortschritt ist nur dann echt, wenn er das Land kompetenter macht.",
+        "text": [
+          "Jede Zusammenarbeit beginnt mit Zuhören und dem Verständnis des realen Kontexts. Wir vermeiden Standardlösungen, wenn Menschen, Ziele und Organisationen eine spezifische Antwort erfordern.",
+          "Wir übersetzen die Analyse in verständliche Prioritäten, klare Verantwortlichkeiten und Schritte, die im Zeitverlauf überprüfbar sind.",
+          "Verständliche und nutzbare Innovation.",
+          "Von menschlichen Prinzipien geleitete Technologie.",
+          "Breite Kompetenzen für eine stärkere Wirtschaft.",
+          "Gemeinsam den nächsten Schritt gestalten"
+        ]
+      },
+      {
+        "title": "Weiter denken.Gemeinsam wachsen.",
+        "text": [
+          "Schildern Sie uns das Problem, das Sie lösen möchten. In einem ersten Gespräch prüfen wir Ziele, Prioritäten und den sinnvollsten nächsten Schritt.",
+          "Unternehmen · Wirtschaft · Menschlichkeit",
+          "Teil von Horyzon werden"
+        ]
+      },
+      {
+        "title": "Selbstständig undberuflich erfüllt.Eine gemeinsame Mission.",
+        "text": [
+          "Eine strukturierte, professionelle und menschliche Gruppe, in der man wachsen, zu Projekten beitragen und mit anderen Fachleuten zusammenarbeiten kann, ohne die eigene Selbstständigkeit aufzugeben."
+        ]
+      }
+    ],
+    "points": [
+      "Zugänglichkeit",
+      "Verantwortung",
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  "de/benessere-organizzativo/analisi-organizzativa": {
+    "title": "Organisationsanalyse",
+    "intro": "Wir machen Ursachen sichtbar, die Menschen, Prozesse und Ergebnisse bremsen.",
+    "sections": [
+      {
+        "title": "Klarheit kommt vor Veränderung.",
+        "text": [
+          "Jede Zusammenarbeit beginnt mit Zuhören und dem Verständnis des realen Kontexts. Wir vermeiden Standardlösungen, wenn Menschen, Ziele und Organisationen eine spezifische Antwort erfordern.",
+          "Wir übersetzen die Analyse in verständliche Prioritäten, klare Verantwortlichkeiten und Schritte, die im Zeitverlauf überprüfbar sind.",
+          "Rollen, Verantwortlichkeiten und Entscheidungswege.",
+          "Operative Schritte, Koordination und Reibungsverluste.",
+          "Die Hebel, die zuerst bewegt werden müssen.",
+          "Gemeinsam den nächsten Schritt gestalten"
+        ]
+      },
+      {
+        "title": "Weiter denken.Gemeinsam wachsen.",
+        "text": [
+          "Schildern Sie uns das Problem, das Sie lösen möchten. In einem ersten Gespräch prüfen wir Ziele, Prioritäten und den sinnvollsten nächsten Schritt.",
+          "Unternehmen · Wirtschaft · Menschlichkeit",
+          "Teil von Horyzon werden"
+        ]
+      },
+      {
+        "title": "Selbstständig undberuflich erfüllt.Eine gemeinsame Mission.",
+        "text": [
+          "Eine strukturierte, professionelle und menschliche Gruppe, in der man wachsen, zu Projekten beitragen und mit anderen Fachleuten zusammenarbeiten kann, ohne die eigene Selbstständigkeit aufzugeben."
+        ]
+      }
+    ],
+    "points": [
+      "Struktur",
+      "Abläufe",
+      "Prioritäten"
+    ]
+  },
+  "de/benessere-organizzativo/human-management": {
+    "title": "Human Management",
+    "intro": "Wir bauen Systeme, in denen Menschen ihren Beitrag verstehen und entfalten können.",
+    "sections": [
+      {
+        "title": "Menschen wachsen, wenn Verantwortung und Sinn klar sind.",
+        "text": [
+          "Jede Zusammenarbeit beginnt mit Zuhören und dem Verständnis des realen Kontexts. Wir vermeiden Standardlösungen, wenn Menschen, Ziele und Organisationen eine spezifische Antwort erfordern.",
+          "Wir übersetzen die Analyse in verständliche Prioritäten, klare Verantwortlichkeiten und Schritte, die im Zeitverlauf überprüfbar sind.",
+          "Mit Richtung, Zuhören und Konsequenz führen.",
+          "Klare Erwartungen und echte Autonomie.",
+          "Kompetenzen und Potenzial mit Zielen verbinden.",
+          "Gemeinsam den nächsten Schritt gestalten"
+        ]
+      },
+      {
+        "title": "Weiter denken.Gemeinsam wachsen.",
+        "text": [
+          "Schildern Sie uns das Problem, das Sie lösen möchten. In einem ersten Gespräch prüfen wir Ziele, Prioritäten und den sinnvollsten nächsten Schritt.",
+          "Unternehmen · Wirtschaft · Menschlichkeit",
+          "Teil von Horyzon werden"
+        ]
+      },
+      {
+        "title": "Selbstständig undberuflich erfüllt.Eine gemeinsame Mission.",
+        "text": [
+          "Eine strukturierte, professionelle und menschliche Gruppe, in der man wachsen, zu Projekten beitragen und mit anderen Fachleuten zusammenarbeiten kann, ohne die eigene Selbstständigkeit aufzugeben."
+        ]
+      }
+    ],
+    "points": [
+      "Führung",
+      "Verantwortung",
+      "Entwicklung"
+    ]
+  },
+  "de/benessere-organizzativo": {
+    "title": "Organisationales Wohlbefinden",
+    "intro": "Wir helfen Unternehmen zu prosperieren und zugleich jeden Menschen darin weiterzuentwickeln.",
+    "sections": [
+      {
+        "title": "Der Erfolg des Unternehmens und die Entwicklung der Menschen sind dasselbe Projekt.",
+        "text": [
+          "Ein Unternehmen prosperiert, wenn es solide Ergebnisse erzielt und zugleich ein Ort wird, an dem Menschen Fähigkeiten, Verantwortung und Bewusstsein entwickeln.",
+          "Wir beginnen mit der Analyse von Struktur, Rollen und Potenzial. Daraus entsteht ein operativer Weg für Wachstum, Generationswechsel, Delegation, Recruiting und Kostenkontrolle; bei Bedarf arbeiten wir in Auswahl und Organisationsentwicklung mit Performia zusammen.",
+          "Ein klarer Blick auf Struktur, Rollen, Abläufe und kritische Punkte.",
+          "Menschen, Verantwortung und Führung als Wachstumssystem.",
+          "Methode und Prioritäten, die Vision in Handlungsfähigkeit übersetzen.",
+          "Orientierende Selbsteinschätzung"
+        ]
+      },
+      {
+        "title": "Messen Sie Ihren Raum für Entwicklung.",
+        "text": [
+          "Achtzehn Fragen, drei Dimensionen und eine erste konkrete Einordnung. Erkennen Sie, was bereits solide ist und wo der nächste Schritt beginnen kann.",
+          "Technologie für Menschen und Organisationen"
+        ]
+      },
+      {
+        "title": "Produktive Menschen auswählen. Stärkere Teams aufbauen.",
+        "text": [
+          "Für Projekte in Italien und der Schweiz arbeiten wir mit Performia zusammen, einer internationalen Organisation, die sich ausschließlich auf Personalauswahl spezialisiert hat. Das System verbindet Analysen von Produktivität, Persönlichkeit, Motivation, Wissen und Eignung; die Werkzeuge sind in über 25 Sprachen verfügbar.",
+          "Performia wurde 2001 gegründet und arbeitet über mehr als 26 internationale Büros. Der Gründer ist seit über 39 Jahren im Recruiting tätig und hat jahrzehntelange Erfahrung in anwendbare Technologie und Methodik übersetzt.",
+          "Gemeinsam den nächsten Schritt gestalten"
+        ]
+      },
+      {
+        "title": "Weiter denken.Gemeinsam wachsen.",
+        "text": [
+          "Schildern Sie uns das Problem, das Sie lösen möchten. In einem ersten Gespräch prüfen wir Ziele, Prioritäten und den sinnvollsten nächsten Schritt.",
+          "Unternehmen · Wirtschaft · Menschlichkeit",
+          "Teil von Horyzon werden"
+        ]
+      },
+      {
+        "title": "Selbstständig undberuflich erfüllt.Eine gemeinsame Mission.",
+        "text": [
+          "Eine strukturierte, professionelle und menschliche Gruppe, in der man wachsen, zu Projekten beitragen und mit anderen Fachleuten zusammenarbeiten kann, ohne die eigene Selbstständigkeit aufzugeben."
+        ]
+      }
+    ],
+    "points": [
+      "Organisationsanalyse",
+      "Human Management",
+      "Unternehmerische Entwicklung"
+    ]
+  },
+  "de/benessere-organizzativo/sviluppo-imprenditoriale": {
+    "title": "Unternehmerische Entwicklung",
+    "intro": "Wir begleiten Unternehmer dabei, Vision und Intuition in ein wachstumsfähiges System zu übersetzen.",
+    "sections": [
+      {
+        "title": "Wachstum wird stabil, wenn das Unternehmen nicht von einer Person abhängt.",
+        "text": [
+          "Jede Zusammenarbeit beginnt mit Zuhören und dem Verständnis des realen Kontexts. Wir vermeiden Standardlösungen, wenn Menschen, Ziele und Organisationen eine spezifische Antwort erfordern.",
+          "Wir übersetzen die Analyse in verständliche Prioritäten, klare Verantwortlichkeiten und Schritte, die im Zeitverlauf überprüfbar sind.",
+          "Richtung, Positionierung und wesentliche Entscheidungen.",
+          "Eine Organisation, die Ambition trägt.",
+          "Rhythmus, Prioritäten und Ergebniskontrolle.",
+          "Gemeinsam den nächsten Schritt gestalten"
+        ]
+      },
+      {
+        "title": "Weiter denken.Gemeinsam wachsen.",
+        "text": [
+          "Schildern Sie uns das Problem, das Sie lösen möchten. In einem ersten Gespräch prüfen wir Ziele, Prioritäten und den sinnvollsten nächsten Schritt.",
+          "Unternehmen · Wirtschaft · Menschlichkeit",
+          "Teil von Horyzon werden"
+        ]
+      },
+      {
+        "title": "Selbstständig undberuflich erfüllt.Eine gemeinsame Mission.",
+        "text": [
+          "Eine strukturierte, professionelle und menschliche Gruppe, in der man wachsen, zu Projekten beitragen und mit anderen Fachleuten zusammenarbeiten kann, ohne die eigene Selbstständigkeit aufzugeben."
+        ]
+      }
+    ],
+    "points": [
+      "Vision",
+      "System",
+      "Umsetzung"
+    ]
+  },
+  "de/benessere-patrimoniale/imprenditori": {
+    "title": "Unternehmer",
+    "intro": "Wir schaffen Klarheit zwischen Unternehmenswert, Privatvermögen und familiärer Verantwortung.",
+    "sections": [
+      {
+        "title": "Unternehmen und Person sind verbunden, dürfen aber nicht verwechselt werden.",
+        "text": [
+          "Jede Zusammenarbeit beginnt mit Zuhören und dem Verständnis des realen Kontexts. Wir vermeiden Standardlösungen, wenn Menschen, Ziele und Organisationen eine spezifische Antwort erfordern.",
+          "Wir übersetzen die Analyse in verständliche Prioritäten, klare Verantwortlichkeiten und Schritte, die im Zeitverlauf überprüfbar sind.",
+          "Die verschiedenen Sphären getrennt betrachten.",
+          "Szenarien und Übergänge vorausschauend vorbereiten.",
+          "Entscheidungen weniger von Dringlichkeit abhängig machen.",
+          "Gemeinsam den nächsten Schritt gestalten"
+        ]
+      },
+      {
+        "title": "Weiter denken.Gemeinsam wachsen.",
+        "text": [
+          "Schildern Sie uns das Problem, das Sie lösen möchten. In einem ersten Gespräch prüfen wir Ziele, Prioritäten und den sinnvollsten nächsten Schritt.",
+          "Unternehmen · Wirtschaft · Menschlichkeit",
+          "Teil von Horyzon werden"
+        ]
+      },
+      {
+        "title": "Selbstständig undberuflich erfüllt.Eine gemeinsame Mission.",
+        "text": [
+          "Eine strukturierte, professionelle und menschliche Gruppe, in der man wachsen, zu Projekten beitragen und mit anderen Fachleuten zusammenarbeiten kann, ohne die eigene Selbstständigkeit aufzugeben."
+        ]
+      }
+    ],
+    "points": [
+      "Grenzen",
+      "Kontinuität",
+      "Freiheit"
+    ]
+  },
+  "de/benessere-patrimoniale": {
+    "title": "Vermögenswohlbefinden",
+    "intro": "Wir helfen italienischem Vermögen, für den Menschen zu arbeiten, der es geschaffen hat – damit nicht nur der Mensch weiter für sein Vermögen arbeitet.",
+    "sections": [
+      {
+        "title": "Vermögen soll den Menschen, die es aufgebaut haben, Freiheit, Möglichkeiten und Zukunft zurückgeben.",
+        "text": [
+          "Italien verfügt über eine starke Kultur von Arbeit und Sparen. Unsere Mission ist es, dieses Vermögen zu einer aktiven Ressource für Leben, Ziele und Freiheit jener zu machen, die es geschaffen haben.",
+          "In Partnerschaft mit Careisgold beleuchten wir auch die Rolle von physischem Anlagegold. Bei Finanzinstrumenten, Aktien und Anleihen koordinieren wir uns mit zugelassenen Fachleuten und bewerten Ziele, Zeithorizont und Risiko: Keine Anlage ist risikofrei oder garantiert Ergebnisse.",
+          "Ziele und Prioritäten als zusammenhängendes System.",
+          "Kontinuität, Schutz und Planung über das laufende Einkommen hinaus.",
+          "Balance zwischen Unternehmen, Privatvermögen und Familienzukunft.",
+          "Orientierende Selbsteinschätzung"
+        ]
+      },
+      {
+        "title": "Messen Sie Ihren Raum für Entwicklung.",
+        "text": [
+          "Achtzehn Fragen, drei Dimensionen und eine erste konkrete Einordnung. Erkennen Sie, was bereits solide ist und wo der nächste Schritt beginnen kann.",
+          "Physisches Feingold als Anlage"
+        ]
+      },
+      {
+        "title": "Vermögen bewusster und zugänglicher machen.",
+        "text": [
+          "Gemeinsam mit Careisgold bringen wir Familien, Fachleuten und Unternehmern physisches Feingold als Anlage näher – mit individuellen Wegen und direktem menschlichem Kontakt.",
+          "Careisgold ist eine Aktiengesellschaft, Metallbank und im OAM-Register eingetragener professioneller Goldhändler. Das Unternehmen gehört zur seit über 15 Jahren aktiven Care Holding. Die Zusammenarbeit unterstützt Horyzons Mission: italienisches Vermögen für jene arbeiten zu lassen, die es geschaffen haben, und Sparen, Wissen und Planung in mehr Freiheit zu verwandeln.",
+          "Gemeinsam den nächsten Schritt gestalten"
+        ]
+      },
+      {
+        "title": "Weiter denken.Gemeinsam wachsen.",
+        "text": [
+          "Schildern Sie uns das Problem, das Sie lösen möchten. In einem ersten Gespräch prüfen wir Ziele, Prioritäten und den sinnvollsten nächsten Schritt.",
+          "Unternehmen · Wirtschaft · Menschlichkeit",
+          "Teil von Horyzon werden"
+        ]
+      },
+      {
+        "title": "Selbstständig undberuflich erfüllt.Eine gemeinsame Mission.",
+        "text": [
+          "Eine strukturierte, professionelle und menschliche Gruppe, in der man wachsen, zu Projekten beitragen und mit anderen Fachleuten zusammenarbeiten kann, ohne die eigene Selbstständigkeit aufzugeben."
+        ]
+      }
+    ],
+    "points": [
+      "Vermögensvision",
+      "Fachleute",
+      "Unternehmer"
+    ]
+  },
+  "de/benessere-patrimoniale/professionisti": {
+    "title": "Fachleute",
+    "intro": "Wir helfen, Vermögen über die heutige Einkommensfähigkeit hinaus zu betrachten.",
+    "sections": [
+      {
+        "title": "Der durch Arbeit geschaffene Wert verdient Kontinuität und Perspektive.",
+        "text": [
+          "Jede Zusammenarbeit beginnt mit Zuhören und dem Verständnis des realen Kontexts. Wir vermeiden Standardlösungen, wenn Menschen, Ziele und Organisationen eine spezifische Antwort erfordern.",
+          "Wir übersetzen die Analyse in verständliche Prioritäten, klare Verantwortlichkeiten und Schritte, die im Zeitverlauf überprüfbar sind.",
+          "Ziele über den Berufszyklus hinaus.",
+          "Verantwortlichkeiten und Verwundbarkeiten sichtbar machen.",
+          "Ressourcen im Einklang mit Leben und Zukunft.",
+          "Gemeinsam den nächsten Schritt gestalten"
+        ]
+      },
+      {
+        "title": "Weiter denken.Gemeinsam wachsen.",
+        "text": [
+          "Schildern Sie uns das Problem, das Sie lösen möchten. In einem ersten Gespräch prüfen wir Ziele, Prioritäten und den sinnvollsten nächsten Schritt.",
+          "Unternehmen · Wirtschaft · Menschlichkeit",
+          "Teil von Horyzon werden"
+        ]
+      },
+      {
+        "title": "Selbstständig undberuflich erfüllt.Eine gemeinsame Mission.",
+        "text": [
+          "Eine strukturierte, professionelle und menschliche Gruppe, in der man wachsen, zu Projekten beitragen und mit anderen Fachleuten zusammenarbeiten kann, ohne die eigene Selbstständigkeit aufzugeben."
+        ]
+      }
+    ],
+    "points": [
+      "Kontinuität",
+      "Schutz",
+      "Plan"
+    ]
+  },
+  "de/benessere-patrimoniale/visione-patrimoniale": {
+    "title": "Vermögensvision",
+    "intro": "Wir verbinden persönliche, berufliche und familiäre Ziele zu einer verständlichen Karte.",
+    "sections": [
+      {
+        "title": "Vor den Instrumenten steht die Richtung.",
+        "text": [
+          "Jede Zusammenarbeit beginnt mit Zuhören und dem Verständnis des realen Kontexts. Wir vermeiden Standardlösungen, wenn Menschen, Ziele und Organisationen eine spezifische Antwort erfordern.",
+          "Wir übersetzen die Analyse in verständliche Prioritäten, klare Verantwortlichkeiten und Schritte, die im Zeitverlauf überprüfbar sind.",
+          "Was das Vermögen ermöglichen soll.",
+          "Zeiten, Verantwortlichkeiten und Risikoniveaus.",
+          "Ein gemeinsamer Rahmen für den Dialog mit Fachleuten.",
+          "Gemeinsam den nächsten Schritt gestalten"
+        ]
+      },
+      {
+        "title": "Weiter denken.Gemeinsam wachsen.",
+        "text": [
+          "Schildern Sie uns das Problem, das Sie lösen möchten. In einem ersten Gespräch prüfen wir Ziele, Prioritäten und den sinnvollsten nächsten Schritt.",
+          "Unternehmen · Wirtschaft · Menschlichkeit",
+          "Teil von Horyzon werden"
+        ]
+      },
+      {
+        "title": "Selbstständig undberuflich erfüllt.Eine gemeinsame Mission.",
+        "text": [
+          "Eine strukturierte, professionelle und menschliche Gruppe, in der man wachsen, zu Projekten beitragen und mit anderen Fachleuten zusammenarbeiten kann, ohne die eigene Selbstständigkeit aufzugeben."
+        ]
+      }
+    ],
+    "points": [
+      "Ziele",
+      "Gleichgewichte",
+      "Koordination"
+    ]
+  },
+  "de/conoscenza": {
+    "title": "Geteiltes Wissen.Gemeinsames Erbe.",
+    "intro": "Bücher, Forschung und Werkzeuge von Horyzon-Fachleuten für alle, die Menschen und Unternehmen weiterentwickeln möchten.",
+    "sections": [
+      {
+        "title": "Drei Bücher. Ein Forschungsweg in Entwicklung.",
+        "text": [
+          "Jede Veröffentlichung bewahrt die Identität ihres Autors und wird zugleich Teil des gemeinsamen kulturellen Erbes von Horyzon. Drei Etappen desselben Weges: ein verfügbares Buch, eines in Überarbeitung und eines in Vorbereitung.",
+          "Körper, Verstand und Geist in der Führung von sich selbst und Organisationen.",
+          "Ein persönlicher Weg zu Energie, Klarheit und unternehmerischer Freiheit.",
+          "Eine Forschung zur Attraktivität von Unternehmen für Champions und Talente.",
+          "Angelo Ria Chetta"
+        ]
+      },
+      {
+        "title": "Management Umano",
+        "text": [
+          "Eine Managementphilosophie, die beim eigenen Selbst beginnt und Körper, Verstand und Geist verbindet, um menschliches und berufliches Potenzial zu entfalten.",
+          "Das Buch bewertet Menschlichkeit neu und verbindet sie mit Erfolg, Fülle, Unternehmertum, Entwicklung und Gesundheit. Es richtet sich an Menschen und Organisationen, die wachsen wollen, ohne Wirksamkeit und Bewusstsein voneinander zu trennen.",
+          "02 / Gedruckte Ausgabe"
+        ]
+      },
+      {
+        "title": "Das Buch in seiner greifbarsten Form.",
+        "text": [
+          "Sonderpreis für die Horyzon-Community. Ladenpreis 29 €. Bestellung, Zahlung und Support erfolgen weiterhin über den offiziellen Angeloria-Shop."
+        ]
+      },
+      {
+        "title": "Die Gegenwart lesen.Die Zukunft vorbereiten.",
+        "text": [
+          "Gemeinsam den nächsten Schritt gestalten"
+        ]
+      },
+      {
+        "title": "Weiter denken.Gemeinsam wachsen.",
+        "text": [
+          "Schildern Sie uns das Problem, das Sie lösen möchten. In einem ersten Gespräch prüfen wir Ziele, Prioritäten und den sinnvollsten nächsten Schritt.",
+          "Unternehmen · Wirtschaft · Menschlichkeit",
+          "Teil von Horyzon werden"
+        ]
+      },
+      {
+        "title": "Selbstständig undberuflich erfüllt.Eine gemeinsame Mission.",
+        "text": [
+          "Eine strukturierte, professionelle und menschliche Gruppe, in der man wachsen, zu Projekten beitragen und mit anderen Fachleuten zusammenarbeiten kann, ohne die eigene Selbstständigkeit aufzugeben."
+        ]
+      }
+    ],
+    "points": [
+      "Management Umano",
+      "Il digiuno dell’imprenditore",
+      "Aziende attraenti per campioni e talenti",
+      "Der Unternehmer auf dem Platz: Tennis als Medizin für Geist, Körper und Unternehmen",
+      "Angst im Unternehmen: versteckte Kosten oder Entwicklungschance?",
+      "Die Vier-Tage-Woche: eine neue unternehmerische Revolution",
+      "Wie attraktiv ist Ihr Unternehmen?",
+      "Delegieren und wachsen, ohne sich zu überlasten",
+      "Personalführung in KMU"
+    ]
+  },
+  "de/contatti": {
+    "title": "Beginnen wir ein Gespräch.",
+    "intro": "Erzählen Sie uns vom nächsten Schritt, den Sie für Ihr Unternehmen, Ihr Projekt oder Ihre Region gestalten möchten.",
+    "sections": [
+      {
+        "title": "Jede Entwicklung beginnt mit einer klaren Frage.",
+        "text": [
+          "Schreiben Sie uns über den Kontext, das Ziel und darüber, was sich heute verändern soll.",
+          "Wir antworten, um zu verstehen, ob und wie Horyzon Sie begleiten kann.",
+          "Wir beginnen mit der realen Situation.",
+          "Gemeinsam definieren wir die Frage.",
+          "Wir bewerten den ersten möglichen Schritt.",
+          "Italien · Schweiz"
+        ]
+      },
+      {
+        "title": "Ein Kompetenznetzwerk in der Nähe von Unternehmen.",
+        "text": [
+          "Wir arbeiten mit Beziehungen und Fachkompetenzen, die in den Regionen verankert sind. Wählen Sie die nächstgelegene Stadt, um ein Gespräch zu beginnen.",
+          "Die Zahlen entsprechen der Städteliste",
+          "Italien",
+          "Italien",
+          "Schweiz · Tessin",
+          "Schweiz · Tessin",
+          "Italien",
+          "Italien",
+          "Italien",
+          "Italien",
+          "Die regionalen Adressen werden als Aliasse aktiviert und in die zentrale Verwaltung von Horyzon eingebunden.",
+          "Gemeinsam den nächsten Schritt gestalten"
+        ]
+      },
+      {
+        "title": "Weiter denken.Gemeinsam wachsen.",
+        "text": [
+          "Schildern Sie uns das Problem, das Sie lösen möchten. In einem ersten Gespräch prüfen wir Ziele, Prioritäten und den sinnvollsten nächsten Schritt.",
+          "Unternehmen · Wirtschaft · Menschlichkeit",
+          "Teil von Horyzon werden"
+        ]
+      },
+      {
+        "title": "Selbstständig undberuflich erfüllt.Eine gemeinsame Mission.",
+        "text": [
+          "Eine strukturierte, professionelle und menschliche Gruppe, in der man wachsen, zu Projekten beitragen und mit anderen Fachleuten zusammenarbeiten kann, ohne die eigene Selbstständigkeit aufzugeben."
+        ]
+      }
+    ],
+    "points": [
+      "Zuhören",
+      "Klarheit",
+      "Richtung",
+      "Milano",
+      "Como",
+      "Lugano",
+      "Bellinzona",
+      "Roma",
+      "Bari",
+      "Taranto",
+      "Lecce"
+    ]
+  },
+  "de/economia": {
+    "title": "Die Wirtschaft prägt die Zukunft von Gemeinschaften.",
+    "intro": "Die Wirtschaft ist eine grundlegende Dimension des modernen Menschen: Sie organisiert Ressourcen, Möglichkeiten und Entscheidungen und beeinflusst kollektive Steuerung tiefgreifend.",
+    "sections": [
+      {
+        "title": "Ökonomie ist die Wissenschaft, die menschliche Bedürfnisse in langfristig tragfähige Richtungen übersetzt.",
+        "text": [
+          "Wir leben in einer Zeit, in der auch Politik stark von der Wirtschaft geprägt wird. Politische Phasen sind oft volatiler; Wirtschaftssysteme, Unternehmen und Produktionsentscheidungen erzeugen tiefere und langfristigere Folgen.",
+          "Die Wirtschaft gibt der Politik Orientierung, die wiederum die Gemeinschaft lenkt. Eine bessere Wirtschaft erhöht deshalb die Fähigkeit eines Landes, seine Zukunft zu wählen, zu planen und aufzubauen.",
+          "Für Horyzon ist Wirtschaft nicht vom Menschen getrennt: Sie ist eine Humanwissenschaft und muss der Entwicklung von Menschen, Unternehmen und Regionen dienen.",
+          "Ressourcen, Beziehungen und Entscheidungsfolgen verstehen.",
+          "Stabilere Bedingungen für gemeinsame Entscheidungen schaffen.",
+          "Wert schaffen, der die Volatilität der Gegenwart überdauert.",
+          "Gemeinsam den nächsten Schritt gestalten"
+        ]
+      },
+      {
+        "title": "Weiter denken.Gemeinsam wachsen.",
+        "text": [
+          "Schildern Sie uns das Problem, das Sie lösen möchten. In einem ersten Gespräch prüfen wir Ziele, Prioritäten und den sinnvollsten nächsten Schritt.",
+          "Unternehmen · Wirtschaft · Menschlichkeit",
+          "Teil von Horyzon werden"
+        ]
+      },
+      {
+        "title": "Selbstständig undberuflich erfüllt.Eine gemeinsame Mission.",
+        "text": [
+          "Eine strukturierte, professionelle und menschliche Gruppe, in der man wachsen, zu Projekten beitragen und mit anderen Fachleuten zusammenarbeiten kann, ohne die eigene Selbstständigkeit aufzugeben."
+        ]
+      }
+    ],
+    "points": [
+      "Wissenschaft",
+      "Richtung",
+      "Dauer"
+    ]
+  },
+  "de/entra-in-horyzon": {
+    "title": "Selbstständig undberuflich erfüllt.Eine gemeinsame Mission.",
+    "intro": "Horyzon ist eine strukturierte, professionelle und menschliche Gruppe, in der Selbstständige wachsen, sich verwirklichen und mit anderen Fachleuten zusammenarbeiten können.",
+    "sections": [
+      {
+        "title": "Beruflich wachsen, ohne die eigene Selbstständigkeit aufzugeben.",
+        "text": [
+          "Das Partner Network vereint Selbstständige mit einer gemeinsamen Mission, seriösen Arbeitsstandards und dem Wunsch, Talent und Kompetenz in den Dienst anderer zu stellen. Es verbindet organisationales, Vermögens- und digitales Wohlbefinden: keine vierte Leistungssäule, sondern das menschliche Netzwerk hinter den Projekten.",
+          "Bei Horyzon können Fachleute zur Geschäftsentwicklung beitragen, Leistungen verkaufen oder erbringen und mit ergänzenden Spezialisten zusammenarbeiten. Die Gruppe bietet Austausch, Struktur und Kooperationsmöglichkeiten, ohne die berufliche Identität des Einzelnen zu ersetzen.",
+          "Wir suchen selbstständige, zuverlässige und ergebnisorientierte Menschen, die gemeinsam wachsen und wertvolle Beziehungen aufbauen. Jede Zusammenarbeit wird auf gegenseitige Passung geprüft und ist weder eine Einkommenszusage noch ein Arbeitsangebot.",
+          "Talent, Kompetenz und berufliche Identität in einer menschlichen Gruppe entwickeln.",
+          "Unterschiedliche Fachgebiete mit klarer Verantwortung verbinden.",
+          "Leistungen entsprechend Kompetenz und geschaffenem Wert verkaufen, erbringen oder koordinieren.",
+          "Der nächste Schritt"
+        ]
+      },
+      {
+        "title": "Erzählen Sie uns, wer Sie sind und welchen Beitrag Sie leisten möchten.",
+        "text": [
+          "Schreiben Sie uns über Ihre Erfahrung, Ihre Kompetenzen und den Bereich, in dem Sie mitarbeiten möchten. Gemeinsam prüfen wir Passung, Formen der Zusammenarbeit und mögliche Projekte.",
+          "Unternehmen · Wirtschaft · Menschlichkeit",
+          "Teil von Horyzon werden"
+        ]
+      },
+      {
+        "title": "Selbstständig undberuflich erfüllt.Eine gemeinsame Mission.",
+        "text": [
+          "Eine strukturierte, professionelle und menschliche Gruppe, in der man wachsen, zu Projekten beitragen und mit anderen Fachleuten zusammenarbeiten kann, ohne die eigene Selbstständigkeit aufzugeben."
+        ]
+      }
+    ],
+    "points": [
+      "Erfüllung",
+      "Zusammenarbeit",
+      "Beitrag"
+    ]
+  },
+  "de/horyzon": {
+    "title": "Ein stärkeres Italien beginnt mit zentrierten Menschen.",
+    "intro": "Horyzons Traum ist es, Wirtschaft, Kreativität und die Entfaltungsmöglichkeiten der Menschen zu stärken – ausgehend von der Qualität jener, die Unternehmen und Organisationen aufbauen.",
+    "sections": [
+      {
+        "title": "Wirtschaft, Kreativität und persönliche Entfaltung gehören zu derselben Mission.",
+        "text": [
+          "Wir wollen zu einem stärkeren Italien beitragen: einem Land, in dem Unternehmen, Wirtschaft und Menschlichkeit konkrete Möglichkeiten für Menschen und Regionen schaffen.",
+          "Dafür vereinen wir Menschen rund um eine gemeinsame Mission, die Talent, Kompetenz und Verantwortung in den Dienst anderer stellen. Wir arbeiten dort, wo systemische Vision und konkretes Handeln zusammentreffen.",
+          "Eine solide, kreative Wirtschaft, die Möglichkeiten erweitert.",
+          "Unterschiedliche Talente, vereint durch den Wunsch, anderen zu nutzen.",
+          "Körper, Verstand und Geist im Einklang, um Verantwortung in Handeln zu verwandeln.",
+          "Das Zuhause Horyzon"
+        ]
+      },
+      {
+        "title": "Ein professionelles Zuhause.Viele Kompetenzen.Eine gemeinsame Mission.",
+        "text": [
+          "Horyzon vereint selbstständige Fachleute, die unterschiedliche Kompetenzen in den Dienst von Menschen, Unternehmen und Gemeinschaften stellen. Jeder bewahrt Identität, Spezialisierung und Autonomie; uns verbinden eine gemeinsame Mission, eine seriöse Methode und die tiefe Aufmerksamkeit für die menschliche Dimension.",
+          "Gründer · Unternehmensanalyst"
+        ]
+      },
+      {
+        "title": "Eine Vision, die Raum für andere Fachleute schafft.",
+        "text": [
+          "Angelo Ria Chetta hat Horyzon gegründet und trägt dazu bei, seine Vision zu bewahren. Seine Aufgabe ist es, Bedingungen, Methoden und Beziehungen zu schaffen, damit unterschiedliche Fachleute ihre Kompetenz entfalten, gemeinsam wachsen und Wert für andere schaffen können.",
+          "Gemeinsam den nächsten Schritt gestalten"
+        ]
+      },
+      {
+        "title": "Weiter denken.Gemeinsam wachsen.",
+        "text": [
+          "Schildern Sie uns das Problem, das Sie lösen möchten. In einem ersten Gespräch prüfen wir Ziele, Prioritäten und den sinnvollsten nächsten Schritt.",
+          "Unternehmen · Wirtschaft · Menschlichkeit",
+          "Teil von Horyzon werden"
+        ]
+      },
+      {
+        "title": "Selbstständig undberuflich erfüllt.Eine gemeinsame Mission.",
+        "text": [
+          "Eine strukturierte, professionelle und menschliche Gruppe, in der man wachsen, zu Projekten beitragen und mit anderen Fachleuten zusammenarbeiten kann, ohne die eigene Selbstständigkeit aufzugeben."
+        ]
+      }
+    ],
+    "points": [
+      "Stärkeres Italien",
+      "Gemeinsame Mission",
+      "Zentrierte Menschen",
+      "Angelo Ria Chetta"
+    ]
+  },
+  "de/impresa": {
+    "title": "Unternehmen sind ein kreativer Ausdruck des Menschen.",
+    "intro": "Unternehmertum verlangt außergewöhnliche menschliche Qualitäten: Vision, Verantwortung, Mut, Kreativität und die Fähigkeit, andere für ein gemeinsames Projekt zu gewinnen.",
+    "sections": [
+      {
+        "title": "Unternehmertum ist eine Kunst und ein spirituelles Spiel, noch bevor es wirtschaftliche Tätigkeit ist.",
+        "text": [
+          "Im ursprünglichen Sinn ist ein Unternehmen ein Vorhaben, das es wert ist, unternommen zu werden: schwierig, bedeutungsvoll und fähig, die Beteiligten zu verändern. Es ist weder unnatürlich noch unedel, sondern ein Ort, an dem die besten menschlichen Qualitäten geprüft werden.",
+          "Nach Familie und Schule ist das Unternehmen einer der wichtigsten Lern- und Entwicklungsräume des Erwachsenenlebens. Hier verbringen wir viel Zeit, lernen Zusammenarbeit, übernehmen Verantwortung und verwandeln Ideen in Wert für die Gemeinschaft.",
+          "Die dafür nötigen Qualitäten besitzt jeder Mensch. Unternehmer entscheiden sich, sie kontinuierlich einzusetzen und sich Risiko, Beziehung und Ergebnisverantwortung zu stellen.",
+          "Etwas Neues schaffen und für andere nutzbar machen.",
+          "Durch Verantwortung, Schwierigkeit und Realität wachsen.",
+          "Individuelle Talente in ein gemeinsames Werk verwandeln.",
+          "Gemeinsam den nächsten Schritt gestalten"
+        ]
+      },
+      {
+        "title": "Weiter denken.Gemeinsam wachsen.",
+        "text": [
+          "Schildern Sie uns das Problem, das Sie lösen möchten. In einem ersten Gespräch prüfen wir Ziele, Prioritäten und den sinnvollsten nächsten Schritt.",
+          "Unternehmen · Wirtschaft · Menschlichkeit",
+          "Teil von Horyzon werden"
+        ]
+      },
+      {
+        "title": "Selbstständig undberuflich erfüllt.Eine gemeinsame Mission.",
+        "text": [
+          "Eine strukturierte, professionelle und menschliche Gruppe, in der man wachsen, zu Projekten beitragen und mit anderen Fachleuten zusammenarbeiten kann, ohne die eigene Selbstständigkeit aufzugeben."
+        ]
+      }
+    ],
+    "points": [
+      "Kunst",
+      "Entwicklung",
+      "Menschen"
+    ]
+  },
+  "de": {
+    "title": "Mehr Ergebnisse.Mehr Freiheit.",
+    "intro": "Wir lösen konkrete Herausforderungen bei Wachstum, Vermögen und Produktivität: weniger Verschwendung, klarere Entscheidungen und mehr Zeit für das Wesentliche.",
+    "sections": [
+      {
+        "title": "Ein stärkeres Italien,das Talent in Chancenverwandeln kann.",
+        "text": [
+          "Wir wollen Wirtschaft, Kreativität und die Entfaltungsmöglichkeiten der Menschen stärken. Wir bündeln Kompetenzen rund um eine gemeinsame Mission, damit Talent zum Dienst an anderen wird und Wert schafft."
+        ]
+      },
+      {
+        "title": "Drei Herausforderungen.Ein Ansprechpartner.",
+        "text": [
+          "Organisation, Vermögen und Technologie werden zu koordinierten Hebeln für konkrete Ergebnisse.",
+          "Unternehmen",
+          "Wir helfen Unternehmen zu prosperieren, indem wir jeden Menschen darin befähigen, sich zu entwickeln und zu wachsen.",
+          "Fachleute und Unternehmer",
+          "Wir helfen italienischem Vermögen, für die Menschen zu arbeiten, die es geschaffen haben – nicht nur umgekehrt.",
+          "Standort Italien",
+          "Technologien, Automatisierung und Daten für mehr Produktivität, weniger Ineffizienz und bessere Entscheidungen.",
+          "Orientierende Selbsteinschätzung"
+        ]
+      },
+      {
+        "title": "Messen Sie Ihren Raum für Entwicklung.",
+        "text": [
+          "Achtzehn Fragen, drei Dimensionen und eine erste konkrete Einordnung. Erkennen Sie, was bereits solide ist und wo der nächste Schritt beginnen kann."
+        ]
+      },
+      {
+        "title": "Fachleute, die Ihren Kontext kennen.",
+        "text": [
+          "Ein Netzwerk von rund 50 Fachleuten in der Lombardei, im Tessin und in Apulien, mit Präsenz in Mailand, Monza, Lugano, Bellinzona, Bari und Lecce. Für jedes Projekt aktivieren wir genau die Kompetenzen, die wirklich erforderlich sind.",
+          "Partner Network"
+        ]
+      },
+      {
+        "title": "Ein professionelles Zuhause.Viele Kompetenzen.Eine gemeinsame Mission.",
+        "text": [
+          "Horyzon ist eine strukturierte, professionelle und menschliche Gruppe für Selbstständige, die wachsen, Dienstleistungen verkaufen oder erbringen und mit anderen Fachleuten zusammenarbeiten möchten, ohne ihre Autonomie aufzugeben."
+        ]
+      },
+      {
+        "title": "Körper, Verstand und Geist.Eine gemeinsameinnere Ausrichtung.",
+        "text": [
+          "Energie und Handeln, Verstehen und Entscheiden, Sinn und Streben: Wir fördern Menschen, die verbunden, zentriert und auf den Traum ausgerichtet sind und Talent sowie Kompetenz in den Dienst anderer stellen.",
+          "Gemeinsam den nächsten Schritt gestalten"
+        ]
+      },
+      {
+        "title": "Weiter denken.Gemeinsam wachsen.",
+        "text": [
+          "Schildern Sie uns das Problem, das Sie lösen möchten. In einem ersten Gespräch prüfen wir Ziele, Prioritäten und den sinnvollsten nächsten Schritt.",
+          "Unternehmen · Wirtschaft · Menschlichkeit",
+          "Teil von Horyzon werden"
+        ]
+      },
+      {
+        "title": "Selbstständig undberuflich erfüllt.Eine gemeinsame Mission.",
+        "text": [
+          "Eine strukturierte, professionelle und menschliche Gruppe, in der man wachsen, zu Projekten beitragen und mit anderen Fachleuten zusammenarbeiten kann, ohne die eigene Selbstständigkeit aufzugeben."
+        ]
+      }
+    ],
+    "points": [
+      "Organisationales Wohlbefinden",
+      "Vermögenswohlbefinden",
+      "Digitales Wohlbefinden"
+    ]
+  },
+  "de/indice-horyzon": {
+    "title": "Messen Sie IhrenRaum für Entwicklung.",
+    "intro": "Drei kurze Fragebögen für einen klareren Blick auf Organisation, Vermögen und digitale Fähigkeiten. Kein Urteil, sondern ein Ausgangspunkt.",
+    "sections": [
+      {
+        "title": "Wo möchten Sie weiterblicken?",
+        "text": [
+          "Messen Sie, wie sehr Struktur, Autonomie und Menschen das Unternehmenswachstum tatsächlich tragen.",
+          "Beobachten Sie, wie sehr Richtung, Balance und Freiheit Ihr aufgebautes Vermögen leiten.",
+          "Bewerten Sie, ob Prozesse, Daten und digitale Kompetenzen tatsächlich Fähigkeiten und Zeit freisetzen.",
+          "02 / So funktioniert es"
+        ]
+      },
+      {
+        "title": "Eine nützliche Momentaufnahme, kein Etikett.",
+        "text": [
+          "Antworten Sie mit Blick auf die reale Situation der letzten sechs Monate. Das Ergebnis zeigt, was bereits solide ist, die wichtigste Entwicklungspriorität und einen ersten konkreten Schritt.",
+          "Unternehmen · Wirtschaft · Menschlichkeit",
+          "Teil von Horyzon werden"
+        ]
+      },
+      {
+        "title": "Selbstständig undberuflich erfüllt.Eine gemeinsame Mission.",
+        "text": [
+          "Eine strukturierte, professionelle und menschliche Gruppe, in der man wachsen, zu Projekten beitragen und mit anderen Fachleuten zusammenarbeiten kann, ohne die eigene Selbstständigkeit aufzugeben."
+        ]
+      }
+    ],
+    "points": [
+      "Organisationales Wohlbefinden",
+      "Vermögenswohlbefinden",
+      "Digitales Wohlbefinden"
+    ]
+  },
+  "de/libro/management-umano": {
+    "title": "Zuerst sich selbst führen.",
+    "intro": "Ein Weg, menschliches und berufliches Potenzial zu entfalten und eine ganzheitliche Sicht auf Menschen, Familien, Unternehmen und Gemeinschaften anzuwenden.",
+    "sections": [
+      {
+        "title": "Management und Menschlichkeit endlich vereint.",
+        "text": [
+          "Der Begriff Management wird oft technisch und beinahe robotisch verwendet. Management Umano führt ihn zu seiner konkretesten Wurzel zurück: sich selbst führen zu lernen, bevor man Dinge und Menschen führt.",
+          "Der Ansatz verbindet Körper, Verstand und Geist und lässt sich auf Einzelpersonen, Organisationen und Gemeinschaften anwenden. Er trennt menschlichen Wert nicht von Erfolg, Fülle, Unternehmen, Entwicklung und Gesundheit.",
+          "Das Buch entsteht auch aus dem Vertrauen in die Fähigkeiten Italiens und in die Möglichkeit, Kreativität, Menschlichkeit und Bewusstsein zu Entwicklungshebeln zu machen.",
+          "Erhalten Sie die PDF- und ePub-Version über das offizielle Formular.",
+          "Für die Horyzon-Community ist das Buch für 15 € statt zum Ladenpreis von 29 € erhältlich.",
+          "Gemeinsam den nächsten Schritt gestalten"
+        ]
+      },
+      {
+        "title": "Weiter denken.Gemeinsam wachsen.",
+        "text": [
+          "Schildern Sie uns das Problem, das Sie lösen möchten. In einem ersten Gespräch prüfen wir Ziele, Prioritäten und den sinnvollsten nächsten Schritt.",
+          "Unternehmen · Wirtschaft · Menschlichkeit",
+          "Teil von Horyzon werden"
+        ]
+      },
+      {
+        "title": "Selbstständig undberuflich erfüllt.Eine gemeinsame Mission.",
+        "text": [
+          "Eine strukturierte, professionelle und menschliche Gruppe, in der man wachsen, zu Projekten beitragen und mit anderen Fachleuten zusammenarbeiten kann, ohne die eigene Selbstständigkeit aufzugeben."
+        ]
+      }
+    ],
+    "points": [
+      "Kostenloses E-Book",
+      "Gedruckte Ausgabe"
+    ]
+  },
+  "de/umanita": {
+    "title": "Körper, Verstand und Geist geben dem Handeln Sinn.",
+    "intro": "Menschlichkeit umfasst Körper, Verstand und Geist. Sie verbindet die Kunst des Unternehmertums mit der Wissenschaft der Ökonomie und führt jede Entscheidung zur Würde und Komplexität des Menschen zurück.",
+    "sections": [
+      {
+        "title": "Keine menschliche Kunst oder Wissenschaft kann auf die Ganzheit des Menschen verzichten.",
+        "text": [
+          "Der Körper ist Energie, Präsenz und Handeln in der Realität. Der Verstand ist Verstehen, Vorstellen und Entscheiden. Der Geist steht für Sinn, Streben und die Verbindung mit etwas Größerem: eine ernsthafte, nicht konfessionelle menschliche Dimension, die unser Handeln orientiert.",
+          "Menschlichkeit ist kein dekorativer Zusatz zu Unternehmen oder Wirtschaft. Sie lässt Kunst und Wissenschaft miteinander sprechen und richtet sie auf wirksame, nachhaltige und menschenwürdige Ergebnisse aus.",
+          "Körper, Verstand und Geist machen einen Menschen, wenn sie vereint und zentriert sind, bewusster für den eigenen Beitrag. Auf einen gemeinsamen Traum ausgerichtet können Talent und Kompetenz zu echtem Dienst an anderen werden.",
+          "Energie, Präsenz und Handeln in der Realität.",
+          "Verstehen, Vorstellen und Entscheiden.",
+          "Sinn, Streben und Verbindung mit etwas Größerem.",
+          "Gemeinsam den nächsten Schritt gestalten"
+        ]
+      },
+      {
+        "title": "Weiter denken.Gemeinsam wachsen.",
+        "text": [
+          "Schildern Sie uns das Problem, das Sie lösen möchten. In einem ersten Gespräch prüfen wir Ziele, Prioritäten und den sinnvollsten nächsten Schritt.",
+          "Unternehmen · Wirtschaft · Menschlichkeit",
+          "Teil von Horyzon werden"
+        ]
+      },
+      {
+        "title": "Selbstständig undberuflich erfüllt.Eine gemeinsame Mission.",
+        "text": [
+          "Eine strukturierte, professionelle und menschliche Gruppe, in der man wachsen, zu Projekten beitragen und mit anderen Fachleuten zusammenarbeiten kann, ohne die eigene Selbstständigkeit aufzugeben."
+        ]
+      }
+    ],
+    "points": [
+      "Körper",
+      "Verstand",
+      "Geist"
+    ]
+  },
+  "economia": {
+    "title": "L’economia orienta il futuro delle comunità.",
+    "intro": "L’economia è una dimensione fondamentale dell’essere umano moderno: organizza risorse, possibilità e scelte e influenza profondamente la governance collettiva.",
+    "sections": [
+      {
+        "title": "L’economia è la scienza che traduce i bisogni umani in direzioni capaci di durare nel tempo.",
+        "text": [
+          "Viviamo in un’epoca nella quale anche la politica è fortemente condizionata dall’economia. Le stagioni politiche sono spesso più volatili e passeggere; i sistemi economici, le imprese e le scelte produttive generano invece conseguenze più profonde e durature.",
+          "Per questo l’economia contribuisce a dare un indirizzo alla politica, che a sua volta orienta la collettività. Migliorare la qualità dell’economia significa quindi migliorare la capacità di un Paese di scegliere, progettare e costruire il proprio futuro.",
+          "Per Horyzon l’economia non è separata dall’essere umano: è una scienza umana e deve rimanere al servizio dell’evoluzione delle persone, delle imprese e dei territori.",
+          "Comprendere risorse, relazioni e conseguenze delle decisioni.",
+          "Costruire condizioni più solide per le scelte collettive.",
+          "Generare valore che superi la volatilità del presente."
+        ]
+      }
+    ],
+    "points": [
+      "Scienza",
+      "Direzione",
+      "Durata"
+    ]
+  },
+  "en/benessere-digitale/competenze": {
+    "title": "Digital skills",
+    "intro": "We develop the ability to understand, choose and govern digital tools.",
+    "sections": [
+      {
+        "title": "True innovation increases people’s autonomy.",
+        "text": [
+          "Every engagement begins with listening and understanding the real context. We avoid standard solutions when people, objectives and organisations require a specific response.",
+          "We translate analysis into clear priorities, defined responsibilities and steps that can be verified over time.",
+          "Opportunities, limits and responsibilities.",
+          "Tools embedded in solid working practices.",
+          "Capabilities that remain within the organisation."
+        ]
+      }
+    ],
+    "points": [
+      "Awareness",
+      "Method",
+      "Autonomy"
+    ]
+  },
+  "en/benessere-digitale/imprese": {
+    "title": "Digital businesses",
+    "intro": "We bring digital tools into processes in a clear, measurable and useful way.",
+    "sections": [
+      {
+        "title": "Technology works when it simplifies work and improves decisions.",
+        "text": [
+          "Every engagement begins with listening and understanding the real context. We avoid standard solutions when people, objectives and organisations require a specific response.",
+          "We translate analysis into clear priorities, defined responsibilities and steps that can be verified over time.",
+          "Digitise what creates value.",
+          "Readable information for better decisions.",
+          "People prepared to use tools effectively."
+        ]
+      }
+    ],
+    "points": [
+      "Processes",
+      "Data",
+      "Adoption"
+    ]
+  },
+  "en/benessere-digitale": {
+    "title": "Digital well-being",
+    "intro": "We help businesses regain productivity and reduce inefficiency through technology, automation and data applied to real processes.",
+    "sections": [
+      {
+        "title": "Technology creates progress when it increases capability, freedom and the quality of decisions.",
+        "text": [
+          "Digital transformation is not simply the adoption of tools: it requires culture, skills, processes and a direction people can understand.",
+          "We start from the results already achieved in our own processes and measure each new intervention against its specific context. Improvement rates depend on the initial situation and are defined only after analysis.",
+          "Tools and processes serving productivity and quality.",
+          "Awareness and capability to govern change.",
+          "An accessible, responsible transformation oriented towards the common good.",
+          "Indicative self-assessment"
+        ]
+      },
+      {
+        "title": "Measure your space for evolution.",
+        "text": [
+          "Eighteen questions, three dimensions and a practical first reading. Discover what is already solid and where the next step can begin."
+        ]
+      }
+    ],
+    "points": [
+      "Digital businesses",
+      "Skills",
+      "Digital Italy"
+    ]
+  },
+  "en/benessere-digitale/italia-digitale": {
+    "title": "Digital Italy",
+    "intro": "We contribute to a digital culture combining competitiveness, inclusion and human quality.",
+    "sections": [
+      {
+        "title": "Progress is real only when it leaves the country more capable.",
+        "text": [
+          "Every engagement begins with listening and understanding the real context. We avoid standard solutions when people, objectives and organisations require a specific response.",
+          "We translate analysis into clear priorities, defined responsibilities and steps that can be verified over time.",
+          "Innovation that is understandable and usable.",
+          "Technology guided by human principles.",
+          "Widespread capabilities for a stronger economy."
+        ]
+      }
+    ],
+    "points": [
+      "Accessibility",
+      "Responsibility",
+      "Competitiveness"
+    ]
+  },
+  "en/benessere-organizzativo/analisi-organizzativa": {
+    "title": "Organisational analysis",
+    "intro": "We make visible the causes holding back people, processes and results.",
+    "sections": [
+      {
+        "title": "Clarity comes before change.",
+        "text": [
+          "Every engagement begins with listening and understanding the real context. We avoid standard solutions when people, objectives and organisations require a specific response.",
+          "We translate analysis into clear priorities, defined responsibilities and steps that can be verified over time.",
+          "Roles, responsibilities and decision lines.",
+          "Operational steps, coordination and waste.",
+          "The levers to address first."
+        ]
+      }
+    ],
+    "points": [
+      "Structure",
+      "Workflows",
+      "Priorities"
+    ]
+  },
+  "en/benessere-organizzativo/human-management": {
+    "title": "Human Management",
+    "intro": "We build systems in which people understand and can express their contribution.",
+    "sections": [
+      {
+        "title": "People grow when responsibility and meaning are clear.",
+        "text": [
+          "Every engagement begins with listening and understanding the real context. We avoid standard solutions when people, objectives and organisations require a specific response.",
+          "We translate analysis into clear priorities, defined responsibilities and steps that can be verified over time.",
+          "Lead with direction, listening and consistency.",
+          "Clear expectations and real autonomy.",
+          "Skills and potential connected to objectives."
+        ]
+      }
+    ],
+    "points": [
+      "Leadership",
+      "Responsibility",
+      "Development"
+    ]
+  },
+  "en/benessere-organizzativo": {
+    "title": "Organisational well-being",
+    "intro": "We help companies prosper while enabling every person within them to evolve and thrive.",
+    "sections": [
+      {
+        "title": "Business prosperity and people’s evolution are one and the same project.",
+        "text": [
+          "A company prospers when it produces solid results and, at the same time, becomes a place where people can develop skills, responsibility and awareness.",
+          "We begin by analysing structure, roles and potential. We then build an operational path addressing growth, generational transition, delegation, recruiting and cost control, involving Performia in selection and organisational development where useful.",
+          "A clear view of structure, roles, workflows and critical issues.",
+          "People, responsibility and leadership as a growth system.",
+          "Method and priorities that turn vision into operational capability.",
+          "Indicative self-assessment"
+        ]
+      },
+      {
+        "title": "Measure your space for evolution.",
+        "text": [
+          "Eighteen questions, three dimensions and a practical first reading. Discover what is already solid and where the next step can begin.",
+          "Technology for people and organisations"
+        ]
+      },
+      {
+        "title": "Select productive people. Build stronger teams.",
+        "text": [
+          "For projects in Italy and Switzerland, we collaborate with Performia, an international organisation focused exclusively on recruitment. Its system combines analysis of productivity, personality, motivation, knowledge and aptitude, with tools available in more than 25 languages.",
+          "Founded in 2001, Performia operates through more than 26 international offices. Its founder has worked in recruitment for over 39 years, transforming decades of experience into applicable technology and method."
+        ]
+      }
+    ],
+    "points": [
+      "Organisational analysis",
+      "Human Management",
+      "Entrepreneurial development"
+    ]
+  },
+  "en/benessere-organizzativo/sviluppo-imprenditoriale": {
+    "title": "Entrepreneurial development",
+    "intro": "We support entrepreneurs in turning vision and intuition into a system capable of growth.",
+    "sections": [
+      {
+        "title": "Growth becomes solid when the company does not depend on one person.",
+        "text": [
+          "Every engagement begins with listening and understanding the real context. We avoid standard solutions when people, objectives and organisations require a specific response.",
+          "We translate analysis into clear priorities, defined responsibilities and steps that can be verified over time.",
+          "Direction, positioning and essential choices.",
+          "An organisation that supports ambition.",
+          "Rhythm, priorities and verification of results."
+        ]
+      }
+    ],
+    "points": [
+      "Vision",
+      "System",
+      "Execution"
+    ]
+  },
+  "en/benessere-patrimoniale/imprenditori": {
+    "title": "Entrepreneurs",
+    "intro": "We create clarity between company value, personal wealth and family responsibility.",
+    "sections": [
+      {
+        "title": "Company and person are connected, but must not be confused.",
+        "text": [
+          "Every engagement begins with listening and understanding the real context. We avoid standard solutions when people, objectives and organisations require a specific response.",
+          "We translate analysis into clear priorities, defined responsibilities and steps that can be verified over time.",
+          "A distinct reading of the different spheres.",
+          "Scenarios and transitions to prepare over time.",
+          "Decisions less dependent on urgency."
+        ]
+      }
+    ],
+    "points": [
+      "Boundaries",
+      "Continuity",
+      "Freedom"
+    ]
+  },
+  "en/benessere-patrimoniale": {
+    "title": "Wealth well-being",
+    "intro": "We help Italian wealth work for the person who created it, so that the person does not simply continue to work for their wealth.",
+    "sections": [
+      {
+        "title": "Wealth should return freedom, possibilities and a future to those who built it.",
+        "text": [
+          "Italy has a strong culture of work and saving. Our mission is to help that wealth become an active resource, supporting the life, objectives and freedom of those who generated it.",
+          "In partnership with Careisgold, we also explore the role of physical investment gold. For financial instruments, shares and bonds, we coordinate with authorised professionals and always assess objectives, time horizon and risk: no investment is risk-free or guarantees results.",
+          "Objectives and priorities understood as one system.",
+          "Continuity, protection and planning beyond current income.",
+          "Balance between company, personal wealth and family future.",
+          "Indicative self-assessment"
+        ]
+      },
+      {
+        "title": "Measure your space for evolution.",
+        "text": [
+          "Eighteen questions, three dimensions and a practical first reading. Discover what is already solid and where the next step can begin.",
+          "Physical pure gold for investment"
+        ]
+      },
+      {
+        "title": "Make wealth more informed and accessible.",
+        "text": [
+          "We work with Careisgold to help families, professionals and entrepreneurs understand physical pure gold for investment through personalised pathways and direct human contact.",
+          "Careisgold is a joint-stock company, bullion bank and professional gold operator registered with the OAM. It belongs to Care Holding, a group active for more than 15 years. The partnership supports Horyzon’s mission: helping Italian wealth work for those who created it, turning savings, knowledge and planning into greater freedom."
+        ]
+      }
+    ],
+    "points": [
+      "Wealth vision",
+      "Professionals",
+      "Entrepreneurs"
+    ]
+  },
+  "en/benessere-patrimoniale/professionisti": {
+    "title": "Professionals",
+    "intro": "We help people understand wealth beyond their present ability to generate income.",
+    "sections": [
+      {
+        "title": "Value created through work deserves continuity and perspective.",
+        "text": [
+          "Every engagement begins with listening and understanding the real context. We avoid standard solutions when people, objectives and organisations require a specific response.",
+          "We translate analysis into clear priorities, defined responsibilities and steps that can be verified over time.",
+          "Objectives beyond the professional cycle.",
+          "Responsibilities and vulnerabilities made visible.",
+          "Resources aligned with life and future."
+        ]
+      }
+    ],
+    "points": [
+      "Continuity",
+      "Protection",
+      "Plan"
+    ]
+  },
+  "en/benessere-patrimoniale/visione-patrimoniale": {
+    "title": "Wealth vision",
+    "intro": "We connect personal, professional and family objectives to create a clear map.",
+    "sections": [
+      {
+        "title": "Direction comes before instruments.",
+        "text": [
+          "Every engagement begins with listening and understanding the real context. We avoid standard solutions when people, objectives and organisations require a specific response.",
+          "We translate analysis into clear priorities, defined responsibilities and steps that can be verified over time.",
+          "What wealth should make possible.",
+          "Time, responsibilities and levels of risk.",
+          "A shared framework for speaking with specialists."
+        ]
+      }
+    ],
+    "points": [
+      "Objectives",
+      "Balances",
+      "Coordination"
+    ]
+  },
+  "en/conoscenza": {
+    "title": "Shared knowledge.Common heritage.",
+    "intro": "Books, research and tools created by Horyzon professionals and shared with those who want people and businesses to evolve.",
+    "sections": [
+      {
+        "title": "Three books. One evolving research path.",
+        "text": [
+          "Each publication retains its author’s identity while becoming part of Horyzon’s shared cultural heritage. Three stages of the same journey: one book available, one under review and one in preparation.",
+          "Body, mind and spirit in managing oneself and organisations.",
+          "A personal journey through energy, clarity and entrepreneurial freedom.",
+          "Research into how businesses can attract champions and talent.",
+          "Angelo Ria Chetta"
+        ]
+      },
+      {
+        "title": "Management Umano",
+        "text": [
+          "A management philosophy that begins with the self and integrates body, mind and spirit to express human and professional potential.",
+          "The book re-evaluates the idea of humanity and connects it with success, abundance, enterprise, evolution and health. It is intended for people and organisations that want to grow without separating effectiveness from awareness.",
+          "02 / Print edition"
+        ]
+      },
+      {
+        "title": "The book in its most tangible form.",
+        "text": [
+          "Price reserved for the Horyzon community. Cover price €29. Orders, payment and support continue on the official Angeloria shop."
+        ]
+      },
+      {
+        "title": "Read the present.Prepare the future.",
+        "text": []
+      }
+    ],
+    "points": [
+      "Management Umano",
+      "Il digiuno dell’imprenditore",
+      "Aziende attraenti per campioni e talenti",
+      "The entrepreneur on court: tennis as medicine for mind, body and business",
+      "Anxiety at work: hidden cost or evolutionary opportunity?",
+      "The four-day week: a new entrepreneurial revolution",
+      "How attractive is your company?",
+      "Delegate and grow without overload",
+      "People management in SMEs"
+    ]
+  },
+  "en/contatti": {
+    "title": "Let’s start a conversation.",
+    "intro": "Tell us about the next step you want to build for your business, project or territory.",
+    "sections": [
+      {
+        "title": "Every evolution begins with a clear question.",
+        "text": [
+          "Write to us about the context, the objective and what you feel needs to change today.",
+          "We will reply to understand whether and how Horyzon can support you.",
+          "We begin with the real situation.",
+          "Together we define the question.",
+          "We assess the first possible step.",
+          "Italy · Switzerland"
+        ]
+      },
+      {
+        "title": "A network of expertise, close to businesses.",
+        "text": [
+          "We work through relationships and professional expertise rooted in local communities. Choose the nearest city to start a conversation.",
+          "Numbers correspond to the city list",
+          "Italy",
+          "Italy",
+          "Switzerland · Ticino",
+          "Switzerland · Ticino",
+          "Italy",
+          "Italy",
+          "Italy",
+          "Italy",
+          "Territorial addresses are aliases being activated and will feed into Horyzon’s central management."
+        ]
+      }
+    ],
+    "points": [
+      "Listening",
+      "Clarity",
+      "Direction",
+      "Milano",
+      "Como",
+      "Lugano",
+      "Bellinzona",
+      "Roma",
+      "Bari",
+      "Taranto",
+      "Lecce"
+    ]
+  },
+  "en/economia": {
+    "title": "The economy shapes the future of communities.",
+    "intro": "The economy is a fundamental dimension of modern human life: it organises resources, possibilities and choices and profoundly influences collective governance.",
+    "sections": [
+      {
+        "title": "Economics is the science that translates human needs into directions capable of lasting over time.",
+        "text": [
+          "We live in an age in which politics is strongly influenced by the economy. Political cycles are often more volatile and temporary; economic systems, enterprises and production choices produce deeper, longer-lasting effects.",
+          "The economy therefore helps set a direction for politics, which in turn guides society. Improving the quality of the economy means improving a country’s ability to choose, plan and build its future.",
+          "For Horyzon, the economy is inseparable from human beings: it is a human science and must remain at the service of people, businesses and territories.",
+          "Understand resources, relationships and the consequences of decisions.",
+          "Build more solid conditions for collective choices.",
+          "Create value that outlasts the volatility of the present."
+        ]
+      }
+    ],
+    "points": [
+      "Science",
+      "Direction",
+      "Duration"
+    ]
+  },
+  "en/entra-in-horyzon": {
+    "title": "Independent and fulfilled.One shared mission.",
+    "intro": "Horyzon is a structured, professional and human group in which independent professionals can grow, fulfil their potential and collaborate with other specialists.",
+    "sections": [
+      {
+        "title": "Grow as a professional without giving up your independence.",
+        "text": [
+          "The Partner Network brings together independent professionals who share a mission, serious working standards and the desire to place talent and expertise at the service of others. It crosses organisational, wealth and digital well-being: it is not a fourth service area, but the human network that makes projects possible.",
+          "At Horyzon, professionals can contribute to business development, sell or deliver services and work alongside complementary specialists according to expertise, responsibility and project. The group provides dialogue, structure and opportunities for collaboration without replacing each person’s professional identity.",
+          "We look for independent, reliable and results-oriented people who can grow together and build valuable professional relationships. Every collaboration is assessed for mutual compatibility and does not represent a promise of earnings or employment.",
+          "Develop talent, expertise and professional identity within a structured, human group.",
+          "Integrate different specialisms on concrete projects with clear responsibilities.",
+          "Sell, deliver or coordinate services according to expertise and value created.",
+          "The next step"
+        ]
+      },
+      {
+        "title": "Tell us who you are and what you would like to contribute.",
+        "text": [
+          "Write to us about your experience, skills and the area in which you would like to collaborate. Together we will assess compatibility, working arrangements and potential projects.",
+          "Enterprise · Economy · Humanity",
+          "Join Horyzon"
+        ]
+      },
+      {
+        "title": "Independent and fulfilled.One shared mission.",
+        "text": [
+          "A structured, professional and human group in which to grow, contribute to projects and collaborate with other specialists while preserving your independence."
+        ]
+      }
+    ],
+    "points": [
+      "Fulfilment",
+      "Collaboration",
+      "Contribution"
+    ]
+  },
+  "en/horyzon": {
+    "title": "A stronger Italy begins with centred people.",
+    "intro": "Horyzon’s dream is to support the economy, creativity and people’s ability to fulfil their potential, beginning with the quality of those who build companies and organisations.",
+    "sections": [
+      {
+        "title": "Economy, creativity and personal fulfilment belong to the same mission.",
+        "text": [
+          "We want to contribute to a stronger Italy: a country where enterprise, economy and humanity create concrete opportunities for people and territories.",
+          "We therefore bring together people centred on a shared mission, ready to place talent, expertise and responsibility at the service of others. We work where systemic vision meets practical action.",
+          "A solid, creative economy that expands people’s possibilities.",
+          "Different talents and expertise united by the desire to be useful to others.",
+          "Body, mind and spirit aligned to turn aspiration and responsibility into action.",
+          "The Horyzon home"
+        ]
+      },
+      {
+        "title": "A professional home.Many areas of expertise.One shared mission.",
+        "text": [
+          "Horyzon brings together independent professionals who place different skills at the service of people, businesses and communities. Each person retains identity, specialisation and independence; a shared mission, a serious method and deep attention to the human dimension unite us.",
+          "Founder · Business analyst"
+        ]
+      },
+      {
+        "title": "A vision that creates space for other professionals.",
+        "text": [
+          "Angelo Ria Chetta founded Horyzon and helps preserve its vision. His role is to create the conditions, method and relationships through which different professionals can express their expertise, grow together and build value for others."
+        ]
+      }
+    ],
+    "points": [
+      "A stronger Italy",
+      "Shared mission",
+      "Centred people",
+      "Angelo Ria Chetta"
+    ]
+  },
+  "en/impresa": {
+    "title": "Enterprise is a creative expression of the human being.",
+    "intro": "Building an enterprise requires extraordinary human qualities: vision, responsibility, courage, creativity and the ability to involve others in a shared project.",
+    "sections": [
+      {
+        "title": "Enterprise is an art and a spiritual game before it is an economic activity.",
+        "text": [
+          "In its most authentic sense, an enterprise is something worthy of being undertaken: a difficult, meaningful endeavour that transforms those who realise it. It is not unnatural or ignoble, but one of the places where the finest human qualities are tested.",
+          "After family and school, enterprise is one of adult life’s main environments for learning and evolution. Here we spend much of our time, learn to collaborate, assume responsibility and transform ideas into value for the community.",
+          "The qualities required to build an enterprise belong to everyone. Entrepreneurs choose to use them consistently, accepting risk, relationships and responsibility for results.",
+          "Create something that did not exist before and make it useful to others.",
+          "Grow through responsibility, difficulty and contact with reality.",
+          "Transform individual talents into a shared endeavour."
+        ]
+      }
+    ],
+    "points": [
+      "Art",
+      "Evolution",
+      "People"
+    ]
+  },
+  "en": {
+    "title": "More results.More freedom.",
+    "intro": "We solve concrete challenges involving growth, wealth and productivity: less waste, clearer decisions and more time for what matters.",
+    "sections": [
+      {
+        "title": "A stronger Italy,turning talentinto possibility.",
+        "text": [
+          "We want to support the economy, creativity and people’s ability to fulfil their potential. We bring together expertise around a shared mission, so that talent becomes service and creates value for others."
+        ]
+      },
+      {
+        "title": "Three challenges.One partner.",
+        "text": [
+          "Organisation, wealth and technology become coordinated levers for producing real results.",
+          "Businesses",
+          "We help companies prosper by enabling every person within them to evolve and thrive.",
+          "Professionals and entrepreneurs",
+          "We help Italian wealth work for those who created it, rather than people only continuing to work for their wealth.",
+          "Country system",
+          "Technology, automation and data to increase productivity, reduce inefficiency and improve decisions.",
+          "Indicative self-assessment"
+        ]
+      },
+      {
+        "title": "Measure your space for evolution.",
+        "text": [
+          "Eighteen questions, three dimensions and a practical first reading. Discover what is already solid and where the next step can begin."
+        ]
+      },
+      {
+        "title": "Specialists close to your context.",
+        "text": [
+          "A network of around 50 professionals across Lombardy, Ticino and Apulia, with a presence in Milan, Monza, Lugano, Bellinzona, Bari and Lecce. We activate only the expertise each project truly needs.",
+          "Partner Network"
+        ]
+      },
+      {
+        "title": "A professional home.Many areas of expertise.One shared mission.",
+        "text": [
+          "Horyzon is a structured, professional and human group for independent professionals who want to grow, sell or deliver services and collaborate with other specialists while preserving their autonomy."
+        ]
+      },
+      {
+        "title": "Body, mind and spirit.One alignedinner direction.",
+        "text": [
+          "Energy and action, understanding and decision, meaning and aspiration: we cultivate people who are united, centred and aligned with the dream, ready to place talent and expertise at the service of others."
+        ]
+      }
+    ],
+    "points": [
+      "Organisational well-being",
+      "Wealth well-being",
+      "Digital well-being"
+    ]
+  },
+  "en/indice-horyzon": {
+    "title": "Measure yourspace for evolution.",
+    "intro": "Three short questionnaires to look more clearly at organisation, wealth and digital capability. Not a judgement: a point from which to begin.",
+    "sections": [
+      {
+        "title": "Where do you want to look beyond?",
+        "text": [
+          "Measure how much structure, autonomy and people truly support business growth.",
+          "Observe how much direction, balance and freedom guide the wealth you have built.",
+          "Assess whether processes, data and digital skills are truly freeing capacity and time.",
+          "02 / How it works"
+        ]
+      },
+      {
+        "title": "A useful snapshot, not a label.",
+        "text": [
+          "Answer with the reality of the last six months in mind. The result will highlight what is already solid, the priority for evolution and one practical first action to test.",
+          "Enterprise · Economy · Humanity",
+          "Join Horyzon"
+        ]
+      },
+      {
+        "title": "Independent and fulfilled.One shared mission.",
+        "text": [
+          "A structured, professional and human group in which to grow, contribute to projects and collaborate with other specialists while preserving your independence."
+        ]
+      }
+    ],
+    "points": [
+      "Organisational well-being",
+      "Wealth well-being",
+      "Digital well-being"
+    ]
+  },
+  "en/libro/management-umano": {
+    "title": "Manage yourself first.",
+    "intro": "A pathway to express human and professional potential and apply an integrated vision to people, families, companies and communities.",
+    "sections": [
+      {
+        "title": "Management and humanity, together at last.",
+        "text": [
+          "The word management is often used in a technical, almost robotic sense. Management Umano returns it to its most concrete root: learning to manage ourselves before managing things and people.",
+          "The proposal integrates body, mind and spirit and can be applied to individuals, organisations and communities. It does not separate human value from success, abundance, enterprise, evolution and health.",
+          "The book also stems from confidence in Italian capabilities and in the possibility that creativity, humanity and awareness can become drivers of development.",
+          "Receive the PDF and ePub versions through the official form.",
+          "The Horyzon community can purchase the book for €15 instead of the €29 cover price."
+        ]
+      }
+    ],
+    "points": [
+      "Free ebook",
+      "Print edition"
+    ]
+  },
+  "en/umanita": {
+    "title": "Body, mind and spirit give meaning to action.",
+    "intro": "Humanity is body, mind and spirit. It connects the art of enterprise with the science of economics, bringing every choice back to the complexity and dignity of the person.",
+    "sections": [
+      {
+        "title": "No human art or science can disregard the integration of the human being.",
+        "text": [
+          "The body is energy, presence and action in reality. The mind is understanding, imagination and decision. The spirit is meaning, aspiration and connection with something greater than ourselves: a serious, non-confessional human dimension that guides what we choose to act for.",
+          "Humanity is not a decorative addition to enterprise or economics. It is the principle that allows art and science to speak to one another, directing them towards effective, sustainable results worthy of the people involved.",
+          "Body, mind and spirit, united and centred, make a person more aware of their contribution. When aligned around a shared dream, talent and expertise can become an authentic service to others.",
+          "Energy, presence and action in reality.",
+          "Understanding, imagination and decision.",
+          "Meaning, aspiration and connection with something greater."
+        ]
+      }
+    ],
+    "points": [
+      "Body",
+      "Mind",
+      "Spirit"
+    ]
+  },
+  "entra-in-horyzon": {
+    "title": "Professionisti autonomie realizzati. Unamissione comune.",
+    "intro": "Horyzon è un gruppo strutturato, professionale e umano nel quale professionisti con partita IVA possono crescere, realizzarsi e collaborare con altri specialisti.",
+    "sections": [
+      {
+        "title": "Crescere come professionisti senza rinunciare alla propria autonomia.",
+        "text": [
+          "La Partner Network riunisce professionisti autonomi che condividono una missione, standard seri di lavoro e il desiderio di mettere talento e competenza al servizio degli altri. È trasversale al benessere organizzativo, patrimoniale e digitale: non è una quarta area, ma la rete umana che rende possibili i progetti.",
+          "In Horyzon si può contribuire allo sviluppo commerciale, vendere o erogare servizi e lavorare insieme a specialisti complementari, secondo competenza, responsabilità e progetto. Il gruppo offre confronto, struttura e occasioni di collaborazione, senza sostituirsi all’identità professionale di ciascuno.",
+          "Cerchiamo persone autonome, affidabili e orientate al risultato, capaci di crescere insieme e di costruire relazioni professionali di valore. Ogni collaborazione viene valutata sulla compatibilità reciproca e non costituisce promessa di guadagno né proposta di rapporto subordinato.",
+          "Sviluppare talento, competenza e identità professionale dentro un gruppo strutturato e umano.",
+          "Integrare specializzazioni differenti su progetti concreti, con responsabilità chiare.",
+          "Vendere, erogare o coordinare servizi in base alla propria competenza e al valore generato.",
+          "Il prossimo passo"
+        ]
+      },
+      {
+        "title": "Raccontaci chi sei e il contributo che vuoi portare.",
+        "text": [
+          "Scrivici indicando esperienza, competenze e area nella quale desideri collaborare. Valuteremo insieme compatibilità, modalità e possibili progetti.",
+          "Impresa · Economia · Umanità",
+          "Entra in Horyzon"
+        ]
+      },
+      {
+        "title": "Professionisti autonomie realizzati. Unamissione comune.",
+        "text": [
+          "Un gruppo strutturato, professionale e umano per crescere, contribuire ai progetti e collaborare con altri specialisti, mantenendo la propria autonomia."
+        ]
+      }
+    ],
+    "points": [
+      "Realizzazione",
+      "Collaborazione",
+      "Contributo"
+    ]
+  },
+  "fr/benessere-digitale/competenze": {
+    "title": "Compétences numériques",
+    "intro": "Nous développons la capacité à comprendre, choisir et gouverner les outils numériques.",
+    "sections": [
+      {
+        "title": "La véritable innovation augmente l’autonomie des personnes.",
+        "text": [
+          "Chaque intervention commence par l’écoute et la compréhension du contexte réel. Nous évitons les solutions standard lorsque les personnes, les objectifs et les organisations exigent une réponse spécifique.",
+          "Nous traduisons l’analyse en priorités compréhensibles, responsabilités définies et étapes vérifiables dans le temps.",
+          "Opportunités, limites et responsabilités.",
+          "Des outils intégrés à des pratiques de travail solides.",
+          "Des capacités qui restent dans l’organisation."
+        ]
+      }
+    ],
+    "points": [
+      "Conscience",
+      "Méthode",
+      "Autonomie"
+    ]
+  },
+  "fr/benessere-digitale/imprese": {
+    "title": "Entreprises numériques",
+    "intro": "Nous intégrons le numérique aux processus de manière compréhensible, mesurable et utile.",
+    "sections": [
+      {
+        "title": "La technologie fonctionne lorsqu’elle simplifie le travail et améliore les décisions.",
+        "text": [
+          "Chaque intervention commence par l’écoute et la compréhension du contexte réel. Nous évitons les solutions standard lorsque les personnes, les objectifs et les organisations exigent une réponse spécifique.",
+          "Nous traduisons l’analyse en priorités compréhensibles, responsabilités définies et étapes vérifiables dans le temps.",
+          "Numériser ce qui crée de la valeur.",
+          "Des informations lisibles pour mieux décider.",
+          "Des personnes prêtes à utiliser réellement les outils."
+        ]
+      }
+    ],
+    "points": [
+      "Processus",
+      "Données",
+      "Adoption"
+    ]
+  },
+  "fr/benessere-digitale": {
+    "title": "Bien-être numérique",
+    "intro": "Nous aidons les entreprises à retrouver de la productivité et à réduire les inefficacités grâce aux technologies, aux automatisations et aux données appliquées aux processus réels.",
+    "sections": [
+      {
+        "title": "La technologie produit du progrès lorsqu’elle augmente les capacités, la liberté et la qualité des décisions.",
+        "text": [
+          "La transformation numérique ne se résume pas à l’adoption d’outils : elle exige une culture, des compétences, des processus et une direction compréhensible.",
+          "Nous partons des résultats obtenus dans nos propres processus et mesurons chaque nouvelle intervention dans son contexte. Les taux d’amélioration dépendent de la situation initiale et ne sont définis qu’après analyse.",
+          "Outils et processus au service de la productivité et de la qualité.",
+          "Conscience et capacités pour gouverner le changement.",
+          "Une transformation accessible, responsable et orientée vers le bien commun.",
+          "Auto-évaluation indicative"
+        ]
+      },
+      {
+        "title": "Mesurez votre espace d’évolution.",
+        "text": [
+          "Dix-huit questions, trois dimensions et une première lecture concrète. Découvrez ce qui est déjà solide et où peut commencer la prochaine étape."
+        ]
+      }
+    ],
+    "points": [
+      "Entreprises numériques",
+      "Compétences",
+      "Italie numérique"
+    ]
+  },
+  "fr/benessere-digitale/italia-digitale": {
+    "title": "Italie numérique",
+    "intro": "Nous contribuons à une culture numérique qui unit compétitivité, inclusion et qualité humaine.",
+    "sections": [
+      {
+        "title": "Le progrès n’existe que s’il rend le pays plus capable.",
+        "text": [
+          "Chaque intervention commence par l’écoute et la compréhension du contexte réel. Nous évitons les solutions standard lorsque les personnes, les objectifs et les organisations exigent une réponse spécifique.",
+          "Nous traduisons l’analyse en priorités compréhensibles, responsabilités définies et étapes vérifiables dans le temps.",
+          "Une innovation compréhensible et utilisable.",
+          "Une technologie guidée par des principes humains.",
+          "Des capacités largement diffusées pour une économie plus forte."
+        ]
+      }
+    ],
+    "points": [
+      "Accessibilité",
+      "Responsabilité",
+      "Compétitivité"
+    ]
+  },
+  "fr/benessere-organizzativo/analisi-organizzativa": {
+    "title": "Analyse organisationnelle",
+    "intro": "Nous rendons visibles les causes qui freinent les personnes, les processus et les résultats.",
+    "sections": [
+      {
+        "title": "La clarté précède le changement.",
+        "text": [
+          "Chaque intervention commence par l’écoute et la compréhension du contexte réel. Nous évitons les solutions standard lorsque les personnes, les objectifs et les organisations exigent une réponse spécifique.",
+          "Nous traduisons l’analyse en priorités compréhensibles, responsabilités définies et étapes vérifiables dans le temps.",
+          "Rôles, responsabilités et lignes de décision.",
+          "Étapes opérationnelles, coordination et dispersions.",
+          "Les leviers sur lesquels intervenir d’abord."
+        ]
+      }
+    ],
+    "points": [
+      "Structure",
+      "Flux",
+      "Priorités"
+    ]
+  },
+  "fr/benessere-organizzativo/human-management": {
+    "title": "Human Management",
+    "intro": "Nous construisons des systèmes où chacun comprend et peut exprimer sa contribution.",
+    "sections": [
+      {
+        "title": "Les personnes grandissent lorsque responsabilité et sens sont clairs.",
+        "text": [
+          "Chaque intervention commence par l’écoute et la compréhension du contexte réel. Nous évitons les solutions standard lorsque les personnes, les objectifs et les organisations exigent une réponse spécifique.",
+          "Nous traduisons l’analyse en priorités compréhensibles, responsabilités définies et étapes vérifiables dans le temps.",
+          "Guider avec direction, écoute et cohérence.",
+          "Des attentes claires et une autonomie réelle.",
+          "Compétences et potentiel reliés aux objectifs."
+        ]
+      }
+    ],
+    "points": [
+      "Leadership",
+      "Responsabilité",
+      "Développement"
+    ]
+  },
+  "fr/benessere-organizzativo": {
+    "title": "Bien-être organisationnel",
+    "intro": "Nous aidons les entreprises à prospérer tout en faisant évoluer et prospérer chaque personne qui les compose.",
+    "sections": [
+      {
+        "title": "La prospérité de l’entreprise et l’évolution des personnes sont un seul et même projet.",
+        "text": [
+          "Une entreprise prospère lorsqu’elle produit des résultats solides et devient en même temps un lieu où les personnes développent capacités, responsabilité et conscience.",
+          "Nous partons de l’analyse de la structure, des rôles et du potentiel. Nous construisons ensuite un parcours opérationnel couvrant croissance, transmission, délégation, recrutement et contrôle des coûts, avec Performia lorsque son expertise est utile.",
+          "Une lecture lucide de la structure, des rôles, des flux et des difficultés.",
+          "Personnes, responsabilité et leadership comme système de croissance.",
+          "Méthode et priorités pour transformer la vision en capacité opérationnelle.",
+          "Auto-évaluation indicative"
+        ]
+      },
+      {
+        "title": "Mesurez votre espace d’évolution.",
+        "text": [
+          "Dix-huit questions, trois dimensions et une première lecture concrète. Découvrez ce qui est déjà solide et où peut commencer la prochaine étape.",
+          "Technologie pour les personnes et les organisations"
+        ]
+      },
+      {
+        "title": "Sélectionner des personnes productives. Construire des équipes plus solides.",
+        "text": [
+          "Pour les projets menés en Italie et en Suisse, nous collaborons avec Performia, organisation internationale spécialisée exclusivement dans le recrutement. Son système associe l’analyse de la productivité, de la personnalité, de la motivation, des connaissances et des aptitudes, avec des outils disponibles dans plus de 25 langues.",
+          "Fondée en 2001, Performia travaille à travers plus de 26 bureaux internationaux. Son fondateur exerce dans le recrutement depuis plus de 39 ans et a transformé des décennies d’expérience en technologie et méthode applicables."
+        ]
+      }
+    ],
+    "points": [
+      "Analyse organisationnelle",
+      "Human Management",
+      "Développement entrepreneurial"
+    ]
+  },
+  "fr/benessere-organizzativo/sviluppo-imprenditoriale": {
+    "title": "Développement entrepreneurial",
+    "intro": "Nous accompagnons l’entrepreneur pour transformer vision et intuition en un système capable de grandir.",
+    "sections": [
+      {
+        "title": "La croissance devient solide lorsque l’entreprise ne dépend pas d’une seule personne.",
+        "text": [
+          "Chaque intervention commence par l’écoute et la compréhension du contexte réel. Nous évitons les solutions standard lorsque les personnes, les objectifs et les organisations exigent une réponse spécifique.",
+          "Nous traduisons l’analyse en priorités compréhensibles, responsabilités définies et étapes vérifiables dans le temps.",
+          "Direction, positionnement et choix essentiels.",
+          "Une organisation qui soutient l’ambition.",
+          "Rythme, priorités et vérification des résultats."
+        ]
+      }
+    ],
+    "points": [
+      "Vision",
+      "Système",
+      "Exécution"
+    ]
+  },
+  "fr/benessere-patrimoniale/imprenditori": {
+    "title": "Entrepreneurs",
+    "intro": "Nous créons de la clarté entre valeur de l’entreprise, patrimoine personnel et responsabilité familiale.",
+    "sections": [
+      {
+        "title": "L’entreprise et la personne sont liées, mais ne doivent pas être confondues.",
+        "text": [
+          "Chaque intervention commence par l’écoute et la compréhension du contexte réel. Nous évitons les solutions standard lorsque les personnes, les objectifs et les organisations exigent une réponse spécifique.",
+          "Nous traduisons l’analyse en priorités compréhensibles, responsabilités définies et étapes vérifiables dans le temps.",
+          "Une lecture distincte des différentes sphères.",
+          "Scénarios et transitions à préparer dans le temps.",
+          "Des décisions moins dépendantes de l’urgence."
+        ]
+      }
+    ],
+    "points": [
+      "Limites",
+      "Continuité",
+      "Liberté"
+    ]
+  },
+  "fr/benessere-patrimoniale": {
+    "title": "Bien-être patrimonial",
+    "intro": "Nous aidons le patrimoine italien à travailler pour la personne qui l’a créé, afin que celle-ci ne soit pas la seule à continuer de travailler pour son patrimoine.",
+    "sections": [
+      {
+        "title": "Le patrimoine doit rendre liberté, possibilités et avenir à celles et ceux qui l’ont bâti.",
+        "text": [
+          "L’Italie possède une grande culture du travail et de l’épargne. Notre mission est d’aider ce patrimoine à devenir une ressource active au service de la vie, des objectifs et de la liberté de ceux qui l’ont créé.",
+          "En partenariat avec Careisgold, nous approfondissons aussi le rôle de l’or physique d’investissement. Pour les instruments financiers, actions et obligations, nous coordonnons des professionnels habilités en évaluant objectifs, horizon et risque : aucun investissement n’est sans risque ni ne garantit de résultats.",
+          "Objectifs et priorités considérés comme un système unique.",
+          "Continuité, protection et projet au-delà du revenu actuel.",
+          "Équilibre entre entreprise, patrimoine personnel et avenir familial.",
+          "Auto-évaluation indicative"
+        ]
+      },
+      {
+        "title": "Mesurez votre espace d’évolution.",
+        "text": [
+          "Dix-huit questions, trois dimensions et une première lecture concrète. Découvrez ce qui est déjà solide et où peut commencer la prochaine étape.",
+          "Or physique pur d’investissement"
+        ]
+      },
+      {
+        "title": "Rendre le patrimoine plus conscient et accessible.",
+        "text": [
+          "Nous collaborons avec Careisgold pour rapprocher familles, professionnels et entrepreneurs de la connaissance de l’or physique pur d’investissement grâce à des parcours personnalisés et à un contact humain direct.",
+          "Careisgold est une société par actions, banque de métaux et opérateur professionnel en or inscrit au registre OAM. Elle appartient à Care Holding, groupe actif depuis plus de 15 ans. Cette collaboration soutient la mission de Horyzon : aider le patrimoine italien à travailler pour ceux qui l’ont créé, en transformant épargne, connaissance et projet en davantage de liberté."
+        ]
+      }
+    ],
+    "points": [
+      "Vision patrimoniale",
+      "Professionnels",
+      "Entrepreneurs"
+    ]
+  },
+  "fr/benessere-patrimoniale/professionisti": {
+    "title": "Professionnels",
+    "intro": "Nous aidons à lire le patrimoine au-delà de la capacité actuelle à produire des revenus.",
+    "sections": [
+      {
+        "title": "La valeur créée par le travail mérite continuité et perspective.",
+        "text": [
+          "Chaque intervention commence par l’écoute et la compréhension du contexte réel. Nous évitons les solutions standard lorsque les personnes, les objectifs et les organisations exigent une réponse spécifique.",
+          "Nous traduisons l’analyse en priorités compréhensibles, responsabilités définies et étapes vérifiables dans le temps.",
+          "Des objectifs qui dépassent le cycle professionnel.",
+          "Rendre visibles responsabilités et fragilités.",
+          "Des ressources cohérentes avec la vie et l’avenir."
+        ]
+      }
+    ],
+    "points": [
+      "Continuité",
+      "Protection",
+      "Projet"
+    ]
+  },
+  "fr/benessere-patrimoniale/visione-patrimoniale": {
+    "title": "Vision patrimoniale",
+    "intro": "Nous relions les objectifs personnels, professionnels et familiaux pour construire une carte lisible.",
+    "sections": [
+      {
+        "title": "La direction vient avant les instruments.",
+        "text": [
+          "Chaque intervention commence par l’écoute et la compréhension du contexte réel. Nous évitons les solutions standard lorsque les personnes, les objectifs et les organisations exigent une réponse spécifique.",
+          "Nous traduisons l’analyse en priorités compréhensibles, responsabilités définies et étapes vérifiables dans le temps.",
+          "Ce que le patrimoine doit rendre possible.",
+          "Temps, responsabilités et niveaux de risque.",
+          "Un cadre commun pour dialoguer avec les spécialistes."
+        ]
+      }
+    ],
+    "points": [
+      "Objectifs",
+      "Équilibres",
+      "Coordination"
+    ]
+  },
+  "fr/conoscenza": {
+    "title": "Connaissance partagée.Patrimoine commun.",
+    "intro": "Des livres, recherches et outils créés par les professionnels Horyzon et partagés avec celles et ceux qui veulent faire évoluer les personnes et les entreprises.",
+    "sections": [
+      {
+        "title": "Trois livres. Une recherche en évolution.",
+        "text": [
+          "Chaque publication conserve l’identité de son auteur tout en devenant partie du patrimoine culturel commun de Horyzon. Trois étapes d’un même parcours : un livre disponible, un en révision et un en préparation.",
+          "Le corps, le mental et l’esprit dans la gestion de soi et des organisations.",
+          "Un parcours personnel entre énergie, lucidité et liberté entrepreneuriale.",
+          "Une recherche sur l’attractivité des entreprises pour les champions et les talents.",
+          "Angelo Ria Chetta"
+        ]
+      },
+      {
+        "title": "Management Umano",
+        "text": [
+          "Une philosophie du management qui commence par soi-même et intègre le corps, le mental et l’esprit pour exprimer le potentiel humain et professionnel.",
+          "Le livre réévalue l’idée d’humanité et la relie au succès, à l’abondance, à l’entreprise, à l’évolution et à la santé. Il s’adresse aux personnes et aux organisations qui souhaitent grandir sans séparer efficacité et conscience.",
+          "02 / Édition papier"
+        ]
+      },
+      {
+        "title": "Le livre dans sa forme la plus concrète.",
+        "text": [
+          "Prix réservé à la communauté Horyzon. Prix public 29 €. La commande, le paiement et l’assistance restent assurés sur la boutique officielle Angeloria."
+        ]
+      },
+      {
+        "title": "Lire le présent.Préparer l’avenir.",
+        "text": []
+      }
+    ],
+    "points": [
+      "Management Umano",
+      "Il digiuno dell’imprenditore",
+      "Aziende attraenti per campioni e talenti",
+      "L’entrepreneur sur le court : le tennis comme médecine pour l’esprit, le corps et l’entreprise",
+      "L’anxiété en entreprise : coût caché ou occasion d’évolution ?",
+      "La semaine de quatre jours : une nouvelle révolution entrepreneuriale",
+      "Votre entreprise est-elle attractive ?",
+      "Déléguer et grandir sans se surcharger",
+      "La gestion du personnel dans les PME"
+    ]
+  },
+  "fr/contatti": {
+    "title": "Commençons une conversation.",
+    "intro": "Parlez-nous de la prochaine étape que vous souhaitez construire pour votre entreprise, votre projet ou votre territoire.",
+    "sections": [
+      {
+        "title": "Toute évolution commence par une question claire.",
+        "text": [
+          "Écrivez-nous pour partager le contexte, l’objectif et ce qui doit selon vous changer aujourd’hui.",
+          "Nous vous répondrons afin de comprendre si et comment Horyzon peut vous accompagner.",
+          "Nous partons de la situation réelle.",
+          "Nous définissons ensemble la question.",
+          "Nous évaluons la première étape possible.",
+          "Italie · Suisse"
+        ]
+      },
+      {
+        "title": "Un réseau de compétences proche des entreprises.",
+        "text": [
+          "Nous intervenons grâce à des relations et à des expertises professionnelles ancrées dans les territoires. Choisissez la ville la plus proche pour engager la conversation.",
+          "Les numéros correspondent à la liste des villes",
+          "Italie",
+          "Italie",
+          "Suisse · Tessin",
+          "Suisse · Tessin",
+          "Italie",
+          "Italie",
+          "Italie",
+          "Italie",
+          "Les adresses territoriales sont des alias en cours d’activation et seront intégrées à la gestion centrale de Horyzon."
+        ]
+      }
+    ],
+    "points": [
+      "Écoute",
+      "Clarté",
+      "Direction",
+      "Milano",
+      "Como",
+      "Lugano",
+      "Bellinzona",
+      "Roma",
+      "Bari",
+      "Taranto",
+      "Lecce"
+    ]
+  },
+  "fr/economia": {
+    "title": "L’économie oriente l’avenir des communautés.",
+    "intro": "L’économie est une dimension fondamentale de l’être humain moderne : elle organise les ressources, les possibilités et les choix, et influence profondément la gouvernance collective.",
+    "sections": [
+      {
+        "title": "L’économie est la science qui traduit les besoins humains en orientations durables.",
+        "text": [
+          "Nous vivons à une époque où la politique est fortement conditionnée par l’économie. Les cycles politiques sont souvent plus volatils ; les systèmes économiques, les entreprises et les choix productifs ont des conséquences plus profondes et durables.",
+          "L’économie contribue ainsi à orienter la politique, qui guide ensuite la collectivité. Améliorer la qualité de l’économie, c’est renforcer la capacité d’un pays à choisir, concevoir et construire son avenir.",
+          "Pour Horyzon, l’économie n’est pas séparée de l’être humain : c’est une science humaine qui doit rester au service de l’évolution des personnes, des entreprises et des territoires.",
+          "Comprendre les ressources, les relations et les conséquences des décisions.",
+          "Créer des conditions plus solides pour les choix collectifs.",
+          "Générer une valeur qui dépasse la volatilité du présent."
+        ]
+      }
+    ],
+    "points": [
+      "Science",
+      "Direction",
+      "Durée"
+    ]
+  },
+  "fr/entra-in-horyzon": {
+    "title": "Indépendants et accomplis.Une mission commune.",
+    "intro": "Horyzon est un groupe structuré, professionnel et humain dans lequel les indépendants peuvent grandir, s’accomplir et collaborer avec d’autres spécialistes.",
+    "sections": [
+      {
+        "title": "Grandir comme professionnel sans renoncer à son indépendance.",
+        "text": [
+          "Le Partner Network réunit des professionnels indépendants qui partagent une mission, des standards de travail sérieux et le désir de mettre leur talent et leurs compétences au service des autres. Il traverse les trois domaines de bien-être : ce n’est pas un quatrième service, mais le réseau humain qui rend les projets possibles.",
+          "Au sein de Horyzon, chacun peut contribuer au développement commercial, vendre ou fournir des services et travailler avec des spécialistes complémentaires selon ses compétences, ses responsabilités et le projet. Le groupe apporte dialogue, structure et possibilités de collaboration sans remplacer l’identité professionnelle de chacun.",
+          "Nous recherchons des personnes autonomes, fiables et orientées vers les résultats, capables de grandir ensemble et de construire des relations professionnelles de valeur. Chaque collaboration est évaluée selon une compatibilité réciproque et ne constitue ni une promesse de revenus ni une offre d’emploi.",
+          "Développer talent, compétence et identité professionnelle dans un groupe structuré et humain.",
+          "Intégrer des spécialités différentes sur des projets concrets avec des responsabilités claires.",
+          "Vendre, fournir ou coordonner des services selon sa compétence et la valeur créée.",
+          "La prochaine étape"
+        ]
+      },
+      {
+        "title": "Parlez-nous de vous et de la contribution que vous souhaitez apporter.",
+        "text": [
+          "Écrivez-nous en indiquant votre expérience, vos compétences et le domaine dans lequel vous souhaitez collaborer. Nous évaluerons ensemble la compatibilité, les modalités et les projets possibles.",
+          "Entreprise · Économie · Humanité",
+          "Rejoindre Horyzon"
+        ]
+      },
+      {
+        "title": "Indépendants et accomplis.Une mission commune.",
+        "text": [
+          "Un groupe structuré, professionnel et humain pour grandir, contribuer aux projets et collaborer avec d’autres spécialistes tout en préservant son indépendance."
+        ]
+      }
+    ],
+    "points": [
+      "Accomplissement",
+      "Collaboration",
+      "Contribution"
+    ]
+  },
+  "fr/horyzon": {
+    "title": "Une Italie plus forte commence par des personnes centrées.",
+    "intro": "Le rêve de Horyzon est de soutenir l’économie, la créativité et la possibilité pour chacun de se réaliser, en partant de la qualité de celles et ceux qui bâtissent des entreprises et des organisations.",
+    "sections": [
+      {
+        "title": "Économie, créativité et réalisation des personnes appartiennent à la même mission.",
+        "text": [
+          "Nous voulons contribuer à une Italie plus forte : un pays où l’entreprise, l’économie et l’humanité créent des possibilités concrètes pour les personnes et les territoires.",
+          "Nous réunissons donc des personnes centrées sur une mission commune, capables de mettre talent, compétence et responsabilité au service des autres. Nous travaillons là où la vision systémique rencontre l’action concrète.",
+          "Une économie solide, créative et capable d’élargir les possibilités.",
+          "Des talents différents unis par le désir d’être utiles aux autres.",
+          "Corps, mental et esprit alignés pour transformer aspiration et responsabilité en action.",
+          "La maison Horyzon"
+        ]
+      },
+      {
+        "title": "Une maison professionnelle.De multiples compétences.Une mission commune.",
+        "text": [
+          "Horyzon réunit des professionnels indépendants qui mettent des compétences différentes au service des personnes, des entreprises et des communautés. Chacun conserve son identité, sa spécialisation et son autonomie ; une mission commune, une méthode sérieuse et une attention profonde à la dimension humaine nous unissent.",
+          "Fondateur · Analyste d’entreprise"
+        ]
+      },
+      {
+        "title": "Une vision qui crée de l’espace pour d’autres professionnels.",
+        "text": [
+          "Angelo Ria Chetta a donné naissance à Horyzon et contribue à en préserver la vision. Son rôle consiste à créer les conditions, la méthode et les relations permettant à différents professionnels d’exprimer leur expertise, de grandir ensemble et de créer de la valeur pour les autres."
+        ]
+      }
+    ],
+    "points": [
+      "Italie plus forte",
+      "Mission commune",
+      "Personnes centrées",
+      "Angelo Ria Chetta"
+    ]
+  },
+  "fr/impresa": {
+    "title": "L’entreprise est une expression créative de l’être humain.",
+    "intro": "Entreprendre exige des qualités humaines extraordinaires : vision, responsabilité, courage, créativité et capacité à réunir d’autres personnes autour d’un projet commun.",
+    "sections": [
+      {
+        "title": "L’entreprise est un art et un jeu spirituel avant même d’être une activité économique.",
+        "text": [
+          "Dans son sens le plus authentique, une entreprise est une œuvre qui mérite d’être entreprise : difficile, significative et capable de transformer celles et ceux qui la réalisent. Elle n’est ni contre nature ni dépourvue de noblesse, mais l’un des lieux où les meilleures qualités humaines sont mises à l’épreuve.",
+          "Après la famille et l’école, l’entreprise est l’un des principaux espaces de formation et d’évolution de la vie adulte. Nous y apprenons à collaborer, à assumer des responsabilités et à transformer des idées en valeur pour la collectivité.",
+          "Les qualités nécessaires à l’entreprise appartiennent à chacun. Entreprendre, c’est choisir de les mobiliser avec constance, en assumant le risque, la relation et la responsabilité du résultat.",
+          "Créer ce qui n’existait pas et le rendre utile aux autres.",
+          "Grandir à travers la responsabilité, la difficulté et la réalité.",
+          "Transformer des talents individuels en œuvre commune."
+        ]
+      }
+    ],
+    "points": [
+      "Art",
+      "Évolution",
+      "Personnes"
+    ]
+  },
+  "fr": {
+    "title": "Plus de résultats.Plus de liberté.",
+    "intro": "Nous résolvons des problèmes concrets de croissance, de patrimoine et de productivité : moins de gaspillage, des décisions plus claires et davantage de temps pour l’essentiel.",
+    "sections": [
+      {
+        "title": "Une Italie plus forte,capable de transformerle talent en possibilités.",
+        "text": [
+          "Nous voulons soutenir l’économie, la créativité et la possibilité pour chacun de se réaliser. Nous réunissons des compétences autour d’une mission commune, afin que le talent devienne service et crée de la valeur pour les autres."
+        ]
+      },
+      {
+        "title": "Trois défis.Un seul interlocuteur.",
+        "text": [
+          "Organisation, patrimoine et technologie deviennent des leviers coordonnés pour produire des résultats concrets.",
+          "Entreprises",
+          "Nous aidons les entreprises à prospérer en permettant à chaque personne qui les compose d’évoluer et de s’épanouir.",
+          "Professionnels et entrepreneurs",
+          "Nous aidons le patrimoine italien à travailler pour celles et ceux qui l’ont créé, et pas seulement l’inverse.",
+          "Système national",
+          "Technologies, automatisations et données pour accroître la productivité, réduire les inefficacités et améliorer les décisions.",
+          "Auto-évaluation indicative"
+        ]
+      },
+      {
+        "title": "Mesurez votre espace d’évolution.",
+        "text": [
+          "Dix-huit questions, trois dimensions et une première lecture concrète. Découvrez ce qui est déjà solide et où peut commencer la prochaine étape."
+        ]
+      },
+      {
+        "title": "Des spécialistes proches de votre réalité.",
+        "text": [
+          "Un réseau d’environ 50 professionnels en Lombardie, au Tessin et dans les Pouilles, avec une présence à Milan, Monza, Lugano, Bellinzona, Bari et Lecce. Pour chaque projet, nous mobilisons uniquement les compétences réellement nécessaires.",
+          "Partner Network"
+        ]
+      },
+      {
+        "title": "Une maison professionnelle.De multiples compétences.Une mission commune.",
+        "text": [
+          "Horyzon est un groupe structuré, professionnel et humain destiné aux indépendants qui souhaitent grandir, vendre ou fournir des services et collaborer avec d’autres spécialistes tout en préservant leur autonomie."
+        ]
+      },
+      {
+        "title": "Corps, mental et esprit.Une mêmedirection intérieure.",
+        "text": [
+          "Énergie et action, compréhension et décision, sens et aspiration : nous cultivons des personnes unies, centrées et alignées sur le rêve, capables de mettre leur talent et leurs compétences au service des autres."
+        ]
+      }
+    ],
+    "points": [
+      "Bien-être organisationnel",
+      "Bien-être patrimonial",
+      "Bien-être numérique"
+    ]
+  },
+  "fr/indice-horyzon": {
+    "title": "Mesurez votreespace d’évolution.",
+    "intro": "Trois questionnaires courts pour observer plus clairement l’organisation, le patrimoine et les capacités numériques. Pas un jugement : un point de départ.",
+    "sections": [
+      {
+        "title": "Où voulez-vous regarder plus loin ?",
+        "text": [
+          "Mesurez dans quelle mesure la structure, l’autonomie et les personnes soutiennent réellement la croissance de l’entreprise.",
+          "Observez dans quelle mesure direction, équilibre et liberté guident le patrimoine que vous avez construit.",
+          "Évaluez si les processus, les données et les compétences numériques libèrent réellement des capacités et du temps.",
+          "02 / Fonctionnement"
+        ]
+      },
+      {
+        "title": "Une photographie utile, pas une étiquette.",
+        "text": [
+          "Répondez en pensant à la situation réelle des six derniers mois. Le résultat mettra en évidence les acquis solides, la priorité d’évolution et une première action concrète à tester.",
+          "Entreprise · Économie · Humanité",
+          "Rejoindre Horyzon"
+        ]
+      },
+      {
+        "title": "Indépendants et accomplis.Une mission commune.",
+        "text": [
+          "Un groupe structuré, professionnel et humain pour grandir, contribuer aux projets et collaborer avec d’autres spécialistes tout en préservant son indépendance."
+        ]
+      }
+    ],
+    "points": [
+      "Bien-être organisationnel",
+      "Bien-être patrimonial",
+      "Bien-être numérique"
+    ]
+  },
+  "fr/libro/management-umano": {
+    "title": "Se diriger soi-même avant tout.",
+    "intro": "Un parcours pour exprimer le potentiel humain et professionnel et appliquer une vision intégrée aux personnes, aux familles, aux entreprises et aux communautés.",
+    "sections": [
+      {
+        "title": "Management et humanité enfin réunis.",
+        "text": [
+          "Le terme management est souvent employé dans un sens technique, presque robotisé. Management Umano le ramène à sa racine la plus concrète : apprendre à se diriger soi-même avant de diriger les choses et les personnes.",
+          "La proposition intègre le corps, le mental et l’esprit et peut s’appliquer aux individus, aux organisations et aux communautés. Elle ne sépare pas la valeur humaine du succès, de l’abondance, de l’entreprise, de l’évolution et de la santé.",
+          "Le livre naît également de la confiance dans les capacités italiennes et dans la possibilité que la créativité, l’humanité et la conscience deviennent des leviers de développement.",
+          "Recevez les versions PDF et ePub via le formulaire officiel.",
+          "La communauté Horyzon peut obtenir le livre à 15 € au lieu du prix public de 29 €."
+        ]
+      }
+    ],
+    "points": [
+      "Ebook gratuit",
+      "Édition papier"
+    ]
+  },
+  "fr/umanita": {
+    "title": "Le corps, le mental et l’esprit donnent du sens à l’action.",
+    "intro": "L’humanité est corps, mental et esprit. Elle relie l’art d’entreprendre à la science économique et ramène chaque choix à la complexité et à la dignité de la personne.",
+    "sections": [
+      {
+        "title": "Aucun art ni aucune science humaine ne peut se passer de l’intégration de l’être humain.",
+        "text": [
+          "Le corps est énergie, présence et action dans la réalité. Le mental est compréhension, imagination et décision. L’esprit est sens, aspiration et connexion avec quelque chose de plus grand que soi : une dimension humaine sérieuse et non confessionnelle qui oriente ce pour quoi nous choisissons d’agir.",
+          "L’humanité n’est pas un supplément décoratif à l’entreprise ou à l’économie. Elle permet à l’art et à la science de dialoguer et les oriente vers des résultats efficaces, durables et dignes des personnes concernées.",
+          "Corps, mental et esprit, unis et centrés, rendent chacun plus conscient de sa contribution. Lorsqu’ils sont alignés sur un rêve commun, le talent et la compétence peuvent devenir un véritable service aux autres.",
+          "Énergie, présence et action dans la réalité.",
+          "Compréhension, imagination et décision.",
+          "Sens, aspiration et connexion avec quelque chose de plus grand."
+        ]
+      }
+    ],
+    "points": [
+      "Corps",
+      "Mental",
+      "Esprit"
+    ]
+  },
+  "frank": {
+    "title": "FrankCannoletta",
+    "intro": "Imprenditore & Strategista",
+    "sections": [
+      {
+        "title": "Una guida strategica integrata.",
+        "text": [
+          "Per imprenditori, manager e professionisti che vogliono affrontare decisioni complesse senza separare la persona che guida, l’organizzazione che produce valore e il patrimonio costruito nel tempo.",
+          "L’approccio parte dall’analisi della situazione reale, identifica gli ostacoli prioritari e traduce la visione in azioni concrete, misurabili e sostenibili.",
+          "IL METODO"
+        ]
+      },
+      {
+        "title": "Tre architetture per costruire solidità.",
+        "text": [
+          "Ogni intervento mantiene una visione d’insieme, ma concentra il lavoro sulla leva che in quel momento produce il maggiore impatto.",
+          "COACHING STRATEGICO & PROBLEM SOLVING",
+          "Gestione delle dinamiche emotive, sblocco delle prestazioni e risoluzione di problemi complessi. Un lavoro orientato a decisioni più lucide, leadership resiliente e azione sotto pressione.",
+          "RILANCIO, GESTIONE & SCALABILITÀ DELLE PMI",
+          "Analisi sistemica, riorganizzazione dei processi e sviluppo aziendale. Dalla direzione generale ai numeri, dalle vendite alle persone, per rendere l’impresa più governabile e produttiva.",
+          "TUTELA & DIVERSIFICAZIONE DEL CAPITALE",
+          "Orientamento strategico per tutelare e diversificare riserve monetarie e patrimonio d’impresa o familiare, anche attraverso soluzioni reali come l’oro fisico da investimento.",
+          "APPROCCIO INTEGRATO"
+        ]
+      },
+      {
+        "title": "Il problema visibile raramente è l’unico problema.",
+        "text": [
+          "Una decisione personale può rallentare l’azienda. Un processo debole può assorbire liquidità. Una struttura patrimoniale fragile può condizionare le scelte imprenditoriali.",
+          "Leggere il sistemaPrima delle soluzioni, una fotografia chiara di persone, numeri, processi e priorità.",
+          "Individuare la levaSi interviene sul punto che può generare il cambiamento più rapido e sostenibile.",
+          "Tradurre in azioneObiettivi, responsabilità e prossimi passi diventano concreti e verificabili.",
+          "COMPETENZE OPERATIVE"
+        ]
+      },
+      {
+        "title": "Dalla visione alla gestione.",
+        "text": [
+          "Visione d’insieme, governance strategica, definizione delle priorità e coordinamento delle aree critiche.",
+          "Controllo di gestione, lettura dei margini, flussi di cassa e indicatori utili alle decisioni.",
+          "Ottimizzazione dei flussi di lavoro e costruzione di standard di servizio chiari, replicabili e misurabili.",
+          "Organizzazione del reparto commerciale-marketing, reti vendita e strategie ad alta efficienza di risorse.",
+          "Ricerca, selezione, attrazione e fidelizzazione di persone coerenti con ruolo, cultura e obiettivi.",
+          "Problem solving, gestione delle dinamiche emotive e supporto alle decisioni ad alto impatto.",
+          "Orientamento alla tutela delle riserve e valutazione di strumenti reali, incluso l’oro fisico.",
+          "ESPERIENZA SUL CAMPO"
+        ]
+      },
+      {
+        "title": "Metodo, impresa, responsabilità.",
+        "text": [
+          "Un profilo costruito tra formazione specialistica, analisi aziendale e affiancamento concreto agli imprenditori.",
+          "Formazione nel Modello Strategico presso Nardone & Partners — Centro di Terapia Strategica.",
+          "Attività di consulenza e analisi organizzativa per le PMI, con competenze maturate sul campo nella lettura e nel miglioramento dei sistemi aziendali.",
+          "Affiancamento sul campo a imprese in crisi, con interventi orientati al rilancio, alla redditività e al marketing a costo zero.",
+          "Sviluppo di reti dedicate e orientamento all’acquisto di oro fisico puro 24k tramite Operatore Professionale in Oro.",
+          "PRIMO CONFRONTO"
+        ]
+      },
+      {
+        "title": "Da quale punto conviene iniziare?",
+        "text": [
+          "Descrivi in poche righe la situazione, la decisione da prendere o l’obiettivo da raggiungere. Il primo confronto serve a definire con chiarezza perimetro, priorità e passo successivo.",
+          "Nota di correttezza professionale. Le attività di coaching e problem solving non sostituiscono percorsi psicologici, psicoterapeutici o sanitari. I contenuti patrimoniali hanno finalità informative e strategiche generali e non costituiscono consulenza finanziaria, fiscale o legale personalizzata né promessa di rendimento o protezione del capitale. Ogni decisione va valutata rispetto alla situazione individuale e, quando necessario, con professionisti abilitati.",
+          "Impresa · Economia · Umanità",
+          "© 2026 HORYZON Consulting"
+        ]
+      }
+    ],
+    "points": [
+      "ArchitettoEmotivo",
+      "Architettod’Impresa",
+      "ArchitettoPatrimoniale",
+      "Direzione generale",
+      "Finanza & controllo",
+      "Processi & standard",
+      "Vendite & marketing",
+      "Risorse umane",
+      "Coaching strategico",
+      "Diversificazione reale",
+      "Coach e Problem Solver certificato",
+      "Esperienza nell’analisi d’azienda",
+      "Volontario in Imprenditore Non Sei Solo",
+      "Collaborazione con Careisgold S.p.A."
+    ]
+  },
+  "horyzon": {
+    "title": "Un’Italia più forte comincia da persone centrate.",
+    "intro": "Il sogno Horyzon è sostenere l’economia, la creatività e la possibilità di realizzazione delle persone, partendo dalla qualità di chi costruisce imprese e organizzazioni.",
+    "sections": [
+      {
+        "title": "Economia, creatività e realizzazione delle persone sono parte della stessa missione.",
+        "text": [
+          "Vogliamo contribuire a un’Italia più forte: un Paese nel quale impresa, economia e umanità creino possibilità concrete per le persone e per i territori.",
+          "Per questo riuniamo persone centrate su una missione comune, capaci di mettere talento, competenza e responsabilità al servizio degli altri. Lavoriamo nel punto in cui visione sistemica e azione concreta si incontrano.",
+          "Un’economia solida, creativa e capace di ampliare le possibilità delle persone.",
+          "Talenti e competenze differenti uniti dal desiderio di essere utili agli altri.",
+          "Corpo, mente e spirito allineati per trasformare aspirazione e responsabilità in azione.",
+          "Casa Horyzon"
+        ]
+      },
+      {
+        "title": "Una casa professionale.Molte competenze.Una missione comune.",
+        "text": [
+          "Horyzon riunisce professionisti autonomi che mettono competenze diverse al servizio di persone, imprese e comunità. Ognuno conserva identità, specializzazione e autonomia; ci uniscono una missione comune, un metodo serio e una profonda attenzione alla dimensione umana.",
+          "Fondatore · Analista d’azienda"
+        ]
+      },
+      {
+        "title": "Una visione che diventa spazio per altri professionisti.",
+        "text": [
+          "Angelo Ria Chetta ha dato origine a Horyzon e contribuisce a custodirne la visione. Il suo ruolo è creare condizioni, metodo e relazioni perché professionisti diversi possano esprimere la propria competenza, crescere insieme e costruire valore per gli altri."
+        ]
+      }
+    ],
+    "points": [
+      "Italia più forte",
+      "Missione comune",
+      "Persone centrate",
+      "Angelo Ria Chetta"
+    ]
+  },
+  "impresa": {
+    "title": "L’impresa è un’espressione creativa dell’essere umano.",
+    "intro": "Fare impresa richiede qualità umane straordinarie: visione, responsabilità, coraggio, creatività e capacità di coinvolgere altre persone in un progetto comune.",
+    "sections": [
+      {
+        "title": "L’impresa è un’arte e uno spiritual game, prima ancora che un’attività economica.",
+        "text": [
+          "Nel significato più autentico del termine, un’impresa è qualcosa che merita di essere intrapreso: un’opera difficile, significativa e capace di trasformare chi la realizza. Non è un’attività poco naturale o poco nobile, ma uno dei luoghi nei quali le migliori qualità dell’essere umano vengono messe alla prova.",
+          "Dopo la famiglia e la scuola, l’impresa è uno dei principali ambienti formativi ed evolutivi della vita adulta. È il luogo nel quale trascorriamo gran parte del nostro tempo, impariamo a collaborare, assumiamo responsabilità e trasformiamo idee in valore per la collettività.",
+          "Le qualità necessarie all’impresa appartengono a ogni persona. Chi fa impresa sceglie di utilizzarle con continuità, esponendosi al rischio, alla relazione e alla responsabilità del risultato.",
+          "Creare qualcosa che prima non esisteva e renderlo utile agli altri.",
+          "Crescere attraverso responsabilità, difficoltà e confronto con la realtà.",
+          "Trasformare talenti individuali in un’opera condivisa."
+        ]
+      }
+    ],
+    "points": [
+      "Arte",
+      "Evoluzione",
+      "Persone"
+    ]
+  },
+  "indice-horyzon": {
+    "title": "Misura il tuospazio di evoluzione.",
+    "intro": "Tre questionari brevi per osservare con maggiore chiarezza organizzazione, patrimonio e capacità digitale. Non un giudizio: un punto dal quale iniziare.",
+    "sections": [
+      {
+        "title": "Da dove vuoi guardare oltre?",
+        "text": [
+          "Misura quanto struttura, autonomia e persone sostengono davvero la crescita dell’impresa.",
+          "Osserva quanto direzione, equilibrio e libertà guidano il patrimonio che hai costruito.",
+          "Valuta se processi, dati e competenze digitali stanno liberando davvero capacità e tempo.",
+          "02 / Come funziona"
+        ]
+      },
+      {
+        "title": "Una fotografia utile, non un’etichetta.",
+        "text": [
+          "Rispondi pensando alla situazione reale degli ultimi sei mesi. Il risultato evidenzierà ciò che è già solido, la priorità evolutiva e una prima azione concreta da mettere alla prova.",
+          "Impresa · Economia · Umanità",
+          "Entra in Horyzon"
+        ]
+      },
+      {
+        "title": "Professionisti autonomie realizzati. Unamissione comune.",
+        "text": [
+          "Un gruppo strutturato, professionale e umano per crescere, contribuire ai progetti e collaborare con altri specialisti, mantenendo la propria autonomia."
+        ]
+      }
+    ],
+    "points": [
+      "Benessere organizzativo",
+      "Benessere patrimoniale",
+      "Benessere digitale"
+    ]
+  },
+  "libro/management-umano": {
+    "title": "Gestire sé stessi, prima di tutto.",
+    "intro": "Un percorso per esprimere il potenziale umano e professionale e applicare una visione integrata a persone, famiglie, aziende e comunità.",
+    "sections": [
+      {
+        "title": "Management e umanità, finalmente insieme.",
+        "text": [
+          "Il termine management viene spesso utilizzato con un’accezione tecnica e quasi robotizzata. Management Umano lo riporta alla sua radice più concreta: imparare a gestire sé stessi prima delle cose e delle persone.",
+          "La proposta integra corpo, mente e spirito e può essere applicata al singolo, alle organizzazioni e alle comunità. Non separa il valore umano da successo, abbondanza, impresa, evoluzione e salute.",
+          "Il libro nasce anche dalla fiducia nelle capacità italiane e nella possibilità che creatività, umanità e consapevolezza diventino leve di sviluppo.",
+          "Ricevi le versioni PDF ed ePub attraverso il modulo ufficiale.",
+          "Per la community Horyzon il volume è disponibile a €15, rispetto al prezzo di copertina di €29."
+        ]
+      }
+    ],
+    "points": [
+      "Ebook gratuito",
+      "Edizione cartacea"
+    ]
+  },
+  "lucio-de-simone": {
+    "title": "LucioDe Simone",
+    "intro": "Horyzon Specialist · Benessere patrimoniale",
+    "sections": [
+      {
+        "title": "Una relazione professionale che parte dalla persona.",
+        "text": [
+          "Lucio De Simone è un professionista con esperienza amministrativa, gestionale e operativa maturata in Italia e in Svizzera. Nel suo percorso ha seguito rapporti bancari e fornitori, pianificazione dei pagamenti, flussi di cassa, logistica e supporto a strutture turistico-ricettive.",
+          "Diplomato in Ragioneria e con un’ottima padronanza del francese, porta oggi questo approccio concreto nella Partner Network Horyzon, nell’area del benessere patrimoniale e con una specializzazione verificata nell’oro fisico da investimento.",
+          "Il primo passo"
+        ]
+      },
+      {
+        "title": "Fare chiarezza prima di scegliere una direzione.",
+        "text": [
+          "Il primo confronto è conoscitivo: serve a capire il punto di partenza, offrire elementi comprensibili e verificare quale percorso possa essere realmente utile.",
+          "Un primo confronto per mettere a fuoco esigenze, orizzonte e priorità patrimoniali, partendo dal contesto reale della persona.",
+          "Un approfondimento chiaro sul ruolo dell’oro fisico da investimento, sulle sue caratteristiche e sugli aspetti da valutare con consapevolezza.",
+          "Quando emerge un interesse concreto, il confronto prosegue nel perimetro Careisgold e, per le attività riservate, con i professionisti abilitati della rete.",
+          "Competenze documentate"
+        ]
+      },
+      {
+        "title": "Oro fisico.Visione concreta.",
+        "text": [
+          "Lucio accompagna il primo approfondimento sull’oro fisico da investimento con un linguaggio chiaro, un approccio concreto e attenzione al quadro patrimoniale complessivo.",
+          "La sua esperienza amministrativa e operativa aiuta a mantenere il confronto ancorato a priorità, sostenibilità delle scelte e corretta comprensione dei passaggi.",
+          "Specializzazione documentata come incaricato Careisgold per il commercio di oro da investimento.",
+          "Esperienza in rapporti bancari e fornitori, pianificazione dei pagamenti e monitoraggio dei flussi di cassa.",
+          "Percorso professionale maturato anche in contesti turistico-ricettivi e logistici internazionali, con ottima padronanza del francese.",
+          "Lucio è titolare di un tesserino Careisgold come incaricato per il commercio di oro da investimento, rilasciato il 12 agosto 2026 e valido fino al 12 agosto 2027. Careisgold S.p.A. è Operatore Professionale in Oro iscritto nel Registro OAM al n. OPO6. Eventuali attività riservate restano affidate a professionisti abilitati.",
+          "Il metodo Horyzon"
+        ]
+      },
+      {
+        "title": "Ascolto, chiarezza, responsabilità.",
+        "text": [
+          "Comprendere il contesto reale prima di formulare ipotesi o indicare una direzione.",
+          "Rendere comprensibili priorità, responsabilità e possibili passi successivi.",
+          "Riconoscere i confini del proprio ruolo e coinvolgere gli specialisti adeguati quando necessario.",
+          "Un primo confronto"
+        ]
+      },
+      {
+        "title": "Partiamo da ciò che per te conta davvero.",
+        "text": [
+          "Scrivi direttamente a Lucio per richiedere un primo confronto nell’area del benessere patrimoniale e dell’oro fisico da investimento.",
+          "Impresa · Economia · Umanità"
+        ]
+      }
+    ],
+    "points": [
+      "Inquadrare gli obiettivi",
+      "Conoscere l’oro fisico",
+      "Attivare il percorso corretto",
+      "Oro fisico da investimento",
+      "Gestione amministrativa",
+      "Operatività Italia–Svizzera",
+      "Ascolto",
+      "Chiarezza",
+      "Responsabilità"
+    ]
+  },
+  "umanita": {
+    "title": "Corpo, mente e spirito danno senso all’azione.",
+    "intro": "L’umanità è corpo, mente e spirito. È ciò che collega l’arte dell’impresa e la scienza dell’economia, riportando ogni scelta alla complessità e alla dignità della persona.",
+    "sections": [
+      {
+        "title": "Non esiste arte o scienza umana che possa prescindere dall’integrazione dell’essere umano.",
+        "text": [
+          "Il corpo è energia, presenza e azione nella realtà. La mente è comprensione, immaginazione e decisione. Lo spirito è significato, aspirazione e connessione con qualcosa di più grande di noi: una dimensione umana, seria e non confessionale, che orienta ciò per cui scegliamo di agire.",
+          "L’umanità non è un’aggiunta decorativa all’impresa o all’economia. È il principio che consente all’arte e alla scienza di dialogare, orientandole verso risultati efficaci, sostenibili e degni delle persone coinvolte.",
+          "Corpo, mente e spirito, uniti e centrati, rendono una persona più consapevole del proprio contributo. Quando sono allineati su un sogno comune, talento e competenza possono diventare un autentico servizio agli altri.",
+          "Energia, presenza e azione nella realtà.",
+          "Comprensione, immaginazione e decisione.",
+          "Significato, aspirazione e connessione con qualcosa di più grande."
+        ]
+      }
+    ],
+    "points": [
+      "Corpo",
+      "Mente",
+      "Spirito"
+    ]
+  }
+}

@@ -1,2 +1,4 @@
-import type { MetadataRoute } from "next";
-export default function sitemap():MetadataRoute.Sitemap { const routes=["","/horyzon","/benessere-organizzativo","/benessere-patrimoniale","/benessere-digitale","/umanita","/entra-in-horyzon","/contatti"]; return routes.map(route=>({url:`https://horyzon.it${route}`,lastModified:new Date(),changeFrequency:route===""?"weekly":"monthly",priority:route===""?1:.8})); }
+import type {MetadataRoute} from 'next';
+import archive from '@/data/archive.json';
+import {people} from '@/data/people';
+export default function sitemap():MetadataRoute.Sitemap{const routes=[...new Set(['',...Object.keys(archive),...Object.keys(people),'le-tre-aree','metodo','persone','biblioteca','misura'])].filter(x=>!['conoscenza','indice-horyzon'].includes(x));return routes.map(x=>({url:`https://horyzon.it/${x}`,changeFrequency:'monthly',priority:x===''?1:.7}))}
