@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-const links=[['Le tre aree','/le-tre-aree'],['Metodo','/metodo'],['Persone','/persone'],['Biblioteca','/biblioteca'],['Misura','/misura'],['Contatti','/contatti']];
+const links=[['Come funziona','/metodo'],["Radar d'Impresa",'/radar-impresa'],['Sistema impresa','/le-tre-aree'],['Platform','/piattaforma'],['Persone','/persone'],['Insights','/biblioteca'],['Contatti','/contatti']];
 export function Wordmark(){return <Link className="wordmark" href="/" aria-label="Horyzon, homepage"><span className="horizon-mark" aria-hidden="true"/><span>HORYZON<small>CONSULTING</small></span></Link>}
 export function SiteHeader(){
  const path=usePathname();const [open,setOpen]=useState(false);const button=useRef<HTMLButtonElement>(null);
