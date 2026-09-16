@@ -63,6 +63,50 @@ export function Journey() {
 
  useEffect(() => {
   const media = video.current;
+  const viewport = root.current;
+  if (!enabled || !media || !viewport) return;
+  // Track the road's vanishing point in the source, including the dissolve.
+  const stops = [[0, .66], [1, .64], [2, .615], [3, .58], [4, .545], [4.5, .52], [5, .5], [6, .48], [7, .43], [7.5, .37]];
+  const position = (time: number) => {
+   if (!media.videoWidth || !media.videoHeight) return;
+   let focal = stops[stops.length - 1][1];
+   for (let i = 1; i < stops.length; i++) {
+    if (time <= stops[i][0]) {
+     const [start, from] = stops[i - 1];
+     const [end, to] = stops[i];
+     focal = from + (to - from) * Math.max(0, (time - start) / (end - start));
+     break;
+    }
+   }
+   const width = viewport.clientWidth;
+   const scale = Math.max(width / media.videoWidth, viewport.clientHeight / media.videoHeight);
+   const drawnWidth = media.videoWidth * scale;
+   const overflow = drawnWidth - width;
+   const percent = overflow > 1 ? Math.max(0, Math.min(1, (focal * drawnWidth - width / 2) / overflow)) * 100 : 50;
+   media.style.objectPosition = `${percent}% center`;
+  };
+  const update = () => position(media.currentTime);
+  let callback = 0;
+  const onFrame: VideoFrameRequestCallback = (_, metadata) => {
+   position(metadata.mediaTime);
+   callback = media.requestVideoFrameCallback(onFrame);
+  };
+  if (typeof media.requestVideoFrameCallback === 'function') callback = media.requestVideoFrameCallback(onFrame);
+  const observer = new ResizeObserver(update);
+  observer.observe(viewport);
+  media.addEventListener('loadeddata', update);
+  media.addEventListener('seeked', update);
+  update();
+  return () => {
+   observer.disconnect();
+   media.removeEventListener('loadeddata', update);
+   media.removeEventListener('seeked', update);
+   if (callback) media.cancelVideoFrameCallback(callback);
+  };
+ }, [enabled]);
+
+ useEffect(() => {
+  const media = video.current;
   const story = root.current?.parentElement;
   if (!enabled || paused || failed || loading || !ready || !media || !story) return;
   let frame = 0;
@@ -76,7 +120,8 @@ export function Journey() {
    if (!Number.isFinite(media.duration) || media.duration <= 0) return;
    const range = Math.max(1, story.offsetHeight - root.current!.clientHeight);
    const progress = Math.max(0, Math.min(1, -story.getBoundingClientRect().top / range));
-   target = progress * Math.max(0, media.duration - 1 / 30);
+   // End before the source camera turns away and the road leaves the frame.
+   target = progress * Math.max(0, Math.min(7.5, media.duration - 1 / 30));
    seek();
   };
   const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
