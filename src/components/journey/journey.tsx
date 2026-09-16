@@ -1,5 +1,6 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createScrubController, scrollTime } from './scrub-controller';
 
 export function Journey() {
  const root = useRef<HTMLDivElement>(null);
@@ -12,7 +13,6 @@ export function Journey() {
  const [needsTap, setNeedsTap] = useState(false);
  const [videoSource, setVideoSource] = useState<string | null>(null);
  const attempt = useRef(0);
- const smoothedTime = useRef(0);
 
  const activate = useCallback(() => {
   const media = video.current;
@@ -119,29 +119,17 @@ export function Journey() {
   const media = video.current;
   const story = root.current?.parentElement;
   if (!enabled || paused || failed || loading || !ready || !media || !story) return;
-  let frame = 0;
-  let target = 0;
-  const seek = () => {
-   frame = 0;
-   const distance = target - smoothedTime.current;
-   smoothedTime.current = Math.abs(distance) < 1 / 60 ? target : smoothedTime.current + distance * .28;
-   if (media.readyState >= 2 && !media.seeking && Math.abs(media.currentTime - smoothedTime.current) >= 1 / 30) {
-    media.currentTime = smoothedTime.current;
-   }
-   if (Math.abs(target - smoothedTime.current) >= 1 / 60) frame = requestAnimationFrame(seek);
-  };
+  const scrub = createScrubController({
+   currentTime: () => media.currentTime,
+   canSeek: () => media.readyState >= 2 && !media.seeking,
+   seek: (time) => { media.currentTime = time; },
+  });
   const update = () => {
    if (!Number.isFinite(media.duration) || media.duration <= 0) return;
    const range = Math.max(1, story.offsetHeight - root.current!.clientHeight);
-   // Reserve the final seconds for the people and contact scene at the sun.
-   const finale = story.querySelector<HTMLElement>('.journey-further');
-   const finaleStart = finale ? Math.max(1, finale.getBoundingClientRect().top - story.getBoundingClientRect().top - root.current!.clientHeight * .35) : range * .75;
    const travelled = Math.max(0, -story.getBoundingClientRect().top);
    const end = Math.max(0, media.duration - 1 / 30);
-   target = travelled < finaleStart
-    ? Math.min(5.5, end) * Math.min(1, travelled / finaleStart)
-    : Math.min(5.5, end) + (end - Math.min(5.5, end)) * Math.max(0, Math.min(1, (travelled - finaleStart) / Math.max(1, range - finaleStart)));
-   if (!frame) frame = requestAnimationFrame(seek);
+   scrub.update(scrollTime(travelled, range, end));
   };
   const schedule = () => update();
   const observer = new ResizeObserver(schedule);
@@ -149,15 +137,14 @@ export function Journey() {
   window.addEventListener('scroll', schedule, { passive: true });
   window.addEventListener('resize', schedule);
   media.addEventListener('loadeddata', schedule);
-   media.addEventListener('seeked', schedule);
+  media.addEventListener('seeked', scrub.flush);
   schedule();
   return () => {
-   cancelAnimationFrame(frame);
    observer.disconnect();
    window.removeEventListener('scroll', schedule);
    window.removeEventListener('resize', schedule);
    media.removeEventListener('loadeddata', schedule);
-   media.removeEventListener('seeked', schedule);
+   media.removeEventListener('seeked', scrub.flush);
   };
  }, [enabled, paused, failed, loading, ready]);
 

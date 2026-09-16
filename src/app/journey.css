@@ -57,3 +57,24 @@
 @media(max-width:600px){.contact-fields{grid-template-columns:1fr;gap:0}.journey-contact-scene{padding:60px 6vw 140px}.journey-content .journey-further{padding-top:90px;padding-bottom:90px}}
 .horyzon-home+.site-footer{position:relative;isolation:isolate;background:#081521;color:#f2eee3}
 @media(prefers-reduced-motion:reduce){.journey-canvas{display:none}.journey-chapter{min-height:auto;padding-top:90px;padding-bottom:90px}.chapter-hero{min-height:calc(100svh - 84px)}.journey-fallback{opacity:1}.journey-visual{position:sticky}.journey-content *{animation:none!important;transition:none!important}}
+
+/* The shorter home narrative keeps each frame readable without slowing the journey. */
+.chapter-intro{font-size:clamp(18px,1.55vw,22px);line-height:1.65;max-width:540px}
+.chapter-body{font-size:17px;line-height:1.75;max-width:540px}
+.chapter-dimensions,.chapter-method{min-height:120svh}
+.department-paths a{align-items:center}
+.journey-anchor{position:absolute;top:0;left:0;scroll-margin-top:84px}.journey-anchor-end{top:auto;bottom:0}
+@media(max-width:850px){
+ .journey-chapter{padding-top:100px;padding-bottom:105px;min-height:100svh}
+ .chapter-copy h1{font-size:clamp(54px,10vw,78px)}
+ .chapter-copy h2{font-size:clamp(52px,9vw,72px)}
+ .chapter-dimensions,.chapter-method{min-height:110svh}
+}
+@media(max-width:480px){
+ .chapter-label{font-size:12px;letter-spacing:.08em;margin-bottom:22px}
+ .chapter-hero{padding-bottom:80px}
+ .chapter-copy h1{font-size:56px}
+ .chapter-copy h2{font-size:52px}
+ .chapter-intro{font-size:19px;line-height:1.58}
+ .chapter-method{min-height:105svh}
+}
