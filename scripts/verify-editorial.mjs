@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile, stat } from 'node:fs/promises';
 
 const manifest = JSON.parse(await readFile('.next/prerender-manifest.json', 'utf8'));
-const routes = ['benessere-organizzativo','benessere-patrimoniale','benessere-digitale','benessere-organizzativo/analisi-organizzativa','benessere-digitale/imprese','le-tre-aree','metodo','persone','angelo','frank','gianluca','biblioteca','libro/management-umano','misura','contatti','entra-in-horyzon','horyzon','privacy-policy','cookie-policy'];
+const routes = ['benessere-organizzativo','benessere-patrimoniale','benessere-digitale','benessere-organizzativo/analisi-organizzativa','benessere-digitale/imprese','le-tre-aree','metodo','persone','angelo','frank','gianluca','biblioteca','libro/management-umano','misura','contatti','entra-in-horyzon','horyzon','radar-impresa','privacy-policy','cookie-policy'];
 for (const route of routes) {
  const html = await readFile(`.next/server/app/${route}.html`, 'utf8');
  assert.equal((html.match(/<h1\b/g) || []).length, 1, `${route}: one page heading`);
@@ -19,5 +19,10 @@ for (const route of routes) {
   for (const anchor of ['comprendere','ambiti','primo-passo']) assert(html.includes(`id="${anchor}"`), `${route}: missing ${anchor}`);
   assert.equal((html.match(/class="service-row"/g) || []).length, 3);
  }
+}
+const radar = await readFile('.next/server/app/radar-impresa.html', 'utf8');
+assert(radar.includes('https://hub.horyzon.it/radar'), 'radar-impresa: canonical Radar URL missing');
+for (const label of ['Amministrazione', 'Produzione', 'Commerciale', 'Marketing', 'Persone', 'Maturità dei processi', 'Autonomia del titolare', 'Profilo complessivo', 'Adozione dell’AI']) {
+ assert(radar.includes(label), `radar-impresa: missing ${label}`);
 }
 console.log(`Editorial checks passed: ${routes.length} representative routes, headings, internal links, area sections, no videos.`);

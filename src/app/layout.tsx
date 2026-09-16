@@ -4,6 +4,7 @@ import "./globals.css";
 import "./inside.css";
 import "./journey.css";
 import "./editorial.css";
+import "./narrative.css";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-sans" });
 const cormorant = Cormorant_Garamond({ subsets: ["latin"], variable: "--font-serif", weight: ["400", "500", "600"] });
