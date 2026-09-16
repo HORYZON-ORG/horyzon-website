@@ -12,4 +12,9 @@ const radar = await readFile('.next/server/app/radar-impresa.html', 'utf8');
 for (const label of ['Amministrazione', 'Produzione', 'Commerciale', 'Marketing', 'Persone']) {
   assert(radar.includes(label), `radar-impresa: missing ${label}`);
 }
+const home = await readFile('.next/server/app/index.html', 'utf8');
+assert.equal((home.match(new RegExp(radarUrl, 'g')) || []).length, 2, 'home: expected two canonical Radar links');
+for (const phrase of ['cinque reparti', 'organizzazione obiettivo', 'reparto prioritario', 'progresso misurabile']) {
+  assert(home.toLowerCase().includes(phrase), `home: missing ${phrase}`);
+}
 console.log('Narrative checks passed.');

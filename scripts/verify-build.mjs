@@ -17,7 +17,7 @@ const manifest=JSON.parse(await readFile('.next/prerender-manifest.json','utf8')
 const routes=new Set(Object.keys(manifest.routes));
 const home=await readFile('.next/server/app/index.html','utf8');
 assert.equal((home.match(/<h1\b/g)||[]).length,1);
-for(const id of ['orizzonte','discovery','dimensioni','cambiamento','prossimo-orizzonte'])assert(home.includes(`id="${id}"`));
+for(const id of ['orizzonte','presente','radar','organismo','percorso-operativo','infrastruttura','progresso','prossimo-orizzonte'])assert(home.includes(`id="${id}"`));
 const links=[...new Set([...home.matchAll(/href="(\/[^"?#]*)/g)].map(x=>x[1]))].filter(x=>!x.startsWith('/_next/'));
 for(const link of links){if(routes.has(link))continue;try{await stat('public'+link)}catch{throw new Error('Unresolved homepage link: '+link)}}
 for(const route of ['/contatti','/metodo','/misura','/persone','/biblioteca','/privacy-policy','/cookie-policy','/v/gianluca','/v/frank/contact.vcf'])assert(routes.has(route),'Missing preserved route '+route);
