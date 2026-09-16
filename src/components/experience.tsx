@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { SiteHeader, SiteFooter } from './site-shell';
 import { Journey } from './journey/journey';
+import { JourneyContactForm } from './journey/contact-form';
 const method = ['Ascolto e analisi', 'Discovery', 'Definizione delle priorità', 'Progettazione del percorso', 'Implementazione', 'Accompagnamento delle persone', 'Verifica dei risultati', 'Evoluzione continua'];
 export function Experience() {
  return <><SiteHeader/><main id="content" className="horyzon-home"><div className="journey-story" id="percorso"><Journey/>
@@ -14,7 +15,7 @@ export function Experience() {
  ].map(([n,t,d,h])=><Link href={'/'+h} key={h}><span className="dimension-number">{n}</span><div><h3>{t}</h3><p>{d}</p></div><span className="dimension-arrow" aria-hidden="true">↗</span></Link>)}</div></div></section>
  <section className="journey-chapter chapter-method" id="cambiamento" aria-labelledby="method-title"><div className="chapter-copy"><p className="chapter-label">03 / ACCOMPAGNARE</p><h2 id="method-title">Una visione vale<br/>quando diventa <em>lavoro migliore.</em></h2><p className="chapter-intro">Dall’analisi all’adozione, restiamo accanto alle persone. Con priorità chiare, responsabilità e risultati da verificare.</p><ol className="journey-method">{method.map((x,i)=><li key={x}><span>{String(i+1).padStart(2,'0')}</span>{x}</li>)}</ol><p className="chapter-body">Processi più fluidi. Decisioni più consapevoli. Strumenti realmente utilizzati. Una trasformazione di cui mantenere il controllo.</p><Link href="/metodo" className="journey-link">Conosci il metodo Horyzon <span aria-hidden="true">↗</span></Link></div></section>
  <section className="journey-chapter chapter-arrival" id="prossimo-orizzonte" aria-labelledby="arrival-title"><div className="chapter-copy"><p className="chapter-label">04 / CONTINUARE A EVOLVERE</p><h2 id="arrival-title">Ogni impresa ha<br/>un orizzonte <em>possibile.</em></h2><p className="chapter-intro">Cominciamo dal punto in cui si trova oggi la tua azienda.</p><div className="journey-actions"><Link className="journey-button" href="/contatti">Parliamo della tua azienda <span aria-hidden="true">↗</span></Link></div><p className="arrival-note">Una prima conversazione. Una direzione da costruire insieme.</p></div></section>
- </div></div>
  <section className="journey-further" aria-labelledby="further-title"><div><p className="chapter-label">LA PROSPETTIVA HORYZON</p><h2 id="further-title">Dietro il percorso,<br/><em>le persone.</em></h2></div><nav aria-label="Scopri Horyzon">{[['Horyzon','La nostra visione','/horyzon'],['Le persone','Le competenze al tuo fianco','/persone'],['La biblioteca','Idee da portare nel lavoro','/biblioteca'],['Entra in Horyzon','Il tuo talento, una missione comune','/entra-in-horyzon']].map(([t,d,h])=><Link href={h} key={h}><div><h3>{t}</h3><p>{d}</p></div><span aria-hidden="true">↗</span></Link>)}</nav></section>
- </main><SiteFooter/></>;
+ <section className="journey-contact-scene" id="parliamone"><JourneyContactForm/></section>
+ </div></div></main><SiteFooter/></>;
 }

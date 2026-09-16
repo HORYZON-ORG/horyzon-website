@@ -66,7 +66,7 @@ export function Journey() {
   const viewport = root.current;
   if (!enabled || !media || !viewport) return;
   // Track the road's vanishing point in the source, including the dissolve.
-  const stops = [[0, .66], [1, .64], [2, .615], [3, .58], [4, .545], [4.5, .52], [5, .5], [6, .48], [7, .43], [7.5, .37]];
+  const stops = [[0, .66], [1, .64], [2, .615], [3, .58], [4, .545], [4.5, .52], [5, .5], [5.5, .5]];
   const position = (time: number) => {
    if (!media.videoWidth || !media.videoHeight) return;
    let focal = stops[stops.length - 1][1];
@@ -119,9 +119,14 @@ export function Journey() {
    frame = 0;
    if (!Number.isFinite(media.duration) || media.duration <= 0) return;
    const range = Math.max(1, story.offsetHeight - root.current!.clientHeight);
-   const progress = Math.max(0, Math.min(1, -story.getBoundingClientRect().top / range));
-   // End before the source camera turns away and the road leaves the frame.
-   target = progress * Math.max(0, Math.min(7.5, media.duration - 1 / 30));
+   // Reserve the final seconds for the people and contact scene at the sun.
+   const finale = story.querySelector<HTMLElement>('.journey-further');
+   const finaleStart = finale ? Math.max(1, finale.getBoundingClientRect().top - story.getBoundingClientRect().top - root.current!.clientHeight * .35) : range * .75;
+   const travelled = Math.max(0, -story.getBoundingClientRect().top);
+   const end = Math.max(0, media.duration - 1 / 30);
+   target = travelled < finaleStart
+    ? Math.min(5.5, end) * Math.min(1, travelled / finaleStart)
+    : Math.min(5.5, end) + (end - Math.min(5.5, end)) * Math.max(0, Math.min(1, (travelled - finaleStart) / Math.max(1, range - finaleStart)));
    seek();
   };
   const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };

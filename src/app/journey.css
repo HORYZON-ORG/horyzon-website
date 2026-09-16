@@ -5,4 +5,29 @@
 @media(max-width:480px){.chapter-label{font-size:11px;letter-spacing:.09em;gap:8px;flex-wrap:wrap;margin-bottom:24px}.chapter-hero{padding-top:44px;padding-bottom:90px}.chapter-copy h1{font-size:54px;line-height:1.02}.chapter-copy h2{font-size:48px}.chapter-intro{font-size:17px;line-height:1.65}.chapter-body{font-size:16px}.journey-actions{align-items:flex-start;flex-direction:column;margin-top:26px}.journey-button{font-size:14px;max-width:100%;gap:20px}.dimension-paths a{gap:14px;padding:22px 0}.dimension-paths h3{font-size:31px}.dimension-paths p{font-size:16px}.journey-method{grid-template-columns:1fr}.journey-method li{min-height:49px;font-size:15px}.journey-chapter{padding-bottom:100px}.chapter-method{min-height:150svh}.journey-further{padding:75px 7vw}.site-footer{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}}
 @media(max-height:650px){.chapter-hero{min-height:700px}.journey-chapter{padding-top:65px;padding-bottom:85px}.journey-utility{bottom:10px}}
 .journey-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:62% center;z-index:1;opacity:0}.is-ready .journey-video{opacity:1}.journey-shade{z-index:2}.journey-content{z-index:3}.journey-utility button:focus-visible{outline:3px solid #f2d09b;outline-offset:4px}
+/* Share one grid cell instead of extending the sticky video with a negative margin. */
+.journey-story{display:grid;overflow:clip}
+.journey-visual{grid-area:1/1;align-self:start;margin-bottom:0;min-width:0}
+.journey-content{grid-area:1/1;min-width:0}
+.journey-story::after{content:"";position:absolute;inset:auto 0 0;height:clamp(64px,12svh,128px);background:linear-gradient(transparent,#081521);pointer-events:none;z-index:4}
+.journey-content .journey-further{background:transparent;color:#f2eee3;min-height:100svh;align-content:center;padding-top:140px;padding-bottom:140px}
+.journey-content .journey-further .chapter-label{color:#dfc79d}
+.journey-content .journey-further em{color:#dfc79d}
+.journey-content .journey-further p:not(.chapter-label){color:#d4dedf}
+.journey-content .journey-further nav a{border-color:#ffffff40}
+.journey-content .journey-further nav a:hover h3{color:#dfc79d}
+.journey-contact-scene{min-height:115svh;display:flex;align-items:center;padding:80px 7vw 160px}
+.journey-contact{pointer-events:auto;width:min(100%,680px);padding:clamp(24px,4vw,48px);background:#081521d9;border:1px solid #e3cfac50;backdrop-filter:blur(12px)}
+.journey-contact h3{font:400 clamp(36px,4vw,56px)/1.08 var(--font-serif);margin:0 0 20px}
+.journey-contact p{line-height:1.7;color:#d4dedf}
+.journey-contact label{display:grid;gap:9px;font-size:14px;margin-top:22px}
+.contact-fields{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.journey-contact input,.journey-contact textarea{width:100%;min-width:0;padding:13px;background:#ffffff0a;color:#fff;border:1px solid #ffffff50;border-radius:0;font:inherit;font-size:16px}
+.journey-contact textarea{resize:vertical}
+.journey-contact input:focus-visible,.journey-contact textarea:focus-visible,.journey-contact button:focus-visible{outline:2px solid #dfc79d;outline-offset:3px}
+.journey-contact textarea::placeholder{color:#a7b6bf}
+.journey-contact .contact-note{font-size:13px;line-height:1.6;margin:22px 0}
+.contact-note a{text-decoration:underline;text-underline-offset:3px}
+@media(max-width:600px){.contact-fields{grid-template-columns:1fr;gap:0}.journey-contact-scene{padding:60px 6vw 140px}.journey-content .journey-further{padding-top:90px;padding-bottom:90px}}
+.horyzon-home+.site-footer{position:relative;isolation:isolate;background:#081521;color:#f2eee3}
 @media(prefers-reduced-motion:reduce){.journey-canvas{display:none}.journey-chapter{min-height:auto;padding-top:90px;padding-bottom:90px}.chapter-hero{min-height:calc(100svh - 84px)}.journey-fallback{opacity:1}.journey-visual{position:sticky}.journey-content *{animation:none!important;transition:none!important}}
