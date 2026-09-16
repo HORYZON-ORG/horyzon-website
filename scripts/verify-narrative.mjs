@@ -17,4 +17,10 @@ assert.equal((home.match(new RegExp(radarUrl, 'g')) || []).length, 2, 'home: exp
 for (const phrase of ['cinque reparti', 'organizzazione obiettivo', 'reparto prioritario', 'progresso misurabile']) {
   assert(home.toLowerCase().includes(phrase), `home: missing ${phrase}`);
 }
+const platform = await readFile('.next/server/app/piattaforma.html', 'utf8');
+for (const phrase of ['Hub', 'ChatGPT Work', 'Platform', 'KPI', 'report', 'sincronizzazione', 'attivazione']) assert(platform.includes(phrase), `piattaforma: missing ${phrase}`);
+const method = await readFile('.next/server/app/metodo.html', 'utf8');
+for (const title of ['Definire la destinazione','Leggere il presente','Disegnare l’organizzazione obiettivo','Mappare persone e responsabilità','Misurare il divario','Scegliere il reparto prioritario','Costruire il programma operativo','Attivare con prove','Verificare e continuare']) assert(method.includes(title), `metodo: missing ${title}`);
+const system = await readFile('.next/server/app/le-tre-aree.html', 'utf8');
+for (const phrase of ['Nucleo organizzativo','Abilitazione digitale','Continuità finanziaria']) assert(system.includes(phrase), `le-tre-aree: missing ${phrase}`);
 console.log('Narrative checks passed.');

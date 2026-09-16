@@ -14,8 +14,6 @@ type ArchivePage={title:string;intro:string;sections:{title:string;text:string[]
 const archive:Record<string,ArchivePage>=archiveData;
 const aliases:Record<string,string>={'conoscenza':'biblioteca','indice-horyzon':'misura','privacy':'privacy-policy','cookies':'cookie-policy','tre-aree':'le-tre-aree','angelo-ria-chetta':'angelo','gianluca-buccoliero':'gianluca'};
 const special:Record<string,{title:string;intro:string}>={
- 'le-tre-aree':{title:'Tre prospettive. Un solo orizzonte.',intro:'Organizzazione, patrimonio e tecnologia: il benessere cresce quando le dimensioni dell’impresa lavorano insieme.'},
- metodo:{title:'La direzione viene prima della velocità.',intro:'Ascoltare. Misurare. Agire. Un percorso concreto, costruito intorno alla tua realtà.'},
  persone:{title:'Il futuro ha un volto umano.',intro:'Competenze diverse, una responsabilità condivisa. Conosci le persone che danno forma alla visione Horyzon.'},
  biblioteca:{title:'Idee che aprono orizzonti.',intro:'Libri, ricerca e prospettive da portare nella vita e nel lavoro.'},
  misura:{title:'Quanto spazio hai per evolvere?',intro:'Tre prospettive per leggere il presente. Scegli un’area e trova un primo passo concreto.'},

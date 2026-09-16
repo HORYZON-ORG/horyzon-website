@@ -1,0 +1,2 @@
+import { operatingJourney } from '@/content/site-narrative';
+export function OperatingJourney({ compact = false }: { compact?: boolean }): React.JSX.Element { return <ol className={`operating-journey ${compact ? 'is-compact' : ''}`}>{operatingJourney.map((stage,index)=><li key={stage.title}><span className="journey-stage-number">{String(index+1).padStart(2,'0')}</span><div><h3>{stage.title}</h3><p>{stage.description}</p></div></li>)}</ol>; }
