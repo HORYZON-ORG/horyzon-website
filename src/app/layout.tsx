@@ -3,6 +3,7 @@ import { Manrope, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 import "./inside.css";
 import "./journey.css";
+import "./editorial.css";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-sans" });
 const cormorant = Cormorant_Garamond({ subsets: ["latin"], variable: "--font-serif", weight: ["400", "500", "600"] });
