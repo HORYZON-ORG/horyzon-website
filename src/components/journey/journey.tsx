@@ -149,7 +149,7 @@ export function Journey() {
 
  return <div ref={root} data-motion={enabled && !paused ? 'enabled' : 'reduced'} data-failed={failed} className={`journey-visual ${ready && enabled && !failed && !paused ? 'is-ready' : ''}`}>
   <picture className="journey-fallback"><source media="(max-width:768px)" srcSet="/journey/horizon-mobile.webp"/><img src="/journey/horizon.webp" alt="" width="1672" height="941" fetchPriority="high"/></picture>
-  {enabled && <video ref={video} className="journey-video" src="/journey/horizon-scroll.mp4" muted playsInline preload="auto" aria-hidden="true" onError={() => { setFailed(true); setLoading(false); }}/ >}
+  {enabled && <video ref={video} className="journey-video" src="/journey/horizon-web.mp4" muted playsInline preload="auto" aria-hidden="true" onError={() => { setFailed(true); setLoading(false); }}/>}
   <div className="journey-shade"/>
   <div className="journey-utility"><span aria-hidden="true">HORYZON <span className="utility-rule"/> UNA DIREZIONE CONDIVISA</span>{enabled && !failed && <button disabled={loading} onClick={() => { if (!ready || needsTap) activate(); else setPaused(!paused); }} aria-pressed={paused}>{loading ? 'Caricamento…' : !ready || needsTap ? 'Tocca per attivare il viaggio' : paused ? 'Attiva il viaggio' : 'Vista statica'}</button>}{failed && <p role="status">Video non disponibile. Puoi continuare a leggere il sito.</p>}</div>
  </div>;

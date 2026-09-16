@@ -6,7 +6,25 @@
 @media(max-height:650px){.chapter-hero{min-height:700px}.journey-chapter{padding-top:65px;padding-bottom:85px}.journey-utility{bottom:10px}}
 .journey-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:62% center;z-index:1;opacity:0}.is-ready .journey-video{opacity:1}.journey-shade{z-index:2}.journey-content{z-index:3}.journey-utility button:focus-visible{outline:3px solid #f2d09b;outline-offset:4px}
 /* Share one grid cell instead of extending the sticky video with a negative margin. */
+.journey-visual .journey-shade{background:rgba(5,16,25,.42)}
+.chapter-copy{position:relative;isolation:isolate}
+.chapter-copy::before{display:none}
+.chapter-hero,.chapter-dimensions,.chapter-arrival{justify-content:center;text-align:center}
+.chapter-hero .chapter-copy,.chapter-arrival .chapter-copy{width:min(880px,88vw);max-width:880px}
+.chapter-hero h1{max-width:850px;margin-inline:auto}
+.chapter-hero .chapter-label,.chapter-arrival .chapter-label,.chapter-dimensions .chapter-label{justify-content:center}
+.chapter-hero .chapter-intro,.chapter-arrival .chapter-intro,.chapter-arrival .arrival-note,.chapter-dimensions .chapter-intro{margin-inline:auto}
+.chapter-hero .journey-actions,.chapter-arrival .journey-actions{justify-content:center;align-items:center}
+.chapter-dimensions .chapter-copy{width:min(1180px,88vw);max-width:1180px}
+.dimension-paths{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));max-width:none;gap:32px;text-align:left;margin-top:54px}
+.dimension-paths a{border-bottom:1px solid #b3c0c148;gap:14px}
+.chapter-method{justify-content:flex-end}
+.chapter-method .chapter-copy{width:min(620px,48vw)}
+.journey-story .journey-content .journey-further{background:transparent}
+.journey-contact-scene{justify-content:center}
+@media(max-width:850px){.chapter-method .chapter-copy{width:100%;max-width:600px}.chapter-hero .chapter-copy,.chapter-arrival .chapter-copy{width:100%}.dimension-paths{grid-template-columns:1fr;gap:0;margin-top:32px}.dimension-paths a{border-bottom:0}.chapter-copy::before{inset:-45px -7vw}.chapter-hero .journey-actions,.chapter-arrival .journey-actions{align-items:center}.chapter-dimensions .chapter-copy{width:100%}.chapter-method{justify-content:flex-start}}
 .journey-story{display:grid;overflow:clip}
+@media(max-width:850px){.chapter-copy::before{display:none}.journey-visual .journey-shade{background:rgba(5,16,25,.42)}}
 .journey-visual{grid-area:1/1;align-self:start;margin-bottom:0;min-width:0}
 .journey-content{grid-area:1/1;min-width:0}
 .journey-story::after{content:"";position:absolute;inset:auto 0 0;height:clamp(64px,12svh,128px);background:linear-gradient(transparent,#081521);pointer-events:none;z-index:4}
