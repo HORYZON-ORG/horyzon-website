@@ -28,4 +28,12 @@ for (const phrase of ['debrief', 'obiettivi', 'organizzazione obiettivo', 'repar
 assert(!/risultati garantiti|autonomia entro \d+/i.test(frank), 'frank: unsupported guarantee');
 const contact = await readFile('.next/server/app/contatti.html', 'utf8');
 for (const phrase of ['Inizia il Radar','Richiedi il debrief','Descrivi il reparto prioritario']) assert(contact.includes(phrase), `contatti: missing ${phrase}`);
+assert(home.includes('<title>Horyzon — Diagnosi e organizzazione per l’impresa</title>'), 'home: narrative title missing');
+for (const phrase of ['Radar d’Impresa', 'organizzazione obiettivo', 'evoluzione misurabile']) assert(home.includes(phrase), `home metadata: missing ${phrase}`);
+const sitemap = await readFile('.next/server/app/sitemap.xml.body', 'utf8');
+for (const route of ['radar-impresa','piattaforma']) assert(sitemap.includes(`https://horyzon.it/${route}`), `sitemap: missing ${route}`);
+for (const [route,html] of [['home',home],['radar',radar],['platform',platform],['method',method],['frank',frank],['contact',contact]]) {
+ assert.equal((html.match(/<h1\b/g)||[]).length, 1, `${route}: expected one h1`);
+ assert(!html.includes('<video') || route==='home', `${route}: internal page must not contain video`);
+}
 console.log('Narrative checks passed.');
