@@ -12,6 +12,15 @@ const radar = await readFile('.next/server/app/radar-impresa.html', 'utf8');
 for (const label of ['Amministrazione', 'Produzione', 'Commerciale', 'Marketing', 'Persone']) {
   assert(radar.includes(label), `radar-impresa: missing ${label}`);
 }
+const commercialRadar = await readFile('.next/server/app/radar.html', 'utf8');
+assert(commercialRadar.includes('La tua azienda funziona'), 'radar landing: commercial problem-led headline missing');
+assert(commercialRadar.includes(`href="${radarUrl}"`), 'radar landing: canonical Hub CTA missing');
+assert(!commercialRadar.includes(`${radarUrl}?`), 'radar landing: Hub CTA must not contain query data');
+assert(commercialRadar.includes('noindex'), 'radar landing: paid landing must be noindex');
+for (const phrase of ['Maturità dei processi', 'Autonomia dal titolare', 'Indice globale', 'Intelligenza artificiale']) {
+  assert(commercialRadar.includes(phrase), `radar landing: missing ${phrase}`);
+}
+assert(!commercialRadar.includes('29 domande'), 'radar landing: must not publish the unresolved question count');
 const home = await readFile('.next/server/app/index.html', 'utf8');
 assert.equal((home.match(new RegExp(`href="${radarUrl}"`, 'g')) || []).length, 2, 'home: expected two canonical Radar links');
 for (const phrase of ['cinque reparti', 'organizzazione obiettivo', 'reparto prioritario', 'progresso misurabile']) {
@@ -32,6 +41,7 @@ assert(home.includes('<title>Horyzon — Diagnosi e organizzazione per l’impre
 for (const phrase of ['Radar d’Impresa', 'organizzazione obiettivo', 'evoluzione misurabile']) assert(home.includes(phrase), `home metadata: missing ${phrase}`);
 const sitemap = await readFile('.next/server/app/sitemap.xml.body', 'utf8');
 for (const route of ['radar-impresa','piattaforma']) assert(sitemap.includes(`https://horyzon.it/${route}`), `sitemap: missing ${route}`);
+assert(!sitemap.includes('https://horyzon.it/radar</loc>'), 'sitemap: commercial Radar landing must stay excluded');
 for (const [route,html] of [['home',home],['radar',radar],['platform',platform],['method',method],['frank',frank],['contact',contact]]) {
  assert.equal((html.match(/<h1\b/g)||[]).length, 1, `${route}: expected one h1`);
  assert(!html.includes('<video') || route==='home', `${route}: internal page must not contain video`);
