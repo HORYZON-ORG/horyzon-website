@@ -30,3 +30,15 @@ scrub.flush();
 assert.deepEqual(seeks, [1.25, 4.5], 'seek completion should jump to the latest target, not replay stale targets');
 
 console.log('Scrub controller checks passed.');
+
+// Multiple scroll positions inside one source frame must not restart decoding.
+let displayed = 1;
+const frameSeeks = [];
+const frameScrub = createScrubController({ currentTime: () => displayed, canSeek: () => true, seek: time => { frameSeeks.push(time); displayed = time; } });
+frameScrub.update(1.02);
+assert.equal(frameSeeks.length, 0, 'do not decode the same 24fps frame twice');
+frameScrub.update(1.05);
+assert.equal(frameSeeks.length, 1);
+assert.equal(frameSeeks[0], 25 / 24, 'seek to a source frame boundary');
+frameScrub.update(0.98);
+assert.equal(frameSeeks[1], 23 / 24, 'reverse scrolling selects the previous frame');

@@ -19,7 +19,8 @@ export function createScrubController({ currentTime, canSeek, seek }: ScrubContr
 
  return {
   update(nextTarget: number) {
-   target = Math.max(0, nextTarget);
+   // The source is 24fps. Sub-frame seeks cost decoding without new imagery.
+   target = Math.floor(Math.max(0, nextTarget) * 24 + 1e-7) / 24;
    flush();
   },
   flush,

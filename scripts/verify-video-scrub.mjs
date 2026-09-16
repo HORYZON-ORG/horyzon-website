@@ -33,11 +33,11 @@ function findSampleCount(buffer, start = 0, end = buffer.length) {
   return null;
 }
 
-for (const [file, maxBytes] of [['public/journey/horizon-web.mp4', 3_200_000], ['public/journey/horizon-mobile.mp4', 1_800_000]]) {
+for (const [file, maxBytes] of [['public/journey/horizon-web.mp4', 10_000_000], ['public/journey/horizon-mobile.mp4', 6_000_000]]) {
   const buffer = await readFile(file);
   const keyframes = findKeyframeCount(buffer);
   const samples = findSampleCount(buffer);
-  assert(samples !== null && samples >= 140, `${file}: expected a fluid frame sequence, found ${samples}`);
+  assert(samples === 240, `${file}: preserve all 240 original frames, found ${samples}`);
   // MP4 may omit stss when every sample is a sync sample.
   assert(keyframes === null || keyframes === samples, `${file}: every frame must be independently seekable`);
   assert((await stat(file)).size <= maxBytes, `${file}: file is too large for smooth scrubbing`);

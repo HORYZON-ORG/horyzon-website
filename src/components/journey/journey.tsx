@@ -69,7 +69,7 @@ export function Journey() {
  useEffect(() => {
   if (!enabled) return;
   return activate();
- }, [enabled, activate]);
+ }, [enabled, videoSource, activate]);
 
  useEffect(() => {
   const media = video.current;
@@ -128,10 +128,14 @@ export function Journey() {
    if (!Number.isFinite(media.duration) || media.duration <= 0) return;
    const range = Math.max(1, story.offsetHeight - root.current!.clientHeight);
    const travelled = Math.max(0, -story.getBoundingClientRect().top);
-   const end = Math.max(0, media.duration - 1 / 30);
+   const end = Math.max(0, media.duration - 1 / 24);
    scrub.update(scrollTime(travelled, range, end));
   };
-  const schedule = () => update();
+  let animation = 0;
+  const schedule = () => {
+   if (animation) return;
+   animation = requestAnimationFrame(() => { animation = 0; update(); });
+  };
   const observer = new ResizeObserver(schedule);
   observer.observe(story);
   window.addEventListener('scroll', schedule, { passive: true });
@@ -140,6 +144,7 @@ export function Journey() {
   media.addEventListener('seeked', scrub.flush);
   schedule();
   return () => {
+   cancelAnimationFrame(animation);
    observer.disconnect();
    window.removeEventListener('scroll', schedule);
    window.removeEventListener('resize', schedule);
