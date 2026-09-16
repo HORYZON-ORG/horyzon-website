@@ -10,7 +10,9 @@ export function Journey() {
  const [paused, setPaused] = useState(false);
  const [loading, setLoading] = useState(false);
  const [needsTap, setNeedsTap] = useState(false);
+ const [videoSource, setVideoSource] = useState<string | null>(null);
  const attempt = useRef(0);
+ const smoothedTime = useRef(0);
 
  const activate = useCallback(() => {
   const media = video.current;
@@ -50,10 +52,18 @@ export function Journey() {
 
  useEffect(() => {
   const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const update = () => setEnabled(!preference.matches);
+  const mobile = window.matchMedia('(max-width: 768px)');
+  const update = () => {
+   setEnabled(!preference.matches);
+   setVideoSource(mobile.matches ? '/journey/horizon-mobile.mp4' : '/journey/horizon-web.mp4');
+  };
   update();
   preference.addEventListener('change', update);
-  return () => preference.removeEventListener('change', update);
+  mobile.addEventListener('change', update);
+  return () => {
+   preference.removeEventListener('change', update);
+   mobile.removeEventListener('change', update);
+  };
  }, []);
 
  useEffect(() => {
@@ -112,11 +122,15 @@ export function Journey() {
   let frame = 0;
   let target = 0;
   const seek = () => {
-   if (media.readyState < 2 || media.seeking) return;
-   if (Math.abs(media.currentTime - target) > 1 / 60) media.currentTime = target;
+   frame = 0;
+   const distance = target - smoothedTime.current;
+   smoothedTime.current = Math.abs(distance) < 1 / 60 ? target : smoothedTime.current + distance * .28;
+   if (media.readyState >= 2 && !media.seeking && Math.abs(media.currentTime - smoothedTime.current) >= 1 / 30) {
+    media.currentTime = smoothedTime.current;
+   }
+   if (Math.abs(target - smoothedTime.current) >= 1 / 60) frame = requestAnimationFrame(seek);
   };
   const update = () => {
-   frame = 0;
    if (!Number.isFinite(media.duration) || media.duration <= 0) return;
    const range = Math.max(1, story.offsetHeight - root.current!.clientHeight);
    // Reserve the final seconds for the people and contact scene at the sun.
@@ -127,15 +141,15 @@ export function Journey() {
    target = travelled < finaleStart
     ? Math.min(5.5, end) * Math.min(1, travelled / finaleStart)
     : Math.min(5.5, end) + (end - Math.min(5.5, end)) * Math.max(0, Math.min(1, (travelled - finaleStart) / Math.max(1, range - finaleStart)));
-   seek();
+   if (!frame) frame = requestAnimationFrame(seek);
   };
-  const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
+  const schedule = () => update();
   const observer = new ResizeObserver(schedule);
   observer.observe(story);
   window.addEventListener('scroll', schedule, { passive: true });
   window.addEventListener('resize', schedule);
   media.addEventListener('loadeddata', schedule);
-  media.addEventListener('seeked', seek);
+   media.addEventListener('seeked', schedule);
   schedule();
   return () => {
    cancelAnimationFrame(frame);
@@ -143,13 +157,15 @@ export function Journey() {
    window.removeEventListener('scroll', schedule);
    window.removeEventListener('resize', schedule);
    media.removeEventListener('loadeddata', schedule);
-   media.removeEventListener('seeked', seek);
+   media.removeEventListener('seeked', schedule);
   };
  }, [enabled, paused, failed, loading, ready]);
 
  return <div ref={root} data-motion={enabled && !paused ? 'enabled' : 'reduced'} data-failed={failed} className={`journey-visual ${ready && enabled && !failed && !paused ? 'is-ready' : ''}`}>
   <picture className="journey-fallback"><source media="(max-width:768px)" srcSet="/journey/horizon-mobile.webp"/><img src="/journey/horizon.webp" alt="" width="1672" height="941" fetchPriority="high"/></picture>
-  {enabled && <video ref={video} className="journey-video" src="/journey/horizon-web.mp4" muted playsInline preload="auto" aria-hidden="true" onError={() => { setFailed(true); setLoading(false); }}/>}
+  {enabled && videoSource && (
+   <video ref={video} className="journey-video" src={videoSource} muted playsInline preload="auto" aria-hidden="true" onError={() => { setFailed(true); setLoading(false); }}/>
+  )}
   <div className="journey-shade"/>
   <div className="journey-utility"><span aria-hidden="true">HORYZON <span className="utility-rule"/> UNA DIREZIONE CONDIVISA</span>{enabled && !failed && <button disabled={loading} onClick={() => { if (!ready || needsTap) activate(); else setPaused(!paused); }} aria-pressed={paused}>{loading ? 'Caricamento…' : !ready || needsTap ? 'Tocca per attivare il viaggio' : paused ? 'Attiva il viaggio' : 'Vista statica'}</button>}{failed && <p role="status">Video non disponibile. Puoi continuare a leggere il sito.</p>}</div>
  </div>;

@@ -9,7 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "assets:build": "node scripts/build-landscape.mjs",
-    "test": "node scripts/verify-build.mjs && node scripts/verify-editorial.mjs && node scripts/verify-narrative.mjs"
+    "test": "node scripts/verify-build.mjs && node scripts/verify-editorial.mjs && node scripts/verify-narrative.mjs && node scripts/verify-video-scrub.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",
