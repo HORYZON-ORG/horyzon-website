@@ -7,6 +7,8 @@ const chapters = [
  ['organismo', 'L’organismo impresa'],
  ['percorso-operativo', 'Il percorso'],
  ['prossimo-orizzonte', 'Il prossimo passo'],
+ ['persone-horyzon', 'Le persone e la visione'],
+ ['parliamone', 'Parliamone'],
 ] as const;
 
 export function ChapterNavigation() {

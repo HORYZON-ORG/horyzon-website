@@ -90,3 +90,4 @@
 .chapter-navigation a:hover .chapter-dot-label,.chapter-navigation a:focus-visible .chapter-dot-label{opacity:1;transform:translateX(0)}
 @media(max-width:768px){.chapter-navigation{top:auto;right:auto;left:50%;bottom:calc(70px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);flex-direction:row;padding:0 6px}.chapter-dot-label{position:fixed;right:auto;left:50%;bottom:54px;transform:translate(-50%,5px)}.chapter-navigation a:hover .chapter-dot-label,.chapter-navigation a:focus-visible .chapter-dot-label{transform:translate(-50%,0)}}
 @media(prefers-reduced-motion:reduce){.chapter-dot,.chapter-dot-label{transition:none}}
+@media(max-width:768px){.chapter-navigation{width:min(322px,calc(100vw - 24px));box-sizing:border-box}.chapter-navigation a{flex:1;min-width:0}}
