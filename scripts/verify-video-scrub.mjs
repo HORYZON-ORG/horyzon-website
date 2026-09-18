@@ -53,5 +53,5 @@ assert(component.includes('src={videoSource}'), 'Journey must select one respons
 assert(!component.includes('type="video/mp4"'), 'Journey must not trigger transient media errors through competing video source elements');
 assert(component.includes('createScrubController'), 'Journey must coalesce scroll targets while the decoder is busy');
 assert(component.includes('onLoadedData={markReady}'), 'late media arrival must recover after the activation timeout');
-assert(styles.includes('.journey-fallback img{object-position:45% center}'), 'mobile fallback must center the generated horizon');
+assert(styles.includes('.journey-fallback img{object-position:50% center}'), 'mobile fallback must center the generated horizon');
 console.log('Video scrub checks passed.');

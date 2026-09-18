@@ -11,7 +11,7 @@ export function scrollTime(travelled: number, range: number, duration: number) {
 
 export function journeyFocalPoint(time: number, mobile: boolean) {
  const stops = mobile
-  ? [[0, .45], [1, .46], [2, .47], [3, .48], [4, .49], [5, .51], [5.5, .53]]
+  ? [[0, .5], [5.5, .5]]
   : [[0, .66], [1, .64], [2, .615], [3, .58], [4, .545], [4.5, .52], [5, .5], [5.5, .5]];
  const focal = stops[stops.length - 1][1];
  for (let i = 1; i < stops.length; i++) {

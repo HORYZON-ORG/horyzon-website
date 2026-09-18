@@ -5,8 +5,8 @@ assert.equal(scrollTime(0, 4000, 8), 0);
 assert.equal(scrollTime(2000, 4000, 8), 4);
 assert.equal(scrollTime(5000, 4000, 8), 8);
 assert.equal(journeyFocalPoint(0, false), .66, 'desktop keeps the established opening crop');
-assert.equal(journeyFocalPoint(0, true), .45, 'mobile opens with the sun and horizon centered');
-assert.equal(journeyFocalPoint(5.5, true), .53, 'mobile follows the horizon through the final frame');
+assert.equal(journeyFocalPoint(0, true), .5, 'mobile opens with the sun and horizon centered');
+assert.equal(journeyFocalPoint(5.5, true), .5, 'mobile keeps the centered sun through the final frame');
 
 let currentTime = 0;
 let seeking = false;
