@@ -9,8 +9,14 @@ for (const [reducedMotion, behavior] of [[false, 'smooth'], [true, 'instant']]) 
 }
 
 const experience = await readFile('src/components/experience.tsx', 'utf8');
-assert(experience.includes('role="tooltip"'), 'Radar handoff note should be available as a tooltip');
-assert(experience.includes('aria-describedby="radar-link-note"'), 'Radar info control should expose the tooltip to assistive technology');
-assert(!experience.includes('<p className="arrival-note">L’assessment si apre'), 'Radar handoff note should not remain as a misaligned paragraph');
+const journey = await readFile('src/components/journey/journey.tsx', 'utf8');
+const styles = await readFile('src/app/journey.css', 'utf8');
+
+assert(!experience.includes('role="tooltip"'), 'Radar tooltip should be removed');
+assert(!experience.includes('radar-info'), 'Radar info control should be removed');
+assert(!journey.includes('motion-control'), 'Pause/static-view control should be removed');
+assert(experience.includes('<BackToTopButton/>'), 'Back-to-top control should sit outside the video stacking context');
+assert(styles.includes('.back-to-top-control{position:fixed;'), 'Back-to-top control should remain fixed to the viewport');
+assert(styles.includes('z-index:1000'), 'Back-to-top control should stay above every page layer');
 
 console.log('Mobile journey controls checks passed.');
