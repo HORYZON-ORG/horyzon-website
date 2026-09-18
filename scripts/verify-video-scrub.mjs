@@ -47,8 +47,11 @@ for (const [file, maxBytes] of [['public/journey/horizon-web.mp4', 10_000_000], 
 }
 
 const component = await readFile('src/components/journey/journey.tsx', 'utf8');
+const styles = await readFile('src/app/journey.css', 'utf8');
 assert(component.includes('horizon-mobile.mp4'), 'Journey must provide a mobile video asset');
 assert(component.includes('src={videoSource}'), 'Journey must select one responsive source before rendering the video');
 assert(!component.includes('type="video/mp4"'), 'Journey must not trigger transient media errors through competing video source elements');
 assert(component.includes('createScrubController'), 'Journey must coalesce scroll targets while the decoder is busy');
+assert(component.includes('onLoadedData={markReady}'), 'late media arrival must recover after the activation timeout');
+assert(styles.includes('.journey-fallback img{object-position:45% center}'), 'mobile fallback must center the generated horizon');
 console.log('Video scrub checks passed.');

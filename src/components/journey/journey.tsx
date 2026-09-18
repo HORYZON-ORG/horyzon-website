@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { createScrubController, scrollTime } from './scrub-controller';
+import { createScrubController, journeyFocalPoint, scrollTime } from './scrub-controller';
 import { scrollToPageTop } from './scroll-to-page-top';
 
 export function Journey() {
@@ -14,6 +14,16 @@ export function Journey() {
  const [needsTap, setNeedsTap] = useState(false);
  const [videoSource, setVideoSource] = useState<string | null>(null);
  const attempt = useRef(0);
+
+ const markReady = useCallback(() => {
+  const media = video.current;
+  if (!media || media.readyState < 2) return;
+  ++attempt.current;
+  media.pause();
+  setReady(true);
+  setLoading(false);
+  setNeedsTap(false);
+ }, []);
 
  const activate = useCallback(() => {
   const media = video.current;
@@ -76,20 +86,11 @@ export function Journey() {
   const media = video.current;
   const viewport = root.current;
   if (!enabled || !media || !viewport) return;
-  // Track the road's vanishing point in the source, including the dissolve.
-  const stops = [[0, .66], [1, .64], [2, .615], [3, .58], [4, .545], [4.5, .52], [5, .5], [5.5, .5]];
+  // Track the generated horizon through both landscape and narrow crops.
   const position = (time: number) => {
    if (!media.videoWidth || !media.videoHeight) return;
-   let focal = stops[stops.length - 1][1];
-   for (let i = 1; i < stops.length; i++) {
-    if (time <= stops[i][0]) {
-     const [start, from] = stops[i - 1];
-     const [end, to] = stops[i];
-     focal = from + (to - from) * Math.max(0, (time - start) / (end - start));
-     break;
-    }
-   }
    const width = viewport.clientWidth;
+   const focal = journeyFocalPoint(time, width <= 768);
    const scale = Math.max(width / media.videoWidth, viewport.clientHeight / media.videoHeight);
    const drawnWidth = media.videoWidth * scale;
    const overflow = drawnWidth - width;
@@ -159,7 +160,7 @@ export function Journey() {
  return <div ref={root} data-motion={enabled && !paused ? 'enabled' : 'reduced'} data-failed={failed} className={`journey-visual ${ready && enabled && !failed && !paused ? 'is-ready' : ''}`}>
   <picture className="journey-fallback"><source media="(max-width:768px)" srcSet="/journey/horizon-mobile.webp"/><img src="/journey/horizon.webp" alt="" width="1672" height="941" fetchPriority="high"/></picture>
   {enabled && videoSource && (
-   <video ref={video} className="journey-video" src={videoSource} muted playsInline preload="auto" aria-hidden="true" onError={() => { setFailed(true); setLoading(false); }}/>
+   <video ref={video} className="journey-video" src={videoSource} muted playsInline preload="auto" aria-hidden="true" onLoadedData={markReady} onError={() => { setFailed(true); setLoading(false); }}/>
   )}
   <div className="journey-shade"/>
   <div className="journey-utility"><span aria-hidden="true">HORYZON <span className="utility-rule"/> UNA DIREZIONE CONDIVISA</span>{enabled && !failed && <button className="journey-utility-button motion-control" disabled={loading} onClick={() => { if (!ready || needsTap) activate(); else setPaused(!paused); }} aria-label={controlLabel} title={controlLabel} aria-pressed={paused}><span className="control-label">{loading ? 'Caricamento…' : !ready || needsTap ? 'Tocca per attivare il viaggio' : paused ? 'Attiva il viaggio' : 'Vista statica'}</span><svg className="journey-control-icon" viewBox="0 0 24 24" aria-hidden="true">{loading ? <circle cx="12" cy="12" r="3" fill="currentColor"/> : paused || !ready || needsTap ? <path d="M8 5.5v13l10-6.5z" fill="currentColor"/> : <><path d="M7.5 5.5h3.5v13H7.5z" fill="currentColor"/><path d="M13 5.5h3.5v13H13z" fill="currentColor"/></>}</svg></button>}<button className="journey-utility-button back-to-top-control" type="button" aria-label="Torna in alto" title="Torna in alto" onClick={() => scrollToPageTop(window.matchMedia('(prefers-reduced-motion: reduce)').matches)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V6M6.5 11.5 12 6l5.5 5.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></button>{failed && <p role="status">Video non disponibile. Puoi continuare a leggere il sito.</p>}</div>
