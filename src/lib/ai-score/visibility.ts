@@ -1,8 +1,5 @@
 import { createHash } from 'node:crypto';
-import {
-  AI_VISIBILITY_METHODOLOGY_VERSION,
-  visibilityWeights,
-} from './methodology';
+import { AI_VISIBILITY_METHODOLOGY_VERSION, visibilityWeights } from './methodology';
 import type {
   AiVisibilityProviderAdapter,
   CostEstimate,
@@ -42,65 +39,15 @@ export interface VisibilityScanProfile {
 }
 
 export const visibilityScanProfiles: Record<VisibilityScanProfileId, VisibilityScanProfile> = {
-  FREE_QUICK_SCAN: {
-    id: 'FREE_QUICK_SCAN',
-    promptCount: 5,
-    providerIds: ['openai_web_search'],
-    maxObservations: 5,
-    maxEstimatedCost: 0.05,
-    timeoutMs: 15_000,
-    concurrency: 1,
-    retries: 0,
-    enabled: true,
-    measuredCoverageThreshold: 80,
-  },
-  PREMIUM_COMPREHENSIVE: {
-    id: 'PREMIUM_COMPREHENSIVE',
-    promptCount: 15,
-    providerIds: ['openai_web_search', 'google_search_grounding', 'perplexity_sonar'],
-    maxObservations: 45,
-    maxEstimatedCost: 0.8,
-    timeoutMs: 30_000,
-    concurrency: 2,
-    retries: 1,
-    enabled: false,
-    measuredCoverageThreshold: 80,
-  },
+  FREE_QUICK_SCAN: { id: 'FREE_QUICK_SCAN', promptCount: 5, providerIds: ['openai_web_search'], maxObservations: 5, maxEstimatedCost: 0.05, timeoutMs: 15_000, concurrency: 1, retries: 0, enabled: true, measuredCoverageThreshold: 80 },
+  PREMIUM_COMPREHENSIVE: { id: 'PREMIUM_COMPREHENSIVE', promptCount: 15, providerIds: ['openai_web_search', 'google_search_grounding', 'perplexity_sonar'], maxObservations: 45, maxEstimatedCost: 0.8, timeoutMs: 30_000, concurrency: 2, retries: 1, enabled: false, measuredCoverageThreshold: 80 },
 };
 
 export const visibilityProviderCandidates: VisibilityProviderCandidate[] = [
-  {
-    id: 'openai_web_search',
-    label: 'OpenAI Web Search',
-    surface: 'grounded_search',
-    evidenceAvailable: ['answer text', 'url citations', 'source metadata', 'model/provider metadata'],
-    requiresCredential: true,
-    blocker: 'Richiede OPENAI_API_KEY e abilitazione esplicita server-side.',
-  },
-  {
-    id: 'google_search_grounding',
-    label: 'Google Search Grounding',
-    surface: 'grounded_search',
-    evidenceAvailable: ['grounded answer', 'grounding chunks', 'citation metadata'],
-    requiresCredential: true,
-    blocker: 'Richiede GOOGLE_AI_API_KEY e abilitazione esplicita server-side.',
-  },
-  {
-    id: 'perplexity_sonar',
-    label: 'Perplexity Sonar',
-    surface: 'answer_engine',
-    evidenceAvailable: ['answer text', 'citations/source urls when returned', 'model/provider metadata'],
-    requiresCredential: true,
-    blocker: 'Richiede PERPLEXITY_API_KEY e abilitazione esplicita server-side.',
-  },
-  {
-    id: 'microsoft_foundry_web_search',
-    label: 'Microsoft Foundry Web Search',
-    surface: 'future_candidate',
-    evidenceAvailable: ['future grounded sources when a supported adapter is designed'],
-    requiresCredential: true,
-    blocker: 'Candidato futuro. Non implementato in questa fase; le Bing Search APIs legacy sono ritirate.',
-  },
+  { id: 'openai_web_search', label: 'OpenAI Web Search', surface: 'grounded_search', evidenceAvailable: ['answer text', 'url citations', 'source metadata', 'model/provider metadata'], requiresCredential: true, blocker: 'Richiede OPENAI_API_KEY e abilitazione esplicita server-side.' },
+  { id: 'google_search_grounding', label: 'Google Search Grounding', surface: 'grounded_search', evidenceAvailable: ['grounded answer', 'grounding chunks', 'citation metadata'], requiresCredential: true, blocker: 'Richiede GOOGLE_AI_API_KEY e abilitazione esplicita server-side.' },
+  { id: 'perplexity_sonar', label: 'Perplexity Sonar', surface: 'answer_engine', evidenceAvailable: ['answer text', 'citations/source urls when returned', 'model/provider metadata'], requiresCredential: true, blocker: 'Richiede PERPLEXITY_API_KEY e abilitazione esplicita server-side.' },
+  { id: 'microsoft_foundry_web_search', label: 'Microsoft Foundry Web Search', surface: 'future_candidate', evidenceAvailable: ['future grounded sources when a supported adapter is designed'], requiresCredential: true, blocker: 'Candidato futuro. Non implementato in questa fase; le Bing Search APIs legacy sono ritirate.' },
 ];
 
 export interface VisibilityObservationStore {
@@ -117,28 +64,15 @@ export class NoopVisibilityObservationStore implements VisibilityObservationStor
 
 const visibilityObservationStore: VisibilityObservationStore = new NoopVisibilityObservationStore();
 
-export async function measureAiVisibility(input: {
-  auditId: string;
-  domain: string;
-  entity: EntityAnalysis;
-  profileId?: VisibilityScanProfileId;
-  store?: VisibilityObservationStore;
-}): Promise<VisibilityScore> {
+export async function measureAiVisibility(input: { auditId: string; domain: string; entity: EntityAnalysis; profileId?: VisibilityScanProfileId; store?: VisibilityObservationStore }): Promise<VisibilityScore> {
   const profile = visibilityScanProfiles[input.profileId ?? 'FREE_QUICK_SCAN'];
   const entityProfile = buildEntityProfile(input.domain, input.entity);
   const prompts = generateVisibilityPrompts({ auditId: input.auditId, entity: entityProfile, profile });
-  const providerRegistry = createVisibilityProviderRegistry();
-  const providerStatuses = providerRegistry.map(providerStatus);
-  const providers = providerRegistry.filter((provider) => profile.providerIds.includes(provider.id) && provider.enabled && provider.isConfigured());
+  const registry = createVisibilityProviderRegistry();
+  const providerStatuses = registry.map(providerStatus);
+  const providers = registry.filter((provider) => profile.providerIds.includes(provider.id) && provider.enabled && provider.isConfigured());
 
-  if (providers.length === 0) {
-    return buildNotMeasuredVisibility({
-      profile,
-      prompts,
-      providerStatuses,
-      blocker: VISIBILITY_BLOCKER,
-    });
-  }
+  if (providers.length === 0) return buildNotMeasuredVisibility({ profile, prompts, providerStatuses, blocker: VISIBILITY_BLOCKER });
 
   const executablePrompts = prompts.filter((prompt) => prompt.status === 'generated' && validateVisibilityPrompt(prompt, entityProfile).valid).slice(0, profile.promptCount);
   const costGuard = await validateVisibilityCostGuard(profile, executablePrompts, providers);
@@ -148,11 +82,11 @@ export async function measureAiVisibility(input: {
   }
 
   const observations: VisibilityObservation[] = [];
-  const context: VisibilityExecutionContext = { auditId: input.auditId, entity: entityProfile, profileId: profile.id, timeoutMs: profile.timeoutMs, startedAt: new Date().toISOString() };
   const store = input.store ?? visibilityObservationStore;
+  const context: VisibilityExecutionContext = { auditId: input.auditId, entity: entityProfile, profileId: profile.id, timeoutMs: profile.timeoutMs, startedAt: new Date().toISOString() };
 
-  for (const provider of providers.slice(0, profile.providerIds.length)) {
-    for (const prompt of executablePrompts.slice(0, profile.promptCount)) {
+  for (const provider of providers) {
+    for (const prompt of executablePrompts) {
       if (observations.length >= profile.maxObservations) break;
       const started = Date.now();
       const cacheKey = visibilityCacheKey(entityProfile.canonicalDomain, prompt, provider.id);
@@ -169,21 +103,24 @@ export async function measureAiVisibility(input: {
 
 export function buildEntityProfile(domain: string, entity: EntityAnalysis): EntityProfile {
   const canonicalDomain = normalizeDomain(domain) ?? domain.toLowerCase();
+  const brand = sanitizeEntityText(entity.brandName);
+  const description = sanitizeEntityText(entity.description, 180);
+  const industry = sanitizeEntityText(entity.organizationType);
   return {
-    organizationName: field(sanitizeEntityText(entity.brandName)),
-    alternateNames: field(unique([entity.brandName, canonicalDomain].map(sanitizeEntityText).filter(Boolean) as string[])),
+    ...(brand ? { organizationName: textField(brand) } : {}),
+    alternateNames: listField(unique([brand, canonicalDomain].filter(Boolean) as string[])),
     domain,
     canonicalDomain,
-    description: field(sanitizeEntityText(entity.description, 180)),
-    industry: field(sanitizeEntityText(entity.organizationType)),
-    services: field(sanitizeEntityList(entity.services)),
-    products: field(sanitizeEntityList(entity.products)),
-    expertise: field(sanitizeEntityList(entity.services)),
-    audiences: field(sanitizeEntityList(entity.audience)),
-    problemsSolved: field([]),
-    locations: field(sanitizeEntityList(entity.locations)),
-    people: field(sanitizeEntityList(entity.people)),
-    competitors: field([]),
+    ...(description ? { description: textField(description) } : {}),
+    ...(industry ? { industry: textField(industry) } : {}),
+    services: listField(sanitizeEntityList(entity.services)),
+    products: listField(sanitizeEntityList(entity.products)),
+    expertise: listField(sanitizeEntityList(entity.services)),
+    audiences: listField(sanitizeEntityList(entity.audience)),
+    problemsSolved: listField([]),
+    locations: listField(sanitizeEntityList(entity.locations)),
+    people: listField(sanitizeEntityList(entity.people)),
+    competitors: listField([]),
   };
 }
 
@@ -195,7 +132,6 @@ export function generateVisibilityPrompts(input: { auditId: string; entity: Enti
   const problem = input.entity.problemsSolved.value[0];
   const audience = input.entity.audiences.value[0];
   const location = input.entity.locations.value[0];
-
   const planned: Array<{ category: VisibilityPromptCategory; intent: VisibilityPromptIntent; branded: boolean; query?: string }> = [
     { category: 'BRANDED', intent: 'branded', branded: true, query: brand },
     { category: 'CATEGORY', intent: 'category', branded: false, query: category ? `aziende specializzate in ${category}${location ? ` in ${location}` : ''}` : undefined },
@@ -223,7 +159,8 @@ export function generateVisibilityPrompts(input: { auditId: string; entity: Enti
       createdAt: now,
     };
     const validation = validateVisibilityPrompt(prompt, input.entity);
-    return validation.valid ? prompt : { ...prompt, status: query ? 'invalid' : 'not_generated', validationErrors: validation.errors };
+    if (validation.valid) return prompt;
+    return { ...prompt, status: query ? 'invalid' : 'not_generated', validationErrors: validation.errors };
   });
 }
 
@@ -263,9 +200,7 @@ export class DisabledSearchSurfaceAdapter implements AiVisibilityProviderAdapter
     this.enabled = config.enabled;
   }
 
-  isConfigured(): boolean {
-    return Boolean(process.env[this.apiKeyEnv]);
-  }
+  isConfigured(): boolean { return Boolean(process.env[this.apiKeyEnv]); }
 
   async estimateCost(prompts: VisibilityPrompt[]): Promise<CostEstimate> {
     return { providerId: this.id, requestCount: prompts.length, estimatedCost: prompts.length * 0.01, currency: 'USD' };
@@ -273,28 +208,7 @@ export class DisabledSearchSurfaceAdapter implements AiVisibilityProviderAdapter
 
   async execute(prompt: VisibilityPrompt, context: VisibilityExecutionContext): Promise<VisibilityObservation> {
     const now = new Date().toISOString();
-    return {
-      id: observationId(context.auditId, prompt.id, this.id),
-      auditId: context.auditId,
-      promptId: prompt.id,
-      providerId: this.id,
-      surface: this.surface,
-      engine: this.label,
-      query: prompt.query,
-      startedAt: now,
-      completedAt: now,
-      timestamp: now,
-      status: 'NOT_CONFIGURED',
-      brandMentioned: false,
-      domainCited: false,
-      citedUrls: [],
-      sources: [],
-      competitorsMentioned: [],
-      evidence: 'Provider adapter is prepared but live execution is disabled until credentials and explicit server-side enablement are configured.',
-      errorCode: 'PROVIDER_NOT_CONFIGURED',
-      provider: this.id,
-      confidence: 0,
-    };
+    return { id: observationId(context.auditId, prompt.id, this.id), auditId: context.auditId, promptId: prompt.id, providerId: this.id, surface: this.surface, engine: this.label, query: prompt.query, startedAt: now, completedAt: now, timestamp: now, status: 'NOT_CONFIGURED', brandMentioned: false, domainCited: false, citedUrls: [], sources: [], competitorsMentioned: [], evidence: 'Provider adapter is prepared but live execution is disabled until credentials and explicit server-side enablement are configured.', errorCode: 'PROVIDER_NOT_CONFIGURED', provider: this.id, confidence: 0 };
   }
 }
 
@@ -309,18 +223,10 @@ export async function validateVisibilityCostGuard(profile: VisibilityScanProfile
   return { ok: true, estimatedCost };
 }
 
-export function scoreVisibilityObservations(input: {
-  domain: string;
-  prompts: VisibilityPrompt[];
-  observations: VisibilityObservation[];
-  profile?: VisibilityScanProfile;
-  providerStatuses?: VisibilityProviderStatus[];
-}): VisibilityScore {
+export function scoreVisibilityObservations(input: { domain: string; prompts: VisibilityPrompt[]; observations: VisibilityObservation[]; profile?: VisibilityScanProfile; providerStatuses?: VisibilityProviderStatus[] }): VisibilityScore {
   const profile = input.profile ?? visibilityScanProfiles.FREE_QUICK_SCAN;
   const valid = input.observations.filter(isValidObservation);
-  if (valid.length === 0) {
-    return buildNotMeasuredVisibility({ profile, prompts: input.prompts, providerStatuses: input.providerStatuses ?? [] });
-  }
+  if (valid.length === 0) return buildNotMeasuredVisibility({ profile, prompts: input.prompts, providerStatuses: input.providerStatuses ?? [] });
 
   const brandMatches = valid.filter((observation) => observation.brandMentioned).length;
   const citationMatches = valid.filter((observation) => observation.domainCited || observation.sources?.some((source) => isDomainCitation(source.url, input.domain))).length;
@@ -330,7 +236,6 @@ export function scoreVisibilityObservations(input: {
   const surfaces = new Set(valid.map((observation) => observation.surface ?? observation.engine));
   const surfacesWithBrand = new Set(valid.filter((observation) => observation.brandMentioned).map((observation) => observation.surface ?? observation.engine));
   const citedUrls = unique(valid.flatMap((observation) => normalizeObservationSources(observation).filter((source) => isDomainCitation(source.url, input.domain)).map((source) => source.normalizedUrl)));
-
   const metricBreakdown: VisibilityMetricBreakdown = {
     brandMentionRate: Math.round((brandMatches / valid.length) * 100),
     citationRate: Math.round((citationMatches / valid.length) * 100),
@@ -339,24 +244,8 @@ export function scoreVisibilityObservations(input: {
     crossEngineConsistency: surfaces.size >= 2 ? Math.round((surfacesWithBrand.size / surfaces.size) * 100) : null,
     citationSourceDiversity: citationMatches > 0 ? Math.round((Math.min(citedUrls.length, citationMatches) / citationMatches) * 100) : 0,
   };
-  const score = weightedVisibilityScore(metricBreakdown);
   const coverageDetail = calculateVisibilityCoverage({ profile, prompts: input.prompts, observations: input.observations, metricBreakdown, providerStatuses: input.providerStatuses ?? [] });
-
-  return {
-    state: coverageDetail.value >= profile.measuredCoverageThreshold ? 'measured' : 'partial',
-    score,
-    coverage: coverageDetail.value,
-    coverageDetail,
-    methodologyVersion: AI_VISIBILITY_METHODOLOGY_VERSION,
-    scanProfileId: profile.id,
-    weights: visibilityWeights,
-    prompts: input.prompts,
-    evidence: valid,
-    observations: valid,
-    metricBreakdown,
-    providerCandidates: visibilityProviderCandidates,
-    providerStatuses: input.providerStatuses,
-  };
+  return { state: coverageDetail.value >= profile.measuredCoverageThreshold ? 'measured' : 'partial', score: weightedVisibilityScore(metricBreakdown), coverage: coverageDetail.value, coverageDetail, methodologyVersion: AI_VISIBILITY_METHODOLOGY_VERSION, scanProfileId: profile.id, weights: visibilityWeights, prompts: input.prompts, evidence: valid, observations: valid, metricBreakdown, providerCandidates: visibilityProviderCandidates, providerStatuses: input.providerStatuses };
 }
 
 export function calculateVisibilityCoverage(input: { profile: VisibilityScanProfile; prompts: VisibilityPrompt[]; observations: VisibilityObservation[]; metricBreakdown: VisibilityMetricBreakdown; providerStatuses: VisibilityProviderStatus[] }): VisibilityCoverage {
@@ -368,39 +257,19 @@ export function calculateVisibilityCoverage(input: { profile: VisibilityScanProf
   const measuredProviders = new Set(input.observations.filter(isValidObservation).map((observation) => observation.providerId ?? observation.provider)).size;
   const metricValues = Object.values(input.metricBreakdown);
   const metricAvailability = metricValues.length > 0 ? Math.round((metricValues.filter((value) => value !== null).length / metricValues.length) * 100) : 0;
-
-  if (input.providerStatuses.filter((status) => status.configured && status.enabled).length === 0) {
-    return { value: 0, plannedPrompts, generatedPrompts, executedPrompts: executedPromptIds.size, successfulObservations, plannedProviders, measuredProviders, metricAvailability: 0 };
-  }
-
-  const value = Math.round((
-    ratio(generatedPrompts, plannedPrompts) * 20 +
-    ratio(executedPromptIds.size, plannedPrompts) * 25 +
-    ratio(successfulObservations, plannedPrompts * plannedProviders) * 25 +
-    ratio(measuredProviders, plannedProviders) * 15 +
-    (metricAvailability / 100) * 15
-  ));
-
+  if (input.providerStatuses.filter((status) => status.configured && status.enabled).length === 0) return { value: 0, plannedPrompts, generatedPrompts, executedPrompts: executedPromptIds.size, successfulObservations, plannedProviders, measuredProviders, metricAvailability: 0 };
+  const value = Math.round(ratio(generatedPrompts, plannedPrompts) * 20 + ratio(executedPromptIds.size, plannedPrompts) * 25 + ratio(successfulObservations, plannedPrompts * plannedProviders) * 25 + ratio(measuredProviders, plannedProviders) * 15 + (metricAvailability / 100) * 15);
   return { value, plannedPrompts, generatedPrompts, executedPrompts: executedPromptIds.size, successfulObservations, plannedProviders, measuredProviders, metricAvailability };
 }
 
 export function buildBrandMatcher(entity: EntityProfile): string[] {
-  return unique([
-    entity.organizationName?.value,
-    ...entity.alternateNames.value,
-    entity.canonicalDomain,
-    entity.canonicalDomain.replace(/\.[a-z]{2,}$/i, ''),
-  ].map((item) => normalizeBrandToken(item)).filter(Boolean) as string[]);
+  return unique([entity.organizationName?.value, ...entity.alternateNames.value, entity.canonicalDomain, entity.canonicalDomain.replace(/\.[a-z]{2,}$/i, '')].map((item) => normalizeBrandToken(item)).filter(Boolean) as string[]);
 }
 
 export function matchesBrand(text: string | undefined, aliases: string[]): boolean {
   const normalized = normalizeBrandToken(text);
   if (!normalized) return false;
-  return aliases.some((alias) => {
-    if (!alias) return false;
-    if (alias.includes('.')) return normalized.split(' ').includes(alias.replace(/\./g, ' ')) || normalized.includes(alias.replace(/\./g, ' '));
-    return new RegExp(`(^|\\s)${escapeRegExp(alias)}($|\\s)`, 'i').test(normalized);
-  });
+  return aliases.some((alias) => new RegExp(`(^|\\s)${escapeRegExp(alias)}($|\\s)`, 'i').test(normalized));
 }
 
 export function isDomainCitation(citedUrl: string | undefined, domain: string): boolean {
@@ -412,11 +281,7 @@ export function isDomainCitation(citedUrl: string | undefined, domain: string): 
 
 export function normalizeDomain(value: string | undefined): string | null {
   if (!value) return null;
-  try {
-    return new URL(value.includes('://') ? value : `https://${value}`).hostname.replace(/^www\./i, '').toLowerCase();
-  } catch {
-    return value.replace(/^https?:\/\//i, '').split('/')[0].replace(/^www\./i, '').toLowerCase() || null;
-  }
+  try { return new URL(value.includes('://') ? value : `https://${value}`).hostname.replace(/^www\./i, '').toLowerCase(); } catch { return value.replace(/^https?:\/\//i, '').split('/')[0].replace(/^www\./i, '').toLowerCase() || null; }
 }
 
 export function normalizeVisibilitySource(source: VisibilitySource): VisibilitySource {
@@ -427,9 +292,8 @@ export function normalizeVisibilitySource(source: VisibilitySource): VisibilityS
 export function dedupeSources(sources: VisibilitySource[]): VisibilitySource[] {
   const seen = new Set<string>();
   return sources.map(normalizeVisibilitySource).filter((source) => {
-    const key = source.normalizedUrl;
-    if (seen.has(key)) return false;
-    seen.add(key);
+    if (seen.has(source.normalizedUrl)) return false;
+    seen.add(source.normalizedUrl);
     return true;
   });
 }
@@ -441,22 +305,7 @@ export function visibilityCacheKey(domain: string, prompt: VisibilityPrompt, pro
 function buildNotMeasuredVisibility(input: { profile: VisibilityScanProfile; prompts: VisibilityPrompt[]; providerStatuses: VisibilityProviderStatus[]; blocker?: string }): VisibilityScore {
   const metricBreakdown: VisibilityMetricBreakdown = { brandMentionRate: null, citationRate: null, promptCoverage: null, shareOfVoice: null, crossEngineConsistency: null, citationSourceDiversity: null };
   const coverageDetail: VisibilityCoverage = { value: 0, plannedPrompts: input.profile.promptCount, generatedPrompts: input.prompts.filter((prompt) => prompt.status === 'generated').length, executedPrompts: 0, successfulObservations: 0, plannedProviders: input.profile.providerIds.length, measuredProviders: 0, metricAvailability: 0 };
-  return {
-    state: 'not_measured',
-    score: null,
-    coverage: 0,
-    coverageDetail,
-    methodologyVersion: AI_VISIBILITY_METHODOLOGY_VERSION,
-    blocker: input.blocker ?? VISIBILITY_BLOCKER,
-    scanProfileId: input.profile.id,
-    weights: visibilityWeights,
-    prompts: input.prompts,
-    evidence: [],
-    observations: [],
-    metricBreakdown,
-    providerCandidates: visibilityProviderCandidates,
-    providerStatuses: input.providerStatuses,
-  };
+  return { state: 'not_measured', score: null, coverage: 0, coverageDetail, methodologyVersion: AI_VISIBILITY_METHODOLOGY_VERSION, blocker: input.blocker ?? VISIBILITY_BLOCKER, scanProfileId: input.profile.id, weights: visibilityWeights, prompts: input.prompts, evidence: [], observations: [], metricBreakdown, providerCandidates: visibilityProviderCandidates, providerStatuses: input.providerStatuses };
 }
 
 function providerStatus(provider: AiVisibilityProviderAdapter): VisibilityProviderStatus {
@@ -471,13 +320,7 @@ function validateObservation(observation: VisibilityObservation, entity: EntityP
   if (!isValidObservation(observation)) return observation;
   const aliases = buildBrandMatcher(entity);
   const sources = dedupeSources(normalizeObservationSources(observation));
-  return {
-    ...observation,
-    brandMentioned: observation.brandMentioned || matchesBrand(observation.evidence, aliases) || matchesBrand(observation.brandMentionEvidence, aliases),
-    domainCited: observation.domainCited || sources.some((source) => isDomainCitation(source.url, entity.canonicalDomain)),
-    sources,
-    citedUrls: sources.map((source) => source.url),
-  };
+  return { ...observation, brandMentioned: observation.brandMentioned || matchesBrand(observation.evidence, aliases) || matchesBrand(observation.brandMentionEvidence, aliases), domainCited: observation.domainCited || sources.some((source) => isDomainCitation(source.url, entity.canonicalDomain)), sources, citedUrls: sources.map((source) => source.url) };
 }
 
 function normalizeObservationSources(observation: VisibilityObservation): VisibilitySource[] {
@@ -500,85 +343,28 @@ function weightedVisibilityScore(metricBreakdown: VisibilityMetricBreakdown): nu
 
 function recordVisibilityTelemetry(event: { auditId: string; profileId: string; providerId: string; status: VisibilityObservationStatus; latencyMs: number; estimatedCost: number; errorCode?: string }) {
   if (process.env.AI_SCORE_VISIBILITY_LOGS !== '1') return;
-  console.info('ai-score.visibility', {
-    auditId: event.auditId,
-    profileId: event.profileId,
-    providerId: event.providerId,
-    status: event.status,
-    latencyMs: event.latencyMs,
-    estimatedCost: event.estimatedCost,
-    errorCode: event.errorCode,
-  });
+  console.info('ai-score.visibility', { auditId: event.auditId, profileId: event.profileId, providerId: event.providerId, status: event.status, latencyMs: event.latencyMs, estimatedCost: event.estimatedCost, errorCode: event.errorCode });
 }
 
 function observationId(auditId: string, promptId: string, providerId: string): string {
   return createHash('sha1').update(`${auditId}:${promptId}:${providerId}`).digest('hex').slice(0, 16);
 }
 
-function field<T>(value: T | undefined): EntityProfileField<T> | undefined;
-function field<T>(value: T): EntityProfileField<T>;
-function field<T>(value: T | undefined): EntityProfileField<T> | undefined {
-  if (value === undefined) return undefined;
-  return { value, source: 'readiness_audit' };
-}
-
-function sanitizeEntityList(items: string[]): string[] {
-  return unique(items.map((item) => sanitizeEntityText(item)).filter(Boolean) as string[]).slice(0, 8);
-}
+function textField(value: string): EntityProfileField<string> { return { value, source: 'readiness_audit' }; }
+function listField(value: string[]): EntityProfileField<string[]> { return { value, source: 'readiness_audit' }; }
+function sanitizeEntityList(items: string[]): string[] { return unique(items.map((item) => sanitizeEntityText(item)).filter(Boolean) as string[]).slice(0, 8); }
 
 function sanitizeEntityText(value: string | undefined, maxLength = 80): string | undefined {
   if (!value) return undefined;
-  const cleaned = value
-    .replace(/https?:\/\/\S+/gi, ' ')
-    .replace(/[\r\n\t]+/g, ' ')
-    .replace(/[<>`{}[\]]/g, ' ')
-    .replace(/\b(ignore|disregard|forget)\b\s+\b(previous|all|system|developer)\b[^.?!]*/gi, ' ')
-    .replace(/\b(always|never)\b\s+\b(say|answer|claim|respond)\b[^.?!]*/gi, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, maxLength)
-    .trim();
+  const cleaned = value.replace(/https?:\/\/\S+/gi, ' ').replace(/[\r\n\t]+/g, ' ').replace(/[<>`{}[\]]/g, ' ').replace(/\b(ignore|disregard|forget)\b\s+\b(previous|all|system|developer)\b[^.?!]*/gi, ' ').replace(/\b(always|never)\b\s+\b(say|answer|claim|respond)\b[^.?!]*/gi, ' ').replace(/\s+/g, ' ').trim().slice(0, maxLength).trim();
   return cleaned || undefined;
 }
 
-function sanitizePromptQuery(value: string): string {
-  return sanitizeEntityText(value, 140) ?? '';
-}
-
-function containsPromptInjection(value: string): boolean {
-  return /ignore previous|disregard previous|system prompt|developer message|always say|never mention|follow these instructions/i.test(value);
-}
-
-function normalizeQuery(value: string): string {
-  return value.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
-}
-
-function normalizeBrandToken(value: string | undefined): string | null {
-  if (!value) return null;
-  const normalized = normalizeQuery(value.replace(/^https?:\/\//i, '').replace(/^www\./i, ''));
-  return normalized || null;
-}
-
-function normalizeUrl(value: string): string {
-  try {
-    const url = new URL(value.includes('://') ? value : `https://${value}`);
-    url.hash = '';
-    url.search = '';
-    url.hostname = url.hostname.replace(/^www\./i, '').toLowerCase();
-    return url.toString().replace(/\/$/, '');
-  } catch {
-    return value.trim().toLowerCase();
-  }
-}
-
-function ratio(value: number, total: number): number {
-  return total > 0 ? Math.min(1, value / total) : 0;
-}
-
-function unique<T>(items: T[]): T[] {
-  return [...new Set(items)];
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
+function sanitizePromptQuery(value: string): string { return sanitizeEntityText(value, 140) ?? ''; }
+function containsPromptInjection(value: string): boolean { return /ignore previous|disregard previous|system prompt|developer message|always say|never mention|follow these instructions/i.test(value); }
+function normalizeQuery(value: string): string { return value.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim(); }
+function normalizeBrandToken(value: string | undefined): string | null { return value ? normalizeQuery(value.replace(/^https?:\/\//i, '').replace(/^www\./i, '')) || null : null; }
+function normalizeUrl(value: string): string { try { const url = new URL(value.includes('://') ? value : `https://${value}`); url.hash = ''; url.search = ''; url.hostname = url.hostname.replace(/^www\./i, '').toLowerCase(); return url.toString().replace(/\/$/, ''); } catch { return value.trim().toLowerCase(); } }
+function ratio(value: number, total: number): number { return total > 0 ? Math.min(1, value / total) : 0; }
+function unique<T>(items: T[]): T[] { return [...new Set(items)]; }
+function escapeRegExp(value: string): string { return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
