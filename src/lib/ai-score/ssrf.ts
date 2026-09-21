@@ -91,9 +91,9 @@ export async function safeFetch(rawInput: string | URL, options: SafeFetchOption
 async function fetchOnceWithPinnedDns(url: URL, options: Required<Pick<SafeFetchOptions, 'timeoutMs' | 'maxBytes'>>): Promise<Omit<SafeFetchResult, 'redirects'>> {
   const address = await resolvePublicAddress(url);
   const transport = url.protocol === 'https:' ? https : http;
-  const lookup: NonNullable<RequestOptions['lookup']> = (_hostname, _options, callback) => {
+  const lookup = ((_hostname: string, _options: unknown, callback: (error: NodeJS.ErrnoException | null, address: string, family: number) => void) => {
     callback(null, address.address, address.family);
-  };
+  }) as NonNullable<RequestOptions['lookup']>;
 
   return new Promise((resolve, reject) => {
     const requestOptions: RequestOptions & { servername?: string } = {
