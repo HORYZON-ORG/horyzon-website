@@ -7,6 +7,9 @@ import { AI_SCORE_LIMITS } from './limits';
 
 export const AUDIT_USER_AGENT = 'HoryzonAIScoreBot/1.0 (+https://horyzon.it/ai-score/methodology)';
 
+type PinnedLookup = (hostname: string, options: unknown, callback: (error: NodeJS.ErrnoException | null, address: string, family: number) => void) => void;
+type PinnedRequestOptions = RequestOptions & { lookup: PinnedLookup; servername?: string };
+
 export class UnsafeAuditUrlError extends Error {
   constructor(message: string) {
     super(message);
@@ -91,12 +94,12 @@ export async function safeFetch(rawInput: string | URL, options: SafeFetchOption
 async function fetchOnceWithPinnedDns(url: URL, options: Required<Pick<SafeFetchOptions, 'timeoutMs' | 'maxBytes'>>): Promise<Omit<SafeFetchResult, 'redirects'>> {
   const address = await resolvePublicAddress(url);
   const transport = url.protocol === 'https:' ? https : http;
-  const lookup = ((_hostname: string, _options: unknown, callback: (error: NodeJS.ErrnoException | null, address: string, family: number) => void) => {
+  const lookup: PinnedLookup = (_hostname, _options, callback) => {
     callback(null, address.address, address.family);
-  }) as NonNullable<RequestOptions['lookup']>;
+  };
 
   return new Promise((resolve, reject) => {
-    const requestOptions: RequestOptions & { servername?: string } = {
+    const requestOptions: PinnedRequestOptions = {
       protocol: url.protocol,
       hostname: url.hostname,
       port: url.port,
