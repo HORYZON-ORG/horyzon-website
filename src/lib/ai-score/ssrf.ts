@@ -2,7 +2,6 @@ import dns from 'node:dns/promises';
 import http from 'node:http';
 import https from 'node:https';
 import net from 'node:net';
-import type { LookupFunction } from 'node:dns';
 import type { IncomingHttpHeaders, IncomingMessage, RequestOptions } from 'node:http';
 import { AI_SCORE_LIMITS } from './limits';
 
@@ -92,12 +91,12 @@ export async function safeFetch(rawInput: string | URL, options: SafeFetchOption
 async function fetchOnceWithPinnedDns(url: URL, options: Required<Pick<SafeFetchOptions, 'timeoutMs' | 'maxBytes'>>): Promise<Omit<SafeFetchResult, 'redirects'>> {
   const address = await resolvePublicAddress(url);
   const transport = url.protocol === 'https:' ? https : http;
-  const lookup: LookupFunction = (_hostname, _options, callback) => {
+  const lookup: NonNullable<RequestOptions['lookup']> = (_hostname, _options, callback) => {
     callback(null, address.address, address.family);
   };
 
   return new Promise((resolve, reject) => {
-    const requestOptions: RequestOptions = {
+    const requestOptions: RequestOptions & { servername?: string } = {
       protocol: url.protocol,
       hostname: url.hostname,
       port: url.port,
