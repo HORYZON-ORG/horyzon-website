@@ -1,4 +1,6 @@
+import { PageStructuredData } from '@/components/structured-data';
+import { HOME_DESCRIPTION, HOME_TITLE, pageMetadata } from '@/content/seo';
 import type { Metadata } from "next";
 import { Experience } from "@/components/experience";
-export const metadata: Metadata = { alternates: { canonical: "/" } };
-export default function Home() { return <><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context": "https://schema.org", "@type": "Organization", name: "Horyzon Consulting", legalName: "FELICITÀ srl", url: "https://horyzon.it", email: "info@horyzon.it", taxID: "05120660757" }) }} /><Experience /></>; }
+export const metadata: Metadata = { ...pageMetadata({ path: "/", title: HOME_TITLE, description: HOME_DESCRIPTION }), alternates: { canonical: "https://horyzon.it", types: { "text/markdown": "https://horyzon.it/index.md" } } };
+export default function Home() { return <><PageStructuredData path="/" name={HOME_TITLE} description={HOME_DESCRIPTION} /><Experience /></>; }

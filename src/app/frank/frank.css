@@ -20,7 +20,7 @@
   --frank-lime-soft: #ebff94;
   --frank-gold: #dfc79d;
   --frank-gold-soft: #f0e2ca;
-  --frank-gold-dark: #8c734b;
+  --frank-gold-dark: #755d39;
 
   background: var(--frank-paper);
   color: var(--frank-ink);
@@ -840,6 +840,10 @@
 .frank-experience-section {
   background: var(--frank-dark-950);
   color: #f2eee3;
+}
+
+.frank-experience-section .frank-kicker {
+  color: var(--frank-gold);
 }
 
 .frank-experience-grid {

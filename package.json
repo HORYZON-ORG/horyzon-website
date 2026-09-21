@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "test:search": "node scripts/verify-search.mjs",
     "assets:build": "node scripts/build-landscape.mjs",
     "higgsfield:seedance": "node --env-file=.env.local --no-warnings --experimental-strip-types index.ts",
     "test": "node scripts/verify-build.mjs && node scripts/verify-editorial.mjs && node scripts/verify-narrative.mjs && node --no-warnings --experimental-strip-types scripts/verify-scrub-controller.mjs && node scripts/verify-video-scrub.mjs && node --no-warnings --experimental-strip-types scripts/verify-mobile-controls.mjs && node --no-warnings --experimental-strip-types scripts/verify-higgsfield-seedance.mjs"

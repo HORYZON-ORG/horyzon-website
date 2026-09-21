@@ -1,3 +1,5 @@
+import { PageStructuredData } from '@/components/structured-data';
+import { pageMetadata } from '@/content/seo';
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -5,12 +7,7 @@ import { RadarStory } from '@/components/radar-story';
 import { RADAR_URL } from '@/content/product-truth';
 import './radar-commercial.css';
 
-export const metadata: Metadata = {
-  title: 'Inizia il Radar d’Impresa',
-  description: 'Una prima fotografia guidata di cinque reparti, processi, autonomia dal titolare e uso dell’intelligenza artificiale.',
-  alternates: { canonical: '/radar' },
-  robots: { index: false, follow: true },
-};
+export const metadata: Metadata = pageMetadata({ path: '/radar', title: 'Inizia il Radar d’Impresa', description: 'Una prima fotografia guidata di cinque reparti, processi, autonomia dal titolare e uso dell’intelligenza artificiale.', noindex: true });
 
 const signals = [
   'Le decisioni importanti tornano sempre sulla tua scrivania.',
@@ -58,7 +55,7 @@ function RadarCta({ position, label = 'Inizia il Radar d’Impresa' }: { positio
 }
 
 export default function CommercialRadarPage() {
-  return <div className="radar-commercial">
+  return <div className="radar-commercial"><PageStructuredData path="/radar" name="Inizia il Radar d’Impresa" description="Una prima fotografia guidata di cinque reparti, processi, autonomia dal titolare e uso dell’intelligenza artificiale." />
     <header className="radar-commercial-header">
       <Link className="radar-commercial-brand" href="/" aria-label="Horyzon, homepage"><span aria-hidden="true"/><strong>HORYZON</strong></Link>
       <RadarCta position="header" label="Inizia" />

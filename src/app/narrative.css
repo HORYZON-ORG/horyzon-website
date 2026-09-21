@@ -33,3 +33,6 @@
 @media(max-width:760px){.business-organism{grid-template-columns:1fr}.organism-core{position:relative;top:auto;width:12rem}.platform-story ol{grid-template-columns:1fr}.platform-story li{min-height:14rem;border-right:1px solid var(--narrative-line);border-bottom:0}.platform-story li:last-child{border-bottom:1px solid var(--narrative-line)}.discipline-hierarchy li{grid-template-columns:1fr;gap:.8rem}}
 .contact-paths{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--narrative-line)}.contact-paths article{padding:2rem 2rem 2rem 0;border-bottom:1px solid var(--narrative-line)}.contact-paths article+article{padding-left:2rem;border-left:1px solid var(--narrative-line)}.contact-paths>article>span{font-size:.72rem;color:#8b754b}.contact-form-surface .journey-contact{color:#f2eee3}
 @media(max-width:760px){.contact-paths{grid-template-columns:1fr}.contact-paths article+article{padding-left:0;border-left:0}}
+
+.narrative-page[data-page="radar-impresa"] .inside-hero .fine-print { color: #c3cdcb; }
+.narrative-page[data-page="radar-impresa"] .narrative-section .fine-print { color: #52636a; }
