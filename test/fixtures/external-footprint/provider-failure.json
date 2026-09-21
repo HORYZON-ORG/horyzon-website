@@ -1,0 +1,9 @@
+{
+  "testOnly": true,
+  "case": "provider failure",
+  "domain": "example.com",
+  "providerId": "perplexity_search",
+  "status": "FAILED",
+  "expectedState": "not_measured",
+  "mustNotCountAsBrandAbsence": true
+}
