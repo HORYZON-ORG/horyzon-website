@@ -1,15 +1,17 @@
 import dns from 'node:dns/promises';
+import http from 'node:http';
+import https from 'node:https';
 import net from 'node:net';
+import type { LookupFunction } from 'node:dns';
+import type { IncomingHttpHeaders, IncomingMessage, RequestOptions } from 'node:http';
+import { AI_SCORE_LIMITS } from './limits';
 
-const MAX_REDIRECTS = 4;
-const DEFAULT_TIMEOUT_MS = 8000;
-const DEFAULT_MAX_BYTES = 900_000;
-const AUDIT_USER_AGENT = 'Horyzon-AI-Score/1.0 (+https://horyzon.it/ai-score)';
+export const AUDIT_USER_AGENT = 'HoryzonAIScoreBot/1.0 (+https://horyzon.it/ai-score/methodology)';
 
-export class SafeFetchError extends Error {
-  constructor(message: string, public readonly status = 400) {
+export class UnsafeAuditUrlError extends Error {
+  constructor(message: string) {
     super(message);
-    this.name = 'SafeFetchError';
+    this.name = 'UnsafeAuditUrlError';
   }
 }
 
@@ -21,137 +23,218 @@ export interface SafeFetchResult {
   redirects: string[];
 }
 
-export function normalizeAuditUrl(input: string) {
-  const candidate = input.trim();
-  if (!candidate) throw new SafeFetchError('Inserisci un URL o dominio valido.');
-  const withProtocol = /^[a-z][a-z\d+.-]*:/i.test(candidate) ? candidate : `https://${candidate}`;
+export interface SafeFetchOptions {
+  timeoutMs?: number;
+  maxBytes?: number;
+  maxRedirects?: number;
+}
+
+const METADATA_IP = '169.254.169.254';
+const RESERVED_HOSTS = new Set(['localhost', 'localhost.localdomain', 'ip6-localhost', 'ip6-loopback']);
+
+export function normalizeAuditUrl(rawInput: string): URL {
+  const trimmed = rawInput.trim();
+  const withProtocol = /^[a-z][a-z0-9+.-]*:/i.test(trimmed) ? trimmed : `https://${trimmed}`;
   let url: URL;
+
   try {
     url = new URL(withProtocol);
   } catch {
-    throw new SafeFetchError('URL non valido.');
+    throw new UnsafeAuditUrlError('URL non valido. Inserisci un dominio pubblico o un URL completo.');
   }
-  if (!['http:', 'https:'].includes(url.protocol)) throw new SafeFetchError('Sono consentiti solo URL http e https.');
-  if (url.username || url.password) throw new SafeFetchError('URL con credenziali embedded non consentiti.');
+
+  if (!['http:', 'https:'].includes(url.protocol)) {
+    throw new UnsafeAuditUrlError('Sono consentiti solo URL http e https.');
+  }
+
+  if (url.username || url.password) {
+    throw new UnsafeAuditUrlError('URL con credenziali incorporate non consentiti.');
+  }
+
   url.hash = '';
-  url.hostname = url.hostname.toLowerCase();
-  if (!url.pathname) url.pathname = '/';
+  const hostname = stripIpv6Brackets(url.hostname).toLowerCase();
+  if (!hostname || RESERVED_HOSTS.has(hostname) || hostname.endsWith('.localhost')) {
+    throw new UnsafeAuditUrlError('Destinazione locale non consentita.');
+  }
+
   return url;
 }
 
-export async function safeFetch(input: string | URL, options: { timeoutMs?: number; maxBytes?: number; maxRedirects?: number } = {}): Promise<SafeFetchResult> {
-  let url = normalizeAuditUrl(input.toString());
+export async function safeFetch(rawInput: string | URL, options: SafeFetchOptions = {}): Promise<SafeFetchResult> {
+  const maxRedirects = options.maxRedirects ?? AI_SCORE_LIMITS.maxRedirects;
   const redirects: string[] = [];
-  const maxRedirects = options.maxRedirects ?? MAX_REDIRECTS;
-  for (let hop = 0; hop <= maxRedirects; hop += 1) {
-    await assertPublicDestination(url);
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? DEFAULT_TIMEOUT_MS);
-    let response: Response;
-    try {
-      response = await fetch(url, {
-        redirect: 'manual',
-        cache: 'no-store',
-        signal: controller.signal,
-        headers: {
-          'user-agent': AUDIT_USER_AGENT,
-          accept: 'text/html,application/xhtml+xml,text/plain,application/xml;q=0.8,*/*;q=0.2',
-        },
-      });
-    } catch (error) {
-      const message = error instanceof Error && error.name === 'AbortError' ? 'Timeout durante la richiesta.' : 'Impossibile raggiungere la destinazione.';
-      throw new SafeFetchError(message, 502);
-    } finally {
-      clearTimeout(timeout);
-    }
+  let current = typeof rawInput === 'string' ? normalizeAuditUrl(rawInput) : normalizeAuditUrl(rawInput.toString());
+
+  for (let redirectCount = 0; redirectCount <= maxRedirects; redirectCount += 1) {
+    const response = await fetchOnceWithPinnedDns(current, {
+      timeoutMs: options.timeoutMs ?? AI_SCORE_LIMITS.timeoutMs,
+      maxBytes: options.maxBytes ?? AI_SCORE_LIMITS.maxBytesPerPage,
+    });
 
     if (isRedirect(response.status)) {
       const location = response.headers.get('location');
-      if (!location) throw new SafeFetchError('Redirect senza destinazione valida.', 502);
-      if (hop === maxRedirects) throw new SafeFetchError('Troppi redirect durante la scansione.', 508);
-      url = normalizeAuditUrl(new URL(location, url).toString());
-      redirects.push(url.toString());
+      if (!location) return { ...response, redirects };
+      if (redirectCount === maxRedirects) {
+        throw new UnsafeAuditUrlError('Limite redirect superato durante la scansione.');
+      }
+      const next = normalizeAuditUrl(new URL(location, current).toString());
+      redirects.push(next.toString());
+      current = next;
       continue;
     }
 
-    const body = await readLimitedBody(response, options.maxBytes ?? DEFAULT_MAX_BYTES);
-    return { url: url.toString(), status: response.status, headers: response.headers, body, redirects };
+    return { ...response, redirects };
   }
-  throw new SafeFetchError('Troppi redirect durante la scansione.', 508);
+
+  throw new UnsafeAuditUrlError('Limite redirect superato durante la scansione.');
 }
 
-async function assertPublicDestination(url: URL) {
-  if (url.hostname === 'localhost' || url.hostname.endsWith('.localhost')) throw new SafeFetchError('Destinazione locale non consentita.');
-  const directIpVersion = net.isIP(url.hostname);
-  const addresses = directIpVersion ? [{ address: url.hostname, family: directIpVersion }] : await resolveHostname(url.hostname);
-  if (!addresses.length) throw new SafeFetchError('DNS resolution non riuscita.', 400);
-  for (const address of addresses) {
-    if (!isPublicIp(address.address)) throw new SafeFetchError('Destinazione non pubblica non consentita.');
-  }
+async function fetchOnceWithPinnedDns(url: URL, options: Required<Pick<SafeFetchOptions, 'timeoutMs' | 'maxBytes'>>): Promise<Omit<SafeFetchResult, 'redirects'>> {
+  const address = await resolvePublicAddress(url);
+  const transport = url.protocol === 'https:' ? https : http;
+  const lookup: LookupFunction = (_hostname, _options, callback) => {
+    callback(null, address.address, address.family);
+  };
+
+  return new Promise((resolve, reject) => {
+    const requestOptions: RequestOptions = {
+      protocol: url.protocol,
+      hostname: url.hostname,
+      port: url.port,
+      path: `${url.pathname}${url.search}`,
+      method: 'GET',
+      timeout: options.timeoutMs,
+      lookup,
+      headers: {
+        Host: url.host,
+        'User-Agent': AUDIT_USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,text/plain;q=0.8,*/*;q=0.5',
+        'Accept-Encoding': 'identity',
+      },
+    };
+
+    if (url.protocol === 'https:') {
+      requestOptions.servername = stripIpv6Brackets(url.hostname);
+    }
+
+    const req = transport.request(requestOptions, (res: IncomingMessage) => {
+      const chunks: Buffer[] = [];
+      let total = 0;
+
+      res.on('data', (chunk: Buffer) => {
+        total += chunk.length;
+        if (total > options.maxBytes) {
+          req.destroy(new UnsafeAuditUrlError('Risposta troppo grande per l’audit gratuito.'));
+          return;
+        }
+        chunks.push(chunk);
+      });
+
+      res.on('end', () => {
+        resolve({
+          url: url.toString(),
+          status: res.statusCode ?? 0,
+          headers: toHeaders(res.headers),
+          body: Buffer.concat(chunks).toString('utf8'),
+        });
+      });
+    });
+
+    req.on('socket', (socket) => {
+      socket.on('connect', () => {
+        const remoteAddress = socket.remoteAddress;
+        if (remoteAddress && !isPublicIp(remoteAddress)) {
+          req.destroy(new UnsafeAuditUrlError('La destinazione risolta non è pubblica.'));
+        }
+      });
+      socket.on('secureConnect', () => {
+        const remoteAddress = socket.remoteAddress;
+        if (remoteAddress && !isPublicIp(remoteAddress)) {
+          req.destroy(new UnsafeAuditUrlError('La destinazione TLS risolta non è pubblica.'));
+        }
+      });
+    });
+
+    req.on('timeout', () => req.destroy(new UnsafeAuditUrlError('Timeout durante la scansione.')));
+    req.on('error', reject);
+    req.end();
+  });
 }
 
-async function resolveHostname(hostname: string) {
-  try {
-    return await dns.lookup(hostname, { all: true, verbatim: true });
-  } catch {
-    throw new SafeFetchError('DNS resolution non riuscita.', 400);
+export async function resolvePublicAddress(url: URL): Promise<{ address: string; family: 4 | 6 }> {
+  const hostname = stripIpv6Brackets(url.hostname).toLowerCase();
+  const directFamily = net.isIP(hostname);
+
+  if (directFamily) {
+    if (!isPublicIp(hostname)) {
+      throw new UnsafeAuditUrlError('Destinazione non pubblica non consentita.');
+    }
+    return { address: hostname, family: directFamily as 4 | 6 };
   }
+
+  const records = await dns.lookup(hostname, { all: true, verbatim: true });
+  const publicRecords = records.filter((record) => isPublicIp(record.address));
+  if (publicRecords.length === 0) {
+    throw new UnsafeAuditUrlError('La destinazione risolve verso indirizzi non pubblici.');
+  }
+
+  return {
+    address: publicRecords[0].address,
+    family: publicRecords[0].family as 4 | 6,
+  };
 }
 
-function isRedirect(status: number) {
+export function isPublicIp(rawAddress: string): boolean {
+  const address = stripIpv6Brackets(rawAddress).toLowerCase();
+  const mappedV4 = address.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+  if (mappedV4) return isPublicIp(mappedV4[1]);
+
+  const family = net.isIP(address);
+  if (family === 4) return isPublicIpv4(address);
+  if (family === 6) return isPublicIpv6(address);
+  return false;
+}
+
+function isPublicIpv4(address: string): boolean {
+  const parts = address.split('.').map((part) => Number(part));
+  if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) return false;
+  const [a, b] = parts;
+  if (address === METADATA_IP) return false;
+  if (a === 0 || a === 10 || a === 127) return false;
+  if (a === 100 && b >= 64 && b <= 127) return false;
+  if (a === 169 && b === 254) return false;
+  if (a === 172 && b >= 16 && b <= 31) return false;
+  if (a === 192 && b === 0) return false;
+  if (a === 192 && b === 168) return false;
+  if (a === 198 && (b === 18 || b === 19)) return false;
+  if (a >= 224) return false;
+  return true;
+}
+
+function isPublicIpv6(address: string): boolean {
+  if (address === '::' || address === '::1') return false;
+  if (address.startsWith('fc') || address.startsWith('fd')) return false;
+  if (address.startsWith('fe8') || address.startsWith('fe9') || address.startsWith('fea') || address.startsWith('feb')) return false;
+  if (address.startsWith('ff')) return false;
+  if (address.startsWith('2001:db8')) return false;
+  if (address.startsWith('2001:2')) return false;
+  if (address.startsWith('2001:10')) return false;
+  return true;
+}
+
+function stripIpv6Brackets(hostname: string): string {
+  return hostname.replace(/^\[/, '').replace(/\]$/, '');
+}
+
+function isRedirect(status: number): boolean {
   return [301, 302, 303, 307, 308].includes(status);
 }
 
-async function readLimitedBody(response: Response, maxBytes: number) {
-  if (!response.body) return '';
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let received = 0;
-  let body = '';
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    received += value.byteLength;
-    if (received > maxBytes) throw new SafeFetchError('Risposta troppo grande per l’audit gratuito.', 413);
-    body += decoder.decode(value, { stream: true });
+function toHeaders(source: IncomingHttpHeaders): Headers {
+  const headers = new Headers();
+  for (const [key, value] of Object.entries(source)) {
+    if (Array.isArray(value)) headers.set(key, value.join(', '));
+    else if (typeof value === 'string') headers.set(key, value);
   }
-  body += decoder.decode();
-  return body;
-}
-
-function isPublicIp(ip: string) {
-  return net.isIP(ip) === 4 ? isPublicIpv4(ip) : isPublicIpv6(ip);
-}
-
-function isPublicIpv4(ip: string) {
-  const octets = ip.split('.').map(Number);
-  if (octets.length !== 4 || octets.some(octet => Number.isNaN(octet) || octet < 0 || octet > 255)) return false;
-  const value = (((octets[0] * 256 + octets[1]) * 256 + octets[2]) * 256 + octets[3]) >>> 0;
-  return ![
-    [0x00000000, 0xff000000],
-    [0x0a000000, 0xff000000],
-    [0x64400000, 0xffc00000],
-    [0x7f000000, 0xff000000],
-    [0xa9fe0000, 0xffff0000],
-    [0xac100000, 0xfff00000],
-    [0xc0000000, 0xffffff00],
-    [0xc0000200, 0xffffff00],
-    [0xc0a80000, 0xffff0000],
-    [0xc6120000, 0xfffe0000],
-    [0xc6336400, 0xffffff00],
-    [0xcb007100, 0xffffff00],
-    [0xe0000000, 0xf0000000],
-    [0xf0000000, 0xf0000000],
-  ].some(([range, mask]) => (value & mask) === range);
-}
-
-function isPublicIpv6(ip: string) {
-  const normalized = ip.toLowerCase();
-  if (normalized === '::' || normalized === '::1') return false;
-  if (normalized.startsWith('::ffff:')) return isPublicIpv4(normalized.slice(7));
-  if (normalized.startsWith('fc') || normalized.startsWith('fd')) return false;
-  if (normalized.startsWith('fe8') || normalized.startsWith('fe9') || normalized.startsWith('fea') || normalized.startsWith('feb')) return false;
-  if (normalized.startsWith('ff')) return false;
-  if (normalized.startsWith('2001:db8')) return false;
-  return true;
+  return headers;
 }
