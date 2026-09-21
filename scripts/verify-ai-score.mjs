@@ -27,8 +27,9 @@ assert.doesNotMatch(audit, /remediationSummary\.length \* 2/, 'Old fake potentia
 for (const blocked of ['a === 10', 'a === 127', 'a === 169 && b === 254', 'address === METADATA_IP', "address === '::1'", "address.startsWith('fc')"]) {
   assert.ok(ssrf.includes(blocked), `SSRF guard missing ${blocked}`);
 }
-assert.match(ssrf, /lookup: NonNullable<RequestOptions\['lookup'\]>/, 'Fetcher must use pinned DNS lookup');
+assert.match(ssrf, /type PinnedLookup/, 'Fetcher must use a pinned DNS lookup');
+assert.match(ssrf, /lookup,/, 'Pinned lookup must be passed to the request options');
 assert.match(ssrf, /socket\.remoteAddress/, 'Fetcher must validate remote socket address');
-assert.match(audit, /classifyPageType\('https:\/\/example\.com\/chi-siamo'|classifyPageType\(url: string/, 'Page classification must be exposed');
+assert.match(audit, /export function classifyPageType\(url: string/, 'Page classification must be exposed');
 
 console.log('AI Score verifier passed');
