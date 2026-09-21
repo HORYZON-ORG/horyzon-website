@@ -1,0 +1,13 @@
+{
+  "testOnly": true,
+  "case": "independent editorial",
+  "domain": "example.com",
+  "result": {
+    "title": "How Example Consulting helps companies adopt AI",
+    "url": "https://industrymagazine.test/articles/example-consulting-ai",
+    "domain": "industrymagazine.test",
+    "snippet": "An editorial article describes Example Consulting as an AI consulting company."
+  },
+  "expectedClassification": "INDEPENDENT_EDITORIAL",
+  "countsAsIndependent": true
+}
