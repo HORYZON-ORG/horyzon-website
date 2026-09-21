@@ -1,0 +1,13 @@
+{
+  "testOnly": true,
+  "case": "directory",
+  "domain": "example.com",
+  "result": {
+    "title": "Example Consulting reviews and company profile",
+    "url": "https://clutch.co/profile/example-consulting",
+    "domain": "clutch.co",
+    "snippet": "Directory listing for Example Consulting."
+  },
+  "expectedClassification": "DIRECTORY",
+  "countsAsIndependent": true
+}
