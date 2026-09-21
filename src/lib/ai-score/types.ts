@@ -65,7 +65,7 @@ export interface AuditCheck {
   status: CheckStatus;
   pointsEarned: number;
   pointsAvailable: number;
-  weightClass: CheckWeightClass;
+  weightClass?: CheckWeightClass;
   measured: boolean;
   evidence: AuditEvidence[];
   definitionVersion?: string;
@@ -182,8 +182,8 @@ export interface VisibilityScore {
   weights: Record<'brandMentionRate' | 'citationRate' | 'promptCoverage' | 'shareOfVoice' | 'crossEngineConsistency' | 'citationSourceDiversity', number>;
   prompts: VisibilityPrompt[];
   evidence: VisibilityEvidence[];
-  observations: VisibilityObservation[];
-  metricBreakdown: VisibilityMetricBreakdown;
+  observations?: VisibilityObservation[];
+  metricBreakdown?: VisibilityMetricBreakdown;
   providerCandidates?: VisibilityProviderCandidate[];
 }
 
@@ -252,7 +252,7 @@ export interface FreeAuditResult {
   analyzedAt: string;
   methodologyVersion: string;
   readiness: { state: AuditMetricState; score: number | null };
-  readinessCoverage: ReadinessCoverage;
+  readinessCoverage?: ReadinessCoverage;
   visibility: VisibilityScore;
   confidence: ConfidenceBreakdown & { value: number };
   interpretation: string;
