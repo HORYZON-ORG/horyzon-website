@@ -11,6 +11,8 @@ export type OpportunitySeverity = 'critical' | 'important' | 'optimization';
 export type PageClassification = 'home' | 'about' | 'contact' | 'service' | 'product' | 'article' | 'legal' | 'other';
 export type PotentialScoreState = 'not_calculated' | 'calculated';
 export type ProviderMeasurementState = 'measured' | 'not_measured' | 'partial' | 'failed';
+export type CheckWeightClass = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+export type ReadinessCoverageLabel = 'complete' | 'partial' | 'limited';
 
 export type ReadinessCategoryId =
   | 'crawlability_indexability'
@@ -36,6 +38,7 @@ export interface AuditCheckDefinition {
   label: string;
   description: string;
   weight: number;
+  weightClass: CheckWeightClass;
   evidenceRequirements: string[];
   aggregation: 'site' | 'page_sample' | 'provider' | 'derived';
 }
@@ -62,6 +65,7 @@ export interface AuditCheck {
   status: CheckStatus;
   pointsEarned: number;
   pointsAvailable: number;
+  weightClass: CheckWeightClass;
   measured: boolean;
   evidence: AuditEvidence[];
   definitionVersion?: string;
@@ -76,8 +80,18 @@ export interface CategoryScore {
   score: number | null;
   pointsEarned: number;
   pointsAvailable: number;
+  coverage: number;
   checksMeasured: number;
   checksApplicable: number;
+}
+
+export interface ReadinessCoverage {
+  value: number;
+  label: ReadinessCoverageLabel;
+  measuredWeight: number;
+  applicableWeight: number;
+  measuredChecks: number;
+  applicableChecks: number;
 }
 
 export interface CrawledPage {
@@ -119,13 +133,14 @@ export interface VisibilityPrompt {
   id: string;
   auditId: string;
   query: string;
-  intent: 'brand' | 'sector' | 'service' | 'problem' | 'non_branded' | 'competitor';
+  intent: 'branded' | 'category' | 'service' | 'problem' | 'recommendation_discovery' | 'competitor';
   category: string;
   generatedBy: 'system' | 'human' | 'provider';
   approved: boolean;
+  status: 'generated' | 'approved' | 'rejected';
 }
 
-export interface VisibilityEvidence {
+export interface VisibilityObservation {
   promptId: string;
   engine: string;
   timestamp: string;
@@ -139,6 +154,26 @@ export interface VisibilityEvidence {
   confidence: number;
 }
 
+export type VisibilityEvidence = VisibilityObservation;
+
+export interface VisibilityMetricBreakdown {
+  brandMentionRate: number | null;
+  citationRate: number | null;
+  promptCoverage: number | null;
+  shareOfVoice: number | null;
+  crossEngineConsistency: number | null;
+  citationSourceDiversity: number | null;
+}
+
+export interface VisibilityProviderCandidate {
+  id: string;
+  label: string;
+  surface: 'answer_engine' | 'grounded_search' | 'search_api';
+  evidenceAvailable: string[];
+  requiresCredential: boolean;
+  blocker: string;
+}
+
 export interface VisibilityScore {
   state: ProviderMeasurementState;
   score: number | null;
@@ -147,6 +182,9 @@ export interface VisibilityScore {
   weights: Record<'brandMentionRate' | 'citationRate' | 'promptCoverage' | 'shareOfVoice' | 'crossEngineConsistency' | 'citationSourceDiversity', number>;
   prompts: VisibilityPrompt[];
   evidence: VisibilityEvidence[];
+  observations: VisibilityObservation[];
+  metricBreakdown: VisibilityMetricBreakdown;
+  providerCandidates?: VisibilityProviderCandidate[];
 }
 
 export interface ExternalBrandFootprintResult {
@@ -214,6 +252,7 @@ export interface FreeAuditResult {
   analyzedAt: string;
   methodologyVersion: string;
   readiness: { state: AuditMetricState; score: number | null };
+  readinessCoverage: ReadinessCoverage;
   visibility: VisibilityScore;
   confidence: ConfidenceBreakdown & { value: number };
   interpretation: string;
