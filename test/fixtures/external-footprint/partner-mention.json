@@ -1,0 +1,13 @@
+{
+  "testOnly": true,
+  "case": "partner mention",
+  "domain": "example.com",
+  "result": {
+    "title": "Our AI transformation partners",
+    "url": "https://partner.test/case-studies/example-consulting",
+    "domain": "partner.test",
+    "snippet": "Partner case study describing collaboration with Example Consulting."
+  },
+  "expectedClassification": "PARTNER",
+  "countsAsIndependent": true
+}
