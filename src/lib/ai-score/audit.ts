@@ -209,6 +209,10 @@ async function fetchOptional(url: string): Promise<OptionalFetch> {
   }
 }
 
+function optionalFetchLabel(fetch: OptionalFetch): string {
+  return fetch.status === 'measured' ? fetch.url : fetch.reason;
+}
+
 function analyzePage(url: string, status: number, headers: Headers, html: string, depth: number): PageFacts {
   const text = extractVisibleText(html);
   const links = extractAttributes(html, 'a', 'href').map((href) => absolutize(url, href)).filter(Boolean) as string[];
@@ -239,6 +243,7 @@ function analyzePage(url: string, status: number, headers: Headers, html: string
     lang: firstMatch(html, /<html[^>]+lang=["']([^"']+)["']/i),
     viewport: metaContent(html, 'viewport'),
     contentType: headers.get('content-type') ?? undefined,
+    headers,
     h1,
     h2,
     h3,
@@ -303,11 +308,14 @@ function buildChecks(context: AuditContext, entity: EntityAnalysis): AuditCheck[
   const checks: AuditCheck[] = [];
   const measuredPages = context.pages.filter((page) => page.statusCode >= 200 && page.statusCode < 400);
   const averageWords = measuredPages.length ? measuredPages.reduce((sum, page) => sum + page.wordCount, 0) / measuredPages.length : 0;
-  const hasRobots = context.robots.status === 'measured';
-  const robotsBody = hasRobots ? context.robots.body : '';
-  const hasSitemap = context.sitemap.status === 'measured';
-  const sitemapBody = hasSitemap ? context.sitemap.body : '';
-  const hasLlms = context.llms.status === 'measured';
+  const robotsFetch = context.robots.status === 'measured' ? context.robots : null;
+  const sitemapFetch = context.sitemap.status === 'measured' ? context.sitemap : null;
+  const llmsFetch = context.llms.status === 'measured' ? context.llms : null;
+  const hasRobots = robotsFetch !== null;
+  const robotsBody = robotsFetch?.body ?? '';
+  const hasSitemap = sitemapFetch !== null;
+  const sitemapBody = sitemapFetch?.body ?? '';
+  const hasLlms = llmsFetch !== null;
 
   const add = (id: string, status: CheckStatus, evidence: AuditEvidence[], measured = status !== 'unknown' && status !== 'not_applicable') => {
     const definition = auditCheckDefinitions.find((item) => item.id === id);
@@ -350,10 +358,10 @@ function buildChecks(context: AuditContext, entity: EntityAnalysis): AuditCheck[
   add('canonical_same_origin', context.home.canonical ? (isSameOrigin(new URL(context.home.finalUrl), absolutize(context.home.finalUrl, context.home.canonical) ?? '') ? 'pass' : 'fail') : 'unknown', [ev('canonical_same_origin', 'Canonical', context.home.canonical ?? 'Not found')], Boolean(context.home.canonical));
   add('meta_robots_indexable', blocksIndexing(context.home.metaRobots) ? 'fail' : context.home.metaRobots ? 'pass' : 'partial', [ev('meta_robots_indexable', 'Meta robots', context.home.metaRobots ?? 'Not declared')]);
   add('x_robots_indexable', blocksIndexing(context.home.xRobots) ? 'fail' : context.home.xRobots ? 'pass' : 'partial', [ev('x_robots_indexable', 'X-Robots-Tag', context.home.xRobots ?? 'Not declared')]);
-  add('robots_txt_available', hasRobots ? 'pass' : 'partial', [ev('robots_txt_available', 'robots.txt', hasRobots ? context.robots.url : context.robots.reason, hasRobots ? context.robots.url : context.home.finalUrl)]);
+  add('robots_txt_available', hasRobots ? 'pass' : 'partial', [ev('robots_txt_available', 'robots.txt', optionalFetchLabel(context.robots), robotsFetch?.url ?? context.home.finalUrl)]);
   add('robots_allows_googlebot', hasRobots ? (robotsDisallows(robotsBody, 'googlebot') ? 'fail' : 'pass') : 'unknown', [ev('robots_allows_googlebot', 'Googlebot policy', hasRobots ? summarizeRobots(robotsBody, 'googlebot') : 'Not measured', context.home.finalUrl, 'derived')], hasRobots);
   add('robots_allows_oai_searchbot', hasRobots ? (robotsDisallows(robotsBody, 'oai-searchbot') ? 'fail' : 'pass') : 'unknown', [ev('robots_allows_oai_searchbot', 'OAI-SearchBot policy', hasRobots ? summarizeRobots(robotsBody, 'oai-searchbot') : 'Not measured', context.home.finalUrl, 'derived')], hasRobots);
-  add('sitemap_available', hasSitemap ? 'pass' : 'partial', [ev('sitemap_available', 'sitemap.xml', hasSitemap ? context.sitemap.url : context.sitemap.reason, hasSitemap ? context.sitemap.url : context.home.finalUrl)]);
+  add('sitemap_available', hasSitemap ? 'pass' : 'partial', [ev('sitemap_available', 'sitemap.xml', optionalFetchLabel(context.sitemap), sitemapFetch?.url ?? context.home.finalUrl)]);
   add('sitemap_same_origin_urls', hasSitemap ? (sitemapSameOrigin(sitemapBody, context.home.finalUrl) ? 'pass' : 'partial') : 'unknown', [ev('sitemap_same_origin_urls', 'Sitemap loc count', String(countSitemapUrls(sitemapBody)), context.home.finalUrl, 'derived')], hasSitemap);
   add('internal_links_present', context.home.internalLinks.length >= 5 ? 'pass' : context.home.internalLinks.length > 0 ? 'partial' : 'fail', [ev('internal_links_present', 'Internal links', String(context.home.internalLinks.length))]);
   add('crawl_sample_accessible', context.pages.length >= 4 ? 'pass' : context.pages.length >= 2 ? 'partial' : 'fail', [ev('crawl_sample_accessible', 'Pages fetched', String(context.pages.length), context.home.finalUrl, 'derived')]);
@@ -421,7 +429,7 @@ function buildChecks(context: AuditContext, entity: EntityAnalysis): AuditCheck[
   add('stale_signals_limited', measuredPages.some((page) => /\b(201[0-9]|2020|2021)\b/i.test(page.text)) ? 'partial' : 'pass', [ev('stale_signals_limited', 'Old year signals', 'Derived from visible text', context.home.finalUrl, 'heuristic')]);
 
   add('ai_crawler_policy', hasRobots && /oai-searchbot|gptbot|claudebot|perplexitybot|google-extended/i.test(robotsBody) ? 'pass' : 'partial', [ev('ai_crawler_policy', 'AI crawler policy', hasRobots ? String(/oai-searchbot|gptbot|claudebot|perplexitybot|google-extended/i.test(robotsBody)) : 'robots not measured', context.home.finalUrl, 'derived')]);
-  add('llms_txt_minor_signal', hasLlms ? 'pass' : 'not_applicable', [ev('llms_txt_minor_signal', 'llms.txt', hasLlms ? context.llms.url : 'N/A', hasLlms ? context.llms.url : context.home.finalUrl)], hasLlms);
+  add('llms_txt_minor_signal', hasLlms ? 'pass' : 'not_applicable', [ev('llms_txt_minor_signal', 'llms.txt', llmsFetch?.url ?? 'N/A', llmsFetch?.url ?? context.home.finalUrl)], hasLlms);
   add('semantic_navigation', context.home.hasNav && context.home.internalLinks.length >= 5 ? 'pass' : context.home.hasNav ? 'partial' : 'fail', [ev('semantic_navigation', 'Navigation/internal links', `${context.home.hasNav}/${context.home.internalLinks.length}`)]);
   add('machine_readable_alternatives', /\.md\b|application\/json|rss|atom/i.test(context.home.html) ? 'pass' : 'not_applicable', [ev('machine_readable_alternatives', 'Alternatives', 'N/A unless explicit feeds, markdown or API links are detected')], /\.md\b|application\/json|rss|atom/i.test(context.home.html));
   add('agent_protocols_applicable', 'not_applicable', [ev('agent_protocols_applicable', 'Agent protocols', 'N/A: no commerce/API/MCP requirement inferred')], false);
