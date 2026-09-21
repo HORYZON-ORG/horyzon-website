@@ -7,7 +7,10 @@ import { AI_SCORE_LIMITS } from './limits';
 
 export const AUDIT_USER_AGENT = 'HoryzonAIScoreBot/1.0 (+https://horyzon.it/ai-score/methodology)';
 
-type PinnedLookup = (hostname: string, options: unknown, callback: (error: NodeJS.ErrnoException | null, address: string, family: number) => void) => void;
+type PinnedLookupOptions = { all?: boolean } | null | undefined;
+type PinnedLookupAddress = { address: string; family: 4 | 6 };
+type PinnedLookupCallback = (error: NodeJS.ErrnoException | null, address: string | PinnedLookupAddress[], family?: number) => void;
+type PinnedLookup = (hostname: string, options: PinnedLookupOptions, callback: PinnedLookupCallback) => void;
 type PinnedRequestOptions = RequestOptions & { lookup: PinnedLookup; servername?: string };
 
 export class UnsafeAuditUrlError extends Error {
@@ -94,7 +97,11 @@ export async function safeFetch(rawInput: string | URL, options: SafeFetchOption
 async function fetchOnceWithPinnedDns(url: URL, options: Required<Pick<SafeFetchOptions, 'timeoutMs' | 'maxBytes'>>): Promise<Omit<SafeFetchResult, 'redirects'>> {
   const address = await resolvePublicAddress(url);
   const transport = url.protocol === 'https:' ? https : http;
-  const lookup: PinnedLookup = (_hostname, _options, callback) => {
+  const lookup: PinnedLookup = (_hostname, lookupOptions, callback) => {
+    if (lookupOptions?.all) {
+      callback(null, [{ address: address.address, family: address.family }]);
+      return;
+    }
     callback(null, address.address, address.family);
   };
 
