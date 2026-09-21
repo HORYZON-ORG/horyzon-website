@@ -1,0 +1,10 @@
+{
+  "testOnly": true,
+  "case": "duplicate results",
+  "domain": "example.com",
+  "results": [
+    { "title": "Example Consulting profile", "url": "https://directory.test/profile/example?utm_source=x", "domain": "directory.test" },
+    { "title": "Example Consulting profile", "url": "https://www.directory.test/profile/example", "domain": "www.directory.test" }
+  ],
+  "expectedDedupedCount": 1
+}
