@@ -4,8 +4,13 @@ export type AuditMetricState = 'measured' | 'not_measured' | 'partial' | 'failed
 export type EvidenceConfidenceLabel = 'HIGH' | 'MEDIUM' | 'LOW';
 export type CheckStatus = 'pass' | 'partial' | 'fail' | 'not_applicable' | 'unknown';
 export type EvidenceVerification = 'present' | 'verified' | 'inferred';
+export type EvidenceVerificationLevel = 'direct' | 'derived' | 'heuristic' | 'external' | 'provider' | 'not_measured';
+export type EvidenceSourceType = 'html' | 'http' | 'robots' | 'sitemap' | 'structured_data' | 'headers' | 'provider' | 'derived';
 export type StructuredDataStatus = 'valid' | 'incomplete' | 'invalid' | 'not_applicable' | 'unknown';
 export type OpportunitySeverity = 'critical' | 'important' | 'optimization';
+export type PageClassification = 'home' | 'about' | 'contact' | 'service' | 'product' | 'article' | 'legal' | 'other';
+export type PotentialScoreState = 'not_calculated' | 'calculated';
+export type ProviderMeasurementState = 'measured' | 'not_measured' | 'partial' | 'failed';
 
 export type ReadinessCategoryId =
   | 'crawlability_indexability'
@@ -25,11 +30,29 @@ export interface ReadinessCategoryDefinition {
   description: string;
 }
 
+export interface AuditCheckDefinition {
+  id: string;
+  categoryId: ReadinessCategoryId;
+  label: string;
+  description: string;
+  weight: number;
+  evidenceRequirements: string[];
+  aggregation: 'site' | 'page_sample' | 'provider' | 'derived';
+}
+
 export interface AuditEvidence {
+  id?: string;
+  checkId?: string;
   label: string;
   value: string;
   sourceUrl?: string;
+  sourceType?: EvidenceSourceType;
+  pageType?: PageClassification;
+  excerpt?: string;
+  collectedAt?: string;
+  confidence?: number;
   verification: EvidenceVerification;
+  verificationLevel?: EvidenceVerificationLevel;
 }
 
 export interface AuditCheck {
@@ -41,6 +64,8 @@ export interface AuditCheck {
   pointsAvailable: number;
   measured: boolean;
   evidence: AuditEvidence[];
+  definitionVersion?: string;
+  aggregation?: AuditCheckDefinition['aggregation'];
 }
 
 export interface CategoryScore {
@@ -53,6 +78,41 @@ export interface CategoryScore {
   pointsAvailable: number;
   checksMeasured: number;
   checksApplicable: number;
+}
+
+export interface CrawledPage {
+  url: string;
+  finalUrl: string;
+  statusCode: number;
+  depth: number;
+  classification: PageClassification;
+  classificationConfidence: number;
+  title?: string;
+  h1: string[];
+  wordCount: number;
+  internalLinks: string[];
+  fetchedAt: string;
+}
+
+export interface CrawlSummary {
+  requestedLimit: number;
+  pagesFetched: number;
+  pagesFailed: number;
+  duplicateUrlsSkipped: number;
+  classifications: Partial<Record<PageClassification, number>>;
+  pages: CrawledPage[];
+}
+
+export interface ConfidenceBreakdown {
+  score: number;
+  label: EvidenceConfidenceLabel;
+  checksCoverage: number;
+  evidenceQuality: number;
+  categoryCoverage: number;
+  crawlCoverage: number;
+  visibilityCoverage: number;
+  externalCoverage: number;
+  appliedFormulaVersion: string;
 }
 
 export interface VisibilityPrompt {
@@ -80,7 +140,7 @@ export interface VisibilityEvidence {
 }
 
 export interface VisibilityScore {
-  state: 'measured' | 'not_measured' | 'partial' | 'failed';
+  state: ProviderMeasurementState;
   score: number | null;
   methodologyVersion: string;
   blocker?: string;
@@ -89,15 +149,29 @@ export interface VisibilityScore {
   evidence: VisibilityEvidence[];
 }
 
+export interface ExternalBrandFootprintResult {
+  state: ProviderMeasurementState;
+  provider: string;
+  measuredAt?: string;
+  blocker?: string;
+  brandMentions: number | null;
+  independentSources: number | null;
+  officialProfiles: string[];
+  evidence: AuditEvidence[];
+}
+
 export interface EntityAnalysis {
   brandName?: string;
   organizationType?: string;
   description?: string;
   services: string[];
+  products: string[];
+  audience: string[];
   people: string[];
   locations: string[];
   sameAs: string[];
   ambiguitySignals: string[];
+  sourcePages: string[];
 }
 
 export interface RemediationItem {
@@ -109,14 +183,26 @@ export interface RemediationItem {
   priority: OpportunitySeverity;
   effort: 'low' | 'medium' | 'high';
   expectedImpact: 'low' | 'medium' | 'high';
+  evidenceIds: string[];
+  confidence: number;
+  scoreImpact: number;
+}
+
+export interface PotentialScore {
+  state: PotentialScoreState;
+  score: number | null;
+  blocker?: string;
+  calculatedFromFindingIds: string[];
 }
 
 export interface PremiumAuditPayload {
   categoryScores: CategoryScore[];
   checks: AuditCheck[];
+  crawlSummary: CrawlSummary;
   entityAnalysis: EntityAnalysis;
+  externalBrandFootprint: ExternalBrandFootprintResult;
   visibilityDetail: VisibilityScore;
-  potentialScore: number | null;
+  potentialScore: PotentialScore;
   remediationSummary: RemediationItem[];
 }
 
@@ -129,9 +215,11 @@ export interface FreeAuditResult {
   methodologyVersion: string;
   readiness: { state: AuditMetricState; score: number | null };
   visibility: VisibilityScore;
-  confidence: { value: number; label: EvidenceConfidenceLabel };
+  confidence: ConfidenceBreakdown & { value: number };
   interpretation: string;
   opportunities: { total: number; critical: number; important: number; optimization: number };
+  signalsAnalyzed: number;
+  pagesAnalyzed: number;
   status: Extract<AuditPipelineState, 'completed' | 'partial' | 'failed'>;
   notice?: string;
   locked: {
@@ -144,6 +232,19 @@ export interface FreeAuditResult {
 
 export interface InternalAuditResult extends FreeAuditResult {
   premium: PremiumAuditPayload;
+}
+
+export interface AiVisibilityProvider {
+  measure(input: { auditId: string; domain: string; entity: EntityAnalysis }): Promise<VisibilityScore>;
+}
+
+export interface ExternalFootprintProvider {
+  measure(input: { auditId: string; domain: string; entity: EntityAnalysis }): Promise<ExternalBrandFootprintResult>;
+}
+
+export interface AuditRepository {
+  findRecent(cacheKey: string): Promise<InternalAuditResult | null>;
+  save(cacheKey: string, audit: InternalAuditResult): Promise<void>;
 }
 
 export type AuditStreamEvent =
