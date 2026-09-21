@@ -1,0 +1,13 @@
+{
+  "testOnly": true,
+  "case": "review",
+  "domain": "example.com",
+  "result": {
+    "title": "Example Consulting customer reviews",
+    "url": "https://trustpilot.com/review/example.com",
+    "domain": "trustpilot.com",
+    "snippet": "Reviews for Example Consulting."
+  },
+  "expectedClassification": "REVIEW",
+  "countsAsIndependent": true
+}
