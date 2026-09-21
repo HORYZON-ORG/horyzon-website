@@ -1,0 +1,11 @@
+{
+  "testOnly": true,
+  "name": "brand-mentioned-not-cited",
+  "observation": {
+    "status": "SUCCESS",
+    "brandMentioned": true,
+    "domainCited": false,
+    "citedUrls": [],
+    "sources": []
+  }
+}
