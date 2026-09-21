@@ -1,0 +1,13 @@
+{
+  "testOnly": true,
+  "case": "category association",
+  "domain": "example.com",
+  "category": "AI consulting",
+  "result": {
+    "title": "Example Consulting and AI consulting for enterprises",
+    "url": "https://magazine.test/ai-consulting-example",
+    "domain": "magazine.test",
+    "snippet": "External source associates Example Consulting with AI consulting."
+  },
+  "expectedCategoryAssociation": true
+}
