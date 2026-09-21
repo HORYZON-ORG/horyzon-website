@@ -28,7 +28,7 @@ export class NoopAiVisibilityProvider implements AiVisibilityProvider {
 }
 
 export class NoopExternalFootprintProvider implements ExternalFootprintProvider {
-  async measure(): Promise<ExternalBrandFootprintResult> {
+  async measure(_input: { auditId: string; domain: string; entity: EntityAnalysis }): Promise<ExternalBrandFootprintResult> {
     return {
       state: 'not_measured',
       provider: 'none',
@@ -76,5 +76,5 @@ function buildVisibilityPromptModel(auditId: string, domain: string, entity: Ent
   ];
 }
 
-export const aiVisibilityProvider = new NoopAiVisibilityProvider();
-export const externalFootprintProvider = new NoopExternalFootprintProvider();
+export const aiVisibilityProvider: AiVisibilityProvider = new NoopAiVisibilityProvider();
+export const externalFootprintProvider: ExternalFootprintProvider = new NoopExternalFootprintProvider();
