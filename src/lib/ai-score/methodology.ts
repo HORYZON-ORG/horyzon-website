@@ -20,6 +20,7 @@ export const AI_SCORE_DISPLAY_METHODOLOGY = 'Horyzon AI Score v1.0';
 export const AI_SCORE_METHODOLOGY_EFFECTIVE_DATE = '2026-09-21';
 export const AI_SCORE_CONFIDENCE_FORMULA_VERSION = 'horyzon-confidence-v2.1';
 export const AI_VISIBILITY_METHODOLOGY_VERSION = 'horyzon-ai-visibility-v1';
+export const AI_EXTERNAL_FOOTPRINT_METHODOLOGY_VERSION = 'horyzon-external-footprint-v1';
 
 export const readinessCategories: ReadinessCategoryDefinition[] = [
   { id: 'crawlability_indexability', label: 'Crawlability & Indexability', weight: 15, description: 'Accessibilità HTTP, indicizzazione, robot policy, redirect e contenuto machine-readable.' },
@@ -30,7 +31,7 @@ export const readinessCategories: ReadinessCategoryDefinition[] = [
   { id: 'technical_quality_ux', label: 'Technical Quality & UX', weight: 10, description: 'Qualità tecnica misurabile: metadata, semantica HTML, accessibilità, header e mobile.' },
   { id: 'freshness_maintenance', label: 'Freshness & Content Maintenance', weight: 5, description: 'Date, lastmod, segnali di manutenzione e assenza di contenuti palesemente obsoleti.' },
   { id: 'ai_agent_readiness', label: 'AI / Agent Readiness', weight: 5, description: 'Policy crawler AI, navigazione semantica, alternative machine-readable e agent readiness pertinente.' },
-  { id: 'external_brand_footprint', label: 'External Brand Footprint', weight: 5, description: 'Fonti indipendenti, profili, menzioni e coerenza del brand tramite provider affidabili.' },
+  { id: 'external_brand_footprint', label: 'External Brand Footprint', weight: 5, description: 'Corroborazione esterna dell’identità, attività e autorevolezza del brand tramite provider affidabili.' },
 ];
 
 export const checkWeightValues: Record<CheckWeightClass, number> = {
@@ -49,6 +50,14 @@ export const visibilityWeights = {
   citationSourceDiversity: 5,
 };
 
+export const externalFootprintWeights = {
+  externalPresence: 25,
+  independentSourceCoverage: 30,
+  entityConsistency: 20,
+  categoryExpertiseAssociation: 15,
+  sourceDiversity: 10,
+};
+
 export const methodologyReferences = [
   { label: 'Google Search Central: crawling and indexing', url: 'https://developers.google.com/search/docs/crawling-indexing', scope: 'Crawlability, indexability, robots, sitemap e canonical.' },
   { label: 'Google Search Central: structured data', url: 'https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data', scope: 'Schema markup, pertinenza e dati strutturati.' },
@@ -56,8 +65,7 @@ export const methodologyReferences = [
   { label: 'Chrome Lighthouse overview', url: 'https://developer.chrome.com/docs/lighthouse/overview/', scope: 'Segnali tecnici, accessibilità e best practice senza usare Lighthouse come media dello score.' },
   { label: 'OpenAI Responses API web search', url: 'https://developers.openai.com/api/docs/guides/tools-web-search', scope: 'Provider candidate per verifiche AI Visibility con fonti/citazioni quando configurato.' },
   { label: 'Gemini API grounding with Google Search', url: 'https://ai.google.dev/gemini-api/docs/google-search', scope: 'Provider candidate per risposte grounded con citazioni e metadata.' },
-  { label: 'Microsoft Bing Web Search API', url: 'https://learn.microsoft.com/bing/search-apis/bing-web-search/overview', scope: 'Provider candidate per risultati web e fonti indipendenti, non equivalente a Copilot visibility.' },
-  { label: 'Perplexity Search API', url: 'https://docs.perplexity.ai/docs/search/quickstart', scope: 'Provider candidate per risultati web strutturati e, con API adeguate, risposte con citazioni.' },
+  { label: 'Perplexity Search API', url: 'https://docs.perplexity.ai/docs/search/quickstart', scope: 'Provider tecnico candidato per risultati web esterni strutturati; non è un’autorità metodologica Horyzon.' },
 ];
 
 export const accessLevels: AuditAccessLevel[] = ['FREE', 'PREMIUM_AUDIT', 'OPTIMIZATION_PLAN'];
@@ -167,11 +175,14 @@ export const auditCheckDefinitions: AuditCheckDefinition[] = [
 export const methodologyDefinition = {
   readinessVersion: AI_READINESS_METHODOLOGY_VERSION,
   visibilityVersion: AI_VISIBILITY_METHODOLOGY_VERSION,
+  externalFootprintVersion: AI_EXTERNAL_FOOTPRINT_METHODOLOGY_VERSION,
   effectiveDate: AI_SCORE_METHODOLOGY_EFFECTIVE_DATE,
   displayName: AI_SCORE_DISPLAY_METHODOLOGY,
   categories: readinessCategories,
   checks: auditCheckDefinitions,
   checkWeightValues,
+  visibilityWeights,
+  externalFootprintWeights,
   references: methodologyReferences,
   confidenceFormulaVersion: AI_SCORE_CONFIDENCE_FORMULA_VERSION,
 };
