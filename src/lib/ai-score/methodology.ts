@@ -206,7 +206,7 @@ export function calculateEvidenceConfidence(input: {
   const categoryCoverage = measuredCategories.size / readinessCategories.length;
 
   const evidenceItems = measured.flatMap((check) => check.evidence);
-  const qualityWeights = evidenceItems.map((evidence) => {
+  const qualityWeights: number[] = evidenceItems.map((evidence) => {
     switch (evidence.verificationLevel) {
       case 'direct': return 0.9;
       case 'external': return 1;
