@@ -1,375 +1,668 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { AI_READINESS_METHODOLOGY_VERSION, AI_SCORE_DISPLAY_METHODOLOGY, AI_VISIBILITY_METHODOLOGY_VERSION, accessLevels, calculateCategoryScores, calculateEvidenceConfidence, calculateReadinessScore, projectFreeResult, visibilityWeights } from './methodology';
-import { SafeFetchError, normalizeAuditUrl, safeFetch } from './ssrf';
-import type { AuditCheck, AuditPipelineState, CheckStatus, EntityAnalysis, FreeAuditResult, InternalAuditResult, ReadinessCategoryId, RemediationItem, StructuredDataStatus, VisibilityScore } from './types';
+import {
+  AI_READINESS_METHODOLOGY_VERSION,
+  AI_SCORE_DISPLAY_METHODOLOGY,
+  accessLevels,
+  auditCheckDefinitions,
+  calculateCategoryScores,
+  calculateEvidenceConfidence,
+  calculateReadinessScore,
+  projectFreeResult,
+} from './methodology';
+import { AI_SCORE_LIMITS } from './limits';
+import { aiVisibilityProvider, externalFootprintProvider } from './providers';
+import { normalizeAuditUrl, safeFetch } from './ssrf';
+import type {
+  AuditCheck,
+  AuditEvidence,
+  AuditPipelineState,
+  CheckStatus,
+  CrawledPage,
+  EntityAnalysis,
+  FreeAuditResult,
+  InternalAuditResult,
+  OpportunitySeverity,
+  PageClassification,
+  PremiumAuditPayload,
+  ReadinessCategoryId,
+  RemediationItem,
+} from './types';
 
-interface HtmlFacts {
-  title: string | null;
-  description: string | null;
-  canonical: string | null;
-  metaRobots: string | null;
-  headings: { h1: string[]; h2: string[]; h3: string[] };
+type StateCallback = (state: AuditPipelineState, label: string) => void;
+
+type PageFacts = CrawledPage & {
+  html: string;
   text: string;
+  description?: string;
+  canonical?: string;
+  metaRobots?: string;
+  xRobots?: string;
+  lang?: string;
+  viewport?: string;
+  contentType?: string;
+  headers: Headers;
+  h2: string[];
+  h3: string[];
   links: string[];
-  images: { alt: string | null }[];
-  jsonLdTypes: string[];
-  jsonLdStatus: StructuredDataStatus;
+  externalLinks: string[];
+  imageCount: number;
+  imagesWithAlt: number;
+  schemaTypes: string[];
   sameAs: string[];
   dates: string[];
-  lang: string | null;
   hasMain: boolean;
   hasNav: boolean;
   hasArticle: boolean;
-}
+  hasLists: boolean;
+  hasTables: boolean;
+  hasFaqSignals: boolean;
+  hasDefinitionSignals: boolean;
+  hasExampleSignals: boolean;
+  hasSourceSignals: boolean;
+  hasDataSignals: boolean;
+  mixedContent: boolean;
+};
 
-interface AuditContext {
-  requestedUrl: URL;
-  finalUrl: string;
-  domain: string;
-  status: number;
-  headers: Headers;
-  html: string;
-  redirects: string[];
-  robots?: string;
-  sitemap?: string;
-  llms?: string;
-  facts: HtmlFacts;
-}
+type OptionalFetch = { status: 'measured'; url: string; body: string; headers: Headers } | { status: 'not_measured'; reason: string };
 
-export async function runAiScoreAudit(rawUrl: string, onState: (state: AuditPipelineState, label: string) => void): Promise<FreeAuditResult> {
-  onState('queued', 'Preparazione analisi');
-  const requestedUrl = normalizeAuditUrl(rawUrl);
-  onState('crawling', 'Verifica accessibilita');
-  const page = await safeFetch(requestedUrl);
-  const final = new URL(page.url);
+type AuditContext = {
+  auditId: string;
+  startedAt: string;
+  inputUrl: URL;
+  home: PageFacts;
+  pages: PageFacts[];
+  robots: OptionalFetch;
+  sitemap: OptionalFetch;
+  llms: OptionalFetch;
+  duplicateUrlsSkipped: number;
+};
+
+const CHECK_COPY: Partial<Record<string, { why: string; fix: string; verification: string; severity: OpportunitySeverity }>> = {
+  https_enabled: { why: 'HTTPS è un prerequisito di fiducia e accessibilità per crawler e sistemi AI.', fix: 'Servi il dominio finale in HTTPS e reindirizza HTTP verso HTTPS.', verification: 'Ripeti l’audit e verifica che l’URL finale usi https://.', severity: 'critical' },
+  robots_allows_googlebot: { why: 'Bloccare crawler search limita discovery e citabilità.', fix: 'Rivedi robots.txt e consenti le aree pubbliche che devono essere indicizzate.', verification: 'Controlla robots.txt e ripeti la scansione.', severity: 'critical' },
+  robots_allows_oai_searchbot: { why: 'Una policy AI troppo restrittiva può ridurre la disponibilità del contenuto per sistemi supportati.', fix: 'Definisci una policy esplicita per crawler AI compatibile con la strategia editoriale.', verification: 'Verifica robots.txt con user-agent OAI-SearchBot.', severity: 'important' },
+  main_content_machine_readable: { why: 'Il contenuto importante deve essere disponibile nel markup ricevuto dai crawler.', fix: 'Assicurati che headline, testo principale e link siano presenti nell’HTML iniziale o in output renderizzato accessibile.', verification: 'Ripeti l’audit e confronta word count e contenuto principale.', severity: 'critical' },
+  critical_pages_depth: { why: 'Pagine troppo sottili offrono poche evidenze citabili.', fix: 'Arricchisci le pagine principali con descrizioni specifiche, casi, dettagli e risposte concrete.', verification: 'Verifica che le pagine principali superino la soglia di contenuto utile.', severity: 'important' },
+  organization_description: { why: 'I sistemi AI devono poter capire rapidamente chi è l’organizzazione e cosa fa.', fix: 'Aggiungi una descrizione esplicita dell’attività in homepage e nella pagina About.', verification: 'Ripeti l’audit e verifica la ricostruzione dell’entità.', severity: 'important' },
+  organization_schema: { why: 'Schema Organization aiuta a disambiguare brand e relazioni ufficiali.', fix: 'Aggiungi JSON-LD Organization coerente con contenuto visibile, URL e profili ufficiali.', verification: 'Valida il JSON-LD e ripeti l’audit.', severity: 'important' },
+  about_page_present: { why: 'Una pagina About rafforza identità, expertise e fiducia.', fix: 'Pubblica o collega chiaramente una pagina Chi siamo/About.', verification: 'La pagina deve essere raggiungibile da link interni.', severity: 'important' },
+  contact_page_present: { why: 'Contatti verificabili aumentano fiducia e responsabilità.', fix: 'Rendi raggiungibile una pagina contatti o una sezione equivalente.', verification: 'La pagina deve essere nel campione o tra i link principali.', severity: 'important' },
+  image_alt_coverage: { why: 'Alt text aiuta accessibilità e interpretazione del contenuto visivo.', fix: 'Aggiungi alt descrittivi alle immagini informative.', verification: 'Ripeti l’audit e controlla la copertura alt.', severity: 'optimization' },
+  structured_dates: { why: 'Date strutturate aiutano a valutare freschezza e manutenzione.', fix: 'Aggiungi datePublished/dateModified dove pertinenti.', verification: 'Valida structured data e ripeti l’audit.', severity: 'optimization' },
+};
+
+export async function runAiScoreAudit(rawUrl: string, onState?: StateCallback): Promise<InternalAuditResult> {
+  const startedAt = new Date().toISOString();
+  const auditId = randomUUID();
+  onState?.('queued', 'Preparazione analisi');
+
+  const inputUrl = normalizeAuditUrl(rawUrl);
+  onState?.('crawling', 'Verifica accessibilità');
+
+  const homeResponse = await safeFetch(inputUrl, { maxBytes: AI_SCORE_LIMITS.maxBytesPerPage });
+  const home = analyzePage(homeResponse.url, homeResponse.status, homeResponse.headers, homeResponse.body, 0);
+
   const [robots, sitemap, llms] = await Promise.all([
-    fetchOptionalAsset(new URL('/robots.txt', final)),
-    fetchOptionalAsset(new URL('/sitemap.xml', final)),
-    fetchOptionalAsset(new URL('/llms.txt', final)),
+    fetchOptional(new URL('/robots.txt', home.finalUrl).toString()),
+    fetchOptional(new URL('/sitemap.xml', home.finalUrl).toString()),
+    fetchOptional(new URL('/llms.txt', home.finalUrl).toString()),
   ]);
-  onState('analyzing', 'Analisi struttura e contenuti');
-  const facts = analyzeHtml(page.body);
-  const context: AuditContext = { requestedUrl, finalUrl: page.url, domain: final.hostname, status: page.status, headers: page.headers, html: page.body, redirects: page.redirects, robots, sitemap, llms, facts };
-  const checks = buildChecks(context);
+
+  onState?.('crawling', 'Analisi pagine rappresentative');
+  const candidates = selectCrawlCandidates(home, sitemap, AI_SCORE_LIMITS.maxPages - 1);
+  const pages = [home];
+  const seen = new Set([home.finalUrl.replace(/\/$/, '')]);
+  let duplicateUrlsSkipped = 0;
+
+  for (const candidate of candidates) {
+    if (pages.length >= AI_SCORE_LIMITS.maxPages) break;
+    try {
+      const response = await safeFetch(candidate, { maxBytes: AI_SCORE_LIMITS.maxBytesPerPage });
+      const key = response.url.replace(/\/$/, '');
+      if (seen.has(key)) {
+        duplicateUrlsSkipped += 1;
+        continue;
+      }
+      seen.add(key);
+      pages.push(analyzePage(response.url, response.status, response.headers, response.body, 1));
+    } catch {
+      // Candidate failures are reflected by crawl coverage/confidence, not exposed as proxy errors.
+    }
+  }
+
+  onState?.('analyzing', 'Analisi struttura, contenuti e segnali AI');
+  const context: AuditContext = { auditId, startedAt, inputUrl, home, pages, robots, sitemap, llms, duplicateUrlsSkipped };
   const entityAnalysis = buildEntityAnalysis(context);
-  onState('visibility_check', 'Verifica visibilita AI');
-  const visibility = buildUnmeasuredVisibility(context.domain);
-  onState('scoring', 'Calcolo risultati');
+  const externalBrandFootprint = await externalFootprintProvider.measure({ auditId, domain: inputUrl.hostname, entity: entityAnalysis });
+  const checks = buildChecks(context, entityAnalysis);
   const categoryScores = calculateCategoryScores(checks);
-  const readiness = calculateReadinessScore(categoryScores);
-  const confidence = calculateEvidenceConfidence(checks, categoryScores.filter(category => category.state !== 'not_measured').length);
-  const opportunities = countOpportunities(checks);
-  const premium = buildPremiumPayload(checks, categoryScores, entityAnalysis, visibility, readiness.score);
-  const status = readiness.state === 'measured' && confidence.value >= 50 ? 'completed' : 'partial';
+  const readinessScore = calculateReadinessScore(categoryScores);
+
+  onState?.('visibility_check', 'Verifica visibilità AI');
+  const visibility = await aiVisibilityProvider.measure({ auditId, domain: inputUrl.hostname, entity: entityAnalysis });
+
+  onState?.('scoring', 'Calcolo risultati');
+  const crawlSummary = buildCrawlSummary(context);
+  const confidence = calculateEvidenceConfidence({ checks, crawlSummary, visibility, externalBrandFootprint });
+  const remediationSummary = buildRemediationSummary(checks);
+  const opportunities = countOpportunities(remediationSummary);
+  const status = visibility.state === 'measured' && externalBrandFootprint.state === 'measured' ? 'completed' : 'partial';
+
+  const premium: PremiumAuditPayload = {
+    categoryScores,
+    checks,
+    crawlSummary,
+    entityAnalysis,
+    externalBrandFootprint,
+    visibilityDetail: visibility,
+    potentialScore: {
+      state: 'not_calculated',
+      score: null,
+      blocker: 'Il potential score richiede simulazioni di remediation verificate. Non viene calcolato in assenza di interventi realmente validati.',
+      calculatedFromFindingIds: [],
+    },
+    remediationSummary,
+  };
+
   const audit: InternalAuditResult = {
-    auditId: randomUUID(),
+    auditId,
     accessLevel: 'FREE',
-    domain: context.domain,
-    finalUrl: context.finalUrl,
-    analyzedAt: new Date().toISOString(),
+    domain: inputUrl.hostname,
+    finalUrl: home.finalUrl,
+    analyzedAt: startedAt,
     methodologyVersion: AI_SCORE_DISPLAY_METHODOLOGY,
-    readiness,
+    readiness: { state: readinessScore === null ? 'not_measured' : status, score: readinessScore },
     visibility,
     confidence,
-    interpretation: interpretResult(readiness.score, confidence.value, opportunities.total, visibility.state),
+    interpretation: buildInterpretation(readinessScore, visibility.state, opportunities.total),
     opportunities,
+    signalsAnalyzed: checks.filter((check) => check.measured).length,
+    pagesAnalyzed: pages.length,
     status,
-    notice: status === 'partial' ? 'Alcune aree non sono state misurate con provider indipendenti in questa versione gratuita.' : undefined,
-    locked: { premiumAudit: true, optimizationPlan: true, availableLevels: [...accessLevels], priceConfigured: false },
+    notice: status === 'partial' ? 'Audit completato con misurazioni parziali: AI Visibility ed External Brand Footprint richiedono provider esterni configurati.' : undefined,
+    locked: {
+      premiumAudit: true,
+      optimizationPlan: true,
+      availableLevels: accessLevels,
+      priceConfigured: false,
+    },
     premium,
   };
-  onState(status, status === 'completed' ? 'Analisi completata' : 'Analisi parziale completata');
+
+  onState?.(status, status === 'completed' ? 'Analisi completata' : 'Analisi completata con evidenze parziali');
+  return audit;
+}
+
+export function toFreeAudit(audit: InternalAuditResult): FreeAuditResult {
   return projectFreeResult(audit);
 }
 
-async function fetchOptionalAsset(url: URL) {
+async function fetchOptional(url: string): Promise<OptionalFetch> {
   try {
-    const response = await safeFetch(url, { timeoutMs: 4500, maxBytes: 180_000, maxRedirects: 2 });
-    return response.status >= 200 && response.status < 400 ? response.body : undefined;
-  } catch {
-    return undefined;
+    const response = await safeFetch(url, { maxBytes: 250_000 });
+    if (response.status >= 200 && response.status < 400) {
+      return { status: 'measured', url: response.url, body: response.body, headers: response.headers };
+    }
+    return { status: 'not_measured', reason: `HTTP ${response.status}` };
+  } catch (error) {
+    return { status: 'not_measured', reason: error instanceof Error ? error.message : 'Fetch non riuscito' };
   }
 }
 
-function buildChecks(context: AuditContext): AuditCheck[] {
-  const facts = context.facts;
-  const textLength = facts.text.length;
-  const wordCount = countWords(facts.text);
-  const aboutOrContact = hasLinkLike(facts.links, ['about', 'chi-siamo', 'contatti', 'contact']);
-  const privacyOrLegal = hasLinkLike(facts.links, ['privacy', 'cookie', 'legal', 'terms']);
-  const crawlPolicy = parseCrawlerPolicy(context.robots);
-  const usefulLinks = facts.links.filter(link => !link.startsWith('#')).length;
-  const checks: AuditCheck[] = [];
+function analyzePage(url: string, status: number, headers: Headers, html: string, depth: number): PageFacts {
+  const text = extractVisibleText(html);
+  const links = extractAttributes(html, 'a', 'href').map((href) => absolutize(url, href)).filter(Boolean) as string[];
+  const current = new URL(url);
+  const internalLinks = unique(links.filter((link) => isSameOrigin(current, link) && isLikelyHtmlUrl(link)));
+  const externalLinks = unique(links.filter((link) => !isSameOrigin(current, link)));
+  const images = extractImageAlts(html);
+  const schemaObjects = extractJsonLd(html);
+  const schemaTypes = unique(schemaObjects.flatMap((item) => normalizeSchemaTypes(item['@type'])));
+  const sameAs = unique(schemaObjects.flatMap((item) => normalizeStringArray(item.sameAs)));
+  const h1 = extractTagText(html, 'h1');
+  const h2 = extractTagText(html, 'h2');
+  const h3 = extractTagText(html, 'h3');
+  const classification = classifyPageType(url, `${h1.join(' ')} ${h2.join(' ')} ${text.slice(0, 500)}`);
 
-  add(checks, 'http_availability', 'Disponibilita HTTP', 'crawlability_indexability', context.status < 400 ? 'pass' : 'fail', 3, context.status < 400 ? 3 : 0, true, [`Status ${context.status}`], context.finalUrl);
-  add(checks, 'https', 'HTTPS', 'crawlability_indexability', context.finalUrl.startsWith('https://') ? 'pass' : 'fail', 2, context.finalUrl.startsWith('https://') ? 2 : 0, true, [new URL(context.finalUrl).protocol.replace(':', '').toUpperCase()], context.finalUrl);
-  add(checks, 'redirects', 'Redirect rivalidati', 'crawlability_indexability', context.redirects.length <= 1 ? 'pass' : 'partial', 1, context.redirects.length <= 1 ? 1 : 0.5, true, [`${context.redirects.length} redirect`], context.finalUrl);
-  add(checks, 'robots_txt', 'robots.txt', 'crawlability_indexability', context.robots ? 'pass' : 'partial', 2, context.robots ? 2 : 0.8, true, [context.robots ? 'robots.txt trovato' : 'robots.txt non trovato'], new URL('/robots.txt', context.finalUrl).toString());
-  add(checks, 'sitemap_xml', 'sitemap.xml', 'crawlability_indexability', context.sitemap ? 'pass' : 'partial', 2, context.sitemap ? 2 : 0.8, true, [context.sitemap ? 'sitemap.xml trovata' : 'sitemap.xml non trovata'], new URL('/sitemap.xml', context.finalUrl).toString());
-  add(checks, 'canonical', 'Canonical', 'crawlability_indexability', facts.canonical ? 'pass' : 'partial', 2, facts.canonical ? 2 : 0.7, true, [facts.canonical ?? 'Canonical non rilevato'], context.finalUrl);
-  add(checks, 'meta_robots', 'Meta robots', 'crawlability_indexability', facts.metaRobots?.includes('noindex') ? 'fail' : facts.metaRobots ? 'pass' : 'partial', 1, facts.metaRobots?.includes('noindex') ? 0 : facts.metaRobots ? 1 : 0.7, true, [facts.metaRobots ?? 'Meta robots non rilevato'], context.finalUrl);
-  add(checks, 'internal_links', 'Internal linking', 'crawlability_indexability', usefulLinks >= 8 ? 'pass' : usefulLinks >= 3 ? 'partial' : 'fail', 2, usefulLinks >= 8 ? 2 : usefulLinks >= 3 ? 1 : 0, true, [`${usefulLinks} link rilevati nella pagina`], context.finalUrl);
-
-  add(checks, 'page_purpose', 'Intento della pagina', 'content_quality_citability', facts.title && facts.description ? 'pass' : 'partial', 3, facts.title && facts.description ? 3 : 1.5, true, [facts.title ?? 'Title assente', facts.description ?? 'Meta description assente'], context.finalUrl);
-  add(checks, 'heading_structure', 'Struttura H1/H2/H3', 'content_quality_citability', facts.headings.h1.length === 1 && facts.headings.h2.length >= 2 ? 'pass' : facts.headings.h1.length >= 1 ? 'partial' : 'fail', 3, facts.headings.h1.length === 1 && facts.headings.h2.length >= 2 ? 3 : facts.headings.h1.length >= 1 ? 1.5 : 0, true, [`H1: ${facts.headings.h1.length}`, `H2: ${facts.headings.h2.length}`], context.finalUrl);
-  add(checks, 'content_depth', 'Profondita del contenuto', 'content_quality_citability', wordCount >= 700 ? 'pass' : wordCount >= 250 ? 'partial' : 'fail', 4, wordCount >= 700 ? 4 : wordCount >= 250 ? 2 : 0.5, true, [`Circa ${wordCount} parole leggibili`], context.finalUrl);
-  add(checks, 'specificity', 'Informazioni specifiche e verificabili', 'content_quality_citability', hasEvidenceLanguage(facts.text) ? 'pass' : 'partial', 3, hasEvidenceLanguage(facts.text) ? 3 : 1.4, true, [hasEvidenceLanguage(facts.text) ? 'Sono presenti segnali di dati, date, casi o riferimenti' : 'Pochi segnali di dati, date, casi o riferimenti'], context.finalUrl);
-  add(checks, 'faq_lists_tables', 'Sezioni scansionabili', 'content_quality_citability', hasScannableStructure(context.html) ? 'pass' : 'partial', 2, hasScannableStructure(context.html) ? 2 : 0.9, true, [hasScannableStructure(context.html) ? 'Liste, FAQ o tabelle rilevate' : 'Struttura scansionabile limitata'], context.finalUrl);
-  add(checks, 'useful_content_ratio', 'Contenuto utile rispetto al markup', 'content_quality_citability', textLength > 1200 ? 'pass' : textLength > 500 ? 'partial' : 'fail', 3, textLength > 1200 ? 3 : textLength > 500 ? 1.5 : 0.5, true, [`${textLength} caratteri testuali estratti`], context.finalUrl);
-  add(checks, 'citability', 'Citabilita dei passaggi', 'content_quality_citability', facts.headings.h2.length >= 3 && wordCount >= 500 ? 'pass' : 'partial', 2, facts.headings.h2.length >= 3 && wordCount >= 500 ? 2 : 0.8, true, ['Valutazione euristica su heading e profondita del testo'], context.finalUrl);
-
-  add(checks, 'brand_clarity', 'Chiarezza del brand', 'entity_semantic_clarity', facts.title || entityFromStructuredData(context.html).brandName ? 'pass' : 'partial', 3, facts.title || entityFromStructuredData(context.html).brandName ? 3 : 1, true, [entityFromStructuredData(context.html).brandName ?? facts.title ?? 'Brand non ricostruito'], context.finalUrl);
-  add(checks, 'organization_description', 'Descrizione esplicita attivita', 'entity_semantic_clarity', facts.description ? 'pass' : 'partial', 3, facts.description ? 3 : 1.2, true, [facts.description ?? 'Descrizione non rilevata'], context.finalUrl);
-  add(checks, 'services_clarity', 'Chiarezza servizi/prodotti', 'entity_semantic_clarity', findServiceSignals(facts.text).length >= 2 ? 'pass' : 'partial', 3, findServiceSignals(facts.text).length >= 2 ? 3 : 1.4, true, findServiceSignals(facts.text).slice(0, 3), context.finalUrl);
-  add(checks, 'about_contact', 'About e contatti', 'entity_semantic_clarity', aboutOrContact ? 'pass' : 'partial', 2, aboutOrContact ? 2 : 0.7, true, [aboutOrContact ? 'Link istituzionali rilevati' : 'Link About/Contact non evidenti'], context.finalUrl);
-  add(checks, 'semantic_relations', 'Relazioni sameAs', 'entity_semantic_clarity', facts.sameAs.length > 0 ? 'pass' : 'partial', 2, facts.sameAs.length > 0 ? 2 : 0.6, true, facts.sameAs.length ? facts.sameAs.slice(0, 4) : ['sameAs non rilevato'], context.finalUrl);
-  add(checks, 'semantic_html', 'HTML semantico', 'entity_semantic_clarity', facts.hasMain && facts.hasNav ? 'pass' : 'partial', 2, facts.hasMain && facts.hasNav ? 2 : 0.8, true, [`main: ${facts.hasMain}`, `nav: ${facts.hasNav}`, `article: ${facts.hasArticle}`], context.finalUrl);
-
-  add(checks, 'json_ld_presence', 'JSON-LD pertinente', 'structured_data', facts.jsonLdTypes.length > 0 ? 'pass' : 'partial', 4, facts.jsonLdTypes.length > 0 ? 4 : 1, true, facts.jsonLdTypes.length ? facts.jsonLdTypes : ['Nessun JSON-LD rilevato'], context.finalUrl);
-  add(checks, 'json_ld_validity', 'Validita JSON-LD', 'structured_data', facts.jsonLdStatus === 'valid' ? 'pass' : facts.jsonLdStatus === 'invalid' ? 'fail' : 'partial', 3, facts.jsonLdStatus === 'valid' ? 3 : facts.jsonLdStatus === 'invalid' ? 0 : 1, true, [`Stato: ${facts.jsonLdStatus}`], context.finalUrl);
-  add(checks, 'schema_relevance', 'Coerenza structured data', 'structured_data', hasRelevantSchema(facts.jsonLdTypes) ? 'pass' : 'partial', 3, hasRelevantSchema(facts.jsonLdTypes) ? 3 : 1, true, facts.jsonLdTypes.length ? facts.jsonLdTypes : ['Schema non valutabile'], context.finalUrl);
-
-  add(checks, 'company_trust_pages', 'Pagine fiducia e informazioni aziendali', 'authority_trust_evidence', aboutOrContact && privacyOrLegal ? 'pass' : aboutOrContact || privacyOrLegal ? 'partial' : 'fail', 4, aboutOrContact && privacyOrLegal ? 4 : aboutOrContact || privacyOrLegal ? 2 : 0, true, [`About/Contact: ${aboutOrContact}`, `Legal/Privacy: ${privacyOrLegal}`], context.finalUrl);
-  add(checks, 'sources_references', 'Fonti e riferimenti', 'authority_trust_evidence', hasEvidenceLanguage(facts.text) ? 'pass' : 'partial', 3, hasEvidenceLanguage(facts.text) ? 3 : 1, true, [hasEvidenceLanguage(facts.text) ? 'Segnali di evidenze presenti' : 'Evidenze esplicite limitate'], context.finalUrl);
-  add(checks, 'editorial_responsibility', 'Responsabilita editoriale', 'authority_trust_evidence', /autore|author|team|founder|consulente|responsabile|metodo/i.test(facts.text) ? 'pass' : 'partial', 3, /autore|author|team|founder|consulente|responsabile|metodo/i.test(facts.text) ? 3 : 1.2, true, ['Ricerca di autore, team, metodo o responsabilita dichiarata'], context.finalUrl);
-  add(checks, 'case_studies_results', 'Risultati documentati', 'authority_trust_evidence', /case study|caso studio|risultat|client|progett|metodolog/i.test(facts.text) ? 'pass' : 'partial', 3, /case study|caso studio|risultat|client|progett|metodolog/i.test(facts.text) ? 3 : 1, true, ['Ricerca di casi, risultati, progetti o metodologia'], context.finalUrl);
-  add(checks, 'contactability', 'Contattabilita', 'authority_trust_evidence', /mailto:|tel:|contatti|contact/i.test(context.html) ? 'pass' : 'partial', 2, /mailto:|tel:|contatti|contact/i.test(context.html) ? 2 : 0.7, true, ['Email, telefono o pagina contatti'], context.finalUrl);
-
-  add(checks, 'technical_metadata', 'Title, description e viewport', 'technical_quality_ux', facts.title && facts.description && /<meta[^>]+name=["']viewport["']/i.test(context.html) ? 'pass' : 'partial', 3, facts.title && facts.description && /<meta[^>]+name=["']viewport["']/i.test(context.html) ? 3 : 1.2, true, ['Metadata tecnici osservati'], context.finalUrl);
-  add(checks, 'security_headers', 'Security headers', 'technical_quality_ux', scoreSecurityHeaders(context.headers) >= 3 ? 'pass' : 'partial', 2, Math.min(2, scoreSecurityHeaders(context.headers) / 2), true, [`${scoreSecurityHeaders(context.headers)} security header rilevati`], context.finalUrl);
-  add(checks, 'image_alt', 'Alt text immagini', 'technical_quality_ux', imageAltRatio(facts.images) >= 0.8 ? 'pass' : imageAltRatio(facts.images) >= 0.4 ? 'partial' : 'fail', 2, imageAltRatio(facts.images) >= 0.8 ? 2 : imageAltRatio(facts.images) >= 0.4 ? 1 : 0, true, [`Alt ratio ${Math.round(imageAltRatio(facts.images) * 100)}%`], context.finalUrl);
-  add(checks, 'rendered_text_available', 'Contenuto machine-readable', 'technical_quality_ux', textLength > 900 ? 'pass' : textLength > 300 ? 'partial' : 'fail', 3, textLength > 900 ? 3 : textLength > 300 ? 1.5 : 0, true, [`${textLength} caratteri leggibili senza rendering browser`], context.finalUrl);
-
-  add(checks, 'dates', 'Date pubblicate o modificate', 'freshness_maintenance', facts.dates.length > 0 ? 'pass' : 'partial', 2, facts.dates.length > 0 ? 2 : 0.6, true, facts.dates.length ? facts.dates.slice(0, 3) : ['Date non rilevate'], context.finalUrl);
-  add(checks, 'sitemap_lastmod', 'Sitemap lastmod', 'freshness_maintenance', context.sitemap?.includes('<lastmod>') ? 'pass' : context.sitemap ? 'partial' : 'unknown', 2, context.sitemap?.includes('<lastmod>') ? 2 : context.sitemap ? 0.8 : 0, Boolean(context.sitemap), [context.sitemap ? 'Sitemap ispezionata' : 'Sitemap non disponibile'], new URL('/sitemap.xml', context.finalUrl).toString());
-  add(checks, 'maintenance_signals', 'Segnali di manutenzione', 'freshness_maintenance', /aggiornat|updated|202[4-6]|lastmod|news|blog|insight/i.test(context.html) ? 'pass' : 'partial', 1, /aggiornat|updated|202[4-6]|lastmod|news|blog|insight/i.test(context.html) ? 1 : 0.3, true, ['Ricerca di aggiornamenti, news, insight o date recenti'], context.finalUrl);
-
-  add(checks, 'ai_crawler_policy', 'Policy crawler AI', 'ai_agent_readiness', crawlPolicy ? 'pass' : context.robots ? 'partial' : 'unknown', 1.5, crawlPolicy ? 1.5 : context.robots ? 0.5 : 0, Boolean(context.robots), [crawlPolicy ?? 'Policy AI crawler non misurabile senza robots.txt'], new URL('/robots.txt', context.finalUrl).toString());
-  add(checks, 'semantic_navigation', 'Navigazione semantica', 'ai_agent_readiness', facts.hasNav && usefulLinks >= 6 ? 'pass' : 'partial', 1.5, facts.hasNav && usefulLinks >= 6 ? 1.5 : 0.6, true, [`nav: ${facts.hasNav}`, `${usefulLinks} link`], context.finalUrl);
-  add(checks, 'llms_txt', 'llms.txt', 'ai_agent_readiness', context.llms ? 'pass' : 'not_applicable', 1, context.llms ? 1 : 0, true, [context.llms ? 'llms.txt trovato' : 'N/A: segnale sperimentale, non fattore ufficiale'], new URL('/llms.txt', context.finalUrl).toString());
-  add(checks, 'agent_protocols', 'API, MCP o protocolli agentici', 'ai_agent_readiness', 'not_applicable', 1, 0, true, ['N/A se non pertinente al modello del sito'], context.finalUrl);
-
-  add(checks, 'external_brand_provider', 'External brand footprint', 'external_brand_footprint', 'unknown', 5, 0, false, ['Provider esterno non configurato: nessun dato inventato'], undefined);
-  return checks;
-}
-
-function add(checks: AuditCheck[], id: string, label: string, categoryId: ReadinessCategoryId, status: CheckStatus, pointsAvailable: number, pointsEarned: number, measured: boolean, evidenceValues: string[], sourceUrl?: string) {
-  checks.push({
-    id,
-    label,
-    categoryId,
-    status,
-    pointsAvailable,
-    pointsEarned: Math.max(0, Math.min(pointsAvailable, pointsEarned)),
-    measured,
-    evidence: evidenceValues.map(value => ({ label, value, sourceUrl, verification: measured ? 'verified' : 'present' })),
-  });
-}
-
-function analyzeHtml(html: string): HtmlFacts {
-  const clean = html.replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<style[\s\S]*?<\/style>/gi, ' ');
   return {
+    url,
+    finalUrl: url,
+    statusCode: status,
+    depth,
+    classification,
+    classificationConfidence: classification === 'other' ? 45 : 80,
     title: firstMatch(html, /<title[^>]*>([\s\S]*?)<\/title>/i),
     description: metaContent(html, 'description'),
-    canonical: firstMatch(html, /<link[^>]+rel=["'][^"']*canonical[^"']*["'][^>]+href=["']([^"']+)["']/i) ?? firstMatch(html, /<link[^>]+href=["']([^"']+)["'][^>]+rel=["'][^"']*canonical[^"']*["']/i),
+    canonical: extractAttributes(html, 'link', 'href', /rel=["'][^"']*canonical/i)[0],
     metaRobots: metaContent(html, 'robots'),
-    headings: { h1: tagTexts(html, 'h1'), h2: tagTexts(html, 'h2'), h3: tagTexts(html, 'h3') },
-    text: decodeEntities(clean.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()),
-    links: [...html.matchAll(/<a[^>]+href=["']([^"']+)["']/gi)].map(match => match[1]),
-    images: [...html.matchAll(/<img\b[^>]*>/gi)].map(match => ({ alt: firstMatch(match[0], /\salt=["']([^"']*)["']/i) })),
-    jsonLdTypes: jsonLdTypes(html),
-    jsonLdStatus: jsonLdStatus(html),
-    sameAs: sameAsValues(html),
-    dates: [...html.matchAll(/(?:datePublished|dateModified|datetime)=["']([^"']+)["']/gi)].map(match => match[1]),
+    xRobots: headers.get('x-robots-tag') ?? undefined,
     lang: firstMatch(html, /<html[^>]+lang=["']([^"']+)["']/i),
+    viewport: metaContent(html, 'viewport'),
+    contentType: headers.get('content-type') ?? undefined,
+    h1,
+    h2,
+    h3,
+    html,
+    text,
+    wordCount: countWords(text),
+    links,
+    internalLinks,
+    externalLinks,
+    imageCount: images.length,
+    imagesWithAlt: images.filter(Boolean).length,
+    schemaTypes,
+    sameAs,
+    dates: extractDates(html),
+    fetchedAt: new Date().toISOString(),
     hasMain: /<main[\s>]/i.test(html),
     hasNav: /<nav[\s>]/i.test(html),
     hasArticle: /<article[\s>]/i.test(html),
+    hasLists: /<(ul|ol|dl)[\s>]/i.test(html),
+    hasTables: /<table[\s>]/i.test(html),
+    hasFaqSignals: /\b(faq|domande frequenti|questions?|q&a)\b/i.test(text),
+    hasDefinitionSignals: /\b(cos'è|che cos.?è|what is|definizione|significa)\b/i.test(text),
+    hasExampleSignals: /\b(esempio|case study|caso|portfolio|risultato|example)\b/i.test(text),
+    hasSourceSignals: /\b(fonte|source|bibliografia|riferimenti|references)\b/i.test(text) || externalLinks.length >= 2,
+    hasDataSignals: /\b\d{2,}%|\b\d+[,.]?\d*\s?(€|k|m|ore|giorni|clienti|progetti)\b/i.test(text),
+    mixedContent: /http:\/\//i.test(html) && url.startsWith('https://'),
   };
+}
+
+export function classifyPageType(url: string, text = ''): PageClassification {
+  const haystack = `${new URL(url).pathname} ${text}`.toLowerCase();
+  if (/^\/?$/.test(new URL(url).pathname)) return 'home';
+  if (/\b(about|chi-siamo|azienda|studio|team)\b/.test(haystack)) return 'about';
+  if (/\b(contact|contatti|contatto|preventivo)\b/.test(haystack)) return 'contact';
+  if (/\b(service|servizi|consulenza|solutions|soluzioni)\b/.test(haystack)) return 'service';
+  if (/\b(product|prodotti|pricing|shop|store)\b/.test(haystack)) return 'product';
+  if (/\b(blog|news|article|articolo|insight|guide|guida)\b/.test(haystack)) return 'article';
+  if (/\b(privacy|cookie|legal|terms|termini)\b/.test(haystack)) return 'legal';
+  return 'other';
+}
+
+function selectCrawlCandidates(home: PageFacts, sitemap: OptionalFetch, limit: number): string[] {
+  const candidates = new Set<string>();
+  for (const type of ['about', 'contact', 'service', 'product', 'article', 'legal'] as PageClassification[]) {
+    const match = home.internalLinks.find((link) => classifyPageType(link) === type);
+    if (match) candidates.add(stripHash(match));
+  }
+  if (sitemap.status === 'measured') {
+    for (const loc of [...sitemap.body.matchAll(/<loc>([^<]+)<\/loc>/gi)].map((match) => match[1].trim())) {
+      if (isSameOrigin(new URL(home.finalUrl), loc) && isLikelyHtmlUrl(loc)) candidates.add(stripHash(loc));
+      if (candidates.size >= limit) break;
+    }
+  }
+  for (const link of home.internalLinks) {
+    candidates.add(stripHash(link));
+    if (candidates.size >= limit) break;
+  }
+  return [...candidates].filter((url) => url !== home.finalUrl).slice(0, limit);
+}
+
+function buildChecks(context: AuditContext, entity: EntityAnalysis): AuditCheck[] {
+  const checks: AuditCheck[] = [];
+  const measuredPages = context.pages.filter((page) => page.statusCode >= 200 && page.statusCode < 400);
+  const averageWords = measuredPages.length ? measuredPages.reduce((sum, page) => sum + page.wordCount, 0) / measuredPages.length : 0;
+  const hasRobots = context.robots.status === 'measured';
+  const robotsBody = hasRobots ? context.robots.body : '';
+  const hasSitemap = context.sitemap.status === 'measured';
+  const sitemapBody = hasSitemap ? context.sitemap.body : '';
+  const hasLlms = context.llms.status === 'measured';
+
+  const add = (id: string, status: CheckStatus, evidence: AuditEvidence[], measured = status !== 'unknown' && status !== 'not_applicable') => {
+    const definition = auditCheckDefinitions.find((item) => item.id === id);
+    if (!definition) throw new Error(`Missing check definition: ${id}`);
+    checks.push({
+      id,
+      label: definition.label,
+      categoryId: definition.categoryId,
+      status,
+      pointsAvailable: definition.weight,
+      pointsEarned: status === 'pass' ? definition.weight : status === 'partial' ? definition.weight * 0.5 : 0,
+      measured,
+      evidence,
+      definitionVersion: AI_READINESS_METHODOLOGY_VERSION,
+      aggregation: definition.aggregation,
+    });
+  };
+
+  const ev = (checkId: string, label: string, value: string, sourceUrl = context.home.finalUrl, level: AuditEvidence['verificationLevel'] = 'direct', category?: PageClassification): AuditEvidence => ({
+    id: createHash('sha1').update(`${context.auditId}:${checkId}:${label}:${value}`).digest('hex').slice(0, 12),
+    checkId,
+    label,
+    value,
+    sourceUrl,
+    sourceType: level === 'derived' || level === 'heuristic' ? 'derived' : 'html',
+    pageType: category,
+    collectedAt: context.startedAt,
+    confidence: level === 'direct' ? 90 : level === 'derived' ? 70 : level === 'heuristic' ? 45 : 60,
+    verification: level === 'direct' ? 'verified' : level === 'derived' ? 'present' : 'inferred',
+    verificationLevel: level,
+  });
+
+  const sampleEv = (checkId: string, label: string, value: string) => context.pages.slice(0, 3).map((page) => ev(checkId, label, valueForPage(page, value), page.finalUrl, 'direct', page.classification));
+
+  add('homepage_http_available', context.home.statusCode > 0 ? 'pass' : 'fail', [ev('homepage_http_available', 'HTTP status', String(context.home.statusCode), context.home.finalUrl, 'direct')]);
+  add('homepage_status_success', context.home.statusCode >= 200 && context.home.statusCode < 300 ? 'pass' : context.home.statusCode < 400 ? 'partial' : 'fail', [ev('homepage_status_success', 'HTTP status', String(context.home.statusCode))]);
+  add('https_enabled', context.home.finalUrl.startsWith('https://') ? 'pass' : 'fail', [ev('https_enabled', 'Final URL', context.home.finalUrl)]);
+  add('redirect_chain_controlled', 'pass', [ev('redirect_chain_controlled', 'Fetch policy', `Redirect limit ${AI_SCORE_LIMITS.maxRedirects}`, context.home.finalUrl, 'derived')]);
+  add('canonical_present', context.home.canonical ? 'pass' : 'fail', [ev('canonical_present', 'Canonical', context.home.canonical ?? 'Not found')]);
+  add('canonical_same_origin', context.home.canonical ? (isSameOrigin(new URL(context.home.finalUrl), absolutize(context.home.finalUrl, context.home.canonical) ?? '') ? 'pass' : 'fail') : 'unknown', [ev('canonical_same_origin', 'Canonical', context.home.canonical ?? 'Not found')], Boolean(context.home.canonical));
+  add('meta_robots_indexable', blocksIndexing(context.home.metaRobots) ? 'fail' : context.home.metaRobots ? 'pass' : 'partial', [ev('meta_robots_indexable', 'Meta robots', context.home.metaRobots ?? 'Not declared')]);
+  add('x_robots_indexable', blocksIndexing(context.home.xRobots) ? 'fail' : context.home.xRobots ? 'pass' : 'partial', [ev('x_robots_indexable', 'X-Robots-Tag', context.home.xRobots ?? 'Not declared')]);
+  add('robots_txt_available', hasRobots ? 'pass' : 'partial', [ev('robots_txt_available', 'robots.txt', hasRobots ? context.robots.url : context.robots.reason, hasRobots ? context.robots.url : context.home.finalUrl)]);
+  add('robots_allows_googlebot', hasRobots ? (robotsDisallows(robotsBody, 'googlebot') ? 'fail' : 'pass') : 'unknown', [ev('robots_allows_googlebot', 'Googlebot policy', hasRobots ? summarizeRobots(robotsBody, 'googlebot') : 'Not measured', context.home.finalUrl, 'derived')], hasRobots);
+  add('robots_allows_oai_searchbot', hasRobots ? (robotsDisallows(robotsBody, 'oai-searchbot') ? 'fail' : 'pass') : 'unknown', [ev('robots_allows_oai_searchbot', 'OAI-SearchBot policy', hasRobots ? summarizeRobots(robotsBody, 'oai-searchbot') : 'Not measured', context.home.finalUrl, 'derived')], hasRobots);
+  add('sitemap_available', hasSitemap ? 'pass' : 'partial', [ev('sitemap_available', 'sitemap.xml', hasSitemap ? context.sitemap.url : context.sitemap.reason, hasSitemap ? context.sitemap.url : context.home.finalUrl)]);
+  add('sitemap_same_origin_urls', hasSitemap ? (sitemapSameOrigin(sitemapBody, context.home.finalUrl) ? 'pass' : 'partial') : 'unknown', [ev('sitemap_same_origin_urls', 'Sitemap loc count', String(countSitemapUrls(sitemapBody)), context.home.finalUrl, 'derived')], hasSitemap);
+  add('internal_links_present', context.home.internalLinks.length >= 5 ? 'pass' : context.home.internalLinks.length > 0 ? 'partial' : 'fail', [ev('internal_links_present', 'Internal links', String(context.home.internalLinks.length))]);
+  add('crawl_sample_accessible', context.pages.length >= 4 ? 'pass' : context.pages.length >= 2 ? 'partial' : 'fail', [ev('crawl_sample_accessible', 'Pages fetched', String(context.pages.length), context.home.finalUrl, 'derived')]);
+  add('main_content_machine_readable', averageWords >= 250 ? 'pass' : averageWords >= 120 ? 'partial' : 'fail', [ev('main_content_machine_readable', 'Average words', String(Math.round(averageWords)), context.home.finalUrl, 'derived')]);
+
+  add('title_present', context.home.title && context.home.title.length >= 8 ? 'pass' : context.home.title ? 'partial' : 'fail', [ev('title_present', 'Title', context.home.title ?? 'Not found')]);
+  add('meta_description_present', context.home.description && context.home.description.length >= 50 ? 'pass' : context.home.description ? 'partial' : 'fail', [ev('meta_description_present', 'Meta description', context.home.description ?? 'Not found')]);
+  add('h1_present', measuredPages.every((page) => page.h1.length > 0) ? 'pass' : measuredPages.some((page) => page.h1.length > 0) ? 'partial' : 'fail', sampleEv('h1_present', 'H1', 'h1'));
+  add('heading_structure', measuredPages.some((page) => page.h2.length + page.h3.length >= 3) ? 'pass' : measuredPages.some((page) => page.h2.length > 0) ? 'partial' : 'fail', [ev('heading_structure', 'Heading count', String(measuredPages.reduce((sum, page) => sum + page.h2.length + page.h3.length, 0)), context.home.finalUrl, 'derived')]);
+  add('critical_pages_depth', averageWords >= 550 ? 'pass' : averageWords >= 250 ? 'partial' : 'fail', [ev('critical_pages_depth', 'Average words', String(Math.round(averageWords)), context.home.finalUrl, 'derived')]);
+  add('thin_pages_limited', measuredPages.filter((page) => page.wordCount < 180).length === 0 ? 'pass' : measuredPages.filter((page) => page.wordCount < 180).length <= 1 ? 'partial' : 'fail', [ev('thin_pages_limited', 'Thin pages', String(measuredPages.filter((page) => page.wordCount < 180).length), context.home.finalUrl, 'derived')]);
+  add('useful_text_ratio', context.home.wordCount >= 300 ? 'pass' : context.home.wordCount >= 150 ? 'partial' : 'fail', [ev('useful_text_ratio', 'Homepage words', String(context.home.wordCount), context.home.finalUrl, 'derived')]);
+  add('list_or_table_structure', measuredPages.some((page) => page.hasLists || page.hasTables) ? 'pass' : 'partial', [ev('list_or_table_structure', 'Structured sections', String(measuredPages.filter((page) => page.hasLists || page.hasTables).length), context.home.finalUrl, 'derived')]);
+  add('faq_or_question_signals', measuredPages.some((page) => page.hasFaqSignals) ? 'pass' : 'not_applicable', [ev('faq_or_question_signals', 'FAQ signals', measuredPages.some((page) => page.hasFaqSignals) ? 'present' : 'N/A')], measuredPages.some((page) => page.hasFaqSignals));
+  add('definition_signals', measuredPages.some((page) => page.hasDefinitionSignals) ? 'pass' : 'partial', [ev('definition_signals', 'Definition signals', String(measuredPages.some((page) => page.hasDefinitionSignals)), context.home.finalUrl, 'derived')]);
+  add('examples_or_cases', measuredPages.some((page) => page.hasExampleSignals) ? 'pass' : 'partial', [ev('examples_or_cases', 'Example/case signals', String(measuredPages.some((page) => page.hasExampleSignals)), context.home.finalUrl, 'derived')]);
+  add('supporting_data_or_sources', measuredPages.some((page) => page.hasSourceSignals || page.hasDataSignals) ? 'pass' : 'partial', [ev('supporting_data_or_sources', 'Sources/data signals', String(measuredPages.some((page) => page.hasSourceSignals || page.hasDataSignals)), context.home.finalUrl, 'derived')]);
+  add('passage_citability', averageWords >= 450 && measuredPages.some((page) => page.hasExampleSignals || page.hasDataSignals) ? 'pass' : averageWords >= 220 ? 'partial' : 'fail', [ev('passage_citability', 'Citability heuristic', `${Math.round(averageWords)} average words plus evidence signals`, context.home.finalUrl, 'heuristic')]);
+
+  add('brand_name_detected', entity.brandName ? 'pass' : 'fail', [ev('brand_name_detected', 'Brand', entity.brandName ?? 'Not detected', context.home.finalUrl, 'derived')]);
+  add('organization_description', entity.description && entity.description.length > 40 ? 'pass' : entity.description ? 'partial' : 'fail', [ev('organization_description', 'Description', entity.description ?? 'Not detected', context.home.finalUrl, 'derived')]);
+  add('service_entity_signals', entity.services.length > 0 ? 'pass' : 'partial', [ev('service_entity_signals', 'Services', entity.services.slice(0, 5).join(', ') || 'Not detected', context.home.finalUrl, 'derived')]);
+  add('product_entity_signals', entity.products.length > 0 ? 'pass' : 'not_applicable', [ev('product_entity_signals', 'Products', entity.products.join(', ') || 'N/A', context.home.finalUrl, 'derived')], entity.products.length > 0);
+  add('audience_signals', entity.audience.length > 0 ? 'pass' : 'partial', [ev('audience_signals', 'Audience', entity.audience.join(', ') || 'Not detected', context.home.finalUrl, 'derived')]);
+  add('people_signals', entity.people.length > 0 ? 'pass' : 'partial', [ev('people_signals', 'People/team signals', String(entity.people.length), context.home.finalUrl, 'derived')]);
+  add('location_signals', entity.locations.length > 0 ? 'pass' : 'partial', [ev('location_signals', 'Locations', entity.locations.join(', ') || 'Not detected', context.home.finalUrl, 'derived')]);
+  add('contact_signals', /\b(email|telefono|phone|contatti|contact|@)\b/i.test(context.pages.map((page) => page.text).join(' ')) ? 'pass' : 'partial', [ev('contact_signals', 'Contact terms', 'Derived from visible text', context.home.finalUrl, 'heuristic')]);
+  add('same_as_signals', entity.sameAs.length > 0 ? 'pass' : 'partial', [ev('same_as_signals', 'sameAs/profiles', entity.sameAs.join(', ') || 'Not detected', context.home.finalUrl, 'derived')]);
+  add('brand_ambiguity_limited', entity.ambiguitySignals.length === 0 ? 'pass' : 'partial', [ev('brand_ambiguity_limited', 'Ambiguity signals', entity.ambiguitySignals.join(', ') || 'None', context.home.finalUrl, 'heuristic')]);
+
+  add('json_ld_parseable', context.pages.some((page) => page.schemaTypes.length > 0) ? 'pass' : 'partial', [ev('json_ld_parseable', 'Schema types', unique(context.pages.flatMap((page) => page.schemaTypes)).join(', ') || 'Not found')]);
+  add('organization_schema', hasSchema(context.pages, 'Organization') || hasSchema(context.pages, 'LocalBusiness') ? 'pass' : 'fail', [ev('organization_schema', 'Organization schema', String(hasSchema(context.pages, 'Organization') || hasSchema(context.pages, 'LocalBusiness')))]);
+  add('website_schema', hasSchema(context.pages, 'WebSite') ? 'pass' : 'partial', [ev('website_schema', 'WebSite schema', String(hasSchema(context.pages, 'WebSite')))]);
+  add('webpage_schema', hasSchema(context.pages, 'WebPage') ? 'pass' : 'partial', [ev('webpage_schema', 'WebPage schema', String(hasSchema(context.pages, 'WebPage')))]);
+  add('breadcrumb_schema', hasSchema(context.pages, 'BreadcrumbList') ? 'pass' : 'not_applicable', [ev('breadcrumb_schema', 'Breadcrumb schema', String(hasSchema(context.pages, 'BreadcrumbList')))], hasSchema(context.pages, 'BreadcrumbList'));
+  const hasArticlePages = context.pages.some((page) => page.classification === 'article');
+  add('article_schema_alignment', hasArticlePages ? (hasSchema(context.pages, 'Article') ? 'pass' : 'partial') : 'not_applicable', [ev('article_schema_alignment', 'Article pages/schema', `${hasArticlePages}/${hasSchema(context.pages, 'Article')}`)], hasArticlePages);
+  add('faq_schema_alignment', context.pages.some((page) => page.hasFaqSignals) ? (hasSchema(context.pages, 'FAQPage') ? 'pass' : 'partial') : 'not_applicable', [ev('faq_schema_alignment', 'FAQ signals/schema', String(hasSchema(context.pages, 'FAQPage')))], context.pages.some((page) => page.hasFaqSignals));
+  add('schema_relevance', unique(context.pages.flatMap((page) => page.schemaTypes)).length <= 10 ? 'pass' : 'partial', [ev('schema_relevance', 'Unique schema types', String(unique(context.pages.flatMap((page) => page.schemaTypes)).length), context.home.finalUrl, 'derived')]);
+
+  add('about_page_present', context.pages.some((page) => page.classification === 'about') || context.home.internalLinks.some((link) => classifyPageType(link) === 'about') ? 'pass' : 'fail', [ev('about_page_present', 'About page', String(context.pages.some((page) => page.classification === 'about')), context.home.finalUrl, 'derived')]);
+  add('contact_page_present', context.pages.some((page) => page.classification === 'contact') || context.home.internalLinks.some((link) => classifyPageType(link) === 'contact') ? 'pass' : 'fail', [ev('contact_page_present', 'Contact page', String(context.pages.some((page) => page.classification === 'contact')), context.home.finalUrl, 'derived')]);
+  add('privacy_page_present', context.pages.some((page) => page.classification === 'legal' && /privacy/i.test(page.finalUrl + page.text)) || context.home.internalLinks.some((link) => /privacy/i.test(link)) ? 'pass' : 'partial', [ev('privacy_page_present', 'Privacy signal', String(context.home.internalLinks.some((link) => /privacy/i.test(link))), context.home.finalUrl, 'derived')]);
+  add('legal_terms_present', context.pages.some((page) => page.classification === 'legal') || context.home.internalLinks.some((link) => /terms|termini|legal|cookie/i.test(link)) ? 'pass' : 'partial', [ev('legal_terms_present', 'Legal links', String(context.home.internalLinks.filter((link) => /terms|termini|legal|cookie|privacy/i.test(link)).length), context.home.finalUrl, 'derived')]);
+  add('team_or_author_present', entity.people.length > 0 || /\b(team|autore|author|fondatore|founder)\b/i.test(context.pages.map((page) => page.text).join(' ')) ? 'pass' : 'partial', [ev('team_or_author_present', 'Team/author signals', String(entity.people.length), context.home.finalUrl, 'derived')]);
+  add('case_study_or_results', measuredPages.some((page) => /\b(case study|risultati|portfolio|clienti|metodologia|successo)\b/i.test(page.text)) ? 'pass' : 'partial', [ev('case_study_or_results', 'Case/results terms', 'Derived from visible text', context.home.finalUrl, 'heuristic')]);
+  add('external_sources_linked', measuredPages.some((page) => page.externalLinks.length >= 2) ? 'pass' : 'partial', [ev('external_sources_linked', 'External links', String(measuredPages.reduce((sum, page) => sum + page.externalLinks.length, 0)), context.home.finalUrl, 'derived')]);
+  add('claims_supported', measuredPages.some((page) => page.hasDataSignals && page.hasSourceSignals) ? 'pass' : measuredPages.some((page) => page.hasDataSignals || page.hasSourceSignals) ? 'partial' : 'fail', [ev('claims_supported', 'Data/source signals', 'Derived from content patterns', context.home.finalUrl, 'heuristic')]);
+
+  add('lang_attribute', context.home.lang ? 'pass' : 'fail', [ev('lang_attribute', 'HTML lang', context.home.lang ?? 'Not found')]);
+  add('viewport_meta', context.home.viewport ? 'pass' : 'fail', [ev('viewport_meta', 'Viewport', context.home.viewport ?? 'Not found')]);
+  const totalImages = measuredPages.reduce((sum, page) => sum + page.imageCount, 0);
+  const totalAlt = measuredPages.reduce((sum, page) => sum + page.imagesWithAlt, 0);
+  add('image_alt_coverage', totalImages === 0 ? 'not_applicable' : totalAlt / totalImages >= 0.8 ? 'pass' : totalAlt / totalImages >= 0.5 ? 'partial' : 'fail', [ev('image_alt_coverage', 'Alt coverage', totalImages === 0 ? 'N/A' : `${totalAlt}/${totalImages}`, context.home.finalUrl, 'derived')], totalImages > 0);
+  add('semantic_landmarks', context.pages.some((page) => page.hasMain && page.hasNav) ? 'pass' : context.pages.some((page) => page.hasMain || page.hasNav || page.hasArticle) ? 'partial' : 'fail', [ev('semantic_landmarks', 'Landmarks', `main=${context.home.hasMain}, nav=${context.home.hasNav}, article=${context.home.hasArticle}`)]);
+  const securityHeaderCount = ['strict-transport-security', 'content-security-policy', 'x-content-type-options', 'referrer-policy'].filter((header) => Boolean(context.home.headers.get(header))).length;
+  add('security_headers', securityHeaderCount >= 3 ? 'pass' : securityHeaderCount >= 1 ? 'partial' : 'fail', [ev('security_headers', 'Security headers', String(securityHeaderCount), context.home.finalUrl, 'direct')]);
+  add('content_type_html', /html/i.test(context.home.contentType ?? '') ? 'pass' : 'partial', [ev('content_type_html', 'Content-Type', context.home.contentType ?? 'Not declared')]);
+  add('mixed_content_absent', context.pages.some((page) => page.mixedContent) ? 'fail' : 'pass', [ev('mixed_content_absent', 'Mixed content signal', String(context.pages.some((page) => page.mixedContent)), context.home.finalUrl, 'derived')]);
+
+  add('structured_dates', measuredPages.some((page) => page.dates.length > 0) ? 'pass' : 'partial', [ev('structured_dates', 'Dates found', String(measuredPages.reduce((sum, page) => sum + page.dates.length, 0)), context.home.finalUrl, 'derived')]);
+  add('sitemap_lastmod', hasSitemap ? (/<lastmod>/i.test(sitemapBody) ? 'pass' : 'partial') : 'unknown', [ev('sitemap_lastmod', 'lastmod', hasSitemap ? String(/<lastmod>/i.test(sitemapBody)) : 'Not measured', context.home.finalUrl, 'derived')], hasSitemap);
+  add('article_dates', hasArticlePages ? (context.pages.some((page) => page.classification === 'article' && page.dates.length > 0) ? 'pass' : 'partial') : 'not_applicable', [ev('article_dates', 'Article dates', String(context.pages.filter((page) => page.classification === 'article' && page.dates.length > 0).length), context.home.finalUrl, 'derived')], hasArticlePages);
+  add('visible_update_signals', measuredPages.some((page) => /\b(aggiornato|updated|202[4-6])\b/i.test(page.text)) ? 'pass' : 'partial', [ev('visible_update_signals', 'Update terms', 'Derived from visible text', context.home.finalUrl, 'heuristic')]);
+  add('stale_signals_limited', measuredPages.some((page) => /\b(201[0-9]|2020|2021)\b/i.test(page.text)) ? 'partial' : 'pass', [ev('stale_signals_limited', 'Old year signals', 'Derived from visible text', context.home.finalUrl, 'heuristic')]);
+
+  add('ai_crawler_policy', hasRobots && /oai-searchbot|gptbot|claudebot|perplexitybot|google-extended/i.test(robotsBody) ? 'pass' : 'partial', [ev('ai_crawler_policy', 'AI crawler policy', hasRobots ? String(/oai-searchbot|gptbot|claudebot|perplexitybot|google-extended/i.test(robotsBody)) : 'robots not measured', context.home.finalUrl, 'derived')]);
+  add('llms_txt_minor_signal', hasLlms ? 'pass' : 'not_applicable', [ev('llms_txt_minor_signal', 'llms.txt', hasLlms ? context.llms.url : 'N/A', hasLlms ? context.llms.url : context.home.finalUrl)], hasLlms);
+  add('semantic_navigation', context.home.hasNav && context.home.internalLinks.length >= 5 ? 'pass' : context.home.hasNav ? 'partial' : 'fail', [ev('semantic_navigation', 'Navigation/internal links', `${context.home.hasNav}/${context.home.internalLinks.length}`)]);
+  add('machine_readable_alternatives', /\.md\b|application\/json|rss|atom/i.test(context.home.html) ? 'pass' : 'not_applicable', [ev('machine_readable_alternatives', 'Alternatives', 'N/A unless explicit feeds, markdown or API links are detected')], /\.md\b|application\/json|rss|atom/i.test(context.home.html));
+  add('agent_protocols_applicable', 'not_applicable', [ev('agent_protocols_applicable', 'Agent protocols', 'N/A: no commerce/API/MCP requirement inferred')], false);
+
+  add('external_provider_available', 'unknown', [ev('external_provider_available', 'External provider', 'Not configured', context.home.finalUrl, 'not_measured')], false);
+
+  return checks;
 }
 
 function buildEntityAnalysis(context: AuditContext): EntityAnalysis {
-  const structured = entityFromStructuredData(context.html);
+  const allText = context.pages.map((page) => page.text).join(' ');
+  const schemaTypes = unique(context.pages.flatMap((page) => page.schemaTypes));
+  const sameAs = unique(context.pages.flatMap((page) => page.sameAs));
+  const brandName = context.home.title?.split(/[|–—-]/)[0]?.trim() || context.inputUrl.hostname.replace(/^www\./, '');
+  const description = context.home.description ?? context.pages.find((page) => page.classification === 'about')?.text.slice(0, 220);
+
   return {
-    brandName: structured.brandName ?? context.facts.title?.split(/[|—-]/)[0]?.trim(),
-    organizationType: structured.organizationType,
-    description: context.facts.description ?? undefined,
-    services: findServiceSignals(context.facts.text),
-    people: [...new Set([...context.facts.text.matchAll(/\b[A-Z][a-z]+\s+[A-Z][a-z]+\b/g)].map(match => match[0]).slice(0, 8))],
-    locations: [...new Set([...context.facts.text.matchAll(/\b(Milano|Roma|Torino|Bologna|Napoli|Italia|Italy)\b/gi)].map(match => match[0]).slice(0, 8))],
-    sameAs: context.facts.sameAs,
-    ambiguitySignals: context.facts.title ? [] : ['Title assente: ricostruzione del brand meno affidabile'],
+    brandName,
+    organizationType: schemaTypes.find((type) => /Organization|LocalBusiness|Corporation|ProfessionalService/i.test(type)),
+    description,
+    services: extractTerms(allText, /\b(servizi|services?|consulenza|strategy|marketing|ai|automation|sviluppo|design|seo|content)\b/gi),
+    products: extractTerms(allText, /\b(prodotti|products?|piattaforma|software|tool|app)\b/gi),
+    audience: extractTerms(allText, /\b(aziende|imprese|startup|brand|team|clienti|professionisti|b2b|ecommerce)\b/gi),
+    people: extractTerms(allText, /\b(founder|fondatore|ceo|team|autore|author|consulente)\b/gi),
+    locations: extractTerms(allText, /\b(italia|milano|roma|torino|napoli|bologna|europe|europa)\b/gi),
+    sameAs,
+    ambiguitySignals: brandName && brandName.length < 3 ? ['brand name too short'] : [],
+    sourcePages: context.pages.map((page) => page.finalUrl),
   };
 }
 
-function buildUnmeasuredVisibility(domain: string): VisibilityScore {
+function buildCrawlSummary(context: AuditContext) {
+  const classifications: Partial<Record<PageClassification, number>> = {};
+  for (const page of context.pages) classifications[page.classification] = (classifications[page.classification] ?? 0) + 1;
   return {
-    state: 'not_measured',
-    score: null,
-    methodologyVersion: AI_VISIBILITY_METHODOLOGY_VERSION,
-    blocker: `Nessun provider AI Visibility affidabile configurato per verificare menzioni e citazioni di ${domain}.`,
-    weights: visibilityWeights,
-    prompts: [],
-    evidence: [],
+    requestedLimit: AI_SCORE_LIMITS.maxPages,
+    pagesFetched: context.pages.length,
+    pagesFailed: Math.max(0, AI_SCORE_LIMITS.maxPages - context.pages.length),
+    duplicateUrlsSkipped: context.duplicateUrlsSkipped,
+    classifications,
+    pages: context.pages.map(({ html: _html, text: _text, description: _description, canonical: _canonical, metaRobots: _metaRobots, xRobots: _xRobots, lang: _lang, viewport: _viewport, contentType: _contentType, headers: _headers, h2: _h2, h3: _h3, links: _links, externalLinks: _externalLinks, imageCount: _imageCount, imagesWithAlt: _imagesWithAlt, schemaTypes: _schemaTypes, sameAs: _sameAs, dates: _dates, hasMain: _hasMain, hasNav: _hasNav, hasArticle: _hasArticle, hasLists: _hasLists, hasTables: _hasTables, hasFaqSignals: _hasFaqSignals, hasDefinitionSignals: _hasDefinitionSignals, hasExampleSignals: _hasExampleSignals, hasSourceSignals: _hasSourceSignals, hasDataSignals: _hasDataSignals, mixedContent: _mixedContent, ...page }) => page),
   };
 }
 
-function buildPremiumPayload(checks: AuditCheck[], categoryScores: InternalAuditResult['premium']['categoryScores'], entityAnalysis: EntityAnalysis, visibilityDetail: VisibilityScore, readinessScore: number | null) {
-  const remediationSummary = checks.filter(check => check.measured && ['fail', 'partial'].includes(check.status)).map<RemediationItem>(check => ({
-    checkId: check.id,
-    title: check.label,
-    whyItMatters: 'Questo controllo contribuisce alla capacita del sito di essere letto, compreso o citato da crawler e sistemi AI.',
-    priority: check.status === 'fail' ? 'critical' : 'optimization',
-    effort: check.pointsAvailable >= 3 ? 'medium' : 'low',
-    expectedImpact: check.pointsAvailable >= 3 ? 'medium' : 'low',
-  }));
-  return { categoryScores, checks, entityAnalysis, visibilityDetail, potentialScore: readinessScore === null ? null : Math.min(100, readinessScore + Math.min(18, remediationSummary.length * 2)), remediationSummary };
+function buildRemediationSummary(checks: AuditCheck[]): RemediationItem[] {
+  return checks
+    .filter((check) => check.measured && ['fail', 'partial'].includes(check.status))
+    .slice(0, 18)
+    .map((check) => {
+      const copy = CHECK_COPY[check.id];
+      const scoreImpact = Math.round((check.pointsAvailable - check.pointsEarned) * 10) / 10;
+      const severity = copy?.severity ?? (check.status === 'fail' && scoreImpact >= 1 ? 'important' : 'optimization');
+      return {
+        checkId: check.id,
+        title: check.label,
+        whyItMatters: copy?.why ?? 'Questo controllo incide sulla chiarezza, accessibilità o affidabilità delle evidenze usate dai sistemi AI.',
+        howToFix: copy?.fix,
+        verification: copy?.verification,
+        priority: severity,
+        effort: severity === 'critical' ? 'high' : severity === 'important' ? 'medium' : 'low',
+        expectedImpact: severity === 'critical' ? 'high' : severity === 'important' ? 'medium' : 'low',
+        evidenceIds: check.evidence.map((item) => item.id).filter(Boolean) as string[],
+        confidence: Math.round((check.evidence.reduce((sum, item) => sum + (item.confidence ?? 50), 0) / Math.max(1, check.evidence.length))),
+        scoreImpact,
+      };
+    });
 }
 
-function countOpportunities(checks: AuditCheck[]) {
-  const open = checks.filter(check => check.measured && (check.status === 'fail' || check.status === 'partial'));
-  const critical = open.filter(check => check.status === 'fail').length;
-  const important = open.filter(check => check.status === 'partial' && check.pointsAvailable >= 3).length;
-  const optimization = Math.max(0, open.length - critical - important);
-  return { total: open.length, critical, important, optimization };
+function countOpportunities(items: RemediationItem[]) {
+  return {
+    total: items.length,
+    critical: items.filter((item) => item.priority === 'critical').length,
+    important: items.filter((item) => item.priority === 'important').length,
+    optimization: items.filter((item) => item.priority === 'optimization').length,
+  };
 }
 
-function interpretResult(score: number | null, confidence: number, opportunities: number, visibilityState: VisibilityScore['state']) {
-  if (score === null) return 'Non sono disponibili evidenze sufficienti per misurare la predisposizione AI del sito senza rischiare una stima arbitraria.';
-  const base = score >= 80 ? 'Il sito presenta una base solida per accessibilita, comprensione e citabilita da parte dei sistemi AI.' : score >= 55 ? 'Il sito mostra una base utile, ma ci sono margini concreti per renderlo piu chiaro, leggibile e citabile dai sistemi AI.' : 'Il sito ha segnali insufficienti o discontinui per essere interpretato con affidabilita dai sistemi AI.';
-  const confidenceNote = confidence < 50 ? ' Le evidenze disponibili sono limitate, quindi la lettura va considerata prudente.' : '';
-  const visibilityNote = visibilityState === 'not_measured' ? ' La visibilita AI reale non e stata misurata per assenza di un provider verificabile.' : '';
-  const opportunityNote = opportunities > 0 ? ` Sono state rilevate ${opportunities} opportunita di miglioramento.` : ' Non sono emerse opportunita deterministiche nella scansione gratuita.';
-  return `${base}${opportunityNote}${confidenceNote}${visibilityNote}`;
+function buildInterpretation(readinessScore: number | null, visibilityState: string, opportunities: number): string {
+  if (readinessScore === null) return 'Non sono state raccolte evidenze sufficienti per calcolare AI Readiness.';
+  const base = readinessScore >= 75
+    ? 'Il sito presenta una base solida per essere letto e interpretato dai sistemi AI.'
+    : readinessScore >= 50
+      ? 'Il sito presenta una base utilizzabile, ma diverse evidenze possono essere rese più chiare e citabili.'
+      : 'Il sito mostra limiti rilevanti nella disponibilità o chiarezza delle evidenze leggibili dai sistemi AI.';
+  const visibility = visibilityState === 'measured' ? ' La visibilità AI è stata misurata separatamente.' : ' La visibilità AI non è ancora misurata perché manca un provider verificabile.';
+  return `${base} Sono state individuate ${opportunities} opportunità basate sui controlli misurati.${visibility}`;
 }
 
-function firstMatch(input: string, pattern: RegExp) {
-  const match = input.match(pattern)?.[1]?.trim();
-  return match ? decodeEntities(match) : null;
+function extractVisibleText(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
-function metaContent(html: string, name: string) {
-  return firstMatch(html, new RegExp(`<meta[^>]+name=["']${name}["'][^>]+content=["']([^"']+)["']`, 'i')) ?? firstMatch(html, new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+name=["']${name}["']`, 'i'));
+function extractTagText(html: string, tag: string): string[] {
+  return [...html.matchAll(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'gi'))]
+    .map((match) => extractVisibleText(match[1]))
+    .filter(Boolean)
+    .slice(0, 20);
 }
 
-function tagTexts(html: string, tag: string) {
-  return [...html.matchAll(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'gi'))].map(match => decodeEntities(match[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim())).filter(Boolean);
+function extractAttributes(html: string, tag: string, attribute: string, tagFilter?: RegExp): string[] {
+  const matches = [...html.matchAll(new RegExp(`<${tag}\\b[^>]*>`, 'gi'))];
+  return matches
+    .filter((match) => !tagFilter || tagFilter.test(match[0]))
+    .map((match) => firstMatch(match[0], new RegExp(`${attribute}=["']([^"']+)["']`, 'i')))
+    .filter(Boolean) as string[];
 }
 
-function countWords(text: string) {
-  return text.split(/\s+/).filter(Boolean).length;
+function extractImageAlts(html: string): string[] {
+  return [...html.matchAll(/<img\b[^>]*>/gi)].map((match) => firstMatch(match[0], /alt=["']([^"']*)["']/i) ?? '');
 }
 
-function jsonLdTypes(html: string) {
-  const types = new Set<string>();
-  for (const block of jsonLdBlocks(html)) collectJsonLdTypes(block, types);
-  return [...types];
+function extractJsonLd(html: string): Record<string, unknown>[] {
+  return [...html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)]
+    .flatMap((match) => {
+      try {
+        const parsed = JSON.parse(match[1]);
+        if (Array.isArray(parsed)) return parsed.filter(isRecord);
+        if (isRecord(parsed['@graph'])) return [];
+        if (Array.isArray(parsed['@graph'])) return parsed['@graph'].filter(isRecord);
+        return isRecord(parsed) ? [parsed] : [];
+      } catch {
+        return [];
+      }
+    });
 }
 
-function jsonLdStatus(html: string): StructuredDataStatus {
-  const blocks = [...html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)].map(match => match[1].trim());
-  if (!blocks.length) return 'unknown';
-  return blocks.every(block => {
-    try { JSON.parse(block); return true; } catch { return false; }
-  }) ? 'valid' : 'invalid';
+function normalizeSchemaTypes(value: unknown): string[] {
+  if (typeof value === 'string') return [value];
+  if (Array.isArray(value)) return value.filter((item): item is string => typeof item === 'string');
+  return [];
 }
 
-function jsonLdBlocks(html: string): unknown[] {
-  return [...html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)].flatMap(match => {
-    try { return [JSON.parse(match[1]) as unknown]; } catch { return []; }
+function normalizeStringArray(value: unknown): string[] {
+  if (typeof value === 'string') return [value];
+  if (Array.isArray(value)) return value.filter((item): item is string => typeof item === 'string');
+  return [];
+}
+
+function extractDates(html: string): string[] {
+  const dateTimes = extractAttributes(html, 'time', 'datetime');
+  const isoDates = [...html.matchAll(/\b20\d{2}-\d{2}-\d{2}\b/g)].map((match) => match[0]);
+  return unique([...dateTimes, ...isoDates]).slice(0, 20);
+}
+
+function metaContent(html: string, name: string): string | undefined {
+  return firstMatch(html, new RegExp(`<meta[^>]+(?:name|property)=["']${name}["'][^>]+content=["']([^"']+)["']`, 'i'))
+    ?? firstMatch(html, new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+(?:name|property)=["']${name}["']`, 'i'));
+}
+
+function firstMatch(text: string, regex: RegExp): string | undefined {
+  const match = text.match(regex);
+  return match?.[1]?.replace(/\s+/g, ' ').trim();
+}
+
+function absolutize(base: string, href: string): string | null {
+  if (!href || /^(mailto|tel|javascript):/i.test(href)) return null;
+  try {
+    const url = new URL(href, base);
+    url.hash = '';
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+function stripHash(url: string): string {
+  const parsed = new URL(url);
+  parsed.hash = '';
+  return parsed.toString();
+}
+
+function isSameOrigin(base: URL, target: string): boolean {
+  try {
+    return new URL(target).origin === base.origin;
+  } catch {
+    return false;
+  }
+}
+
+function isLikelyHtmlUrl(url: string): boolean {
+  return !/\.(pdf|jpg|jpeg|png|webp|gif|svg|zip|mp4|mov|mp3|css|js)(\?|$)/i.test(new URL(url).pathname);
+}
+
+function countWords(text: string): number {
+  return text.split(/\s+/).filter((word) => word.length > 1).length;
+}
+
+function blocksIndexing(value?: string): boolean {
+  return Boolean(value && /\b(noindex|none)\b/i.test(value));
+}
+
+function robotsDisallows(body: string, agent: string): boolean {
+  const lower = body.toLowerCase();
+  const blocks = lower.split(/user-agent:/).slice(1);
+  return blocks.some((block) => {
+    const [header, ...rules] = block.split('\n');
+    return (header.includes(agent) || header.includes('*')) && rules.some((line) => /^\s*disallow:\s*\/\s*$/i.test(line));
   });
 }
 
-function collectJsonLdTypes(value: unknown, types: Set<string>) {
-  if (Array.isArray(value)) return value.forEach(item => collectJsonLdTypes(item, types));
-  if (!value || typeof value !== 'object') return;
-  const record = value as Record<string, unknown>;
-  const type = record['@type'];
-  if (typeof type === 'string') types.add(type);
-  if (Array.isArray(type)) type.filter((item): item is string => typeof item === 'string').forEach(item => types.add(item));
-  Object.values(record).forEach(child => collectJsonLdTypes(child, types));
+function summarizeRobots(body: string, agent: string): string {
+  return robotsDisallows(body, agent) ? `${agent} blocked` : `${agent} not fully blocked`;
 }
 
-function sameAsValues(html: string) {
-  const values = new Set<string>();
-  for (const block of jsonLdBlocks(html)) collectSameAs(block, values);
-  return [...values];
+function sitemapSameOrigin(body: string, base: string): boolean {
+  const origin = new URL(base).origin;
+  const urls = [...body.matchAll(/<loc>([^<]+)<\/loc>/gi)].map((match) => match[1].trim());
+  if (urls.length === 0) return false;
+  return urls.slice(0, 50).every((url) => {
+    try { return new URL(url).origin === origin; } catch { return false; }
+  });
 }
 
-function collectSameAs(value: unknown, values: Set<string>) {
-  if (Array.isArray(value)) return value.forEach(item => collectSameAs(item, values));
-  if (!value || typeof value !== 'object') return;
-  const record = value as Record<string, unknown>;
-  const sameAs = record.sameAs;
-  if (typeof sameAs === 'string') values.add(sameAs);
-  if (Array.isArray(sameAs)) sameAs.filter((item): item is string => typeof item === 'string').forEach(item => values.add(item));
-  Object.values(record).forEach(child => collectSameAs(child, values));
+function countSitemapUrls(body: string): number {
+  return [...body.matchAll(/<loc>/gi)].length;
 }
 
-function entityFromStructuredData(html: string) {
-  const result: { brandName?: string; organizationType?: string } = {};
-  for (const block of jsonLdBlocks(html)) {
-    const stack = [block];
-    while (stack.length) {
-      const current = stack.pop();
-      if (!current || typeof current !== 'object') continue;
-      if (Array.isArray(current)) { stack.push(...current); continue; }
-      const record = current as Record<string, unknown>;
-      const type = record['@type'];
-      const types = Array.isArray(type) ? type : [type];
-      if (types.some(item => item === 'Organization' || item === 'LocalBusiness')) {
-        if (typeof record.name === 'string') result.brandName = record.name;
-        if (typeof type === 'string') result.organizationType = type;
-      }
-      stack.push(...Object.values(record));
-    }
-  }
-  return result;
+function hasSchema(pages: PageFacts[], type: string): boolean {
+  return pages.some((page) => page.schemaTypes.some((schemaType) => schemaType.toLowerCase() === type.toLowerCase()));
 }
 
-function hasRelevantSchema(types: string[]) {
-  return types.some(type => ['Organization', 'WebSite', 'WebPage', 'BreadcrumbList', 'Person', 'Service', 'Article', 'LocalBusiness', 'FAQPage'].includes(type));
+function extractTerms(text: string, regex: RegExp): string[] {
+  return unique([...text.matchAll(regex)].map((match) => match[0].toLowerCase())).slice(0, 8);
 }
 
-function hasLinkLike(links: string[], needles: string[]) {
-  return links.some(link => needles.some(needle => link.toLowerCase().includes(needle)));
+function valueForPage(page: PageFacts, value: string): string {
+  if (value === 'h1') return page.h1.join(' | ') || 'Not found';
+  return value;
 }
 
-function hasEvidenceLanguage(text: string) {
-  return /\b(20\d{2}|\d+%|case study|fonte|source|dati|risultati|metodo|ricerca|studio|report|clienti)\b/i.test(text);
+function unique<T>(items: T[]): T[] {
+  return [...new Set(items)];
 }
 
-function hasScannableStructure(html: string) {
-  return /<(ul|ol|table)\b/i.test(html) || /faq|domande frequenti|question/i.test(html);
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
 }
-
-function findServiceSignals(text: string) {
-  const candidates = ['consulenza', 'audit', 'analisi', 'piattaforma', 'formazione', 'strategia', 'automazione', 'ai', 'organizzazione', 'marketing', 'sviluppo'];
-  return candidates.filter(candidate => new RegExp(`\\b${candidate}\\b`, 'i').test(text));
-}
-
-function parseCrawlerPolicy(robots?: string) {
-  if (!robots) return null;
-  const relevant = ['Googlebot', 'Bingbot', 'OAI-SearchBot', 'Claude-SearchBot', 'PerplexityBot', 'ChatGPT-User', 'Claude-User', 'Perplexity-User'];
-  const found = relevant.filter(bot => new RegExp(`user-agent:\\s*${bot}`, 'i').test(robots));
-  return found.length ? `Policy rilevate per ${found.join(', ')}` : null;
-}
-
-function imageAltRatio(images: { alt: string | null }[]) {
-  if (!images.length) return 1;
-  return images.filter(image => image.alt && image.alt.trim().length > 0).length / images.length;
-}
-
-function scoreSecurityHeaders(headers: Headers) {
-  return ['content-security-policy', 'strict-transport-security', 'x-content-type-options', 'x-frame-options', 'referrer-policy', 'permissions-policy'].filter(header => headers.has(header)).length;
-}
-
-function decodeEntities(value: string) {
-  return value.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
-}
-
-export function stableAuditCacheKey(input: string) {
-  return createHash('sha256').update(input.trim().toLowerCase()).digest('hex');
-}
-
-export { SafeFetchError };
