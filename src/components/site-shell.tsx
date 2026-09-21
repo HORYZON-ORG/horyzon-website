@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-const links=[['Come funziona','/metodo'],["Radar d'Impresa",'/radar-impresa'],['Sistema impresa','/le-tre-aree'],['Platform','/piattaforma'],['Persone','/persone'],['Insights','/biblioteca'],['Contatti','/contatti']];
+const links=[['Come funziona','/metodo'],["Radar d'Impresa",'/radar-impresa'],['AI Score','/ai-score'],['Sistema impresa','/le-tre-aree'],['Platform','/piattaforma'],['Persone','/persone'],['Insights','/biblioteca'],['Contatti','/contatti']];
 export function Wordmark(){const path=usePathname();return <Link className="wordmark" href="/" aria-label="Horyzon, homepage" onClick={event=>{if(path==='/'&&!event.ctrlKey&&!event.metaKey&&!event.shiftKey&&!event.altKey){event.preventDefault();window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'})}}}><span className="horizon-mark" aria-hidden="true"/><span>HORYZON<small>CONSULTING</small></span></Link>}
 export function SiteHeader(){
  const path=usePathname();const [open,setOpen]=useState(false);const button=useRef<HTMLButtonElement>(null);
