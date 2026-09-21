@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test:search": "node scripts/verify-search.mjs",
     "test:readable": "node --no-warnings --experimental-strip-types scripts/verify-readable.mjs",
-    "test:ai-score": "node --no-warnings --experimental-strip-types scripts/verify-ai-score.ts",
+    "test:ai-score": "node scripts/verify-ai-score.mjs",
     "assets:build": "node scripts/build-landscape.mjs",
     "higgsfield:seedance": "node --env-file=.env.local --no-warnings --experimental-strip-types index.ts",
     "test": "node scripts/verify-build.mjs && node scripts/verify-editorial.mjs && node scripts/verify-narrative.mjs && node --no-warnings --experimental-strip-types scripts/verify-scrub-controller.mjs && node scripts/verify-video-scrub.mjs && node --no-warnings --experimental-strip-types scripts/verify-mobile-controls.mjs && node --no-warnings --experimental-strip-types scripts/verify-higgsfield-seedance.mjs && npm run test:ai-score"
