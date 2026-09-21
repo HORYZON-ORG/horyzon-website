@@ -1,0 +1,13 @@
+{
+  "testOnly": true,
+  "case": "owned result",
+  "domain": "example.com",
+  "result": {
+    "title": "Example Consulting",
+    "url": "https://example.com/about",
+    "domain": "example.com",
+    "snippet": "Official company profile."
+  },
+  "expectedClassification": "OWNED",
+  "countsAsIndependent": false
+}
