@@ -60,46 +60,29 @@ export async function POST(request: Request) {
     },
   });
 
+  return ndjson(stream);
+}
+
+function streamEvents(events: AuditStreamEvent[]) {
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      for (const event of events) {
+        controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+      }
+      controller.close();
+    },
+  });
+  return ndjson(stream);
+}
+
+function ndjson(stream: ReadableStream<Uint8Array>) {
   return new Response(stream, {
     headers: {
       'Content-Type': 'application/x-ndjson; charset=utf-8',
       'Cache-Control': 'no-store',
     },
   });
-}
-
-function streamEvents(events: AuditStreamEvent[]) {
-  const encoder = new TextEncoder();
-  return new Response(events.map((event) => encoder.encode(`${JSON.stringify(event)}\n`)).reduce((stream, chunk) => {
-    stream.enqueue(chunk);
-    return stream;
-  }, new ReadableStreamDefaultControllerShim()).stream, {
-    headers: {
-      'Content-Type': 'application/x-ndjson; charset=utf-8',
-      'Cache-Control': 'no-store',
-    },
-  });
-}
-
-class ReadableStreamDefaultControllerShim {
-  stream: ReadableStream<Uint8Array>;
-  private controller?: ReadableStreamDefaultController<Uint8Array>;
-  private chunks: Uint8Array[] = [];
-
-  constructor() {
-    this.stream = new ReadableStream<Uint8Array>({
-      start: (controller) => {
-        this.controller = controller;
-        for (const chunk of this.chunks) controller.enqueue(chunk);
-        controller.close();
-      },
-    });
-  }
-
-  enqueue(chunk: Uint8Array) {
-    if (this.controller) this.controller.enqueue(chunk);
-    else this.chunks.push(chunk);
-  }
 }
 
 function getClientKey(request: Request): string {
