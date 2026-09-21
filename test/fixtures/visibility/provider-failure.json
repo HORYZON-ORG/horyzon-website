@@ -1,0 +1,11 @@
+{
+  "testOnly": true,
+  "name": "provider-failure",
+  "observation": {
+    "status": "FAILED",
+    "brandMentioned": false,
+    "domainCited": false,
+    "errorCode": "PROVIDER_TIMEOUT",
+    "note": "Technical failure is not brand absence."
+  }
+}
