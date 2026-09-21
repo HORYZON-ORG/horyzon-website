@@ -1,0 +1,13 @@
+{
+  "testOnly": true,
+  "case": "ambiguous brand",
+  "domain": "example.com",
+  "result": {
+    "title": "Example launches new restaurant menu",
+    "url": "https://localnews.test/example-restaurant",
+    "domain": "localnews.test",
+    "snippet": "Example is a restaurant brand in another city."
+  },
+  "expectedMatchConfidence": "LOW",
+  "countsAsIndependent": false
+}
