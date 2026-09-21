@@ -1,0 +1,9 @@
+{
+  "testOnly": true,
+  "name": "multiple-surfaces",
+  "observations": [
+    { "status": "SUCCESS", "surface": "OpenAI Web Search", "brandMentioned": true, "domainCited": true },
+    { "status": "SUCCESS", "surface": "Google Search Grounding", "brandMentioned": true, "domainCited": false },
+    { "status": "SUCCESS", "surface": "Perplexity Sonar", "brandMentioned": false, "domainCited": false }
+  ]
+}
