@@ -1,8 +1,9 @@
 "use client";
 
+import Link from 'next/link';
 import type { FormEvent } from 'react';
 import { useMemo, useState } from 'react';
-import type { AuditPipelineState, AuditStreamEvent, FreeAuditResult } from '@/lib/ai-score/types';
+import type { AuditPipelineState, AuditStreamEvent, FreeAuditResult, ReadinessCoverage } from '@/lib/ai-score/types';
 
 const pipeline: { state: AuditPipelineState; label: string }[] = [
   { state: 'queued', label: 'Preparazione analisi' },
@@ -114,15 +115,16 @@ function AuditResult({ audit }: { audit: FreeAuditResult }) {
       <dl>
         <div><dt>Dominio</dt><dd>{audit.domain}</dd></div>
         <div><dt>Analisi</dt><dd>{new Intl.DateTimeFormat('it-IT', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(audit.analyzedAt))}</dd></div>
-        <div><dt>Metodo</dt><dd>{audit.methodologyVersion}</dd></div>
+        <div><dt>Metodo</dt><dd>{audit.methodologyVersion} · <Link href="/ai-score/methodology">Come viene calcolato</Link></dd></div>
         <div><dt>Evidenze</dt><dd>{audit.pagesAnalyzed} pagine · {audit.signalsAnalyzed} segnali</dd></div>
       </dl>
     </div>
     <div className="ai-score-metrics">
-      <Metric title="AI Readiness" value={formatScore(audit.readiness.score)} text="Quanto il sito è predisposto." state={audit.readiness.state} />
+      <Metric title="AI Readiness" value={formatScore(audit.readiness.score)} text="Quanto il sito è predisposto." state={readinessStateLabel(audit.readiness.state, audit.readinessCoverage)} />
       <Metric title="AI Visibility" value={audit.visibility.score === null ? 'Not measured' : formatScore(audit.visibility.score)} text="Quanto appare realmente nelle risposte AI." state={audit.visibility.state} />
       <Metric title="Evidence confidence" value={audit.confidence.label} text="Quanto sono solide le evidenze disponibili per questa analisi." state={`${audit.confidence.value}/100`} />
     </div>
+    {audit.readinessCoverage && <p className="ai-score-notice">AI Readiness calcolata con coverage {audit.readinessCoverage.value}% sui controlli applicabili misurati.</p>}
     {audit.notice && <p className="ai-score-notice">{audit.notice}</p>}
     <p className="ai-score-interpretation">{audit.interpretation}</p>
     <div className="ai-score-premium">
@@ -139,7 +141,7 @@ function AuditResult({ audit }: { audit: FreeAuditResult }) {
         <h3>Scopri cosa limita il tuo AI Score</h3>
         <p>Accedi all’analisi completa per vedere controlli, evidenze, priorità e interventi collegati ai problemi realmente rilevati.</p>
         <button className="button ghost-dark" type="button" disabled>Sblocca l’analisi completa</button>
-        <small>Accesso premium non ancora attivo: prezzo e pagamento arriveranno da configurazione/backend.</small>
+        <small>Analisi completa in arrivo: lo sblocco sarà disponibile quando attiveremo l’accesso premium.</small>
       </div>
     </div>
   </section>;
@@ -156,4 +158,10 @@ function Metric({ title, value, text, state }: { title: string; value: string; t
 
 function formatScore(score: number | null) {
   return score === null ? 'Not measured' : `${score}/100`;
+}
+
+function readinessStateLabel(state: string, coverage?: ReadinessCoverage) {
+  if (!coverage) return state;
+  const label = coverage.label === 'complete' ? 'Valutazione completa' : coverage.label === 'partial' ? 'Valutazione parziale' : 'Coverage limitata';
+  return `${label} · ${coverage.value}%`;
 }
