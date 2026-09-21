@@ -1,0 +1,11 @@
+{
+  "testOnly": true,
+  "name": "brand-mentioned-cited",
+  "observation": {
+    "status": "SUCCESS",
+    "brandMentioned": true,
+    "domainCited": true,
+    "citedUrls": ["https://www.example.com/services/ai-consulting"],
+    "sources": [{ "url": "https://www.example.com/services/ai-consulting", "normalizedUrl": "https://example.com/services/ai-consulting", "domain": "example.com", "title": "AI consulting" }]
+  }
+}
