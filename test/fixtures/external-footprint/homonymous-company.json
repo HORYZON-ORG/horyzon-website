@@ -1,0 +1,13 @@
+{
+  "testOnly": true,
+  "case": "homonymous company",
+  "domain": "example.com",
+  "result": {
+    "title": "Example Consulting logistics services",
+    "url": "https://logisticsdirectory.test/example-consulting",
+    "domain": "logisticsdirectory.test",
+    "snippet": "A logistics provider with the same name, no AI or consulting context."
+  },
+  "expectedMatchConfidence": "MEDIUM",
+  "needsContextValidation": true
+}
