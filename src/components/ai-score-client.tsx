@@ -7,9 +7,9 @@ import type { AuditPipelineState, AuditStreamEvent, FreeAuditResult, ReadinessCo
 
 const pipeline: { state: AuditPipelineState; label: string }[] = [
   { state: 'queued', label: 'Preparazione analisi' },
-  { state: 'crawling', label: 'Verifica accessibilità' },
+  { state: 'crawling', label: 'Verifica accessibilita' },
   { state: 'analyzing', label: 'Analisi struttura e contenuti' },
-  { state: 'visibility_check', label: 'Verifica visibilità' },
+  { state: 'visibility_check', label: 'Verifica visibilita' },
   { state: 'scoring', label: 'Calcolo risultati' },
   { state: 'completed', label: 'Risultato gratuito' },
 ];
@@ -120,8 +120,8 @@ function AuditResult({ audit }: { audit: FreeAuditResult }) {
       </dl>
     </div>
     <div className="ai-score-metrics">
-      <Metric title="AI Readiness" value={formatScore(audit.readiness.score)} text="Quanto il sito è predisposto." state={readinessStateLabel(audit.readiness.state, audit.readinessCoverage)} />
-      <Metric title="AI Visibility" value={audit.visibility.score === null ? 'Not measured' : formatScore(audit.visibility.score)} text="Quanto appare realmente nelle risposte AI." state={audit.visibility.state} />
+      <Metric title="AI Readiness" value={formatScore(audit.readiness.score)} text="Quanto il sito e predisposto." state={readinessStateLabel(audit.readiness.state, audit.readinessCoverage)} />
+      <Metric title="AI Visibility" value={audit.visibility.score === null ? 'Not measured' : formatScore(audit.visibility.score)} text="Analizziamo la presenza del brand su diverse superfici di ricerca AI." state={visibilityStateLabel(audit)} />
       <Metric title="Evidence confidence" value={audit.confidence.label} text="Quanto sono solide le evidenze disponibili per questa analisi." state={`${audit.confidence.value}/100`} />
     </div>
     {audit.readinessCoverage && <p className="ai-score-notice">AI Readiness calcolata con coverage {audit.readinessCoverage.value}% sui controlli applicabili misurati.</p>}
@@ -130,8 +130,8 @@ function AuditResult({ audit }: { audit: FreeAuditResult }) {
     <div className="ai-score-premium">
       <div>
         <p className="section-kicker">Analisi completa</p>
-        <h3>{audit.opportunities.total > 0 ? `Abbiamo individuato ${audit.opportunities.total} opportunità di miglioramento` : 'Nessuna opportunità deterministica nel risultato gratuito'}</h3>
-        <div className="ai-score-severity" aria-label="Conteggio opportunità per severità">
+        <h3>{audit.opportunities.total > 0 ? `Abbiamo individuato ${audit.opportunities.total} opportunita di miglioramento` : 'Nessuna opportunita deterministica nel risultato gratuito'}</h3>
+        <div className="ai-score-severity" aria-label="Conteggio opportunita per severita">
           <span>{audit.opportunities.critical} critiche</span>
           <span>{audit.opportunities.important} importanti</span>
           <span>{audit.opportunities.optimization} ottimizzazioni</span>
@@ -139,9 +139,9 @@ function AuditResult({ audit }: { audit: FreeAuditResult }) {
       </div>
       <div>
         <h3>Scopri cosa limita il tuo AI Score</h3>
-        <p>Accedi all’analisi completa per vedere controlli, evidenze, priorità e interventi collegati ai problemi realmente rilevati.</p>
+        <p>Accedi all’analisi completa per vedere controlli, evidenze, priorita e interventi collegati ai problemi realmente rilevati.</p>
         <button className="button ghost-dark" type="button" disabled>Sblocca l’analisi completa</button>
-        <small>Analisi completa in arrivo: lo sblocco sarà disponibile quando attiveremo l’accesso premium.</small>
+        <small>Analisi completa in arrivo: lo sblocco sara disponibile quando attiveremo l’accesso premium.</small>
       </div>
     </div>
   </section>;
@@ -164,4 +164,11 @@ function readinessStateLabel(state: string, coverage?: ReadinessCoverage) {
   if (!coverage) return state;
   const label = coverage.label === 'complete' ? 'Valutazione completa' : coverage.label === 'partial' ? 'Valutazione parziale' : 'Coverage limitata';
   return `${label} · ${coverage.value}%`;
+}
+
+function visibilityStateLabel(audit: FreeAuditResult) {
+  if (audit.visibility.state === 'not_measured') return 'Not measured';
+  const planned = audit.visibility.coverageDetail?.plannedPrompts ?? 5;
+  const executed = audit.visibility.coverageDetail?.successfulObservations ?? 0;
+  return `Quick scan · ${executed}/${planned} query analizzate`;
 }
