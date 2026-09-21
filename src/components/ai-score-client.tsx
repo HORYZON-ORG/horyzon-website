@@ -6,9 +6,9 @@ import type { AuditPipelineState, AuditStreamEvent, FreeAuditResult } from '@/li
 
 const pipeline: { state: AuditPipelineState; label: string }[] = [
   { state: 'queued', label: 'Preparazione analisi' },
-  { state: 'crawling', label: 'Verifica accessibilita' },
+  { state: 'crawling', label: 'Verifica accessibilità' },
   { state: 'analyzing', label: 'Analisi struttura e contenuti' },
-  { state: 'visibility_check', label: 'Verifica visibilita' },
+  { state: 'visibility_check', label: 'Verifica visibilità' },
   { state: 'scoring', label: 'Calcolo risultati' },
   { state: 'completed', label: 'Risultato gratuito' },
 ];
@@ -115,10 +115,11 @@ function AuditResult({ audit }: { audit: FreeAuditResult }) {
         <div><dt>Dominio</dt><dd>{audit.domain}</dd></div>
         <div><dt>Analisi</dt><dd>{new Intl.DateTimeFormat('it-IT', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(audit.analyzedAt))}</dd></div>
         <div><dt>Metodo</dt><dd>{audit.methodologyVersion}</dd></div>
+        <div><dt>Evidenze</dt><dd>{audit.pagesAnalyzed} pagine · {audit.signalsAnalyzed} segnali</dd></div>
       </dl>
     </div>
     <div className="ai-score-metrics">
-      <Metric title="AI Readiness" value={formatScore(audit.readiness.score)} text="Quanto il sito e predisposto." state={audit.readiness.state} />
+      <Metric title="AI Readiness" value={formatScore(audit.readiness.score)} text="Quanto il sito è predisposto." state={audit.readiness.state} />
       <Metric title="AI Visibility" value={audit.visibility.score === null ? 'Not measured' : formatScore(audit.visibility.score)} text="Quanto appare realmente nelle risposte AI." state={audit.visibility.state} />
       <Metric title="Evidence confidence" value={audit.confidence.label} text="Quanto sono solide le evidenze disponibili per questa analisi." state={`${audit.confidence.value}/100`} />
     </div>
@@ -127,8 +128,8 @@ function AuditResult({ audit }: { audit: FreeAuditResult }) {
     <div className="ai-score-premium">
       <div>
         <p className="section-kicker">Analisi completa</p>
-        <h3>{audit.opportunities.total > 0 ? `Abbiamo individuato ${audit.opportunities.total} opportunita di miglioramento` : 'Nessuna opportunita deterministica nel risultato gratuito'}</h3>
-        <div className="ai-score-severity" aria-label="Conteggio opportunita per severita">
+        <h3>{audit.opportunities.total > 0 ? `Abbiamo individuato ${audit.opportunities.total} opportunità di miglioramento` : 'Nessuna opportunità deterministica nel risultato gratuito'}</h3>
+        <div className="ai-score-severity" aria-label="Conteggio opportunità per severità">
           <span>{audit.opportunities.critical} critiche</span>
           <span>{audit.opportunities.important} importanti</span>
           <span>{audit.opportunities.optimization} ottimizzazioni</span>
@@ -136,9 +137,9 @@ function AuditResult({ audit }: { audit: FreeAuditResult }) {
       </div>
       <div>
         <h3>Scopri cosa limita il tuo AI Score</h3>
-        <p>Accedi all’analisi completa per capire perche hai ottenuto questi risultati, quali problemi sono stati rilevati e quali interventi possono avere maggiore impatto.</p>
+        <p>Accedi all’analisi completa per vedere controlli, evidenze, priorità e interventi collegati ai problemi realmente rilevati.</p>
         <button className="button ghost-dark" type="button" disabled>Sblocca l’analisi completa</button>
-        <small>Prezzi e pagamento saranno gestiti da configurazione/backend. Stato attuale: locked.</small>
+        <small>Accesso premium non ancora attivo: prezzo e pagamento arriveranno da configurazione/backend.</small>
       </div>
     </div>
   </section>;
