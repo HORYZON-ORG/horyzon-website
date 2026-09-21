@@ -23,6 +23,8 @@ const nextConfig: NextConfig = {
    { key: 'X-Content-Type-Options', value: 'nosniff' },
    { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
    { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
+  ] }, { source: '/', headers: [
+   { key: 'Vary', value: 'Accept, RSC, Next-Router-State-Tree, Next-Router-Prefetch, Next-Router-Segment-Prefetch' },
   ] }, { source: '/home.md', headers: [
    { key: 'Content-Type', value: 'text/markdown; charset=utf-8' },
    { key: 'X-Robots-Tag', value: 'noindex, follow' },

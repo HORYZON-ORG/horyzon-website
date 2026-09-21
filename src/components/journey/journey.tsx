@@ -118,8 +118,9 @@ export function Journey() {
    seek: (time) => { media.currentTime = time; },
   });
   const update = () => {
-   if (!Number.isFinite(media.duration) || media.duration <= 0) return;
-   const range = Math.max(1, story.offsetHeight - root.current!.clientHeight);
+   const viewport = root.current;
+   if (!viewport || !Number.isFinite(media.duration) || media.duration <= 0) return;
+   const range = Math.max(1, story.offsetHeight - viewport.clientHeight);
    const travelled = Math.max(0, -story.getBoundingClientRect().top);
    const end = Math.max(0, media.duration - 1 / 24);
    scrub.update(scrollTime(travelled, range, end));
