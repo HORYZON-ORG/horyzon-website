@@ -24,7 +24,6 @@ import type {
   OpportunitySeverity,
   PageClassification,
   PremiumAuditPayload,
-  ReadinessCategoryId,
   RemediationItem,
 } from './types';
 
@@ -147,6 +146,7 @@ export async function runAiScoreAudit(rawUrl: string, onState?: StateCallback): 
   const remediationSummary = buildRemediationSummary(checks);
   const opportunities = countOpportunities(remediationSummary);
   const status = visibility.state === 'measured' && externalBrandFootprint.state === 'measured' ? 'completed' : 'partial';
+  const readinessState = readinessScore === null ? 'not_measured' : status === 'completed' ? 'measured' : 'partial';
 
   const premium: PremiumAuditPayload = {
     categoryScores,
@@ -171,7 +171,7 @@ export async function runAiScoreAudit(rawUrl: string, onState?: StateCallback): 
     finalUrl: home.finalUrl,
     analyzedAt: startedAt,
     methodologyVersion: AI_SCORE_DISPLAY_METHODOLOGY,
-    readiness: { state: readinessScore === null ? 'not_measured' : status, score: readinessScore },
+    readiness: { state: readinessState, score: readinessScore },
     visibility,
     confidence,
     interpretation: buildInterpretation(readinessScore, visibility.state, opportunities.total),
