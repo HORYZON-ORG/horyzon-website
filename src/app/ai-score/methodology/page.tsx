@@ -7,7 +7,9 @@ import {
   AI_SCORE_DISPLAY_METHODOLOGY,
   AI_SCORE_METHODOLOGY_EFFECTIVE_DATE,
   auditCheckDefinitions,
+  checkWeightValues,
   methodologyDefinition,
+  methodologyReferences,
   readinessCategories,
   visibilityWeights,
 } from '@/lib/ai-score/methodology';
@@ -28,7 +30,8 @@ export default function AiScoreMethodologyPage() {
           <h1>Metodologia Horyzon AI Score</h1>
           <p className="page-intro">{AI_SCORE_DISPLAY_METHODOLOGY} misura AI Readiness con controlli deterministici e tiene separata AI Visibility, che richiede provider verificabili.</p>
           <dl className="ai-score-methodology-meta">
-            <div><dt>Versione readiness</dt><dd>{methodologyDefinition.readinessVersion}</dd></div>
+            <div><dt>Versione pubblica</dt><dd>{AI_SCORE_DISPLAY_METHODOLOGY}</dd></div>
+            <div><dt>ID tecnico</dt><dd>{methodologyDefinition.readinessVersion}</dd></div>
             <div><dt>Formula confidence</dt><dd>{methodologyDefinition.confidenceFormulaVersion}</dd></div>
             <div><dt>Data efficacia</dt><dd>{AI_SCORE_METHODOLOGY_EFFECTIVE_DATE}</dd></div>
             <div><dt>Controlli definiti</dt><dd>{auditCheckDefinitions.length}</dd></div>
@@ -53,12 +56,27 @@ export default function AiScoreMethodologyPage() {
 
       <section className="narrative-section ai-score-method">
         <header>
-          <p className="section-kicker">Confidence</p>
-          <h2>La fiducia non è una scelta editoriale.</h2>
-          <p className="narrative-lede">Evidence confidence deriva da copertura dei controlli applicabili, qualità delle evidenze, copertura categorie, profondità crawl, copertura AI Visibility e copertura External Brand Footprint.</p>
+          <p className="section-kicker">Pesi interni</p>
+          <h2>Non tutti i controlli valgono allo stesso modo.</h2>
+          <p className="narrative-lede">Dentro ogni categoria, i controlli sono ponderati per impatto: un blocco di indicizzazione pesa più di un segnale opzionale come llms.txt. I pesi macro restano quelli pubblicati sopra.</p>
         </header>
         <div className="output-list">
-          <article><h3>80-100</h3><p>HIGH: evidenze ampie e prevalentemente dirette.</p></article>
+          {Object.entries(checkWeightValues).map(([label, weight]) => <article key={label}>
+            <h3>{label}</h3>
+            <strong>{weight} unità</strong>
+            <p>{label === 'CRITICAL' ? 'Controlli che possono impedire discovery, crawling, interpretazione o fiducia di base.' : label === 'HIGH' ? 'Segnali importanti per qualità, autorevolezza o accessibilità machine-readable.' : label === 'MEDIUM' ? 'Controlli utili ma non sempre decisivi singolarmente.' : 'Segnali minori o contestuali: contribuiscono poco e non sono trattati come ranking factor ufficiali.'}</p>
+          </article>)}
+        </div>
+      </section>
+
+      <section className="narrative-section ai-score-method">
+        <header>
+          <p className="section-kicker">Confidence</p>
+          <h2>La fiducia non è una scelta editoriale.</h2>
+          <p className="narrative-lede">Evidence confidence deriva da copertura dei controlli applicabili, qualità delle evidenze, copertura categorie, profondità crawl, copertura AI Visibility e copertura External Brand Footprint. Se mancano provider esterni per Visibility e Footprint, la confidence non può salire a HIGH.</p>
+        </header>
+        <div className="output-list">
+          <article><h3>80-100</h3><p>HIGH: evidenze ampie, prevalentemente dirette e provider esterni disponibili dove necessari.</p></article>
           <article><h3>50-79</h3><p>MEDIUM: audit utile ma con fonti, profondità o provider mancanti.</p></article>
           <article><h3>0-49</h3><p>LOW: evidenze insufficienti o molti controlli non misurati.</p></article>
         </div>
@@ -75,6 +93,20 @@ export default function AiScoreMethodologyPage() {
             <h3>{labelVisibilityWeight(key)}</h3>
             <strong>{weight}%</strong>
             <p>Predisposto nel modello dati; resta Not measured finché non è configurato un provider verificabile.</p>
+          </article>)}
+        </div>
+      </section>
+
+      <section className="narrative-section ai-score-method">
+        <header>
+          <p className="section-kicker">Riferimenti</p>
+          <h2>Fonti e standard usati come base.</h2>
+          <p className="narrative-lede">Questi riferimenti guidano controlli e provider candidati. Horyzon AI Score resta una metodologia indipendente, non uno score ufficiale di OpenAI, Google, Microsoft, Anthropic o Perplexity.</p>
+        </header>
+        <div className="output-list ai-score-methodology-grid">
+          {methodologyReferences.map(reference => <article key={reference.url}>
+            <h3><a href={reference.url} target="_blank" rel="noreferrer">{reference.label}</a></h3>
+            <p>{reference.scope}</p>
           </article>)}
         </div>
       </section>
