@@ -22,7 +22,6 @@ import type {
   ExternalFootprintQueryCategory,
   ExternalFootprintQueryIntent,
   ExternalSearchResult,
-  ExternalSourceClassification,
   ExternalSourceClassificationResult,
   ExternalBrandFootprintResult,
 } from './types';
@@ -397,6 +396,11 @@ function buildObservationEvidence(result: ExternalSearchResult, match: { confide
   return [`${result.title} (${result.domain})`, `classification=${classification.classification}`, `matchConfidence=${match.confidence}`, `categoryAssociation=${categoryAssociation}`, peopleAssociations.length ? `people=${peopleAssociations.join(', ')}` : undefined].filter(Boolean).join(' | ');
 }
 
+function recordExternalFootprintTelemetry(event: { auditId: string; profileId: string; providerId: string; queryCount: number; resultsCount: number; matchedSources: number; coverage: number; latencyMs: number; estimatedCost: number; errorCode?: string }) {
+  if (process.env.AI_SCORE_EXTERNAL_FOOTPRINT_LOGS !== '1') return;
+  console.info('ai-score.external_footprint', { auditId: event.auditId, profileId: event.profileId, providerId: event.providerId, queryCount: event.queryCount, resultsCount: event.resultsCount, matchedSources: event.matchedSources, coverage: event.coverage, latencyMs: event.latencyMs, estimatedCost: event.estimatedCost, errorCode: event.errorCode });
+}
+
 function sanitizeFootprintQuery(value: string): string { return sanitizeEntityText(value, 160) ?? ''; }
 
 function sanitizeEntityText(value: string | undefined, maxLength = 100): string | undefined {
@@ -410,5 +414,3 @@ function includesNormalized(haystack: string | undefined, needle: string | undef
 function normalizeQuery(value: string): string { return value.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s.]/g, ' ').replace(/\s+/g, ' ').trim(); }
 function normalizeUrl(value: string): string { try { const url = new URL(value.includes('://') ? value : `https://${value}`); url.hash = ''; for (const param of ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'fbclid', 'gclid']) url.searchParams.delete(param); url.hostname = url.hostname.replace(/^www\./i, '').toLowerCase(); return url.toString().replace(/\/$/, ''); } catch { return value.trim().toLowerCase(); } }
 function ratio(value: number, total: number): number { return total > 0 ? Math.min(1, value / total) : 0; }
-
-export type { ExternalSourceClassification };
