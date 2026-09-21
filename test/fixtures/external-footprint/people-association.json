@@ -1,0 +1,13 @@
+{
+  "testOnly": true,
+  "case": "people association",
+  "domain": "example.com",
+  "person": "Jane Rossi",
+  "result": {
+    "title": "Jane Rossi speaks for Example Consulting",
+    "url": "https://event.test/speakers/jane-rossi",
+    "domain": "event.test",
+    "snippet": "Jane Rossi is associated professionally with Example Consulting."
+  },
+  "expectedPeopleAssociation": true
+}
