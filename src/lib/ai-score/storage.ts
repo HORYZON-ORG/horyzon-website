@@ -6,13 +6,13 @@ import type { AuditRepository, InternalAuditResult } from './types';
  * Production can replace this adapter without changing the audit engine.
  */
 export class NoopAuditRepository implements AuditRepository {
-  async findRecent(): Promise<InternalAuditResult | null> {
+  async findRecent(_cacheKey: string): Promise<InternalAuditResult | null> {
     return null;
   }
 
-  async save(): Promise<void> {
+  async save(_cacheKey: string, _audit: InternalAuditResult): Promise<void> {
     return;
   }
 }
 
-export const auditRepository = new NoopAuditRepository();
+export const auditRepository: AuditRepository = new NoopAuditRepository();
