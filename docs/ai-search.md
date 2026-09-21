@@ -33,6 +33,8 @@ La homepage supporta `Accept: text/markdown` sullo stesso URL, con `Vary: Accept
 
 Eseguire `npm run test:readable` e `npm run test:readable -- https://horyzon.it` per verificare negoziazione, cache separate HTML/Markdown, MIME e indicizzabilità. Il file generato non è versionato: usare sempre `npm run build`, anche su Vercel. Il rapporto testo/codice di scanner esterni non misura la percentuale di contenuto effettivamente compresa dagli assistenti.
 
+Su Vercel l'adapter statico Next sostituisce `Vary` nella risposta HTML con gli header RSC. La CDN include già `Accept` nella chiave; la risposta HTML impone `max-age=0, must-revalidate`. I test verificano alternanza dei formati, ETag distinti e rivalidazione incrociata (mai 304 per la rappresentazione sbagliata). La risposta Markdown conserva esplicitamente `Vary: Accept`.
+
 Eseguire `npm run build`, `npm run lint`, `npm run typecheck`, `npm test` e `npm run test:search`. Il controllo search usa l'output reale della build; `node scripts/verify-search.mjs https://horyzon.it` controlla anche status, MIME e header della produzione. Verificare inoltre browser desktop/mobile, riduzione movimento, CTA, link, console e assenza di overflow.
 
 Lighthouse misura laboratorio: non riportare TBT come INP né i suoi risultati come 75° percentile sul campo. `/radar` perde punti SEO per il noindex voluto; non rimuoverlo per aumentare il punteggio. Non esiste un punteggio universale AI-readiness: presentare i controlli tecnici, poi separatamente la visibilità osservata.
@@ -49,6 +51,7 @@ IndexNow è un'opzione futura per notificare modifiche effettive, senza garanzie
 ## Riferimenti ufficiali consultati
 
 - https://vercel.com/blog/making-agent-friendly-pages-with-content-negotiation
+- https://vercel.com/docs/caching/cdn-cache
 
 - https://developers.google.com/search/docs/fundamentals/ai-optimization-guide
 - https://developers.google.com/search/docs/appearance/ai-features

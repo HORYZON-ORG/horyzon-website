@@ -15,13 +15,20 @@ if (base) {
  const get = async headers => {
   const response = await fetch(base + '/', { headers, redirect: 'manual' });
   assert.equal(response.status, 200);
-  assert.match(response.headers.get('vary'), /\baccept\b/i);
+  // Vercel's Next static adapter replaces Vary on HTML. Its CDN includes
+  // Accept in the cache key by default; downstream caches must revalidate.
+  if (!/\baccept\b/i.test(response.headers.get('vary') ?? '')) {
+   assert.equal(response.headers.get('server'), 'Vercel');
+   assert.match(response.headers.get('cache-control'), /max-age=0/);
+   assert.match(response.headers.get('cache-control'), /must-revalidate/);
+  }
   assert.match(response.headers.get('vary'), /\brsc\b/i);
   assert(!response.headers.get('x-robots-tag')?.includes('noindex'), 'Negotiation must not noindex the homepage');
   return { response, body: await response.text() };
  };
  for (let repeat = 0; repeat < 2; repeat++) {
   const md = await get({ accept: 'text/markdown' });
+  assert.match(md.response.headers.get('vary'), /\baccept\b/i);
   assert.match(md.response.headers.get('content-type'), /^text\/markdown; charset=utf-8$/i);
   assert(md.body.includes('# La tua impresa ha un orizzonte.'));
   assert(md.body.includes('https://hub.horyzon.it/radar'));
@@ -31,6 +38,13 @@ if (base) {
    assert.match(html.response.headers.get('content-type'), /^text\/html/i);
    assert(html.body.includes('<h1'));
    assert(html.body.includes('La tua impresa ha un orizzonte.'));
+   assert.notEqual(html.response.headers.get('etag'), md.response.headers.get('etag'));
+   for (const [variant, etag] of [['text/html', md.response.headers.get('etag')], ['text/markdown', html.response.headers.get('etag')]]) {
+    assert(etag);
+    const revalidated = await fetch(base + '/', { headers: { accept: variant, 'if-none-match': etag } });
+    assert.equal(revalidated.status, 200, 'A different representation must not return 304');
+    assert.match(revalidated.headers.get('content-type'), new RegExp(`^${variant}`));
+   }
   }
  }
  const rsc = await fetch(base + '/', { headers: { accept: 'text/markdown', rsc: '1' } });
