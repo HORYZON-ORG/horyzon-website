@@ -1,0 +1,13 @@
+{
+  "testOnly": true,
+  "case": "official LinkedIn",
+  "domain": "example.com",
+  "result": {
+    "title": "Example Consulting | LinkedIn",
+    "url": "https://www.linkedin.com/company/example-consulting",
+    "domain": "linkedin.com",
+    "snippet": "Official company page for Example Consulting."
+  },
+  "expectedClassification": "OFFICIAL_EXTERNAL",
+  "countsAsIndependent": false
+}
