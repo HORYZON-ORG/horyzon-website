@@ -8,14 +8,16 @@ import {
   AI_SCORE_METHODOLOGY_EFFECTIVE_DATE,
   auditCheckDefinitions,
   checkWeightValues,
+  externalFootprintWeights,
   methodologyDefinition,
   methodologyReferences,
   readinessCategories,
   visibilityWeights,
 } from '@/lib/ai-score/methodology';
+import { createExternalFootprintProviderRegistry, externalFootprintProfiles } from '@/lib/ai-score/external-footprint';
 import { createVisibilityProviderRegistry, visibilityProviderCandidates, visibilityScanProfiles } from '@/lib/ai-score/visibility';
 
-const description = 'Metodologia Horyzon AI Score: pesi, controlli, confidence, limiti e separazione tra AI Readiness e AI Visibility.';
+const description = 'Metodologia Horyzon AI Score: pesi, controlli, confidence, limiti e separazione tra AI Readiness, AI Visibility ed External Brand Footprint.';
 
 export const metadata: Metadata = pageMetadata({ path: '/ai-score/methodology', title: 'Metodologia Horyzon AI Score', description });
 
@@ -24,6 +26,12 @@ export default function AiScoreMethodologyPage() {
     id: provider.id,
     label: provider.label,
     surface: provider.surface,
+    configured: provider.isConfigured(),
+    enabled: provider.enabled,
+  }));
+  const footprintProviderStatuses = createExternalFootprintProviderRegistry().map((provider) => ({
+    id: provider.id,
+    label: provider.label,
     configured: provider.isConfigured(),
     enabled: provider.enabled,
   }));
@@ -38,7 +46,7 @@ export default function AiScoreMethodologyPage() {
         <div>
           <p className="eyebrow"><span />Metodo pubblico</p>
           <h1>Metodologia Horyzon AI Score</h1>
-          <p className="page-intro">{AI_SCORE_DISPLAY_METHODOLOGY} misura AI Readiness con controlli deterministici e tiene separata AI Visibility, che richiede observation reali raccolte da provider verificabili.</p>
+          <p className="page-intro">{AI_SCORE_DISPLAY_METHODOLOGY} misura AI Readiness con controlli deterministici e tiene separate AI Visibility ed External Brand Footprint, che richiedono observation reali raccolte da provider verificabili.</p>
           <dl className="ai-score-methodology-meta">
             <div><dt>Versione pubblica</dt><dd>{AI_SCORE_DISPLAY_METHODOLOGY}</dd></div>
             <div><dt>ID tecnico</dt><dd>{methodologyDefinition.readinessVersion}</dd></div>
@@ -110,6 +118,22 @@ export default function AiScoreMethodologyPage() {
 
       <section className="narrative-section ai-score-method">
         <header>
+          <p className="section-kicker">External Brand Footprint</p>
+          <h2>Corroborazione esterna, non volume grezzo.</h2>
+          <p className="narrative-lede">Verifica quanto l'identità e l'attività del brand trovano riscontro in fonti esterne al proprio sito.</p>
+          <p className="narrative-lede">Fonti indipendenti pesano piu dei profili controllati dal brand. La quantita di risultati non equivale automaticamente ad autorevolezza e la metrica resta Not measured senza provider verificabile.</p>
+        </header>
+        <div className="output-list">
+          {Object.entries(externalFootprintWeights).map(([key, weight]) => <article key={key}>
+            <h3>{labelExternalFootprintWeight(key)}</h3>
+            <strong>{weight}%</strong>
+            <p>{externalFootprintMetricCopy(key)}</p>
+          </article>)}
+        </div>
+      </section>
+
+      <section className="narrative-section ai-score-method">
+        <header>
           <p className="section-kicker">Superfici supportate</p>
           <h2>Provider predisposti, non configurati.</h2>
           <p className="narrative-lede">Lo stato mostra solo disponibilita operativa, non segreti o valori di configurazione. Nessuna chiamata live viene eseguita finche il provider non e configurato e abilitato server-side.</p>
@@ -120,6 +144,11 @@ export default function AiScoreMethodologyPage() {
             <strong>{provider.configured && provider.enabled ? 'Supported' : 'Not configured'}</strong>
             <p>{provider.surface}</p>
           </article>)}
+          {footprintProviderStatuses.map(provider => <article key={provider.id}>
+            <h3>{provider.label}</h3>
+            <strong>{provider.configured && provider.enabled ? 'Supported' : 'Not configured'}</strong>
+            <p>External Brand Footprint search provider</p>
+          </article>)}
         </div>
       </section>
 
@@ -127,11 +156,13 @@ export default function AiScoreMethodologyPage() {
         <header>
           <p className="section-kicker">Scan profile</p>
           <h2>Quick scan ora, premium dopo.</h2>
-          <p className="narrative-lede">Il profilo gratuito pianifica 5 prompt e 1 provider. Il profilo premium e predisposto per 15 prompt e fino a 3 superfici, ma resta disabilitato finche non saranno definiti accesso e provider reali.</p>
+          <p className="narrative-lede">Il profilo gratuito pianifica 5 prompt Visibility e 5 query External Footprint. I profili premium sono predisposti per maggiore profondita, ma restano disabilitati finche non saranno definiti accesso e provider reali.</p>
         </header>
         <div className="output-list">
           <article><h3>FREE_QUICK_SCAN</h3><p>{visibilityScanProfiles.FREE_QUICK_SCAN.promptCount} prompt · {visibilityScanProfiles.FREE_QUICK_SCAN.providerIds.length} provider previsto · budget massimo configurabile.</p></article>
           <article><h3>PREMIUM_COMPREHENSIVE</h3><p>{visibilityScanProfiles.PREMIUM_COMPREHENSIVE.promptCount} prompt · fino a {visibilityScanProfiles.PREMIUM_COMPREHENSIVE.providerIds.length} provider · non eseguito nel livello gratuito.</p></article>
+          <article><h3>FREE_EXTERNAL_FOOTPRINT</h3><p>{externalFootprintProfiles.FREE_EXTERNAL_FOOTPRINT.queryCount} query · {externalFootprintProfiles.FREE_EXTERNAL_FOOTPRINT.providerIds.length} provider previsto · disabilitato senza provider reale.</p></article>
+          <article><h3>PREMIUM_EXTERNAL_FOOTPRINT</h3><p>{externalFootprintProfiles.PREMIUM_EXTERNAL_FOOTPRINT.queryCount} query · fino a {externalFootprintProfiles.PREMIUM_EXTERNAL_FOOTPRINT.providerIds.length} provider · non eseguito nel livello gratuito.</p></article>
         </div>
       </section>
 
@@ -182,4 +213,21 @@ function visibilityMetricCopy(key: string) {
   if (key === 'shareOfVoice') return 'N/A finche non esistono competitor affidabili osservati o configurati.';
   if (key === 'crossEngineConsistency') return 'N/A nel quick scan con una sola superficie; misurabile con almeno due provider.';
   return 'Diversita delle pagine del dominio citate, deduplicate e normalizzate.';
+}
+
+function labelExternalFootprintWeight(key: string) {
+  return key
+    .replace('externalPresence', 'External Presence')
+    .replace('independentSourceCoverage', 'Independent Source Coverage')
+    .replace('entityConsistency', 'Entity Consistency')
+    .replace('categoryExpertiseAssociation', 'Category / Expertise Association')
+    .replace('sourceDiversity', 'Source Diversity');
+}
+
+function externalFootprintMetricCopy(key: string) {
+  if (key === 'externalPresence') return 'Presenza del brand in fonti esterne pertinenti, con saturazione per non premiare il volume infinito.';
+  if (key === 'independentSourceCoverage') return 'Peso delle fonti realmente indipendenti rispetto ai profili controllati dal brand.';
+  if (key === 'entityConsistency') return 'Coerenza tra identita dichiarata e identita osservata nelle fonti esterne.';
+  if (key === 'categoryExpertiseAssociation') return 'Corroborazione esterna del settore, dei servizi o dell’expertise dichiarata.';
+  return 'Diversita ragionevole tra fonti editoriali, partner, directory, review, social e profili ufficiali.';
 }
