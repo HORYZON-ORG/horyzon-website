@@ -17,6 +17,12 @@ export type VisibilityPromptCategory = 'BRANDED' | 'CATEGORY' | 'SERVICE' | 'PRO
 export type VisibilityPromptIntent = 'branded' | 'category' | 'service' | 'problem' | 'recommendation_discovery' | 'competitor';
 export type VisibilityPromptStatus = 'generated' | 'not_generated' | 'approved' | 'rejected' | 'invalid';
 export type VisibilityObservationStatus = 'SUCCESS' | 'PARTIAL' | 'FAILED' | 'SKIPPED' | 'NOT_CONFIGURED';
+export type ExternalFootprintQueryCategory = 'BRAND' | 'BRAND_CATEGORY' | 'BRAND_SERVICE' | 'PEOPLE_ASSOCIATION' | 'OFFICIAL_PROFILE' | 'INDEPENDENT_MENTION';
+export type ExternalFootprintQueryIntent = 'brand_presence' | 'brand_category_association' | 'brand_service_association' | 'people_association' | 'official_profile' | 'independent_mention';
+export type ExternalFootprintQueryStatus = 'generated' | 'not_generated' | 'invalid' | 'approved' | 'rejected';
+export type ExternalSearchResultStatus = 'SUCCESS' | 'PARTIAL' | 'FAILED' | 'SKIPPED' | 'NOT_CONFIGURED';
+export type ExternalSourceClassification = 'OWNED' | 'OFFICIAL_EXTERNAL' | 'INDEPENDENT_EDITORIAL' | 'DIRECTORY' | 'REVIEW' | 'SOCIAL' | 'PARTNER' | 'UNKNOWN';
+export type EntityMatchConfidenceLabel = 'HIGH' | 'MEDIUM' | 'LOW';
 
 export type ReadinessCategoryId =
   | 'crawlability_indexability'
@@ -153,6 +159,7 @@ export interface EntityProfile {
   problemsSolved: EntityProfileField<string[]>;
   locations: EntityProfileField<string[]>;
   people: EntityProfileField<string[]>;
+  officialProfiles?: EntityProfileField<string[]>;
   competitors?: EntityProfileField<string[]>;
 }
 
@@ -267,15 +274,121 @@ export interface VisibilityScore {
   providerStatuses?: VisibilityProviderStatus[];
 }
 
+export interface ExternalFootprintQuery {
+  id: string;
+  auditId?: string;
+  query: string;
+  normalizedQuery?: string;
+  category: ExternalFootprintQueryCategory;
+  intent: ExternalFootprintQueryIntent;
+  branded: boolean;
+  generatedAt: string;
+  generationMethod: 'deterministic_v1' | 'manual' | 'provider';
+  status: ExternalFootprintQueryStatus;
+  validationErrors?: string[];
+}
+
+export interface ExternalSearchResult {
+  id: string;
+  providerId: string;
+  queryId: string;
+  position?: number;
+  title: string;
+  url: string;
+  normalizedUrl: string;
+  domain: string;
+  snippet?: string;
+  publishedAt?: string;
+  retrievedAt: string;
+  status: ExternalSearchResultStatus;
+  rawResponseReference?: string;
+  errorCode?: string;
+}
+
+export interface ExternalSourceClassificationResult {
+  classification: ExternalSourceClassification;
+  confidence: number;
+  method: 'domain_match' | 'known_platform' | 'known_directory' | 'review_signal' | 'relationship_signal' | 'editorial_signal' | 'heuristic_v1';
+  independent: boolean;
+  official: boolean;
+}
+
+export interface ExternalFootprintObservation {
+  id: string;
+  auditId?: string;
+  queryId: string;
+  resultId: string;
+  brandMatched: boolean;
+  matchConfidence: number;
+  matchConfidenceLabel: EntityMatchConfidenceLabel;
+  sourceClassification: ExternalSourceClassification;
+  classificationConfidence: number;
+  classificationMethod: ExternalSourceClassificationResult['method'];
+  independent: boolean;
+  official: boolean;
+  categoryAssociation: boolean;
+  peopleAssociations: string[];
+  evidence: string;
+  observedAt: string;
+}
+
+export interface ExternalFootprintMetricBreakdown {
+  externalPresence: number | null;
+  independentSourceCoverage: number | null;
+  entityConsistency: number | null;
+  categoryExpertiseAssociation: number | null;
+  sourceDiversity: number | null;
+}
+
+export interface ExternalFootprintCoverage {
+  value: number;
+  plannedQueries: number;
+  generatedQueries: number;
+  executedQueries: number;
+  validResults: number;
+  entityMatches: number;
+  plannedProviders: number;
+  measuredProviders: number;
+  metricAvailability: number;
+}
+
+export interface ExternalFootprintProviderCandidate {
+  id: string;
+  label: string;
+  evidenceAvailable: string[];
+  requiresCredential: boolean;
+  blocker: string;
+}
+
+export interface ExternalFootprintProviderStatus {
+  id: string;
+  label: string;
+  configured: boolean;
+  enabled: boolean;
+  liveCalls: number;
+}
+
 export interface ExternalBrandFootprintResult {
   state: ProviderMeasurementState;
   provider: string;
   measuredAt?: string;
   blocker?: string;
+  score?: number | null;
+  coverage?: number;
+  coverageDetail?: ExternalFootprintCoverage;
+  methodologyVersion?: string;
+  profileId?: string;
+  weights?: Record<'externalPresence' | 'independentSourceCoverage' | 'entityConsistency' | 'categoryExpertiseAssociation' | 'sourceDiversity', number>;
   brandMentions: number | null;
   independentSources: number | null;
   officialProfiles: string[];
   evidence: AuditEvidence[];
+  queries?: ExternalFootprintQuery[];
+  searchResults?: ExternalSearchResult[];
+  observations?: ExternalFootprintObservation[];
+  metricBreakdown?: ExternalFootprintMetricBreakdown;
+  providerCandidates?: ExternalFootprintProviderCandidate[];
+  providerStatuses?: ExternalFootprintProviderStatus[];
 }
 
 export interface EntityAnalysis {
@@ -380,6 +493,24 @@ export interface AiVisibilityProviderAdapter {
 
 export interface AiVisibilityProvider {
   measure(input: { auditId: string; domain: string; entity: EntityAnalysis }): Promise<VisibilityScore>;
+}
+
+export interface ExternalFootprintExecutionContext {
+  auditId: string;
+  entity: EntityProfile;
+  profileId: string;
+  timeoutMs: number;
+  maxResultsPerQuery: number;
+  startedAt: string;
+}
+
+export interface ExternalFootprintProviderAdapter {
+  id: string;
+  label: string;
+  enabled: boolean;
+  isConfigured(): boolean;
+  estimateCost?(queries: ExternalFootprintQuery[]): Promise<CostEstimate>;
+  search(queries: ExternalFootprintQuery[], context: ExternalFootprintExecutionContext): Promise<ExternalSearchResult[]>;
 }
 
 export interface ExternalFootprintProvider {
