@@ -6,6 +6,14 @@ import type {
   VisibilityScore,
 } from './types';
 import {
+  createExternalFootprintProviderRegistry,
+  externalFootprintProviderCandidates,
+  externalFootprintProfiles,
+  generateExternalFootprintQueries,
+  measureExternalBrandFootprint,
+  scoreExternalFootprintObservations,
+} from './external-footprint';
+import {
   buildEntityProfile,
   createVisibilityProviderRegistry,
   generateVisibilityPrompts,
@@ -15,8 +23,6 @@ import {
   visibilityProviderCandidates,
   visibilityScanProfiles,
 } from './visibility';
-
-const FOOTPRINT_BLOCKER = 'External Brand Footprint richiede un provider affidabile per menzioni, profili e fonti indipendenti. Nessun provider e configurato in questa versione.';
 
 export class RegistryAiVisibilityProvider implements AiVisibilityProvider {
   async measure(input: { auditId: string; domain: string; entity: EntityAnalysis }): Promise<VisibilityScore> {
@@ -29,17 +35,14 @@ export class RegistryAiVisibilityProvider implements AiVisibilityProvider {
   }
 }
 
-export class NoopExternalFootprintProvider implements ExternalFootprintProvider {
-  async measure(_input: { auditId: string; domain: string; entity: EntityAnalysis }): Promise<ExternalBrandFootprintResult> {
-    return {
-      state: 'not_measured',
-      provider: 'none',
-      blocker: FOOTPRINT_BLOCKER,
-      brandMentions: null,
-      independentSources: null,
-      officialProfiles: [],
-      evidence: [],
-    };
+export class RegistryExternalFootprintProvider implements ExternalFootprintProvider {
+  async measure(input: { auditId: string; domain: string; entity: EntityAnalysis }): Promise<ExternalBrandFootprintResult> {
+    return measureExternalBrandFootprint({
+      auditId: input.auditId,
+      domain: input.domain,
+      entity: input.entity,
+      profileId: 'FREE_EXTERNAL_FOOTPRINT',
+    });
   }
 }
 
@@ -51,12 +54,24 @@ export function buildVisibilityPromptModel(auditId: string, domain: string, enti
   });
 }
 
+export function buildExternalFootprintQueryModel(auditId: string, domain: string, entity: EntityAnalysis) {
+  return generateExternalFootprintQueries({
+    auditId,
+    entity: buildEntityProfile(normalizeDomain(domain) ?? domain, entity),
+    profile: externalFootprintProfiles.FREE_EXTERNAL_FOOTPRINT,
+  });
+}
+
 export {
+  createExternalFootprintProviderRegistry,
   createVisibilityProviderRegistry,
+  externalFootprintProviderCandidates,
+  externalFootprintProfiles,
+  scoreExternalFootprintObservations,
   scoreVisibilityObservations,
   visibilityProviderCandidates,
   visibilityScanProfiles,
 };
 
 export const aiVisibilityProvider: AiVisibilityProvider = new RegistryAiVisibilityProvider();
-export const externalFootprintProvider: ExternalFootprintProvider = new NoopExternalFootprintProvider();
+export const externalFootprintProvider: ExternalFootprintProvider = new RegistryExternalFootprintProvider();
