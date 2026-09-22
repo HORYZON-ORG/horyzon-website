@@ -353,6 +353,12 @@ const readinessAreas = [
   ['09', 'Presenza esterna del brand', "Quando misurabile, verifichiamo quanto l'identità e l'attività dell'organizzazione trovino riscontro anche in fonti esterne al proprio sito."],
 ] as const;
 
+const supportedSurfaces = [
+  ['AI Visibility', 'OpenAI Web Search', 'Not configured', 'FREE_QUICK_SCAN misura prompt brand, categoria, servizio, problema e discovery solo quando un provider reale e configurato.'],
+  ['External Brand Footprint', 'Perplexity Search API', 'Not configured', 'FREE_EXTERNAL_FOOTPRINT osserva fonti esterne quando il provider e configurato; la quantita di risultati non equivale automaticamente ad autorevolezza.'],
+  ['Legacy cleanup', 'Microsoft Bing', 'Not configured', 'Bing Search APIs legacy non sono piu usate: eventuali provider futuri saranno valutati con adapter e contratti aggiornati.'],
+] as const;
+
 export const metadata: Metadata = pageMetadata({ path: '/ai-score/methodology', title: 'Come funziona Horyzon AI Score', description });
 
 export default function AiScoreMethodologyPage() {
@@ -420,6 +426,22 @@ export default function AiScoreMethodologyPage() {
           <strong>Not measured</strong>
           <span>Non è un punteggio basso. È una dichiarazione di trasparenza quando una misurazione non ha evidenze sufficienti.</span>
         </aside>
+      </section>
+
+      <section className="narrative-section ai-method-section">
+        <header>
+          <p className="section-kicker">Provider</p>
+          <h2>Superfici supportate</h2>
+          <p className="narrative-lede">Le superfici esterne restano fail-closed finche non sono presenti credenziali, budget, rate limit, circuit breaker e uno store persistente.</p>
+        </header>
+        <div className="ai-method-areas">
+          {supportedSurfaces.map(([surface, provider, status, copy]) => <article key={`${surface}-${provider}`}>
+            <span>{status}</span>
+            <h3>{surface}</h3>
+            <p><strong>{provider}</strong></p>
+            <p>{copy}</p>
+          </article>)}
+        </div>
       </section>
 
       <section className="narrative-section ai-method-section">

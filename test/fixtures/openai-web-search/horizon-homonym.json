@@ -1,0 +1,27 @@
+{
+  "testOnly": true,
+  "notice": "TEST ONLY - NOT REAL PROVIDER DATA",
+  "name": "Horizon != Horyzon",
+  "response": {
+    "id": "resp_test_horizon",
+    "model": "gpt-5",
+    "status": "completed",
+    "output": [
+      {
+        "type": "message",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "Horizon offers a different service and should not match Horyzon.",
+            "annotations": []
+          }
+        ]
+      }
+    ],
+    "usage": {
+      "input_tokens": 75,
+      "output_tokens": 20,
+      "total_tokens": 95
+    }
+  }
+}

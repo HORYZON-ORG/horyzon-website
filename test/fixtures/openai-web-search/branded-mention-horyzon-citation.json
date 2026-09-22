@@ -1,0 +1,35 @@
+{
+  "testOnly": true,
+  "notice": "TEST ONLY - NOT REAL PROVIDER DATA",
+  "name": "branded mention + horyzon.it citation",
+  "response": {
+    "id": "resp_test_branded_cited",
+    "model": "gpt-5",
+    "status": "completed",
+    "output": [
+      {
+        "type": "message",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "Horyzon offers AI Score and AI visibility services for companies.",
+            "annotations": [
+              {
+                "type": "url_citation",
+                "url": "https://www.horyzon.it/ai-score",
+                "title": "Horyzon AI Score",
+                "start_index": 0,
+                "end_index": 7
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "usage": {
+      "input_tokens": 120,
+      "output_tokens": 40,
+      "total_tokens": 160
+    }
+  }
+}

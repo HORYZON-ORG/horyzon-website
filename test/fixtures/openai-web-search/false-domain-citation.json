@@ -1,0 +1,35 @@
+{
+  "testOnly": true,
+  "notice": "TEST ONLY - NOT REAL PROVIDER DATA",
+  "name": "false domain horyzon.it.example.com",
+  "response": {
+    "id": "resp_test_false_domain",
+    "model": "gpt-5",
+    "status": "completed",
+    "output": [
+      {
+        "type": "message",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "A lookalike host is cited but it is not the owned domain.",
+            "annotations": [
+              {
+                "type": "url_citation",
+                "url": "https://horyzon.it.example.com/page",
+                "title": "Lookalike host",
+                "start_index": 2,
+                "end_index": 16
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "usage": {
+      "input_tokens": 80,
+      "output_tokens": 25,
+      "total_tokens": 105
+    }
+  }
+}

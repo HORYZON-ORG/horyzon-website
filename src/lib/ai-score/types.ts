@@ -213,6 +213,15 @@ export interface VisibilityObservation {
   evidence?: string;
   rawResponseReference?: string;
   errorCode?: string;
+  failureClass?: string;
+  providerResponseId?: string;
+  providerResponseStatus?: string;
+  providerUsage?: {
+    inputTokens?: number;
+    outputTokens?: number;
+    totalTokens?: number;
+  };
+  redactedDebug?: Record<string, unknown>;
   provider: string;
   confidence: number;
 }

@@ -152,3 +152,63 @@ npm run ai-score:test-provider -- --provider=openai_web_search --domain=horyzon.
 ```
 
 In Phase 6A `--execute` still blocks unless every runtime guard passes, and no live network adapter is implemented here.
+
+## OpenAI Web Search - TEST_ONLY
+
+Phase 7A adds a server-side `OpenAIWebSearchAdapter` for future AI Visibility execution through the OpenAI Responses API and the `web_search` tool. The adapter is available only to internal test commands. It is not public activation.
+
+PUBLIC remains disabled:
+
+- `AI_SCORE_LIVE_PROVIDERS` must stay unset or false.
+- `POST /api/ai-score` accepts only `url` and cannot select `openai_web_search`, pass `--execute`, override budgets, or enable test mode.
+- `OPENAI_API_KEY` is read only server-side by the adapter and is not configured in Phase 7A.
+- Phase 7A performs zero real OpenAI provider calls.
+
+Execution must fail closed before the transport unless every guard passes:
+
+- persistent runtime store is required;
+- provider and global daily budget are required;
+- rate-limit HMAC is required;
+- provider circuit must be `CLOSED`;
+- provider key/config must be present, except for explicit test-only mock transport;
+- frozen prompts must validate and produce a deterministic `promptSetHash`.
+
+Dry-run:
+
+```bash
+npm run ai-score:test-provider -- --provider=openai_web_search --domain=horyzon.it --dry-run
+```
+
+Expected Phase 7A dry-run behavior:
+
+- real provider network calls: `0`;
+- `configured=false` when `OPENAI_API_KEY` is absent;
+- `publicEnabled=false`;
+- `executionStatus=blocked`;
+- `blockedReason=provider_not_configured` or another pre-transport guard;
+- five frozen prompts for `BRANDED`, `CATEGORY`, `SERVICE`, `PROBLEM`, `DISCOVERY`;
+- non-branded prompts do not contain `Horyzon`.
+
+Mock execution:
+
+```bash
+npm run ai-score:test-provider -- --provider=openai_web_search --domain=horyzon.it --execute --mock-provider
+```
+
+Expected Phase 7A mock behavior:
+
+- uses `MockOpenAIResponsesTransport`;
+- `mockTransportCalls > 0`;
+- `realNetworkCalls=0`;
+- extracts output text, native `url_citation` annotations, cited URLs, source titles, response id/model/status, and usage from test-only fixtures;
+- reconciles budget after the mock response;
+- can feed provider failures into the circuit breaker model.
+
+The adapter stores only a redacted debug representation. It does not persist the full raw OpenAI response. Mention detection remains separate from citation detection: a textual mention of `Horyzon` is not a citation, `Horizon` is not `Horyzon`, and `horyzon.it.example.com` is not classified as the owned domain.
+
+Phase 7B command, for future authorization only:
+
+```bash
+# DO NOT RUN UNTIL PHASE 7B AUTHORIZED
+npm run ai-score:test-provider -- --provider=openai_web_search --domain=horyzon.it --execute
+```

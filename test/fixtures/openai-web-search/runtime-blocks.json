@@ -1,0 +1,12 @@
+{
+  "testOnly": true,
+  "notice": "TEST ONLY - NOT REAL PROVIDER DATA",
+  "cases": [
+    "disabled provider blocks before transport",
+    "missing key blocks before transport",
+    "memory store blocks real execution",
+    "budget blocked before transport",
+    "circuit OPEN blocked before transport",
+    "public route cannot execute TEST_ONLY provider"
+  ]
+}

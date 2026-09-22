@@ -1,0 +1,35 @@
+{
+  "testOnly": true,
+  "notice": "TEST ONLY - NOT REAL PROVIDER DATA",
+  "name": "own-domain citation",
+  "response": {
+    "id": "resp_test_own_domain",
+    "model": "gpt-5",
+    "status": "completed",
+    "output": [
+      {
+        "type": "message",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "The cited source is from the official domain.",
+            "annotations": [
+              {
+                "type": "url_citation",
+                "url": "https://blog.horyzon.it/insights",
+                "title": "Horyzon insights",
+                "start_index": 4,
+                "end_index": 16
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "usage": {
+      "input_tokens": 80,
+      "output_tokens": 25,
+      "total_tokens": 105
+    }
+  }
+}

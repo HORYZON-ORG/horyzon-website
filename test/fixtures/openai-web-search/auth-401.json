@@ -1,0 +1,12 @@
+{
+  "testOnly": true,
+  "notice": "TEST ONLY - NOT REAL PROVIDER DATA",
+  "name": "auth 401",
+  "status": 401,
+  "response": {
+    "error": {
+      "code": "invalid_api_key",
+      "message": "test-only auth error"
+    }
+  }
+}

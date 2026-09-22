@@ -1,0 +1,35 @@
+{
+  "testOnly": true,
+  "notice": "TEST ONLY - NOT REAL PROVIDER DATA",
+  "name": "non-branded no match",
+  "response": {
+    "id": "resp_test_no_match",
+    "model": "gpt-5",
+    "status": "completed",
+    "output": [
+      {
+        "type": "message",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "Several providers offer AI visibility audits for B2B teams.",
+            "annotations": [
+              {
+                "type": "url_citation",
+                "url": "https://example.org/ai-visibility",
+                "title": "AI visibility guide",
+                "start_index": 0,
+                "end_index": 16
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "usage": {
+      "input_tokens": 100,
+      "output_tokens": 30,
+      "total_tokens": 130
+    }
+  }
+}

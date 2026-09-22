@@ -1,0 +1,12 @@
+{
+  "testOnly": true,
+  "notice": "TEST ONLY - NOT REAL PROVIDER DATA",
+  "name": "HTTP 500",
+  "status": 500,
+  "response": {
+    "error": {
+      "code": "server_error",
+      "message": "test-only server error"
+    }
+  }
+}
