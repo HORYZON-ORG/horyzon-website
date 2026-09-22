@@ -39,11 +39,11 @@ export const publicFaqs: Record<string, readonly PublicFaq[]> = {
   { question: 'Dove posso leggere la metodologia di AI Score?', answer: 'La pagina della metodologia spiega versioni, categorie, segnali e limiti della valutazione.' },
  ],
  '/le-tre-aree': [
-  { question: 'Perché risolvere un problema in un reparto non basta sempre?', answer: 'Perché il lavoro passa da un reparto all’altro. Una vendita, per esempio, coinvolge la capacità di produrre, le informazioni amministrative e le responsabilità delle persone. Horyzon osserva queste relazioni prima di definire l’intervento.' },
-  { question: 'Quali reparti considera Horyzon per leggere un’impresa?', answer: 'Amministrazione, Produzione, Commerciale, Marketing e Persone: ogni reparto ha una funzione distinta e influenza gli altri.' },
-  { question: 'Perché analizzare l’azienda come un sistema?', answer: 'Perché un sintomo in un reparto può dipendere da ruoli, processi, dati o decisioni che coinvolgono l’intera organizzazione.' },
-  { question: 'Quali sono le aree di intervento di Horyzon?', answer: 'Il nucleo organizzativo è sostenuto da abilitazione digitale e continuità finanziaria, per rendere il lavoro più chiaro, usabile e verificabile.' },
-  { question: 'Come capire da quale area iniziare?', answer: 'Il Radar e la discovery aiutano a leggere il presente; la priorità viene definita sulle evidenze raccolte, non su una categoria scelta a priori.' },
+  { question: 'Quali sono i tre benesseri di Horyzon?', answer: 'Benessere organizzativo, patrimoniale e digitale: tre dimensioni che aiutano l’impresa a lavorare con più chiarezza, equilibrio e continuità.' },
+  { question: 'Devo sapere già da quale area iniziare?', answer: 'No. Puoi partire dall’area che senti più vicina alla tua esigenza oppure iniziare dal Radar per leggere meglio la situazione attuale.' },
+  { question: 'Le tre aree sono separate?', answer: 'No. Persone, patrimonio e strumenti si influenzano a vicenda. Horyzon parte dalla priorità concreta e considera le connessioni necessarie.' },
+  { question: 'Dove trovo i servizi di ogni area?', answer: 'Ogni area raccoglie i relativi percorsi e approfondimenti. Il primo confronto serve a scegliere il punto di partenza più utile.' },
+  { question: 'Posso chiedere un confronto prima di iniziare?', answer: 'Sì. Puoi raccontarci la situazione che vuoi migliorare e valutare insieme il passo più utile.' },
  ],
  '/piattaforma': [
   { question: 'Come posso condividere con il team lo stato delle priorità?', answer: 'Nel percorso Horyzon si definiscono responsabilità e informazioni utili ai diversi ruoli. La Platform offre una vista dedicata all’azienda con indicatori e avanzamento dei flussi configurati.' },

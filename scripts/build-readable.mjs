@@ -23,7 +23,7 @@ converter.addRule('absoluteLinks', {
 });
 converter.addRule('decorative', { filter: node => node.getAttribute('aria-hidden') === 'true' || node.hasAttribute('hidden'), replacement: () => '' });
 const markdown = converter.turndown(body).trim() + '\n';
-assert(markdown.includes('# La tua impresa ha un orizzonte.'));
+assert(/^# Far stare bene un’impresa, _?davvero\._?$/m.test(markdown));
 assert(!markdown.includes('self.__next_f'));
 await writeFile('public/home.md', markdown);
 console.log(`Homepage Markdown: ${Buffer.byteLength(markdown)} bytes, derived from ${Buffer.byteLength(html)} bytes of HTML`);

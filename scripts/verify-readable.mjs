@@ -30,14 +30,14 @@ if (base) {
   const md = await get({ accept: 'text/markdown' });
   assert.match(md.response.headers.get('vary'), /\baccept\b/i);
   assert.match(md.response.headers.get('content-type'), /^text\/markdown; charset=utf-8$/i);
-  assert(md.body.includes('# La tua impresa ha un orizzonte.'));
+  assert(/^# Far stare bene un’impresa, _?davvero\._?$/m.test(md.body));
   assert(md.body.includes('https://hub.horyzon.it/radar'));
   assert(!md.body.includes('<script') && !md.body.includes('self.__next_f'));
   for (const accept of ['text/html', '*/*', 'text/markdown;q=0, text/html']) {
    const html = await get({ accept });
    assert.match(html.response.headers.get('content-type'), /^text\/html/i);
    assert(html.body.includes('<h1'));
-   assert(html.body.includes('La tua impresa ha un orizzonte.'));
+   assert(html.body.includes('Far stare bene un’impresa, davvero.'));
    assert.notEqual(html.response.headers.get('etag'), md.response.headers.get('etag'));
    for (const [variant, etag] of [['text/html', md.response.headers.get('etag')], ['text/markdown', html.response.headers.get('etag')]]) {
     assert(etag);

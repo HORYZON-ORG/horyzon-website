@@ -3,11 +3,9 @@ import { useEffect, useState } from 'react';
 
 const chapters = [
  ['orizzonte', 'Il tuo orizzonte'],
- ['presente', 'Leggere il presente'],
- ['organismo', 'L’organismo impresa'],
- ['percorso-operativo', 'Il percorso'],
- ['prossimo-orizzonte', 'Il prossimo passo'],
- ['persone-horyzon', 'Le persone e la visione'],
+ ['radar', 'Inizia dal Radar'],
+ ['tre-benesseri', 'I tre benesseri'],
+ ['come-lavoriamo', 'Come lavoriamo'],
  ['parliamone', 'Parliamone'],
 ] as const;
 

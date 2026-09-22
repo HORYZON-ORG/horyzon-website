@@ -22,7 +22,7 @@ for (const route of routes) {
 }
 const radar = await readFile('.next/server/app/radar-impresa.html', 'utf8');
 assert(radar.includes('https://hub.horyzon.it/radar'), 'radar-impresa: canonical Radar URL missing');
-for (const label of ['Amministrazione', 'Produzione', 'Commerciale', 'Marketing', 'Persone', 'Maturità dei processi', 'Autonomia del titolare', 'Profilo complessivo', 'Adozione dell’AI']) {
+for (const label of ['Amministrazione', 'Produzione', 'Commerciale', 'Marketing', 'Persone', 'Come lavora l’impresa', 'Dove si concentra il peso', 'Da dove cominciare']) {
  assert(radar.includes(label), `radar-impresa: missing ${label}`);
 }
 console.log(`Editorial checks passed: ${routes.length} representative routes, headings, internal links, area sections, no videos.`);

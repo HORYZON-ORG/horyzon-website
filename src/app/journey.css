@@ -111,3 +111,11 @@
 @media(max-width:1100px){.site-header{gap:15px}.site-links{gap:15px;font-size:12px}.site-footer{grid-template-columns:1.2fr 1fr 1fr}.site-footer .footer-company{grid-column:1/-1;border-top:1px solid #ffffff1f;padding-top:28px}}
 @media(max-width:850px){.site-footer{grid-template-columns:1fr 1fr;gap:36px 24px;padding-top:62px}.site-footer .footer-intro,.site-footer .footer-company,.site-footer small{grid-column:1/-1}.site-footer .footer-company{margin-top:4px}.site-footer .footer-path{gap:11px}.site-footer .footer-path p{margin-bottom:4px}}
 @media(max-width:470px){.site-footer{grid-template-columns:1fr}.site-footer .footer-intro,.site-footer .footer-company,.site-footer small{grid-column:auto}}
+
+/* Commercial home: fewer choices, clearer entrances, and a shorter reading rhythm. */
+.chapter-current,.chapter-method{min-height:105svh}.chapter-dimensions{min-height:118svh}.chapter-arrival{min-height:94svh}
+.wellbeing-paths{grid-template-columns:repeat(3,minmax(0,1fr));max-width:1180px;gap:28px;text-align:left;margin-top:46px}
+.wellbeing-paths a{min-height:210px;align-items:flex-start;border-bottom:1px solid #b3c0c148;padding:25px 0}
+.wellbeing-paths h3{font-size:clamp(27px,2.6vw,42px);max-width:13ch}.wellbeing-paths p{max-width:26ch;font-size:15px}
+.chapter-method .journey-method{grid-template-columns:repeat(3,minmax(0,1fr));max-width:680px}
+@media(max-width:850px){.chapter-current,.chapter-method,.chapter-dimensions,.chapter-arrival{min-height:100svh}.wellbeing-paths{grid-template-columns:1fr;gap:0;margin-top:32px}.wellbeing-paths a{min-height:0;padding:24px 0}.chapter-method .journey-method{grid-template-columns:1fr}}
