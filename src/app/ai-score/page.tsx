@@ -16,25 +16,26 @@ export default function AiScorePage() {
     <main id="content" className="inside editorial-page narrative-page ai-score-page" data-page="ai-score">
       <nav className="editorial-breadcrumb" aria-label="Percorso di navigazione"><Link href="/">Horyzon</Link><span aria-hidden="true">/</span><span aria-current="page">AI Score</span></nav>
       <section className="inside-hero ai-score-hero">
-        <div>
-          <p className="eyebrow"><span />Horyzon / AI Score</p>
-          <h1>Quanto è pronto il tuo sito per l’AI?</h1>
-          <p className="page-intro">Analizza quanto il tuo sito è accessibile, comprensibile e citabile dai sistemi AI e verifica quanto il tuo brand è visibile nelle loro risposte.</p>
+        <div className="ai-score-hero-grid">
+          <div className="ai-score-hero-copy">
+            <p className="eyebrow"><span />Horyzon / AI Score</p>
+            <h1>Quanto è pronto il tuo sito per l’AI?</h1>
+            <p className="page-intro">Scopri quanto il tuo sito è pronto per essere trovato, compreso e citato dai sistemi AI.</p>
+          </div>
+          <div className="ai-score-horizon-visual" aria-hidden="true">
+            <span />
+            <i />
+          </div>
           <AiScoreClient />
-          <p className="fine-print ai-score-disclaimer">Horyzon analizza struttura, contenuti, accessibilità AI, autorevolezza e segnali utili alla comprensione del sito da parte dei sistemi AI. Il punteggio è una metodologia Horyzon, non uno score ufficiale OpenAI, Google, Microsoft, Anthropic o Perplexity. <Link href="/ai-score/methodology">Leggi la metodologia</Link>.</p>
         </div>
       </section>
       <section className="narrative-section ai-score-method">
         <header>
-          <p className="section-kicker">Metodo</p>
-          <h2>Readiness e Visibility restano separate.</h2>
-          <p className="narrative-lede">AI Readiness misura quanto il sito è predisposto a essere scoperto, interpretato e citato. AI Visibility misura solo la presenza reale nelle risposte dei sistemi AI supportati: se il provider non è disponibile, resta Not measured.</p>
+          <p className="section-kicker">Metodologia</p>
+          <h2>Un punteggio trasparente, non una black box.</h2>
+          <p className="narrative-lede">Horyzon separa predisposizione tecnica e visibilità reale e assegna punti solo a segnali effettivamente misurati.</p>
         </header>
-        <div className="output-list">
-          <article><h3>Metodologia versionata</h3><p>Nove categorie Readiness con pesi espliciti per un totale di 100 punti.</p></article>
-          <article><h3>Evidenze verificabili</h3><p>I controlli derivano da segnali osservabili nella scansione server-side e dichiarano quando una metrica non è misurata.</p></article>
-          <article><h3>Accesso progressivo</h3><p>Il livello gratuito mostra score principali, confidence e opportunità aggregate; diagnosi e piano operativo restano predisposti per accesso premium.</p></article>
-        </div>
+        <Link className="text-link" href="/ai-score/methodology">Scopri la metodologia ↗</Link>
       </section>
     </main>
     <SiteFooter />
