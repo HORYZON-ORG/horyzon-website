@@ -308,14 +308,23 @@ export class SupabaseProviderRuntimeStore implements ProviderRuntimeStore {
     return this.rpc('ai_score_try_provider_half_open', { p_provider_id: providerId, p_at: at.toISOString() });
   }
 
+  private supabaseHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
+      apikey: this.serviceRoleKey,
+      'content-type': 'application/json',
+    };
+
+    if (!this.serviceRoleKey.startsWith('sb_')) {
+      headers.authorization = `Bearer ${this.serviceRoleKey}`;
+    }
+
+    return headers;
+  }
+
   private async rpc<T>(fn: string, body: Record<string, unknown>): Promise<T> {
     const response = await fetch(`${this.url}/rest/v1/rpc/${fn}`, {
       method: 'POST',
-      headers: {
-        apikey: this.serviceRoleKey,
-        authorization: `Bearer ${this.serviceRoleKey}`,
-        'content-type': 'application/json',
-      },
+      headers: this.supabaseHeaders(),
       body: JSON.stringify(body),
     });
     if (!response.ok) throw new Error(`AI Score runtime store RPC failed: ${fn}`);
