@@ -23,7 +23,7 @@ export function AiScoreClient() {
   const [audit, setAudit] = useState<FreeAuditResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
-  const resultRef = useRef<HTMLElement>(null);
+  const resultRef = useRef<HTMLElement | null>(null);
   const reached = useMemo(() => new Set(events.filter(event => event.type === 'state').map(event => event.state)), [events]);
   const showProgress = (running || events.length > 0 || error) && !audit;
 
