@@ -5,6 +5,12 @@ import {
   providerRuntimeDefinitions,
   validateProviderExecutionPlan,
 } from '../src/lib/ai-score/provider-runtime.ts';
+import {
+  createProviderRuntimeStore,
+  readBudgetConfig,
+  readRateLimitConfig,
+  runtimeStoreDiagnostics,
+} from '../src/lib/ai-score/runtime-store.ts';
 
 const args = parseArgs(process.argv.slice(2));
 const provider = args.provider;
@@ -23,10 +29,15 @@ if (!domain) {
 const definition = providerRuntimeDefinitions[provider];
 const plannedRequests = 5;
 const estimatedCostUsd = plannedRequests * definition.estimatedUnitCostUsd;
-const runtime = getProviderRuntimeState(provider, { estimatedCostUsd, scanProfileBudgetUsd: 0.05 });
-const plan = validateProviderExecutionPlan({ providerId: provider, estimatedCostUsd, scanProfileBudgetUsd: 0.05 });
+const store = createProviderRuntimeStore();
+const storeState = runtimeStoreDiagnostics(store);
+const budget = readBudgetConfig(provider);
+const rateLimit = readRateLimitConfig();
+const runtime = getProviderRuntimeState(provider, { estimatedCostUsd, scanProfileBudgetUsd: 0.05, usageStore: store });
+const plan = validateProviderExecutionPlan({ providerId: provider, estimatedCostUsd, scanProfileBudgetUsd: 0.05, usageStore: store });
 const prompts = buildDryRunPrompts(domain, definition.surface);
 const executionBlocked = dryRun || !plan.ok;
+const providerEligibility = !executionBlocked && runtime.publicEnabled;
 
 const report = {
   provider,
@@ -39,6 +50,23 @@ const report = {
   circuitState: runtime.circuitState,
   budgetState: runtime.budgetState,
   health: runtime.health,
+  runtimeStore: storeState,
+  budgetConfiguration: {
+    state: budget.state,
+    providerDailyBudgetConfigured: budget.providerDailyBudgetUsd !== null,
+    globalDailyBudgetConfigured: budget.globalDailyBudgetUsd !== null,
+  },
+  rateLimitState: {
+    hmacConfigured: rateLimit.hmacConfigured,
+    clientWindowSeconds: rateLimit.client.windowSeconds,
+    clientLimit: rateLimit.client.limit,
+    domainWindowSeconds: rateLimit.domain.windowSeconds,
+    domainLimit: rateLimit.domain.limit,
+  },
+  providerEligibility: {
+    eligible: providerEligibility,
+    reason: runtime.blockers[0] ?? (dryRun ? 'dry-run requested' : 'eligible for future live adapter'),
+  },
   plannedPromptOrQueryCount: prompts.length,
   plannedRequests,
   estimatedCostUsd,
