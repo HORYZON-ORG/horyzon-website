@@ -1,13 +1,9 @@
 import { operatingJourney } from './site-narrative';
 import { capabilityLabels, productCapabilities, RADAR_URL } from './product-truth';
+import { publicFaqs } from './public-faq';
 
 // Also rendered visibly on /radar-impresa: one source for HTML and Markdown.
-export const radarAnswers = [
- { question: 'Che cos’è il Radar d’Impresa?', answer: 'È una prima autovalutazione guidata di Amministrazione, Produzione, Commerciale, Marketing e Persone. Rende leggibili maturità dei processi, autonomia dal titolare e adozione dell’AI.' },
- { question: 'Il risultato è già un piano operativo?', answer: 'No. Il risultato orienta un confronto: il debrief interpreta il profilo, mentre evidenze, responsabilità e priorità vengono approfondite nel percorso Horyzon.' },
- { question: 'Qual è la differenza tra Hub e Platform?', answer: 'Hub raccoglie le evidenze della discovery e produce un Blueprint versionato da riesaminare. Platform rende leggibili KPI, snapshot, report e stato delle attivazioni. I sistemi approvati svolgono il lavoro operativo.' },
- { question: 'Le integrazioni sono già attive per ogni azienda?', answer: 'No. Accessi, autorizzazioni, configurazione e prove devono essere verificati per la singola azienda prima dell’attivazione. La presenza di una capacità non dimostra che sia già operativa nel suo contesto.' },
-] as const;
+export const radarAnswers = publicFaqs['/radar-impresa'];
 
 export const publicGuideLinks = [
  ['Horyzon', '/horyzon', 'Identità e visione'],

@@ -8,6 +8,7 @@ import "./journey.css";
 import "./editorial.css";
 import "./narrative.css";
 import "./ai-score.css";
+import "./faq.css";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-sans" });
 const cormorant = Cormorant_Garamond({ subsets: ["latin"], variable: "--font-serif", weight: ["400", "500", "600"] });

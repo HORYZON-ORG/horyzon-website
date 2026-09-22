@@ -23,6 +23,7 @@ const urls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => decode(m
 assert(urls.length > 10, 'Sitemap unexpectedly empty');
 assert.equal(new Set(urls).size, urls.length, 'Duplicate sitemap URL');
 const excluded = ['/radar', '/privacy-policy', '/cookie-policy', '/v/frank', '/llms.txt', '/index.md'];
+const faqRoutes = new Set(['/', '/horyzon', '/metodo', '/radar-impresa', '/ai-score', '/le-tre-aree', '/piattaforma', '/contatti']);
 const titleSet = new Set();
 let schemaCount = 0;
 for (const url of urls) {
@@ -63,7 +64,18 @@ for (const url of urls) {
   assert(breadcrumb);
   assert(breadcrumb.itemListElement.every((item, index) => item.position === index + 1 && item.item.startsWith(origin)));
  }
- assert(!nodes.some(node => ['FAQPage', 'HowTo', 'AggregateRating'].includes(node['@type'])));
+ const faq = nodes.find(node => node['@type'] === 'FAQPage');
+ if (faqRoutes.has(route)) {
+  assert(faq, `Visible FAQPage schema missing: ${route}`);
+  assert(faq.mainEntity.length >= 4, `FAQ requires at least four answers: ${route}`);
+  const visibleText = decode(html.replace(/<script\b[\s\S]*?<\/script>/g, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' '));
+  for (const item of faq.mainEntity) {
+   assert.equal(item['@type'], 'Question');
+   assert(visibleText.includes(item.name), `FAQ question is not visible: ${route}`);
+   assert(visibleText.includes(item.acceptedAnswer.text), `FAQ answer is not visible: ${route}`);
+  }
+ } else assert(!faq, `Unexpected FAQPage schema: ${route}`);
+ assert(!nodes.some(node => ['HowTo', 'AggregateRating'].includes(node['@type'])));
  schemaCount += nodes.length;
 }
 for (const route of excluded.filter(route => !route.includes('.'))) {
@@ -83,7 +95,7 @@ assert(!markdown.includes('https://hub.horyzon.it/radar?'));
 assert(!markdown.includes('29 domande'));
 for (const state of ['Disponibile oggi', 'Configurato nel percorso', 'Direzione evolutiva']) assert(markdown.includes(state), `Missing capability state: ${state}`);
 const radar = await get('/radar-impresa');
-assert(radar.includes('Qual è la differenza tra Hub e Platform?'));
+assert(radar.includes('Qual è la differenza tra Horyzon Hub e Platform?'));
 assert(radar.includes('Le integrazioni sono già attive per ogni azienda?'));
 assert((await get('/')).includes('type="text/markdown"'));
 

@@ -6,6 +6,8 @@ import { Journey } from './journey/journey';
 import { ChapterNavigation } from './journey/chapter-navigation';
 import { JourneyContactForm } from './journey/contact-form';
 import { BackToTopButton } from './journey/back-to-top-button';
+import { FaqSection } from './faq-section';
+import { publicFaqs } from '@/content/public-faq';
 
 export function Experience() {
  return <><SiteHeader/><ChapterNavigation/><BackToTopButton/><main id="content" className="horyzon-home"><div className="journey-story" id="percorso"><Journey/><div className="journey-content">
@@ -15,6 +17,6 @@ export function Experience() {
   <section className="journey-chapter chapter-method" id="percorso-operativo" aria-labelledby="method-title"><span className="journey-anchor" id="infrastruttura" aria-hidden="true"/><span className="journey-anchor journey-anchor-end" id="progresso" aria-hidden="true"/><div className="chapter-copy"><p className="chapter-label">03 / IL PERCORSO</p><h2 id="method-title">Dalla direzione al <em>lavoro verificabile.</em></h2><p className="chapter-intro">Definiamo ruoli, priorità, strumenti e indicatori. Le persone decidono; l’AI sostiene il lavoro negli ambienti approvati.</p><ol className="journey-method">{['Leggere','Disegnare','Attivare','Verificare'].map((stage,index)=><li key={stage}><span>{String(index+1).padStart(2,'0')}</span>{stage}</li>)}</ol><div className="journey-actions"><Link href="/metodo" className="journey-link">Il metodo <span aria-hidden="true">↗</span></Link><Link href="/piattaforma" className="journey-link">La Platform <span aria-hidden="true">↗</span></Link></div></div></section>
   <section className="journey-chapter chapter-arrival" id="prossimo-orizzonte" aria-labelledby="arrival-title"><div className="chapter-copy"><p className="chapter-label">04 / IL PROSSIMO PASSO</p><h2 id="arrival-title">Comincia da dove <em>sei oggi.</em></h2><p className="chapter-intro">Il Radar fotografa il presente. Il confronto trasforma la priorità in un percorso.</p><div className="journey-actions"><Link className="journey-button" href="/contatti">Parliamo della tua priorità <span aria-hidden="true">↗</span></Link></div></div></section>
   <section className="journey-further" id="persone-horyzon" aria-labelledby="further-title"><div><p className="chapter-label">LA PROSPETTIVA HORYZON</p><h2 id="further-title">Dietro il percorso,<br/><em>le persone.</em></h2></div><nav aria-label="Scopri Horyzon">{[['Horyzon','La nostra visione','/horyzon'],['Le persone','Le responsabilità nel percorso','/persone'],['La biblioteca','Idee da portare nel lavoro','/biblioteca'],['Entra in Horyzon','Il tuo talento, una missione comune','/entra-in-horyzon']].map(([title,description,href])=><Link href={href} key={href}><div><h3>{title}</h3><p>{description}</p></div><span aria-hidden="true">↗</span></Link>)}</nav></section>
-  <section className="journey-contact-scene" id="parliamone"><JourneyContactForm/></section>
+  <section className="journey-contact-scene" id="parliamone"><JourneyContactForm/></section><FaqSection items={publicFaqs['/']} variant="dark" />
  </div></div></main><SiteFooter/></>;
 }

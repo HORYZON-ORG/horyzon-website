@@ -4,6 +4,8 @@ import { pageMetadata } from '@/content/seo';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { SiteFooter, SiteHeader } from '@/components/site-shell';
+import { FaqSection } from '@/components/faq-section';
+import { publicFaqs } from '@/content/public-faq';
 
 const description = 'Analizza quanto il tuo sito è accessibile, comprensibile e citabile dai sistemi AI con una metodologia Horyzon versionata e spiegabile.';
 const heroBalanceCss = `
@@ -101,7 +103,7 @@ export const metadata: Metadata = pageMetadata({ path: '/ai-score', title: 'Hory
 
 export default function AiScorePage() {
   return <>
-    <PageStructuredData path="/ai-score" name="Horyzon AI Score" description={description} breadcrumbs={[{ name: 'Horyzon', path: '/' }, { name: 'AI Score', path: '/ai-score' }]} />
+    <PageStructuredData path="/ai-score" name="Horyzon AI Score" description={description} breadcrumbs={[{ name: 'Horyzon', path: '/' }, { name: 'AI Score', path: '/ai-score' }]} faqs={publicFaqs['/ai-score']} />
     <style>{heroBalanceCss}</style>
     <SiteHeader />
     <main id="content" className="inside editorial-page narrative-page ai-score-page" data-page="ai-score">
@@ -128,6 +130,7 @@ export default function AiScorePage() {
         </header>
         <Link className="text-link" href="/ai-score/methodology">Scopri la metodologia ↗</Link>
       </section>
+      <FaqSection items={publicFaqs['/ai-score']} />
     </main>
     <SiteFooter />
   </>;
