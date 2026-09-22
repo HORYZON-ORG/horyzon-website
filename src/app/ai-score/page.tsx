@@ -7,6 +7,10 @@ import { SiteFooter, SiteHeader } from '@/components/site-shell';
 
 const description = 'Analizza quanto il tuo sito è accessibile, comprensibile e citabile dai sistemi AI con una metodologia Horyzon versionata e spiegabile.';
 const heroBalanceCss = `
+.ai-score-hero .page-intro {
+  color: #c7d1d0;
+}
+
 @media (min-width: 851px) {
   .ai-score-hero-grid {
     display: block;
@@ -23,6 +27,7 @@ const heroBalanceCss = `
 
   .ai-score-hero .page-intro {
     max-width: 720px;
+    color: #c7d1d0;
   }
 
   .ai-score-horizon-visual {
