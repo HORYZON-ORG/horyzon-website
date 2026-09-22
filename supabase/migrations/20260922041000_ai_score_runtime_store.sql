@@ -1,6 +1,7 @@
 -- Horyzon AI Score runtime safety store.
 -- Prepared in Phase 6B. Apply only to the authorized Horyzon database.
 -- Budget dates are UTC dates supplied by the server runtime.
+-- Runtime RPC functions are callable only with server-side service_role credentials.
 
 create table if not exists public.provider_daily_usage (
   budget_date date not null,
@@ -16,7 +17,15 @@ create table if not exists public.provider_daily_usage (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   primary key (budget_date, provider_id, mode),
-  constraint provider_daily_usage_non_negative check (request_count >= 0 and observation_count >= 0 and estimated_cost_usd >= 0 and (actual_cost_usd is null or actual_cost_usd >= 0) and success_count >= 0 and failure_count >= 0 and total_latency_ms >= 0)
+  constraint provider_daily_usage_non_negative check (
+    request_count >= 0 and
+    observation_count >= 0 and
+    estimated_cost_usd >= 0 and
+    (actual_cost_usd is null or actual_cost_usd >= 0) and
+    success_count >= 0 and
+    failure_count >= 0 and
+    total_latency_ms >= 0
+  )
 );
 
 create table if not exists public.provider_runtime_state (
@@ -60,12 +69,16 @@ create or replace function public.ai_score_reserve_provider_budget(
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = pg_catalog, public
 as $$
 declare
-  v_provider provider_daily_usage%rowtype;
-  v_global provider_daily_usage%rowtype;
+  v_provider public.provider_daily_usage%rowtype;
+  v_global public.provider_daily_usage%rowtype;
 begin
+  if nullif(trim(p_provider_id), '') is null or p_mode not in ('TEST_ONLY', 'PUBLIC') then
+    return jsonb_build_object('allowed', false, 'reason', 'invalid_budget', 'reservedCostUsd', 0);
+  end if;
+
   if p_estimated_cost_usd <= 0 or p_request_count <= 0 then
     return jsonb_build_object('allowed', false, 'reason', 'invalid_budget', 'reservedCostUsd', 0);
   end if;
@@ -74,11 +87,23 @@ begin
     return jsonb_build_object('allowed', false, 'reason', 'missing_budget', 'reservedCostUsd', 0);
   end if;
 
-  insert into public.provider_daily_usage (budget_date, provider_id, mode) values (p_budget_date, p_provider_id, p_mode) on conflict (budget_date, provider_id, mode) do nothing;
-  insert into public.provider_daily_usage (budget_date, provider_id, mode) values (p_budget_date, '__global__', p_mode) on conflict (budget_date, provider_id, mode) do nothing;
+  insert into public.provider_daily_usage (budget_date, provider_id, mode)
+  values (p_budget_date, p_provider_id, p_mode)
+  on conflict (budget_date, provider_id, mode) do nothing;
 
-  select * into v_provider from public.provider_daily_usage where budget_date = p_budget_date and provider_id = p_provider_id and mode = p_mode for update;
-  select * into v_global from public.provider_daily_usage where budget_date = p_budget_date and provider_id = '__global__' and mode = p_mode for update;
+  insert into public.provider_daily_usage (budget_date, provider_id, mode)
+  values (p_budget_date, '__global__', p_mode)
+  on conflict (budget_date, provider_id, mode) do nothing;
+
+  select * into v_provider
+  from public.provider_daily_usage
+  where budget_date = p_budget_date and provider_id = p_provider_id and mode = p_mode
+  for update;
+
+  select * into v_global
+  from public.provider_daily_usage
+  where budget_date = p_budget_date and provider_id = '__global__' and mode = p_mode
+  for update;
 
   if v_provider.estimated_cost_usd + p_estimated_cost_usd > p_provider_budget_usd then
     return jsonb_build_object('allowed', false, 'reason', 'provider_budget_exhausted', 'reservedCostUsd', 0, 'dailyBudgetUsd', p_provider_budget_usd, 'globalBudgetUsd', p_global_budget_usd);
@@ -95,8 +120,13 @@ begin
       updated_at = now()
   where budget_date = p_budget_date and provider_id in (p_provider_id, '__global__') and mode = p_mode;
 
-  select * into v_provider from public.provider_daily_usage where budget_date = p_budget_date and provider_id = p_provider_id and mode = p_mode;
-  select * into v_global from public.provider_daily_usage where budget_date = p_budget_date and provider_id = '__global__' and mode = p_mode;
+  select * into v_provider
+  from public.provider_daily_usage
+  where budget_date = p_budget_date and provider_id = p_provider_id and mode = p_mode;
+
+  select * into v_global
+  from public.provider_daily_usage
+  where budget_date = p_budget_date and provider_id = '__global__' and mode = p_mode;
 
   return jsonb_build_object(
     'allowed', true,
@@ -121,11 +151,15 @@ create or replace function public.ai_score_reconcile_provider_budget(
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = pg_catalog, public
 as $$
 declare
   v_delta numeric := 0;
 begin
+  if nullif(trim(p_provider_id), '') is null or p_mode not in ('TEST_ONLY', 'PUBLIC') then
+    return jsonb_build_object('providerId', p_provider_id, 'date', p_budget_date, 'estimatedCostUsd', p_estimated_cost_usd, 'actualCostUsd', p_actual_cost_usd, 'success', false, 'reason', 'invalid_input');
+  end if;
+
   if p_actual_cost_usd is not null then
     v_delta := p_actual_cost_usd - p_estimated_cost_usd;
   end if;
@@ -143,15 +177,24 @@ begin
 end;
 $$;
 
-create or replace function public.ai_score_check_rate_limit(p_bucket_key text, p_window_start timestamptz, p_expires_at timestamptz, p_limit integer)
+create or replace function public.ai_score_check_rate_limit(
+  p_bucket_key text,
+  p_window_start timestamptz,
+  p_expires_at timestamptz,
+  p_limit integer
+)
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = pg_catalog, public
 as $$
 declare
   v_count integer;
 begin
+  if nullif(trim(p_bucket_key), '') is null or p_limit <= 0 or p_expires_at <= p_window_start then
+    return jsonb_build_object('allowed', false, 'reason', 'invalid_rate_limit', 'bucketKey', p_bucket_key, 'requestCount', 0, 'limit', p_limit, 'retryAfterSeconds', 0);
+  end if;
+
   insert into public.ai_score_rate_limit (bucket_key, window_start, request_count, expires_at)
   values (p_bucket_key, p_window_start, 1, p_expires_at)
   on conflict (bucket_key, window_start)
@@ -160,7 +203,16 @@ begin
                 updated_at = now()
   returning request_count into v_count;
 
-  return jsonb_build_object('allowed', v_count <= p_limit, 'bucketKey', p_bucket_key, 'windowStart', p_window_start, 'expiresAt', p_expires_at, 'requestCount', v_count, 'limit', p_limit, 'retryAfterSeconds', greatest(0, ceil(extract(epoch from (p_expires_at - now())))), 'reason', case when v_count <= p_limit then null else 'rate_limited' end);
+  return jsonb_build_object(
+    'allowed', v_count <= p_limit,
+    'bucketKey', p_bucket_key,
+    'windowStart', p_window_start,
+    'expiresAt', p_expires_at,
+    'requestCount', v_count,
+    'limit', p_limit,
+    'retryAfterSeconds', greatest(0, ceil(extract(epoch from (p_expires_at - now())))),
+    'reason', case when v_count <= p_limit then null else 'rate_limited' end
+  );
 end;
 $$;
 
@@ -168,9 +220,17 @@ create or replace function public.ai_score_get_provider_circuit(p_provider_id te
 returns jsonb
 language sql
 security definer
-set search_path = public
+set search_path = pg_catalog, public
 as $$
-  select case when s.provider_id is null then null else jsonb_build_object('providerId', s.provider_id, 'circuitState', s.circuit_state, 'consecutiveFailures', s.consecutive_failures, 'openedAt', s.opened_at, 'lastSuccessAt', s.last_success_at, 'lastFailureAt', s.last_failure_at, 'lastErrorCode', s.last_error_code) end
+  select case when s.provider_id is null then null else jsonb_build_object(
+    'providerId', s.provider_id,
+    'circuitState', s.circuit_state,
+    'consecutiveFailures', s.consecutive_failures,
+    'openedAt', s.opened_at,
+    'lastSuccessAt', s.last_success_at,
+    'lastFailureAt', s.last_failure_at,
+    'lastErrorCode', s.last_error_code
+  ) end
   from (select p_provider_id as provider_id) p
   left join public.provider_runtime_state s on s.provider_id = p.provider_id;
 $$;
@@ -179,13 +239,22 @@ create or replace function public.ai_score_record_provider_success(p_provider_id
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = pg_catalog, public
 as $$
 begin
+  if nullif(trim(p_provider_id), '') is null then
+    return jsonb_build_object('providerId', p_provider_id, 'circuitState', 'OPEN', 'consecutiveFailures', 0, 'lastErrorCode', 'invalid_provider');
+  end if;
+
   insert into public.provider_runtime_state (provider_id, circuit_state, consecutive_failures, last_success_at, updated_at)
   values (p_provider_id, 'CLOSED', 0, p_at, now())
   on conflict (provider_id)
-  do update set circuit_state = 'CLOSED', consecutive_failures = 0, opened_at = null, last_success_at = p_at, last_error_code = null, updated_at = now();
+  do update set circuit_state = 'CLOSED',
+                consecutive_failures = 0,
+                opened_at = null,
+                last_success_at = p_at,
+                last_error_code = null,
+                updated_at = now();
   return public.ai_score_get_provider_circuit(p_provider_id);
 end;
 $$;
@@ -194,11 +263,15 @@ create or replace function public.ai_score_record_provider_failure(p_provider_id
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = pg_catalog, public
 as $$
 declare
   v_threshold integer := 3;
 begin
+  if nullif(trim(p_provider_id), '') is null or p_failure_class not in ('AUTH', 'RATE_LIMIT', 'PROVIDER', 'TIMEOUT', 'MALFORMED_RESPONSE', 'INTERNAL') then
+    return jsonb_build_object('providerId', p_provider_id, 'circuitState', 'OPEN', 'consecutiveFailures', 0, 'lastErrorCode', 'invalid_failure');
+  end if;
+
   insert into public.provider_runtime_state (provider_id, circuit_state, consecutive_failures, opened_at, last_failure_at, last_error_code, updated_at)
   values (p_provider_id, case when p_failure_class = 'AUTH' then 'OPEN' else 'CLOSED' end, 1, case when p_failure_class = 'AUTH' then p_at else null end, p_at, p_error_code, now())
   on conflict (provider_id)
@@ -216,13 +289,22 @@ create or replace function public.ai_score_open_provider_circuit(p_provider_id t
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = pg_catalog, public
 as $$
 begin
+  if nullif(trim(p_provider_id), '') is null then
+    return jsonb_build_object('providerId', p_provider_id, 'circuitState', 'OPEN', 'consecutiveFailures', 0, 'lastErrorCode', 'invalid_provider');
+  end if;
+
   insert into public.provider_runtime_state (provider_id, circuit_state, consecutive_failures, opened_at, last_failure_at, last_error_code, updated_at)
   values (p_provider_id, 'OPEN', 1, p_at, p_at, p_error_code, now())
   on conflict (provider_id)
-  do update set circuit_state = 'OPEN', consecutive_failures = greatest(1, provider_runtime_state.consecutive_failures), opened_at = p_at, last_failure_at = p_at, last_error_code = p_error_code, updated_at = now();
+  do update set circuit_state = 'OPEN',
+                consecutive_failures = greatest(1, provider_runtime_state.consecutive_failures),
+                opened_at = p_at,
+                last_failure_at = p_at,
+                last_error_code = p_error_code,
+                updated_at = now();
   return public.ai_score_get_provider_circuit(p_provider_id);
 end;
 $$;
@@ -231,25 +313,44 @@ create or replace function public.ai_score_try_provider_half_open(p_provider_id 
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = pg_catalog, public
 as $$
 begin
+  if nullif(trim(p_provider_id), '') is null then
+    return jsonb_build_object('providerId', p_provider_id, 'circuitState', 'OPEN', 'consecutiveFailures', 0, 'lastErrorCode', 'invalid_provider');
+  end if;
+
   insert into public.provider_runtime_state (provider_id, circuit_state, consecutive_failures, opened_at, updated_at)
   values (p_provider_id, 'HALF_OPEN', 0, p_at, now())
   on conflict (provider_id)
-  do update set circuit_state = 'HALF_OPEN', opened_at = coalesce(provider_runtime_state.opened_at, p_at), updated_at = now();
+  do update set circuit_state = 'HALF_OPEN',
+                opened_at = coalesce(provider_runtime_state.opened_at, p_at),
+                updated_at = now();
   return public.ai_score_get_provider_circuit(p_provider_id);
 end;
 $$;
 
-revoke all on table public.provider_daily_usage from anon, authenticated;
-revoke all on table public.provider_runtime_state from anon, authenticated;
-revoke all on table public.ai_score_rate_limit from anon, authenticated;
-revoke all on function public.ai_score_reserve_provider_budget(text, text, date, numeric, integer, integer, numeric, numeric) from anon, authenticated;
-revoke all on function public.ai_score_reconcile_provider_budget(text, text, date, numeric, numeric, boolean, integer) from anon, authenticated;
-revoke all on function public.ai_score_check_rate_limit(text, timestamptz, timestamptz, integer) from anon, authenticated;
-revoke all on function public.ai_score_get_provider_circuit(text) from anon, authenticated;
-revoke all on function public.ai_score_record_provider_success(text, timestamptz) from anon, authenticated;
-revoke all on function public.ai_score_record_provider_failure(text, text, text, timestamptz) from anon, authenticated;
-revoke all on function public.ai_score_open_provider_circuit(text, text, text, timestamptz) from anon, authenticated;
-revoke all on function public.ai_score_try_provider_half_open(text, timestamptz) from anon, authenticated;
+revoke all on table public.provider_daily_usage from public, anon, authenticated;
+revoke all on table public.provider_runtime_state from public, anon, authenticated;
+revoke all on table public.ai_score_rate_limit from public, anon, authenticated;
+grant all on table public.provider_daily_usage to service_role;
+grant all on table public.provider_runtime_state to service_role;
+grant all on table public.ai_score_rate_limit to service_role;
+
+revoke all on function public.ai_score_reserve_provider_budget(text, text, date, numeric, integer, integer, numeric, numeric) from public, anon, authenticated;
+revoke all on function public.ai_score_reconcile_provider_budget(text, text, date, numeric, numeric, boolean, integer) from public, anon, authenticated;
+revoke all on function public.ai_score_check_rate_limit(text, timestamptz, timestamptz, integer) from public, anon, authenticated;
+revoke all on function public.ai_score_get_provider_circuit(text) from public, anon, authenticated;
+revoke all on function public.ai_score_record_provider_success(text, timestamptz) from public, anon, authenticated;
+revoke all on function public.ai_score_record_provider_failure(text, text, text, timestamptz) from public, anon, authenticated;
+revoke all on function public.ai_score_open_provider_circuit(text, text, text, timestamptz) from public, anon, authenticated;
+revoke all on function public.ai_score_try_provider_half_open(text, timestamptz) from public, anon, authenticated;
+
+grant execute on function public.ai_score_reserve_provider_budget(text, text, date, numeric, integer, integer, numeric, numeric) to service_role;
+grant execute on function public.ai_score_reconcile_provider_budget(text, text, date, numeric, numeric, boolean, integer) to service_role;
+grant execute on function public.ai_score_check_rate_limit(text, timestamptz, timestamptz, integer) to service_role;
+grant execute on function public.ai_score_get_provider_circuit(text) to service_role;
+grant execute on function public.ai_score_record_provider_success(text, timestamptz) to service_role;
+grant execute on function public.ai_score_record_provider_failure(text, text, text, timestamptz) to service_role;
+grant execute on function public.ai_score_open_provider_circuit(text, text, text, timestamptz) to service_role;
+grant execute on function public.ai_score_try_provider_half_open(text, timestamptz) to service_role;
