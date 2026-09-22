@@ -4,7 +4,7 @@ import { SiteFooter, SiteHeader } from '@/components/site-shell';
 import { PageStructuredData } from '@/components/structured-data';
 import { pageMetadata } from '@/content/seo';
 
-const description = 'Scopri cosa misura Horyzon AI Score e perche la valutazione distingue predisposizione, visibilita AI e solidita delle evidenze.';
+const description = 'Scopri cosa misura Horyzon AI Score e perché la valutazione distingue predisposizione, visibilità AI e solidità delle evidenze.';
 const publicVersion = 'Horyzon AI Score v1.0';
 
 const methodologyPageCss = `
@@ -325,32 +325,32 @@ const measures = [
   {
     id: '01',
     title: 'AI Readiness',
-    copy: 'Misura quanto il sito e predisposto a essere correttamente scoperto, interpretato e utilizzato dai sistemi di ricerca e AI.',
+    copy: 'Misura quanto il sito è predisposto a essere correttamente scoperto, interpretato e utilizzato dai sistemi di ricerca e AI.',
   },
   {
     id: '02',
     title: 'AI Visibility',
     copy: 'Misura quanto il brand emerge e viene citato nelle diverse superfici di ricerca AI effettivamente analizzate.',
-    note: 'Se una superficie non puo essere realmente verificata, non viene simulato alcun risultato.',
+    note: 'Se una superficie non può essere realmente verificata, non viene simulato alcun risultato.',
   },
   {
     id: '03',
     title: 'Evidence Confidence',
     copy: 'Indica quanto sono complete e affidabili le evidenze disponibili per la valutazione.',
-    note: 'Una confidence piu bassa non significa necessariamente un sito peggiore: indica una misurazione meno completa.',
+    note: 'Una confidence più bassa non significa necessariamente un sito peggiore: indica una misurazione meno completa.',
   },
 ];
 
 const readinessAreas = [
-  ['01', 'Accessibilita e indicizzazione', 'Verifichiamo che il sito e i suoi contenuti principali possano essere raggiunti e interpretati correttamente dai sistemi automatici.'],
-  ['02', 'Qualita e citabilita dei contenuti', 'Valutiamo quanto le informazioni siano chiare, specifiche, strutturate e utilizzabili come fonte.'],
-  ['03', 'Identita e chiarezza semantica', "Verifichiamo quanto sia comprensibile chi e l'organizzazione, cosa offre, a chi si rivolge e quali competenze rappresenta."],
-  ['04', 'Dati strutturati', 'Analizziamo i segnali machine-readable che aiutano sistemi di ricerca e AI a interpretare correttamente informazioni ed entita.'],
-  ['05', 'Autorevolezza ed evidenze', 'Cerchiamo segnali che rendano identita, informazioni e affermazioni verificabili e riconducibili a fonti chiare.'],
-  ['06', 'Qualita tecnica', "Consideriamo alcuni elementi tecnici che incidono sull'accessibilita, sulla leggibilita e sulla corretta interpretazione del sito."],
+  ['01', 'Accessibilità e indicizzazione', 'Verifichiamo che il sito e i suoi contenuti principali possano essere raggiunti e interpretati correttamente dai sistemi automatici.'],
+  ['02', 'Qualità e citabilità dei contenuti', 'Valutiamo quanto le informazioni siano chiare, specifiche, strutturate e utilizzabili come fonte.'],
+  ['03', 'Identità e chiarezza semantica', "Verifichiamo quanto sia comprensibile chi è l'organizzazione, cosa offre, a chi si rivolge e quali competenze rappresenta."],
+  ['04', 'Dati strutturati', 'Analizziamo i segnali machine-readable che aiutano sistemi di ricerca e AI a interpretare correttamente informazioni ed entità.'],
+  ['05', 'Autorevolezza ed evidenze', 'Cerchiamo segnali che rendano identità, informazioni e affermazioni verificabili e riconducibili a fonti chiare.'],
+  ['06', 'Qualità tecnica', "Consideriamo alcuni elementi tecnici che incidono sull'accessibilità, sulla leggibilità e sulla corretta interpretazione del sito."],
   ['07', 'Aggiornamento dei contenuti', 'Valutiamo segnali che aiutano a capire se le informazioni vengono mantenute coerenti e aggiornate nel tempo.'],
   ['08', 'Predisposizione ai sistemi AI', "Verifichiamo alcuni segnali specifici che possono facilitare l'accesso e l'interpretazione dei contenuti da parte dei sistemi AI."],
-  ['09', 'Presenza esterna del brand', "Quando misurabile, verifichiamo quanto l'identita e l'attivita dell'organizzazione trovino riscontro anche in fonti esterne al proprio sito."],
+  ['09', 'Presenza esterna del brand', "Quando misurabile, verifichiamo quanto l'identità e l'attività dell'organizzazione trovino riscontro anche in fonti esterne al proprio sito."],
 ] as const;
 
 export const metadata: Metadata = pageMetadata({ path: '/ai-score/methodology', title: 'Come funziona Horyzon AI Score', description });
@@ -368,12 +368,12 @@ export default function AiScoreMethodologyPage() {
           <div className="ai-method-hero-copy">
             <p className="eyebrow"><span />Horyzon / AI Score</p>
             <h1>Come funziona Horyzon AI Score</h1>
-            <p className="page-intro">Analizziamo quanto un sito e predisposto a essere scoperto, compreso e utilizzato dai sistemi AI e, quando disponibile, quanto il brand emerge nelle superfici di ricerca AI.</p>
+            <p className="page-intro">Analizziamo quanto un sito è predisposto a essere scoperto, compreso e utilizzato dai sistemi AI e, quando disponibile, quanto il brand emerge nelle superfici di ricerca AI.</p>
             <p className="ai-method-subintro">La valutazione combina segnali tecnici, contenutistici, semantici e di autorevolezza attraverso una metodologia Horyzon basata su evidenze verificabili.</p>
           </div>
           <aside className="ai-method-hero-panel" aria-label="Avvia AI Score">
             <strong>Parti dal tuo dominio.</strong>
-            <p>Il risultato gratuito mostra le tre misure principali e indica quando una metrica non puo essere realmente osservata.</p>
+            <p>Il risultato gratuito mostra le tre misure principali e indica quando una metrica non può essere realmente osservata.</p>
             <Link className="button primary" href="/ai-score">Analizza il tuo sito <span aria-hidden="true">→</span></Link>
           </aside>
         </div>
@@ -412,13 +412,13 @@ export default function AiScoreMethodologyPage() {
       <section className="narrative-section ai-method-principle">
         <div>
           <p className="section-kicker">Il nostro principio</p>
-          <h2>Misuriamo solo cio che possiamo verificare.</h2>
-          <p>Quando un segnale non puo essere realmente osservato, non inventiamo un risultato. La metrica viene indicata come non misurata e il livello di confidence tiene conto delle evidenze effettivamente disponibili.</p>
-          <p>Questo mantiene separati cio che sappiamo, cio che possiamo misurare e cio che non e ancora verificabile.</p>
+          <h2>Misuriamo solo ciò che possiamo verificare.</h2>
+          <p>Quando un segnale non può essere realmente osservato, non inventiamo un risultato. La metrica viene indicata come non misurata e il livello di confidence tiene conto delle evidenze effettivamente disponibili.</p>
+          <p>Questo mantiene separati ciò che sappiamo, ciò che possiamo misurare e ciò che non è ancora verificabile.</p>
         </div>
         <aside className="ai-method-principle-card" aria-label="Principio metodologico">
           <strong>Not measured</strong>
-          <span>Non e un punteggio basso. E una dichiarazione di trasparenza quando una misurazione non ha evidenze sufficienti.</span>
+          <span>Non è un punteggio basso. È una dichiarazione di trasparenza quando una misurazione non ha evidenze sufficienti.</span>
         </aside>
       </section>
 
@@ -426,15 +426,15 @@ export default function AiScoreMethodologyPage() {
         <header>
           <p className="section-kicker">Migliorare</p>
           <h2>Due modi per andare oltre il punteggio.</h2>
-          <p className="narrative-lede">Conoscere il proprio AI Score e il primo passo. Il passo successivo e capire quali principi seguire oppure quali interventi servono nello specifico sito analizzato.</p>
+          <p className="narrative-lede">Conoscere il proprio AI Score è il primo passo. Il passo successivo è capire quali principi seguire oppure quali interventi servono nello specifico sito analizzato.</p>
         </header>
         <div className="ai-method-products">
           <article>
             <span className="ai-method-product-number">01</span>
             <span className="ai-method-product-label">Guida generale</span>
             <h3>Horyzon AI Optimization Guide</h3>
-            <p>Una guida pratica ai principi e alle buone pratiche per costruire siti piu accessibili, comprensibili e citabili dai sistemi AI.</p>
-            <p>E pensata per chi vuole conoscere le regole generali dell'ottimizzazione AI, indipendentemente da uno specifico audit.</p>
+            <p>Una guida pratica ai principi e alle buone pratiche per costruire siti più accessibili, comprensibili e citabili dai sistemi AI.</p>
+            <p>È pensata per chi vuole conoscere le regole generali dell'ottimizzazione AI, indipendentemente da uno specifico audit.</p>
             <strong className="ai-method-product-meaning">Come migliorare un sito per l'AI in generale.</strong>
             <span className="ai-method-status">In arrivo</span>
           </article>
@@ -442,7 +442,7 @@ export default function AiScoreMethodologyPage() {
             <span className="ai-method-product-number">02</span>
             <span className="ai-method-product-label">Piano personalizzato</span>
             <h3>Horyzon AI Optimization Plan</h3>
-            <p>Un piano costruito sui risultati reali dell'audit del tuo sito, con problemi individuati, priorita e interventi specifici.</p>
+            <p>Un piano costruito sui risultati reali dell'audit del tuo sito, con problemi individuati, priorità e interventi specifici.</p>
             <p>Non contiene indicazioni generiche: parte dalle evidenze raccolte durante l'analisi del dominio.</p>
             <strong className="ai-method-product-meaning">Come migliorare il tuo sito sulla base dell'audit.</strong>
             <Link className="button ghost-dark" href="/ai-score">Analizza il tuo sito <span aria-hidden="true">→</span></Link>
@@ -455,7 +455,7 @@ export default function AiScoreMethodologyPage() {
           <div className="ai-method-closing-copy">
             <span className="ai-method-version">{publicVersion}</span>
             <h2>Una metodologia indipendente.</h2>
-            <p>Horyzon AI Score e una metodologia proprietaria indipendente che utilizza standard web, documentazione pubblica e segnali verificabili come riferimenti tecnici.</p>
+            <p>Horyzon AI Score è una metodologia proprietaria indipendente che utilizza standard web, documentazione pubblica e segnali verificabili come riferimenti tecnici.</p>
           </div>
           <Link className="button primary" href="/ai-score">Analizza il tuo sito <span aria-hidden="true">→</span></Link>
         </div>
