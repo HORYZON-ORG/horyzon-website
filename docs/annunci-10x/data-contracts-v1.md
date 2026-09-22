@@ -480,8 +480,18 @@ Runtime adapter:
 - `src/lib/annunci-10x/persistence/rows.ts` parses database rows back through the Annunci 10x domain validators before returning them to callers.
 - `src/lib/annunci-10x/persistence/security.ts` owns session secret creation, hashing, and safe event metadata validation.
 
+AI runtime persistence:
+
+- Phase 4 uses `annunci10x_ai_operations`; no additional migration is required.
+- The orchestrator computes a deterministic idempotency key from session, operation type, input identity, prompt version, and model.
+- If an operation with the same idempotency identity is already `SUCCEEDED`, its validated output payload is reused and the provider is not called again.
+- Successful operation payloads store sanitized output, provider name, model, prompt id/version, optional provider request id, latency, retry count, and usage metadata.
+- Failed operation payloads store sanitized error code/message/retryability/status only.
+- Chain-of-thought, API keys, session secrets, raw provider response bodies, payment state, and browser credentials are not persisted in `annunci10x_ai_operations`.
+
 Mapping notes:
 
 - Product `BUILD` entry mode maps to persistence flow `CREATE`; read-side parsing maps `CREATE` back to `entryMode: 'BUILD'`.
 - Payment, checkout, webhook schema, authenticated account identity, cross-device resume, and retention duration remain `OPEN DECISION`.
 - The current persistence layer is prepared for server-side entitlement data, but it does not implement a payment provider or entitlement source of truth yet.
+- Phase 4 adds runtime error codes `AI_PROVIDER_ERROR`, `AI_INVALID_OUTPUT`, `RATE_LIMITED`, and `INTERNAL_ERROR` for provider-facing failures; deterministic domain errors remain separate.

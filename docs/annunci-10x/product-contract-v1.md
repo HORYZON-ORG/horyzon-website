@@ -8,7 +8,7 @@ Legacy route, not part of this product: `/annuncio-10x`
 
 This document defines the local canonical product contract for the Annunci 10x foundations phase and records subsequent phase status where needed.
 
-Phase 1 was documentation only. Phase 3 adds Supabase persistence migrations and a server-side persistence adapter; it still does not implement routes, APIs, payments, provider runtime calls, deployments, or public navigation changes.
+Phase 1 was documentation only. Phase 3 adds Supabase persistence migrations and a server-side persistence adapter. Phase 4 adds the server-side AI runtime and prompt registry. The product still does not implement routes, APIs, payments, deployments, or public navigation changes.
 
 ## Canonical baseline
 
@@ -128,8 +128,27 @@ Still not implemented:
 
 - `/annunci-10x` route or UI.
 - Public API routes or server actions.
-- OpenAI/provider runtime calls.
 - Payment checkout, webhook handling, or durable entitlement source.
 - Authenticated account ownership or cross-device resume.
 - Retention jobs or deletion workflow.
 - SEO/header/footer/sitemap changes.
+
+## Phase 4 AI runtime status
+
+Implemented scope:
+
+- Server-only provider abstraction under `src/lib/annunci-10x/ai/`.
+- Dedicated OpenAI provider implementation for Annunci 10x.
+- Deterministic mock provider for tests.
+- Versioned prompt registry for the 11 authorized operations.
+- Operation orchestration with persistence, idempotency, timeout, sanitized errors, usage metadata, and one schema-repair retry.
+- Generate -> Validate -> one targeted Revise -> Validate cycle primitive.
+
+Still not implemented:
+
+- Public API route or server action using the runtime.
+- UI for `/annunci-10x`.
+- Live provider smoke test when `OPENAI_API_KEY` is unavailable.
+- Payment, checkout, webhook, durable entitlement source, or pricing logic.
+- Vercel deploy or env mutation.
+- Supabase schema changes beyond Phase 3.

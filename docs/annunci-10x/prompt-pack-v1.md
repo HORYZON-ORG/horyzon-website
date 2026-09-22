@@ -4,7 +4,7 @@ Canonical route: `/annunci-10x`
 
 Legacy route, not part of this prompt pack: `/annuncio-10x` is `NON TOCCARE`.
 
-This document defines prompt contracts only. It does not select a provider or implement model calls.
+This document defines prompt contracts. Phase 4 implements the server-side runtime under `src/lib/annunci-10x/ai/` while keeping provider code, prompt registry, structured-output validation, model routing, persistence, and retry policy isolated from UI, API routes, payment, SEO, and the legacy `/annuncio-10x` prototype.
 
 ## Core policy shared by all AI tasks
 
@@ -357,3 +357,92 @@ Rules:
 There is no `SCORE` prompt.
 
 Score and final publication gates are deterministic TypeScript outputs from versioned rubrics and typed evaluation targets.
+
+There is also no `GATE_DECISION` prompt. Publication status is produced by TypeScript gate logic, not by the AI provider.
+
+## Phase 4 runtime implementation
+
+Provider abstraction:
+
+- `Annunci10xAiProvider` exposes `executeStructuredTask`.
+- Initial providers are `OPENAI` and `MOCK`.
+- The domain orchestrator does not import provider-specific response types.
+- The OpenAI implementation is server-only, fail-closed when `OPENAI_API_KEY` is absent, uses the Responses API with JSON Schema structured output, `store: false`, explicit timeout, and no tools/web search.
+
+Prompt registry:
+
+- Registry file: `src/lib/annunci-10x/ai/prompts/index.ts`.
+- Shared policy: `annunci10x-core-policy` / `annunci10x-core-policy-v1`.
+- Prompt definitions:
+  - `PRECHECK`: `annunci10x.precheck` / `annunci10x.precheck.v1`
+  - `EXTRACT`: `annunci10x.extract` / `annunci10x.extract.v1`
+  - `CLARIFY`: `annunci10x.clarify` / `annunci10x.clarify.v1`
+  - `PROFILE`: `annunci10x.profile` / `annunci10x.profile.v1`
+  - `STRATEGY`: `annunci10x.strategy` / `annunci10x.strategy.v1`
+  - `GENERATE`: `annunci10x.generate` / `annunci10x.generate.v1`
+  - `VALIDATE`: `annunci10x.validate` / `annunci10x.validate.v1`
+  - `EVALUATE`: `annunci10x.evaluate` / `annunci10x.evaluate.v1`
+  - `CHANNEL_ADAPTER`: `annunci10x.channel_adapter` / `annunci10x.channel_adapter.v1`
+  - `EDIT_CLASSIFIER`: `annunci10x.edit_classifier` / `annunci10x.edit_classifier.v1`
+  - `REVISE`: `annunci10x.revise` / `annunci10x.revise.v1`
+
+Model routing:
+
+- Default model: `gpt-5-mini`.
+- Override per task via server-side env:
+  - `ANNUNCI10X_MODEL_PRECHECK`
+  - `ANNUNCI10X_MODEL_EXTRACT`
+  - `ANNUNCI10X_MODEL_CLARIFY`
+  - `ANNUNCI10X_MODEL_PROFILE`
+  - `ANNUNCI10X_MODEL_STRATEGY`
+  - `ANNUNCI10X_MODEL_GENERATE`
+  - `ANNUNCI10X_MODEL_VALIDATE`
+  - `ANNUNCI10X_MODEL_EVALUATE`
+  - `ANNUNCI10X_MODEL_CHANNEL_ADAPTER`
+  - `ANNUNCI10X_MODEL_EDIT_CLASSIFIER`
+  - `ANNUNCI10X_MODEL_REVISE`
+- `ANNUNCI10X_MODEL_DEFAULT` can override the default for all tasks.
+- These are routing defaults, not final cost or product pricing decisions.
+
+Timeout and retry:
+
+- Timeout default: `30000` ms.
+- Override via `ANNUNCI10X_AI_TIMEOUT_MS`.
+- Schema-invalid output retries exactly once with a schema-repair instruction.
+- A second malformed response fails as `AI_INVALID_OUTPUT`.
+- Rate limit maps to `RATE_LIMITED`.
+- Provider failures map to sanitized `AI_PROVIDER_ERROR`.
+- Public errors do not expose API keys, stack traces, raw provider payloads, full prompts, raw ads, or chain-of-thought.
+
+Structured output:
+
+- Every prompt has a JSON Schema in `src/lib/annunci-10x/ai/schemas.ts`.
+- Provider structured output is still runtime-validated after receipt.
+- `EVALUATE` must return exactly 20 check statuses and cannot include arbitrary score/points fields.
+- `EXTRACT` target paths are restricted to allowed RoleCard paths.
+
+Generate -> Validate -> Revise:
+
+- `GENERATE` is followed by `VALIDATE`.
+- `PASS` stops successfully.
+- `NEEDS_REVISION` allows one targeted `REVISE`, then `VALIDATE` must run again.
+- A second `NEEDS_REVISION` stops as needs-verification behavior.
+- `BLOCK` never enters an automatic loop.
+- Maximum automatic revision count: 1.
+
+Data minimization:
+
+- The runtime projects input per task before calling the provider.
+- It strips session secrets, cookies, API keys, service-role keys, payment, purchases, entitlements, commercial context, price, and discount fields.
+- `GENERATE` receives RoleCard, RoleProfile, and CommunicationStrategy only; it does not receive score targets, payment state, or entitlement state.
+
+Usage metadata:
+
+- Provider result can carry `inputTokens`, `outputTokens`, `totalTokens`, `cachedTokens`, and `providerRequestId`.
+- The orchestrator persists sanitized usage metadata inside the AI operation output payload.
+- No API pricing or commercial product price is calculated in this phase.
+
+Live provider test status:
+
+- `LIVE_PROVIDER_TEST = NOT_RUN_MISSING_CREDENTIAL` when `OPENAI_API_KEY` is absent.
+- Mock/provider/orchestrator tests remain mandatory and do not depend on network.
