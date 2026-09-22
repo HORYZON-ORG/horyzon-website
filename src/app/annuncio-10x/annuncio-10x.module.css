@@ -2,3 +2,9 @@
 @media(max-width:900px){.hero{grid-template-columns:1fr;padding-top:5rem}.hero h1{font-size:clamp(3.8rem,13vw,7rem)}.heroPanel{max-width:600px}.problem>div,.builder,.resultGrid,.beforeAfter header,.method{grid-template-columns:1fr}.builderIntro{position:static}.problem>ul{grid-template-columns:1fr}.problem li,.problem li+li{padding:1.4rem 0;border-right:0;border-bottom:1px solid #aab3ad;gap:1rem}.fieldGrid{grid-template-columns:1fr}.fullField{grid-column:auto}.result{grid-column:auto}.comparison{grid-template-columns:1fr}.comparison article+article{border-left:0;border-top:1px solid #aeb8b1}}
 @media(max-width:600px){.hero{padding-inline:6vw}.heroActions{align-items:flex-start;flex-direction:column}.problem,.builder,.beforeAfter,.method,.faq{padding-inline:6vw}.modeTabs{grid-template-columns:1fr}.modeTabs button{min-height:90px}.form{padding:1.25rem}.result>header{display:grid}.result header button{width:100%}.comparison{margin-top:3rem}}
 @media(prefers-reduced-motion:reduce){.page *{scroll-behavior:auto!important}}
+
+/* Keep the sales headline inside its grid track at intermediate widths and browser zoom levels. */
+.heroCopy{min-width:0}
+.hero{gap:clamp(2.5rem,6vw,7rem)}
+.hero h1{font-size:clamp(3.6rem,6.3vw,7.2rem);line-height:.96;letter-spacing:-.05em;max-width:900px}
+@media(max-width:1100px) and (min-width:901px){.hero{grid-template-columns:minmax(0,1fr) minmax(290px,.72fr)}}

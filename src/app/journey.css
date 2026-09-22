@@ -96,3 +96,6 @@
 .back-to-top-control{display:none}
 .back-to-top-control:focus-visible{outline:2px solid #f2d09b;outline-offset:3px}
 @media(max-width:768px){.chapter-navigation{display:none}.back-to-top-control{position:fixed;right:14px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:1000;display:grid;place-items:center;width:44px;height:44px;min-height:44px;padding:0;border:1px solid #c6c9c052;border-radius:50%;background:#081521e8;color:#e8e4d9;backdrop-filter:blur(8px)}.back-to-top-control svg{display:block;width:18px;height:18px}}
+
+/* Cormorant's italic ascenders need more room than the original near-solid leading. */
+.chapter-copy h1,.chapter-copy h2{line-height:1.08}
