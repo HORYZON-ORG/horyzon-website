@@ -3,234 +3,464 @@ import Link from 'next/link';
 import { SiteFooter, SiteHeader } from '@/components/site-shell';
 import { PageStructuredData } from '@/components/structured-data';
 import { pageMetadata } from '@/content/seo';
-import {
-  AI_SCORE_DISPLAY_METHODOLOGY,
-  AI_SCORE_METHODOLOGY_EFFECTIVE_DATE,
-  auditCheckDefinitions,
-  checkWeightValues,
-  externalFootprintWeights,
-  methodologyDefinition,
-  methodologyReferences,
-  readinessCategories,
-  visibilityWeights,
-} from '@/lib/ai-score/methodology';
-import { createExternalFootprintProviderRegistry, externalFootprintProfiles } from '@/lib/ai-score/external-footprint';
-import { createVisibilityProviderRegistry, visibilityProviderCandidates, visibilityScanProfiles } from '@/lib/ai-score/visibility';
 
-const description = 'Metodologia Horyzon AI Score: pesi, controlli, confidence, limiti e separazione tra AI Readiness, AI Visibility ed External Brand Footprint.';
-const footprintProviderDisplayLabels: Record<string, string> = {
-  perplexity_search: 'Perplexity Search API',
-};
+const description = 'Scopri cosa misura Horyzon AI Score e perche la valutazione distingue predisposizione, visibilita AI e solidita delle evidenze.';
+const publicVersion = 'Horyzon AI Score v1.0';
 
-export const metadata: Metadata = pageMetadata({ path: '/ai-score/methodology', title: 'Metodologia Horyzon AI Score', description });
+const methodologyPageCss = `
+.ai-score-methodology-hero {
+  display: block !important;
+  padding-top: 70px;
+  padding-bottom: 78px;
+}
+
+.ai-method-hero-shell,
+.ai-method-section,
+.ai-method-principle,
+.ai-method-closing {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 1120px);
+  margin-inline: auto;
+}
+
+.ai-method-hero-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+  gap: clamp(34px, 7vw, 88px);
+  align-items: end;
+}
+
+.ai-method-hero-copy h1 {
+  max-width: 920px;
+  margin: 24px 0 24px;
+  font-size: clamp(58px, 7.2vw, 106px);
+  line-height: .9;
+}
+
+.ai-method-hero-copy .page-intro,
+.ai-method-hero-copy .ai-method-subintro {
+  max-width: 760px;
+  color: #c7d1d0;
+}
+
+.ai-method-subintro {
+  margin: 18px 0 0;
+  font-size: clamp(16px, 1.35vw, 19px);
+  line-height: 1.75;
+}
+
+.ai-method-hero-panel {
+  border: 1px solid #d7ff3f45;
+  background: #ffffff08;
+  padding: 28px;
+  color: #edf1e6;
+  box-shadow: 0 28px 80px #00000022;
+}
+
+.ai-method-hero-panel p {
+  margin: 0 0 28px;
+  color: #b8c8c3;
+  line-height: 1.7;
+}
+
+.ai-method-hero-panel strong {
+  display: block;
+  margin-bottom: 10px;
+  font: 400 34px/1 var(--font-serif);
+  color: #f5f4eb;
+}
+
+.ai-method-hero-panel .button {
+  width: 100%;
+  margin-top: 2px;
+}
+
+.ai-method-section {
+  padding: 86px 0;
+}
+
+.ai-method-section + .ai-method-section,
+.ai-method-principle + .ai-method-section,
+.ai-method-section + .ai-method-principle {
+  border-top: 1px solid #c3cab9;
+}
+
+.ai-method-section header {
+  max-width: 820px;
+  margin-bottom: 36px;
+}
+
+.ai-method-section h2,
+.ai-method-principle h2,
+.ai-method-closing h2 {
+  margin: 12px 0 0;
+  font: 400 clamp(38px, 5vw, 76px)/1.02 var(--font-serif);
+  letter-spacing: -.025em;
+}
+
+.ai-method-section .narrative-lede,
+.ai-method-principle p,
+.ai-method-closing p {
+  max-width: 760px;
+  color: #47564f;
+  line-height: 1.75;
+}
+
+.ai-method-measures {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  background: #b9c3ac;
+  border: 1px solid #b9c3ac;
+}
+
+.ai-method-measures article {
+  min-width: 0;
+  background: #eef1e7;
+  padding: 30px;
+}
+
+.ai-method-measures span,
+.ai-method-areas span,
+.ai-method-product-label,
+.ai-method-version {
+  display: inline-block;
+  margin-bottom: 18px;
+  font-size: 11px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: #64713b;
+  font-weight: 800;
+}
+
+.ai-method-measures h3,
+.ai-method-products h3 {
+  margin: 0 0 16px;
+  font: 400 clamp(29px, 3vw, 42px)/1.05 var(--font-serif);
+  letter-spacing: -.015em;
+}
+
+.ai-method-measures p,
+.ai-method-areas p,
+.ai-method-products p {
+  margin: 0;
+  color: #455650;
+  line-height: 1.7;
+}
+
+.ai-method-measures p + p,
+.ai-method-products p + p {
+  margin-top: 14px;
+}
+
+.ai-method-areas {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  background: #b9c3ac;
+  border: 1px solid #b9c3ac;
+}
+
+.ai-method-areas article {
+  min-width: 0;
+  background: #f4f3ea;
+  padding: 24px;
+}
+
+.ai-method-areas h3 {
+  margin: 0 0 12px;
+  font-size: 19px;
+  line-height: 1.25;
+  color: #122226;
+}
+
+.ai-method-principle {
+  display: grid;
+  grid-template-columns: minmax(0, .78fr) minmax(280px, .42fr);
+  gap: clamp(30px, 6vw, 76px);
+  align-items: center;
+  padding: 86px 0;
+}
+
+.ai-method-principle-card {
+  border: 1px solid #d7ff3f55;
+  background: #081521;
+  color: #f5f4eb;
+  padding: 34px;
+}
+
+.ai-method-principle-card strong {
+  display: block;
+  font: 400 clamp(46px, 7vw, 86px)/.86 var(--font-serif);
+  color: #d7ff3f;
+}
+
+.ai-method-principle-card span {
+  display: block;
+  margin-top: 18px;
+  color: #c7d1d0;
+  line-height: 1.7;
+}
+
+.ai-method-products {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: #b9c3ac;
+  border: 1px solid #b9c3ac;
+}
+
+.ai-method-products article {
+  min-width: 0;
+  background: #e8ecdc;
+  padding: clamp(28px, 4vw, 44px);
+}
+
+.ai-method-products article:last-child {
+  background: #f4f3ea;
+}
+
+.ai-method-product-number {
+  display: block;
+  margin-bottom: 34px;
+  font: 400 clamp(56px, 7vw, 92px)/.8 var(--font-serif);
+  color: #667333;
+}
+
+.ai-method-product-meaning {
+  display: block;
+  margin: 22px 0 24px;
+  color: #122226;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.ai-method-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  border: 1px solid #9eac91;
+  padding: 0 18px;
+  color: #47564f;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.ai-method-closing {
+  padding: 78px 0 92px;
+  border-top: 1px solid #c3cab9;
+}
+
+.ai-method-closing-inner {
+  display: flex;
+  gap: 28px;
+  align-items: end;
+  justify-content: space-between;
+}
+
+.ai-method-closing-copy {
+  max-width: 780px;
+}
+
+.ai-method-closing .button {
+  white-space: nowrap;
+}
+
+@media (max-width: 1000px) {
+  .ai-method-hero-shell,
+  .ai-method-principle,
+  .ai-method-closing-inner {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .ai-method-hero-panel {
+    max-width: 560px;
+  }
+
+  .ai-method-measures,
+  .ai-method-areas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .ai-score-methodology-hero {
+    padding-top: 48px;
+    padding-bottom: 58px;
+  }
+
+  .ai-method-hero-copy h1 {
+    font-size: clamp(48px, 13vw, 76px);
+  }
+
+  .ai-method-section,
+  .ai-method-principle,
+  .ai-method-closing {
+    padding: 62px 0;
+  }
+
+  .ai-method-measures,
+  .ai-method-areas,
+  .ai-method-products {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-method-measures article,
+  .ai-method-areas article,
+  .ai-method-products article,
+  .ai-method-hero-panel,
+  .ai-method-principle-card {
+    padding: 24px;
+  }
+
+  .ai-method-closing .button {
+    width: 100%;
+  }
+}
+`;
+
+const measures = [
+  {
+    id: '01',
+    title: 'AI Readiness',
+    copy: 'Misura quanto il sito e predisposto a essere correttamente scoperto, interpretato e utilizzato dai sistemi di ricerca e AI.',
+  },
+  {
+    id: '02',
+    title: 'AI Visibility',
+    copy: 'Misura quanto il brand emerge e viene citato nelle diverse superfici di ricerca AI effettivamente analizzate.',
+    note: 'Se una superficie non puo essere realmente verificata, non viene simulato alcun risultato.',
+  },
+  {
+    id: '03',
+    title: 'Evidence Confidence',
+    copy: 'Indica quanto sono complete e affidabili le evidenze disponibili per la valutazione.',
+    note: 'Una confidence piu bassa non significa necessariamente un sito peggiore: indica una misurazione meno completa.',
+  },
+];
+
+const readinessAreas = [
+  ['01', 'Accessibilita e indicizzazione', 'Verifichiamo che il sito e i suoi contenuti principali possano essere raggiunti e interpretati correttamente dai sistemi automatici.'],
+  ['02', 'Qualita e citabilita dei contenuti', 'Valutiamo quanto le informazioni siano chiare, specifiche, strutturate e utilizzabili come fonte.'],
+  ['03', 'Identita e chiarezza semantica', "Verifichiamo quanto sia comprensibile chi e l'organizzazione, cosa offre, a chi si rivolge e quali competenze rappresenta."],
+  ['04', 'Dati strutturati', 'Analizziamo i segnali machine-readable che aiutano sistemi di ricerca e AI a interpretare correttamente informazioni ed entita.'],
+  ['05', 'Autorevolezza ed evidenze', 'Cerchiamo segnali che rendano identita, informazioni e affermazioni verificabili e riconducibili a fonti chiare.'],
+  ['06', 'Qualita tecnica', "Consideriamo alcuni elementi tecnici che incidono sull'accessibilita, sulla leggibilita e sulla corretta interpretazione del sito."],
+  ['07', 'Aggiornamento dei contenuti', 'Valutiamo segnali che aiutano a capire se le informazioni vengono mantenute coerenti e aggiornate nel tempo.'],
+  ['08', 'Predisposizione ai sistemi AI', "Verifichiamo alcuni segnali specifici che possono facilitare l'accesso e l'interpretazione dei contenuti da parte dei sistemi AI."],
+  ['09', 'Presenza esterna del brand', "Quando misurabile, verifichiamo quanto l'identita e l'attivita dell'organizzazione trovino riscontro anche in fonti esterne al proprio sito."],
+] as const;
+
+export const metadata: Metadata = pageMetadata({ path: '/ai-score/methodology', title: 'Come funziona Horyzon AI Score', description });
 
 export default function AiScoreMethodologyPage() {
-  const providerStatuses = createVisibilityProviderRegistry().map((provider) => ({
-    id: provider.id,
-    label: provider.label,
-    surface: provider.surface,
-    configured: provider.isConfigured(),
-    enabled: provider.enabled,
-  }));
-  const footprintProviderStatuses = createExternalFootprintProviderRegistry().map((provider) => ({
-    id: provider.id,
-    label: provider.label,
-    configured: provider.isConfigured(),
-    enabled: provider.enabled,
-  }));
-  const publicReferences = methodologyReferences.filter((reference) => !/bing web search api/i.test(reference.label));
-
   return <>
-    <PageStructuredData path="/ai-score/methodology" name="Metodologia Horyzon AI Score" description={description} breadcrumbs={[{ name: 'Horyzon', path: '/' }, { name: 'AI Score', path: '/ai-score' }, { name: 'Metodologia', path: '/ai-score/methodology' }]} />
+    <PageStructuredData path="/ai-score/methodology" name="Come funziona Horyzon AI Score" description={description} breadcrumbs={[{ name: 'Horyzon', path: '/' }, { name: 'AI Score', path: '/ai-score' }, { name: 'Come funziona', path: '/ai-score/methodology' }]} />
+    <style>{methodologyPageCss}</style>
     <SiteHeader />
     <main id="content" className="inside editorial-page narrative-page ai-score-page" data-page="ai-score-methodology">
-      <nav className="editorial-breadcrumb" aria-label="Percorso di navigazione"><Link href="/">Horyzon</Link><span aria-hidden="true">/</span><Link href="/ai-score">AI Score</Link><span aria-hidden="true">/</span><span aria-current="page">Metodologia</span></nav>
+      <nav className="editorial-breadcrumb" aria-label="Percorso di navigazione"><Link href="/">Horyzon</Link><span aria-hidden="true">/</span><Link href="/ai-score">AI Score</Link><span aria-hidden="true">/</span><span aria-current="page">Come funziona</span></nav>
+
       <section className="inside-hero ai-score-hero ai-score-methodology-hero">
-        <div>
-          <p className="eyebrow"><span />Metodo pubblico</p>
-          <h1>Metodologia Horyzon AI Score</h1>
-          <p className="page-intro">{AI_SCORE_DISPLAY_METHODOLOGY} misura AI Readiness con controlli deterministici e tiene separate AI Visibility ed External Brand Footprint, che richiedono observation reali raccolte da provider verificabili.</p>
-          <dl className="ai-score-methodology-meta">
-            <div><dt>Versione pubblica</dt><dd>{AI_SCORE_DISPLAY_METHODOLOGY}</dd></div>
-            <div><dt>ID tecnico</dt><dd>{methodologyDefinition.readinessVersion}</dd></div>
-            <div><dt>Formula confidence</dt><dd>{methodologyDefinition.confidenceFormulaVersion}</dd></div>
-            <div><dt>Data efficacia</dt><dd>{AI_SCORE_METHODOLOGY_EFFECTIVE_DATE}</dd></div>
-            <div><dt>Controlli definiti</dt><dd>{auditCheckDefinitions.length}</dd></div>
-          </dl>
+        <div className="ai-method-hero-shell">
+          <div className="ai-method-hero-copy">
+            <p className="eyebrow"><span />Horyzon / AI Score</p>
+            <h1>Come funziona Horyzon AI Score</h1>
+            <p className="page-intro">Analizziamo quanto un sito e predisposto a essere scoperto, compreso e utilizzato dai sistemi AI e, quando disponibile, quanto il brand emerge nelle superfici di ricerca AI.</p>
+            <p className="ai-method-subintro">La valutazione combina segnali tecnici, contenutistici, semantici e di autorevolezza attraverso una metodologia Horyzon basata su evidenze verificabili.</p>
+          </div>
+          <aside className="ai-method-hero-panel" aria-label="Avvia AI Score">
+            <strong>Parti dal tuo dominio.</strong>
+            <p>Il risultato gratuito mostra le tre misure principali e indica quando una metrica non puo essere realmente osservata.</p>
+            <Link className="button primary" href="/ai-score">Analizza il tuo sito <span aria-hidden="true">→</span></Link>
+          </aside>
         </div>
       </section>
 
-      <section className="narrative-section ai-score-method">
+      <section className="narrative-section ai-method-section">
+        <header>
+          <p className="section-kicker">La valutazione</p>
+          <h2>Tre misure, tre significati diversi.</h2>
+        </header>
+        <div className="ai-method-measures">
+          {measures.map((measure) => <article key={measure.id}>
+            <span>{measure.id}</span>
+            <h3>{measure.title}</h3>
+            <p>{measure.copy}</p>
+            {measure.note && <p>{measure.note}</p>}
+          </article>)}
+        </div>
+      </section>
+
+      <section className="narrative-section ai-method-section">
         <header>
           <p className="section-kicker">AI Readiness</p>
-          <h2>Nove categorie, 100 punti.</h2>
-          <p className="narrative-lede">Lo score Readiness e calcolato solo sulle categorie effettivamente misurate. Le categorie non misurate non ricevono punteggi fittizi e abbassano invece Evidence confidence.</p>
+          <h2>Cosa analizziamo</h2>
+          <p className="narrative-lede">AI Readiness considera diverse dimensioni del sito. Insieme descrivono quanto le informazioni siano accessibili, comprensibili e verificabili dai sistemi automatici.</p>
         </header>
-        <div className="output-list ai-score-methodology-grid">
-          {readinessCategories.map(category => <article key={category.id}>
-            <h3>{category.label}</h3>
-            <strong>{category.weight} punti</strong>
-            <p>{category.description}</p>
+        <div className="ai-method-areas">
+          {readinessAreas.map(([number, title, copy]) => <article key={number}>
+            <span>{number}</span>
+            <h3>{title}</h3>
+            <p>{copy}</p>
           </article>)}
         </div>
       </section>
 
-      <section className="narrative-section ai-score-method">
+      <section className="narrative-section ai-method-principle">
+        <div>
+          <p className="section-kicker">Il nostro principio</p>
+          <h2>Misuriamo solo cio che possiamo verificare.</h2>
+          <p>Quando un segnale non puo essere realmente osservato, non inventiamo un risultato. La metrica viene indicata come non misurata e il livello di confidence tiene conto delle evidenze effettivamente disponibili.</p>
+          <p>Questo mantiene separati cio che sappiamo, cio che possiamo misurare e cio che non e ancora verificabile.</p>
+        </div>
+        <aside className="ai-method-principle-card" aria-label="Principio metodologico">
+          <strong>Not measured</strong>
+          <span>Non e un punteggio basso. E una dichiarazione di trasparenza quando una misurazione non ha evidenze sufficienti.</span>
+        </aside>
+      </section>
+
+      <section className="narrative-section ai-method-section">
         <header>
-          <p className="section-kicker">Pesi interni</p>
-          <h2>Non tutti i controlli valgono allo stesso modo.</h2>
-          <p className="narrative-lede">Dentro ogni categoria, i controlli sono ponderati per impatto: un blocco di indicizzazione pesa piu di un segnale opzionale come llms.txt. I pesi macro restano quelli pubblicati sopra.</p>
+          <p className="section-kicker">Migliorare</p>
+          <h2>Due modi per andare oltre il punteggio.</h2>
+          <p className="narrative-lede">Conoscere il proprio AI Score e il primo passo. Il passo successivo e capire quali principi seguire oppure quali interventi servono nello specifico sito analizzato.</p>
         </header>
-        <div className="output-list">
-          {Object.entries(checkWeightValues).map(([label, weight]) => <article key={label}>
-            <h3>{label}</h3>
-            <strong>{weight} unita</strong>
-            <p>{label === 'CRITICAL' ? 'Controlli che possono impedire discovery, crawling, interpretazione o fiducia di base.' : label === 'HIGH' ? 'Segnali importanti per qualita, autorevolezza o accessibilita machine-readable.' : label === 'MEDIUM' ? 'Controlli utili ma non sempre decisivi singolarmente.' : 'Segnali minori o contestuali: contribuiscono poco e non sono trattati come ranking factor ufficiali.'}</p>
-          </article>)}
+        <div className="ai-method-products">
+          <article>
+            <span className="ai-method-product-number">01</span>
+            <span className="ai-method-product-label">Guida generale</span>
+            <h3>Horyzon AI Optimization Guide</h3>
+            <p>Una guida pratica ai principi e alle buone pratiche per costruire siti piu accessibili, comprensibili e citabili dai sistemi AI.</p>
+            <p>E pensata per chi vuole conoscere le regole generali dell'ottimizzazione AI, indipendentemente da uno specifico audit.</p>
+            <strong className="ai-method-product-meaning">Come migliorare un sito per l'AI in generale.</strong>
+            <span className="ai-method-status">In arrivo</span>
+          </article>
+          <article>
+            <span className="ai-method-product-number">02</span>
+            <span className="ai-method-product-label">Piano personalizzato</span>
+            <h3>Horyzon AI Optimization Plan</h3>
+            <p>Un piano costruito sui risultati reali dell'audit del tuo sito, con problemi individuati, priorita e interventi specifici.</p>
+            <p>Non contiene indicazioni generiche: parte dalle evidenze raccolte durante l'analisi del dominio.</p>
+            <strong className="ai-method-product-meaning">Come migliorare il tuo sito sulla base dell'audit.</strong>
+            <Link className="button ghost-dark" href="/ai-score">Analizza il tuo sito <span aria-hidden="true">→</span></Link>
+          </article>
         </div>
       </section>
 
-      <section className="narrative-section ai-score-method">
-        <header>
-          <p className="section-kicker">Confidence</p>
-          <h2>La fiducia non e una scelta editoriale.</h2>
-          <p className="narrative-lede">Evidence confidence deriva da copertura dei controlli applicabili, qualita delle evidenze, copertura categorie, profondita crawl, copertura AI Visibility e copertura External Brand Footprint. Se mancano provider esterni per Visibility e Footprint, la confidence non puo salire a HIGH.</p>
-        </header>
-        <div className="output-list">
-          <article><h3>80-100</h3><p>HIGH: evidenze ampie, prevalentemente dirette e provider esterni disponibili dove necessari.</p></article>
-          <article><h3>50-79</h3><p>MEDIUM: audit utile ma con fonti, profondita o provider mancanti.</p></article>
-          <article><h3>0-49</h3><p>LOW: evidenze insufficienti o molti controlli non misurati.</p></article>
+      <section className="narrative-section ai-method-closing">
+        <div className="ai-method-closing-inner">
+          <div className="ai-method-closing-copy">
+            <span className="ai-method-version">{publicVersion}</span>
+            <h2>Una metodologia indipendente.</h2>
+            <p>Horyzon AI Score e una metodologia proprietaria indipendente che utilizza standard web, documentazione pubblica e segnali verificabili come riferimenti tecnici.</p>
+          </div>
+          <Link className="button primary" href="/ai-score">Analizza il tuo sito <span aria-hidden="true">→</span></Link>
         </div>
-      </section>
-
-      <section className="narrative-section ai-score-method">
-        <header>
-          <p className="section-kicker">AI Visibility</p>
-          <h2>Presenza reale, pipeline separata.</h2>
-          <p className="narrative-lede">AI Visibility misura quanto il brand emerge e viene citato nelle risposte generate da diverse superfici di ricerca AI. Analizziamo la presenza del brand su diverse superfici di ricerca AI.</p>
-          <p className="narrative-lede">Questa metrica non usa robots.txt, sitemap, Schema.org, Lighthouse, AI Readiness, content score o llms.txt per calcolare lo score. Usa solo observation reali raccolte dai provider configurati.</p>
-        </header>
-        <div className="output-list">
-          {Object.entries(visibilityWeights).map(([key, weight]) => <article key={key}>
-            <h3>{labelVisibilityWeight(key)}</h3>
-            <strong>{weight}%</strong>
-            <p>{visibilityMetricCopy(key)}</p>
-          </article>)}
-        </div>
-      </section>
-
-      <section className="narrative-section ai-score-method">
-        <header>
-          <p className="section-kicker">External Brand Footprint</p>
-          <h2>Corroborazione esterna, non volume grezzo.</h2>
-          <p className="narrative-lede">Verifica quanto l&apos;identità e l&apos;attività del brand trovano riscontro in fonti esterne al proprio sito.</p>
-          <p className="narrative-lede">Fonti indipendenti pesano piu dei profili controllati dal brand. La quantita di risultati non equivale automaticamente ad autorevolezza e la metrica resta Not measured senza provider verificabile.</p>
-        </header>
-        <div className="output-list">
-          {Object.entries(externalFootprintWeights).map(([key, weight]) => <article key={key}>
-            <h3>{labelExternalFootprintWeight(key)}</h3>
-            <strong>{weight}%</strong>
-            <p>{externalFootprintMetricCopy(key)}</p>
-          </article>)}
-        </div>
-      </section>
-
-      <section className="narrative-section ai-score-method">
-        <header>
-          <p className="section-kicker">Superfici supportate</p>
-          <h2>Provider predisposti, non configurati.</h2>
-          <p className="narrative-lede">Lo stato mostra solo disponibilita operativa, non segreti o valori di configurazione. Nessuna chiamata live viene eseguita finche il provider non e configurato e abilitato server-side.</p>
-        </header>
-        <div className="output-list ai-score-methodology-grid">
-          {providerStatuses.map(provider => <article key={provider.id}>
-            <h3>{provider.label}</h3>
-            <strong>{provider.configured && provider.enabled ? 'Supported' : 'Not configured'}</strong>
-            <p>{provider.surface}</p>
-          </article>)}
-          {footprintProviderStatuses.map(provider => <article key={provider.id}>
-            <h3>{footprintProviderDisplayLabels[provider.id] ?? provider.label}</h3>
-            <strong>{provider.configured && provider.enabled ? 'Supported' : 'Not configured'}</strong>
-            <p>External Brand Footprint search provider</p>
-          </article>)}
-        </div>
-      </section>
-
-      <section className="narrative-section ai-score-method">
-        <header>
-          <p className="section-kicker">Scan profile</p>
-          <h2>Quick scan ora, premium dopo.</h2>
-          <p className="narrative-lede">Il profilo gratuito pianifica 5 prompt Visibility e 5 query External Footprint. I profili premium sono predisposti per maggiore profondita, ma restano disabilitati finche non saranno definiti accesso e provider reali.</p>
-        </header>
-        <div className="output-list">
-          <article><h3>FREE_QUICK_SCAN</h3><p>{visibilityScanProfiles.FREE_QUICK_SCAN.promptCount} prompt · {visibilityScanProfiles.FREE_QUICK_SCAN.providerIds.length} provider previsto · budget massimo configurabile.</p></article>
-          <article><h3>PREMIUM_COMPREHENSIVE</h3><p>{visibilityScanProfiles.PREMIUM_COMPREHENSIVE.promptCount} prompt · fino a {visibilityScanProfiles.PREMIUM_COMPREHENSIVE.providerIds.length} provider · non eseguito nel livello gratuito.</p></article>
-          <article><h3>FREE_EXTERNAL_FOOTPRINT</h3><p>{externalFootprintProfiles.FREE_EXTERNAL_FOOTPRINT.queryCount} query · {externalFootprintProfiles.FREE_EXTERNAL_FOOTPRINT.providerIds.length} provider previsto · disabilitato senza provider reale.</p></article>
-          <article><h3>PREMIUM_EXTERNAL_FOOTPRINT</h3><p>{externalFootprintProfiles.PREMIUM_EXTERNAL_FOOTPRINT.queryCount} query · fino a {externalFootprintProfiles.PREMIUM_EXTERNAL_FOOTPRINT.providerIds.length} provider · non eseguito nel livello gratuito.</p></article>
-        </div>
-      </section>
-
-      <section className="narrative-section ai-score-method">
-        <header>
-          <p className="section-kicker">Riferimenti</p>
-          <h2>Fonti e standard usati come base.</h2>
-          <p className="narrative-lede">Questi riferimenti guidano controlli e provider candidati. Horyzon AI Score resta una metodologia indipendente, non uno score ufficiale di OpenAI, Google, Microsoft, Anthropic o Perplexity. Le Bing Search APIs legacy non sono piu usate come provider candidato attivo.</p>
-        </header>
-        <div className="output-list ai-score-methodology-grid">
-          {publicReferences.map(reference => <article key={reference.url}>
-            <h3><a href={reference.url} target="_blank" rel="noreferrer">{reference.label}</a></h3>
-            <p>{reference.scope}</p>
-          </article>)}
-          {visibilityProviderCandidates.filter(candidate => candidate.surface === 'future_candidate').map(candidate => <article key={candidate.id}>
-            <h3>{candidate.label}</h3>
-            <p>{candidate.blocker}</p>
-          </article>)}
-        </div>
-      </section>
-
-      <section className="narrative-section ai-score-method">
-        <header>
-          <p className="section-kicker">Limiti</p>
-          <h2>Misurato significa verificato.</h2>
-          <p className="narrative-lede">L’audit gratuito usa una scansione controllata, limiti anti-abuso e protezioni SSRF. Non interroga servizi AI senza provider, non calcola potential score senza remediation validate e non crea profili esterni senza fonti affidabili.</p>
-        </header>
       </section>
     </main>
     <SiteFooter />
   </>;
-}
-
-function labelVisibilityWeight(key: string) {
-  return key
-    .replace('brandMentionRate', 'Brand Mention Rate')
-    .replace('citationRate', 'Citation Rate')
-    .replace('promptCoverage', 'Prompt Coverage')
-    .replace('shareOfVoice', 'Share of Voice')
-    .replace('crossEngineConsistency', 'Cross-engine Consistency')
-    .replace('citationSourceDiversity', 'Citation / Source Diversity');
-}
-
-function visibilityMetricCopy(key: string) {
-  if (key === 'brandMentionRate') return 'Observation valide con menzione del brand divise per observation valide.';
-  if (key === 'citationRate') return 'Observation valide con citazione reale del dominio divise per observation valide.';
-  if (key === 'promptCoverage') return 'Categorie di prompt in cui il brand emerge, non una duplicazione del mention rate.';
-  if (key === 'shareOfVoice') return 'N/A finche non esistono competitor affidabili osservati o configurati.';
-  if (key === 'crossEngineConsistency') return 'N/A nel quick scan con una sola superficie; misurabile con almeno due provider.';
-  return 'Diversita delle pagine del dominio citate, deduplicate e normalizzate.';
-}
-
-function labelExternalFootprintWeight(key: string) {
-  return key
-    .replace('externalPresence', 'External Presence')
-    .replace('independentSourceCoverage', 'Independent Source Coverage')
-    .replace('entityConsistency', 'Entity Consistency')
-    .replace('categoryExpertiseAssociation', 'Category / Expertise Association')
-    .replace('sourceDiversity', 'Source Diversity');
-}
-
-function externalFootprintMetricCopy(key: string) {
-  if (key === 'externalPresence') return 'Presenza del brand in fonti esterne pertinenti, con saturazione per non premiare il volume infinito.';
-  if (key === 'independentSourceCoverage') return 'Peso delle fonti realmente indipendenti rispetto ai profili controllati dal brand.';
-  if (key === 'entityConsistency') return 'Coerenza tra identita dichiarata e identita osservata nelle fonti esterne.';
-  if (key === 'categoryExpertiseAssociation') return 'Corroborazione esterna del settore, dei servizi o dell’expertise dichiarata.';
-  return 'Diversita ragionevole tra fonti editoriali, partner, directory, review, social e profili ufficiali.';
 }
