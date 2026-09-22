@@ -434,17 +434,17 @@ export default function AiScoreMethodologyPage() {
             <span className="ai-method-product-label">Guida generale</span>
             <h3>Horyzon AI Optimization Guide</h3>
             <p>Una guida pratica ai principi e alle buone pratiche per costruire siti più accessibili, comprensibili e citabili dai sistemi AI.</p>
-            <p>È pensata per chi vuole conoscere le regole generali dell'ottimizzazione AI, indipendentemente da uno specifico audit.</p>
-            <strong className="ai-method-product-meaning">Come migliorare un sito per l'AI in generale.</strong>
+            <p>È pensata per chi vuole conoscere le regole generali dell&apos;ottimizzazione AI, indipendentemente da uno specifico audit.</p>
+            <strong className="ai-method-product-meaning">Come migliorare un sito per l&apos;AI in generale.</strong>
             <span className="ai-method-status">In arrivo</span>
           </article>
           <article>
             <span className="ai-method-product-number">02</span>
             <span className="ai-method-product-label">Piano personalizzato</span>
             <h3>Horyzon AI Optimization Plan</h3>
-            <p>Un piano costruito sui risultati reali dell'audit del tuo sito, con problemi individuati, priorità e interventi specifici.</p>
-            <p>Non contiene indicazioni generiche: parte dalle evidenze raccolte durante l'analisi del dominio.</p>
-            <strong className="ai-method-product-meaning">Come migliorare il tuo sito sulla base dell'audit.</strong>
+            <p>Un piano costruito sui risultati reali dell&apos;audit del tuo sito, con problemi individuati, priorità e interventi specifici.</p>
+            <p>Non contiene indicazioni generiche: parte dalle evidenze raccolte durante l&apos;analisi del dominio.</p>
+            <strong className="ai-method-product-meaning">Come migliorare il tuo sito sulla base dell&apos;audit.</strong>
             <Link className="button ghost-dark" href="/ai-score">Analizza il tuo sito <span aria-hidden="true">→</span></Link>
           </article>
         </div>
