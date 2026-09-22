@@ -23,6 +23,7 @@ Circuit state can be `CLOSED`, `OPEN`, or `HALF_OPEN`. Phase 6A ships the model 
 Do not commit values for these variables.
 
 ```env
+AI_SCORE_RUNTIME_STORE_ENABLED=
 AI_SCORE_LIVE_PROVIDERS=
 AI_SCORE_PROVIDER_TEST_MODE=
 AI_SCORE_PROVIDER_TELEMETRY=
@@ -33,9 +34,19 @@ AI_SCORE_PERPLEXITY_VISIBILITY_ENABLED=
 AI_SCORE_PERPLEXITY_FOOTPRINT_ENABLED=
 
 AI_SCORE_DAILY_BUDGET_USD=
+AI_SCORE_TEST_DAILY_BUDGET_USD=
 AI_SCORE_OPENAI_DAILY_BUDGET_USD=
 AI_SCORE_GOOGLE_DAILY_BUDGET_USD=
 AI_SCORE_PERPLEXITY_DAILY_BUDGET_USD=
+
+AI_SCORE_RATE_LIMIT_MAX=
+AI_SCORE_RATE_LIMIT_WINDOW_SECONDS=
+AI_SCORE_DOMAIN_LIMIT_MAX=
+AI_SCORE_DOMAIN_LIMIT_WINDOW_SECONDS=
+AI_SCORE_RATE_LIMIT_HMAC_SECRET=
+
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
 
 OPENAI_API_KEY=
 GOOGLE_AI_API_KEY=
@@ -62,6 +73,15 @@ FREE scan profiles are selected server-side. The initial free AI Visibility prio
 
 `ProviderUsageStore` is the required accounting boundary for public execution. The shipped `NoopProviderUsageStore` is intentionally non-persistent, so public live calls remain blocked even if credentials and flags are present.
 
+Phase 6B prepares a server-side `ProviderRuntimeStore` with atomic operations for:
+
+- provider and global daily budget reservation;
+- reservation reconciliation when actual provider cost is known;
+- persistent circuit state;
+- HMAC-based client and domain rate limiting.
+
+The budget day is a UTC date. It must not depend on the serverless instance timezone.
+
 Before setting `AI_SCORE_LIVE_PROVIDERS=true`, production must provide persistent usage accounting for:
 
 - daily spend per provider;
@@ -69,6 +89,34 @@ Before setting `AI_SCORE_LIVE_PROVIDERS=true`, production must provide persisten
 - consecutive failures for the circuit breaker.
 
 Without persistent usage storage, public execution fails closed with `NO_PERSISTENT_STORE`.
+
+## Database preparation
+
+The website repository currently does not include an authorized database client, Supabase dependency, or migration runner. Phase 6B therefore prepares the migration but does not apply it automatically:
+
+```text
+supabase/migrations/20260922041000_ai_score_runtime_store.sql
+```
+
+The migration creates only runtime safety tables:
+
+- `provider_daily_usage`;
+- `provider_runtime_state`;
+- `ai_score_rate_limit`.
+
+It does not store audited HTML, AI answers, complete prompts, personal data, or remediation evidence. RLS is enabled and anon/authenticated access is revoked; access is intended only from server-side RPC calls using an authorized server credential.
+
+## Rate limiting
+
+When a persistent store is configured, rate limiting should use:
+
+- per-client/IP HMAC bucket;
+- per-domain HMAC bucket;
+- configurable limits and window durations.
+
+The raw IP or raw domain must not be stored as the bucket key. `AI_SCORE_RATE_LIMIT_HMAC_SECRET` is required for persistent rate-limit keys.
+
+If no persistent store is configured, the existing in-memory public audit limiter can keep the current website usable, but it is not sufficient for opening live providers.
 
 ## Manual dry-run
 
@@ -82,6 +130,9 @@ Expected Phase 6A behavior:
 - 0 network calls;
 - provider shown as not configured unless its credential exists in the server environment;
 - execution blocked;
+- runtime store type and persistence state shown;
+- budget and rate-limit configuration state shown;
+- provider eligibility shown;
 - no secret values printed.
 
 Future live checks must require the explicit flag:
