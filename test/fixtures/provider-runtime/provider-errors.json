@@ -1,0 +1,23 @@
+{
+  "testOnly": true,
+  "fixtures": [
+    {
+      "providerId": "openai_web_search",
+      "status": 401,
+      "code": "UNAUTHORIZED",
+      "expectedCircuitImpact": "failure_recorded"
+    },
+    {
+      "providerId": "google_search_grounding",
+      "status": 429,
+      "code": "RATE_LIMITED",
+      "expectedCircuitImpact": "failure_recorded"
+    },
+    {
+      "providerId": "perplexity_search",
+      "status": 500,
+      "code": "PROVIDER_ERROR",
+      "expectedCircuitImpact": "failure_recorded"
+    }
+  ]
+}
