@@ -130,12 +130,12 @@ export async function createAnonymousAnalyzeSession(context: Annunci10xRuntimeCo
   });
   await context.persistence.appendEvent({
     sessionId: created.session.id,
-    eventName: 'SESSION_STARTED',
+    eventName: 'session_started',
     metadata: { entryMode: 'ANALYZE', provider: context.configuredProvider },
   });
   await context.persistence.appendEvent({
     sessionId: created.session.id,
-    eventName: 'FLOW_SELECTED',
+    eventName: 'flow_selected',
     metadata: { flow: 'ANALYZE' },
   });
   return created;
@@ -145,7 +145,7 @@ export async function runFreeAnnunci10xAnalysis(input: RunFreeAnalysisInput): Pr
   const context = input.context ?? createAnnunci10xRuntimeContext();
   assertRawAd(input.rawAdText);
   await requireOwnedSession(context, input.sessionId, input.sessionSecret);
-  await context.persistence.appendEvent({ sessionId: input.sessionId, eventName: 'ORIGINAL_AD_SUBMITTED', metadata: { lengthBucket: bucketLength(input.rawAdText) } });
+  await context.persistence.appendEvent({ sessionId: input.sessionId, eventName: 'original_ad_submitted', metadata: { lengthBucket: bucketLength(input.rawAdText) } });
 
   const orchestrator = new Annunci10xAiOrchestrator({ provider: context.provider, persistence: context.persistence });
   const operations: PublicAnnunci10xOperation[] = [];
@@ -165,7 +165,7 @@ export async function runFreeAnnunci10xAnalysis(input: RunFreeAnalysisInput): Pr
     input: { rawText: input.rawAdText, declaredChannel: 'LINKEDIN', roleHint: input.roleHint ?? null, companyHint: input.companyHint ?? null, entryMode: 'ANALYZE' },
   });
   operations.push(toPublicOperation(precheck, 'PRECHECK', context.configuredProvider));
-  await context.persistence.appendEvent({ sessionId: input.sessionId, eventName: 'PRECHECK_COMPLETED', metadata: { detectedType: precheck.output.detectedType, canRunFullAnalysis: precheck.output.canRunFullAnalysis } });
+  await context.persistence.appendEvent({ sessionId: input.sessionId, eventName: 'precheck_completed', metadata: { detectedType: precheck.output.detectedType, canRunFullAnalysis: precheck.output.canRunFullAnalysis } });
 
   if (!precheck.output.canRunFullAnalysis || precheck.output.detectedType === 'NOT_JOB_AD' || precheck.output.detectedType === 'UNUSABLE') {
     throw new Annunci10xPublicError('INVALID_INPUT', precheck.output.reason || 'Il testo non contiene abbastanza elementi per analizzare un annuncio.', 422);
@@ -244,9 +244,9 @@ export async function runFreeAnnunci10xAnalysis(input: RunFreeAnalysisInput): Pr
   });
   operations.push(toPublicOperation(clarify, 'CLARIFY', context.configuredProvider));
 
-  await context.persistence.appendEvent({ sessionId: input.sessionId, eventName: 'ANALYSIS_COMPLETED', metadata: { coverage: score.coverage, gateStatus: gate.status } });
+  await context.persistence.appendEvent({ sessionId: input.sessionId, eventName: 'analysis_completed', metadata: { coverage: score.coverage, gateStatus: gate.status } });
   if (clarify.output.status === 'NEEDS_CLARIFICATION') {
-    await context.persistence.appendEvent({ sessionId: input.sessionId, eventName: 'CLARIFICATION_REQUESTED', metadata: { targetPath: clarify.output.clarification?.targetPath ?? 'unknown' } });
+    await context.persistence.appendEvent({ sessionId: input.sessionId, eventName: 'clarification_requested', metadata: { targetPath: clarify.output.clarification?.targetPath ?? 'unknown' } });
   }
 
   return publicResult({
@@ -315,7 +315,7 @@ export async function answerAnnunci10xClarification(input: AnswerClarificationIn
     score,
     gate,
   });
-  await context.persistence.appendEvent({ sessionId: session.id, eventName: 'ANALYSIS_COMPLETED', metadata: { coverage: score.coverage, gateStatus: gate.status, afterClarification: true } });
+  await context.persistence.appendEvent({ sessionId: session.id, eventName: 'analysis_completed', metadata: { coverage: score.coverage, gateStatus: gate.status, afterClarification: true } });
 
   return publicResult({ sessionId: input.sessionId, snapshot, evaluation, score, gate, roleCard, clarification: null, operations, provider: context.configuredProvider });
 }
@@ -324,7 +324,7 @@ export async function resumeAnnunci10xAnalysis(cookie: Annunci10xSessionCookie, 
   const session = await requireOwnedSession(context, cookie.sessionId, cookie.sessionSecret);
   const snapshot = await context.persistence.getLatestSnapshot(cookie.sessionId, cookie.sessionSecret);
   const evaluation = await context.persistence.getLatestEvaluation(cookie.sessionId, cookie.sessionSecret);
-  await context.persistence.appendEvent({ sessionId: cookie.sessionId, eventName: 'ANALYSIS_RESUMED', metadata: { hasSnapshot: Boolean(snapshot), hasEvaluation: Boolean(evaluation) } });
+  await context.persistence.appendEvent({ sessionId: cookie.sessionId, eventName: 'analysis_resumed', metadata: { hasSnapshot: Boolean(snapshot), hasEvaluation: Boolean(evaluation) } });
   return { session, snapshot, evaluation };
 }
 
