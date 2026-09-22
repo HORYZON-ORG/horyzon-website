@@ -118,6 +118,16 @@ The raw IP or raw domain must not be stored as the bucket key. `AI_SCORE_RATE_LI
 
 If no persistent store is configured, the existing in-memory public audit limiter can keep the current website usable, but it is not sufficient for opening live providers.
 
+## Retention
+
+Phase 6B.1 does not introduce a new cron or background worker. Runtime data is intentionally small and scoped to provider safety:
+
+- remove expired `ai_score_rate_limit` rows with `expires_at < now()` when operational cleanup is scheduled;
+- keep `provider_daily_usage` by UTC day for budget/audit reconciliation, then archive or delete according to the future commercial reporting policy;
+- keep `provider_runtime_state` as current provider health state and reset only through controlled server-side operations.
+
+Test scripts use clearly prefixed provider identifiers and attempt to delete only their own test rows.
+
 ## Manual dry-run
 
 ```bash
