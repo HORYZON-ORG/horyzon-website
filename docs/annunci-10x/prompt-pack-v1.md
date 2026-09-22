@@ -245,7 +245,7 @@ type EvaluateOutput = {
   checkEvidence: {
     checkId: string;
     evidence: string[];
-    suggestedStatus?: 'PASS' | 'PARTIAL' | 'FAIL' | 'N/D';
+    suggestedStatus?: 'PASS' | 'PARTIAL' | 'MISSING' | 'CONFLICT' | 'NOT_EVALUABLE';
   }[];
 };
 ```

@@ -1,15 +1,30 @@
 import assert from 'node:assert/strict';
 import {
+  ANNUNCI10X_METHOD_FIXTURES,
   ANNUNCI10X_PROMPT_PACK_VERSION,
+  ANNUNCI10X_RUBRIC,
+  ANNUNCI10X_RUBRIC_DIMENSIONS,
+  ANNUNCI10X_SCORE_BANDS,
   CHECK_STATUSES,
   FACT_SOURCES,
   FACT_STATUSES,
   PRODUCT_CODES,
   PUBLICATION_STATUSES,
   REQUIREMENT_CLASSIFICATIONS,
+  assessScoreBand,
+  calculateAnnunci10xScore,
   canTransition,
   createFact,
+  criticalMissingData,
+  deriveAnnunci10xStrategyRules,
+  evaluateAnnunci10xCompleteness,
+  evaluatePublicationGate,
+  getPointsForCheckStatus,
+  invalidCta,
+  materialConflict,
+  unconfirmedClaim,
   validateAdEvaluation,
+  validateAnnunci10xRubric,
   validateAnnunci10xSession,
   validateChannelVariant,
   validateClaimCheck,
@@ -21,8 +36,10 @@ import {
   validateInterviewDecision,
   validateOriginalAd,
   validateProductCode,
+  validatePublicationGate,
   validateRoleCard,
   validateRoleProfile,
+  validateScoreResult,
   validateUserAnswer,
 } from '../src/lib/annunci-10x/index.ts';
 
@@ -192,11 +209,109 @@ assert.equal(validateEvaluationTarget({ kind: 'GENERATED_MASTER', generatedAdId:
 assert.equal(validateEvaluationTarget({ kind: 'CHANNEL_VARIANT', channelVariantId: 'variant-1', masterAdId: 'master-1' }).ok, true);
 assert.equal(validateEvaluationTarget({ kind: 'MASTER', generatedAdId: 'master-1' }).ok, false, 'legacy target name must be rejected');
 
+assert.deepEqual(CHECK_STATUSES, ['PASS', 'PARTIAL', 'MISSING', 'CONFLICT', 'NOT_EVALUABLE']);
 for (const status of CHECK_STATUSES) {
-  assert.equal(validateEvaluationCheck({ ...score.checks[0], status, score: status === 'UNKNOWN' || status === 'NOT_APPLICABLE' ? null : 1 }).ok, true, `CheckStatus ${status} should validate`);
+  const expectedScore = status === 'NOT_EVALUABLE' ? null : getPointsForCheckStatus(status);
+  assert.equal(validateEvaluationCheck({ ...score.checks[0], status, score: expectedScore }).ok, true, `CheckStatus ${status} should validate`);
 }
 
+const rubricValidation = validateAnnunci10xRubric();
+assert.equal(rubricValidation.ok, true, rubricValidation.errors.join('\n'));
+assert.equal(ANNUNCI10X_RUBRIC.checks.length, 20, 'rubric must contain exactly 20 controls');
+assert.equal(rubricValidation.totalMaxPoints, 100, 'rubric total must be 100');
+assert.equal(new Set(ANNUNCI10X_RUBRIC.checks.map((item) => item.id)).size, 20, 'rubric ids must be unique');
+for (const dimension of ANNUNCI10X_RUBRIC_DIMENSIONS) {
+  const dimensionTotal = ANNUNCI10X_RUBRIC.checks
+    .filter((item) => item.dimensionId === dimension.id)
+    .reduce((sum, item) => sum + item.maxPoints, 0);
+  assert.equal(dimensionTotal, dimension.maxPoints, `${dimension.id} must total ${dimension.maxPoints}`);
+}
+
+assert.equal(getPointsForCheckStatus('PASS'), 5);
+assert.equal(getPointsForCheckStatus('PARTIAL'), 2.5);
+assert.equal(getPointsForCheckStatus('MISSING'), 0);
+assert.equal(getPointsForCheckStatus('CONFLICT'), 0);
+assert.equal(getPointsForCheckStatus('NOT_EVALUABLE'), null);
+
+const allPassScore = calculateAnnunci10xScore(ANNUNCI10X_RUBRIC.checks.map((definition) => ({
+  id: definition.id,
+  status: 'PASS',
+  evidence: ['pass evidence'],
+  score: 0,
+})));
+assert.equal(allPassScore.finalScore, 100);
+assert.equal(allPassScore.minScore, 100);
+assert.equal(allPassScore.maxScore, 100);
+assert.equal(allPassScore.coverage, 100);
+assert.equal(allPassScore.band.kind, 'DEFINITE');
+assert.equal(allPassScore.band.kind === 'DEFINITE' && allPassScore.band.band.id, 'GOOD_COMPLETENESS');
+assert.equal(allPassScore.checks[0].score, 5, 'caller-provided score must be ignored');
+assert.equal(validateScoreResult(allPassScore).ok, true, 'calculated score remains compatible with ScoreResult');
+
+const ndScore = calculateAnnunci10xScore(ANNUNCI10X_METHOD_FIXTURES.scoreWithNotEvaluable);
+assert.equal(ndScore.value, null);
+assert.equal(ndScore.finalScore, null);
+assert.equal(ndScore.minScore, 57.5);
+assert.equal(ndScore.maxScore, 77.5);
+assert.deepEqual(ndScore.interval, { min: 57.5, max: 77.5 });
+assert.equal(ndScore.coverage, 80);
+assert.equal(ndScore.band.kind, 'RANGE', 'N/D interval crossing bands must not produce a definitive band');
+assert.equal(ndScore.band.kind === 'RANGE' && ndScore.band.minBand.id, 'NEEDS_REINFORCEMENT');
+assert.equal(ndScore.band.kind === 'RANGE' && ndScore.band.maxBand.id, 'USABLE_BASE');
+assert.notEqual(ndScore.value, 71.875, 'score must not be normalized over observable max');
+
+assert.equal(ANNUNCI10X_SCORE_BANDS.length, 4);
+assert.equal(assessScoreBand(80).kind, 'DEFINITE');
+assert.equal(assessScoreBand(39).kind, 'DEFINITE');
+assert.equal(assessScoreBand(57.5, 77.5).kind, 'RANGE');
+
 assert.deepEqual(PUBLICATION_STATUSES, ['READY', 'READY_WITH_WARNINGS', 'NEEDS_VERIFICATION', 'BLOCKED']);
+const highScoreWithBlockingGate = evaluatePublicationGate({
+  evaluatedAt: now,
+  findings: [materialConflict('Sede indicata sia full remote sia presenza obbligatoria.')],
+});
+assert.equal(calculateAnnunci10xScore(ANNUNCI10X_METHOD_FIXTURES.highScoreWithGate).minScore, 95);
+assert.equal(highScoreWithBlockingGate.status, 'BLOCKED', 'score 95 + material conflict must be blocked');
+assert.equal(validatePublicationGate(highScoreWithBlockingGate).ok, true);
+
+const lowScoreReadyGate = evaluatePublicationGate({ evaluatedAt: now });
+assert.equal(calculateAnnunci10xScore(ANNUNCI10X_METHOD_FIXTURES.lowScoreWithoutGate).minScore, 40);
+assert.equal(lowScoreReadyGate.status, 'READY', 'low score without gate must not become BLOCKED automatically');
+
+assert.equal(evaluatePublicationGate({ evaluatedAt: now, findings: [unconfirmedClaim('Benefit non confermato.', 'WARNING')] }).status, 'NEEDS_VERIFICATION');
+assert.equal(evaluatePublicationGate({ evaluatedAt: now, findings: [criticalMissingData('Contratto mancante.'), invalidCta('Link candidatura assente.')] }).status, 'BLOCKED');
+
+const routineStrategy = deriveAnnunci10xStrategyRules(ANNUNCI10X_METHOD_FIXTURES.routineNonTechnical.strategyInput);
+assert.equal(routineStrategy.levers.stability, 'HIGH');
+assert.equal(routineStrategy.levers.standardContribution, 'HIGH');
+assert.equal(routineStrategy.levers.toolsSupportAccessibility, 'HIGH');
+assert.equal(routineStrategy.levers.technicalDepth, 'MEDIUM');
+assert.ok(routineStrategy.constraints.some((item) => item.includes('artificial continuous challenge')));
+assert.ok(routineStrategy.structures.preferred.includes('WORK_REALITY_FIRST'));
+assert.ok(routineStrategy.structures.excluded.includes('PROBLEM_FIRST'));
+
+const challengeStrategy = deriveAnnunci10xStrategyRules(ANNUNCI10X_METHOD_FIXTURES.qualifiedTechnicalChallenge.strategyInput);
+assert.equal(challengeStrategy.levers.resultClarity, 'HIGH');
+assert.equal(challengeStrategy.levers.responsibilityChallenge, 'HIGH');
+assert.equal(challengeStrategy.levers.technicalDepth, 'HIGH');
+assert.ok(challengeStrategy.structures.preferred.includes('RESULT_FIRST'));
+assert.ok(challengeStrategy.structures.preferred.includes('PROBLEM_FIRST'));
+
+const mixedStrategy = deriveAnnunci10xStrategyRules(ANNUNCI10X_METHOD_FIXTURES.mixedTechnical.strategyInput);
+assert.equal(mixedStrategy.levers.stability, 'MEDIUM');
+assert.equal(mixedStrategy.levers.responsibilityChallenge, 'HIGH');
+assert.ok(mixedStrategy.constraints.some((item) => item.includes('planned work and unexpected problems')));
+
+const unknownPopularityStrategy = deriveAnnunci10xStrategyRules(ANNUNCI10X_METHOD_FIXTURES.unknownPopularity.strategyInput);
+assert.equal(unknownPopularityStrategy.preservedRolePopularity, 'UNKNOWN');
+assert.ok(unknownPopularityStrategy.constraints.some((item) => item.includes('must not be coerced')));
+
+assert.equal(evaluateAnnunci10xCompleteness({ roleCard, compensationKnown: true }).status, 'COMPLETE');
+assert.equal(evaluateAnnunci10xCompleteness({ roleCard, compensationKnown: false, compensationRequired: false }).status, 'GENERABLE_WITH_VERIFICATION');
+assert.equal(evaluateAnnunci10xCompleteness({ roleCard, workModeConflict: true }).status, 'BLOCKED');
+assert.equal(evaluateAnnunci10xCompleteness({ roleCard: { ...roleCard, mission: undefined, outcomes: [], responsibilities: [] } }).status, 'BLOCKED');
+assert.equal(evaluateAnnunci10xCompleteness({ roleCard, unsupportedGeneratedClaim: true }).status, 'GENERABLE_WITH_VERIFICATION');
+
 assert.equal(validateAdEvaluation({
   id: 'evaluation-1',
   sessionId: 'session-1',
@@ -234,7 +349,7 @@ assert.equal(canTransition('COLLECTING', 'PAYMENT_REQUIRED', { flow: 'CREATE', r
 assert.equal(canTransition('ROLE_CARD_READY', 'USER_CONFIRMED', { flow: 'CREATE', roleCard }).allowed, true, 'valid RoleCard can be confirmed');
 assert.equal(canTransition('USER_CONFIRMED', 'PAYMENT_REQUIRED', { flow: 'CREATE', roleCard, openClarifications: [] }).allowed, true, 'confirmed valid RoleCard can require payment');
 assert.equal(canTransition('USER_CONFIRMED', 'PAYMENT_REQUIRED', { flow: 'CREATE', roleCard, openClarifications: [blockingClarification] }).allowed, false, 'blocking clarification prevents payment');
-assert.equal(canTransition('COLLECTING', 'PAYMENT_REQUIRED', { flow: 'CREATE', roleCard, openClarifications: [], }).allowed, false, 'GUIDE entitlement does not skip questionnaire or confirmation');
+assert.equal(canTransition('COLLECTING', 'PAYMENT_REQUIRED', { flow: 'CREATE', roleCard, openClarifications: [] }).allowed, false, 'GUIDE entitlement does not skip questionnaire or confirmation');
 assert.equal(canTransition('STARTED', 'PAYMENT_REQUIRED', { flow: 'GUIDE', roleCard }).allowed, false, 'Guide purchase is independent from editorial state machine');
 
 assert.equal(validateGeneratedAd(master).ok, true);

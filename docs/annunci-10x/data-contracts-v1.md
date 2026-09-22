@@ -221,13 +221,15 @@ type EvaluationCheck = {
   label: string;
   score: number | null;
   maxScore: number;
-  status: 'PASS' | 'PARTIAL' | 'FAIL' | 'N/D';
+  status: 'PASS' | 'PARTIAL' | 'MISSING' | 'CONFLICT' | 'NOT_EVALUABLE';
   evidence: string[];
   gateImpact?: 'NONE' | 'WARNING' | 'BLOCKING';
 };
 
 type ScoreResult = {
   value: number | null;
+  minScore?: number;
+  maxScore?: number;
   max: 100;
   interval?: { min: number; max: number };
   coverage: number;
@@ -255,6 +257,14 @@ type AdEvaluation = {
 ```
 
 Evaluation targets are separate. The original ad, Master, and channel variants are not scored as the same artifact.
+
+Deterministic score rules:
+
+- `PASS` derives full check points.
+- `PARTIAL` derives half check points.
+- `MISSING` and `CONFLICT` derive zero points.
+- `NOT_EVALUABLE` derives `null`, reduces coverage, and creates an interval.
+- callers must not provide arbitrary points for a check.
 
 ## Generated output
 

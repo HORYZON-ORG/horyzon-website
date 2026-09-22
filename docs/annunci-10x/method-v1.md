@@ -198,6 +198,14 @@ The v1 rubric has 20 checks:
 
 Each check can return a measured result or `N/D`.
 
+Canonical deterministic check statuses:
+
+- `PASS`: full credit.
+- `PARTIAL`: partial credit.
+- `MISSING`: zero points because the expected information is absent.
+- `CONFLICT`: zero points because available information contradicts itself; may also feed a publication gate.
+- `NOT_EVALUABLE`: no direct score; reduces coverage and produces a score interval.
+
 ## N/D
 
 `N/D` means the check is not applicable or not determinable from available facts.
@@ -207,6 +215,8 @@ Rules:
 - `N/D` must not be silently scored as failure.
 - `N/D` lowers coverage when the missing information matters.
 - `N/D` can create a clarification or gate warning.
+- `N/D` maps to the implementation status `NOT_EVALUABLE`.
+- Scores are not normalized over the observable maximum. If 20 points are not evaluable and the observed score is 57.5, the interval is 57.5-77.5 with 80 coverage.
 
 ## Score and gate separation
 
