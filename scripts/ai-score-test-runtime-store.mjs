@@ -118,7 +118,7 @@ try {
   for (let index = 0; index < 4; index += 1) {
     const result = await store.checkRateLimit({
       scope: 'client',
-      identifier: `127.0.0.1:${runId}`,
+      rawIdentifier: `127.0.0.1:${runId}`,
       at,
       limit: 3,
       windowSeconds: 60,
@@ -132,7 +132,7 @@ try {
   for (let index = 0; index < 3; index += 1) {
     const result = await store.checkRateLimit({
       scope: 'domain',
-      identifier: `example-${runId}.com`,
+      rawIdentifier: `example-${runId}.com`,
       at,
       limit: 2,
       windowSeconds: 60,
@@ -144,7 +144,7 @@ try {
 
   const nextWindow = await store.checkRateLimit({
     scope: 'client',
-    identifier: `127.0.0.1:${runId}`,
+    rawIdentifier: `127.0.0.1:${runId}`,
     at: new Date(at.getTime() + 65_000),
     limit: 3,
     windowSeconds: 60,
