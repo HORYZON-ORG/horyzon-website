@@ -40,7 +40,9 @@ assert.match(migration, /create table if not exists public\.ai_score_rate_limit/
 assert.match(migration, /for update/, 'Budget reservation must use row locking');
 assert.match(migration, /on conflict \(bucket_key, window_start\)[\s\S]*do update/, 'Rate limit must use atomic upsert');
 assert.match(migration, /enable row level security/, 'Runtime tables must enable RLS');
-assert.match(migration, /revoke all on table public\.provider_daily_usage from anon, authenticated/, 'Usage table must not be browser-accessible');
+assert.match(migration, /revoke all on table public\.provider_daily_usage from public, anon, authenticated/, 'Usage table must not be browser-accessible');
+assert.match(migration, /revoke all on table public\.provider_runtime_state from public, anon, authenticated/, 'Circuit table must not be browser-accessible');
+assert.match(migration, /revoke all on table public\.ai_score_rate_limit from public, anon, authenticated/, 'Rate limit table must not be browser-accessible');
 assert.match(migration, /security definer/, 'RPC functions must be server-side functions');
 
 assert.match(script, /runtimeStore/, 'Dry-run must print runtime store state');
