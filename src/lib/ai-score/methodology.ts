@@ -13,7 +13,7 @@ import type {
   ReadinessCategoryId,
   ReadinessCoverage,
   VisibilityScore,
-} from './types';
+} from './types.ts';
 
 export const AI_READINESS_METHODOLOGY_VERSION = 'horyzon-ai-readiness-v1';
 export const AI_SCORE_DISPLAY_METHODOLOGY = 'Horyzon AI Score v1.0';
