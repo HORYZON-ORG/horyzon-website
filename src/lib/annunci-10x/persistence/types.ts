@@ -182,6 +182,7 @@ export interface Annunci10xPersistenceAdapter {
   completeAiOperation(input: CompleteAiOperationInput): Promise<PersistedAiOperation>;
   failAiOperation(input: FailAiOperationInput): Promise<PersistedAiOperation>;
   saveEvaluation(input: SaveEvaluationInput): Promise<PersistedEvaluation>;
+  getLatestEvaluation(sessionId: string, sessionSecret: string): Promise<PersistedEvaluation | null>;
   saveOutput(input: SaveOutputInput): Promise<PersistedOutput>;
   appendEvent(input: AppendEventInput): Promise<PersistedEvent>;
 }

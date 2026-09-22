@@ -181,6 +181,17 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
     return parseEvaluationRow(first(rows, 'save evaluation'));
   }
 
+  async getLatestEvaluation(sessionId: string, sessionSecret: string): Promise<PersistedEvaluation | null> {
+    await this.requireOwnership(sessionId, sessionSecret);
+    const rows = await this.select('annunci10x_evaluations', {
+      session_id: `eq.${sessionId}`,
+      select: '*',
+      order: 'created_at.desc',
+      limit: '1',
+    });
+    return rows[0] ? parseEvaluationRow(rows[0]) : null;
+  }
+
   async saveOutput(input: SaveOutputInput): Promise<PersistedOutput> {
     await this.requireOwnership(input.sessionId, input.sessionSecret);
     if (input.outputType === 'MASTER') validateGeneratedAdOrThrow(input.generatedContent);
@@ -395,6 +406,14 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
     };
     this.evaluations.push(row);
     return parseEvaluationRow(row);
+  }
+
+  async getLatestEvaluation(sessionId: string, sessionSecret: string): Promise<PersistedEvaluation | null> {
+    this.requireMemoryOwnership(sessionId, sessionSecret);
+    const row = this.evaluations
+      .filter((item) => item.session_id === sessionId)
+      .sort((left, right) => String(right.created_at).localeCompare(String(left.created_at)))[0];
+    return row ? parseEvaluationRow(row) : null;
   }
 
   async saveOutput(input: SaveOutputInput): Promise<PersistedOutput> {
