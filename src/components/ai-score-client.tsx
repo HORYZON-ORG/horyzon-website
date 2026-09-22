@@ -1,7 +1,7 @@
 "use client";
 
 import Link from 'next/link';
-import type { FormEvent } from 'react';
+import type { FormEvent, RefObject } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { AuditPipelineState, AuditStreamEvent, FreeAuditResult, ReadinessCoverage } from '@/lib/ai-score/types';
 
@@ -106,7 +106,7 @@ export function AiScoreClient() {
 
     {showProgress && <AnalysisProgress activeState={activeState} reached={reached} error={error} />}
     {error && <p className="ai-score-error" role="alert">{error}</p>}
-    {audit && <AuditResult audit={audit} ref={resultRef} />}
+    {audit && <AuditResult audit={audit} resultRef={resultRef} />}
   </div>;
 }
 
@@ -132,12 +132,10 @@ function AnalysisProgress({ activeState, reached, error }: { activeState: AuditP
   </section>;
 }
 
-const AuditResult = forwardAuditResult;
-
-function forwardAuditResult({ audit, ref }: { audit: FreeAuditResult; ref: React.RefObject<HTMLElement | null> }) {
+function AuditResult({ audit, resultRef }: { audit: FreeAuditResult; resultRef: RefObject<HTMLElement | null> }) {
   const isPartial = audit.status === 'partial';
 
-  return <section ref={ref} className="ai-score-results" aria-labelledby="ai-score-risultato">
+  return <section ref={resultRef} className="ai-score-results" aria-labelledby="ai-score-risultato">
     <div className="ai-score-results-head">
       <div>
         <p className="section-kicker">Risultato</p>
