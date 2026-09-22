@@ -18,6 +18,9 @@ import { createExternalFootprintProviderRegistry, externalFootprintProfiles } fr
 import { createVisibilityProviderRegistry, visibilityProviderCandidates, visibilityScanProfiles } from '@/lib/ai-score/visibility';
 
 const description = 'Metodologia Horyzon AI Score: pesi, controlli, confidence, limiti e separazione tra AI Readiness, AI Visibility ed External Brand Footprint.';
+const footprintProviderDisplayLabels: Record<string, string> = {
+  perplexity_search: 'Perplexity Search API',
+};
 
 export const metadata: Metadata = pageMetadata({ path: '/ai-score/methodology', title: 'Metodologia Horyzon AI Score', description });
 
@@ -120,7 +123,7 @@ export default function AiScoreMethodologyPage() {
         <header>
           <p className="section-kicker">External Brand Footprint</p>
           <h2>Corroborazione esterna, non volume grezzo.</h2>
-          <p className="narrative-lede">Verifica quanto l'identità e l'attività del brand trovano riscontro in fonti esterne al proprio sito.</p>
+          <p className="narrative-lede">Verifica quanto l&apos;identità e l&apos;attività del brand trovano riscontro in fonti esterne al proprio sito.</p>
           <p className="narrative-lede">Fonti indipendenti pesano piu dei profili controllati dal brand. La quantita di risultati non equivale automaticamente ad autorevolezza e la metrica resta Not measured senza provider verificabile.</p>
         </header>
         <div className="output-list">
@@ -145,7 +148,7 @@ export default function AiScoreMethodologyPage() {
             <p>{provider.surface}</p>
           </article>)}
           {footprintProviderStatuses.map(provider => <article key={provider.id}>
-            <h3>{provider.label}</h3>
+            <h3>{footprintProviderDisplayLabels[provider.id] ?? provider.label}</h3>
             <strong>{provider.configured && provider.enabled ? 'Supported' : 'Not configured'}</strong>
             <p>External Brand Footprint search provider</p>
           </article>)}
