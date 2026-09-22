@@ -13,44 +13,54 @@ const heroBalanceCss = `
 
 @media (min-width: 851px) {
   .ai-score-hero-grid {
-    display: block;
-    max-width: 1220px;
+    display: block !important;
+    max-width: 1220px !important;
   }
 
   .ai-score-hero-copy {
-    max-width: 980px;
+    max-width: 980px !important;
   }
 
   .ai-score-hero h1 {
-    max-width: 980px;
+    max-width: 980px !important;
   }
 
   .ai-score-hero .page-intro {
-    max-width: 720px;
+    max-width: 760px !important;
     color: #c7d1d0;
   }
 
   .ai-score-horizon-visual {
-    position: absolute;
-    top: 0;
-    right: -4vw;
-    width: min(38vw, 470px);
-    min-height: 0;
-    aspect-ratio: 1;
-    opacity: .55;
+    position: absolute !important;
+    top: 0 !important;
+    right: -4vw !important;
+    width: min(38vw, 470px) !important;
+    min-height: 0 !important;
+    aspect-ratio: 1 !important;
+    opacity: .55 !important;
   }
 
   .ai-score-product {
-    margin-top: 30px;
-    max-width: 100%;
+    display: block !important;
+    margin-top: 30px !important;
+    max-width: 100% !important;
+    width: 100% !important;
   }
 
   .ai-score-form,
   .ai-score-progress,
   .ai-score-error {
-    width: 100%;
-    max-width: 1120px;
-    margin-inline: auto;
+    width: 100% !important;
+    max-width: 1120px !important;
+    margin-inline: auto !important;
+  }
+
+  .ai-score-form {
+    padding: 20px !important;
+  }
+
+  .ai-score-input-row {
+    grid-template-columns: minmax(0,1fr) minmax(210px,260px) !important;
   }
 }
 `;
