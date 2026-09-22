@@ -102,3 +102,12 @@
 
 /* Cormorant's italic ascenders need more room than the original near-solid leading. */
 .chapter-copy h1,.chapter-copy h2{line-height:1.08}
+
+/* Navigation hierarchy: six visible destinations, depth lives in contextual paths. */
+.site-footer{grid-template-columns:minmax(220px,1.35fr) repeat(3,minmax(150px,.8fr)) minmax(180px,.9fr);gap:42px;padding-block:88px 42px}
+.site-footer .footer-intro{display:block}.site-footer .footer-intro>p{max-width:22ch;margin:18px 0 0}.site-footer .footer-join{display:inline-flex;margin-top:28px;padding-bottom:7px;border-bottom:1px solid #d9bf8f;color:#f2eee3;font-size:13px}
+.site-footer .footer-path{display:flex;flex-direction:column;gap:13px;font-size:13px}.site-footer .footer-path p{margin:0 0 7px;color:#d9bf8f;font-size:12px;font-weight:700}.site-footer .footer-path a{width:max-content;max-width:100%;line-height:1.45}.site-footer .footer-path a:hover{color:#d9bf8f}
+.site-footer .footer-company{padding-left:0}.site-footer small{margin-top:18px}
+@media(max-width:1100px){.site-header{gap:15px}.site-links{gap:15px;font-size:12px}.site-footer{grid-template-columns:1.2fr 1fr 1fr}.site-footer .footer-company{grid-column:1/-1;border-top:1px solid #ffffff1f;padding-top:28px}}
+@media(max-width:850px){.site-footer{grid-template-columns:1fr 1fr;gap:36px 24px;padding-top:62px}.site-footer .footer-intro,.site-footer .footer-company,.site-footer small{grid-column:1/-1}.site-footer .footer-company{margin-top:4px}.site-footer .footer-path{gap:11px}.site-footer .footer-path p{margin-bottom:4px}}
+@media(max-width:470px){.site-footer{grid-template-columns:1fr}.site-footer .footer-intro,.site-footer .footer-company,.site-footer small{grid-column:auto}}

@@ -161,3 +161,5 @@
 }
 @media(max-width:540px){.organism-node{font-size:10px;padding:6px 9px}.editorial-page .organism-core{width:48%}.editorial-page .organism-core strong{font-size:34px}.editorial-page .department-detail{grid-template-columns:1fr;padding-left:0}.department-purpose{grid-column:auto}.method-chapter-list .operating-journey{margin-left:0}.method-chapter-list summary strong{font-size:38px}.editorial-page .platform-story ol{grid-template-columns:1fr}.editorial-page .platform-story li{min-height:230px;border-right:0!important}.service-row{grid-template-columns:35px minmax(0,1fr) 42px}.service-open{width:40px;height:40px}.book-visual{min-height:460px}.editorial-page .book-cover{height:390px}.library-intro{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){.organism-stage:after{animation:none}}
+
+.editorial-page .page-return{padding:38px 7vw;background:var(--atlas-paper);border-top:1px solid #aab8b0}.editorial-page .page-return a{display:inline-flex;min-height:44px;align-items:center;border-bottom:1px solid #93794f;font-size:14px}.editorial-page .page-return a:hover{color:#6e5835}
