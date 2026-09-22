@@ -8,6 +8,7 @@ import "./journey.css";
 import "./editorial.css";
 import "./narrative.css";
 import "./ai-score.css";
+import "./brand-logo.css";
 import "./faq.css";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-sans" });

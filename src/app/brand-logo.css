@@ -1,0 +1,17 @@
+.wordmark-logo-wrap {
+  display: block;
+  line-height: 0;
+  padding: 5px 9px;
+  background: #f3f1e9;
+}
+
+.wordmark-logo {
+  display: block;
+  width: 178px;
+  height: auto;
+}
+
+@media (max-width: 850px) {
+  .wordmark-logo-wrap { padding: 4px 7px; }
+  .wordmark-logo { width: 138px; }
+}
