@@ -10,6 +10,7 @@ import "./narrative.css";
 import "./ai-score.css";
 import "./brand-logo.css";
 import "./faq.css";
+import "./atlas.css";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-sans" });
 const cormorant = Cormorant_Garamond({ subsets: ["latin"], variable: "--font-serif", weight: ["400", "500", "600"] });

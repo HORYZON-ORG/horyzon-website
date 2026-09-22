@@ -67,7 +67,7 @@ for (const url of urls) {
  const faq = nodes.find(node => node['@type'] === 'FAQPage');
  if (faqRoutes.has(route)) {
   assert(faq, `Visible FAQPage schema missing: ${route}`);
-  assert(faq.mainEntity.length >= 4, `FAQ requires at least four answers: ${route}`);
+  assert.equal(faq.mainEntity.length, 5, `FAQ requires five answers: ${route}`);
   const visibleText = decode(html.replace(/<script\b[\s\S]*?<\/script>/g, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' '));
   for (const item of faq.mainEntity) {
    assert.equal(item['@type'], 'Question');
