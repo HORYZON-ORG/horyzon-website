@@ -2,6 +2,7 @@ export * from './completeness.ts';
 export * from './constants.ts';
 export * from './fixtures.ts';
 export * from './gates.ts';
+export * from './persistence/index.ts';
 export * from './rubric.ts';
 export * from './score.ts';
 export * from './state-machine.ts';

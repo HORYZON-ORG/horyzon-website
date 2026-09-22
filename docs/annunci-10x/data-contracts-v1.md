@@ -4,7 +4,7 @@ Canonical route: `/annunci-10x`
 
 Legacy route, not part of these contracts: `/annuncio-10x` is `NON TOCCARE`.
 
-These contracts are TypeScript-like pseudotypes. They are not implementation code and must not be converted into a migration in this phase.
+These contracts are TypeScript-like pseudotypes. The Phase 1 contract was documentation-only; Phase 3 adds the physical Supabase persistence mapping described at the end of this document.
 
 ## Shared primitives
 
@@ -418,7 +418,7 @@ Server-side entitlement is mandatory. A browser flag cannot grant generation.
 
 ## Conceptual MVP database
 
-Do not create a migration in this phase.
+Phase 1 note: the following table list was conceptual and did not authorize a migration during the foundations phase. Phase 3 now materializes the MVP persistence layer in Supabase with additive, isolated `annunci10x_*` objects.
 
 Conceptual tables:
 
@@ -432,7 +432,56 @@ Conceptual tables:
 
 Open decisions:
 
-- `OPEN DECISION`: physical database provider.
+- Physical database provider: Supabase project `horyzon` (`pmkyeqrfkunypfkbjnyg`, `eu-central-1`).
 - `OPEN DECISION`: authentication and account identity.
 - `OPEN DECISION`: retention policy.
 - `OPEN DECISION`: payment provider and webhook schema.
+
+## Supabase persistence v1
+
+Migration files:
+
+- `supabase/migrations/20260922195436_annunci10x_persistence.sql`
+- `supabase/migrations/20260922195633_annunci10x_fk_indexes.sql`
+
+Physical tables:
+
+- `annunci10x_sessions`: anonymous/session-owned root record with SHA-256 owner secret verifier, flow, state, current snapshot pointer, selected channel, version columns, commercial context, timestamps, optional expiry.
+- `annunci10x_answers`: raw interview answers. Raw text stays separate from normalized facts and snapshots.
+- `annunci10x_snapshots`: append-only normalized state snapshots with monotonic per-session `version`, role card, optional role profile and strategy.
+- `annunci10x_ai_operations`: AI operation audit and idempotency ledger. It stores status, model, prompt version, optional snapshot refs, output/error payloads, and never stores chain-of-thought.
+- `annunci10x_outputs`: generated Master ads and channel variants. `CHANNEL_VARIANT` rows require a channel and parent Master.
+- `annunci10x_evaluations`: score, gate, and evaluation target persistence for original ads, generated Master ads, and channel variants.
+- `annunci10x_events`: minimal telemetry with database and runtime guards against raw answers, original/full ad text, compensation, company name, personal data, and PII in metadata.
+
+Access model:
+
+- All Annunci 10x tables have RLS enabled.
+- No `anon` or `authenticated` grants are given on Annunci 10x tables or RPC functions.
+- No public RLS policies are created intentionally; access is server-only through the Supabase service role.
+- The service role receives only the needed table privileges: read/write for mutable server records and insert/read for append-only records.
+- Session ownership is verified with an owner secret hash. The browser receives the secret; the database stores only the hash.
+- The service-role key must never be exposed through `NEXT_PUBLIC_*` variables or client components.
+
+RPC functions:
+
+- `annunci10x_create_session`: creates a session and returns the row without `owner_secret_hash`.
+- `annunci10x_verify_session_secret`: verifies session ownership and expiry.
+- `annunci10x_append_snapshot`: locks the session row, computes the next version, appends a snapshot, and updates `current_snapshot_id`.
+- `annunci10x_register_ai_operation`: creates or returns an idempotent operation for the same session, task, input snapshot identity, prompt version, and idempotency key.
+- `annunci10x_complete_ai_operation`: marks an owned operation as `SUCCEEDED`.
+- `annunci10x_fail_ai_operation`: marks an owned operation as `FAILED`.
+
+All Annunci 10x RPC functions are `SECURITY DEFINER`, set `search_path = pg_catalog, public`, revoke default execution from `public`, `anon`, and `authenticated`, and grant execution only to `service_role`.
+
+Runtime adapter:
+
+- `src/lib/annunci-10x/persistence/adapter.ts` provides a server-only Supabase REST/RPC adapter and a memory adapter for deterministic tests.
+- `src/lib/annunci-10x/persistence/rows.ts` parses database rows back through the Annunci 10x domain validators before returning them to callers.
+- `src/lib/annunci-10x/persistence/security.ts` owns session secret creation, hashing, and safe event metadata validation.
+
+Mapping notes:
+
+- Product `BUILD` entry mode maps to persistence flow `CREATE`; read-side parsing maps `CREATE` back to `entryMode: 'BUILD'`.
+- Payment, checkout, webhook schema, authenticated account identity, cross-device resume, and retention duration remain `OPEN DECISION`.
+- The current persistence layer is prepared for server-side entitlement data, but it does not implement a payment provider or entitlement source of truth yet.

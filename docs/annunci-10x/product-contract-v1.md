@@ -6,9 +6,9 @@ Legacy route, not part of this product: `/annuncio-10x`
 
 ## Status
 
-This document defines the local canonical product contract for the Annunci 10x foundations phase.
+This document defines the local canonical product contract for the Annunci 10x foundations phase and records subsequent phase status where needed.
 
-It is documentation only. It does not implement routes, APIs, payments, database tables, migrations, or external services.
+Phase 1 was documentation only. Phase 3 adds Supabase persistence migrations and a server-side persistence adapter; it still does not implement routes, APIs, payments, provider runtime calls, deployments, or public navigation changes.
 
 ## Canonical baseline
 
@@ -106,10 +106,30 @@ The new product must not import from `src/components/job-ad-builder.tsx` because
 
 ## Non-goals for foundations
 
+Historical Phase 1 non-goals, superseded only where a later phase explicitly says so:
+
 - No route implementation yet.
-- No database migration yet.
+- No database migration yet. Superseded by Phase 3 for isolated Supabase `annunci10x_*` persistence only.
 - No payment integration yet.
 - No provider integration yet.
 - No public navigation link yet.
 - No sitemap change yet.
 - No migration or reuse of `/annuncio-10x`.
+
+## Phase 3 persistence status
+
+Implemented scope:
+
+- Additive Supabase migrations for `annunci10x_*` tables, indexes, RLS, service-role-only grants, and RPC helpers.
+- Local server-only persistence adapter under `src/lib/annunci-10x/persistence/`.
+- Deterministic local verifier for ownership, append-only snapshots, AI operation idempotency, output parent rules, row parsing, safe event metadata, and server-verified entitlement contracts.
+
+Still not implemented:
+
+- `/annunci-10x` route or UI.
+- Public API routes or server actions.
+- OpenAI/provider runtime calls.
+- Payment checkout, webhook handling, or durable entitlement source.
+- Authenticated account ownership or cross-device resume.
+- Retention jobs or deletion workflow.
+- SEO/header/footer/sitemap changes.
