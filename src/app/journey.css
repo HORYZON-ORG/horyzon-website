@@ -20,6 +20,9 @@
 .department-paths{grid-template-columns:repeat(5,minmax(0,1fr));gap:18px}
 .department-paths h3{font-size:clamp(22px,2vw,30px)}
 .department-paths p{font-size:13px}
+@media(max-width:1400px) and (min-width:1101px){.department-paths{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:1100px) and (min-width:851px){.department-paths{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:1400px) and (min-width:851px){.department-paths a{min-width:0}.department-paths h3{overflow-wrap:anywhere}}
 .chapter-current,.chapter-infrastructure{justify-content:flex-end}
 .chapter-current .chapter-copy,.chapter-infrastructure .chapter-copy{width:min(620px,48vw)}
 .chapter-progress{justify-content:center;text-align:center}
