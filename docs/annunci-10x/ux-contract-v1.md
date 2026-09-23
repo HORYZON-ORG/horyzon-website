@@ -9,7 +9,7 @@ This document defines the user experience contract and records the implemented U
 Current UI status:
 
 - Product page: implemented on `/annunci-10x`.
-- Analyze flow: implemented and tested with `ANNUNCI10X_AI_PROVIDER=MOCK`; OpenAI live validation remains pending API credit.
+- Analyze flow: implemented, score-calibrated, UX-polished, and tested with `ANNUNCI10X_AI_PROVIDER=MOCK`; OpenAI live validation remains pending API credit except for the Phase 10 score benchmark already recorded separately.
 - Build / Crea da zero: implemented through user confirmation and the pre-payment commercial screen; checkout and final generation are not implemented.
 - Guide: visible as product option, purchase not implemented.
 - Commercial architecture: implemented as a server-side catalog plus deterministic offer engine. Offers are disabled, price/discount remain `OPEN_DECISION`, and browser state is never authoritative for entitlements.
@@ -62,7 +62,7 @@ Sequence:
 3. Analysis.
 4. Score/interval plus coverage.
 5. Strengths.
-6. Three priorities.
+6. Up to three priorities, without inventing items to fill the count.
 7. Clarifications.
 8. Full diagnosis.
 9. Offers.
@@ -91,6 +91,17 @@ Score display:
 - show value or interval when coverage requires uncertainty;
 - show coverage separately;
 - do not show fake precision.
+- keep publication status separate from score and coverage.
+- `READY` copy must mean no critical blocker was detected, not that the ad is excellent.
+- In `MOCK` mode, show a visible test/demo indicator near the result.
+
+Role and company context:
+
+- Role and company hints are optional context.
+- Role context can help interpretation but must not increase the score by itself.
+- Company name is declared context and must not become attractiveness evidence by itself.
+- The observed role from the original ad has display precedence when reliable.
+- If declared role and observed role are conservatively incompatible, show a warning without changing score or blocking publication automatically.
 
 Clarifications:
 
@@ -101,7 +112,7 @@ Clarifications:
 Diagnosis:
 
 - includes strengths;
-- includes three priorities;
+- includes up to three priorities;
 - includes claim and missing information risks;
 - can lead to generation offer.
 

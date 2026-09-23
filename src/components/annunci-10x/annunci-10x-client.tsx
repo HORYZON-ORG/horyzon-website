@@ -2,6 +2,7 @@
 
 import type { FormEvent } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { formatAnnunci10xScore, formatCheckScore, priorityHeading, publicationCopy } from '@/lib/annunci-10x/presentation.ts';
 import styles from './annunci-10x.module.css';
 
 type CheckStatus = 'PASS' | 'PARTIAL' | 'MISSING' | 'CONFLICT' | 'NOT_EVALUABLE';
@@ -49,7 +50,18 @@ interface PublicResult {
     checks: { id: string; label: string; status: CheckStatus; score: number | null; maxScore: number; evidence: string[] }[];
   };
   gate: { status: string; blockingReasons: string[]; warnings: string[] };
-  roleSummary: { title: string; location: string; workMode: string; contractType: string; missingFacts: string[] };
+  roleSummary: {
+    title: string;
+    titleSource: 'OBSERVED' | 'DECLARED_CONTEXT' | 'UNKNOWN';
+    observedTitle: string | null;
+    declaredTitle: string | null;
+    roleMismatch: { status: 'MATCH' | 'POSSIBLE_MISMATCH' | 'UNKNOWN'; message: string | null; evidence: string[] };
+    companyName: string;
+    location: string;
+    workMode: string;
+    contractType: string;
+    missingFacts: string[];
+  };
   strengths: string[];
   priorities: string[];
   clarification?: { id: string; targetPath: string; question: string; reason: string; blocking: boolean; canSkip: boolean } | null;
@@ -141,9 +153,9 @@ Candidatura via email con CV aggiornato.`;
 
 const statusLabels: Record<CheckStatus, string> = {
   PASS: 'Ok',
-  PARTIAL: 'Parziale',
+  PARTIAL: 'In parte',
   MISSING: 'Manca',
-  CONFLICT: 'Conflitto',
+  CONFLICT: 'Contraddizione',
   NOT_EVALUABLE: 'N/D',
 };
 
@@ -205,9 +217,7 @@ export function Annunci10xClient() {
 
   const scoreLabel = useMemo(() => {
     if (!result) return 'N/D';
-    if (typeof result.score.value === 'number') return `${result.score.value}/100`;
-    if (result.score.interval) return `${result.score.interval.min}-${result.score.interval.max}/100`;
-    return 'N/D';
+    return formatAnnunci10xScore(result.score);
   }, [result]);
 
   async function loadPremiumOutput() {
@@ -472,8 +482,8 @@ function AnalyzeForm(props: {
     <textarea id="annunci10x-ad" value={props.rawAdText} onChange={(event) => props.onRawAdText(event.target.value)} placeholder={sampleAd} rows={12} disabled={props.running} aria-describedby="annunci10x-ad-help" />
     <p id="annunci10x-ad-help" className={styles.help}>Il testo incollato viene trattato come contenuto utente non attendibile, mai come istruzioni per il sistema.</p>
     <div className={styles.inlineFields}>
-      <label>Ruolo, se vuoi precisarlo<input value={props.roleHint} onChange={(event) => props.onRoleHint(event.target.value)} disabled={props.running} placeholder="Es. Customer care specialist" /></label>
-      <label>Azienda, opzionale<input value={props.companyHint} onChange={(event) => props.onCompanyHint(event.target.value)} disabled={props.running} placeholder="Nome azienda" /></label>
+      <label>Ruolo <span className={styles.optional}>opzionale</span><input value={props.roleHint} onChange={(event) => props.onRoleHint(event.target.value)} disabled={props.running} placeholder="Es. Customer care specialist" /><small>Aiuta a interpretare correttamente l&apos;annuncio. Non aumenta il punteggio da solo.</small></label>
+      <label>Azienda <span className={styles.optional}>opzionale</span><input value={props.companyHint} onChange={(event) => props.onCompanyHint(event.target.value)} disabled={props.running} placeholder="Nome azienda" /><small>Serve come contesto per l&apos;analisi. Il nome dell&apos;azienda non aumenta il punteggio.</small></label>
     </div>
     <div className={styles.actions}>
       <button type="submit" disabled={props.running}>{props.running ? 'Analisi in corso' : 'Analizza gratis'}</button>
@@ -639,33 +649,55 @@ function AnalysisResult(props: {
   onClarificationAnswer: (value: string) => void;
   onAnswerClarification: (skip?: boolean) => void;
 }) {
+  const publication = publicationCopy(props.result.gate.status);
+  const prioritiesTitle = priorityHeading(props.result.priorities.length);
+  const showRoleMismatch = props.result.roleSummary.roleMismatch.status === 'POSSIBLE_MISMATCH' && props.result.roleSummary.roleMismatch.message;
   return <section className={styles.result} aria-labelledby="annunci10x-result-title">
+    {props.result.provider === 'MOCK' && <div className={styles.testNotice} role="status">
+      <strong>Modalità test - valutazione dimostrativa</strong>
+      <span>Il percorso usa il provider MOCK configurato per sviluppo e verifica. Il risultato non è una valutazione OpenAI live.</span>
+    </div>}
     <div className={styles.resultHead}>
       <div>
         <p>Risultato analisi</p>
         <h2 id="annunci10x-result-title">{props.result.roleSummary.title}</h2>
+        <small className={styles.provenance}>{props.result.roleSummary.titleSource === 'OBSERVED' ? "Ruolo osservato nell'annuncio" : props.result.roleSummary.titleSource === 'DECLARED_CONTEXT' ? 'Ruolo dichiarato come contesto' : 'Ruolo non determinato'}</small>
       </div>
       <div className={styles.scoreBox}>
-        <span>Score</span>
+        <span>Score Annunci 10x</span>
         <strong>{props.scoreLabel}</strong>
-        <small>Coverage {props.result.score.coverage}%</small>
+        <small>Range di forza dell&apos;annuncio, non stato di pubblicazione.</small>
+      </div>
+      <div className={styles.scoreBox}>
+        <span>Copertura analisi</span>
+        <strong>{props.result.score.coverage}%</strong>
+        <small>Indica quanta parte dei 20 controlli è valutabile con le informazioni disponibili.</small>
       </div>
       <div className={styles.gateBox}>
-        <span>Pubblicazione</span>
-        <strong>{props.result.gate.status.replaceAll('_', ' ')}</strong>
+        <span>Stato pubblicazione</span>
+        <strong>{publication.label}</strong>
+        <small>{publication.description}</small>
       </div>
     </div>
 
+    {showRoleMismatch && <div className={styles.warningPanel} role="status" aria-live="polite">
+      <p>Possibile incoerenza sul ruolo</p>
+      <strong>{props.result.roleSummary.roleMismatch.message}</strong>
+    </div>}
+
     <div className={styles.summaryGrid}>
+      <Metric label="Ruolo dichiarato" value={props.result.roleSummary.declaredTitle ?? 'N/D'} />
+      <Metric label="Azienda (contesto)" value={props.result.roleSummary.companyName} />
       <Metric label="Sede" value={props.result.roleSummary.location} />
       <Metric label="Modalita" value={props.result.roleSummary.workMode} />
       <Metric label="Contratto" value={props.result.roleSummary.contractType} />
-      <Metric label="Provider" value={props.result.provider} />
     </div>
+
+    {props.result.score.coverage < 100 && <p className={styles.help}>Alcuni controlli non sono valutabili con le informazioni disponibili. N/D significa che il controllo non è valutabile con le informazioni disponibili. Non equivale a zero.</p>}
 
     <div className={styles.columns}>
       <Panel title="Punti forti" items={props.result.strengths} empty="Nessun punto forte solido ancora." />
-      <Panel title="Tre priorita" items={props.result.priorities} empty="Nessuna priorita rilevata." />
+      {props.result.priorities.length > 0 ? <Panel title={prioritiesTitle} items={props.result.priorities} empty="Nessuna priorità rilevata." /> : <Panel title="Priorità" items={[]} empty="Nessuna priorità rilevata." />}
     </div>
 
     {props.result.clarification && <div className={styles.clarification}>
@@ -687,7 +719,7 @@ function AnalysisResult(props: {
           <span>{check.id}</span>
           <strong>{check.label}</strong>
           <em data-status={check.status}>{statusLabels[check.status]}</em>
-          <small>{check.score === null ? 'N/D' : `${check.score}/${check.maxScore}`}</small>
+          <small>{formatCheckScore(check.score, check.maxScore)}</small>
         </article>)}
       </div>
     </details>
@@ -710,9 +742,7 @@ function AnalysisResult(props: {
 }
 
 function PremiumOutputPanel(props: { output: PremiumOutput; copied: string | null; onCopy: (label: string, value: string) => void }) {
-  const score = typeof props.output.score.value === 'number'
-    ? `${props.output.score.value}/100`
-    : props.output.score.interval ? `${props.output.score.interval.min}-${props.output.score.interval.max}/100` : 'N/D';
+  const score = formatAnnunci10xScore(props.output.score);
   const channelText = props.output.channelVariant
     ? props.output.channelVariant.sections.map((section) => `${section.title}\n${section.body}`).join('\n\n')
     : '';

@@ -64,6 +64,14 @@ The deterministic TypeScript gate remains separate from the numeric score.
 
 Material conflicts on work mode, schedule/conditions, compensation, channel/destination consistency, or CTA can block publication even when the numeric score is otherwise acceptable.
 
+Product display rule:
+
+- `READY` means no critical publication blocker was detected.
+- `READY` must not be presented as "the ad is excellent" or as a substitute for Score, Coverage, Strengths, or Priorities.
+- When coverage is below 100, score must be shown as a range and coverage must remain a separate concept.
+- Role and company hints are context only. They can help interpret the target, but they must not replace target evidence or increase score by themselves.
+- If declared role and observed role appear incompatible, the product can show a conservative warning; that warning is not a score penalty and is not an automatic publication block.
+
 ## Evidence Scope By Check
 
 | Check | What it measures | Evidence needed for PASS | Context allowance | N/D / Missing / Partial / Conflict notes |
@@ -95,4 +103,3 @@ Material conflicts on work mode, schedule/conditions, compensation, channel/dest
 - The provider must not return score fields.
 - The deterministic calculator owns points, intervals, coverage, bands, and gate.
 - `MOCK` is deterministic test infrastructure. It should not be treated as a semantic quality authority, but it must not mask obvious missing-evidence cases.
-

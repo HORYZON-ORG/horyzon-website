@@ -47,11 +47,14 @@ function makeMockOutput(request: Annunci10xAiProviderRequest, mode: MockAnnunci1
     return { detectedType: 'FULL_JOB_AD', confidence: 96, reason: 'Contains role, activities, requirements, and conditions.', canRunFullAnalysis: true };
   }
   if (request.operationType === 'EXTRACT') {
-    const conflict = /remoto.*presenza|presenza.*remoto/i.test(stringifyInput(request.input));
+    const originalText = originalAdText(request.input);
+    const title = extractMockTitle(originalText);
+    const responsibility = extractMockResponsibility(originalText);
+    const conflict = /remoto.*presenza|presenza.*remoto/i.test(originalText);
     return {
       extractedFacts: [
-        { targetPath: 'title', value: 'Addetto pulizie', source: 'EXTRACTED', confidence: 94, evidence: 'Addetto pulizie' },
-        { targetPath: 'responsibilities', value: 'Pulizia uffici e spazi comuni', source: 'EXTRACTED', confidence: 90, evidence: 'pulizia uffici' },
+        { targetPath: 'title', value: title, source: 'EXTRACTED', confidence: 94, evidence: title },
+        { targetPath: 'responsibilities', value: responsibility, source: 'EXTRACTED', confidence: 90, evidence: responsibility },
       ],
       possibleConflicts: conflict ? [{ targetPath: 'attractionContext.workMode', values: ['remoto', 'presenza'], reason: 'The input contains incompatible work mode statements.' }] : [],
     };
@@ -186,6 +189,36 @@ function versions(): Record<string, string> {
 
 function stringifyInput(input: unknown): string {
   return JSON.stringify(input).toLowerCase();
+}
+
+function originalAdText(input: unknown): string {
+  if (typeof input !== 'object' || input === null) return stringifyInput(input);
+  const originalAd = (input as Record<string, unknown>).originalAd;
+  if (typeof originalAd === 'object' && originalAd !== null && typeof (originalAd as Record<string, unknown>).rawText === 'string') {
+    return String((originalAd as Record<string, unknown>).rawText);
+  }
+  return stringifyInput(input);
+}
+
+function extractMockTitle(text: string): string {
+  const sentence = text.match(/(?:cerchiamo|selezioniamo|ricerchiamo)\s+(?:un|una)?\s*([^\n.;]{3,120})/i)?.[1]
+    ?? text.match(/\b((?:addett[oa]|customer care|manutentore|impiegat[oa]|commerciale|developer|designer)[^\n.;,]{0,90})/i)?.[1];
+  const cleaned = cleanMockFragment(sentence)
+    .replace(/\s+(?:per|nella|nel|presso|con)\s+.+$/i, '')
+    .replace(/\s+(?:a|in)\s+[A-ZÀ-Ü][a-zà-ü]+.*$/i, '')
+    .trim();
+  return cleaned || 'Ruolo da chiarire';
+}
+
+function extractMockResponsibility(text: string): string {
+  const explicit = text.match(/(?:attivita|attività|mansioni|responsabilita|responsabilità|ti occuperai di)[:\s]+([^\n.]{8,160})/i)?.[1];
+  if (explicit) return cleanMockFragment(explicit);
+  const operational = text.match(/\b(?:gestira|gestirà|gestisce|gestire|risponde|rispondera|risponderà|aggiorna|aggiornamento|pulizia|manutenzione)[^\n.]{8,160}/i)?.[0];
+  return cleanMockFragment(operational) || 'Attivita operative indicate nel testo originale';
+}
+
+function cleanMockFragment(value: string | undefined): string {
+  return (value ?? '').replace(/\s+/g, ' ').trim().replace(/[;:,.]+$/, '');
 }
 
 function makeMockEvaluation(input: unknown): unknown {

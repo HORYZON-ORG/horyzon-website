@@ -14,6 +14,7 @@ import { MockAnnunci10xProvider } from './ai/mock-provider.ts';
 import { OpenAiAnnunci10xProvider } from './ai/openai-provider.ts';
 import { Annunci10xAiOrchestrator } from './ai/orchestrator.ts';
 import { resolveAnnunci10xCommercial, type Annunci10xCommercialOffer } from './commercial.ts';
+import { buildRoleContextPresentation, deriveResultPriorities, deriveResultStrengths, type RoleContextMismatch } from './presentation.ts';
 import type { Annunci10xEvaluateOutput, Annunci10xExtractOutput, Annunci10xProfileOutput } from './ai/schemas.ts';
 import { createFact } from './validation.ts';
 import type { Annunci10xPersistenceAdapter, PersistedAnnunci10xSession, PersistedEvaluation, PersistedSnapshot } from './persistence/types.ts';
@@ -62,6 +63,11 @@ export interface PublicAnnunci10xAnalysisResult {
   coverage: number;
   roleSummary: {
     title: string;
+    titleSource: 'OBSERVED' | 'DECLARED_CONTEXT' | 'UNKNOWN';
+    observedTitle: string | null;
+    declaredTitle: string | null;
+    roleMismatch: RoleContextMismatch;
+    companyName: string;
     location: string;
     workMode: string;
     contractType: string;
@@ -264,6 +270,7 @@ export async function runFreeAnnunci10xAnalysis(input: RunFreeAnalysisInput): Pr
     score,
     gate,
     roleCard,
+    declaredRole: input.roleHint,
     clarification: clarify.output.status === 'NEEDS_CLARIFICATION' && clarify.output.clarification ? {
       id: `clarification-${stableShortId(clarify.output.clarification.targetPath)}`,
       targetPath: clarify.output.clarification.targetPath,
@@ -394,7 +401,12 @@ async function requireOwnedSession(context: Annunci10xRuntimeContext, sessionId:
 
 function buildRoleCardFromExtract(rawText: string, extract: Annunci10xExtractOutput, roleHint?: string, companyHint?: string): RoleCard {
   const facts = new Map(extract.extractedFacts.map((fact) => [fact.targetPath, fact]));
-  const title = stringFact(facts.get('title')?.value ?? roleHint ?? guessTitle(rawText), 'EXTRACTED', 'original-title');
+  const extractedTitle = facts.get('title')?.value;
+  const title = extractedTitle
+    ? stringFact(extractedTitle, 'EXTRACTED', 'original-title')
+    : roleHint
+      ? stringFact(roleHint, 'USER_DECLARED', 'role-hint')
+      : stringFact(guessTitle(rawText), 'EXTRACTED', 'original-title');
   const responsibility = stringFact(facts.get('responsibilities')?.value ?? guessResponsibility(rawText), 'EXTRACTED', 'original-responsibility');
   const mission = stringFact(guessMission(rawText), 'SYSTEM_INFERRED', 'mission-nd', false);
   const requirement = stringFact(guessRequirement(rawText), 'EXTRACTED', 'original-requirement');
@@ -461,10 +473,18 @@ async function publicResult(input: {
   score: ScoreResult & { minScore?: number; maxScore?: number; finalScore?: number | null };
   gate: PublicationGate;
   roleCard: RoleCard;
+  declaredRole?: string | null;
   clarification: PublicAnnunci10xAnalysisResult['clarification'];
   operations: PublicAnnunci10xOperation[];
   provider: Annunci10xConfiguredProvider;
 }): Promise<PublicAnnunci10xAnalysisResult> {
+  const observedTitle = input.roleCard.title?.source === 'EXTRACTED' || input.roleCard.title?.source === 'USER_CONFIRMED'
+    ? textValue(input.roleCard.title)
+    : null;
+  const roleContext = buildRoleContextPresentation({
+    declaredRole: input.declaredRole ?? (input.roleCard.title?.source === 'USER_DECLARED' ? textValue(input.roleCard.title) : null),
+    observedRole: observedTitle,
+  });
   const commercial = await resolveAnnunci10xCommercial({
     subject: { kind: 'SESSION', sessionId: input.sessionId },
     flow: 'ANALYZE',
@@ -478,14 +498,19 @@ async function publicResult(input: {
     gate: input.gate,
     coverage: input.score.coverage,
     roleSummary: {
-      title: textValue(input.roleCard.title),
+      title: roleContext.displayTitle,
+      titleSource: roleContext.displayTitleSource,
+      observedTitle: roleContext.observedTitle,
+      declaredTitle: roleContext.declaredTitle,
+      roleMismatch: roleContext.mismatch,
+      companyName: textValue(input.roleCard.attractionContext.companyName),
       location: textValue(input.roleCard.attractionContext.location),
       workMode: textValue(input.roleCard.attractionContext.workMode),
       contractType: textValue(input.roleCard.attractionContext.contractType),
       missingFacts: missingFacts(input.roleCard),
     },
-    strengths: input.score.checks.filter((check) => check.status === 'PASS').slice(0, 4).map((check) => check.label),
-    priorities: input.score.checks.filter((check) => ['MISSING', 'CONFLICT', 'PARTIAL', 'NOT_EVALUABLE'].includes(check.status)).slice(0, 3).map((check) => check.label),
+    strengths: deriveResultStrengths(input.score.checks),
+    priorities: deriveResultPriorities(input.score.checks),
     checks: input.score.checks,
     clarification: input.clarification,
     offers: {
