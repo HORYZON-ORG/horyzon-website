@@ -25,4 +25,22 @@ assert(radar.includes('https://hub.horyzon.it/radar'), 'radar-impresa: canonical
 for (const label of ['Amministrazione', 'Produzione', 'Commerciale', 'Marketing', 'Persone', 'Come lavora l’impresa', 'Dove si concentra il peso', 'Da dove cominciare']) {
  assert(radar.includes(label), `radar-impresa: missing ${label}`);
 }
+const serviceRoutes = [
+ 'benessere-organizzativo/analisi-organizzativa',
+ 'benessere-organizzativo/sviluppo-imprenditoriale',
+ 'benessere-organizzativo/human-management',
+ 'benessere-patrimoniale/visione-patrimoniale',
+ 'benessere-patrimoniale/imprenditori',
+ 'benessere-patrimoniale/professionisti',
+ 'benessere-digitale/imprese',
+ 'benessere-digitale/competenze',
+ 'benessere-digitale/italia-digitale',
+];
+for (const route of serviceRoutes) {
+ const html = await readFile(`.next/server/app/${route}.html`, 'utf8');
+ assert(html.includes('service-editorial'), `${route}: diagnostic story missing`);
+ assert(html.includes('Quando diventa urgente'), `${route}: urgency section missing`);
+ assert(html.includes('Cosa diventa visibile'), `${route}: evidence section missing`);
+ assert(html.includes(`href="/${route.split('/')[0]}"`), `${route}: area return missing`);
+}
 console.log(`Editorial checks passed: ${routes.length} representative routes, headings, internal links, area sections, no videos.`);
