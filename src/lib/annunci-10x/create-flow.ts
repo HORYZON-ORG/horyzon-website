@@ -749,7 +749,7 @@ function workModeFromText(text: string): Fact<string> | undefined {
 }
 
 function locationFromText(text: string): Fact<string> | undefined {
-  const match = text.match(/\b(?:a|sede di|zona)\s+([A-ZÀ-Ü][a-zà-ü]+(?:\s[A-ZÀ-Ü][a-zà-ü]+)?)/);
+  const match = text.match(/\b(?:sede\s+di|sede|zona|a)\s*:?\s+([A-ZÀ-Ü][a-zà-ü]+(?:\s[A-ZÀ-Ü][a-zà-ü]+)?)/i);
   return match?.[1] ? fact(match[1], 'USER_DECLARED', 'create-location') : undefined;
 }
 
@@ -760,7 +760,8 @@ function contractFromText(text: string): Fact<string> | undefined {
 
 function scheduleFromText(text: string): Fact<string> | undefined {
   const match = text.match(/(?:orario|turni|lunedi|lunedì|venerdi|venerdì|weekend)[^\n.]{0,100}/i);
-  return match?.[0] ? fact(match[0], 'USER_DECLARED', 'create-schedule') : undefined;
+  const schedule = clean(match?.[0]?.replace(/^orario\s*:\s*/i, ''));
+  return schedule ? fact(schedule, 'USER_DECLARED', 'create-schedule') : undefined;
 }
 
 function extractCompany(text: string): string {

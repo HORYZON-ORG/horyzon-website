@@ -307,6 +307,8 @@ for (const [stepId, answer] of unknownAnswers) {
   });
 }
 assert.equal(unknownCreateState.roleCard.compensation, 'OPEN_DECISION');
+assert.equal(unknownCreateState.roleCard.location, 'Bari');
+assert.equal(unknownCreateState.roleCard.schedule, 'Da definire');
 assert.equal(unknownCreateState.roleCard.compensation.includes('0'), false, 'unknown compensation must not become zero');
 assert.equal(unknownCreateState.roleCard.compensation.toLowerCase().includes('concordare'), false, 'unknown compensation must not become a default claim');
 
