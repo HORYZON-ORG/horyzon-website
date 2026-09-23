@@ -1,7 +1,7 @@
 import type { AiOperationType } from '../types.ts';
 
 export const ANNUNCI10X_AI_DEFAULT_MODEL = 'gpt-5-mini';
-export const ANNUNCI10X_AI_DEFAULT_TIMEOUT_MS = 30000;
+export const ANNUNCI10X_AI_DEFAULT_TIMEOUT_MS = 90000;
 
 export const ANNUNCI10X_MODEL_ENV_BY_OPERATION = {
   PRECHECK: 'ANNUNCI10X_MODEL_PRECHECK',

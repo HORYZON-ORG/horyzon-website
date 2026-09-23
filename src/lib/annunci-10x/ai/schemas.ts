@@ -208,7 +208,7 @@ export const ANNUNCI10X_AI_OUTPUT_SCHEMAS = {
     technicality: profileAspectSchema(['LOW', 'MEDIUM', 'HIGH', 'UNKNOWN']),
   }),
   STRATEGY: objectSchema(['communicationStrategy', 'primaryStructure', 'openingStrategy', 'levers', 'editorialLength', 'rationale', 'publicSummary'], {
-    communicationStrategy: { type: 'object', additionalProperties: true },
+    communicationStrategy: communicationStrategySchema(),
     primaryStructure: stringSchema(),
     openingStrategy: stringSchema(),
     levers: arraySchema(stringSchema()),
@@ -217,10 +217,10 @@ export const ANNUNCI10X_AI_OUTPUT_SCHEMAS = {
     publicSummary: stringSchema(),
   }),
   GENERATE: objectSchema(['generatedAd', 'title', 'metadata', 'sections', 'fullText', 'sourcePaths'], {
-    generatedAd: { type: 'object', additionalProperties: true },
+    generatedAd: generatedAdSchema(),
     title: stringSchema(),
-    metadata: { type: 'object', additionalProperties: { type: 'string' } },
-    sections: arraySchema({ type: 'object', additionalProperties: true }),
+    metadata: objectSchema([], {}),
+    sections: arraySchema(generatedSectionSchema()),
     fullText: stringSchema(),
     sourcePaths: arraySchema(stringSchema()),
   }),
@@ -249,7 +249,7 @@ export const ANNUNCI10X_AI_OUTPUT_SCHEMAS = {
     })),
   }),
   CHANNEL_ADAPTER: objectSchema(['channelVariant'], {
-    channelVariant: { type: 'object', additionalProperties: true },
+    channelVariant: channelVariantSchema(),
   }),
   EDIT_CLASSIFIER: objectSchema(['intent', 'affectedPaths', 'requiresConfirmation', 'reason'], {
     intent: enumSchema(['EDITORIAL', 'FACTUAL', 'STRATEGIC', 'UNSUPPORTED_FACT']),
@@ -258,10 +258,10 @@ export const ANNUNCI10X_AI_OUTPUT_SCHEMAS = {
     reason: stringSchema(),
   }),
   REVISE: objectSchema(['revisedSections', 'changedSectionIds', 'changeSummary', 'requiresValidation'], {
-    revisedSections: arraySchema({ type: 'object', additionalProperties: true }),
+    revisedSections: arraySchema(generatedSectionSchema()),
     changedSectionIds: arraySchema(stringSchema()),
     changeSummary: stringSchema(),
-    requiresValidation: { type: 'boolean', const: true },
+    requiresValidation: trueBooleanSchema(),
   }),
 } as const satisfies Record<string, Annunci10xJsonSchema>;
 
@@ -435,18 +435,114 @@ export function isPublicationChannel(value: unknown): value is PublicationChanne
   return oneOf(value, PUBLICATION_CHANNELS);
 }
 
-function objectSchema(required: string[], properties: Record<string, unknown>): Annunci10xJsonSchema {
-  return { type: 'object', additionalProperties: false, required, properties };
+function objectSchema(_required: string[], properties: Record<string, unknown>): Annunci10xJsonSchema {
+  return { type: 'object', additionalProperties: false, required: Object.keys(properties), properties };
 }
 
 function profileAspectSchema(values: readonly string[]): unknown {
-  return objectSchema(['level', 'rationale', 'evidencePaths', 'confidence', 'needsConfirmation'], {
+  return objectSchema(['label', 'level', 'rationale', 'evidencePaths', 'confidence', 'needsConfirmation'], {
     label: enumSchema(values),
     level: enumSchema(values),
     rationale: stringSchema(),
     evidencePaths: arraySchema(stringSchema()),
     confidence: numberSchema(),
     needsConfirmation: booleanSchema(),
+  });
+}
+
+function factStringSchema(): unknown {
+  return objectSchema(['value', 'source', 'status', 'sourceId', 'confidence', 'publishable', 'notes'], {
+    value: stringSchema(),
+    source: enumSchema(['EXTRACTED', 'USER_DECLARED', 'SYSTEM_INFERRED', 'USER_CONFIRMED']),
+    status: enumSchema(['RAW', 'NORMALIZED', 'CONFIRMED', 'REJECTED', 'STALE']),
+    sourceId: nullableStringSchema(),
+    confidence: numberSchema(),
+    publishable: booleanSchema(),
+    notes: nullableStringSchema(),
+  });
+}
+
+function versionsSchema(): unknown {
+  return objectSchema([], {
+    dataContractVersion: stringSchema(),
+    methodVersion: stringSchema(),
+    rubricVersion: stringSchema(),
+    strategyVersion: stringSchema(),
+    promptVersion: stringSchema(),
+  });
+}
+
+function clarificationSchema(): unknown {
+  return objectSchema(['id', 'stepId', 'fieldKey', 'question', 'reason', 'requiredFor', 'priority', 'blocking', 'answered'], {
+    id: stringSchema(),
+    stepId: enumSchema(['ROLE', 'OUTCOMES', 'REQUIREMENTS', 'CONDITIONS', 'ATTRACTION', 'CHANNEL']),
+    fieldKey: stringSchema(),
+    question: stringSchema(),
+    reason: stringSchema(),
+    requiredFor: enumSchema(['SCORE', 'GATE', 'GENERATION', 'CHANNEL_ADAPTER']),
+    priority: enumSchema(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']),
+    blocking: booleanSchema(),
+    answered: booleanSchema(),
+  });
+}
+
+function communicationStrategySchema(): unknown {
+  return objectSchema(['id', 'sessionId', 'summary', 'candidateAngle', 'emphasis', 'proofPoints', 'reasons', 'riskNotes', 'missingFacts', 'channelPriorities', 'versions'], {
+    id: stringSchema(),
+    sessionId: stringSchema(),
+    summary: stringSchema(),
+    candidateAngle: stringSchema(),
+    emphasis: objectSchema(['challenge', 'routine', 'qualification', 'commitment', 'technicality'], {
+      challenge: enumSchema(['LOW', 'MEDIUM', 'HIGH', 'UNKNOWN', 'NOT_APPLICABLE']),
+      routine: enumSchema(['LOW', 'MEDIUM', 'HIGH', 'UNKNOWN', 'NOT_APPLICABLE']),
+      qualification: enumSchema(['LOW', 'MEDIUM', 'HIGH', 'UNKNOWN', 'NOT_APPLICABLE']),
+      commitment: enumSchema(['LOW', 'MEDIUM', 'HIGH', 'UNKNOWN', 'NOT_APPLICABLE']),
+      technicality: enumSchema(['LOW', 'MEDIUM', 'HIGH', 'UNKNOWN', 'NOT_APPLICABLE']),
+    }),
+    proofPoints: arraySchema(factStringSchema()),
+    reasons: arraySchema(objectSchema(['id', 'label', 'factIds'], {
+      id: stringSchema(),
+      label: stringSchema(),
+      factIds: arraySchema(stringSchema()),
+    })),
+    riskNotes: arraySchema(stringSchema()),
+    missingFacts: arraySchema(clarificationSchema()),
+    channelPriorities: arraySchema(enumSchema(PUBLICATION_CHANNELS)),
+    versions: versionsSchema(),
+  });
+}
+
+function generatedSectionSchema(): unknown {
+  return objectSchema(['id', 'type', 'key', 'title', 'body', 'sourceFactIds'], {
+    id: stringSchema(),
+    type: enumSchema(['TITLE', 'OPENING', 'CONTEXT', 'MISSION', 'RESPONSIBILITIES', 'REQUIREMENTS', 'CONDITIONS', 'GROWTH', 'APPLICATION', 'CLAIM_CHECK']),
+    key: stringSchema(),
+    title: stringSchema(),
+    body: stringSchema(),
+    sourceFactIds: arraySchema(stringSchema()),
+  });
+}
+
+function generatedAdSchema(): unknown {
+  return objectSchema(['id', 'sessionId', 'kind', 'sections', 'sourceOfTruth', 'generatedAt', 'promptVersion'], {
+    id: stringSchema(),
+    sessionId: stringSchema(),
+    kind: enumSchema(['MASTER']),
+    sections: arraySchema(generatedSectionSchema()),
+    sourceOfTruth: trueBooleanSchema(),
+    generatedAt: stringSchema(),
+    promptVersion: stringSchema(),
+  });
+}
+
+function channelVariantSchema(): unknown {
+  return objectSchema(['id', 'masterAdId', 'channel', 'sections', 'introducedFactIds', 'adaptedFromMaster'], {
+    id: stringSchema(),
+    masterAdId: stringSchema(),
+    channel: enumSchema(PUBLICATION_CHANNELS),
+    sections: arraySchema(generatedSectionSchema()),
+    introducedFactIds: arraySchema(stringSchema()),
+    adaptedFromMaster: trueBooleanSchema(),
   });
 }
 
@@ -464,6 +560,10 @@ function nullableStringSchema(): unknown {
 
 function booleanSchema(): unknown {
   return { type: 'boolean' };
+}
+
+function trueBooleanSchema(): unknown {
+  return { type: 'boolean', enum: [true] };
 }
 
 function numberSchema(): unknown {
