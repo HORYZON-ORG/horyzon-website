@@ -333,6 +333,16 @@ type GeneratedOutput = {
 
 The Master is the source of truth for all channel variants.
 
+Phase 8 implementation notes:
+
+- `GenerationAuthorization` is a server-side runtime contract, not a browser payload. It can return `AUTHORIZED`, `NOT_AUTHORIZED`, `ALREADY_CONSUMED`, or `INVALID_STATE`.
+- Browser fields such as `authorized`, `credits`, `paid`, `purchase`, `receipt`, `testAuthorization`, or `entitlements` are ignored and cannot authorize generation.
+- Production generation remains `NOT_AUTHORIZED` until a checkout or durable entitlement source is implemented.
+- The test authorization provider is available only to server-side tests and harnesses.
+- Premium output is stored using the existing `MASTER` and `CHANNEL_VARIANT` output types; no Phase 8 migration adds a new output type.
+- Phase 8 stores comparison and claim-check metadata inside the generated Master payload extension while keeping the required `GeneratedAd` shape valid.
+- The current physical channel constraint remains `LINKEDIN | INDEED | ATS | EMAIL | CUSTOM`; expanded channel labels require a future migration.
+
 ## AI operations and errors
 
 ```ts
@@ -542,3 +552,5 @@ Mapping notes:
 - Payment, checkout, webhook schema, authenticated account identity, cross-device resume, and retention duration remain `OPEN DECISION`.
 - The current persistence layer is prepared for server-side entitlement data, but it does not implement a payment provider or entitlement source of truth yet.
 - Phase 4 adds runtime error codes `AI_PROVIDER_ERROR`, `AI_INVALID_OUTPUT`, `RATE_LIMITED`, and `INTERNAL_ERROR` for provider-facing failures; deterministic domain errors remain separate.
+- Phase 8 adds read-side output retrieval through the persistence adapter without changing Supabase schema or grants.
+- Phase 8 premium generation uses the existing AI operation ledger. For premium idempotency, a server-only authorization identity participates in the operation idempotency identity but is not projected into provider prompts.

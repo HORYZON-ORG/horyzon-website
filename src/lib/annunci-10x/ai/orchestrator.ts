@@ -22,6 +22,7 @@ export interface Annunci10xRunAiTaskInput<T extends AiOperationType = AiOperatio
   operationType: T;
   input: Record<string, unknown>;
   inputSnapshotId?: string | null;
+  idempotencyInputIdentityOverride?: string;
   promptVersionOverride?: string;
   model?: string;
   timeoutMs?: number;
@@ -64,7 +65,7 @@ export class Annunci10xAiOrchestrator {
     const idempotencyKey = createAnnunci10xAiIdempotencyKey({
       sessionId: input.sessionId,
       operationType: input.operationType,
-      inputIdentity: input.inputSnapshotId ?? stableHash(projectedInput),
+      inputIdentity: input.idempotencyInputIdentityOverride ?? input.inputSnapshotId ?? stableHash(projectedInput),
       promptVersion,
       model,
     });

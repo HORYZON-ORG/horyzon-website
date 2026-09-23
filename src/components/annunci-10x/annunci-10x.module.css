@@ -333,6 +333,15 @@
   line-height: 1.55;
 }
 
+.outputText {
+  margin: 0 0 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: #e9f6f3;
+  font: inherit;
+  line-height: 1.6;
+}
+
 .clarification {
   display: grid;
   gap: 10px;

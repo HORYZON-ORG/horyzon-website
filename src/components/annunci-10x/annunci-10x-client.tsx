@@ -108,6 +108,21 @@ interface ResumePayload {
   evaluation?: { id: string; score: PublicResult['score']; gate: PublicResult['gate']; createdAt: string } | null;
 }
 
+interface PremiumOutput {
+  outputId: string;
+  masterText: string;
+  channelVariant: { channel: string; sections: { id: string; title: string; body: string }[] } | null;
+  score: PublicResult['score'];
+  gate: PublicResult['gate'];
+  validationState: string;
+  claimCheck: { id: string; claim: string; status: string; publishable: boolean }[];
+  comparison: { improvements: string[]; regressionsToReview: string[]; changes: { label: string; before?: string; after?: string }[] } | null;
+  rationale: string[];
+  checklist: string[];
+  provider: 'MOCK' | 'OPENAI';
+  generatedAt: string;
+}
+
 const createSteps: { id: CreateStepId; label: string; question: string; placeholder: string }[] = [
   { id: 'ROLE_CONTEXT', label: 'Contesto ruolo', question: 'Che ruolo vuoi assumere e in quale contesto aziendale?', placeholder: 'Es. Cerchiamo un customer care specialist per azienda SaaS B2B a Bari...' },
   { id: 'PRIMARY_CONTRIBUTION', label: 'Contributo primario', question: 'Quale contributo deve portare la persona nei primi mesi?', placeholder: 'Es. Ridurre tempi di risposta, gestire ticket e migliorare la qualita delle risposte...' },
@@ -140,6 +155,7 @@ export function Annunci10xClient() {
   const [result, setResult] = useState<PublicResult | null>(null);
   const [resume, setResume] = useState<ResumePayload | null>(null);
   const [commercial, setCommercial] = useState<CommercialState | null>(null);
+  const [premiumOutput, setPremiumOutput] = useState<PremiumOutput | null>(null);
   const [createState, setCreateState] = useState<CreateState | null>(null);
   const [createAnswer, setCreateAnswer] = useState('');
   const [clarificationAnswer, setClarificationAnswer] = useState('');
@@ -148,6 +164,7 @@ export function Annunci10xClient() {
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [activeStage, setActiveStage] = useState<string | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
   const resultRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -172,6 +189,12 @@ export function Annunci10xClient() {
         if (payload.ok && payload.commercial) setCommercial(payload.commercial);
       })
       .catch(() => undefined);
+    fetch('/api/annunci-10x/premium/output', { cache: 'no-store' })
+      .then((response) => response.json())
+      .then((payload: { ok: boolean; result?: PremiumOutput | null }) => {
+        if (payload.ok) setPremiumOutput(payload.result ?? null);
+      })
+      .catch(() => undefined);
   }, []);
 
   useEffect(() => {
@@ -186,6 +209,16 @@ export function Annunci10xClient() {
     if (result.score.interval) return `${result.score.interval.min}-${result.score.interval.max}/100`;
     return 'N/D';
   }, [result]);
+
+  async function loadPremiumOutput() {
+    try {
+      const response = await fetch('/api/annunci-10x/premium/output', { cache: 'no-store' });
+      const payload = await response.json();
+      if (payload.ok) setPremiumOutput(payload.result ?? null);
+    } catch {
+      setPremiumOutput(null);
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -207,6 +240,7 @@ export function Annunci10xClient() {
       if (!response.ok || !payload.ok) throw new Error(payload.error?.message ?? 'Analisi non riuscita.');
       setActiveStage('CLARIFY');
       setResult(payload.result);
+      loadPremiumOutput();
       setResume(null);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Analisi non riuscita.');
@@ -338,6 +372,12 @@ export function Annunci10xClient() {
     }
   }
 
+  async function copyText(label: string, value: string) {
+    await navigator.clipboard.writeText(value);
+    setCopied(label);
+    window.setTimeout(() => setCopied(null), 1800);
+  }
+
   return <div className={styles.experience}>
     <section className={styles.productGrid} aria-label="Percorsi Annunci 10x">
       <article className={styles.pathPanel} data-active={mode === 'ANALYZE'}>
@@ -406,6 +446,8 @@ export function Annunci10xClient() {
         onAnswerClarification={answerClarification}
       />
     </div>}
+
+    {premiumOutput && <PremiumOutputPanel output={premiumOutput} copied={copied} onCopy={copyText} />}
   </div>;
 }
 
@@ -664,6 +706,68 @@ function AnalysisResult(props: {
     </details>
 
     <OfferCards offers={props.result.offers.availableOffers} empty="Nessuna offerta disponibile." />
+  </section>;
+}
+
+function PremiumOutputPanel(props: { output: PremiumOutput; copied: string | null; onCopy: (label: string, value: string) => void }) {
+  const score = typeof props.output.score.value === 'number'
+    ? `${props.output.score.value}/100`
+    : props.output.score.interval ? `${props.output.score.interval.min}-${props.output.score.interval.max}/100` : 'N/D';
+  const channelText = props.output.channelVariant
+    ? props.output.channelVariant.sections.map((section) => `${section.title}\n${section.body}`).join('\n\n')
+    : '';
+  return <section className={styles.result} aria-labelledby="annunci10x-premium-title">
+    <div className={styles.resultHead}>
+      <div>
+        <p>Output premium</p>
+        <h2 id="annunci10x-premium-title">Master generato</h2>
+      </div>
+      <div className={styles.scoreBox}>
+        <span>Score</span>
+        <strong>{score}</strong>
+        <small>Coverage {props.output.score.coverage}%</small>
+      </div>
+      <div className={styles.gateBox}>
+        <span>Validazione</span>
+        <strong>{props.output.validationState.replaceAll('_', ' ')}</strong>
+      </div>
+    </div>
+    <div className={styles.panel}>
+      <h3>Master</h3>
+      <pre className={styles.outputText}>{props.output.masterText}</pre>
+      <div className={styles.actions}>
+        <button type="button" onClick={() => props.onCopy('master', props.output.masterText)}>{props.copied === 'master' ? 'Copiato' : 'Copia master'}</button>
+      </div>
+    </div>
+    {props.output.channelVariant && <div className={styles.panel}>
+      <h3>Variante {props.output.channelVariant.channel}</h3>
+      <pre className={styles.outputText}>{channelText}</pre>
+      <div className={styles.actions}>
+        <button type="button" onClick={() => props.onCopy('channel', channelText)}>{props.copied === 'channel' ? 'Copiato' : 'Copia variante'}</button>
+      </div>
+    </div>}
+    <div className={styles.columns}>
+      <Panel title="Decisioni" items={props.output.rationale} empty="Nessuna decisione disponibile." />
+      <Panel title="Checklist" items={props.output.checklist} empty="Nessun controllo da rivedere." />
+    </div>
+    {props.output.comparison && <div className={styles.panel}>
+      <h3>Confronto con analisi gratuita</h3>
+      <ul>
+        {props.output.comparison.changes.map((change) => <li key={`${change.label}-${change.after ?? ''}`}>{change.label}: {change.before ?? 'N/D'}{' -> '}{change.after ?? 'N/D'}</li>)}
+        {props.output.comparison.improvements.map((item) => <li key={item}>{item}</li>)}
+        {props.output.comparison.regressionsToReview.map((item) => <li key={item}>{item}</li>)}
+      </ul>
+    </div>}
+    <details className={styles.details}>
+      <summary>Claim check</summary>
+      <div className={styles.checks}>
+        {props.output.claimCheck.map((claim) => <article key={claim.id}>
+          <span>{claim.status}</span>
+          <strong>{claim.claim}</strong>
+          <em data-status={claim.publishable ? 'PASS' : 'CONFLICT'}>{claim.publishable ? 'Pubblicabile' : 'Da verificare'}</em>
+        </article>)}
+      </div>
+    </details>
   </section>;
 }
 

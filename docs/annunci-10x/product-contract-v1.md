@@ -8,7 +8,7 @@ Legacy route, not part of this product: `/annuncio-10x`
 
 This document defines the local canonical product contract for Annunci 10x and records implementation status where needed.
 
-Phase 1 was documentation only. Phase 3 added Supabase persistence migrations and a server-side persistence adapter. Phase 4 added the server-side AI runtime and prompt registry. Phase 5 implemented the unlisted product page and the `ANALYZE` path, tested with the explicit `MOCK` provider. Phase 6 implements `BUILD` / Crea da zero through user confirmation and the pre-payment commercial screen, tested with the explicit `MOCK` provider. Phase 7 adds the server-side commercial catalog, entitlement abstraction, deterministic offer engine, and read-only offer API without checkout, prices, payment provider, or durable purchase source of truth.
+Phase 1 was documentation only. Phase 3 added Supabase persistence migrations and a server-side persistence adapter. Phase 4 added the server-side AI runtime and prompt registry. Phase 5 implemented the unlisted product page and the `ANALYZE` path, tested with the explicit `MOCK` provider. Phase 6 implements `BUILD` / Crea da zero through user confirmation and the pre-payment commercial screen, tested with the explicit `MOCK` provider. Phase 7 adds the server-side commercial catalog, entitlement abstraction, deterministic offer engine, and read-only offer API without checkout, prices, payment provider, or durable purchase source of truth. Phase 8 adds the premium generation domain pipeline and output rendering while keeping public generation locked behind server-side authorization.
 
 Current status:
 
@@ -17,7 +17,7 @@ Current status:
 - Create: `IMPLEMENTED_THROUGH_PRE_PAYMENT`, `TESTED_WITH_MOCK`, `LIVE_AI_TEST_PENDING`.
 - Guide: `PRODUCT_DEFINED`, `PURCHASE_NOT_IMPLEMENTED`.
 - Commercial: `ARCHITECTURE_IMPLEMENTED`, `OFFER_ENGINE_IMPLEMENTED`, `PRICING_OPEN`, `PAYMENT_NOT_IMPLEMENTED`, `CHECKOUT_NOT_IMPLEMENTED`, `REAL_ENTITLEMENT_SOURCE_PENDING`.
-- Generation: `RUNTIME_IMPLEMENTED`, `USER_FLOW_NOT_IMPLEMENTED`, `LIVE_AI_TEST_PENDING`.
+- Generation: `PIPELINE_IMPLEMENTED`, `SERVER_SIDE_AUTHORIZATION_REQUIRED`, `PUBLIC_UNLOCK_NOT_IMPLEMENTED`, `TESTED_WITH_MOCK`, `LIVE_AI_TEST_PENDING`.
 - OpenAI: `PROVIDER_IMPLEMENTED`, `LIVE_VALIDATION_PENDING_API_CREDIT`.
 - Supabase: `IMPLEMENTED`, `LIVE_PERSISTENCE_VERIFIED`.
 - Route: `PRODUCTION_DEPLOYED`, `UNLISTED`, `NOINDEX_NOFOLLOW`.
@@ -27,7 +27,7 @@ Current status:
 
 - Repository: `HORYZON-ORG/horyzon-website`
 - Branch: `main`
-- Temporary canonical baseline before Phase 6: `169020f9b64f7da7d41a2954c9115d205d6d4408`
+- Temporary canonical baseline before Phase 8: `d913e35ebcbf73e798c81c69981063fa8ff5697c`
 - Local work continues directly on `main` by explicit authorization.
 - Do not reset local `main` behind this baseline.
 - Do not create branches or pull requests for this phase.
@@ -108,6 +108,30 @@ The sequence must stay consistent across all documents:
 - `GUIDE_PLUS_AD` can grant both guide access and generation access.
 - Final generated output is produced only after entitlement confirms access to generation.
 - No document may require payment after final generation for the same output.
+
+## Phase 8 premium generation status
+
+Implemented scope:
+
+- Server-side generation authorization contract with `AUTHORIZED`, `NOT_AUTHORIZED`, `ALREADY_CONSUMED`, and `INVALID_STATE`.
+- Production authorization provider denies generation until checkout or a durable entitlement source exists.
+- Test authorization provider exists only in server-side tests and harnesses.
+- Premium orchestration runs `GENERATE -> VALIDATE -> optional one REVISE -> VALIDATE -> EVALUATE -> CHANNEL_ADAPTER`.
+- Deterministic score and publication gate remain TypeScript-owned; provider output cannot carry score fields.
+- Generated Master and channel variant are persisted in existing `annunci10x_outputs` rows; generated Master evaluation is persisted in `annunci10x_evaluations`.
+- Public API routes exist for generate/output/edit, but generate and edit fail closed in production without server-side authorization.
+- UI can render and copy an already-authorized persisted premium output, but it does not expose a browser-side unlock or checkout.
+
+Still not implemented:
+
+- Checkout, payment provider, prices, numeric discounts, webhook handling, and durable paid entitlement source.
+- Public self-service generation unlock.
+- Live OpenAI premium smoke test; OpenAI remains pending API credit.
+- Expanded publication channel taxonomy beyond the existing database-allowed channels.
+
+Technical constraint:
+
+- The physical database and TypeScript constants currently allow only `LINKEDIN`, `INDEED`, `ATS`, `EMAIL`, and `CUSTOM`. Adding `LINKEDIN_JOBS`, `LINKEDIN_POST`, `META_SOCIAL`, `COMPANY_WEBSITE`, `GENERAL`, or `OTHER` requires an explicit future migration and was not implemented in Phase 8.
 
 ## Legacy boundary
 

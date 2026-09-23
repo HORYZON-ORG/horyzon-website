@@ -231,6 +231,20 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
     return parseOutputRow(first(rows, 'save output'));
   }
 
+  async getLatestOutput(sessionId: string, sessionSecret: string, outputType?: SaveOutputInput['outputType'], parentMasterId?: string | null): Promise<PersistedOutput | null> {
+    await this.requireOwnership(sessionId, sessionSecret);
+    const query: Record<string, string> = {
+      session_id: `eq.${sessionId}`,
+      select: '*',
+      order: 'created_at.desc',
+      limit: '1',
+    };
+    if (outputType) query.output_type = `eq.${outputType}`;
+    if (parentMasterId !== undefined) query.parent_master_id = parentMasterId === null ? 'is.null' : `eq.${parentMasterId}`;
+    const rows = await this.select('annunci10x_outputs', query);
+    return rows[0] ? parseOutputRow(rows[0]) : null;
+  }
+
   async appendEvent(input: AppendEventInput): Promise<PersistedEvent> {
     const metadata = input.metadata ?? {};
     assertSafeEventMetadata(metadata);
@@ -488,6 +502,16 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
     };
     this.outputs.set(row.id, row);
     return parseOutputRow(row);
+  }
+
+  async getLatestOutput(sessionId: string, sessionSecret: string, outputType?: SaveOutputInput['outputType'], parentMasterId?: string | null): Promise<PersistedOutput | null> {
+    this.requireMemoryOwnership(sessionId, sessionSecret);
+    const row = [...this.outputs.values()]
+      .filter((item) => item.session_id === sessionId)
+      .filter((item) => !outputType || item.output_type === outputType)
+      .filter((item) => parentMasterId === undefined || item.parent_master_id === parentMasterId)
+      .sort((left, right) => String(right.created_at).localeCompare(String(left.created_at)))[0];
+    return row ? parseOutputRow(row) : null;
   }
 
   async appendEvent(input: AppendEventInput): Promise<PersistedEvent> {

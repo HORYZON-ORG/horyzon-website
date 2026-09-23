@@ -195,5 +195,6 @@ export interface Annunci10xPersistenceAdapter {
   saveEvaluation(input: SaveEvaluationInput): Promise<PersistedEvaluation>;
   getLatestEvaluation(sessionId: string, sessionSecret: string): Promise<PersistedEvaluation | null>;
   saveOutput(input: SaveOutputInput): Promise<PersistedOutput>;
+  getLatestOutput(sessionId: string, sessionSecret: string, outputType?: Annunci10xOutputType, parentMasterId?: string | null): Promise<PersistedOutput | null>;
   appendEvent(input: AppendEventInput): Promise<PersistedEvent>;
 }

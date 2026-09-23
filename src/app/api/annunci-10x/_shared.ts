@@ -87,12 +87,21 @@ export function toErrorResponse(error: unknown): NextResponse {
   }
   const record = typeof error === 'object' && error !== null ? error as { code?: unknown; message?: unknown; status?: unknown } : {};
   const code = typeof record.code === 'string' ? record.code : 'INTERNAL';
-  const status = code === 'RATE_LIMITED' ? 429 : code === 'AI_PROVIDER_ERROR' ? 503 : code === 'AI_INVALID_OUTPUT' ? 502 : 500;
+  const status = code === 'RATE_LIMITED' ? 429
+    : code === 'PAYMENT_REQUIRED' || code === 'ENTITLEMENT_MISSING' ? 402
+      : code === 'GENERATION_BLOCKED' || code === 'NEEDS_VERIFICATION' ? 409
+        : code === 'AI_PROVIDER_ERROR' ? 503
+          : code === 'AI_INVALID_OUTPUT' ? 502
+            : 500;
   const message = code === 'AI_PROVIDER_ERROR'
     ? 'Provider AI non disponibile per Annunci 10x.'
     : code === 'RATE_LIMITED'
       ? 'Provider AI temporaneamente limitato.'
-      : 'Analisi non completata. Riprova tra poco.';
+      : code === 'PAYMENT_REQUIRED'
+        ? 'Generazione Annunci 10x non autorizzata.'
+        : code === 'GENERATION_BLOCKED'
+          ? 'Generazione Annunci 10x non disponibile per questa sessione.'
+          : 'Analisi non completata. Riprova tra poco.';
   return NextResponse.json(publicErrorPayload(code, message), { status, headers: { 'Cache-Control': 'no-store' } });
 }
 

@@ -13,6 +13,7 @@ Current UI status:
 - Build / Crea da zero: implemented through user confirmation and the pre-payment commercial screen; checkout and final generation are not implemented.
 - Guide: visible as product option, purchase not implemented.
 - Commercial architecture: implemented as a server-side catalog plus deterministic offer engine. Offers are disabled, price/discount remain `OPEN_DECISION`, and browser state is never authoritative for entitlements.
+- Premium generation: domain pipeline and persisted output rendering are implemented with `MOCK` test coverage. Public generation remains locked because checkout and durable entitlement are not implemented.
 
 ## Global UX principles
 
@@ -186,7 +187,8 @@ Payment:
 Generation:
 
 - starts only after entitlement is confirmed server-side.
-- not implemented in the user flow in Phase 6.
+- implemented as a server-side Phase 8 pipeline.
+- not publicly unlockable from the browser until a future checkout/entitlement phase.
 
 No fake before/after score:
 
@@ -240,6 +242,9 @@ Edit:
 - classify edit intent;
 - if edit adds facts, require confirmation;
 - run validation again after revision.
+- editorial edits can produce a new validated output version when server-side generation authorization exists;
+- factual or strategic edits update the source of truth and require regeneration;
+- unsupported claims require confirmation and do not modify output.
 
 Comparison layer:
 
@@ -351,3 +356,9 @@ When no entitlement exists:
 - show Guide standalone;
 - show generation offer;
 - show bundle if enabled.
+
+Phase 8 UI implementation notes:
+
+- The page does not add a public "generate now" unlock.
+- If a server-authorized premium output already exists for the session, the UI can resume it, show Master, score, gate, rationale, checklist, comparison for Analyze, channel variant, claim check, and copy controls.
+- The public `generate` and `edit` API routes return controlled authorization errors until production has a real server-side entitlement source.

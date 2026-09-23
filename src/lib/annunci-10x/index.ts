@@ -6,6 +6,7 @@ export * from './create-flow.ts';
 export * from './fixtures.ts';
 export * from './gates.ts';
 export * from './persistence/index.ts';
+export * from './premium/index.ts';
 export * from './product-flow.ts';
 export * from './rubric.ts';
 export * from './score.ts';

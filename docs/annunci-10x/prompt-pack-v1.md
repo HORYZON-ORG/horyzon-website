@@ -12,6 +12,7 @@ Implementation status:
 - `OPENAI` provider: implemented and configurable through `ANNUNCI10X_AI_PROVIDER=OPENAI`.
 - Live OpenAI validation: pending API credit; do not claim live OpenAI smoke success until Phase 4.5 is rerun.
 - Phase 6 `CREATE` uses `EXTRACT`, `CLARIFY`, `PROFILE`, `STRATEGY`, and `EDIT_CLASSIFIER`; it does not call `GENERATE`, `VALIDATE`, `REVISE`, or `CHANNEL_ADAPTER` in the pre-payment user flow.
+- Phase 8 premium generation uses `GENERATE`, `VALIDATE`, optional one `REVISE`, `EVALUATE`, `CHANNEL_ADAPTER`, and `EDIT_CLASSIFIER` only after server-side authorization. Production remains locked until checkout or durable entitlement exists.
 
 ## Core policy shared by all AI tasks
 
@@ -358,6 +359,14 @@ Rules:
 - `CHANNEL_ADAPTER` follows a valid Master.
 - `EDIT_CLASSIFIER` precedes user-driven revision.
 - `REVISE` is limited to one automatic targeted pass.
+
+Phase 8 orchestration implementation:
+
+- Production authorization currently returns `NOT_AUTHORIZED`; this is intentional while payment is absent.
+- Test authorization is server-side only and not exposed through query params, request bodies, headers, cookies, or local storage.
+- Authorization identity may participate in AI operation idempotency, but payment, price, discount, purchase, commercial context, and entitlement objects are stripped before provider calls.
+- A validation result with unsupported claims, contradictions, altered requirements, or omitted critical facts feeds deterministic TypeScript gates. A high provider-assisted evaluation cannot override those gates.
+- Channel adaptation is skipped for blocked output and cannot introduce new facts.
 
 ## No score prompt
 
