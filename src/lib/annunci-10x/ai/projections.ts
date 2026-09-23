@@ -24,7 +24,21 @@ export function projectAnnunci10xAiInput(operationType: AiOperationType, input: 
   if (operationType === 'STRATEGY') return pick(projected, ['roleCard', 'roleProfile', 'strategyRules', 'channel']);
   if (operationType === 'GENERATE') return pick(projected, ['roleCard', 'roleProfile', 'communicationStrategy']);
   if (operationType === 'VALIDATE') return pick(projected, ['generatedAd', 'roleCard']);
-  if (operationType === 'EVALUATE') return pick(projected, ['target', 'roleCard', 'roleProfile', 'communicationStrategy', 'channel', 'rubric']);
+  if (operationType === 'EVALUATE') {
+    return pick(projected, [
+      'target',
+      'originalAd',
+      'generatedAd',
+      'master',
+      'channelVariant',
+      'claimCheck',
+      'roleCard',
+      'roleProfile',
+      'communicationStrategy',
+      'channel',
+      'rubric',
+    ]);
+  }
   if (operationType === 'CHANNEL_ADAPTER') return pick(projected, ['master', 'roleCard', 'targetChannel']);
   if (operationType === 'EDIT_CLASSIFIER') return pick(projected, ['editRequest', 'roleCard', 'currentMaster']);
   return pick(projected, ['currentMaster', 'roleCard', 'communicationStrategy', 'editRequest', 'validationIssues']);

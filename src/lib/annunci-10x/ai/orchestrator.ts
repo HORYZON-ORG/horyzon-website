@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { calculateAnnunci10xScore } from '../score.ts';
-import { evaluatePublicationGate, unconfirmedClaim } from '../gates.ts';
+import { evaluatePublicationGate, materialConflict, unconfirmedClaim } from '../gates.ts';
 import type { AiOperationType, GeneratedAd, RoleCard } from '../types.ts';
 import type { Annunci10xPersistenceAdapter, PersistedAiOperation } from '../persistence/types.ts';
 import { Annunci10xAiError, sanitizeAiErrorPayload } from './errors.ts';
@@ -264,8 +264,15 @@ export function calculateScoreAndGateFromEvaluateOutput(output: Annunci10xEvalua
   })));
   const findings = output.checks
     .filter((check) => check.status === 'CONFLICT')
-    .map((check) => unconfirmedClaim(`Rubric check ${check.id}: ${check.reason}`, 'WARNING'));
+    .map((check) => {
+      const message = `Rubric check ${check.id}: ${check.reason}`;
+      return isMaterialConflictCheck(check.id) ? materialConflict(message, 'BLOCKING') : unconfirmedClaim(message, 'WARNING');
+    });
   return { score, gate: evaluatePublicationGate({ findings }) };
+}
+
+function isMaterialConflictCheck(checkId: string): boolean {
+  return ['12', '13', '14', '17', '20'].includes(checkId);
 }
 
 export function createAnnunci10xAiIdempotencyKey(input: {

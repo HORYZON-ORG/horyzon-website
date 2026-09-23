@@ -1,5 +1,4 @@
 import { ANNUNCI10X_PROMPT_PACK_VERSION } from '../constants.ts';
-import { ANNUNCI10X_RUBRIC } from '../rubric.ts';
 import type { Annunci10xAiProvider, Annunci10xAiProviderRequest, Annunci10xAiProviderResult } from './provider.ts';
 import { Annunci10xAiError } from './errors.ts';
 
@@ -86,15 +85,7 @@ function makeMockOutput(request: Annunci10xAiProviderRequest, mode: MockAnnunci1
     return { claims: [], unsupportedClaims: [], contradictions: [], omittedCriticalFacts: [], alteredRequirements: [], result: 'PASS' };
   }
   if (request.operationType === 'EVALUATE') {
-    return {
-      checks: ANNUNCI10X_RUBRIC.checks.map((definition, index) => ({
-        id: definition.id,
-        status: index === 13 ? 'NOT_EVALUABLE' : index === 14 ? 'MISSING' : 'PASS',
-        evidence: [`Evidence for ${definition.id}`],
-        reason: index === 13 ? 'Not determinable from available facts.' : 'Fixture evidence.',
-        suggestion: 'Keep evidence tied to confirmed facts.',
-      })),
-    };
+    return makeMockEvaluation(request.input);
   }
   if (request.operationType === 'CHANNEL_ADAPTER') return mockChannelVariant();
   if (request.operationType === 'EDIT_CLASSIFIER') return classifyMockEdit(readEditRequest(request.input));
@@ -195,4 +186,89 @@ function versions(): Record<string, string> {
 
 function stringifyInput(input: unknown): string {
   return JSON.stringify(input).toLowerCase();
+}
+
+function makeMockEvaluation(input: unknown): unknown {
+  const text = targetText(input);
+  const lower = text.toLowerCase();
+  const channel = readStringPath(input, ['channel']).toUpperCase();
+  const hasRemotePresenceConflict = /\bremot[oea]\b/.test(lower) && /presenza|in sede/.test(lower);
+  const checks = [
+    status('01', hasRoleTitle(lower) ? 'PASS' : 'MISSING', 'Target text identifies the role.'),
+    status('02', /senior|junior|responsabile|coordin|perimetro|riporterai|gestirai/i.test(text) ? 'PASS' : 'PARTIAL', 'Role perimeter is only partly visible.'),
+    status('03', hasActivity(lower) ? 'PASS' : 'MISSING', 'Daily activities are visible in the target text.'),
+    status('04', hasOutcome(lower) ? 'PASS' : 'MISSING', 'Activities are not enough to prove an observable expected result.'),
+    status('05', /team|reparto|client[ei]|responsabile|fornitori|stakeholder|crm/i.test(text) ? 'PARTIAL' : 'MISSING', 'Operating context is partial or absent.'),
+    status('06', hasAttractionReason(lower) ? 'PARTIAL' : 'NOT_EVALUABLE', 'Role popularity and company attractiveness are not determinable from target evidence alone.'),
+    status('07', hasActivity(lower) ? 'PARTIAL' : 'MISSING', 'Challenge/routine balance is only partially represented.'),
+    status('08', /turni|part-?time|full-?time|requisiti|disponibil/i.test(text) ? 'PARTIAL' : 'MISSING', 'Qualification or commitment is only partly explicit.'),
+    status('09', /crm|ticket|software|impianti|normativa|macchinari|excel|gestionale/i.test(text) ? 'PASS' : 'PARTIAL', 'Technical detail fit is limited but not misleading.'),
+    status('10', /preferibil|plus|nice to have|formazione|apprend/i.test(text) ? 'PASS' : lower.includes('requisit') ? 'MISSING' : 'NOT_EVALUABLE', 'A requirements list alone does not separate required, preferred, and trainable items.'),
+    status('11', lower.includes('requisit') && hasActivity(lower) ? 'PASS' : lower.includes('requisit') ? 'PARTIAL' : 'NOT_EVALUABLE', 'Requirement relevance depends on visible work evidence.'),
+    status('12', hasRemotePresenceConflict ? 'CONFLICT' : /bari|milano|roma|modena|lecce|sede|presenza|ibrid|remot/i.test(text) ? 'PASS' : 'MISSING', hasRemotePresenceConflict ? 'Target text contains incompatible work-mode statements.' : 'Location or work mode evidence checked in target text.'),
+    status('13', hasDetailedSchedule(lower) ? 'PASS' : /part-?time|full-?time|turni|orari/i.test(text) ? 'PARTIAL' : 'MISSING', 'Contract or schedule evidence is incomplete without concrete hours/cadence.'),
+    status('14', /ral|stipendio|compenso|retribuzione|euro|€|\d+\s?k/i.test(text) ? 'PASS' : 'NOT_EVALUABLE', 'Compensation is not visible in the target text.'),
+    status('15', hasAttractionReason(lower) ? 'PARTIAL' : 'MISSING', 'Company attractiveness needs concrete target-text reasons, not just a company name.'),
+    status('16', channel && channel !== 'UNKNOWN' && channel !== 'CUSTOM' ? 'PARTIAL' : 'NOT_EVALUABLE', 'Generic or unknown channel is not automatic channel-fit evidence.'),
+    status('17', channel && channel !== 'UNKNOWN' && channel !== 'CUSTOM' ? 'PARTIAL' : 'NOT_EVALUABLE', 'Destination/field consistency cannot be evaluated without channel fields.'),
+    status('18', text.length >= 180 ? 'PASS' : text.length >= 80 ? 'PARTIAL' : 'MISSING', 'Readability is estimated from target-text structure.'),
+    status('19', /dinamic[oa]|leader|stimolante|giovane/i.test(text) ? 'PARTIAL' : text.length >= 80 ? 'PASS' : 'MISSING', 'Language is concrete enough when it avoids generic promotional wording.'),
+    status('20', /candidat|candidatura|cv|invia|email|mail/i.test(text) ? /@|https?:\/\/|portale|form/i.test(text) ? 'PASS' : 'PARTIAL' : 'MISSING', 'CTA exists only if target text gives a usable application path.'),
+  ];
+  return { checks };
+}
+
+function status(id: string, value: string, reason: string): unknown {
+  return {
+    id,
+    status: value,
+    evidence: value === 'NOT_EVALUABLE' ? [] : [`mock target evidence for check ${id}`],
+    reason,
+    suggestion: 'Use target-text evidence before assigning full credit.',
+  };
+}
+
+function targetText(input: unknown): string {
+  if (typeof input !== 'object' || input === null) return '';
+  const record = input as Record<string, unknown>;
+  const original = record.originalAd;
+  if (typeof original === 'object' && original !== null && typeof (original as Record<string, unknown>).rawText === 'string') {
+    return String((original as Record<string, unknown>).rawText);
+  }
+  const generated = record.generatedAd ?? record.master ?? record.channelVariant;
+  if (typeof generated === 'object' && generated !== null && Array.isArray((generated as Record<string, unknown>).sections)) {
+    return ((generated as Record<string, unknown>).sections as unknown[])
+      .map((section) => typeof section === 'object' && section !== null ? String((section as Record<string, unknown>).body ?? '') : '')
+      .join('\n');
+  }
+  return '';
+}
+
+function readStringPath(input: unknown, path: readonly string[]): string {
+  let value = input;
+  for (const key of path) {
+    if (typeof value !== 'object' || value === null) return '';
+    value = (value as Record<string, unknown>)[key];
+  }
+  return typeof value === 'string' ? value : '';
+}
+
+function hasRoleTitle(text: string): boolean {
+  return /cerchiamo|selezioniamo|ricerchiamo|addett|customer care|manutentore|commerciale|developer|designer/.test(text);
+}
+
+function hasActivity(text: string): boolean {
+  return /gestir|aggiorna|pulizia|manutenz|svilupp|prepar|rispond|coordina|ticket|crm|richieste/.test(text);
+}
+
+function hasOutcome(text: string): boolean {
+  return /risultat|obiettivo|garantir|ridurre|aumentare|migliorare|assicurare|kpi|qualita|continuita/.test(text);
+}
+
+function hasDetailedSchedule(text: string): boolean {
+  return /\b\d{1,2}\s?ore\b|\b\d{1,2}[:.]\d{2}\b|lunedi|lunedì|venerdi|venerdì|turni\s+\d/.test(text);
+}
+
+function hasAttractionReason(text: string): boolean {
+  return /affiancamento|formazione|crescita|team|stabilita|welfare|flessibil|benefit|portafoglio clienti|supporto/.test(text);
 }

@@ -271,6 +271,7 @@ async function fullGenerationScenario(scenarioId, roleCard, channel, includeChan
     operationType: 'EVALUATE',
     input: {
       target: { kind: 'GENERATED_MASTER', generatedAdId: generate.output.generatedAd.id },
+      generatedAd: generate.output.generatedAd,
       roleCard,
       roleProfile,
       communicationStrategy,

@@ -195,6 +195,7 @@ export async function runAnnunci10xPremiumGeneration(input: Annunci10xPremiumGen
       operationType: 'EVALUATE',
       input: {
         target: { kind: 'GENERATED_MASTER', generatedAdId: finalMaster.id },
+        generatedAd: finalMaster,
         roleCard: snapshot.roleCard,
         roleProfile: snapshot.roleProfile,
         communicationStrategy: snapshot.communicationStrategy,
@@ -403,7 +404,7 @@ export async function requestAnnunci10xPremiumEdit(input: PremiumEditInput): Pro
     sessionId: input.sessionId,
     sessionSecret: input.sessionSecret,
     operationType: 'EVALUATE',
-    input: { target: { kind: 'GENERATED_MASTER', generatedAdId: master.id }, roleCard: snapshot.roleCard, roleProfile: snapshot.roleProfile, communicationStrategy: snapshot.communicationStrategy, channel: preferredChannel(snapshot), rubric: ANNUNCI10X_RUBRIC },
+    input: { target: { kind: 'GENERATED_MASTER', generatedAdId: master.id }, generatedAd: master, roleCard: snapshot.roleCard, roleProfile: snapshot.roleProfile, communicationStrategy: snapshot.communicationStrategy, channel: preferredChannel(snapshot), rubric: ANNUNCI10X_RUBRIC },
     inputSnapshotId: snapshot.id,
     idempotencyInputIdentityOverride: stableHash({ snapshotId: snapshot.id, outputId: output.id, editRequest: input.editRequest, operation: 'EVALUATE' }),
   });
