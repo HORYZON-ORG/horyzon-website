@@ -397,7 +397,7 @@ Prompt registry:
   - `STRATEGY`: `annunci10x.strategy` / `annunci10x.strategy.v1`
   - `GENERATE`: `annunci10x.generate` / `annunci10x.generate.v1`
   - `VALIDATE`: `annunci10x.validate` / `annunci10x.validate.v1`
-  - `EVALUATE`: `annunci10x.evaluate` / `annunci10x.evaluate.v1`
+  - `EVALUATE`: `annunci10x.evaluate` / `annunci10x.evaluate.v3`
   - `CHANNEL_ADAPTER`: `annunci10x.channel_adapter` / `annunci10x.channel_adapter.v1`
   - `EDIT_CLASSIFIER`: `annunci10x.edit_classifier` / `annunci10x.edit_classifier.v1`
   - `REVISE`: `annunci10x.revise` / `annunci10x.revise.v1`
