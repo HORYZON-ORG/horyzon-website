@@ -172,7 +172,7 @@ export async function runAnnunci10xPremiumGeneration(input: Annunci10xPremiumGen
       const revision = revisionResult.output as Annunci10xReviseOutput;
       finalMaster = {
         ...generated.generatedAd,
-        sections: revision.revisedSections,
+        sections: mergeRevisedSections(generated.generatedAd.sections, revision.revisedSections),
         generatedAt: new Date().toISOString(),
       };
       automaticRevisionCount = 1;
@@ -604,6 +604,14 @@ function generationDenied(authorization: GenerationAuthorization): Annunci10xPub
   const code = authorization.status === 'INVALID_STATE' ? 'GENERATION_BLOCKED' : authorization.status === 'ALREADY_CONSUMED' ? 'GENERATION_BLOCKED' : 'PAYMENT_REQUIRED';
   const status = authorization.status === 'NOT_AUTHORIZED' ? 402 : 409;
   return new Annunci10xPublicError(code, authorization.reason, status);
+}
+
+function mergeRevisedSections(currentSections: GeneratedAd['sections'], revisedSections: GeneratedAd['sections']): GeneratedAd['sections'] {
+  if (revisedSections.length >= currentSections.length) return revisedSections;
+  const revisedById = new Map(revisedSections.map((section) => [section.id, section]));
+  const merged = currentSections.map((section) => revisedById.get(section.id) ?? section);
+  const knownIds = new Set(currentSections.map((section) => section.id));
+  return [...merged, ...revisedSections.filter((section) => !knownIds.has(section.id))];
 }
 
 function preferredChannel(snapshot: PersistedSnapshot): PublicationChannel {

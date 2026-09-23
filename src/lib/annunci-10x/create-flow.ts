@@ -484,7 +484,7 @@ function buildCreateRoleCard(answers: PersistedAnswer[]): RoleCard {
       companyName: extractCompany(role) ? fact(extractCompany(role), 'USER_DECLARED', 'create-company') : undefined,
       companyDescription: clean(role) ? fact(clean(role), 'USER_DECLARED', 'create-company-description') : undefined,
       workMode: workModeFromText(clarificationWorkMode || offer || work),
-      location: locationFromText(role || offer || work),
+      location: locationFromText([role, offer, work].filter(Boolean).join('\n')),
       contractType: contractFromText(offer),
       schedule: scheduleFromText(offer || work),
       attractivenessEvidence: [fact(clean(attraction) || 'N/D - elemento attrattivo da chiarire', sourceFor(attraction), 'create-attraction', Boolean(attraction))],

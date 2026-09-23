@@ -133,14 +133,20 @@ function mockGenerate(mode: MockAnnunci10xProviderMode): unknown {
       id: 'master-1',
       sessionId: 'session-1',
       kind: 'MASTER',
-      sections: [mockSection('section-1', 'TITLE', 'Titolo', body, ['answer-title'])],
+      sections: [
+        mockSection('section-1', 'TITLE', 'Titolo', body, ['answer-title']),
+        mockSection('section-2', 'RESPONSIBILITIES', 'Attivita', 'Pulizia uffici, corridoi e spazi comuni.', ['answer-responsibility']),
+      ],
       sourceOfTruth: true,
       generatedAt: '2026-09-22T00:00:00.000Z',
       promptVersion: ANNUNCI10X_PROMPT_PACK_VERSION,
     },
     title: 'Addetto pulizie',
     metadata: { language: 'it' },
-    sections: [mockSection('section-1', 'TITLE', 'Titolo', body, ['answer-title'])],
+    sections: [
+      mockSection('section-1', 'TITLE', 'Titolo', body, ['answer-title']),
+      mockSection('section-2', 'RESPONSIBILITIES', 'Attivita', 'Pulizia uffici, corridoi e spazi comuni.', ['answer-responsibility']),
+    ],
     fullText: body,
     sourcePaths: ['title', 'responsibilities'],
   };

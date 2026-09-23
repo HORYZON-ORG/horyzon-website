@@ -169,6 +169,8 @@ assert.deepEqual(
     authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
   });
   assert.equal(result.operations.filter((operation) => operation.type === 'REVISE').length, 1, 'automatic revision runs at most once');
+  assert.equal(result.master.sections.length, 2, 'partial REVISE output is merged into the existing master instead of replacing all sections');
+  assert.equal(result.master.sections.some((section) => section.id === 'section-2'), true, 'unchanged master sections are preserved after partial revision');
   assert.equal(result.gate.status, 'NEEDS_VERIFICATION', 'unsupported claim prevents READY even when score exists');
   assert.ok(result.claimCheck.some((claim) => claim.status === 'UNSUPPORTED'));
 }
