@@ -5,7 +5,9 @@ Stato:
 - `CONTENT_V1_COMPLETE`
 - `EDITORIALLY_REVIEWED`
 - `METHODOLOGY_CHECKED`
-- `PDF_NOT_YET_DESIGNED`
+- `DESIGN_V1_COMPLETE`
+- `PDF_V1_RENDERED`
+- `PDF_V1_QA_PASSED`
 
 ## Scopo
 
@@ -18,6 +20,7 @@ La guida e autonoma: una persona deve poterla usare anche senza accedere alla pa
 - `guide-content-v1.md`: contenuto completo della guida, con metodo, esempi, template, score, gate e placeholder visuali.
 - `checklist-v1.md`: checklist operativa stampabile e griglia rapida dei 20 controlli.
 - `README.md`: stato editoriale, fonti, vincoli e prossime fasi.
+- `final/`: sorgente riproducibile, asset, PDF finale e PDF operativi standalone.
 
 ## Fonti metodologiche
 
@@ -67,27 +70,20 @@ Questa fase non modifica:
 
 - Titolo commerciale finale della guida.
 - Sottotitolo di copertina.
-- Formato fisico o digitale finale.
-- Griglia editoriale e numero pagine.
-- Tipografia e palette.
-- Cover.
-- Layout dei visual placeholder.
-- Gerarchia callout.
-- Eventuale impaginazione della checklist.
 - CTA definitiva e destinazione commerciale.
+- Distribuzione pubblica.
+- Prezzi, bundle, checkout ed entitlement.
 
-## FASE 9B suggerita
+## FASE 9B status
 
-La fase successiva dovrebbe occuparsi di design e produzione PDF, senza riscrivere arbitrariamente il metodo:
+La FASE 9B ha prodotto la prima versione PDF consegnabile senza riscrivere arbitrariamente il metodo:
 
-- title page e copertina;
-- indice impaginato;
-- griglia di pagina;
-- tipografia;
-- palette;
-- componenti visuali per `[VISUAL]`, `[BOX]`, `[EXERCISE]`;
-- esempi visuali prima/dopo;
-- checklist stampabile;
-- footer, numerazione e branding;
-- esportazione PDF;
-- verifica pagina per pagina.
+- `final/output/Annunci_10x_Guida_v1.pdf`
+- `final/output/Annunci_10x_Checklist_v1.pdf`
+- `final/output/Annunci_10x_Scheda_v1.pdf`
+
+Commercial status:
+
+- `PRICE_OPEN`
+- `CTA_OPEN`
+- `PUBLIC_URL_OPEN`

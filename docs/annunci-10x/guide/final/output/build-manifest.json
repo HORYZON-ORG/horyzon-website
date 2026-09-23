@@ -1,0 +1,36 @@
+{
+  "version": "v1",
+  "sourceContent": [
+    "guide-content-v1.md",
+    "checklist-v1.md"
+  ],
+  "pageCount": {
+    "guide": 24,
+    "checklist": 3,
+    "scheda": 1
+  },
+  "fonts": [
+    "Ubuntu R/M/B/L from bundled Poppler fonts"
+  ],
+  "palette": {
+    "night": "#081521",
+    "paper": "#F2EEE3",
+    "gold": "#D9BF8F",
+    "teal": "#628780",
+    "ink": "#162932"
+  },
+  "outputs": {
+    "Annunci_10x_Guida_v1.pdf": {
+      "bytes": 126413,
+      "sha256": "950325d363c4917c04d4266bdad6de76bcc33cfdd6d687310f14a61e9a3d26a6"
+    },
+    "Annunci_10x_Checklist_v1.pdf": {
+      "bytes": 85976,
+      "sha256": "9a00fb3e2ff7f203698d1f523ec934e012a148508faa4fba1e1b3d11412fa9c2"
+    },
+    "Annunci_10x_Scheda_v1.pdf": {
+      "bytes": 64446,
+      "sha256": "01a020c83bb317d4a48efc82482b274936482470918a6fdc0432d22efa241e49"
+    }
+  }
+}
