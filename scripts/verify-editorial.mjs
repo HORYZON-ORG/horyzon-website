@@ -52,4 +52,12 @@ for (const [route, phrase] of [
  assert(html.includes(phrase), `${route}: unique area question missing`);
  assert(html.includes('area-first-step'), `${route}: first-step section missing`);
 }
+for (const route of ['benessere-organizzativo', 'benessere-digitale/imprese', 'horyzon', 'angelo', 'metodo']) {
+ const html = await readFile(`.next/server/app/${route}.html`, 'utf8');
+ assert(html.includes('site-frame'), `${route}: contained frame missing`);
+}
+for (const route of ['privacy-policy', 'cookie-policy']) {
+ const html = await readFile(`.next/server/app/${route}.html`, 'utf8');
+ assert(!html.includes('site-frame'), `${route}: contained frame must be excluded`);
+}
 console.log(`Editorial checks passed: ${routes.length} representative routes, headings, internal links, area sections, no videos.`);
