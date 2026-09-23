@@ -8,6 +8,8 @@ Stato:
 - `DESIGN_V1_COMPLETE`
 - `PDF_V1_RENDERED`
 - `PDF_V1_QA_PASSED`
+- `PDF_V1_1_RENDERED`
+- `PDF_V1_1_QA_PASSED`
 
 ## Scopo
 
@@ -17,8 +19,10 @@ La guida e autonoma: una persona deve poterla usare anche senza accedere alla pa
 
 ## File
 
-- `guide-content-v1.md`: contenuto completo della guida, con metodo, esempi, template, score, gate e placeholder visuali.
-- `checklist-v1.md`: checklist operativa stampabile e griglia rapida dei 20 controlli.
+- `guide-content-v1.md`: contenuto completo V1 della guida, con metodo, esempi, template, score, gate e placeholder visuali.
+- `checklist-v1.md`: checklist operativa V1 stampabile e griglia rapida dei 20 controlli.
+- `guide-content-v1.1.md`: note sorgente della revisione editoriale V1.1.
+- `checklist-v1.1.md`: checklist V1.1 con terminologia cliente e compilazione più ariosa.
 - `README.md`: stato editoriale, fonti, vincoli e prossime fasi.
 - `final/`: sorgente riproducibile, asset, PDF finale e PDF operativi standalone.
 
@@ -44,7 +48,7 @@ La rubrica pubblicata nella guida usa le 8 dimensioni e i 20 controlli attualmen
 
 - Nessun prezzo, sconto, pagamento o checkout.
 - Nessuna URL pubblica o CTA definitiva.
-- Placeholder ammesso: `[CTA ANNUNCI 10x — DA INSERIRE AL LANCIO]`.
+- Nessun placeholder commerciale nel PDF V1.1 destinato al cliente.
 - Nessuna promessa di risultato garantito.
 - Nessun posizionamento come prodotto magico o sostituto della conoscenza del ruolo.
 - Esempi segnati come fittizi.
@@ -87,3 +91,36 @@ Commercial status:
 - `PRICE_OPEN`
 - `CTA_OPEN`
 - `PUBLIC_URL_OPEN`
+
+## FASE 9C status
+
+La FASE 9C mantiene la V1 come precedente release editoriale e aggiunge la
+V1.1 come release corrente candidata all'uso commerciale:
+
+- `final/output/Annunci_10x_Guida_v1.1.pdf`
+- `final/output/Annunci_10x_Checklist_v1.1.pdf`
+- `final/output/Annunci_10x_Scheda_v1.1.pdf`
+- `final/output/build-manifest-v1.1.json`
+
+Revisioni V1.1:
+
+- terminologia cliente italianizzata;
+- Impegno reso non ambiguo rispetto al costo economico;
+- natura del lavoro rappresentata come routine, misto e sfida;
+- Strategy mini-canvas semplificato e non numerico;
+- definizione Master resa editoriale;
+- esempi rivisti secondo il principio facts first;
+- rubrica e checklist ridisegnate per leggibilità e compilazione;
+- Scheda ampliata su due pagine;
+- chiusura definitiva senza placeholder, URL o note interne;
+- safe-margin QA eseguita su Guida, Checklist e Scheda renderizzate.
+
+Current editorial release:
+
+- `CURRENT_EDITORIAL_RELEASE = v1.1`
+
+Commercial status unchanged:
+
+- `PRICE_OPEN`
+- `CTA_OPEN`
+- `DISTRIBUTION_NOT_CONNECTED`

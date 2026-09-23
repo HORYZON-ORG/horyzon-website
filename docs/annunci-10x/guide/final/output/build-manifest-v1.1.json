@@ -1,0 +1,43 @@
+{
+  "version": "v1.1",
+  "sourceContent": [
+    "guide-content-v1.1.md",
+    "checklist-v1.1.md",
+    "source/build_guide_pdf_v1_1.py"
+  ],
+  "pageCount": {
+    "guide": 28,
+    "checklist": 4,
+    "scheda": 2
+  },
+  "fonts": [
+    "Ubuntu R/M/B/L from bundled Poppler fonts"
+  ],
+  "palette": {
+    "night": "#081521",
+    "paper": "#F2EEE3",
+    "gold": "#D9BF8F",
+    "teal": "#628780",
+    "ink": "#162932"
+  },
+  "preserves": {
+    "dimensions": 8,
+    "checks": 20,
+    "totalPoints": 100,
+    "scoreNormalization": false
+  },
+  "outputs": {
+    "Annunci_10x_Guida_v1.1.pdf": {
+      "bytes": 137323,
+      "sha256": "367d8a4a1ca3184c3e040a82f58f951d221f8d5754b7720b2f1e93ff251b3618"
+    },
+    "Annunci_10x_Checklist_v1.1.pdf": {
+      "bytes": 88907,
+      "sha256": "2396f79a6146536e38023f33e2c1e0f7953e9f0ad36252d9de4ff811802dcd09"
+    },
+    "Annunci_10x_Scheda_v1.1.pdf": {
+      "bytes": 65399,
+      "sha256": "828772d114bd8537436f287123e1bc3fedf194c567eb4a3b4f83a03319c32bbf"
+    }
+  }
+}

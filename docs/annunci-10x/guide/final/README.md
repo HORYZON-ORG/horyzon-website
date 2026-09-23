@@ -5,6 +5,8 @@ Status:
 - `DESIGN_V1_COMPLETE`
 - `PDF_V1_RENDERED`
 - `PDF_V1_QA_PASSED`
+- `PDF_V1_1_RENDERED`
+- `PDF_V1_1_QA_PASSED`
 - `PRICE_OPEN`
 - `CTA_OPEN`
 - `PUBLIC_URL_OPEN`
@@ -15,12 +17,19 @@ Status:
 - `output/Annunci_10x_Checklist_v1.pdf`
 - `output/Annunci_10x_Scheda_v1.pdf`
 - `output/build-manifest.json`
+- `output/Annunci_10x_Guida_v1.1.pdf`
+- `output/Annunci_10x_Checklist_v1.1.pdf`
+- `output/Annunci_10x_Scheda_v1.1.pdf`
+- `output/build-manifest-v1.1.json`
 
 Page count:
 
 - Guide: 24 pages.
 - Checklist: 3 pages.
 - Scheda: 1 page.
+- Guide v1.1: 28 pages.
+- Checklist v1.1: 4 pages.
+- Scheda v1.1: 2 pages.
 
 Generated: September 2026.
 
@@ -38,6 +47,12 @@ From the repository root:
 
 ```powershell
 & 'C:\Users\emanu\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' 'docs\annunci-10x\guide\final\source\build_guide_pdf.py'
+```
+
+For v1.1:
+
+```powershell
+& 'C:\Users\emanu\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' 'docs\annunci-10x\guide\final\source\build_guide_pdf_v1_1.py'
 ```
 
 ## Font Choice
@@ -71,8 +86,11 @@ Based on:
 
 - `docs/annunci-10x/guide/guide-content-v1.md`
 - `docs/annunci-10x/guide/checklist-v1.md`
+- `docs/annunci-10x/guide/guide-content-v1.1.md`
+- `docs/annunci-10x/guide/checklist-v1.1.md`
 
-Rendered product version: `v1`.
+Rendered product versions: `v1`, `v1.1`.
+Current editorial release: `v1.1`.
 
 ## QA Status
 
@@ -81,3 +99,6 @@ Rendered product version: `v1`.
 - Forbidden-term scan: passed.
 - Method integrity check: passed.
 - Runtime/app changes: none.
+- V1.1 visual QA: passed on 34 rendered pages.
+- V1.1 forbidden-term and accent scan: passed.
+- V1.1 safe-margin QA: passed.
