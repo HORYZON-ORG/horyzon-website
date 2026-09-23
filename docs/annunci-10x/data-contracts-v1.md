@@ -401,7 +401,36 @@ type Entitlements = {
   adGeneration: boolean;
   bundle: boolean;
   source: 'PURCHASE' | 'BUNDLE' | 'ADMIN' | 'OPEN_DECISION';
+  verification: 'SERVER_VERIFIED';
   checkedAt: ISODateTime;
+  serverAuthorityId: Id;
+};
+
+type CommercialEntitlements = {
+  guide: boolean;
+  adGenerationCredits: number;
+  source: 'NO_TRUSTED_SOURCE' | 'PURCHASE' | 'BUNDLE' | 'ADMIN' | 'TEST';
+  verification: 'SERVER_VERIFIED';
+  checkedAt: ISODateTime;
+};
+
+type CommercialSubject = {
+  kind: 'ACCOUNT' | 'EMAIL_VERIFIED' | 'PAYMENT_CUSTOMER' | 'SESSION' | 'ANONYMOUS';
+  id?: Id;
+  sessionId?: Id;
+};
+
+type CommercialOffer = {
+  id: Id;
+  productCode: ProductCode;
+  displayName: string;
+  description: string;
+  includedCapabilities: ('GUIDE_ACCESS' | 'AD_GENERATION_CREDIT')[];
+  eligibility: 'AVAILABLE' | 'UNAVAILABLE';
+  pricingStatus: 'OPEN_DECISION';
+  discountReason: 'NONE' | 'GUIDE_OWNER' | 'BUNDLE';
+  purchaseEnabled: false;
+  reasonUnavailable: 'PURCHASE_DISABLED' | 'ALREADY_ENTITLED';
 };
 
 type CommercialContext = {
@@ -414,7 +443,15 @@ type CommercialContext = {
 };
 ```
 
-Server-side entitlement is mandatory. A browser flag cannot grant generation.
+Server-side entitlement is mandatory. A browser flag cannot grant guide access, ad generation credits, `PAID` state, price, or discount. Phase 7 implements the commercial catalog, offer engine, and entitlement provider abstraction in code. The real entitlement source of truth, checkout, webhook handling, payment provider, and prices remain pending.
+
+Read-only commercial API shape:
+
+```txt
+GET /api/annunci-10x/commercial/offers
+```
+
+The API may use a server-verified session cookie to select the trusted flow/state. Query parameters or client payloads such as `guide=true`, `credits=100`, `paid=true`, or `price=0` are ignored or rejected and cannot mutate trusted state.
 
 ## Conceptual MVP database
 

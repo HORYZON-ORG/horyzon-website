@@ -8,7 +8,7 @@ Legacy route, not part of this product: `/annuncio-10x`
 
 This document defines the local canonical product contract for Annunci 10x and records implementation status where needed.
 
-Phase 1 was documentation only. Phase 3 added Supabase persistence migrations and a server-side persistence adapter. Phase 4 added the server-side AI runtime and prompt registry. Phase 5 implemented the unlisted product page and the `ANALYZE` path, tested with the explicit `MOCK` provider. Phase 6 implements `BUILD` / Crea da zero through user confirmation and the pre-payment commercial screen, tested with the explicit `MOCK` provider.
+Phase 1 was documentation only. Phase 3 added Supabase persistence migrations and a server-side persistence adapter. Phase 4 added the server-side AI runtime and prompt registry. Phase 5 implemented the unlisted product page and the `ANALYZE` path, tested with the explicit `MOCK` provider. Phase 6 implements `BUILD` / Crea da zero through user confirmation and the pre-payment commercial screen, tested with the explicit `MOCK` provider. Phase 7 adds the server-side commercial catalog, entitlement abstraction, deterministic offer engine, and read-only offer API without checkout, prices, payment provider, or durable purchase source of truth.
 
 Current status:
 
@@ -16,7 +16,7 @@ Current status:
 - Analyze: `IMPLEMENTED`, `TESTED_WITH_MOCK`, `LIVE_AI_TEST_PENDING`.
 - Create: `IMPLEMENTED_THROUGH_PRE_PAYMENT`, `TESTED_WITH_MOCK`, `LIVE_AI_TEST_PENDING`.
 - Guide: `PRODUCT_DEFINED`, `PURCHASE_NOT_IMPLEMENTED`.
-- Commercial: `PRE_PAYMENT_UI_IMPLEMENTED`, `PRICING_OPEN`, `PAYMENT_NOT_IMPLEMENTED`, `ENTITLEMENTS_NOT_IMPLEMENTED`.
+- Commercial: `ARCHITECTURE_IMPLEMENTED`, `OFFER_ENGINE_IMPLEMENTED`, `PRICING_OPEN`, `PAYMENT_NOT_IMPLEMENTED`, `CHECKOUT_NOT_IMPLEMENTED`, `REAL_ENTITLEMENT_SOURCE_PENDING`.
 - Generation: `RUNTIME_IMPLEMENTED`, `USER_FLOW_NOT_IMPLEMENTED`, `LIVE_AI_TEST_PENDING`.
 - OpenAI: `PROVIDER_IMPLEMENTED`, `LIVE_VALIDATION_PENDING_API_CREDIT`.
 - Supabase: `IMPLEMENTED`, `LIVE_PERSISTENCE_VERIFIED`.
@@ -81,9 +81,11 @@ Rules:
 - A user who owns `GUIDE` must automatically receive the reserved offer on generation.
 - Manual coupons are not the canonical entitlement mechanism.
 - `GUIDE_PLUS_AD` must be supported as a bundle.
-- The Guide must remain visible and purchasable standalone on the product page.
+- The Guide must remain visible as a standalone product on the product page. Purchase remains disabled until a future checkout phase.
 - Entitlements must be evaluated server-side before price presentation, purchase creation, and generation authorization.
 - Client UI may display entitlement state, but cannot be the source of truth.
+- Phase 7 exposes only disabled offers with `pricingStatus=OPEN_DECISION`, `purchaseEnabled=false`, and no numeric price or discount.
+- A session subject is a temporary technical/testing subject, not a permanent purchase identity.
 
 Open decisions:
 

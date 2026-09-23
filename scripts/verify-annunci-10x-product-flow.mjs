@@ -60,6 +60,8 @@ assert.equal(result.score.checks.length, 20);
 assert.equal(result.score.value, null, 'mock evaluates one N/D check and produces a range');
 assert.equal(result.coverage < 100, true);
 assert.equal(result.offers.checkoutEnabled, false);
+assert.deepEqual(result.offers.availableOffers.map((offer) => offer.productCode), ['GUIDE', 'AD_GENERATION', 'GUIDE_PLUS_AD']);
+assert.equal(result.offers.availableOffers.every((offer) => offer.purchaseEnabled === false), true);
 assert.equal(result.roleSummary.title.length > 0, true);
 assert.equal(JSON.stringify(result.operations).includes(fullAd), false, 'raw ad must not be exposed in operation metadata');
 
@@ -186,9 +188,12 @@ assert.equal(confirmedCreate.currentStep, 'COMMERCIAL');
 assert.equal(confirmedCreate.paymentRequired, true);
 assert.equal(confirmedCreate.commercial.checkoutEnabled, false);
 assert.equal(confirmedCreate.commercial.price, 'OPEN_DECISION');
+assert.deepEqual(confirmedCreate.commercial.availableOffers.map((offer) => offer.productCode), ['AD_GENERATION', 'GUIDE_PLUS_AD']);
+assert.equal(confirmedCreate.commercial.availableOffers.every((offer) => offer.purchaseEnabled === false), true);
 
 const resumedCreate = await resumeAnnunci10xCreate(startedCreate.cookie, createContext);
 assert.equal(resumedCreate.paymentRequired, true);
+assert.deepEqual(resumedCreate.commercial.availableOffers.map((offer) => offer.productCode), ['AD_GENERATION', 'GUIDE_PLUS_AD']);
 
 await assert.rejects(
   () => runFreeAnnunci10xAnalysis({

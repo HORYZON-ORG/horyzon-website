@@ -7,6 +7,27 @@ import styles from './annunci-10x.module.css';
 type CheckStatus = 'PASS' | 'PARTIAL' | 'MISSING' | 'CONFLICT' | 'NOT_EVALUABLE';
 type Mode = 'ANALYZE' | 'CREATE';
 type CreateStepId = 'ROLE_CONTEXT' | 'PRIMARY_CONTRIBUTION' | 'WORK_REALITY' | 'REQUIREMENTS' | 'ATTRACTION' | 'OFFER' | 'CHANNEL_APPLICATION';
+type ProductCode = 'GUIDE' | 'AD_GENERATION' | 'GUIDE_PLUS_AD';
+
+interface CommercialOffer {
+  id: string;
+  productCode: ProductCode;
+  displayName: string;
+  description: string;
+  includedCapabilities: string[];
+  eligibility: 'AVAILABLE' | 'UNAVAILABLE';
+  pricingStatus: 'OPEN_DECISION';
+  discountReason: 'NONE' | 'GUIDE_OWNER' | 'BUNDLE';
+  purchaseEnabled: false;
+  reasonUnavailable: string;
+}
+
+interface CommercialState {
+  availableOffers: CommercialOffer[];
+  checkoutEnabled: false;
+  pricingStatus: 'OPEN_DECISION';
+  entitlements: { guide: boolean; adGenerationCredits: number; source: string };
+}
 
 interface PublicOperation {
   type: string;
@@ -32,6 +53,12 @@ interface PublicResult {
   strengths: string[];
   priorities: string[];
   clarification?: { id: string; targetPath: string; question: string; reason: string; blocking: boolean; canSkip: boolean } | null;
+  offers: {
+    checkoutEnabled: false;
+    pricingStatus: 'OPEN_DECISION';
+    availableOffers: CommercialOffer[];
+    entitlements: { guide: boolean; adGenerationCredits: number; source: string };
+  };
   operations: PublicOperation[];
   provider: 'MOCK' | 'OPENAI';
 }
@@ -62,7 +89,15 @@ interface CreateState {
   clarification: { id: string; targetPath: string; question: string; reason: string; blocking: boolean; canAdvance: boolean } | null;
   canConfirm: boolean;
   paymentRequired: boolean;
-  commercial: { checkoutEnabled: false; price: 'OPEN_DECISION'; discountValue: 'OPEN_DECISION'; entitlements: string };
+  commercial: {
+    checkoutEnabled: false;
+    price: 'OPEN_DECISION';
+    discountValue: 'OPEN_DECISION';
+    entitlements: string;
+    pricingStatus: 'OPEN_DECISION';
+    availableOffers: CommercialOffer[];
+    entitlementSummary: { guide: boolean; adGenerationCredits: number; source: string };
+  };
   operations: PublicOperation[];
 }
 
@@ -104,6 +139,7 @@ export function Annunci10xClient() {
   const [companyHint, setCompanyHint] = useState('');
   const [result, setResult] = useState<PublicResult | null>(null);
   const [resume, setResume] = useState<ResumePayload | null>(null);
+  const [commercial, setCommercial] = useState<CommercialState | null>(null);
   const [createState, setCreateState] = useState<CreateState | null>(null);
   const [createAnswer, setCreateAnswer] = useState('');
   const [clarificationAnswer, setClarificationAnswer] = useState('');
@@ -128,6 +164,12 @@ export function Annunci10xClient() {
           setCreateState(payload.result);
           setMode('CREATE');
         }
+      })
+      .catch(() => undefined);
+    fetch('/api/annunci-10x/commercial/offers', { cache: 'no-store' })
+      .then((response) => response.json())
+      .then((payload: { ok: boolean; commercial?: CommercialState }) => {
+        if (payload.ok && payload.commercial) setCommercial(payload.commercial);
       })
       .catch(() => undefined);
   }, []);
@@ -312,8 +354,8 @@ export function Annunci10xClient() {
       </article>
       <article className={styles.pathPanel}>
         <span>03</span>
-        <h2>Guida Annunci 10x</h2>
-        <p>Prodotto standalone previsto. Prezzi e acquisto restano decisione aperta lato server.</p>
+        <h2>{commercial?.availableOffers.find((offer) => offer.productCode === 'GUIDE')?.displayName ?? 'Guida Annunci 10x'}</h2>
+        <p>{commercial?.availableOffers.find((offer) => offer.productCode === 'GUIDE')?.description ?? 'Prodotto standalone previsto. Prezzi e acquisto restano decisione aperta lato server.'}</p>
         <button type="button" disabled>Non attivo</button>
       </article>
     </section>
@@ -539,9 +581,10 @@ function CreateSummary(props: {
       <ul>
         <li>Checkout disabilitato</li>
         <li>Prezzo: open decision</li>
-        <li>Entitlement: server verified, non acquistato</li>
+        <li>Entitlement: server verified, {props.state.commercial.entitlementSummary.guide ? 'guida attiva' : 'non acquistato'}</li>
         <li>Generazione finale non avviata</li>
       </ul>
+      <OfferCards offers={props.state.commercial.availableOffers} empty="Nessuna offerta disponibile in questo stato." />
     </section> : <div className={styles.actions}><button type="button" onClick={props.onConfirm} disabled={props.running || !props.state.canConfirm}>Conferma scheda</button></div>}
   </div>;
 }
@@ -620,11 +663,20 @@ function AnalysisResult(props: {
       </div>
     </details>
 
-    <section className={styles.offers} aria-label="Prossimi passi">
-      <article><h3>Guida Annunci 10x</h3><p>Standalone previsto. Prezzo non definito in questa fase.</p><button type="button" disabled>In preparazione</button></article>
-      <article><h3>Generazione annuncio</h3><p>Richiedera entitlement server-side. Nessun checkout attivo ora.</p><button type="button" disabled>Bloccato</button></article>
-      <article><h3>Bundle</h3><p>Guida piu generazione, se abilitato in futuro lato server.</p><button type="button" disabled>Open decision</button></article>
-    </section>
+    <OfferCards offers={props.result.offers.availableOffers} empty="Nessuna offerta disponibile." />
+  </section>;
+}
+
+function OfferCards({ offers, empty }: { offers: CommercialOffer[]; empty: string }) {
+  if (!offers.length) return <section className={styles.offers} aria-label="Prossimi passi"><article><h3>{empty}</h3><p>Le offerte sono calcolate lato server in base allo stato del percorso.</p><button type="button" disabled>Non attivo</button></article></section>;
+  return <section className={styles.offers} aria-label="Prossimi passi">
+    {offers.map((offer) => <article key={offer.id}>
+      <h3>{offer.displayName}</h3>
+      <p>{offer.description}</p>
+      <small>{offer.pricingStatus === 'OPEN_DECISION' ? 'Prezzo: open decision' : offer.pricingStatus}</small>
+      <small>{offer.discountReason === 'GUIDE_OWNER' ? 'Condizione guida owner' : offer.discountReason === 'BUNDLE' ? 'Bundle previsto' : 'Nessuno sconto numerico'}</small>
+      <button type="button" disabled>{offer.purchaseEnabled ? 'Continua' : 'Acquisto non attivo'}</button>
+    </article>)}
   </section>;
 }
 

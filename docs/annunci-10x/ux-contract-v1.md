@@ -12,6 +12,7 @@ Current UI status:
 - Analyze flow: implemented and tested with `ANNUNCI10X_AI_PROVIDER=MOCK`; OpenAI live validation remains pending API credit.
 - Build / Crea da zero: implemented through user confirmation and the pre-payment commercial screen; checkout and final generation are not implemented.
 - Guide: visible as product option, purchase not implemented.
+- Commercial architecture: implemented as a server-side catalog plus deterministic offer engine. Offers are disabled, price/discount remain `OPEN_DECISION`, and browser state is never authoritative for entitlements.
 
 ## Global UX principles
 
@@ -41,6 +42,8 @@ Commercial display rules:
 - Do not ask the user to manually enter a coupon as the canonical path.
 - If `GUIDE_PLUS_AD` is available, show it as a bundle option.
 - Prices and discount values are `OPEN DECISION` until set server-side.
+- The Analyze conversion area and the Create commercial screen consume the same server-side offer contract.
+- `CREATE` must not show an early generation paywall while state is `COLLECTING`.
 
 Route visibility rules:
 
@@ -107,6 +110,7 @@ Offers:
 - generation;
 - bundle where supported;
 - reserved generation offer when `entitlements.guide=true`.
+- disabled purchase controls while `purchaseEnabled=false`.
 
 Comparison:
 
@@ -170,13 +174,14 @@ Pre-payment:
 - keeps checkout disabled;
 - does not grant entitlement;
 - does not start final ad generation.
+- renders offers calculated server-side for the current journey state.
 
 Payment:
 
 - happens after confirmation and offers;
 - before generation;
 - skipped only when server-side entitlement already grants generation.
-- not implemented in Phase 6.
+- not implemented in Phase 6 or Phase 7.
 
 Generation:
 

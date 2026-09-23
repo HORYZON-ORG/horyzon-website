@@ -7,6 +7,7 @@ import {
   ANNUNCI10X_STRATEGY_VERSION,
 } from './constants.ts';
 import { Annunci10xAiOrchestrator } from './ai/orchestrator.ts';
+import { resolveAnnunci10xCommercial, type Annunci10xCommercialOffer } from './commercial.ts';
 import type { Annunci10xProfileOutput, Annunci10xStrategyOutput } from './ai/schemas.ts';
 import { deriveAnnunci10xStrategyRules, type StrategyRuleInput } from './strategy-rules.ts';
 import { canTransition } from './state-machine.ts';
@@ -53,6 +54,13 @@ export interface PublicAnnunci10xCreateState {
     price: 'OPEN_DECISION';
     discountValue: 'OPEN_DECISION';
     entitlements: 'SERVER_VERIFIED_OPEN_DECISION';
+    pricingStatus: 'OPEN_DECISION';
+    availableOffers: Annunci10xCommercialOffer[];
+    entitlementSummary: {
+      guide: boolean;
+      adGenerationCredits: number;
+      source: string;
+    };
   };
   operations: PublicAnnunci10xOperation[];
   updatedAt: string;
@@ -361,6 +369,11 @@ async function publicCreateState(input: {
   const completedSteps = completedCreateSteps(answers);
   const clarification = deriveBlockingClarification(answers);
   const ready = isRoleCardReady(answers, roleCard) && !clarification;
+  const commercial = await resolveAnnunci10xCommercial({
+    subject: { kind: 'SESSION', sessionId: input.sessionId },
+    flow: 'CREATE',
+    journeyState: session.state,
+  });
   return {
     sessionId: input.sessionId,
     flow: 'CREATE',
@@ -378,7 +391,19 @@ async function publicCreateState(input: {
     clarification,
     canConfirm: session.state === 'ROLE_CARD_READY' && ready,
     paymentRequired: session.state === 'PAYMENT_REQUIRED',
-    commercial: { checkoutEnabled: false, price: 'OPEN_DECISION', discountValue: 'OPEN_DECISION', entitlements: 'SERVER_VERIFIED_OPEN_DECISION' },
+    commercial: {
+      checkoutEnabled: false,
+      price: 'OPEN_DECISION',
+      discountValue: 'OPEN_DECISION',
+      entitlements: 'SERVER_VERIFIED_OPEN_DECISION',
+      pricingStatus: commercial.pricingStatus,
+      availableOffers: commercial.availableOffers,
+      entitlementSummary: {
+        guide: commercial.entitlements.guide,
+        adGenerationCredits: commercial.entitlements.adGenerationCredits,
+        source: commercial.entitlements.source,
+      },
+    },
     operations: input.operations,
     updatedAt: session.updatedAt,
   };

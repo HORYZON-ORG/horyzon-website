@@ -13,6 +13,7 @@ import { Annunci10xAiError } from './ai/errors.ts';
 import { MockAnnunci10xProvider } from './ai/mock-provider.ts';
 import { OpenAiAnnunci10xProvider } from './ai/openai-provider.ts';
 import { Annunci10xAiOrchestrator } from './ai/orchestrator.ts';
+import { resolveAnnunci10xCommercial, type Annunci10xCommercialOffer } from './commercial.ts';
 import type { Annunci10xEvaluateOutput, Annunci10xExtractOutput, Annunci10xProfileOutput } from './ai/schemas.ts';
 import { createFact } from './validation.ts';
 import type { Annunci10xPersistenceAdapter, PersistedAnnunci10xSession, PersistedEvaluation, PersistedSnapshot } from './persistence/types.ts';
@@ -82,6 +83,13 @@ export interface PublicAnnunci10xAnalysisResult {
     adGeneration: 'OPEN_DECISION';
     bundle: 'OPEN_DECISION';
     checkoutEnabled: false;
+    pricingStatus: 'OPEN_DECISION';
+    availableOffers: Annunci10xCommercialOffer[];
+    entitlements: {
+      guide: boolean;
+      adGenerationCredits: number;
+      source: string;
+    };
   };
   stages: string[];
   operations: PublicAnnunci10xOperation[];
@@ -249,7 +257,7 @@ export async function runFreeAnnunci10xAnalysis(input: RunFreeAnalysisInput): Pr
     await context.persistence.appendEvent({ sessionId: input.sessionId, eventName: 'clarification_requested', metadata: { targetPath: clarify.output.clarification?.targetPath ?? 'unknown' } });
   }
 
-  return publicResult({
+  return await publicResult({
     sessionId: input.sessionId,
     snapshot,
     evaluation,
@@ -317,7 +325,7 @@ export async function answerAnnunci10xClarification(input: AnswerClarificationIn
   });
   await context.persistence.appendEvent({ sessionId: session.id, eventName: 'analysis_completed', metadata: { coverage: score.coverage, gateStatus: gate.status, afterClarification: true } });
 
-  return publicResult({ sessionId: input.sessionId, snapshot, evaluation, score, gate, roleCard, clarification: null, operations, provider: context.configuredProvider });
+  return await publicResult({ sessionId: input.sessionId, snapshot, evaluation, score, gate, roleCard, clarification: null, operations, provider: context.configuredProvider });
 }
 
 export async function resumeAnnunci10xAnalysis(cookie: Annunci10xSessionCookie, context: Annunci10xRuntimeContext): Promise<{ session: PersistedAnnunci10xSession; snapshot: PersistedSnapshot | null; evaluation: PersistedEvaluation | null }> {
@@ -446,7 +454,7 @@ function scoreAndGate(output: Annunci10xEvaluateOutput, extract: Annunci10xExtra
   };
 }
 
-function publicResult(input: {
+async function publicResult(input: {
   sessionId: string;
   snapshot: PersistedSnapshot;
   evaluation: PersistedEvaluation;
@@ -456,7 +464,12 @@ function publicResult(input: {
   clarification: PublicAnnunci10xAnalysisResult['clarification'];
   operations: PublicAnnunci10xOperation[];
   provider: Annunci10xConfiguredProvider;
-}): PublicAnnunci10xAnalysisResult {
+}): Promise<PublicAnnunci10xAnalysisResult> {
+  const commercial = await resolveAnnunci10xCommercial({
+    subject: { kind: 'SESSION', sessionId: input.sessionId },
+    flow: 'ANALYZE',
+    journeyState: 'PRODUCT_PAGE',
+  });
   return {
     sessionId: input.sessionId,
     snapshotId: input.snapshot.id,
@@ -475,7 +488,19 @@ function publicResult(input: {
     priorities: input.score.checks.filter((check) => ['MISSING', 'CONFLICT', 'PARTIAL', 'NOT_EVALUABLE'].includes(check.status)).slice(0, 3).map((check) => check.label),
     checks: input.score.checks,
     clarification: input.clarification,
-    offers: { guideStandalone: 'OPEN_DECISION', adGeneration: 'OPEN_DECISION', bundle: 'OPEN_DECISION', checkoutEnabled: false },
+    offers: {
+      guideStandalone: 'OPEN_DECISION',
+      adGeneration: 'OPEN_DECISION',
+      bundle: 'OPEN_DECISION',
+      checkoutEnabled: false,
+      pricingStatus: commercial.pricingStatus,
+      availableOffers: commercial.availableOffers,
+      entitlements: {
+        guide: commercial.entitlements.guide,
+        adGenerationCredits: commercial.entitlements.adGenerationCredits,
+        source: commercial.entitlements.source,
+      },
+    },
     stages: ['PRECHECK', 'EXTRACT', 'PROFILE', 'STRATEGY', 'EVALUATE', 'CLARIFY'],
     operations: input.operations,
     provider: input.provider,
