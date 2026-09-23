@@ -749,7 +749,8 @@ function workModeFromText(text: string): Fact<string> | undefined {
 }
 
 function locationFromText(text: string): Fact<string> | undefined {
-  const match = text.match(/\b(?:sede\s+di|sede|zona|a)\s*:?\s+([A-ZÀ-Ü][a-zà-ü]+(?:\s[A-ZÀ-Ü][a-zà-ü]+)?)/i);
+  const explicit = text.match(/\b(?:sede\s+di|sede|zona)\s*:?\s+([A-ZÀ-Ü][a-zà-ü]+(?:\s[A-ZÀ-Ü][a-zà-ü]+)?)/i);
+  const match = explicit ?? text.match(/\ba\s+([A-ZÀ-Ü][a-zà-ü]+(?:\s[A-ZÀ-Ü][a-zà-ü]+)?)/i);
   return match?.[1] ? fact(match[1], 'USER_DECLARED', 'create-location') : undefined;
 }
 

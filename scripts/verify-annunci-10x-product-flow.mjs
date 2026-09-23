@@ -288,7 +288,7 @@ assert.deepEqual(resumedCreate.commercial.availableOffers.map((offer) => offer.p
 const unknownCreateContext = makeContext();
 const startedUnknownCreate = await startAnnunci10xCreate({ context: unknownCreateContext });
 const unknownAnswers = [
-  ['ROLE_CONTEXT', 'Ruolo: addetto customer care. Azienda o contesto: team assistenza clienti.'],
+  ['ROLE_CONTEXT', 'Ruolo: addetto customer care. Azienda o contesto: societa SaaS che vende servizi a PMI.'],
   ['PRIMARY_CONTRIBUTION', 'Risultato principale: gestire ticket e migliorare la qualita delle risposte.'],
   ['WORK_REALITY', 'Attivita reali: gestisce richieste clienti, aggiorna CRM e collabora con il team.'],
   ['REQUIREMENTS', 'Indispensabili: italiano scritto chiaro. Preferenziali: esperienza CRM. Apprendibili: software ticketing interno.'],
