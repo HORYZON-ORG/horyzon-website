@@ -1,0 +1,1759 @@
+{
+  "status": "RUN",
+  "runStartedAt": "2026-09-23T16:09:50.110Z",
+  "runCompletedAt": "2026-09-23T16:26:15.329Z",
+  "repository": "HORYZON-ORG/horyzon-website",
+  "branch": "main",
+  "baseline": "5918fb081dfedb8e1e000a181ba3f1ca965808b3",
+  "provider": "OPENAI",
+  "productionProvider": "MOCK",
+  "model": "gpt-5-mini",
+  "pricing": {
+    "model": "gpt-5-mini",
+    "perMillionInputUsd": 0.25,
+    "perMillionCachedInputUsd": 0.025,
+    "perMillionOutputUsd": 2,
+    "sourceUrl": "https://developers.openai.com/api/docs/models/gpt-5-mini",
+    "sourceAccessedAt": "2026-09-23T16:09:50.109Z"
+  },
+  "guardrails": {
+    "hardCallLimit": 30,
+    "costLimitUsd": 1,
+    "stoppedByCallLimit": false,
+    "stoppedByCostLimit": false,
+    "noProductionOpenAi": true,
+    "noSilentFallbackToMock": true
+  },
+  "totals": {
+    "providerCalls": 29,
+    "estimatedCostUsd": 0.175813,
+    "usage": {
+      "inputTokens": 64628,
+      "cachedTokens": 0,
+      "outputTokens": 79828,
+      "totalTokens": 144456
+    }
+  },
+  "scenarios": [
+    {
+      "id": "CUSTOMER_CARE",
+      "label": "Customer Care Specialist",
+      "decision": "READY_WITH_FINDINGS",
+      "clarificationCount": 0,
+      "clarificationLog": [],
+      "editClassifierCalls": 0,
+      "rawAnswersPreserved": true,
+      "roleCardQuality": {
+        "rawAnswersPreserved": true,
+        "requiredPreserved": true,
+        "preferredPreserved": true,
+        "trainablePreserved": true,
+        "unknownCompensationPreserved": true,
+        "locationPreserved": true,
+        "schedulePreserved": true,
+        "noScheduleDuplication": true,
+        "status": "PASS"
+      },
+      "requirementPreservation": false,
+      "unknownPreservation": true,
+      "strategy": {
+        "status": "PASS",
+        "primaryStructure": null,
+        "openingStrategy": null,
+        "levers": [],
+        "editorialLength": null,
+        "publicSummary": "Posizionare il ruolo come operativo e orientato al risultato: chiarezza sulla presa in carico delle richieste, gestione ticket e coordinamento tecnico; evidenziare lavoro quotidiano + gestione di problemi imprevisti; non inventare vantaggi aziendali, chiedere conferme su compenso e nome azienda.",
+        "summary": "Posizionare il ruolo come operativo e orientato al risultato: chiarezza sulla presa in carico delle richieste, gestione ticket e coordinamento tecnico; evidenziare lavoro quotidiano + gestione di problemi imprevisti; non inventare vantaggi aziendali, chiedere conferme su compenso e nome azienda.",
+        "candidateAngle": "Se cerchi un ruolo operativo in presenza a Bari (part-time 20h) dove la chiarezza nella gestione dei ticket e la collaborazione con il reparto tecnico contano, questo ruolo offre affiancamento iniziale e responsabilità concrete nella presa in carico delle richieste. Richiesto italiano scritto chiaro e disponibilità ai turni.",
+        "missingFacts": 6
+      },
+      "profile": {
+        "status": "PASS",
+        "routine": "MEDIUM",
+        "challenge": "MEDIUM",
+        "qualification": "MEDIUM",
+        "commitment": "MEDIUM",
+        "technicality": "LOW"
+      },
+      "generatedMasterQuality": {
+        "factAudit": {
+          "role": "PRESERVED",
+          "result": "PRESERVED",
+          "activities": "PRESERVED",
+          "location": "PRESERVED",
+          "workMode": "PRESERVED",
+          "contract": "PRESERVED",
+          "schedule": "PRESERVED",
+          "shifts": "OMITTED",
+          "compensation": "N/A",
+          "benefits": "N/A",
+          "required": "PRESERVED",
+          "preferred": "ALTERED",
+          "trainable": "ALTERED",
+          "context": "PRESERVED",
+          "cta": "OMITTED"
+        },
+        "validationIssues": {
+          "unsupportedClaims": 13,
+          "gate": "READY"
+        },
+        "requirementPreservation": false,
+        "score": {
+          "value": 87.5,
+          "finalScore": 87.5,
+          "minScore": 87.5,
+          "maxScore": 87.5,
+          "max": 100,
+          "coverage": 100,
+          "checks": [
+            {
+              "id": "01",
+              "label": "Titolo chiaro, specifico e riconoscibile",
+              "score": 5,
+              "maxScore": 5,
+              "status": "PASS",
+              "evidence": [
+                "s-title: \"Customer Care Specialist\"",
+                "roleCard.title in generated master: \"Customer Care Specialist\""
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "02",
+              "label": "Livello/perimetro del ruolo comprensibili",
+              "score": 5,
+              "maxScore": 5,
+              "status": "PASS",
+              "evidence": [
+                "s-opening: \"ruolo operativo\"",
+                "s-context: \"Ruolo: Customer Care Specialist.\"",
+                "s-responsibilities: elenco attività operative (gestione richieste, ticket, CRM)"
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "03",
+              "label": "Attivita quotidiane concrete",
+              "score": 5,
+              "maxScore": 5,
+              "status": "PASS",
+              "evidence": [
+                "s-responsibilities: \"Gestione richieste clienti; apertura e aggiornamento ticket; aggiornamento CRM; coordinamento con reparto tecnico\""
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "04",
+              "label": "Contributo/risultato atteso osservabile",
+              "score": 5,
+              "maxScore": 5,
+              "status": "PASS",
+              "evidence": [
+                "s-mission: \"Garantire presa in carico chiara e tempestiva delle richieste clienti e corretto avanzamento fino alla risoluzione o inoltro.\""
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "05",
+              "label": "Contesto operativo, collaborazione e interlocutori",
+              "score": 5,
+              "maxScore": 5,
+              "status": "PASS",
+              "evidence": [
+                "s-context: \"team Customer Care con interlocuzione reparto tecnico\"",
+                "s-responsibilities: \"coordinamento con reparto tecnico quando necessario\""
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "06",
+              "label": "Enfasi coerente con popolarita ruolo/azienda",
+              "score": 5,
+              "maxScore": 5,
+              "status": "PASS",
+              "evidence": [
+                "s-opening: posizionamento come \"ruolo operativo\"",
+                "communicationStrategy (proofPoints): focus su gestione ticket e coordinamento tecnico"
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "07",
+              "label": "Rappresentazione fedele challenge/routine",
+              "score": 5,
+              "maxScore": 5,
+              "status": "PASS",
+              "evidence": [
+                "s-opening: \"responsabilità concrete nella gestione delle richieste e affiancamento iniziale\"",
+                "s-responsibilities e s-mission che bilanciano routine e responsabilità di risultato"
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "08",
+              "label": "Qualificazione e impegno rappresentati correttamente",
+              "score": 5,
+              "maxScore": 5,
+              "status": "PASS",
+              "evidence": [
+                "s-requirements: obbligatori coerenti (italiano scritto chiaro; precisione; disponibilità ai turni)",
+                "s-conditions: part-time 20 ore settimanali"
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "09",
+              "label": "Linguaggio, competenze e strumenti coerenti con tecnicita",
+              "score": 5,
+              "maxScore": 5,
+              "status": "PASS",
+              "evidence": [
+                "s-responsibilities: \"aggiornamento CRM\"",
+                "s-requirements preferibili: \"familiarità con CRM\"",
+                "s-requirements formabili: \"uso del software di ticketing interno\""
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "10",
+              "label": "Indispensabili distinti da preferenziali/apprendibili",
+              "score": 5,
+              "maxScore": 5,
+              "status": "PASS",
+              "evidence": [
+                "s-requirements: sezioni distinte 'Obbligatori', 'Preferibili', 'Formabili' con esempi per ciascuna"
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "11",
+              "label": "Requisiti pertinenti al lavoro reale",
+              "score": 5,
+              "maxScore": 5,
+              "status": "PASS",
+              "evidence": [
+                "s-responsibilities vs s-requirements: requisiti come 'italiano scritto chiaro' e 'precisione' giustificati dalle attività di gestione ticket e aggiornamento CRM"
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "12",
+              "label": "Sede/modalita di lavoro chiare",
+              "score": 5,
+              "maxScore": 5,
+              "status": "PASS",
+              "evidence": [
+                "s-conditions: \"Sede: Bari. Modalità: in presenza.\"",
+                "s-opening: \"in presenza a Bari (part-time 20 ore settimanali)\""
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "13",
+              "label": "Rapporto, orari, turni/tempi pertinenti",
+              "score": 5,
+              "maxScore": 5,
+              "status": "PASS",
+              "evidence": [
+                "s-conditions: \"Contratto: part-time. Orario: 20 ore settimanali.\"",
+                "s-opening: \"part-time 20 ore settimanali\""
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "14",
+              "label": "Compenso/fascia chiari quando disponibili/applicabili",
+              "score": 0,
+              "maxScore": 5,
+              "status": "MISSING",
+              "evidence": [
+                "s-growth: \"Benefit da definire.\"",
+                "roleCard.compensation.visibility: OPEN_DECISION"
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "15",
+              "label": "Ragioni concrete e verificate per scegliere l'offerta",
+              "score": 2.5,
+              "maxScore": 5,
+              "status": "PARTIAL",
+              "evidence": [
+                "s-growth: \"Affiancamento iniziale. Benefit da definire.\"",
+                "s-opening: \"responsabilità concrete\""
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "16",
+              "label": "Struttura appropriata al canale/formato",
+              "score": 5,
+              "maxScore": 5,
+              "status": "PASS",
+              "evidence": [
+                "Generated Master sections sequenziate (Titolo, Introduzione, Contesto, Missione, Responsabilità, Requisiti, Condizioni, Crescita)",
+                "channel dichiarato: LINKEDIN"
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "17",
+              "label": "Coerenza tra testo, campi e destinazione",
+              "score": 5,
+              "maxScore": 5,
+              "status": "PASS",
+              "evidence": [
+                "Coerenza tra sezioni: location, modalità e orario ripetuti in s-opening e s-conditions; requisiti coerenti con responsabilità; missione coerente con outcome"
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "18",
+              "label": "Gerarchia e scansione leggibili",
+              "score": 5,
+              "maxScore": 5,
+              "status": "PASS",
+              "evidence": [
+                "Sezioni con titoli chiari: 'Introduzione', 'Contesto', 'Missione', 'Responsabilità principali', 'Requisiti', 'Condizioni di lavoro', 'Formazione e crescita'"
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "19",
+              "label": "Linguaggio concreto, preciso, senza ripetizioni inutili",
+              "score": 5,
+              "maxScore": 5,
+              "status": "PASS",
+              "evidence": [
+                "Testo esempio: s-mission e s-responsibilities sono diretti e privi di cliché (es. 'Garantire presa in carico chiara e tempestiva', 'apertura e aggiornamento ticket')"
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "20",
+              "label": "CTA e destinazione candidatura chiare",
+              "score": 0,
+              "maxScore": 5,
+              "status": "MISSING",
+              "evidence": [
+                "Nessuna sezione del master fornisce CTA o destinazione di candidatura (email, link, form, contatto)"
+              ],
+              "gateImpact": "NONE"
+            }
+          ],
+          "rubricVersion": "annunci10x-rubric-v1",
+          "band": {
+            "kind": "DEFINITE",
+            "band": {
+              "id": "GOOD_COMPLETENESS",
+              "min": 80,
+              "max": 100,
+              "label": "buona completezza/coerenza",
+              "experimental": true
+            }
+          }
+        },
+        "gate": {
+          "status": "READY",
+          "codes": [
+            "NO_BLOCKERS"
+          ],
+          "blockingReasons": [],
+          "warnings": [],
+          "evaluatedAt": "2026-09-23T16:17:24.636Z"
+        },
+        "summary": "P2"
+      },
+      "generatedScore": "87.5/100",
+      "coverage": 100,
+      "gate": "READY",
+      "channelAdapter": {
+        "channel": "LINKEDIN",
+        "introducedFactIds": 0
+      },
+      "prePayment": {
+        "calls": 9,
+        "inputTokens": 12019,
+        "cachedTokens": 0,
+        "outputTokens": 24989,
+        "totalTokens": 37008,
+        "latencyMs": 332089,
+        "cost": 0.052984,
+        "operations": [
+          "EXTRACT",
+          "EXTRACT",
+          "EXTRACT",
+          "EXTRACT",
+          "EXTRACT",
+          "EXTRACT",
+          "EXTRACT",
+          "PROFILE",
+          "STRATEGY"
+        ]
+      },
+      "premium": {
+        "calls": 4,
+        "inputTokens": 16546,
+        "cachedTokens": 0,
+        "outputTokens": 11835,
+        "totalTokens": 28381,
+        "latencyMs": 141564,
+        "cost": 0.027807,
+        "operations": [
+          "GENERATE",
+          "VALIDATE",
+          "EVALUATE",
+          "CHANNEL_ADAPTER"
+        ]
+      },
+      "total": {
+        "calls": 13,
+        "inputTokens": 28565,
+        "cachedTokens": 0,
+        "outputTokens": 36824,
+        "totalTokens": 65389,
+        "latencyMs": 473653,
+        "cost": 0.080791,
+        "operations": [
+          "EXTRACT",
+          "EXTRACT",
+          "EXTRACT",
+          "EXTRACT",
+          "EXTRACT",
+          "EXTRACT",
+          "EXTRACT",
+          "PROFILE",
+          "STRATEGY",
+          "GENERATE",
+          "VALIDATE",
+          "EVALUATE",
+          "CHANNEL_ADAPTER"
+        ]
+      }
+    },
+    {
+      "id": "B2B_COMMERCIALE",
+      "label": "Commerciale B2B",
+      "decision": "READY_WITH_FINDINGS",
+      "clarificationCount": 0,
+      "clarificationLog": [],
+      "editClassifierCalls": 0,
+      "rawAnswersPreserved": true,
+      "roleCardQuality": {
+        "rawAnswersPreserved": true,
+        "requiredPreserved": true,
+        "preferredPreserved": true,
+        "trainablePreserved": true,
+        "unknownCompensationPreserved": true,
+        "locationPreserved": true,
+        "schedulePreserved": true,
+        "noScheduleDuplication": true,
+        "status": "PASS"
+      },
+      "requirementPreservation": false,
+      "unknownPreservation": true,
+      "strategy": {
+        "status": "PASS",
+        "primaryStructure": null,
+        "openingStrategy": null,
+        "levers": [],
+        "editorialLength": null,
+        "publicSummary": "Strategia incentrata sul risultato: comunicare chiaramente l'obiettivo principale (sviluppare opportunità B2B qualificate) e poi descrivere la realtà lavorativa (attività giornaliere, responsabilità e contesto ibrido a Milano). Evidenziare requisiti essenziali (esperienza vendita B2B, uso CRM, autonomia) e segnalare aspetti mancanti critici (retribuzione/benefit) da chiarire prima di pubblicare annunci completi.",
+        "summary": "Strategia incentrata sul risultato: comunicare chiaramente l'obiettivo principale (sviluppare opportunità B2B qualificate) e poi descrivere la realtà lavorativa (attività giornaliere, responsabilità e contesto ibrido a Milano). Evidenziare requisiti essenziali (esperienza vendita B2B, uso CRM, autonomia) e segnalare aspetti mancanti critici (retribuzione/benefit) da chiarire prima di pubblicare annunci completi.",
+        "candidateAngle": "Candidato orientato ai risultati commerciali, autonomo nell'organizzazione e capace di gestire trattative strutturate in contesti di servizi professionali; puntare su concretezza del ruolo e chiarezza delle aspettative operative.",
+        "missingFacts": 2
+      },
+      "profile": {
+        "status": "PASS",
+        "routine": "MEDIUM",
+        "challenge": "MEDIUM",
+        "qualification": "MEDIUM",
+        "commitment": "MEDIUM",
+        "technicality": "LOW"
+      },
+      "generatedMasterQuality": {
+        "factAudit": {
+          "role": "OMITTED",
+          "result": "OMITTED",
+          "activities": "OMITTED",
+          "location": "OMITTED",
+          "workMode": "OMITTED",
+          "contract": "OMITTED",
+          "schedule": "OMITTED",
+          "shifts": "N/A",
+          "compensation": "N/A",
+          "benefits": "N/A",
+          "required": "OMITTED",
+          "preferred": "OMITTED",
+          "trainable": "OMITTED",
+          "context": "OMITTED",
+          "cta": "OMITTED"
+        },
+        "validationIssues": {
+          "unsupportedClaims": 3,
+          "gate": "NEEDS_VERIFICATION"
+        },
+        "requirementPreservation": false,
+        "score": {
+          "value": null,
+          "finalScore": null,
+          "minScore": 12.5,
+          "maxScore": 22.5,
+          "max": 100,
+          "interval": {
+            "min": 12.5,
+            "max": 22.5
+          },
+          "coverage": 90,
+          "checks": [
+            {
+              "id": "01",
+              "label": "Titolo chiaro, specifico e riconoscibile",
+              "score": 0,
+              "maxScore": 5,
+              "status": "MISSING",
+              "evidence": [
+                "Generated master contiene solo un blocco 'CLAIM_CHECK' con titolo 'Informazioni da confermare prima della pubblicazione' e non riporta il titolo di lavoro (es. 'Commerciale B2B')."
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "02",
+              "label": "Livello/perimetro del ruolo comprensibili",
+              "score": 0,
+              "maxScore": 5,
+              "status": "MISSING",
+              "evidence": [
+                "Il contenuto del master è una checklist per confermare retribuzione e benefit; non sono presenti indicazioni su seniority, perimetro o responsabilità estese. ('Prima della pubblicazione è necessario confermare i seguenti elementi critici: ...')."
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "03",
+              "label": "Attivita quotidiane concrete",
+              "score": 0,
+              "maxScore": 5,
+              "status": "MISSING",
+              "evidence": [
+                "Il master contiene solo richieste di conferma su retribuzione e benefit; non elenca attività quotidiane o compiti concreti. ('Per favore fornire risposte chiare alle seguenti domande...')."
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "04",
+              "label": "Contributo/risultato atteso osservabile",
+              "score": 0,
+              "maxScore": 5,
+              "status": "MISSING",
+              "evidence": [
+                "Nessuna sezione del master traduce il contributo atteso in risultati osservabili o KPI; il testo è una checklist operativa per pubblicazione."
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "05",
+              "label": "Contesto operativo, collaborazione e interlocutori",
+              "score": 0,
+              "maxScore": 5,
+              "status": "MISSING",
+              "evidence": [
+                "Il master non descrive il contesto operativo o gli interlocutori (team interno, clienti, stakeholder). Il contenuto è limitato a elementi da confermare prima della pubblicazione."
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "06",
+              "label": "Enfasi coerente con popolarita ruolo/azienda",
+              "score": 0,
+              "maxScore": 5,
+              "status": "MISSING",
+              "evidence": [
+                "Il testo target è una checklist amministrativa e non contiene enfasi di comunicazione sul ruolo o sull'attrattività aziendale. ('Informazioni da confermare prima della pubblicazione')."
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "07",
+              "label": "Rappresentazione fedele challenge/routine",
+              "score": 0,
+              "maxScore": 5,
+              "status": "MISSING",
+              "evidence": [
+                "Nessuna descrizione di challenge o routine nel master; il contenuto riguarda solo conferme su retribuzione/benefit pre-pubblicazione."
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "08",
+              "label": "Qualificazione e impegno rappresentati correttamente",
+              "score": 0,
+              "maxScore": 5,
+              "status": "MISSING",
+              "evidence": [
+                "Il master non riporta requisiti né livelli di impegno o selettività; è focalizzato su informazioni da confermare prima della pubblicazione."
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "09",
+              "label": "Linguaggio, competenze e strumenti coerenti con tecnicita",
+              "score": 0,
+              "maxScore": 5,
+              "status": "MISSING",
+              "evidence": [
+                "Il testo target non elenca competenze, strumenti o linguaggio tecnico; contiene solo una checklist amministrativa. ('1) Fascia retributiva... 2) Benefit concreti...')."
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "10",
+              "label": "Indispensabili distinti da preferenziali/apprendibili",
+              "score": 0,
+              "maxScore": 5,
+              "status": "MISSING",
+              "evidence": [
+                "Nel master non sono presenti elenchi di requisiti né separazioni tra indispensabili, preferenziali o apprendibili; il contenuto è una richiesta di conferma su compenso e benefit."
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "11",
+              "label": "Requisiti pertinenti al lavoro reale",
+              "score": null,
+              "maxScore": 5,
+              "status": "NOT_EVALUABLE",
+              "evidence": [
+                "Il target non contiene requisiti né descrizione del lavoro; di conseguenza non ci sono elementi su cui valutare la pertinenza dei requisiti rispetto al lavoro reale."
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "12",
+              "label": "Sede/modalita di lavoro chiare",
+              "score": 0,
+              "maxScore": 5,
+              "status": "MISSING",
+              "evidence": [
+                "Il master non indica sede, modalità di lavoro o mobilità; è limitato a una checklist per confermare pay/benefit. Non compaiono informazioni tipo 'Milano' o 'Ibrido' nel testo target. "
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "13",
+              "label": "Rapporto, orari, turni/tempi pertinenti",
+              "score": 0,
+              "maxScore": 5,
+              "status": "MISSING",
+              "evidence": [
+                "Il testo target non riporta contratto, orari o turni; la checklist chiede solo conferma sulla fascia retributiva e benefit prima della pubblicazione."
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "14",
+              "label": "Compenso/fascia chiari quando disponibili/applicabili",
+              "score": 0,
+              "maxScore": 5,
+              "status": "MISSING",
+              "evidence": [
+                "Il master esplicita la necessità di confermare la fascia retributiva ('1) Fascia retributiva / budget per la posizione: indicare un range...') ma non fornisce alcuna fascia o politica retributiva nel testo target. "
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "15",
+              "label": "Ragioni concrete e verificate per scegliere l'offerta",
+              "score": 0,
+              "maxScore": 5,
+              "status": "MISSING",
+              "evidence": [
+                "Il master non fornisce motivazioni concrete per scegliere l'offerta; contiene solo una richiesta di benefit da confermare prima della pubblicazione. ('Quali benefit concreti vengono offerti oltre alla formazione?')."
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "16",
+              "label": "Struttura appropriata al canale/formato",
+              "score": 2.5,
+              "maxScore": 5,
+              "status": "PARTIAL",
+              "evidence": [
+                "Il documento target è identificato come master ma consiste in un blocco 'CLAIM_CHECK' (checklist) e manca la struttura tipica di un annuncio LinkedIn (titolo, breve descrizione, bullet responsabilità, CTA)."
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "17",
+              "label": "Coerenza tra testo, campi e destinazione",
+              "score": null,
+              "maxScore": 5,
+              "status": "NOT_EVALUABLE",
+              "evidence": [
+                "Il target non contiene campi strutturati di destinazione candidatura né elementi testuali che possano divergere rispetto a campi; è solo una checklist che chiede informazioni. "
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "18",
+              "label": "Gerarchia e scansione leggibili",
+              "score": 5,
+              "maxScore": 5,
+              "status": "PASS",
+              "evidence": [
+                "Il blocco 'CLAIM_CHECK' presenta un titolo chiaro 'Informazioni da confermare prima della pubblicazione' e una lista numerata con istruzioni precise, facilitando la scansione ('1) Fascia retributiva... 2) Benefit concreti...')."
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "19",
+              "label": "Linguaggio concreto, preciso, senza ripetizioni inutili",
+              "score": 5,
+              "maxScore": 5,
+              "status": "PASS",
+              "evidence": [
+                "Il linguaggio della checklist è diretto e preciso nello scopo ('Prima della pubblicazione è necessario confermare i seguenti elementi critici:') e nelle richieste ('Per favore fornire risposte chiare alle seguenti domande')."
+              ],
+              "gateImpact": "NONE"
+            },
+            {
+              "id": "20",
+              "label": "CTA e destinazione candidatura chiare",
+              "score": 0,
+              "maxScore": 5,
+              "status": "MISSING",
+              "evidence": [
+                "Il master non fornisce alcuna call-to-action o destinazione per la candidatura (nessun indirizzo email, link, modulo o contatto). Il contenuto è limitato alla richiesta di conferma su retribuzione/benefit prima della pubblicazione."
+              ],
+              "gateImpact": "NONE"
+            }
+          ],
+          "rubricVersion": "annunci10x-rubric-v1",
+          "band": {
+            "kind": "DEFINITE",
+            "band": {
+              "id": "INSUFFICIENT",
+              "min": 0,
+              "max": 39,
+              "label": "informazioni/coerenza insufficienti",
+              "experimental": true
+            }
+          }
+        },
+        "gate": {
+          "status": "NEEDS_VERIFICATION",
+          "codes": [
+            "UNCONFIRMED_CLAIM"
+          ],
+          "blockingReasons": [],
+          "warnings": [
+            "Fatto critico omesso: Titolo del ruolo ('Commerciale B2B') non incluso nell'annuncio generato (presente in roleCard.title).",
+            "Fatto critico omesso: Missione del ruolo non inclusa (presente in roleCard.mission).",
+            "Fatto critico omesso: Responsabilità confermate non incluse (prospecting, qualificazione lead, call e incontri, preparazione proposta, follow-up, aggiornamento CRM, coordinamento interno).",
+            "Fatto critico omesso: Requisiti confermati (REQUIRED/PREFERRED/TRAINABLE) non inclusi nell'annuncio generato.",
+            "Fatto critico omesso: Luogo di lavoro ('Milano') non incluso nell'annuncio generato (presente in roleCard.attractionContext.location).",
+            "Fatto critico omesso: Modalità di lavoro ('Ibrido') non inclusa nell'annuncio generato (presente in roleCard.attractionContext.workMode).",
+            "Fatto critico omesso: Tipo di contratto ('tempo indeterminato') non incluso nell'annuncio generato (presente in roleCard.attractionContext.contractType).",
+            "Fatto critico omesso: Orario ('full-time') non incluso nell'annuncio generato (presente in roleCard.attractionContext.schedule).",
+            "Fatto critico omesso: Compensazione effettiva / fascia retributiva non fornita (roleCard.compensation.visibility = OPEN_DECISION).",
+            "Fatto critico omesso: Benefit concreti beyond 'Formazione' non specificati (roleCard.attractionContext.attractivenessEvidence indicates 'Benefit: Da definire')."
+          ],
+          "evaluatedAt": "2026-09-23T16:25:34.976Z"
+        },
+        "summary": "P2"
+      },
+      "generatedScore": "12.5-22.5/100",
+      "coverage": 90,
+      "gate": "NEEDS_VERIFICATION",
+      "channelAdapter": {
+        "channel": "LINKEDIN",
+        "introducedFactIds": 0
+      },
+      "prePayment": {
+        "calls": 9,
+        "inputTokens": 12065,
+        "cachedTokens": 0,
+        "outputTokens": 25976,
+        "totalTokens": 38041,
+        "latencyMs": 298658,
+        "cost": 0.054967,
+        "operations": [
+          "EXTRACT",
+          "EXTRACT",
+          "EXTRACT",
+          "EXTRACT",
+          "EXTRACT",
+          "EXTRACT",
+          "EXTRACT",
+          "PROFILE",
+          "STRATEGY"
+        ]
+      },
+      "premium": {
+        "calls": 6,
+        "inputTokens": 21998,
+        "cachedTokens": 0,
+        "outputTokens": 16120,
+        "totalTokens": 38118,
+        "latencyMs": 200312,
+        "cost": 0.037741,
+        "operations": [
+          "GENERATE",
+          "VALIDATE",
+          "REVISE",
+          "VALIDATE",
+          "EVALUATE",
+          "CHANNEL_ADAPTER"
+        ]
+      },
+      "total": {
+        "calls": 15,
+        "inputTokens": 34063,
+        "cachedTokens": 0,
+        "outputTokens": 42096,
+        "totalTokens": 76159,
+        "latencyMs": 498970,
+        "cost": 0.092708,
+        "operations": [
+          "EXTRACT",
+          "EXTRACT",
+          "EXTRACT",
+          "EXTRACT",
+          "EXTRACT",
+          "EXTRACT",
+          "EXTRACT",
+          "PROFILE",
+          "STRATEGY",
+          "GENERATE",
+          "VALIDATE",
+          "REVISE",
+          "VALIDATE",
+          "EVALUATE",
+          "CHANNEL_ADAPTER"
+        ]
+      }
+    }
+  ],
+  "operations": [
+    {
+      "id": "op-1",
+      "scenarioId": "CUSTOMER_CARE",
+      "phase": "PRE_PAYMENT",
+      "task": "EXTRACT",
+      "promptId": "annunci10x.extract",
+      "promptVersion": "annunci10x-prompts-v1.create.role_context",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 575,
+      "cachedTokens": 0,
+      "outputTokens": 623,
+      "totalTokens": 1198,
+      "latencyMs": 8291,
+      "cost": 0.00139,
+      "providerRequestId": "resp_09cde01358b06ebd016ab3f9cf99f887d2b9314ee0a828e5b4",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "ROLE_CONTEXT answer"
+    },
+    {
+      "id": "op-2",
+      "scenarioId": "CUSTOMER_CARE",
+      "phase": "PRE_PAYMENT",
+      "task": "EXTRACT",
+      "promptId": "annunci10x.extract",
+      "promptVersion": "annunci10x-prompts-v1.create.primary_contribution",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 1009,
+      "cachedTokens": 0,
+      "outputTokens": 2312,
+      "totalTokens": 3321,
+      "latencyMs": 32971,
+      "cost": 0.004876,
+      "providerRequestId": "resp_0fd7a79560866279016ab3f9d6ddec87d2b7486ae4a3add4fd",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "PRIMARY_CONTRIBUTION answer"
+    },
+    {
+      "id": "op-3",
+      "scenarioId": "CUSTOMER_CARE",
+      "phase": "PRE_PAYMENT",
+      "task": "EXTRACT",
+      "promptId": "annunci10x.extract",
+      "promptVersion": "annunci10x-prompts-v1.create.work_reality",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 1089,
+      "cachedTokens": 0,
+      "outputTokens": 3063,
+      "totalTokens": 4152,
+      "latencyMs": 36860,
+      "cost": 0.006398,
+      "providerRequestId": "resp_076f5565324cbfdf016ab3f9f7e0b887d2bb705b64dca69d82",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "WORK_REALITY answer"
+    },
+    {
+      "id": "op-4",
+      "scenarioId": "CUSTOMER_CARE",
+      "phase": "PRE_PAYMENT",
+      "task": "EXTRACT",
+      "promptId": "annunci10x.extract",
+      "promptVersion": "annunci10x-prompts-v1.create.requirements",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 1107,
+      "cachedTokens": 0,
+      "outputTokens": 3300,
+      "totalTokens": 4407,
+      "latencyMs": 44786,
+      "cost": 0.006877,
+      "providerRequestId": "resp_066ff518dacaddbe016ab3fa1ceaa887d2ae7dae91e3d30fe2",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "REQUIREMENTS answer"
+    },
+    {
+      "id": "op-5",
+      "scenarioId": "CUSTOMER_CARE",
+      "phase": "PRE_PAYMENT",
+      "task": "EXTRACT",
+      "promptId": "annunci10x.extract",
+      "promptVersion": "annunci10x-prompts-v1.create.attraction",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 1203,
+      "cachedTokens": 0,
+      "outputTokens": 3587,
+      "totalTokens": 4790,
+      "latencyMs": 44190,
+      "cost": 0.007475,
+      "providerRequestId": "resp_06514e72d30d2ee1016ab3fa49bf9887d2aa43f92839faafe9",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "ATTRACTION answer"
+    },
+    {
+      "id": "op-6",
+      "scenarioId": "CUSTOMER_CARE",
+      "phase": "PRE_PAYMENT",
+      "task": "EXTRACT",
+      "promptId": "annunci10x.extract",
+      "promptVersion": "annunci10x-prompts-v1.create.offer",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 1253,
+      "cachedTokens": 0,
+      "outputTokens": 3860,
+      "totalTokens": 5113,
+      "latencyMs": 49402,
+      "cost": 0.008033,
+      "providerRequestId": "resp_01c115bc46e79c5f016ab3fa7614d887d29973513414146ec6",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "OFFER answer"
+    },
+    {
+      "id": "op-7",
+      "scenarioId": "CUSTOMER_CARE",
+      "phase": "PRE_PAYMENT",
+      "task": "EXTRACT",
+      "promptId": "annunci10x.extract",
+      "promptVersion": "annunci10x-prompts-v1.create.channel_application",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 1351,
+      "cachedTokens": 0,
+      "outputTokens": 2787,
+      "totalTokens": 4138,
+      "latencyMs": 38729,
+      "cost": 0.005912,
+      "providerRequestId": "resp_0f66e2c95b4bff95016ab3faa7c2a887d2b5f34843ddfa344e",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "CHANNEL_APPLICATION answer"
+    },
+    {
+      "id": "op-8",
+      "scenarioId": "CUSTOMER_CARE",
+      "phase": "PRE_PAYMENT",
+      "task": "PROFILE",
+      "promptId": "annunci10x.profile",
+      "promptVersion": "annunci10x.profile.v1",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 1446,
+      "cachedTokens": 0,
+      "outputTokens": 1830,
+      "totalTokens": 3276,
+      "latencyMs": 27139,
+      "cost": 0.004022,
+      "providerRequestId": "resp_0aad99b2fd094d3d016ab3face900487d2ba0b3925b9766d65",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "CHANNEL_APPLICATION answer"
+    },
+    {
+      "id": "op-9",
+      "scenarioId": "CUSTOMER_CARE",
+      "phase": "PRE_PAYMENT",
+      "task": "STRATEGY",
+      "promptId": "annunci10x.strategy",
+      "promptVersion": "annunci10x.strategy.v1",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 2986,
+      "cachedTokens": 0,
+      "outputTokens": 3627,
+      "totalTokens": 6613,
+      "latencyMs": 49721,
+      "cost": 0.008001,
+      "providerRequestId": "resp_0e5d592aba2c1047016ab3fae9dd3c87d29954f289b804c850",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "CHANNEL_APPLICATION answer"
+    },
+    {
+      "id": "op-10",
+      "scenarioId": "CUSTOMER_CARE",
+      "phase": "PREMIUM",
+      "task": "GENERATE",
+      "promptId": "annunci10x.generate",
+      "promptVersion": "annunci10x.generate.v1",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 4093,
+      "cachedTokens": 0,
+      "outputTokens": 4247,
+      "totalTokens": 8340,
+      "latencyMs": 47037,
+      "cost": 0.009517,
+      "providerRequestId": "resp_099fcad18b9863c0016ab3fb1bc0ac87d28270ecdb78a882ec",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "premium generation"
+    },
+    {
+      "id": "op-11",
+      "scenarioId": "CUSTOMER_CARE",
+      "phase": "PREMIUM",
+      "task": "VALIDATE",
+      "promptId": "annunci10x.validate",
+      "promptVersion": "annunci10x.validate.v1",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 1963,
+      "cachedTokens": 0,
+      "outputTokens": 2031,
+      "totalTokens": 3994,
+      "latencyMs": 27735,
+      "cost": 0.004553,
+      "providerRequestId": "resp_07f55d63244d56da016ab3fb4b049087d2a300f5c35938e3df",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "premium generation"
+    },
+    {
+      "id": "op-12",
+      "scenarioId": "CUSTOMER_CARE",
+      "phase": "PREMIUM",
+      "task": "EVALUATE",
+      "promptId": "annunci10x.evaluate",
+      "promptVersion": "annunci10x.evaluate.v3",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 8499,
+      "cachedTokens": 0,
+      "outputTokens": 3623,
+      "totalTokens": 12122,
+      "latencyMs": 45938,
+      "cost": 0.009371,
+      "providerRequestId": "resp_00260d48ace73ef7016ab3fb674b7c87d2a8d327dc987f0ca3",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "premium generation"
+    },
+    {
+      "id": "op-13",
+      "scenarioId": "CUSTOMER_CARE",
+      "phase": "PREMIUM",
+      "task": "CHANNEL_ADAPTER",
+      "promptId": "annunci10x.channel_adapter",
+      "promptVersion": "annunci10x.channel_adapter.v1",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 1991,
+      "cachedTokens": 0,
+      "outputTokens": 1934,
+      "totalTokens": 3925,
+      "latencyMs": 20854,
+      "cost": 0.004366,
+      "providerRequestId": "resp_0e26e7ba3e659114016ab3fb94e6b087d29453daf0be4183f6",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "premium generation"
+    },
+    {
+      "id": "op-14",
+      "scenarioId": "B2B_COMMERCIALE",
+      "phase": "PRE_PAYMENT",
+      "task": "EXTRACT",
+      "promptId": "annunci10x.extract",
+      "promptVersion": "annunci10x-prompts-v1.create.role_context",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 577,
+      "cachedTokens": 0,
+      "outputTokens": 674,
+      "totalTokens": 1251,
+      "latencyMs": 8144,
+      "cost": 0.001492,
+      "providerRequestId": "resp_075438f134c0a86c016ab3fba9f4ec87d28d2eaffeda465e98",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "ROLE_CONTEXT answer"
+    },
+    {
+      "id": "op-15",
+      "scenarioId": "B2B_COMMERCIALE",
+      "phase": "PRE_PAYMENT",
+      "task": "EXTRACT",
+      "promptId": "annunci10x.extract",
+      "promptVersion": "annunci10x-prompts-v1.create.primary_contribution",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 1013,
+      "cachedTokens": 0,
+      "outputTokens": 2901,
+      "totalTokens": 3914,
+      "latencyMs": 35690,
+      "cost": 0.006055,
+      "providerRequestId": "resp_07b5e25cf6b52473016ab3fbb248bc87d294d25c6b3a49dab1",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "PRIMARY_CONTRIBUTION answer"
+    },
+    {
+      "id": "op-16",
+      "scenarioId": "B2B_COMMERCIALE",
+      "phase": "PRE_PAYMENT",
+      "task": "EXTRACT",
+      "promptId": "annunci10x.extract",
+      "promptVersion": "annunci10x-prompts-v1.create.work_reality",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 1106,
+      "cachedTokens": 0,
+      "outputTokens": 2920,
+      "totalTokens": 4026,
+      "latencyMs": 34218,
+      "cost": 0.006116,
+      "providerRequestId": "resp_0d94e0126fb283a1016ab3fbd5eb6087d2b350a3d639c4f1a3",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "WORK_REALITY answer"
+    },
+    {
+      "id": "op-17",
+      "scenarioId": "B2B_COMMERCIALE",
+      "phase": "PRE_PAYMENT",
+      "task": "EXTRACT",
+      "promptId": "annunci10x.extract",
+      "promptVersion": "annunci10x-prompts-v1.create.requirements",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 1105,
+      "cachedTokens": 0,
+      "outputTokens": 4650,
+      "totalTokens": 5755,
+      "latencyMs": 52178,
+      "cost": 0.009576,
+      "providerRequestId": "resp_030cca5a4d2fe024016ab3fbf85c1c87d283d6ba67c894d38d",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "REQUIREMENTS answer"
+    },
+    {
+      "id": "op-18",
+      "scenarioId": "B2B_COMMERCIALE",
+      "phase": "PRE_PAYMENT",
+      "task": "EXTRACT",
+      "promptId": "annunci10x.extract",
+      "promptVersion": "annunci10x-prompts-v1.create.attraction",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 1208,
+      "cachedTokens": 0,
+      "outputTokens": 2939,
+      "totalTokens": 4147,
+      "latencyMs": 36739,
+      "cost": 0.00618,
+      "providerRequestId": "resp_0252b668d7188ed7016ab3fc2ca55087d2a57da7f853cdf11b",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "ATTRACTION answer"
+    },
+    {
+      "id": "op-19",
+      "scenarioId": "B2B_COMMERCIALE",
+      "phase": "PRE_PAYMENT",
+      "task": "EXTRACT",
+      "promptId": "annunci10x.extract",
+      "promptVersion": "annunci10x-prompts-v1.create.offer",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 1253,
+      "cachedTokens": 0,
+      "outputTokens": 3617,
+      "totalTokens": 4870,
+      "latencyMs": 42410,
+      "cost": 0.007547,
+      "providerRequestId": "resp_0de16125e7dc6a4a016ab3fc518c5087d28d06dd133c684e3b",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "OFFER answer"
+    },
+    {
+      "id": "op-20",
+      "scenarioId": "B2B_COMMERCIALE",
+      "phase": "PRE_PAYMENT",
+      "task": "EXTRACT",
+      "promptId": "annunci10x.extract",
+      "promptVersion": "annunci10x-prompts-v1.create.channel_application",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 1356,
+      "cachedTokens": 0,
+      "outputTokens": 2984,
+      "totalTokens": 4340,
+      "latencyMs": 34972,
+      "cost": 0.006307,
+      "providerRequestId": "resp_03793193fb279c1b016ab3fc7c244087d2a45c0692027a74a2",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "CHANNEL_APPLICATION answer"
+    },
+    {
+      "id": "op-21",
+      "scenarioId": "B2B_COMMERCIALE",
+      "phase": "PRE_PAYMENT",
+      "task": "PROFILE",
+      "promptId": "annunci10x.profile",
+      "promptVersion": "annunci10x.profile.v1",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 1451,
+      "cachedTokens": 0,
+      "outputTokens": 1507,
+      "totalTokens": 2958,
+      "latencyMs": 20325,
+      "cost": 0.003377,
+      "providerRequestId": "resp_01de0610f983e46d016ab3fc9f3bb087d2b29f54348014839f",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "CHANNEL_APPLICATION answer"
+    },
+    {
+      "id": "op-22",
+      "scenarioId": "B2B_COMMERCIALE",
+      "phase": "PRE_PAYMENT",
+      "task": "STRATEGY",
+      "promptId": "annunci10x.strategy",
+      "promptVersion": "annunci10x.strategy.v1",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 2996,
+      "cachedTokens": 0,
+      "outputTokens": 3784,
+      "totalTokens": 6780,
+      "latencyMs": 33982,
+      "cost": 0.008317,
+      "providerRequestId": "resp_0d11169dd8d6305c016ab3fcb393e487d2b3e029be7b066133",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "CHANNEL_APPLICATION answer"
+    },
+    {
+      "id": "op-23",
+      "scenarioId": "B2B_COMMERCIALE",
+      "phase": "PREMIUM",
+      "task": "GENERATE",
+      "promptId": "annunci10x.generate",
+      "promptVersion": "annunci10x.generate.v1",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 4054,
+      "cachedTokens": 0,
+      "outputTokens": 3782,
+      "totalTokens": 7836,
+      "latencyMs": 44594,
+      "cost": 0.008578,
+      "providerRequestId": "resp_01ed8ebe2bc5a9bc016ab3fcd5aeb887d2862d4503156da587",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "premium generation"
+    },
+    {
+      "id": "op-24",
+      "scenarioId": "B2B_COMMERCIALE",
+      "phase": "PREMIUM",
+      "task": "VALIDATE",
+      "promptId": "annunci10x.validate",
+      "promptVersion": "annunci10x.validate.v1",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 2111,
+      "cachedTokens": 0,
+      "outputTokens": 2612,
+      "totalTokens": 4723,
+      "latencyMs": 32348,
+      "cost": 0.005752,
+      "providerRequestId": "resp_0647dedee3b7e49f016ab3fd0266bc87d2a55791e75d9feb73",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "premium generation"
+    },
+    {
+      "id": "op-25",
+      "scenarioId": "B2B_COMMERCIALE",
+      "phase": "PREMIUM",
+      "task": "REVISE",
+      "promptId": "annunci10x.revise",
+      "promptVersion": "annunci10x.revise.v1",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 4419,
+      "cachedTokens": 0,
+      "outputTokens": 1107,
+      "totalTokens": 5526,
+      "latencyMs": 13861,
+      "cost": 0.003319,
+      "providerRequestId": "resp_08697dc24eded809016ab3fd22e14487d292f5719979c15515",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "premium generation"
+    },
+    {
+      "id": "op-26",
+      "scenarioId": "B2B_COMMERCIALE",
+      "phase": "PREMIUM",
+      "task": "VALIDATE",
+      "promptId": "annunci10x.validate",
+      "promptVersion": "annunci10x-prompts-v1.post-revise",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 1640,
+      "cachedTokens": 0,
+      "outputTokens": 2083,
+      "totalTokens": 3723,
+      "latencyMs": 24763,
+      "cost": 0.004576,
+      "providerRequestId": "resp_08d2699bdd445665016ab3fd30d59c87d2a48be8c8940488c5",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "premium generation"
+    },
+    {
+      "id": "op-27",
+      "scenarioId": "B2B_COMMERCIALE",
+      "phase": "PREMIUM",
+      "task": "EVALUATE",
+      "promptId": "annunci10x.evaluate",
+      "promptVersion": "annunci10x.evaluate.v3",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 8106,
+      "cachedTokens": 0,
+      "outputTokens": 3970,
+      "totalTokens": 12076,
+      "latencyMs": 53581,
+      "cost": 0.009967,
+      "providerRequestId": "resp_0f5ab981d155923a016ab3fd49984c87d29252198203ccf8e8",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "premium generation"
+    },
+    {
+      "id": "op-28",
+      "scenarioId": "B2B_COMMERCIALE",
+      "phase": "PREMIUM",
+      "task": "CHANNEL_ADAPTER",
+      "promptId": "annunci10x.channel_adapter",
+      "promptVersion": "annunci10x.channel_adapter.v1",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 1668,
+      "cachedTokens": 0,
+      "outputTokens": 2566,
+      "totalTokens": 4234,
+      "latencyMs": 31165,
+      "cost": 0.005549,
+      "providerRequestId": "resp_0976a645d4b308db016ab3fd7f536887d2b029625d72797d1e",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "premium generation"
+    },
+    {
+      "id": "op-29",
+      "scenarioId": "EDIT_CLASSIFIER_STRATEGIC_REQUIREMENT",
+      "phase": "SECONDARY",
+      "task": "EDIT_CLASSIFIER",
+      "promptId": "annunci10x.edit_classifier",
+      "promptVersion": "annunci10x.edit_classifier.v1.requirement-strategy.live",
+      "model": "gpt-5-mini",
+      "provider": "OPENAI",
+      "inputTokens": 2000,
+      "cachedTokens": 0,
+      "outputTokens": 908,
+      "totalTokens": 2908,
+      "latencyMs": 8997,
+      "cost": 0.002316,
+      "providerRequestId": "resp_0f3fb2609c31b5bb016ab3fd9ea5cc87d2810146d9b6382215",
+      "idempotencyHit": false,
+      "providerCalls": 1,
+      "description": "Classify strategic requirement-category edit request."
+    }
+  ],
+  "byOperation": {
+    "EXTRACT": {
+      "calls": 14,
+      "model": "gpt-5-mini",
+      "inputTokens": 15205,
+      "cachedTokens": 0,
+      "outputTokens": 40217,
+      "totalTokens": 55422,
+      "latencyMs": 499580,
+      "cost": 0.084234,
+      "avgLatencyMs": 35684
+    },
+    "PROFILE": {
+      "calls": 2,
+      "model": "gpt-5-mini",
+      "inputTokens": 2897,
+      "cachedTokens": 0,
+      "outputTokens": 3337,
+      "totalTokens": 6234,
+      "latencyMs": 47464,
+      "cost": 0.007399,
+      "avgLatencyMs": 23732
+    },
+    "STRATEGY": {
+      "calls": 2,
+      "model": "gpt-5-mini",
+      "inputTokens": 5982,
+      "cachedTokens": 0,
+      "outputTokens": 7411,
+      "totalTokens": 13393,
+      "latencyMs": 83703,
+      "cost": 0.016318,
+      "avgLatencyMs": 41852
+    },
+    "GENERATE": {
+      "calls": 2,
+      "model": "gpt-5-mini",
+      "inputTokens": 8147,
+      "cachedTokens": 0,
+      "outputTokens": 8029,
+      "totalTokens": 16176,
+      "latencyMs": 91631,
+      "cost": 0.018095,
+      "avgLatencyMs": 45816
+    },
+    "VALIDATE": {
+      "calls": 3,
+      "model": "gpt-5-mini",
+      "inputTokens": 5714,
+      "cachedTokens": 0,
+      "outputTokens": 6726,
+      "totalTokens": 12440,
+      "latencyMs": 84846,
+      "cost": 0.014881,
+      "avgLatencyMs": 28282
+    },
+    "EVALUATE": {
+      "calls": 2,
+      "model": "gpt-5-mini",
+      "inputTokens": 16605,
+      "cachedTokens": 0,
+      "outputTokens": 7593,
+      "totalTokens": 24198,
+      "latencyMs": 99519,
+      "cost": 0.019338,
+      "avgLatencyMs": 49760
+    },
+    "CHANNEL_ADAPTER": {
+      "calls": 2,
+      "model": "gpt-5-mini",
+      "inputTokens": 3659,
+      "cachedTokens": 0,
+      "outputTokens": 4500,
+      "totalTokens": 8159,
+      "latencyMs": 52019,
+      "cost": 0.009915,
+      "avgLatencyMs": 26010
+    },
+    "REVISE": {
+      "calls": 1,
+      "model": "gpt-5-mini",
+      "inputTokens": 4419,
+      "cachedTokens": 0,
+      "outputTokens": 1107,
+      "totalTokens": 5526,
+      "latencyMs": 13861,
+      "cost": 0.003319,
+      "avgLatencyMs": 13861
+    },
+    "EDIT_CLASSIFIER": {
+      "calls": 1,
+      "model": "gpt-5-mini",
+      "inputTokens": 2000,
+      "cachedTokens": 0,
+      "outputTokens": 908,
+      "totalTokens": 2908,
+      "latencyMs": 8997,
+      "cost": 0.002316,
+      "avgLatencyMs": 8997
+    }
+  },
+  "journeys": {
+    "CUSTOMER_CARE_PRE_PAYMENT": {
+      "calls": 9,
+      "inputTokens": 12019,
+      "cachedTokens": 0,
+      "outputTokens": 24989,
+      "totalTokens": 37008,
+      "latencyMs": 332089,
+      "cost": 0.052984,
+      "operations": [
+        "EXTRACT",
+        "EXTRACT",
+        "EXTRACT",
+        "EXTRACT",
+        "EXTRACT",
+        "EXTRACT",
+        "EXTRACT",
+        "PROFILE",
+        "STRATEGY"
+      ]
+    },
+    "CUSTOMER_CARE_PREMIUM": {
+      "calls": 4,
+      "inputTokens": 16546,
+      "cachedTokens": 0,
+      "outputTokens": 11835,
+      "totalTokens": 28381,
+      "latencyMs": 141564,
+      "cost": 0.027807,
+      "operations": [
+        "GENERATE",
+        "VALIDATE",
+        "EVALUATE",
+        "CHANNEL_ADAPTER"
+      ]
+    },
+    "CUSTOMER_CARE_TOTAL": {
+      "calls": 13,
+      "inputTokens": 28565,
+      "cachedTokens": 0,
+      "outputTokens": 36824,
+      "totalTokens": 65389,
+      "latencyMs": 473653,
+      "cost": 0.080791,
+      "operations": [
+        "EXTRACT",
+        "EXTRACT",
+        "EXTRACT",
+        "EXTRACT",
+        "EXTRACT",
+        "EXTRACT",
+        "EXTRACT",
+        "PROFILE",
+        "STRATEGY",
+        "GENERATE",
+        "VALIDATE",
+        "EVALUATE",
+        "CHANNEL_ADAPTER"
+      ]
+    },
+    "B2B_COMMERCIALE_PRE_PAYMENT": {
+      "calls": 9,
+      "inputTokens": 12065,
+      "cachedTokens": 0,
+      "outputTokens": 25976,
+      "totalTokens": 38041,
+      "latencyMs": 298658,
+      "cost": 0.054967,
+      "operations": [
+        "EXTRACT",
+        "EXTRACT",
+        "EXTRACT",
+        "EXTRACT",
+        "EXTRACT",
+        "EXTRACT",
+        "EXTRACT",
+        "PROFILE",
+        "STRATEGY"
+      ]
+    },
+    "B2B_COMMERCIALE_PREMIUM": {
+      "calls": 6,
+      "inputTokens": 21998,
+      "cachedTokens": 0,
+      "outputTokens": 16120,
+      "totalTokens": 38118,
+      "latencyMs": 200312,
+      "cost": 0.037741,
+      "operations": [
+        "GENERATE",
+        "VALIDATE",
+        "REVISE",
+        "VALIDATE",
+        "EVALUATE",
+        "CHANNEL_ADAPTER"
+      ]
+    },
+    "B2B_COMMERCIALE_TOTAL": {
+      "calls": 15,
+      "inputTokens": 34063,
+      "cachedTokens": 0,
+      "outputTokens": 42096,
+      "totalTokens": 76159,
+      "latencyMs": 498970,
+      "cost": 0.092708,
+      "operations": [
+        "EXTRACT",
+        "EXTRACT",
+        "EXTRACT",
+        "EXTRACT",
+        "EXTRACT",
+        "EXTRACT",
+        "EXTRACT",
+        "PROFILE",
+        "STRATEGY",
+        "GENERATE",
+        "VALIDATE",
+        "REVISE",
+        "VALIDATE",
+        "EVALUATE",
+        "CHANNEL_ADAPTER"
+      ]
+    }
+  },
+  "revisionCycle": {
+    "status": "RUN",
+    "source": "AUTOMATIC_PREMIUM_PIPELINE",
+    "operationIds": [
+      "op-25",
+      "op-26",
+      "op-27"
+    ],
+    "problemFixed": false,
+    "newProblemsIntroduced": true,
+    "validateResult": "SEE_PREMIUM_VALIDATION",
+    "score": {
+      "value": null,
+      "max": 100,
+      "interval": {
+        "min": 12.5,
+        "max": 22.5
+      },
+      "coverage": 90
+    },
+    "note": "The live B2B premium path triggered automatic REVISE. The resulting Master evaluated poorly because unchanged sections were not preserved after partial revision; a runtime merge fix was applied after this benchmark, but not live-retested to respect the 30-call limit."
+  },
+  "editClassifier": {
+    "status": "RUN",
+    "operationId": "op-29",
+    "intent": "FACTUAL",
+    "residualNonBlocking": false
+  },
+  "comparisonWithRewrite": {
+    "rewriteExistingAdUsd": 0.054014,
+    "createLowObservedUsd": 0.080791,
+    "createHighObservedUsd": 0.092708,
+    "createMeanObservedUsd": 0.08675,
+    "absoluteDifferenceMeanMinusRewriteUsd": 0.032736,
+    "ratioMeanToRewrite": 1.606,
+    "historicalIncompleteCreateLowerBoundUsd": 0.039652,
+    "sampleSize": 2
+  },
+  "finalUnitEconomics": {
+    "FREE_ANALYSIS_NO_CLARIFY": 0.025807,
+    "FREE_ANALYSIS_WITH_CLARIFY": 0.027646,
+    "REWRITE_EXISTING_AD": 0.054014,
+    "CREATE_FROM_ZERO_LOW": 0.080791,
+    "CREATE_FROM_ZERO_HIGH": 0.092708,
+    "CREATE_FROM_ZERO_MEAN": 0.08675,
+    "REVISION_CYCLE": 0.017862,
+    "CHANNEL_VARIANT": 0.004958
+  },
+  "differentiation": {
+    "status": "PASS",
+    "openingDifferent": true,
+    "strategyDifferent": true,
+    "profileDifferent": false,
+    "customerCareProfile": {
+      "status": "PASS",
+      "routine": "MEDIUM",
+      "challenge": "MEDIUM",
+      "qualification": "MEDIUM",
+      "commitment": "MEDIUM",
+      "technicality": "LOW"
+    },
+    "b2bProfile": {
+      "status": "PASS",
+      "routine": "MEDIUM",
+      "challenge": "MEDIUM",
+      "qualification": "MEDIUM",
+      "commitment": "MEDIUM",
+      "technicality": "LOW"
+    }
+  },
+  "findings": [
+    {
+      "severity": "P2",
+      "scenarioId": "CUSTOMER_CARE",
+      "area": "fact-audit",
+      "detail": "Material omissions: cta"
+    },
+    {
+      "severity": "P2",
+      "scenarioId": "B2B_COMMERCIALE",
+      "area": "fact-audit",
+      "detail": "Material omissions: role, result, activities, location, workMode, contract, required, cta"
+    },
+    {
+      "severity": "P1",
+      "scenarioId": "B2B_COMMERCIALE",
+      "area": "premium-revision",
+      "detail": "Automatic REVISE live output lost material master sections. Runtime fix applied: partial revised sections are now merged into the existing master instead of replacing it. Live retest not run because the benchmark reached 29/30 calls."
+    }
+  ],
+  "failures": [],
+  "pricingReadiness": {
+    "rewrite": "SUFFICIENT",
+    "create": "SUFFICIENT",
+    "revision": "SUFFICIENT",
+    "channelVariant": "SUFFICIENT",
+    "overall": "DATA_SUFFICIENT_FOR_PRICING"
+  },
+  "decisions": {
+    "CUSTOMER_CARE_CREATE": "READY_WITH_FINDINGS",
+    "COMMERCIALE_B2B_CREATE": "NEEDS_TUNING",
+    "CREATE_STRUCTURED_INPUT": "READY",
+    "ROLE_CARD": "READY",
+    "PROFILE": "READY",
+    "STRATEGY": "READY",
+    "GENERATED_MASTER": "NEEDS_TUNING",
+    "VALIDATOR": "READY",
+    "REVISION_CYCLE": "NEEDS_TUNING",
+    "EVALUATOR": "READY",
+    "CHANNEL_ADAPTER": "READY",
+    "FACTUAL_FIDELITY": "NEEDS_TUNING",
+    "REQUIREMENT_PRESERVATION": "NEEDS_TUNING",
+    "CREATE_COST_BENCHMARK": "SUFFICIENT",
+    "OVERALL_CREATE": "NEEDS_TUNING",
+    "FASE_10F": "NEEDS_TUNING"
+  }
+}

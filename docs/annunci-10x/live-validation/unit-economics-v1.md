@@ -3,8 +3,10 @@
 Source of truth:
 - `docs/annunci-10x/live-validation/openai-live-validation-v1.md`
 - `docs/annunci-10x/live-validation/cost-benchmark-v1.json`
+- `docs/annunci-10x/live-validation/create-live-validation-v1.md`
+- `docs/annunci-10x/live-validation/create-cost-benchmark-v1.json`
 
-No new OpenAI calls were made for this analysis. No runtime, prompt, Supabase, Vercel, AI Score, entitlement, checkout, or pricing configuration was changed.
+FASE 10A made no new calls and analyzed the first live benchmark. FASE 10F adds 29 local/server-side OpenAI calls for structured Create-from-zero validation. No Supabase migration, Vercel env change, AI Score change, legacy change, checkout, or pricing configuration was made.
 
 ## Data Check
 
@@ -85,31 +87,27 @@ The benchmark measured one REVISE call, but did not measure a complete post-revi
 
 ### Create From Zero, Pre Payment
 
-The benchmark did not contain a full Create-from-zero interview path with answer-by-answer EXTRACT operations. Therefore full `CREATE_PRE_PAYMENT` is N/D.
-
-Observed pre-payment subset:
-
-| Measured subset | Calls | Input | Cached | Output | Total tokens | Cost |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| PROFILE + STRATEGY after role card exists | 2 | 4,179 | 1,365 | 5,354 | 9,532 | $0.011445 |
-
-Missing for full Create pre-payment:
-- number of answers: N/D
-- answer-step EXTRACT calls: N/D
-- create-path CLARIFY count: N/D
-- journey-specific EDIT_CLASSIFIER use before payment: N/D
-
-### Create From Zero, Premium
-
-`CREATE_PREMIUM_INCREMENT` uses the same measured premium operations as rewrite: GENERATE + VALIDATE generated master + EVALUATE generated master + CHANNEL_ADAPTER.
+FASE 10F measured two full Create-from-zero pre-payment journeys through the structured `CREALO` form: seven answer-step `EXTRACT` calls, then `PROFILE` and `STRATEGY`.
 
 | Journey | Calls | Input | Cached | Output | Total tokens | Cost |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| CREATE_PREMIUM_INCREMENT, no revision | 4 | 14,964 | 0 | 12,233 | 27,197 | $0.028207 |
-| CREATE_TOTAL, complete | N/D | N/D | N/D | N/D | N/D | N/D |
-| CREATE_TOTAL, observed partial lower-bound subset | 6 | 19,143 | 1,365 | 17,586 | 36,729 | $0.039652 |
+| CUSTOMER_CARE_PRE_PAYMENT | 9 | 12,019 | 0 | 24,989 | 37,008 | $0.052984 |
+| B2B_COMMERCIALE_PRE_PAYMENT | 9 | 12,065 | 0 | 25,976 | 38,041 | $0.054967 |
 
-The partial lower-bound subset is not the full cost to Horyzon for Create from zero. It excludes answer collection extraction and any create-path clarification loop.
+Observed clarification count: 0 in both structured journeys. The previous partial lower-bound subset ($0.039652 total subset; $0.011445 pre-payment subset) remains historical and incomplete.
+
+### Create From Zero, Premium
+
+FASE 10F measured premium generation after server-side test authorization. Customer Care completed without revision. Commerciale B2B triggered automatic `REVISE`, followed by post-revision `VALIDATE` and `EVALUATE`.
+
+| Journey | Calls | Input | Cached | Output | Total tokens | Cost |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| CUSTOMER_CARE_PREMIUM | 4 | 16,546 | 0 | 11,835 | 28,381 | $0.027807 |
+| B2B_COMMERCIALE_PREMIUM, with automatic revision | 6 | 21,998 | 0 | 16,120 | 38,118 | $0.037741 |
+| CUSTOMER_CARE_TOTAL | 13 | 28,565 | 0 | 36,824 | 65,389 | $0.080791 |
+| B2B_COMMERCIALE_TOTAL | 15 | 34,063 | 0 | 42,096 | 76,159 | $0.092708 |
+
+Sample size: 2. These values are observed provider costs, not pricing recommendations and not a stable statistical forecast. The B2B quality result was `NEEDS_TUNING`: automatic revision exposed a runtime section-preservation bug, fixed after the benchmark without extra live retest because the phase reached 29/30 allowed calls.
 
 ## Central Comparison
 
@@ -119,26 +117,29 @@ The partial lower-bound subset is not the full cost to Horyzon for Create from z
 | Analisi gratuita con chiarimenti | 6 | 11,871 | 1,365 | 12,493 | $0.027646 |
 | Riscrittura premium - incremento | 4 | 14,964 | 0 | 12,233 | $0.028207 |
 | Riscrittura premium - totale | 9 | 25,949 | 1,365 | 23,917 | $0.054014 |
-| Creazione da zero - pre pagamento | N/D | N/D | N/D | N/D | N/D |
-| Creazione da zero - premium incremento | 4 | 14,964 | 0 | 12,233 | $0.028207 |
-| Creazione da zero - totale | N/D | N/D | N/D | N/D | N/D |
+| Creazione da zero - pre pagamento, low observed | 9 | 12,019 | 0 | 24,989 | $0.052984 |
+| Creazione da zero - pre pagamento, high observed | 9 | 12,065 | 0 | 25,976 | $0.054967 |
+| Creazione da zero - premium incremento, low observed | 4 | 16,546 | 0 | 11,835 | $0.027807 |
+| Creazione da zero - premium incremento, high observed | 6 | 21,998 | 0 | 16,120 | $0.037741 |
+| Creazione da zero - totale, low observed | 13 | 28,565 | 0 | 36,824 | $0.080791 |
+| Creazione da zero - totale, high observed | 15 | 34,063 | 0 | 42,096 | $0.092708 |
 
 `COST_TO_HORYZON_REWRITE_EXISTING_AD`: $0.054014 observed without clarification/revision; $0.055853 with one clarification and no revision.
 
-`COST_TO_HORYZON_CREATE_FROM_ZERO`: N/D for complete journey. Partial lower-bound subset observed: $0.039652, not sufficient for pricing.
+`COST_TO_HORYZON_CREATE_FROM_ZERO`: $0.080791-$0.092708 observed across two complete structured Create journeys. Mean observed: $0.086750. Sample size = 2.
 
-Rewrite/create difference: N/D.
+Rewrite/create difference using observed mean: +$0.032736.
 
-Create/rewrite ratio: N/D.
+Create/rewrite ratio using observed mean: 1.606x.
 
 ## Revision Cost
 
 | Component | Calls | Input | Cached | Output | Total tokens | Cost |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | REVISE only | 1 | 1,918 | 0 | 1,022 | 2,940 | $0.002523 |
-| Post-revision VALIDATE | N/D | N/D | N/D | N/D | N/D | N/D |
-| Post-revision EVALUATE | N/D | N/D | N/D | N/D | N/D | N/D |
-| Complete one-revision cycle | N/D | N/D | N/D | N/D | N/D | N/D |
+| Post-revision VALIDATE | 1 | 1,594 | 0 | 2,129 | 3,723 | $0.004576 |
+| Post-revision EVALUATE | 1 | 7,227 | 0 | 4,849 | 12,076 | $0.009967 |
+| Complete one-revision cycle | 3 | 13,240 | 0 | 8,085 | 21,325 | $0.017862 |
 
 ## Channel Variant Cost
 
@@ -195,8 +196,9 @@ These are sums of observed API latencies, not UX promises.
 | FREE_ANALYSIS_WITH_CLARIFY | 161 s |
 | REWRITE premium increment, no revision | 148 s |
 | REWRITE total, no clarification/revision | 294 s |
-| CREATE_FROM_ZERO full | N/D |
-| CREATE observed partial lower-bound subset | 209 s |
+| CREATE_FROM_ZERO low observed | 474 s |
+| CREATE_FROM_ZERO high observed | 499 s |
+| REVISION_CYCLE observed | 92 s |
 
 ## Quality Context
 
@@ -214,6 +216,8 @@ Observed quality findings from FASE 10:
 | EVALUATE | PASS; provider did not compute score fields; deterministic TypeScript scoring used |
 | CHANNEL_ADAPTER | PASS; introducedFactIds remained 0 |
 | EDIT_CLASSIFIER | PASS for editorial, factual, unsupported fact; WARN for strategic request classified as EDITORIAL |
+| CREATE_FROM_ZERO structured form | PASS for raw answer preservation, requirement categories, UNKNOWN compensation, and 0 clarification in two fixtures |
+| CREATE_FROM_ZERO premium B2B | NEEDS_TUNING; automatic revision exposed a section-preservation bug fixed after the benchmark |
 
 `EDIT_CLASSIFIER strategic`: WARN - classified as EDITORIAL. No correction is made in FASE 10A.
 
@@ -224,9 +228,9 @@ Observed quality findings from FASE 10:
 | FREE_ANALYSIS | $0.025807 without clarification; $0.027646 with clarification | Analysis result, score/range/coverage, strengths/priorities, possible clarification |
 | GUIDE | $0 / N/A | Already produced PDF guide assets |
 | REWRITE_EXISTING_AD | $0.054014 without clarification/revision; $0.055853 with clarification/no revision | Free analysis plus generated Annuncio 10x, validation/evaluation, one channel variant |
-| CREATE_FROM_ZERO | N/D complete; partial lower-bound subset $0.039652 | Role-card based creation plus generated Annuncio 10x; full interview extraction cost not measured |
+| CREATE_FROM_ZERO | $0.080791-$0.092708 observed; mean $0.086750; sample size 2 | Structured create form, RoleCard, generated Annuncio 10x, validation/evaluation, one channel variant |
 | GUIDE_PLUS_REWRITE | Same OpenAI delivery cost as REWRITE_EXISTING_AD; guide adds $0 API delivery cost | Guide plus rewrite journey |
-| GUIDE_PLUS_CREATE | N/D complete; guide adds $0 API delivery cost | Guide plus create-from-zero journey |
+| GUIDE_PLUS_CREATE | Create API cost observed above; guide adds $0 API delivery cost | Guide plus create-from-zero journey |
 
 Excluded from this analysis: payment fees, VAT, marketing, labor, hosting, support, and non-OpenAI infrastructure.
 
@@ -236,16 +240,16 @@ A. API cost free analysis: $0.025807 without clarification; $0.027646 with one c
 
 B. API cost rewrite: $0.054014 without clarification/revision; $0.055853 with clarification/no revision.
 
-C. API cost create: N/D complete; partial lower-bound subset $0.039652.
+C. API cost create: $0.080791-$0.092708 observed; mean $0.086750; sample size 2. Historical incomplete lower-bound subset: $0.039652.
 
-D. API cost revision: REVISE only $0.002523; complete post-revision cycle N/D.
+D. API cost revision: complete observed cycle $0.017862 for REVISE + post-revision VALIDATE + EVALUATE.
 
-E. API cost channel variant: $0.004054 per variant observed.
+E. API cost channel variant: $0.004958 average in FASE 10F; previous FASE 10A average $0.004054.
 
-F. Rewrite/create economic difference: N/D for full create; measured data are insufficient.
+F. Rewrite/create economic difference using observed Create mean: +$0.032736; Create/Rewrite ratio 1.606x.
 
-G. Quality findings: overall PASS, with one EDIT_CLASSIFIER strategic WARN.
+G. Quality findings: Create cost benchmark is sufficient, but B2B premium quality is NEEDS_TUNING until the post-benchmark revision merge fix is live-retested.
 
 H. Value inputs without price decision: rewrite has measured full journey; create likely has extra interview extraction and clarification cost not measured; guide delivery has no OpenAI cost; EVALUATE/GENERATE/VALIDATE/STRATEGY drive most API spend; latency is material for multi-operation paths.
 
-Assessment: `MORE_MEASUREMENT_REQUIRED` for final Create-from-zero pricing. Existing-ad rewrite has enough observed data for pricing discussion.
+Assessment: `DATA_SUFFICIENT_FOR_PRICING` for OpenAI provider cost discussion, with a separate product-quality caveat: `CREATE_FROM_ZERO` needs a targeted live retest after the revision merge fix before it should be called product-ready.
