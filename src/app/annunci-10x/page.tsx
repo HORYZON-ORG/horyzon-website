@@ -29,7 +29,7 @@ export default function Annunci10xPage() {
           <p className="eyebrow"><span />Horyzon / prodotto riservato</p>
           <h1>ANNUNCI 10x</h1>
           <p className="page-intro">Analizza annunci di lavoro, separa fatti e incertezze, misura la pubblicabilita e trasforma i dubbi in domande utili.</p>
-          <p className="page-intro">Analyze funziona ora. Create e Guide sono visibili come percorsi in preparazione. Nessun checkout e nessun prezzo sono attivi in questa fase.</p>
+          <p className="page-intro">Analyze funziona ora. Create guida la raccolta da zero fino alla conferma della scheda e alla schermata commerciale pre-payment. Nessun checkout e nessun prezzo sono attivi in questa fase.</p>
         </div>
       </section>
 

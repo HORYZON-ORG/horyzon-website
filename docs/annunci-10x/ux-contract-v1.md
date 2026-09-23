@@ -4,7 +4,14 @@ Canonical route: `/annunci-10x`
 
 Legacy route, not part of this UX: `/annuncio-10x` is `NON TOCCARE`.
 
-This document defines the user experience contract. It does not implement UI.
+This document defines the user experience contract and records the implemented UI status.
+
+Current UI status:
+
+- Product page: implemented on `/annunci-10x`.
+- Analyze flow: implemented and tested with `ANNUNCI10X_AI_PROVIDER=MOCK`; OpenAI live validation remains pending API credit.
+- Build / Crea da zero: implemented through user confirmation and the pre-payment commercial screen; checkout and final generation are not implemented.
+- Guide: visible as product option, purchase not implemented.
 
 ## Global UX principles
 
@@ -110,25 +117,26 @@ Comparison:
 Sequence:
 
 1. Introduction.
-2. Six macro-steps.
+2. Seven macro-steps.
 3. Adaptive questions.
 4. Channel/application preferences.
 5. Scheda 10x.
 6. Synthetic strategy.
 7. Edit.
 8. Confirmation.
-9. Offers.
-10. Payment.
-11. Generation.
+9. Pre-payment commercial screen.
+10. Payment, not implemented in this phase.
+11. Generation, not implemented in this phase.
 
-Six macro-steps:
+Seven macro-steps:
 
-1. Role and mission.
-2. Outcomes and responsibilities.
-3. Requirements and qualification.
-4. Conditions and compensation.
-5. Company attractiveness and context.
-6. Channel and application process.
+1. `ROLE_CONTEXT`.
+2. `PRIMARY_CONTRIBUTION`.
+3. `WORK_REALITY`.
+4. `REQUIREMENTS`.
+5. `ATTRACTION`.
+6. `OFFER`.
+7. `CHANNEL_APPLICATION`.
 
 Adaptive questions:
 
@@ -155,15 +163,25 @@ Edit and confirmation:
 - user confirms before purchase/generation;
 - unconfirmed inferred facts remain excluded from final copy.
 
+Pre-payment:
+
+- appears only after user confirmation;
+- shows `OPEN_DECISION` price/discount state;
+- keeps checkout disabled;
+- does not grant entitlement;
+- does not start final ad generation.
+
 Payment:
 
 - happens after confirmation and offers;
 - before generation;
 - skipped only when server-side entitlement already grants generation.
+- not implemented in Phase 6.
 
 Generation:
 
 - starts only after entitlement is confirmed server-side.
+- not implemented in the user flow in Phase 6.
 
 No fake before/after score:
 

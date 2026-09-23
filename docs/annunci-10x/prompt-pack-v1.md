@@ -6,6 +6,13 @@ Legacy route, not part of this prompt pack: `/annuncio-10x` is `NON TOCCARE`.
 
 This document defines prompt contracts. Phase 4 implements the server-side runtime under `src/lib/annunci-10x/ai/` while keeping provider code, prompt registry, structured-output validation, model routing, persistence, and retry policy isolated from UI, API routes, payment, SEO, and the legacy `/annuncio-10x` prototype.
 
+Implementation status:
+
+- `MOCK` provider: used for deterministic development and test.
+- `OPENAI` provider: implemented and configurable through `ANNUNCI10X_AI_PROVIDER=OPENAI`.
+- Live OpenAI validation: pending API credit; do not claim live OpenAI smoke success until Phase 4.5 is rerun.
+- Phase 6 `CREATE` uses `EXTRACT`, `CLARIFY`, `PROFILE`, `STRATEGY`, and `EDIT_CLASSIFIER`; it does not call `GENERATE`, `VALIDATE`, `REVISE`, or `CHANNEL_ADAPTER` in the pre-payment user flow.
+
 ## Core policy shared by all AI tasks
 
 The shared policy is included in every prompt contract:

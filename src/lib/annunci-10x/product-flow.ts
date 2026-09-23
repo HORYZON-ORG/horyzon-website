@@ -144,7 +144,7 @@ export async function createAnonymousAnalyzeSession(context: Annunci10xRuntimeCo
 export async function runFreeAnnunci10xAnalysis(input: RunFreeAnalysisInput): Promise<PublicAnnunci10xAnalysisResult> {
   const context = input.context ?? createAnnunci10xRuntimeContext();
   assertRawAd(input.rawAdText);
-  await requireOwnedSession(context, input.sessionId, input.sessionSecret);
+  await requireOwnedSession(context, input.sessionId, input.sessionSecret, 'ANALYZE');
   await context.persistence.appendEvent({ sessionId: input.sessionId, eventName: 'original_ad_submitted', metadata: { lengthBucket: bucketLength(input.rawAdText) } });
 
   const orchestrator = new Annunci10xAiOrchestrator({ provider: context.provider, persistence: context.persistence });
@@ -272,7 +272,7 @@ export async function runFreeAnnunci10xAnalysis(input: RunFreeAnalysisInput): Pr
 export async function answerAnnunci10xClarification(input: AnswerClarificationInput): Promise<PublicAnnunci10xAnalysisResult> {
   const context = input.context ?? createAnnunci10xRuntimeContext();
   if (!input.answer.trim()) throw new Annunci10xPublicError('INVALID_INPUT', 'Inserisci una risposta o salta la domanda.', 400);
-  const session = await requireOwnedSession(context, input.sessionId, input.sessionSecret);
+  const session = await requireOwnedSession(context, input.sessionId, input.sessionSecret, 'ANALYZE');
   const latest = await context.persistence.getLatestSnapshot(input.sessionId, input.sessionSecret);
   if (!latest) throw new Annunci10xPublicError('INVALID_INPUT', 'Nessuna analisi da aggiornare.', 409);
 
@@ -321,7 +321,7 @@ export async function answerAnnunci10xClarification(input: AnswerClarificationIn
 }
 
 export async function resumeAnnunci10xAnalysis(cookie: Annunci10xSessionCookie, context: Annunci10xRuntimeContext): Promise<{ session: PersistedAnnunci10xSession; snapshot: PersistedSnapshot | null; evaluation: PersistedEvaluation | null }> {
-  const session = await requireOwnedSession(context, cookie.sessionId, cookie.sessionSecret);
+  const session = await requireOwnedSession(context, cookie.sessionId, cookie.sessionSecret, 'ANALYZE');
   const snapshot = await context.persistence.getLatestSnapshot(cookie.sessionId, cookie.sessionSecret);
   const evaluation = await context.persistence.getLatestEvaluation(cookie.sessionId, cookie.sessionSecret);
   await context.persistence.appendEvent({ sessionId: cookie.sessionId, eventName: 'analysis_resumed', metadata: { hasSnapshot: Boolean(snapshot), hasEvaluation: Boolean(evaluation) } });
@@ -377,9 +377,10 @@ function assertRawAd(rawAdText: string): void {
   if (length > ANNUNCI10X_MAX_AD_CHARS) throw new Annunci10xPublicError('INVALID_INPUT', 'Il testo supera il limite massimo per l analisi gratuita.', 413);
 }
 
-async function requireOwnedSession(context: Annunci10xRuntimeContext, sessionId: string, sessionSecret: string): Promise<PersistedAnnunci10xSession> {
+async function requireOwnedSession(context: Annunci10xRuntimeContext, sessionId: string, sessionSecret: string, flow?: 'ANALYZE' | 'CREATE'): Promise<PersistedAnnunci10xSession> {
   const session = await context.persistence.getSession(sessionId, sessionSecret);
   if (!session) throw new Annunci10xPublicError('INVALID_INPUT', 'Sessione Annunci 10x non valida o scaduta.', 401);
+  if (flow && session.flow !== flow) throw new Annunci10xPublicError('INVALID_INPUT', 'Sessione Annunci 10x non compatibile con questo percorso.', 409);
   return session;
 }
 

@@ -14,6 +14,10 @@ export async function GET(request: Request) {
     const context = createContext();
     const limited = checkAnnunci10xRateLimit(request, cookie.sessionId);
     if (limited) return limited;
+    const existing = await context.persistence.getSession(cookie.sessionId, cookie.sessionSecret);
+    if (existing?.flow !== 'ANALYZE') {
+      return NextResponse.json({ ok: true, session: null }, { headers: { 'Cache-Control': 'no-store' } });
+    }
     const resumed = await resumeAnnunci10xAnalysis(cookie, context);
     if (!resumed.session) throw new Annunci10xPublicError('INVALID_INPUT', 'Sessione non valida.', 401);
     return NextResponse.json({

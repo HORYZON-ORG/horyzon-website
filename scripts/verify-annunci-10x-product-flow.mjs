@@ -9,6 +9,12 @@ import {
   encodeAnnunci10xCookie,
   readConfiguredProvider,
   resumeAnnunci10xAnalysis,
+  startAnnunci10xCreate,
+  answerAnnunci10xCreateStep,
+  clarifyAnnunci10xCreate,
+  editAnnunci10xCreate,
+  confirmAnnunci10xCreate,
+  resumeAnnunci10xCreate,
   runFreeAnnunci10xAnalysis,
   answerAnnunci10xClarification,
 } from '../src/lib/annunci-10x/index.ts';
@@ -104,6 +110,95 @@ await assert.rejects(
     context,
   }),
   /Sessione Annunci 10x/,
+);
+
+const createContext = makeContext();
+const startedCreate = await startAnnunci10xCreate({ context: createContext });
+assert.equal(startedCreate.result.state, 'COLLECTING');
+assert.equal(startedCreate.result.currentStep, 'ROLE_CONTEXT');
+assert.equal(startedCreate.result.paymentRequired, false);
+
+const createAnswers = [
+  ['ROLE_CONTEXT', 'Cerchiamo un customer care specialist per azienda SaaS B2B con sede a Bari.'],
+  ['PRIMARY_CONTRIBUTION', 'Missione: ridurre i tempi di risposta e migliorare la qualita dei ticket nei primi mesi.'],
+  ['WORK_REALITY', 'Gestisce ticket, aggiorna CRM, collabora con sales. Il lavoro e remoto ma richiede presenza in sede per onboarding.'],
+  ['REQUIREMENTS', 'Obbligatorio: italiano scritto chiaro. Preferenziale: esperienza CRM. Apprendibile: procedure interne.'],
+  ['ATTRACTION', 'Affiancamento iniziale, team stabile, processi chiari e obiettivi condivisi.'],
+  ['OFFER', 'Sede Bari, contratto tempo determinato 12 mesi, ibrido 2 giorni, RAL 24000 euro.'],
+  ['CHANNEL_APPLICATION', 'LinkedIn e ATS aziendale; candidatura tramite form con CV aggiornato.'],
+];
+
+let createState = startedCreate.result;
+for (const [stepId, answer] of createAnswers) {
+  createState = await answerAnnunci10xCreateStep({
+    sessionId: startedCreate.cookie.sessionId,
+    sessionSecret: startedCreate.cookie.sessionSecret,
+    stepId,
+    answer,
+    context: createContext,
+  });
+  assert.equal(createState.provider, 'MOCK');
+}
+
+assert.equal(createState.clarification?.targetPath, 'attractionContext.workMode');
+assert.equal(createState.canConfirm, false, 'blocking clarification prevents confirmation');
+await assert.rejects(
+  () => confirmAnnunci10xCreate({
+    sessionId: startedCreate.cookie.sessionId,
+    sessionSecret: startedCreate.cookie.sessionSecret,
+    context: createContext,
+  }),
+  /chiarimento bloccante/i,
+);
+
+createState = await clarifyAnnunci10xCreate({
+  sessionId: startedCreate.cookie.sessionId,
+  sessionSecret: startedCreate.cookie.sessionSecret,
+  clarificationId: createState.clarification.id,
+  answer: 'La posizione e ibrida: due giorni da remoto e tre in sede a Bari.',
+  context: createContext,
+});
+assert.equal(createState.currentStep, 'SUMMARY');
+assert.equal(createState.canConfirm, true);
+assert.ok(createState.strategy);
+assert.equal(createState.operations.some((operation) => operation.type === 'PROFILE'), true);
+assert.equal(createState.operations.some((operation) => operation.type === 'STRATEGY'), true);
+assert.equal(createState.operations.some((operation) => operation.type === 'GENERATE'), false, 'create flow must not generate final ads');
+assert.equal(createState.operations.some((operation) => operation.type === 'VALIDATE'), false, 'create flow must not validate generated ads');
+
+const editedCreate = await editAnnunci10xCreate({
+  sessionId: startedCreate.cookie.sessionId,
+  sessionSecret: startedCreate.cookie.sessionSecret,
+  targetPath: 'title',
+  value: 'Customer care specialist B2B',
+  context: createContext,
+});
+assert.equal(editedCreate.roleCard.title, 'Customer care specialist B2B');
+assert.equal(editedCreate.operations[0].type, 'EDIT_CLASSIFIER');
+
+const confirmedCreate = await confirmAnnunci10xCreate({
+  sessionId: startedCreate.cookie.sessionId,
+  sessionSecret: startedCreate.cookie.sessionSecret,
+  context: createContext,
+});
+assert.equal(confirmedCreate.state, 'PAYMENT_REQUIRED');
+assert.equal(confirmedCreate.currentStep, 'COMMERCIAL');
+assert.equal(confirmedCreate.paymentRequired, true);
+assert.equal(confirmedCreate.commercial.checkoutEnabled, false);
+assert.equal(confirmedCreate.commercial.price, 'OPEN_DECISION');
+
+const resumedCreate = await resumeAnnunci10xCreate(startedCreate.cookie, createContext);
+assert.equal(resumedCreate.paymentRequired, true);
+
+await assert.rejects(
+  () => runFreeAnnunci10xAnalysis({
+    sessionId: startedCreate.cookie.sessionId,
+    sessionSecret: startedCreate.cookie.sessionSecret,
+    rawAdText: fullAd,
+    context: createContext,
+  }),
+  /non compatibile/i,
+  'analyze flow rejects create sessions',
 );
 
 console.log('Annunci 10x product flow verifier passed');

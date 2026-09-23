@@ -1,6 +1,7 @@
 export * from './completeness.ts';
 export * from './ai/index.ts';
 export * from './constants.ts';
+export * from './create-flow.ts';
 export * from './fixtures.ts';
 export * from './gates.ts';
 export * from './persistence/index.ts';

@@ -6,16 +6,29 @@ Legacy route, not part of this product: `/annuncio-10x`
 
 ## Status
 
-This document defines the local canonical product contract for the Annunci 10x foundations phase and records subsequent phase status where needed.
+This document defines the local canonical product contract for Annunci 10x and records implementation status where needed.
 
-Phase 1 was documentation only. Phase 3 adds Supabase persistence migrations and a server-side persistence adapter. Phase 4 adds the server-side AI runtime and prompt registry. The product still does not implement routes, APIs, payments, deployments, or public navigation changes.
+Phase 1 was documentation only. Phase 3 added Supabase persistence migrations and a server-side persistence adapter. Phase 4 added the server-side AI runtime and prompt registry. Phase 5 implemented the unlisted product page and the `ANALYZE` path, tested with the explicit `MOCK` provider. Phase 6 implements `BUILD` / Crea da zero through user confirmation and the pre-payment commercial screen, tested with the explicit `MOCK` provider.
+
+Current status:
+
+- Product page: `IMPLEMENTED`.
+- Analyze: `IMPLEMENTED`, `TESTED_WITH_MOCK`, `LIVE_AI_TEST_PENDING`.
+- Create: `IMPLEMENTED_THROUGH_PRE_PAYMENT`, `TESTED_WITH_MOCK`, `LIVE_AI_TEST_PENDING`.
+- Guide: `PRODUCT_DEFINED`, `PURCHASE_NOT_IMPLEMENTED`.
+- Commercial: `PRE_PAYMENT_UI_IMPLEMENTED`, `PRICING_OPEN`, `PAYMENT_NOT_IMPLEMENTED`, `ENTITLEMENTS_NOT_IMPLEMENTED`.
+- Generation: `RUNTIME_IMPLEMENTED`, `USER_FLOW_NOT_IMPLEMENTED`, `LIVE_AI_TEST_PENDING`.
+- OpenAI: `PROVIDER_IMPLEMENTED`, `LIVE_VALIDATION_PENDING_API_CREDIT`.
+- Supabase: `IMPLEMENTED`, `LIVE_PERSISTENCE_VERIFIED`.
+- Route: `PRODUCTION_DEPLOYED`, `UNLISTED`, `NOINDEX_NOFOLLOW`.
+- Legacy `/annuncio-10x`: `UNCHANGED`.
 
 ## Canonical baseline
 
 - Repository: `HORYZON-ORG/horyzon-website`
 - Branch: `main`
-- Temporary canonical baseline: `fd73b131757c32a50cef396262b215646685ed23`
-- Local work may continue before push authorization is available.
+- Temporary canonical baseline before Phase 6: `169020f9b64f7da7d41a2954c9115d205d6d4408`
+- Local work continues directly on `main` by explicit authorization.
 - Do not reset local `main` behind this baseline.
 - Do not create branches or pull requests for this phase.
 - Do not push or claim deployment until verified separately.

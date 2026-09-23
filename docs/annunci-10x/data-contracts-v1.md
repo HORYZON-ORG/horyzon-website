@@ -492,6 +492,16 @@ AI runtime persistence:
 Mapping notes:
 
 - Product `BUILD` entry mode maps to persistence flow `CREATE`; read-side parsing maps `CREATE` back to `entryMode: 'BUILD'`.
+- Phase 6 `CREATE` uses seven product macro-steps without changing the physical `annunci10x_answers.interview_step` enum:
+  - `ROLE_CONTEXT` -> `ROLE`
+  - `PRIMARY_CONTRIBUTION` -> `OUTCOMES`
+  - `WORK_REALITY` -> `OUTCOMES`
+  - `REQUIREMENTS` -> `REQUIREMENTS`
+  - `ATTRACTION` -> `ATTRACTION`
+  - `OFFER` -> `CONDITIONS`
+  - `CHANNEL_APPLICATION` -> `CHANNEL`
+- Raw answers remain in `annunci10x_answers`; normalized facts, profile, and strategy are represented by append-only snapshots. This keeps raw user text separate from AI operation telemetry and avoids a Phase 6 migration.
+- Session state updates for `CREATE` use the existing `annunci10x_sessions.state`, `selected_channel`, and `current_snapshot_id` columns through the server-side adapter. No client-side state is authoritative for payment readiness.
 - Payment, checkout, webhook schema, authenticated account identity, cross-device resume, and retention duration remain `OPEN DECISION`.
 - The current persistence layer is prepared for server-side entitlement data, but it does not implement a payment provider or entitlement source of truth yet.
 - Phase 4 adds runtime error codes `AI_PROVIDER_ERROR`, `AI_INVALID_OUTPUT`, `RATE_LIMITED`, and `INTERNAL_ERROR` for provider-facing failures; deterministic domain errors remain separate.

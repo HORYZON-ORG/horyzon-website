@@ -37,8 +37,9 @@ export async function getSessionCookie(): Promise<Annunci10xSessionCookie | null
 
 export async function getOrCreateSession(context: Annunci10xRuntimeContext): Promise<Annunci10xSessionCookie & { created: boolean }> {
   const existing = await getSessionCookie();
-  if (existing && await context.persistence.getSession(existing.sessionId, existing.sessionSecret)) {
-    return { ...existing, created: false };
+  if (existing) {
+    const session = await context.persistence.getSession(existing.sessionId, existing.sessionSecret);
+    if (session?.flow === 'ANALYZE') return { ...existing, created: false };
   }
   const created = await createAnonymousAnalyzeSession(context);
   const cookie = { sessionId: created.session.id, sessionSecret: created.sessionSecret };

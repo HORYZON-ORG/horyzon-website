@@ -83,6 +83,9 @@ assert.ok(sessionA.sessionSecret.length >= 32);
 
 assert.equal(await adapter.getSession(sessionA.session.id, sessionA.sessionSecret).then(Boolean), true, 'correct owner can read session');
 assert.equal(await adapter.getSession(sessionA.session.id, 'wrong-secret-that-is-long-enough-to-hash').then(Boolean), false, 'wrong secret cannot read session');
+const collectingSession = await adapter.updateSession({ sessionId: sessionA.session.id, sessionSecret: sessionA.sessionSecret, state: 'COLLECTING', selectedChannel: 'LINKEDIN' });
+assert.equal(collectingSession.state, 'COLLECTING');
+assert.equal(collectingSession.selectedChannel, 'LINKEDIN');
 
 await assert.rejects(
   () => adapter.appendAnswer({
@@ -105,6 +108,9 @@ const answer = await adapter.appendAnswer({
   rawAnswer: 'Vorrei un annuncio per customer care, con testo RAW preservato.',
 });
 assert.equal(answer.rawAnswer, 'Vorrei un annuncio per customer care, con testo RAW preservato.');
+const sessionAnswers = await adapter.getAnswers(sessionA.session.id, sessionA.sessionSecret);
+assert.equal(sessionAnswers.length, 1);
+assert.equal(sessionAnswers[0].questionId, 'role-title');
 
 const snapshot1 = await adapter.appendSnapshot({
   sessionId: sessionA.session.id,

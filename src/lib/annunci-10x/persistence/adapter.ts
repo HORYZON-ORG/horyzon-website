@@ -38,6 +38,7 @@ import type {
   SaveEvaluationInput,
   SaveOutputInput,
   StartAiOperationInput,
+  UpdateSessionInput,
 } from './types.ts';
 
 type DbRow = Record<string, unknown>;
@@ -95,6 +96,19 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
     return rows[0] ? parseSessionRow(rows[0]) : null;
   }
 
+  async updateSession(input: UpdateSessionInput): Promise<PersistedAnnunci10xSession> {
+    await this.requireOwnership(input.sessionId, input.sessionSecret);
+    const row: DbRow = { updated_at: new Date().toISOString() };
+    if (input.state !== undefined) row.state = input.state;
+    if (input.selectedChannel !== undefined) row.selected_channel = input.selectedChannel;
+    if (input.currentSnapshotId !== undefined) row.current_snapshot_id = input.currentSnapshotId;
+    const rows = await this.update('annunci10x_sessions', {
+      id: `eq.${input.sessionId}`,
+      owner_secret_hash: `eq.${hashAnnunci10xSessionSecret(input.sessionSecret)}`,
+    }, row);
+    return parseSessionRow(first(rows, 'update session'));
+  }
+
   async appendAnswer(input: AppendAnswerInput): Promise<PersistedAnswer> {
     await this.requireOwnership(input.sessionId, input.sessionSecret);
     const rows = await this.insert('annunci10x_answers', {
@@ -105,6 +119,16 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
       raw_answer: input.rawAnswer,
     });
     return parseAnswerRow(first(rows, 'append answer'));
+  }
+
+  async getAnswers(sessionId: string, sessionSecret: string): Promise<PersistedAnswer[]> {
+    await this.requireOwnership(sessionId, sessionSecret);
+    const rows = await this.select('annunci10x_answers', {
+      session_id: `eq.${sessionId}`,
+      select: '*',
+      order: 'created_at.asc',
+    });
+    return rows.map(parseAnswerRow);
   }
 
   async appendSnapshot(input: AppendSnapshotInput): Promise<PersistedSnapshot> {
@@ -255,6 +279,16 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
     return response.json() as Promise<DbRow[]>;
   }
 
+  private async update(table: string, query: Record<string, string>, row: DbRow): Promise<DbRow[]> {
+    const response = await this.fetchImpl(`${this.url}/rest/v1/${table}?${new URLSearchParams(query)}`, {
+      method: 'PATCH',
+      headers: { ...this.headers(), Prefer: 'return=representation' },
+      body: JSON.stringify(row),
+    });
+    if (!response.ok) throw new Annunci10xPersistenceError(`Annunci 10x update failed: ${table}`, 'DATABASE');
+    return response.json() as Promise<DbRow[]>;
+  }
+
   private headers(): Record<string, string> {
     return {
       apikey: this.serviceRoleKey,
@@ -304,6 +338,17 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
     return parseSessionRow(row);
   }
 
+  async updateSession(input: UpdateSessionInput): Promise<PersistedAnnunci10xSession> {
+    this.requireMemoryOwnership(input.sessionId, input.sessionSecret);
+    const row = this.sessions.get(input.sessionId);
+    if (!row) throw new Annunci10xPersistenceError('Annunci 10x session not found.', 'OWNERSHIP');
+    if (input.state !== undefined) row.state = input.state;
+    if (input.selectedChannel !== undefined) row.selected_channel = input.selectedChannel;
+    if (input.currentSnapshotId !== undefined) row.current_snapshot_id = input.currentSnapshotId;
+    row.updated_at = new Date().toISOString();
+    return parseSessionRow(row);
+  }
+
   async appendAnswer(input: AppendAnswerInput): Promise<PersistedAnswer> {
     this.requireMemoryOwnership(input.sessionId, input.sessionSecret);
     const row = {
@@ -317,6 +362,14 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
     };
     this.answers.push(row);
     return parseAnswerRow(row);
+  }
+
+  async getAnswers(sessionId: string, sessionSecret: string): Promise<PersistedAnswer[]> {
+    this.requireMemoryOwnership(sessionId, sessionSecret);
+    return this.answers
+      .filter((row) => row.session_id === sessionId)
+      .sort((left, right) => String(left.created_at).localeCompare(String(right.created_at)))
+      .map(parseAnswerRow);
   }
 
   async appendSnapshot(input: AppendSnapshotInput): Promise<PersistedSnapshot> {

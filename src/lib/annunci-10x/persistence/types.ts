@@ -12,6 +12,7 @@ import type {
   RoleCard,
   RoleProfile,
   ScoreResult,
+  SessionState,
 } from '../types.ts';
 
 export type Annunci10xPersistenceFlow = 'ANALYZE' | 'CREATE';
@@ -53,6 +54,14 @@ export interface PersistedAnswer {
   clarificationId?: string | null;
   rawAnswer: string;
   createdAt: string;
+}
+
+export interface UpdateSessionInput {
+  sessionId: string;
+  sessionSecret: string;
+  state?: SessionState;
+  selectedChannel?: PublicationChannel | null;
+  currentSnapshotId?: string | null;
 }
 
 export interface AppendSnapshotInput {
@@ -175,7 +184,9 @@ export interface PersistedEvent {
 export interface Annunci10xPersistenceAdapter {
   createSession(input: CreateSessionInput): Promise<CreateSessionResult>;
   getSession(sessionId: string, sessionSecret: string): Promise<PersistedAnnunci10xSession | null>;
+  updateSession(input: UpdateSessionInput): Promise<PersistedAnnunci10xSession>;
   appendAnswer(input: AppendAnswerInput): Promise<PersistedAnswer>;
+  getAnswers(sessionId: string, sessionSecret: string): Promise<PersistedAnswer[]>;
   appendSnapshot(input: AppendSnapshotInput): Promise<PersistedSnapshot>;
   getLatestSnapshot(sessionId: string, sessionSecret: string): Promise<PersistedSnapshot | null>;
   startAiOperation(input: StartAiOperationInput): Promise<PersistedAiOperation>;
