@@ -13,7 +13,7 @@ import { deriveAnnunci10xStrategyRules, type StrategyRuleInput } from './strateg
 import { canTransition } from './state-machine.ts';
 import { createFact } from './validation.ts';
 import type { AppendAnswerInput, PersistedAnnunci10xSession, PersistedAnswer, PersistedSnapshot } from './persistence/types.ts';
-import type { CommunicationStrategy, Fact, PublicationChannel, RoleCard, RoleProfile, SessionState } from './types.ts';
+import type { CommunicationStrategy, Fact, PublicationChannel, Requirement, RequirementClassification, RoleCard, RoleProfile, SessionState } from './types.ts';
 import {
   Annunci10xPublicError,
   createAnnunci10xRuntimeContext,
@@ -288,16 +288,20 @@ export async function editAnnunci10xCreate(input: EditCreateInput): Promise<Publ
   const latest = await context.persistence.getLatestSnapshot(input.sessionId, input.sessionSecret);
   if (!latest) throw new Annunci10xPublicError('INVALID_INPUT', 'Nessuna scheda da modificare.', 409);
 
-  const orchestrator = new Annunci10xAiOrchestrator({ provider: context.provider, persistence: context.persistence });
   const operations: PublicAnnunci10xOperation[] = [];
-  const classified = await orchestrator.runTask({
-    sessionId: input.sessionId,
-    sessionSecret: input.sessionSecret,
-    operationType: 'EDIT_CLASSIFIER',
-    input: { editRequest: `${input.targetPath}: ${value}`, roleCard: latest.roleCard, currentMaster: null },
-    inputSnapshotId: latest.id,
-  });
-  operations.push(toPublicOperation(classified, 'EDIT_CLASSIFIER', context.configuredProvider));
+  let editIntent = 'STRUCTURED_FIELD';
+  if (!isDeterministicEditTarget(input.targetPath)) {
+    const orchestrator = new Annunci10xAiOrchestrator({ provider: context.provider, persistence: context.persistence });
+    const classified = await orchestrator.runTask({
+      sessionId: input.sessionId,
+      sessionSecret: input.sessionSecret,
+      operationType: 'EDIT_CLASSIFIER',
+      input: { editRequest: `${input.targetPath}: ${value}`, roleCard: latest.roleCard, currentMaster: null },
+      inputSnapshotId: latest.id,
+    });
+    operations.push(toPublicOperation(classified, 'EDIT_CLASSIFIER', context.configuredProvider));
+    editIntent = typeof classified.output.intent === 'string' ? classified.output.intent : 'CLASSIFIED_EDIT';
+  }
 
   await context.persistence.appendAnswer({
     sessionId: input.sessionId,
@@ -316,7 +320,7 @@ export async function editAnnunci10xCreate(input: EditCreateInput): Promise<Publ
     reason: 'USER_EDIT',
   });
   await context.persistence.updateSession({ sessionId: input.sessionId, sessionSecret: input.sessionSecret, state: 'ROLE_CARD_READY', currentSnapshotId: snapshot.id });
-  await context.persistence.appendEvent({ sessionId: input.sessionId, eventName: 'role_card_edited', metadata: { targetPath: input.targetPath, intent: classified.output.intent } });
+  await context.persistence.appendEvent({ sessionId: input.sessionId, eventName: 'role_card_edited', metadata: { targetPath: input.targetPath, intent: editIntent } });
   return publicCreateState({ context, sessionId: input.sessionId, sessionSecret: input.sessionSecret, operations });
 }
 
@@ -463,16 +467,15 @@ function buildCreateRoleCard(answers: PersistedAnswer[]): RoleCard {
   const offer = answerFor(answers, 'OFFER');
   const clarificationWorkMode = answerForQuestion(answers, 'create.clarify.attractionContext.workMode');
   const title = clean(extractAfter(role, ['ruolo', 'figura', 'cerco', 'cerchiamo'])) || clean(role.split(/[.\n]/)[0]) || 'Ruolo da chiarire';
-  const mission = clean(extractAfter(contribution, ['missione', 'obiettivo', 'contributo'])) || clean(contribution.split(/[.\n]/)[0]) || 'N/D - contributo da chiarire';
-  const responsibility = clean(work.split(/[.\n]/)[0]) || 'N/D - lavoro quotidiano da chiarire';
-  const required = clean(requirements.split(/[.\n]/)[0]) || 'Requisiti da chiarire';
+  const mission = clean(extractAfter(contribution, ['risultato principale', 'missione', 'obiettivo', 'contributo'])) || clean(contribution.split(/[.\n]/)[0]) || 'N/D - contributo da chiarire';
+  const responsibility = clean(extractAfter(work, ['attivita reali', 'attività reali', 'attivita', 'attività'])) || clean(work.split(/[.\n]/)[0]) || 'N/D - lavoro quotidiano da chiarire';
   const channel = channelFromAnswers(answers);
   return {
     title: fact(title, sourceFor(role), 'create-role-title', Boolean(role)),
     mission: fact(mission, sourceFor(contribution), 'create-mission', Boolean(contribution)),
     outcomes: [fact(mission, sourceFor(contribution), 'create-outcome', Boolean(contribution))],
     responsibilities: [fact(responsibility, sourceFor(work), 'create-responsibility', Boolean(work))],
-    requirements: [{ id: 'req-create-1', label: fact(required, sourceFor(requirements), 'create-requirement', Boolean(requirements)), classification: 'REQUIRED' }],
+    requirements: requirementsFromText(requirements),
     compensation: {
       visibility: fact(hasCompensation(offer) ? 'PUBLIC' : 'OPEN_DECISION', hasCompensation(offer) ? 'USER_DECLARED' : 'SYSTEM_INFERRED', 'create-compensation-visibility', hasCompensation(offer)) as never,
       amountText: hasCompensation(offer) ? fact(extractCompensation(offer), 'USER_DECLARED', 'create-compensation') : undefined,
@@ -551,6 +554,19 @@ function applyEditToRoleCard(roleCard: RoleCard, targetPath: string, value: stri
   return { ...roleCard, attractionContext: { ...roleCard.attractionContext, attractivenessEvidence: [next] } };
 }
 
+function isDeterministicEditTarget(targetPath: string): boolean {
+  return [
+    'title',
+    'mission',
+    'responsibilities',
+    'requirements',
+    'attractionContext.location',
+    'attractionContext.workMode',
+    'attractionContext.contractType',
+    'compensation.amountText',
+  ].includes(targetPath);
+}
+
 function buildRoleProfile(roleCard: RoleCard, profile: Annunci10xProfileOutput): RoleProfile {
   const levelFact = (value: string, sourceId: string) => createFact(value, 'SYSTEM_INFERRED', { sourceId, publishable: false, confidence: 70 }) as never;
   return {
@@ -597,7 +613,7 @@ function publicRoleCard(roleCard: RoleCard, channel: PublicationChannel | null):
     workMode: textValue(roleCard.attractionContext.workMode),
     contractType: textValue(roleCard.attractionContext.contractType),
     schedule: textValue(roleCard.attractionContext.schedule),
-    compensation: textValue(roleCard.compensation?.amountText) || textValue(roleCard.compensation?.visibility),
+    compensation: roleCard.compensation?.amountText ? textValue(roleCard.compensation.amountText) : textValue(roleCard.compensation?.visibility),
     attractionEvidence: roleCard.attractionContext.attractivenessEvidence.map(textValue),
     channel,
     missingFacts: missingFacts(roleCard),
@@ -653,6 +669,43 @@ function stepFromPath(path: string): AppendAnswerInput['interviewStep'] {
   if (path.includes('attraction')) return 'ATTRACTION';
   if (path.includes('responsibilities') || path.includes('mission')) return 'OUTCOMES';
   return 'ROLE';
+}
+
+const requirementLabelMap: { classification: RequirementClassification; labels: string[] }[] = [
+  { classification: 'REQUIRED', labels: ['indispensabili', 'indispensabile', 'obbligatori', 'obbligatorio', 'required'] },
+  { classification: 'PREFERRED', labels: ['preferenziali', 'preferenziale', 'preferibili', 'preferibile', 'preferred'] },
+  { classification: 'TRAINABLE', labels: ['apprendibili', 'apprendibile', 'formabili', 'formabile', 'trainable'] },
+  { classification: 'DISQUALIFYING', labels: ['disqualifying', 'vincoli escludenti', 'vincolo escludente', 'vincoli', 'vincolo'] },
+];
+
+function requirementsFromText(text: string): Requirement[] {
+  const requirements = requirementLabelMap.flatMap((definition) => {
+    const value = extractLabeledSegment(text, definition.labels);
+    if (!value || isUnknownAnswer(value)) return [];
+    return [{
+      id: `req-create-${definition.classification.toLowerCase()}`,
+      label: fact(value, 'USER_DECLARED', `create-requirement-${definition.classification.toLowerCase()}`),
+      classification: definition.classification,
+    }];
+  });
+  if (requirements.some((item) => item.classification === 'REQUIRED')) return requirements;
+  const fallback = clean(text.split(/[.\n]/)[0]) || 'Requisiti da chiarire';
+  return [{
+    id: 'req-create-required',
+    label: fact(fallback, sourceFor(text), 'create-requirement-required', Boolean(text)),
+    classification: 'REQUIRED',
+  }];
+}
+
+function extractLabeledSegment(text: string, labels: string[]): string {
+  const normalized = text.replace(/\r/g, '\n');
+  const allLabels = requirementLabelMap.flatMap((definition) => definition.labels).map(escapeRegExp).join('|');
+  for (const label of labels) {
+    const expression = new RegExp(`(?:^|[\\n.;])\\s*${escapeRegExp(label)}\\s*[:\\-]\\s*([\\s\\S]*?)(?=(?:[\\n.;]\\s*(?:${allLabels})\\s*[:\\-])|$)`, 'i');
+    const match = normalized.match(expression);
+    if (match?.[1]) return clean(match[1]);
+  }
+  return '';
 }
 
 function channelFromAnswers(answers: PersistedAnswer[]): PublicationChannel | null {
@@ -724,6 +777,7 @@ function extractAfter(text: string, labels: string[]): string {
 }
 
 function hasCompensation(text: string): boolean {
+  if (/(?:compenso|ral|stipendio|retribuzione)[^\n.]{0,60}(?:non lo so|da definire|n\/d)/i.test(text)) return false;
   return /\b(?:ral|stipendio|compenso|retribuzione|euro|€)\b/i.test(text);
 }
 
@@ -751,6 +805,10 @@ function stableShortId(input: string): string {
   let hash = 0;
   for (let index = 0; index < input.length; index += 1) hash = ((hash << 5) - hash + input.charCodeAt(index)) | 0;
   return Math.abs(hash).toString(36);
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function versions() {

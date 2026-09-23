@@ -20,7 +20,7 @@ import { createFact } from './validation.ts';
 import type { Annunci10xPersistenceAdapter, PersistedAnnunci10xSession, PersistedEvaluation, PersistedSnapshot } from './persistence/types.ts';
 import { createAnnunci10xPersistenceAdapter } from './persistence/adapter.ts';
 import type { Annunci10xAiProvider } from './ai/provider.ts';
-import type { CommercialContext, CommunicationStrategy, EvaluationCheck, PublicationGate, RoleCard, RoleProfile, ScoreResult } from './types.ts';
+import type { CommercialContext, CommunicationStrategy, EvaluationCheck, PublicationChannel, PublicationGate, RoleCard, RoleProfile, ScoreResult } from './types.ts';
 
 export const ANNUNCI10X_COOKIE_NAME = 'horyzon_annunci10x_session';
 export const ANNUNCI10X_MAX_AD_CHARS = 12_000;
@@ -109,6 +109,7 @@ export interface RunFreeAnalysisInput {
   rawAdText: string;
   roleHint?: string;
   companyHint?: string;
+  channelHint?: PublicationChannel;
   context?: Annunci10xRuntimeContext;
 }
 
@@ -176,7 +177,7 @@ export async function runFreeAnnunci10xAnalysis(input: RunFreeAnalysisInput): Pr
     sessionId: input.sessionId,
     sessionSecret: input.sessionSecret,
     operationType: 'PRECHECK',
-    input: { rawText: input.rawAdText, declaredChannel: 'LINKEDIN', roleHint: input.roleHint ?? null, companyHint: input.companyHint ?? null, entryMode: 'ANALYZE' },
+    input: { rawText: input.rawAdText, declaredChannel: input.channelHint ?? 'LINKEDIN', roleHint: input.roleHint ?? null, companyHint: input.companyHint ?? null, entryMode: 'ANALYZE' },
   });
   operations.push(toPublicOperation(precheck, 'PRECHECK', context.configuredProvider));
   await context.persistence.appendEvent({ sessionId: input.sessionId, eventName: 'precheck_completed', metadata: { detectedType: precheck.output.detectedType, canRunFullAnalysis: precheck.output.canRunFullAnalysis } });
@@ -215,7 +216,7 @@ export async function runFreeAnnunci10xAnalysis(input: RunFreeAnalysisInput): Pr
     sessionId: input.sessionId,
     sessionSecret: input.sessionSecret,
     operationType: 'STRATEGY',
-    input: { roleCard, roleProfile, channel: 'LINKEDIN' },
+    input: { roleCard, roleProfile, channel: input.channelHint ?? 'LINKEDIN' },
     inputSnapshotId: initialSnapshot.id,
   });
   operations.push(toPublicOperation(strategyTask, 'STRATEGY', context.configuredProvider));

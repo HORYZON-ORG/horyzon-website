@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { runFreeAnnunci10xAnalysis } from '@/lib/annunci-10x';
+import type { PublicationChannel } from '@/lib/annunci-10x';
 import { checkAnnunci10xRateLimit, createContext, getOrCreateSession, readJsonBody, toErrorResponse } from '../_shared';
 
 export const runtime = 'nodejs';
@@ -15,16 +16,22 @@ export async function POST(request: Request) {
     const rawAdText = typeof payload.rawAdText === 'string' ? payload.rawAdText : '';
     const roleHint = typeof payload.roleHint === 'string' ? payload.roleHint : undefined;
     const companyHint = typeof payload.companyHint === 'string' ? payload.companyHint : undefined;
+    const channelHint = isPublicationChannel(payload.channelHint) ? payload.channelHint : undefined;
     const result = await runFreeAnnunci10xAnalysis({
       sessionId: session.sessionId,
       sessionSecret: session.sessionSecret,
       rawAdText,
       roleHint,
       companyHint,
+      channelHint,
       context,
     });
     return NextResponse.json({ ok: true, result }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
     return toErrorResponse(error);
   }
+}
+
+function isPublicationChannel(value: unknown): value is PublicationChannel {
+  return value === 'LINKEDIN' || value === 'INDEED' || value === 'ATS' || value === 'EMAIL' || value === 'CUSTOM';
 }

@@ -209,7 +209,7 @@ const createAnswers = [
   ['ROLE_CONTEXT', 'Cerchiamo un customer care specialist per azienda SaaS B2B con sede a Bari.'],
   ['PRIMARY_CONTRIBUTION', 'Missione: ridurre i tempi di risposta e migliorare la qualita dei ticket nei primi mesi.'],
   ['WORK_REALITY', 'Gestisce ticket, aggiorna CRM, collabora con sales. Il lavoro e remoto ma richiede presenza in sede per onboarding.'],
-  ['REQUIREMENTS', 'Obbligatorio: italiano scritto chiaro. Preferenziale: esperienza CRM. Apprendibile: procedure interne.'],
+  ['REQUIREMENTS', 'Obbligatorio: italiano scritto chiaro. Preferenziale: esperienza CRM. Apprendibile: procedure interne. Vincoli: indisponibilita ai turni.'],
   ['ATTRACTION', 'Affiancamento iniziale, team stabile, processi chiari e obiettivi condivisi.'],
   ['OFFER', 'Sede Bari, contratto tempo determinato 12 mesi, ibrido 2 giorni, RAL 24000 euro.'],
   ['CHANNEL_APPLICATION', 'LinkedIn e ATS aziendale; candidatura tramite form con CV aggiornato.'],
@@ -228,6 +228,11 @@ for (const [stepId, answer] of createAnswers) {
 }
 
 assert.equal(createState.clarification?.targetPath, 'attractionContext.workMode');
+const requirementsByClass = Object.fromEntries(createState.roleCard.requirements.map((item) => [item.classification, item.label]));
+assert.equal(requirementsByClass.REQUIRED, 'italiano scritto chiaro');
+assert.equal(requirementsByClass.PREFERRED, 'esperienza CRM');
+assert.equal(requirementsByClass.TRAINABLE, 'procedure interne');
+assert.equal(requirementsByClass.DISQUALIFYING, 'indisponibilita ai turni');
 assert.equal(createState.canConfirm, false, 'blocking clarification prevents confirmation');
 await assert.rejects(
   () => confirmAnnunci10xCreate({
@@ -261,7 +266,7 @@ const editedCreate = await editAnnunci10xCreate({
   context: createContext,
 });
 assert.equal(editedCreate.roleCard.title, 'Customer care specialist B2B');
-assert.equal(editedCreate.operations[0].type, 'EDIT_CLASSIFIER');
+assert.equal(editedCreate.operations.some((operation) => operation.type === 'EDIT_CLASSIFIER'), false, 'structured field edits must not call EDIT_CLASSIFIER');
 
 const confirmedCreate = await confirmAnnunci10xCreate({
   sessionId: startedCreate.cookie.sessionId,
@@ -279,6 +284,31 @@ assert.equal(confirmedCreate.commercial.availableOffers.every((offer) => offer.p
 const resumedCreate = await resumeAnnunci10xCreate(startedCreate.cookie, createContext);
 assert.equal(resumedCreate.paymentRequired, true);
 assert.deepEqual(resumedCreate.commercial.availableOffers.map((offer) => offer.productCode), ['AD_GENERATION', 'GUIDE_PLUS_AD']);
+
+const unknownCreateContext = makeContext();
+const startedUnknownCreate = await startAnnunci10xCreate({ context: unknownCreateContext });
+const unknownAnswers = [
+  ['ROLE_CONTEXT', 'Ruolo: addetto customer care per sede di Bari.'],
+  ['PRIMARY_CONTRIBUTION', 'Risultato principale: gestire ticket e migliorare la qualita delle risposte.'],
+  ['WORK_REALITY', 'Attivita reali: gestisce richieste clienti, aggiorna CRM e collabora con il team.'],
+  ['REQUIREMENTS', 'Indispensabili: italiano scritto chiaro. Preferenziali: esperienza CRM. Apprendibili: software ticketing interno.'],
+  ['ATTRACTION', 'Benefit: Da definire. Formazione e crescita concreta: affiancamento iniziale.'],
+  ['OFFER', 'Sede: Bari. Modalita: Da definire. Contratto: Da definire. Orario: Da definire. Compenso: Non lo so / da definire.'],
+  ['CHANNEL_APPLICATION', 'Canale: Da definire. Candidatura: via email con CV aggiornato.'],
+];
+let unknownCreateState = startedUnknownCreate.result;
+for (const [stepId, answer] of unknownAnswers) {
+  unknownCreateState = await answerAnnunci10xCreateStep({
+    sessionId: startedUnknownCreate.cookie.sessionId,
+    sessionSecret: startedUnknownCreate.cookie.sessionSecret,
+    stepId,
+    answer,
+    context: unknownCreateContext,
+  });
+}
+assert.equal(unknownCreateState.roleCard.compensation, 'OPEN_DECISION');
+assert.equal(unknownCreateState.roleCard.compensation.includes('0'), false, 'unknown compensation must not become zero');
+assert.equal(unknownCreateState.roleCard.compensation.toLowerCase().includes('concordare'), false, 'unknown compensation must not become a default claim');
 
 await assert.rejects(
   () => runFreeAnnunci10xAnalysis({
