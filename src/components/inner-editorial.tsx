@@ -2,10 +2,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { RADAR_URL } from '@/content/product-truth';
 
-const directions: Record<string, { label: string; words: string[]; question: string; outcome: string }> = {
- 'benessere-organizzativo': { label: 'Benessere organizzativo', words: ['Persone', 'Ruoli', 'Relazioni'], question: 'L’azienda cresce. L’organizzazione riesce a seguirla?', outcome: 'Più chiarezza nel lavoro. Più spazio per le persone.' },
- 'benessere-patrimoniale': { label: 'Benessere patrimoniale', words: ['Protezione', 'Equilibrio', 'Continuità'], question: 'Le scelte di oggi proteggono ciò che vuoi costruire domani?', outcome: 'Una visione d’insieme, prima della prossima decisione.' },
- 'benessere-digitale': { label: 'Benessere digitale', words: ['Dati', 'Strumenti', 'Competenze'], question: 'La tecnologia semplifica il lavoro o aggiunge complessità?', outcome: 'Strumenti utili. Persone preparate. Controllo delle scelte.' },
+const directions: Record<string, { label: string; words: string[]; question: string; outcome: string; firstStep: string }> = {
+ 'benessere-organizzativo': { label: 'Benessere organizzativo', words: ['Persone', 'Ruoli', 'Relazioni'], question: 'Il lavoro deve potersi muovere anche senza di te.', outcome: 'Più chiarezza nel lavoro. Più spazio per le persone.', firstStep: 'Leggiamo dove ruoli, decisioni e processi stanno trattenendo energia.' },
+ 'benessere-patrimoniale': { label: 'Benessere patrimoniale', words: ['Protezione', 'Equilibrio', 'Continuità'], question: 'Proteggere ciò che hai costruito richiede una vista completa.', outcome: 'Una visione d’insieme, prima della prossima decisione.', firstStep: 'Mettiamo in relazione ciò che conta prima di scegliere strumenti e interlocutori.' },
+ 'benessere-digitale': { label: 'Benessere digitale', words: ['Dati', 'Strumenti', 'Competenze'], question: 'La tecnologia vale quando libera capacità nel lavoro reale.', outcome: 'Strumenti utili. Persone preparate. Controllo delle scelte.', firstStep: 'Partiamo dai passaggi di lavoro in cui dati, strumenti e persone devono tornare a collaborare.' },
 };
 export function EditorialVisual({ page }: { page: string }) {
  const area = directions[page.split('/')[0]];
@@ -28,6 +28,6 @@ export function AreaEditorial({ area, body, points, services }: { area: string; 
   <section className="area-introduction" id="comprendere"><div><p className="section-kicker">Il punto di partenza</p><h2>{direction.question}</h2></div><div className="area-narrative">{body.map(text => <p key={text}>{text}</p>)}<div className="area-signature"><span aria-hidden="true">↗</span><p>{direction.outcome}</p></div></div></section>
   <section className="area-services" id="ambiti"><header><p className="section-kicker">Come possiamo aiutare</p><h2>Un percorso che parte dalla tua realtà.</h2></header><div>{services.map((service, i) => <Link className="service-row" href={service.href} key={service.href}><span className="service-number">0{i + 1}</span><div><h3>{service.title}</h3><p>{service.intro}</p></div><span className="service-open" aria-label="Approfondisci">↗</span></Link>)}</div></section>
   <section className="area-focus"><div><p className="section-kicker">Che cosa osserviamo</p><h2>Le cose che fanno la differenza.</h2><p>La priorità non si indovina: si costruisce insieme, a partire da ciò che accade davvero.</p></div><ul>{points.map(point => <li key={point}><span aria-hidden="true">↗</span>{point}</li>)}</ul></section>
-  <section className="area-first-step" id="primo-passo"><p className="section-kicker">Cominciamo da qui</p><h2>Prima di cambiare, facciamo chiarezza.</h2><p>Il Radar è un primo passo per osservare il presente e scegliere dove intervenire.</p><a href={RADAR_URL} className="button primary">Inizia il Radar <span aria-hidden="true">↗</span></a><Link href="/contatti" className="text-link">Preferisci parlarne con noi?</Link></section>
+  <section className="area-first-step" id="primo-passo"><p className="section-kicker">Cominciamo da qui</p><h2>Prima di cambiare, facciamo chiarezza.</h2><p>{direction.firstStep}</p><a href={RADAR_URL} className="button primary">Inizia il Radar <span aria-hidden="true">↗</span></a><Link href="/contatti" className="text-link">Preferisci parlarne con noi?</Link></section>
  </>;
 }

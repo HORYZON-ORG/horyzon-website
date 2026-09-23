@@ -43,4 +43,13 @@ for (const route of serviceRoutes) {
  assert(html.includes('Cosa diventa visibile'), `${route}: evidence section missing`);
  assert(html.includes(`href="/${route.split('/')[0]}"`), `${route}: area return missing`);
 }
+for (const [route, phrase] of [
+ ['benessere-organizzativo', 'Il lavoro deve potersi muovere anche senza di te.'],
+ ['benessere-patrimoniale', 'Proteggere ciò che hai costruito richiede una vista completa.'],
+ ['benessere-digitale', 'La tecnologia vale quando libera capacità nel lavoro reale.'],
+]) {
+ const html = await readFile(`.next/server/app/${route}.html`, 'utf8');
+ assert(html.includes(phrase), `${route}: unique area question missing`);
+ assert(html.includes('area-first-step'), `${route}: first-step section missing`);
+}
 console.log(`Editorial checks passed: ${routes.length} representative routes, headings, internal links, area sections, no videos.`);

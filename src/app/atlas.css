@@ -177,6 +177,12 @@
 .editorial-page .service-evidence li{border-top:1px solid #7f968d;padding:20px 0;font-size:clamp(18px,1.65vw,26px);line-height:1.35}.editorial-page .service-evidence .text-link{margin-top:42px}
 @media(max-width:760px){.editorial-page .service-diagnostic li,.editorial-page .service-interventions li{grid-template-columns:42px minmax(0,1fr);font-size:20px}.editorial-page .service-diagnostic,.editorial-page .service-interventions,.editorial-page .service-evidence{padding-inline:6vw}}
 
+.editorial-page[data-page="benessere-organizzativo"] .area-first-step{background:radial-gradient(circle at 50% 110%,#31554c,#071722 55%)}
+.editorial-page[data-page="benessere-patrimoniale"] .area-first-step{background:linear-gradient(135deg,#433d30,#0d2025)}
+.editorial-page[data-page="benessere-digitale"] .area-first-step{background:linear-gradient(135deg,#102d38,#31554c)}
+.editorial-page[data-page="benessere-patrimoniale"] .area-services{background:#e5e1d6}.editorial-page[data-page="benessere-patrimoniale"] .service-row:nth-child(even){padding-left:5vw}
+.editorial-page[data-page="benessere-digitale"] .area-services{background:#d7e0dc}.editorial-page[data-page="benessere-digitale"] .service-row h3{letter-spacing:-.035em}
+
 /* The three commercial entrances use the same system language without asking a prospect to decode it. */
 .wellbeing-area-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid #9cada5}
 .wellbeing-area-card{min-height:360px;padding:30px;display:flex;flex-direction:column;border-bottom:1px solid #9cada5;color:var(--atlas-ink);transition:background .3s ease,color .3s ease,transform .3s ease}
