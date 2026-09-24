@@ -144,7 +144,6 @@ export default function CollaboratoriVincentiPage() {
   };
 
   const progressPct = ((currentSlide - 1) / (totalSlides - 1)) * 100;
-  const currentSlideData = deckData.slides[currentSlide - 1];
 
   return (
     <div className="deck-root-container">
@@ -188,66 +187,61 @@ export default function CollaboratoriVincentiPage() {
 
       {/* Floating Presentation Controls Dock */}
       <nav id="controls-dock" aria-label="Controlli presentazione">
-        <div className="dock-left">
-          <Link href="/" className="dock-btn text-btn" title="Torna alla Home di Horyzon">
-            ← Horyzon.it
-          </Link>
-          <span className="dock-module-pill">
-            MOD {currentSlideData?.mod_num || '01'}
-          </span>
-          <span className="dock-title-preview" title={currentSlideData?.title}>
-            {currentSlideData?.title}
-          </span>
-        </div>
+        <Link
+          href="/"
+          className="dock-btn text-btn dock-btn-home"
+          title="Torna alla Home di Horyzon"
+        >
+          ← Horyzon
+        </Link>
 
-        <div className="dock-center">
+        <button
+          type="button"
+          className="dock-btn text-btn"
+          id="btn-toggle-index"
+          onClick={() => setIsIndexOpen((prev) => !prev)}
+          title="Indice dei Moduli (Tasto M)"
+        >
+          ☰ Moduli
+        </button>
+
+        <div className="dock-nav-group">
           <button
             type="button"
-            className="dock-btn"
+            className="dock-btn dock-arrow-btn"
             id="btn-prev-slide"
             onClick={prevSlide}
             disabled={currentSlide <= 1}
             title="Slide precedente (Freccia Sinistra)"
           >
-            ←
+            ‹
           </button>
           <div className="dock-counter">
-            <strong id="dock-cur-slide">{currentSlide}</strong> /{' '}
+            <strong id="dock-cur-slide">{currentSlide}</strong>
+            <span className="dock-counter-sep">/</span>
             <span id="dock-total-slides">{totalSlides}</span>
           </div>
           <button
             type="button"
-            className="dock-btn"
+            className="dock-btn dock-arrow-btn"
             id="btn-next-slide"
             onClick={nextSlide}
             disabled={currentSlide >= totalSlides}
             title="Slide successiva (Spazio o Freccia Destra)"
           >
-            →
+            ›
           </button>
         </div>
 
-        <div className="dock-right">
-          <button
-            type="button"
-            className="dock-btn text-btn"
-            id="btn-toggle-index"
-            onClick={() => setIsIndexOpen((prev) => !prev)}
-            title="Indice dei Moduli (Tasto M)"
-          >
-            ☰ Moduli
-          </button>
-
-          <button
-            type="button"
-            className="dock-btn"
-            id="btn-fullscreen"
-            onClick={toggleFullscreen}
-            title="Schermo Intero (Tasto F)"
-          >
-            ⛶
-          </button>
-        </div>
+        <button
+          type="button"
+          className="dock-btn"
+          id="btn-fullscreen"
+          onClick={toggleFullscreen}
+          title="Schermo Intero (Tasto F)"
+        >
+          ⛶
+        </button>
       </nav>
 
       {/* Index Drawer Overlay */}
@@ -265,15 +259,24 @@ export default function CollaboratoriVincentiPage() {
       >
         <div className="drawer-header">
           <h2 className="drawer-title">Indice Masterclass</h2>
-          <button
-            type="button"
-            className="drawer-close-btn"
-            id="btn-close-index"
-            onClick={() => setIsIndexOpen(false)}
-            aria-label="Chiudi indice"
-          >
-            ×
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Link
+              href="/"
+              className="dock-btn text-btn"
+              style={{ textDecoration: 'none', color: 'var(--text-secondary)' }}
+            >
+              ← Horyzon.it
+            </Link>
+            <button
+              type="button"
+              className="drawer-close-btn"
+              id="btn-close-index"
+              onClick={() => setIsIndexOpen(false)}
+              aria-label="Chiudi indice"
+            >
+              ×
+            </button>
+          </div>
         </div>
 
         <div className="drawer-scroll-body">
