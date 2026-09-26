@@ -86,7 +86,10 @@ for (const definition of ANNUNCI10X_RUBRIC_CHECKS_V2) {
   for (const anchor of [0, 2, 4, 6, 8, 10]) assert.match(prompt, new RegExp(`\\b${anchor}=`), `prompt includes anchor ${anchor}`);
 }
 assert.equal(getEvaluatePromptV2CharacterCount(), prompt.length);
-assert.equal(ANNUNCI10X_EVALUATE_PROMPT_VERSION_V2, 'annunci10x.evaluate.v2.2');
+assert.equal(ANNUNCI10X_EVALUATE_PROMPT_VERSION_V2, 'annunci10x.evaluate.v2.3');
+assert.match(prompt, /Decision order STEP 1/);
+assert.match(prompt, /GENUINELY_UNKNOWN/);
+assert.match(prompt, /fast scoring pass/);
 assert.equal(prompt.includes('Accelerator:'), false, 'prompt must not expose accelerator architecture metadata');
 assert.equal(prompt.includes('Gate:'), false, 'prompt must not ask provider to reason about gate metadata');
 
@@ -98,6 +101,8 @@ assert.throws(() => validateEvaluateOutputV2({ ...makeOutput(8), finalScore: 80 
 assert.throws(() => validateEvaluateOutputV2({ ...makeOutput(8), coverage: 100 }), /coverage/);
 assert.throws(() => validateEvaluateOutputV2({ ...makeOutput(8), band: 'GOOD_BASE' }), /band/);
 assert.throws(() => validateEvaluateOutputV2({ ...makeOutput(8), gate: 'READY' }), /gate/);
+assert.throws(() => validateEvaluateOutputV2(makeOutput(8, { '01': { evidence: ['one', 'two', 'three'] } })), /at most 2/);
+assert.throws(() => validateEvaluateOutputV2(makeOutput(8, { '01': { missing: ['one', 'two', 'three'] } })), /at most 2/);
 
 validateEvaluateOutputV2(makeOutput(8, { 16: { score: null, status: 'NOT_EVALUABLE', evidence: [], reason: 'No channel policy exists.' } }));
 validateEvaluateOutputV2(makeOutput(8, { 14: { score: 0, status: 'MISSING', missing: ['Compensation absent.'] } }));
@@ -248,6 +253,8 @@ assert.equal(capturedOpenAiBody.store, false);
 assert.equal(capturedOpenAiBody.text.format.name, 'annunci10x_evaluate_v2');
 assert.equal(capturedOpenAiBody.text.format.schema.properties.checks.minItems, 20);
 assert.equal(capturedOpenAiBody.text.format.schema.properties.checks.maxItems, 20);
+assert.equal(capturedOpenAiBody.text.format.schema.properties.checks.items.properties.evidence.maxItems, 2);
+assert.equal(capturedOpenAiBody.text.format.schema.properties.checks.items.properties.missing.maxItems, 2);
 
 assert.equal(EVALUATE_PROMPT.version, 'annunci10x.evaluate.v3');
 assert.equal(ANNUNCI10X_PROMPT_REGISTRY.EVALUATE.version, 'annunci10x.evaluate.v3');

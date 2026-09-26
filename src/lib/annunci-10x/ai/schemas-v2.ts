@@ -41,9 +41,9 @@ export const ANNUNCI10X_EVALUATE_OUTPUT_SCHEMA_V2 = {
           id: { type: 'string', enum: CHECK_IDS_V2 },
           score: { anyOf: [{ type: 'integer', minimum: 0, maximum: 10 }, { type: 'null' }] },
           status: { type: 'string', enum: ANNUNCI10X_CHECK_STATUSES_V2 },
-          evidence: { type: 'array', items: { type: 'string' } },
+          evidence: { type: 'array', maxItems: 2, items: { type: 'string' } },
           reason: { type: 'string' },
-          missing: { type: 'array', items: { type: 'string' } },
+          missing: { type: 'array', maxItems: 2, items: { type: 'string' } },
           confidence: { type: 'integer', minimum: 0, maximum: 100 },
         },
       },
@@ -107,7 +107,9 @@ function requireArray(value: unknown, path: string): unknown[] {
 }
 
 function requireStringArray(value: unknown, path: string): string[] {
-  return requireArray(value, path).map((item, index) => requireString(item, `${path}[${index}]`));
+  const array = requireArray(value, path);
+  if (array.length > 2) throw new Error(`${path} must contain at most 2 items`);
+  return array.map((item, index) => requireString(item, `${path}[${index}]`));
 }
 
 function requireString(value: unknown, path: string): string {

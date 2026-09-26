@@ -47,16 +47,18 @@ Fase 1B added an isolated TypeScript V2 scoring core for rubric definitions, per
 
 Fase 1C added an isolated V2 provider contract and shadow runner:
 
-- prompt version `annunci10x.evaluate.v2.2`;
+- prompt version `annunci10x.evaluate.v2.3`;
 - schema name `annunci10x_evaluate_v2`;
 - structured TARGET vs CONTEXT input projection;
 - one schema-repair retry;
 - deterministic aggregation through `calculateAnnunci10xScoreV2()`;
 - deterministic tests only, including `OpenAiAnnunci10xProvider` with fake fetch.
 
+Fase 1D.1 clarifies that the V2 provider is a compact fast scoring pass, not the final customer-facing report writer. Evidence and missing arrays are bounded to two short items per check.
+
 The V2 projection is boundary-aware: TARGET preserves legitimate ad/bundle evidence such as application email, phone, URL, named contact, role name, and company text, while technical secret keys are removed. CONTEXT is limited to `roleCard`, `roleProfile`, and `communicationStrategy` and strips lead PII, secrets, and commercial/payment metadata.
 
-These additions are not wired to `/annunci-10x`, V1 `EVALUATE`, persistence, UI, API routes, or public product behavior. No live OpenAI calibration is claimed.
+These additions are not wired to `/annunci-10x`, V1 `EVALUATE`, persistence, UI, API routes, or public product behavior. The V2.3 live pilot is documented separately as calibration evidence only, not production validation.
 
 Important current files:
 
