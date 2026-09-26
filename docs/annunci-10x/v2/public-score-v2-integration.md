@@ -2,6 +2,19 @@
 
 Status: implemented behind a server-side feature flag.
 
+## Production readiness status
+
+- CODE: READY
+- DATABASE MIGRATION: APPLIED
+- PRODUCTION FLAG: V1
+- PUBLIC V2: NOT ENABLED
+- AI PROVIDER FOR ACTIVATION: PENDING REAL PROVIDER VERIFICATION
+
+V2 public activation remains blocked because production durable `AnalysisRun`
+records have been observed with `provider = MOCK` and `evaluation_mode = V1`.
+MOCK is a deterministic development/test mode and must not be treated as a
+definitive customer-facing AI result.
+
 ## Feature flag
 
 `ANNUNCI10X_PUBLIC_SCORE_VERSION` controls the public free-analysis score version.
@@ -52,7 +65,9 @@ Application code exposes `gate: null` for V2.
 - `V2_SHADOW`
 - `V2_PUBLIC`
 
-The migration file is committed but not applied by this phase.
+The migration has been applied to the canonical Supabase production project
+`horyzon` (`pmkyeqrfkunypfkbjnyg`). It only updates the analysis-run
+`evaluation_mode` check constraint.
 
 ## Non-goals
 

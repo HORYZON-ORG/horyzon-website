@@ -39,12 +39,12 @@ export async function getGatedAnnunci10xFreeResult(input: {
   if (!run) throw new Annunci10xPublicError('NOT_FOUND', 'Analisi non trovata.', 404);
 
   const eligibility = await getAnnunci10xResultEligibility({ session: input.session, analysisRunId: run.id, context });
-  if (!eligibility.analysisReady) throw new Annunci10xPublicError('ANALYSIS_NOT_READY', 'Il risultato non e ancora pronto.', 409);
+  if (!eligibility.analysisReady) throw new Annunci10xPublicError('ANALYSIS_NOT_READY', 'Il risultato non è ancora pronto.', 409);
   if (!eligibility.emailVerified) throw new Annunci10xPublicError('EMAIL_VERIFICATION_REQUIRED', 'Verifica la tua email per visualizzare il risultato.', 403);
-  if (!eligibility.resultEligible || !run.evaluationId) throw new Annunci10xPublicError('RESULT_NOT_AVAILABLE', 'Il risultato non e disponibile per questa analisi.', 409);
+  if (!eligibility.resultEligible || !run.evaluationId) throw new Annunci10xPublicError('RESULT_NOT_AVAILABLE', 'Il risultato non è disponibile per questa analisi.', 409);
 
   const evaluation = await context.persistence.getEvaluationById(run.evaluationId, run.sessionId, input.session.sessionSecret);
-  if (!evaluation) throw new Annunci10xPublicError('RESULT_NOT_AVAILABLE', 'Il risultato non e disponibile per questa analisi.', 409);
+  if (!evaluation) throw new Annunci10xPublicError('RESULT_NOT_AVAILABLE', 'Il risultato non è disponibile per questa analisi.', 409);
 
   await context.persistence.appendEvent({
     sessionId: input.session.sessionId,
@@ -87,7 +87,7 @@ export function progressLabelForAnalysisStage(stage: Annunci10xAnalysisRunStage)
   if (stage === 'SOURCE_VALIDATION' || stage === 'PRECHECK' || stage === 'EXTRACT') return 'Stiamo leggendo il tuo annuncio';
   if (stage === 'PROFILE' || stage === 'STRATEGY') return 'Stiamo ricostruendo il ruolo';
   if (stage === 'EVALUATE' || stage === 'CLARIFY') return 'Stiamo verificando i criteri Annunci 10x';
-  return 'Il risultato e pronto';
+  return 'Il risultato è pronto';
 }
 
 function resultVersionForScore(score: Annunci10xPersistedScoreResult): FreeResultVersion {
@@ -101,11 +101,11 @@ function interpretationForResult(
 ): string {
   if (resultVersion === 'V2') {
     if (!band) return 'Non ci sono abbastanza elementi valutabili per assegnare una fascia.';
-    if (band.code === 'CRITICAL') return "L'annuncio non rende ancora chiara la realta del ruolo.";
+    if (band.code === 'CRITICAL') return "L'annuncio non rende ancora chiara la realtà del ruolo.";
     if (band.code === 'WEAK') return "L'annuncio contiene alcuni fatti utili, ma lascia incertezza materiale.";
-    if (band.code === 'GOOD_BASE') return "L'annuncio e utilizzabile, con margini chiari di precisione.";
-    if (band.code === 'STRONG') return "L'annuncio e chiaro, coerente e orientato alla decisione del candidato.";
-    return "L'annuncio e molto completo e coerente rispetto ai criteri Annunci 10x.";
+    if (band.code === 'GOOD_BASE') return "L'annuncio è utilizzabile, con margini chiari di precisione.";
+    if (band.code === 'STRONG') return "L'annuncio è chiaro, coerente e orientato alla decisione del candidato.";
+    return "L'annuncio è molto completo e coerente rispetto ai criteri Annunci 10x.";
   }
   if ('interval' in score && score.interval) return 'Risultato calcolato con semantica V1: il range viene preservato senza applicare fasce V2.';
   if (typeof score.value === 'number') return 'Risultato calcolato con semantica V1. La valutazione completa resta protetta dal gate email.';
