@@ -54,6 +54,19 @@ Future work:
 - preserve unsupported-claim detection;
 - regression-test prompt injection and unsupported benefit claims.
 
+## Phase 3A: context capsule
+
+Future work:
+
+- prevent AI calls from receiving the entire funnel history by default;
+- build operation-specific Context Capsules from structured source of truth;
+- keep raw answers, normalized facts, RoleCard, RoleProfile, Strategy, and current snapshot distinct;
+- preserve missing facts, conflicts, unsupported claims, and `DO_NOT_CLAIM`;
+- keep capsule generation deterministic in TypeScript first;
+- use any future semantic accelerator only after benchmark validation.
+
+Do not implement Context Capsule during Fase 1A.
+
 ## Phase 4: data model
 
 Future work:
@@ -127,6 +140,40 @@ Before enabling V2 publicly:
 - verify robots and `X-Robots-Tag`;
 - verify no public Premium Guide asset exposure;
 - verify no legacy `/annuncio-10x` change.
+
+## Future local decision accelerator feasibility
+
+Rizzo Flow is not a required part of Annunci 10x architecture. It is a possible local accelerator only for closed tasks and only after domain-specific benchmark validation.
+
+Potential future benchmark candidates:
+
+- `PRECHECK`: job ad / teaser / incomplete / invalid.
+- Routing: which wizard area needs clarification.
+- Sufficiency: data sufficient yes/no.
+- Semantic filtering: which block is relevant for a future Context Capsule.
+- Lead classification: recruiting problem / CRM routing.
+- Simple guardrails: suspicious input / prompt-injection prefilter.
+- Some 0-10 score checks only after specific benchmark validation.
+
+Do not use a closed decision accelerator for:
+
+- text generation;
+- ad rewriting;
+- free extraction;
+- email;
+- textual reports;
+- Master generation;
+- variants;
+- complex reasoning.
+
+Missing-evidence weakness must be treated as a first-class risk. `MISSING` vs `N/D` must not be delegated automatically to a local accelerator.
+
+Future adoption rule:
+
+1. Shadow benchmark on Annunci 10x fixtures.
+2. Compare against primary LLM and deterministic rules.
+3. Review missing-evidence behavior.
+4. Approve a capability-specific GO before production use.
 
 ## Rollback principle
 

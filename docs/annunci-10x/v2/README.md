@@ -64,6 +64,8 @@ The V2 docs identify future changes. They do not claim those changes are already
 - `method-v2.md`: canonical V2 method.
 - `guide-mapping-v2.md`: mapping from V2 guide questions and sheet areas to current runtime.
 - `score-semantics-v2.md`: future score semantics and publication gate separation.
+- `rubric-v2-anchors.md`: provider-agnostic 0-10 anchors for the 20 V2 controls.
+- `calibration-fixtures-v2.md`: methodological calibration fixtures and monotonicity/stability expectations.
 - `ux-contract-v2.md`: future UX constraints and public/private output rules.
 - `data-contracts-v2.md`: conceptual data model and migration needs.
 - `commercial-v2.md`: decided commercial architecture without checkout implementation.

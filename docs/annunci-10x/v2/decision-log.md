@@ -202,6 +202,19 @@ This should still be handled carefully as positioning, not as a measurable guara
 - Migration SQL.
 - Runtime provider/prompt updates.
 
+## Future architecture principle: decision accelerator
+
+Annunci 10x should not depend unnecessarily on a single model type.
+
+Future decision routing principle:
+
+1. If a decision is deterministic, use TypeScript/rules.
+2. If a decision is semantic but closed, and a specialized engine has demonstrated high performance on an Annunci 10x-specific benchmark, it may be used as an accelerator.
+3. If the task requires text generation, free extraction, complex reasoning, explanations, or the accelerator does not reach required quality, use the primary OpenAI/LLM provider.
+4. If the accelerator is uncertain, fallback to the primary model.
+
+This is not authorization to implement Rizzo Flow or any other accelerator. Every capability must earn production use through a specific Annunci 10x benchmark.
+
 ## Obsolete or superseded
 
 - V1/V1.1 guide content as canonical future method source.
