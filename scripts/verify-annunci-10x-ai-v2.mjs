@@ -109,6 +109,42 @@ assert.equal(repaired.retryCount, 1);
 assert.equal(repairedProvider.calls.length, 2);
 assert.match(repairedProvider.calls[1].systemPrompt, /SCHEMA REPAIR/);
 
+const modelEvaluateProvider = new FakeProvider(makeOutput(7));
+await runAnnunci10xEvaluateV2({
+  input: makeInput(),
+  provider: modelEvaluateProvider,
+  env: { ANNUNCI10X_MODEL_EVALUATE: 'model-evaluate', ANNUNCI10X_MODEL_DEFAULT: 'model-default', ANNUNCI10X_AI_TIMEOUT_MS: '12345' },
+});
+assert.equal(modelEvaluateProvider.calls[0].model, 'model-evaluate');
+assert.equal(modelEvaluateProvider.calls[0].timeoutMs, 12345);
+
+const modelDefaultProvider = new FakeProvider(makeOutput(7));
+await runAnnunci10xEvaluateV2({
+  input: makeInput(),
+  provider: modelDefaultProvider,
+  env: { ANNUNCI10X_MODEL_DEFAULT: 'model-default' },
+});
+assert.equal(modelDefaultProvider.calls[0].model, 'model-default');
+
+const constantDefaultProvider = new FakeProvider(makeOutput(7));
+await runAnnunci10xEvaluateV2({
+  input: makeInput(),
+  provider: constantDefaultProvider,
+  env: {},
+});
+assert.equal(constantDefaultProvider.calls[0].model, 'gpt-5-mini');
+
+const explicitModelProvider = new FakeProvider(makeOutput(7));
+await runAnnunci10xEvaluateV2({
+  input: makeInput(),
+  provider: explicitModelProvider,
+  model: 'explicit-model',
+  timeoutMs: 2222,
+  env: { ANNUNCI10X_MODEL_EVALUATE: 'model-evaluate', ANNUNCI10X_MODEL_DEFAULT: 'model-default', ANNUNCI10X_AI_TIMEOUT_MS: '12345' },
+});
+assert.equal(explicitModelProvider.calls[0].model, 'explicit-model');
+assert.equal(explicitModelProvider.calls[0].timeoutMs, 2222);
+
 const invalidProvider = new FakeProvider([{ checks: [] }, { checks: [] }]);
 await assert.rejects(
   () => runAnnunci10xEvaluateV2({ input: makeInput(), provider: invalidProvider, model: 'fake-model' }),

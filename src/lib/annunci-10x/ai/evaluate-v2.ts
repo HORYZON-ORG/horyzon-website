@@ -7,7 +7,7 @@ import {
 import { calculateAnnunci10xScoreV2 } from '../score-v2.ts';
 import type { ScoreResultV2 } from '../types-v2.ts';
 import { Annunci10xAiError } from './errors.ts';
-import { ANNUNCI10X_AI_DEFAULT_MODEL, ANNUNCI10X_AI_DEFAULT_TIMEOUT_MS } from './models.ts';
+import { getAnnunci10xAiTimeoutMs, getAnnunci10xModelForOperation } from './models.ts';
 import {
   ANNUNCI10X_EVALUATE_PROMPT_VERSION_V2,
   EVALUATE_PROMPT_V2,
@@ -43,6 +43,7 @@ export interface RunAnnunci10xEvaluateV2Options {
   model?: string;
   timeoutMs?: number;
   operationId?: string;
+  env?: Record<string, string | undefined>;
 }
 
 export interface RunAnnunci10xEvaluateV2Result extends Annunci10xEvaluateOutputV2 {
@@ -82,8 +83,9 @@ export function projectEvaluateContextV2(context: Annunci10xEvaluateContextV2): 
 }
 
 export async function runAnnunci10xEvaluateV2(options: RunAnnunci10xEvaluateV2Options): Promise<RunAnnunci10xEvaluateV2Result> {
-  const model = options.model ?? ANNUNCI10X_AI_DEFAULT_MODEL;
-  const timeoutMs = options.timeoutMs ?? ANNUNCI10X_AI_DEFAULT_TIMEOUT_MS;
+  const env = options.env ?? process.env;
+  const model = options.model ?? getAnnunci10xModelForOperation('EVALUATE', env);
+  const timeoutMs = options.timeoutMs ?? getAnnunci10xAiTimeoutMs(env);
   const projectedInput = projectEvaluateInputV2(options.input);
   const operationId = options.operationId ?? createEvaluateOperationIdV2({ input: projectedInput, model });
 
