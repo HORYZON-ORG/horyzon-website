@@ -12,7 +12,7 @@ type BusinessRole = 'OWNER_ENTREPRENEUR' | 'HR' | 'INTERNAL_RECRUITER' | 'CONSUL
 interface AnalysisRunState {
   id: string;
   status: AnalysisStatus;
-  stage: AnalysisStage;
+  stage?: AnalysisStage;
   sourceStatus: 'READY' | 'URL_FETCH_FAILED' | 'INVALID_SOURCE';
   ready: boolean;
   progressLabel: string;
@@ -200,7 +200,7 @@ export function Annunci10xAnalyzeFlow() {
       if (!response.ok || !payload.ok) throw new Error(payload.error?.code ?? payload.error?.message ?? 'EMAIL_PROVIDER_UNAVAILABLE');
       setResendAfterSeconds(Number(payload.resendAfterSeconds ?? 0));
       setExpiresInSeconds(Number(payload.expiresInSeconds ?? 0));
-      setStatusMessage(payload.sent ? 'Codice inviato se il provider email e disponibile.' : `Puoi richiedere un nuovo codice tra ${Number(payload.resendAfterSeconds ?? 0)} secondi.`);
+      setStatusMessage(payload.sent ? 'Codice inviato.' : `Puoi richiedere un nuovo codice tra ${Number(payload.resendAfterSeconds ?? 0)} secondi.`);
     } catch (cause) {
       setError(customerSafeError(cause, 'La verifica email e temporaneamente non disponibile.'));
     } finally {
@@ -241,7 +241,7 @@ export function Annunci10xAnalyzeFlow() {
     <form className={styles.form} onSubmit={submitSource} aria-labelledby="analyze-source-title">
       <div className={styles.formHead}>
         <p>Analizza gratis</p>
-        <h2 id="analyze-source-title">Parti dal testo o dall&apos;URL dell&apos;annuncio.</h2>
+        <h2 id="analyze-source-title">Calcola il tuo Annunci 10x Score.</h2>
       </div>
       <div className={styles.sourceToggle} role="radiogroup" aria-label="Sorgente annuncio">
         <button type="button" data-active={sourceMode === 'PASTED_TEXT'} onClick={() => setSourceMode('PASTED_TEXT')} disabled={busy === 'source'}>Incolla testo</button>
@@ -255,17 +255,21 @@ export function Annunci10xAnalyzeFlow() {
             <input id="annunci10x-source-url" type="url" required value={url} onChange={(event) => setUrl(event.target.value)} placeholder="https://..." disabled={busy === 'source'} />
           </Field>}
       <div className={styles.actions}>
-        <button type="submit" disabled={busy === 'source'}>{busy === 'source' ? 'Avvio in corso' : 'Avvia analisi'}</button>
+        <button type="submit" disabled={busy === 'source'}>{busy === 'source' ? 'Avvio in corso' : 'Calcola gratis il tuo Score'}</button>
         {sourceMode === 'PASTED_TEXT' && <button type="button" disabled={busy === 'source'} onClick={() => setText(sampleAd)}>Usa esempio</button>}
       </div>
     </form>
 
-    {analysisRun && <div className={styles.createNotice} aria-live="polite">
+    {analysisRun && <div className={styles.progressCard} aria-live="polite">
       <div>
-        <p>Stato analisi</p>
+        <p>Analisi in corso</p>
         <strong>{analysisRun.status === 'FAILED' ? 'Analisi non completata' : analysisRun.progressLabel}</strong>
       </div>
-      <div><span>{analysisRun.ready ? 'OK' : analysisRun.status}</span><small>{analysisRun.ready ? 'pronto' : 'in corso'}</small></div>
+      <div className={styles.progressRail} aria-hidden="true">
+        <span data-active="true" />
+        <span data-active={analysisRun.ready || emailVerified ? 'true' : 'false'} />
+        <span data-active={analysisRun.ready ? 'true' : 'false'} />
+      </div>
     </div>}
 
     {sourceFailed && <div className={styles.warningPanel} role="status">
@@ -276,7 +280,7 @@ export function Annunci10xAnalyzeFlow() {
     {canShowContact && <form className={styles.form} onSubmit={submitContact} aria-labelledby="analyze-contact-title">
       <div className={styles.formHead}>
         <p>Dati contatto</p>
-        <h2 id="analyze-contact-title">Ti avvisiamo solo dopo la verifica email.</h2>
+        <h2 id="analyze-contact-title">Completa i dati mentre analizziamo il testo.</h2>
       </div>
       <div className={styles.fieldGrid}>
         <Field label="Nome" htmlFor="lead-first-name" required><input id="lead-first-name" required value={contact.firstName} onChange={(event) => setContact({ ...contact, firstName: event.target.value })} disabled={contactSaved || busy === 'contact'} /></Field>
@@ -290,7 +294,7 @@ export function Annunci10xAnalyzeFlow() {
     </form>}
 
     {contactSaved && !emailVerified && <section className={styles.form} aria-labelledby="email-verification-title">
-      <div className={styles.formHead}><p>Verifica email</p><h2 id="email-verification-title">Inserisci il codice a 6 cifre.</h2></div>
+      <div className={styles.formHead}><p>Verifica email</p><h2 id="email-verification-title">Verifica la tua email per visualizzare il risultato.</h2></div>
       <div className={styles.actions}>
         <button type="button" onClick={requestCode} disabled={busy === 'request-code' || resendAfterSeconds > 0}>{resendAfterSeconds > 0 ? `Nuovo codice tra ${resendAfterSeconds}s` : 'Invia codice'}</button>
         {expiresInSeconds > 0 && <span>Codice valido per circa {expiresInSeconds}s.</span>}
@@ -301,8 +305,8 @@ export function Annunci10xAnalyzeFlow() {
       </form>
     </section>}
 
-    {showResultLocked && <div className={styles.testNotice} role="status"><strong>Il risultato e pronto.</strong><span>Verifica la tua email per visualizzarlo.</span></div>}
-    {showVerifiedWaiting && <div className={styles.testNotice} role="status"><strong>Email verificata.</strong><span>Stiamo completando l&apos;analisi.</span></div>}
+    {showResultLocked && <div className={styles.lockedNotice} role="status"><strong>Il tuo risultato e pronto.</strong><span>Verifica la tua email per visualizzarlo.</span></div>}
+    {showVerifiedWaiting && <div className={styles.lockedNotice} role="status"><strong>Email verificata.</strong><span>Stiamo completando l&apos;analisi.</span></div>}
     {analysisRun?.status === 'FAILED' && !sourceFailed && <div className={styles.error} role="alert">Non siamo riusciti a completare l&apos;analisi. Riprova.</div>}
     {statusMessage && <p className={styles.coverageNote} aria-live="polite">{statusMessage}</p>}
     {error && <p className={styles.error} role="alert">{error}</p>}
@@ -314,13 +318,13 @@ export function Annunci10xAnalyzeFlow() {
 function FreeResultCard({ result }: { result: FreeResult }) {
   return <section className={styles.result} aria-labelledby="free-result-title">
     <div className={styles.resultHead}>
-      <div><p>Risultato gratuito</p><h2 id="free-result-title">Score Annunci 10x</h2><small>{result.resultVersion === 'V1_COMPAT' ? 'Compatibilita V1' : 'Semantica V2'}</small></div>
+      <div><p>Annunci 10x Score</p><h2 id="free-result-title">Risultato gratuito</h2></div>
       <div className={styles.scoreBox}><span>Score</span><strong>{formatFreeScore(result.score)}</strong></div>
       <div className={styles.scoreBox}><span>Copertura</span><strong>{Math.round(result.score.coverage)}%</strong></div>
-      <div className={styles.gateBox}><span>Fascia</span><strong>{result.band?.label ?? 'N/D'}</strong><small>{result.resultVersion === 'V1_COMPAT' ? 'Le fasce V2 non sono applicate a risultati V1.' : 'Fascia deterministica V2.'}</small></div>
+      {result.band && <div className={styles.gateBox}><span>Fascia</span><strong>{result.band.label}</strong></div>}
     </div>
     <div className={styles.panel}><h3>Interpretazione</h3><p>{result.interpretation}</p></div>
-    <section className={styles.improveCta}><p>Prossimo passo</p><h3>{result.nextAction.label}</h3><span>La generazione premium e il checkout non sono ancora attivi in questa fase.</span></section>
+    <section className={styles.improveCta}><p>Prossimo passo</p><h3>{result.nextAction.label}</h3><span>Potrai trasformare il testo in una versione piu chiara e pronta da adattare al canale.</span></section>
   </section>;
 }
 
@@ -338,7 +342,8 @@ function normalizeRun(run: AnalysisRunState): AnalysisRunState {
   };
 }
 
-function fallbackProgressLabel(stage: AnalysisStage): string {
+function fallbackProgressLabel(stage?: AnalysisStage): string {
+  if (!stage) return 'Stiamo leggendo il tuo annuncio';
   if (stage === 'SOURCE_VALIDATION' || stage === 'PRECHECK' || stage === 'EXTRACT') return 'Stiamo leggendo il tuo annuncio';
   if (stage === 'PROFILE' || stage === 'STRATEGY') return 'Stiamo ricostruendo il ruolo';
   if (stage === 'EVALUATE' || stage === 'CLARIFY') return 'Stiamo verificando i criteri Annunci 10x';

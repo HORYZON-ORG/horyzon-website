@@ -1,5 +1,6 @@
 "use client";
 
+import Image from 'next/image';
 import type { FormEvent, ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { formatAnnunci10xScore } from '@/lib/annunci-10x/presentation.ts';
@@ -330,52 +331,45 @@ export function Annunci10xClient() {
 
   return <div className={styles.page}>
     <section className={styles.hero}>
+      <Image
+        src="/annunci-10x/hero.jpeg"
+        alt="Professionisti che camminano verso una citta al tramonto"
+        fill
+        sizes="100vw"
+        preload
+        className={styles.heroImage}
+      />
+      <div className={styles.heroShade} aria-hidden="true" />
       <div className={styles.heroContent}>
         <p className={styles.eyebrow}>Horyzon / Annunci 10x</p>
-        <h1>Trova candidati migliori partendo da un annuncio migliore.</h1>
-        <p className={styles.heroLead}>Valuta un testo gia scritto oppure costruisci da zero la scheda del ruolo. Prima mettiamo in ordine i fatti, poi decidiamo se l&apos;annuncio e pronto o cosa va chiarito.</p>
+        <h1>Le persone giuste esistono. Il tuo annuncio riesce ad attirarle?</h1>
+        <p className={styles.heroLead}>Scopri in pochi minuti quanto il tuo annuncio riesce davvero a spiegare il ruolo, attirare persone coerenti e ridurre candidature fuori target.</p>
         <div className={styles.heroActions} aria-label="Percorsi iniziali">
-          <button type="button" onClick={() => selectMode('ANALYZE')}>Valuta il tuo annuncio</button>
-          <button type="button" onClick={() => selectMode('CREATE')}>Crea da zero</button>
+          <button type="button" onClick={() => selectMode('ANALYZE')}>Calcola gratis il tuo Annunci 10x Score</button>
+          <button type="button" onClick={() => selectMode('CREATE')}>Devo creare un annuncio da zero</button>
         </div>
-        <p className={styles.validation}>Modalita test visibile. Nessun checkout attivo in questa fase.</p>
       </div>
-      <aside className={styles.heroPanel} aria-label="Cosa ottieni">
-        <p>Il tuo output</p>
-        <ul>
-          <li>Score Annunci 10x</li>
-          <li>Punti forti</li>
-          <li>Priorita da risolvere</li>
-          <li>Controllo pubblicazione</li>
-        </ul>
-        <span>La generazione finale resta bloccata dietro autorizzazione server-side.</span>
-      </aside>
     </section>
 
-    <section className={styles.problem}>
-      <p className={styles.eyebrowDark}>Perche serve</p>
-      <h2>Molti annunci chiedono tutto. E spiegano troppo poco.</h2>
-      <div className={styles.concepts}>
-        <article><span>01</span><h3>Ruolo</h3><p>Il candidato deve capire subito quale lavoro reale trovera, non solo il titolo.</p></article>
-        <article><span>02</span><h3>Persona</h3><p>I requisiti devono distinguere cio che e indispensabile, preferibile o apprendibile.</p></article>
-        <article><span>03</span><h3>Contesto</h3><p>Condizioni, interlocutori e candidatura riducono ambiguita e false aspettative.</p></article>
-      </div>
-    </section>
+    <PainSection />
+    <ConsequenceSection />
+    <HowItWorksSection />
+    <PathChoiceSection onAnalyze={() => selectMode('ANALYZE')} onCreate={() => selectMode('CREATE')} />
 
     <section ref={workspaceRef} className={styles.workspace} aria-labelledby="annunci10x-workspace-title">
       <div className={styles.workspaceIntro}>
-        <p>Prodotto</p>
+        <p>Workspace</p>
         <h2 id="annunci10x-workspace-title">Parti dal punto in cui sei.</h2>
-        <p>Se hai gia un annuncio, lo leggiamo con i 20 controlli. Se parti da zero, raccogliamo i fatti e ti facciamo confermare la posizione prima del confine commerciale.</p>
+        <p>Analizza un testo gia pronto oppure ricostruisci prima il ruolo reale. In entrambi i casi, il metodo resta lo stesso: prima i fatti, poi le parole.</p>
       </div>
       <div className={styles.workspaceBody}>
         <div className={styles.modeTabs} role="tablist" aria-label="Scegli percorso">
           <button type="button" role="tab" aria-selected={mode === 'ANALYZE'} data-active={mode === 'ANALYZE'} onClick={() => selectMode('ANALYZE')}>
-            <span>Valutalo</span>
+            <span>Calcola lo Score</span>
             <small>Ho gia un annuncio</small>
           </button>
           <button type="button" role="tab" aria-selected={mode === 'CREATE'} data-active={mode === 'CREATE'} onClick={() => selectMode('CREATE')}>
-            <span>Crealo</span>
+            <span>Crea da zero</span>
             <small>Parto dal ruolo reale</small>
           </button>
         </div>
@@ -407,10 +401,153 @@ export function Annunci10xClient() {
 
     {premiumOutput && <PremiumOutputPanel output={premiumOutput} copied={copied} onCopy={copyText} />}
 
-    <BeforeAfter />
-    <MethodStatement />
-    <FaqSection />
+    <MethodSection />
+    <RolesSection />
+    <AudienceSection />
+    <ProductLadder />
+    <RecruitingBridge />
+    <FinalCta onAnalyze={() => selectMode('ANALYZE')} onCreate={() => selectMode('CREATE')} />
   </div>;
+}
+
+const painItems = [
+  ['Tanti CV. Pochi davvero coerenti.', 'L annuncio arriva a molte persone, ma non sempre a quelle che capiscono davvero il lavoro.'],
+  ['Annunci che sembrano tutti uguali.', 'Quando il testo e generico, anche un ruolo concreto perde riconoscibilita.'],
+  ['Ruoli descritti in modo troppo vago.', 'Attivita, condizioni e risultati attesi restano impliciti e aumentano le candidature fuori target.'],
+  ['Sostituire una persona sbagliata sembra impossibile.', 'La selezione si blocca quando trovare un alternativa sembra ancora piu difficile.'],
+];
+
+const consequenceItems = ['tempo perso', 'selezioni che si allungano', 'manager assorbiti dal recruiting', 'persone fuori ruolo', 'errori operativi', 'crescita frenata'];
+const methodSteps = ['Lavoro reale', 'Persona necessaria', 'Strategia', 'Annuncio', 'Verifica'];
+const lenses = [
+  ['Popolarita', 'Un ruolo raro non va raccontato come uno molto comune.'],
+  ['Sfida / Routine', 'Cambia il peso tra stabilita, ritmo, autonomia e complessita.'],
+  ['Qualificazione', 'Distingue cio che serve subito da cio che si puo imparare.'],
+  ['Tecnicita', 'Evita di parlare a tutti quando serve parlare a chi capisce quel lavoro.'],
+];
+const checkCategories = ['chiarezza del ruolo', 'attivita reali', 'risultato atteso', 'requisiti', 'condizioni', 'offerta', 'candidatura', 'coerenza complessiva'];
+const roles = ['Magazziniere', 'Cameriere', 'Cuoco', 'Venditore / Commerciale', 'Customer Care', 'Tecnico', 'Impiegato amministrativo', 'Automation Engineer'];
+
+function PainSection() {
+  return <section className={styles.sectionBlock}>
+    <div className={styles.sectionHeading}>
+      <p>Il problema</p>
+      <h2>Quando non arrivano le persone giuste, il problema non e sempre il mercato.</h2>
+    </div>
+    <div className={styles.cardGrid}>{painItems.map(([title, copy], index) => <article key={title} className={styles.editorialCard}><span>{String(index + 1).padStart(2, '0')}</span><h3>{title}</h3><p>{copy}</p></article>)}</div>
+  </section>;
+}
+
+function ConsequenceSection() {
+  return <section className={styles.consequence}>
+    <div>
+      <p>Conseguenze</p>
+      <h2>Un annuncio poco chiaro non rallenta solo il recruiting.</h2>
+    </div>
+    <p>Assorbe tempo, allunga le decisioni, aumenta i colloqui inutili e rende piu difficile capire se il problema e il mercato, il ruolo o il modo in cui lo stai presentando.</p>
+    <div className={styles.chips}>{consequenceItems.map((item) => <span key={item}>{item}</span>)}</div>
+  </section>;
+}
+
+function HowItWorksSection() {
+  return <section className={styles.sectionBlock}>
+    <div className={styles.sectionHeading}>
+      <p>Come funziona</p>
+      <h2>Quattro passaggi, senza trasformare la valutazione in un manuale.</h2>
+    </div>
+    <div className={styles.steps}>
+      {['Inserisci il tuo annuncio', 'Lo analizziamo con il metodo Annunci 10x', 'Verifica la tua email', 'Visualizza il tuo Score'].map((item, index) => <article key={item}><span>{String(index + 1).padStart(2, '0')}</span><h3>{item}</h3></article>)}
+    </div>
+    <p className={styles.valueLine}>Gratis ricevi Annunci 10x Score e una breve interpretazione: capisci subito se il tuo annuncio e una base solida o se sta lasciando fuori informazioni decisive.</p>
+  </section>;
+}
+
+function PathChoiceSection({ onAnalyze, onCreate }: { onAnalyze: () => void; onCreate: () => void }) {
+  return <section className={styles.pathSplit}>
+    <article>
+      <p>Percorso 1</p>
+      <h2>Ho gia un annuncio</h2>
+      <span>Scopri cosa funziona e cosa sta limitando chiarezza e rilevanza.</span>
+      <button type="button" onClick={onAnalyze}>Calcola lo Score</button>
+    </article>
+    <article>
+      <p>Percorso 2</p>
+      <h2>Parto da zero</h2>
+      <span>Costruisci prima la realta del ruolo, poi l annuncio.</span>
+      <button type="button" onClick={onCreate}>Crea da zero</button>
+    </article>
+  </section>;
+}
+
+function MethodSection() {
+  return <section className={styles.methodSection}>
+    <div className={styles.sectionHeading}>
+      <p>Metodo Annunci 10x</p>
+      <h2>Prima la realta del ruolo. Poi le parole.</h2>
+    </div>
+    <div className={styles.methodFlow}>{methodSteps.map((step) => <span key={step}>{step}</span>)}</div>
+    <div className={styles.lensGrid}>{lenses.map(([title, copy]) => <article key={title}><h3>{title}</h3><p>{copy}</p></article>)}</div>
+    <div className={styles.checksBand}><h3>20 controlli, senza mostrare la rubrica completa.</h3><div className={styles.chips}>{checkCategories.map((item) => <span key={item}>{item}</span>)}</div></div>
+  </section>;
+}
+
+function RolesSection() {
+  return <section className={styles.rolesSection}>
+    <div className={styles.sectionHeading}>
+      <p>Esempi ruoli</p>
+      <h2>Funziona sui ruoli che assumono davvero le PMI.</h2>
+    </div>
+    <div className={styles.roleChips}>{roles.map((role) => <span key={role}>{role}</span>)}</div>
+  </section>;
+}
+
+function AudienceSection() {
+  return <section className={styles.audienceGrid}>
+    <article>
+      <p>Per chi e</p>
+      <h2>Per chi assume direttamente.</h2>
+      <ul><li>Imprenditori e titolari</li><li>Responsabili HR</li><li>Recruiter interni</li><li>Consulenti HR</li><li>Aziende che vogliono chiarire il ruolo prima di pubblicare</li></ul>
+    </article>
+    <article>
+      <p>Per chi non e</p>
+      <h2>Non e una frase magica.</h2>
+      <ul><li>Chi vuole inventare benefit o condizioni</li><li>Chi cerca promesse non vere</li><li>Chi pensa che piu CV significhi automaticamente selezionare meglio</li><li>Chi vuole attirare tutti invece delle persone coerenti</li></ul>
+    </article>
+  </section>;
+}
+
+function ProductLadder() {
+  return <section className={styles.ladder}>
+    <div className={styles.sectionHeading}>
+      <p>Value ladder</p>
+      <h2>Dal primo Score al metodo riutilizzabile.</h2>
+    </div>
+    <div className={styles.ladderGrid}>
+      <article><span>€0</span><h3>Annunci 10x Score</h3><p>Una prima lettura gratuita per capire se il testo e una base solida.</p></article>
+      <article><span>€7</span><h3>Migliora il tuo annuncio</h3><p>Partiamo dal testo analizzato e costruiamo una versione piu chiara, coerente e pronta da adattare al canale.</p></article>
+      <article><span>€9</span><h3>Crea il tuo annuncio da zero</h3><p>Rispondi alle domande sul lavoro reale, conferma i fatti e genera l annuncio quando il percorso sara disponibile.</p></article>
+      <article><span>€49</span><h3>Agent Recruiter</h3><p>Guida Premium, metodo Annunci 10x, setup dell assistant e processo riutilizzabile per lavorare meglio sui ruoli futuri.</p></article>
+    </div>
+    <p className={styles.creditNote}>In futuro, i primi prodotti potranno essere riconosciuti come credito verso Agent Recruiter.</p>
+  </section>;
+}
+
+function RecruitingBridge() {
+  return <section className={styles.bridge}>
+    <p>Oltre il self-service</p>
+    <h2>Quando il problema non e piu solo l annuncio.</h2>
+    <span>Se il recruiting richiede piu di un testo migliore, Horyzon puo aiutarti a chiarire fabbisogno, processo e selezione senza trasformare questa pagina in una promessa irrealistica.</span>
+  </section>;
+}
+
+function FinalCta({ onAnalyze, onCreate }: { onAnalyze: () => void; onCreate: () => void }) {
+  return <section className={styles.finalCta}>
+    <h2>Inizia dal prossimo annuncio che devi pubblicare.</h2>
+    <div className={styles.heroActions}>
+      <button type="button" onClick={onAnalyze}>Calcola gratis il tuo Score</button>
+      <button type="button" onClick={onCreate}>Crea un annuncio da zero</button>
+    </div>
+  </section>;
 }
 
 function CreateFlow(props: {
@@ -452,7 +589,7 @@ function CreateFlow(props: {
       </div>
     </div>}
     {props.state && (props.state.currentStep === 'SUMMARY' || props.state.currentStep === 'COMMERCIAL') && <CreateSummary state={props.state} running={props.running} editTarget={props.editTarget} editValue={props.editValue} onEditTarget={props.onEditTarget} onEditValue={props.onEditValue} onSubmitEdit={props.onSubmitEdit} onConfirm={props.onConfirm} />}
-    {!props.state && <div className={styles.startCreate}><p>Puoi compilare i campi e preparare direttamente la scheda. La sessione viene creata al salvataggio.</p><button type="button" onClick={props.onStart} disabled={props.running}>Crea una sessione</button></div>}
+    {!props.state && <div className={styles.startCreate}><p>Puoi compilare i campi e preparare direttamente la scheda. Salviamo il percorso quando inizi.</p><button type="button" onClick={props.onStart} disabled={props.running}>Inizia da zero</button></div>}
   </section>;
 }
 
@@ -546,7 +683,7 @@ function CreateSummary(props: {
       <Field label="Nuovo valore" htmlFor="create-edit-value"><input id="create-edit-value" value={props.editValue} onChange={(event) => props.onEditValue(event.target.value)} disabled={props.running} /></Field>
       <button type="submit" disabled={props.running}>Modifica</button>
     </form>}
-    {props.state.paymentRequired ? <section className={styles.commercialPanel}><p>Confine commerciale</p><h3>La posizione e pronta. Ora possiamo costruire il tuo Annuncio 10x.</h3><span>Checkout non attivo in questa fase. La generazione finale resta protetta da autorizzazione server-side.</span><OfferCards offers={props.state.commercial.availableOffers} empty="La generazione non e disponibile in questo stato." /></section> : <div className={styles.actions}><button type="button" onClick={props.onConfirm} disabled={props.running || !props.state.canConfirm}>Conferma</button><span>Puoi modificare i campi prima della conferma.</span></div>}
+    {props.state.paymentRequired ? <section className={styles.commercialPanel}><p>Prossimo passo</p><h3>La posizione e pronta. Ora possiamo costruire il tuo Annuncio 10x.</h3><span>La generazione online sara disponibile in una fase successiva.</span><OfferCards offers={props.state.commercial.availableOffers} empty="La generazione non e ancora disponibile per questo percorso." /></section> : <div className={styles.actions}><button type="button" onClick={props.onConfirm} disabled={props.running || !props.state.canConfirm}>Conferma</button><span>Puoi modificare i campi prima della conferma.</span></div>}
   </section>;
 }
 
@@ -558,20 +695,8 @@ function PremiumOutputPanel(props: { output: PremiumOutput; copied: string | nul
 
 function OfferCards({ offers, empty }: { offers: CommercialOffer[]; empty: string }) {
   const visibleOffers = offers.filter((offer) => offer.productCode === 'AD_GENERATION');
-  if (!visibleOffers.length) return <div className={styles.offerPanel}><h3>{empty}</h3><p>La disponibilita viene calcolata lato server in base allo stato del percorso.</p><button type="button" disabled>Non attivo</button></div>;
-  return <div className={styles.offerList} aria-label="Prossimo passo">{visibleOffers.map((offer) => <article key={offer.id} className={styles.offerPanel}><h3>{offer.displayName}</h3><p>{offer.description}</p><button type="button" disabled>{offer.purchaseEnabled ? 'Continua' : 'Acquisto non attivo'}</button></article>)}</div>;
-}
-
-function BeforeAfter() {
-  return <section className={styles.beforeAfter}><header><p className={styles.eyebrowDark}>Prima / Dopo</p><h2>Da una richiesta generica a un ruolo riconoscibile.</h2></header><div className={styles.comparison}><article><span>Prima</span><p>Cerchiamo persona dinamica, motivata, flessibile, capace di lavorare in team e gestire attivita diverse.</p></article><article><span>Dopo</span><p>Cerchiamo un addetto customer care per gestire ticket, aggiornare il CRM e dare risposte scritte chiare ai clienti nella sede di Bari.</p></article></div></section>;
-}
-
-function MethodStatement() {
-  return <section className={styles.method}><div><p>Metodo</p><h2>Prima la realta del ruolo. Poi le parole.</h2></div><p>Lavoro reale, persona necessaria, strategia e annuncio devono stare nello stesso ordine. Quando un fatto manca, resta da definire: non diventa una promessa.</p></section>;
-}
-
-function FaqSection() {
-  return <section className={styles.faq}><p className={styles.eyebrowDark}>FAQ</p><h2>Domande frequenti</h2>{[['Serve avere gia un annuncio?', 'No. Puoi valutare un testo esistente oppure partire da zero con il percorso Crealo.'], ['Cosa include la valutazione gratuita?', 'Score, copertura, stato pubblicazione, punti forti, priorita, controlli e chiarimenti quando servono.'], ['Cosa devo sapere per crearne uno da zero?', 'Ruolo, risultato atteso, attivita, requisiti, condizioni e modalita di candidatura. I dettagli non noti possono restare da definire.'], ['Posso modificare le informazioni prima della generazione?', 'Si. Prima del confine commerciale vedi la scheda capita dal sistema e puoi correggere i campi strutturati.'], ['Quando viene richiesto il pagamento?', 'Valutalo e raccolta dati sono gratuiti. La richiesta commerciale arriva solo prima della generazione premium, che non ha checkout attivo in questa fase.'], ['Il sistema inventa informazioni mancanti?', 'No. Le informazioni mancanti restano N/D, da definire o diventano chiarimenti quando bloccano la pubblicazione.']].map(([question, answer]) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}</section>;
+  if (!visibleOffers.length) return <div className={styles.offerPanel}><h3>{empty}</h3><p>Ti guideremo al passo successivo quando sara disponibile.</p><button type="button" disabled>In preparazione</button></div>;
+  return <div className={styles.offerList} aria-label="Prossimo passo">{visibleOffers.map((offer) => <article key={offer.id} className={styles.offerPanel}><h3>{offer.displayName}</h3><p>{offer.description}</p><button type="button" disabled>In preparazione</button></article>)}</div>;
 }
 
 function Field(props: { label: string; htmlFor: string; required?: boolean; optional?: boolean; children: ReactNode }) {
