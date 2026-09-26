@@ -44,15 +44,20 @@ The Premium Guide human self-evaluation uses:
 
 The guide explicitly does not turn those answers into a numeric score.
 
-### Software scoring
+### Software scoring ownership
 
-The software product may still produce a numeric score, but only through a deterministic scoring contract:
+The software product may still produce a numeric score, but only through a structured provider contract plus deterministic aggregation:
 
 - 20 controls.
-- Each control scored by anchors, evidence, and reasons.
-- Future V2 target: each control can be `0..10` or `null` / N/D.
-- Final score normalized to `/100`.
-- Score calculation is deterministic TypeScript, not arbitrary LLM judgement.
+- For each control, the LLM/provider must return a structured evaluation with `checkId`, `score`, `evidence`, `reason`, `missing`, `confidence`, and applicability/status.
+- Per-control `score` is an integer `0..10` or `null`.
+- Per-control scoring must be constrained by explicit future V2 anchors and must not be arbitrary LLM judgement.
+- The provider does not own final score `/100`, final coverage, final band, or final publication gate.
+- TypeScript validates schema and bounds, distinguishes `MISSING` from `N/D`, aggregates per-control scores, computes final score, computes coverage, assigns band, and computes publication gate.
+
+Conceptual formula:
+
+`LLM = numeric evaluation of individual controls. TypeScript = deterministic aggregation of final result.`
 
 ### N/D and MISSING
 
@@ -62,6 +67,8 @@ The software product may still produce a numeric score, but only through a deter
 
 `MISSING` means the information is expected but absent from the evaluated target.
 
+V2 must not transform `N/D` into zero and must not use score ranges to compensate for `N/D`.
+
 ### Score and publication gate
 
 Score and publication gate are distinct.
@@ -70,7 +77,7 @@ A text can have a high score and still be blocked by a material publication issu
 
 ### V2 score bands
 
-Future V2 public score bands:
+Current V2 product score bands:
 
 - `0-49`: Critico.
 - `50-69`: Debole.
@@ -78,7 +85,9 @@ Future V2 public score bands:
 - `85-94`: Forte.
 - `95-100`: Eccellente.
 
-These bands need calibration before final copy. They must not become hiring guarantees.
+Future calibration must verify evaluation quality, monotonicity, stability, anchor distributions, and public wording. It does not authorize autonomous threshold changes. If benchmarks suggest the numeric thresholds are problematic, the question must return to the product owner.
+
+These bands must not become hiring guarantees.
 
 ### V2 value ladder
 
@@ -126,9 +135,14 @@ This is a concept, not final copy.
 
 Future flow:
 
-`SOURCE -> ANALYSIS STARTS -> CONTACT DATA -> EMAIL VERIFICATION -> ANALYSIS CONTINUES -> RESULT`
+`SOURCE -> ANALYSIS STARTS -> CONTACT DATA -> EMAIL VERIFICATION -> RESULT`
 
 The product can accept either a public ad link or pasted ad text. Analysis starts as soon as the ad source is available.
+
+The free score/report must not be delivered until both conditions are true:
+
+- `analysis_run` is `READY`.
+- Email is `VERIFIED`.
 
 During processing, the product can collect:
 
@@ -142,7 +156,7 @@ During processing, the product can collect:
 
 ### Free result
 
-The public/free result should focus on:
+The decided on-site free result contains:
 
 - Score `/100`.
 - Band.
@@ -150,6 +164,8 @@ The public/free result should focus on:
 - Contextual CTA.
 
 Full diagnostics should move to a private web report or dynamic email report. PDF is not an MVP requirement for the free result.
+
+Additional teasers such as strongest signal, main weak area, or extra diagnostic previews are deferred UX decisions.
 
 ### Create flow
 
@@ -182,7 +198,7 @@ This should still be handled carefully as positioning, not as a measurable guara
 - Exact checkout provider and webhook design.
 - Exact private storage/delivery mechanism for the Premium Guide.
 - Exact HighLevel field mapping.
-- Final calibrated score thresholds and public explanations.
+- Final public wording for score thresholds and explanations.
 - Migration SQL.
 - Runtime provider/prompt updates.
 

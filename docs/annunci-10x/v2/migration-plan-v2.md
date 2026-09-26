@@ -39,9 +39,9 @@ Future work:
 - add responsibilities to check 02;
 - add V2 anchors for `0..10/null`;
 - preserve N/D vs MISSING;
-- add deterministic calculator tests.
+- add deterministic calculator tests for aggregation, coverage, bands, and gate.
 
-Do not let the provider calculate final score.
+The provider must produce bounded per-control numeric evaluations. Do not let the provider calculate final score `/100`, final coverage, final band, or final publication gate.
 
 ## Phase 3: prompt and schema alignment
 
@@ -49,7 +49,7 @@ Future work:
 
 - update `EVALUATE` prompt wording to V2 controls;
 - keep original target evidence rules;
-- require structured evidence and reasons;
+- require structured per-control results with `checkId`, `score`, `evidence`, `reason`, `missing`, `confidence`, and applicability/status;
 - prevent chain-of-thought storage;
 - preserve unsupported-claim detection;
 - regression-test prompt injection and unsupported benefit claims.
@@ -75,7 +75,7 @@ Future work:
 - implement pain-led entry copy;
 - support source-first analysis;
 - collect contact data during processing;
-- add email verification if required;
+- require email verification before free score/report delivery;
 - display focused free result;
 - move detailed report to private/email output.
 

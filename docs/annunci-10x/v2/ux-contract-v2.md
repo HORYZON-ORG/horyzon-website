@@ -25,9 +25,11 @@ Future analyze flow:
 1. User provides public link or pasted ad text.
 2. Analysis starts immediately.
 3. During processing, product collects contact data.
-4. Email verification can happen before full report delivery.
+4. Email verification is required before free score/report delivery.
 5. Result shows score, band, short meaning, and CTA.
 6. Detailed diagnostics are delivered through private report or email.
+
+The free score/report must not be delivered until the analysis is ready and email is verified.
 
 The public result should avoid overwhelming the user with all internal checks.
 
@@ -38,10 +40,9 @@ Free result should include:
 - score `/100`;
 - band;
 - short plain-language interpretation;
-- one or few strengths;
-- main priority;
-- coverage or uncertainty if relevant;
 - CTA to rewrite, create, or access Agent Recruiter / Premium Guide.
+
+Additional teasers such as strongest signal, main weak area, strengths, priorities, or extra diagnostic previews are deferred UX decisions.
 
 Full result can include:
 
@@ -104,7 +105,7 @@ It can include:
 - evidence reasons;
 - CTA.
 
-The system owns structure. LLM text may fill short explanations inside controlled sections.
+The system owns structure. LLM text may fill short explanations inside controlled sections, but final score, coverage, band, and gate remain deterministic product outputs.
 
 ## Marketing consent UX
 

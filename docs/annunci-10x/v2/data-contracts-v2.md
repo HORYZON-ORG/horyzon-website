@@ -107,15 +107,17 @@ Future V2 score records should store:
 - status;
 - evidence snippets or structured evidence references;
 - reason;
+- missing signals;
+- confidence;
+- applicability/status;
 - unsupported-claim flags;
 - coverage;
-- score interval when coverage is incomplete;
 - final normalized score;
 - band;
 - gate status;
 - gate reasons.
 
-The provider request/response should not be the source of final score.
+The provider request/response can be the source of per-control numeric evaluations, evidence, and reasons. It must not be the source of final score `/100`, coverage, band, or gate.
 
 ## Report data
 

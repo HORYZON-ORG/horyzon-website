@@ -29,8 +29,7 @@ Future conceptual flow:
 2. `ANALYSIS STARTS`
 3. `CONTACT DATA`
 4. `EMAIL VERIFICATION`
-5. `ANALYSIS CONTINUES`
-6. `RESULT`
+5. `RESULT`
 
 The analysis should start as soon as the ad is available. The product can collect contact data while processing, instead of waiting until after all analysis is complete.
 
@@ -53,7 +52,12 @@ Future minimum contact data:
 - business role;
 - company email.
 
-Email verification can be required before the detailed result is delivered.
+Email verification is required for the free analyze funnel.
+
+The score and report must not be delivered until:
+
+- `analysis_run` is `READY`;
+- email is `VERIFIED`.
 
 Marketing consent must be separate from operational email/report delivery.
 
@@ -64,9 +68,9 @@ The free result should expose a focused result:
 - score `/100`;
 - score band;
 - short explanation of what the band means;
-- strongest signal;
-- main missing/weak area;
 - contextual CTA.
+
+Additional teasers such as strongest signal, main weak area, or extra diagnostic previews are deferred UX decisions for a future landing phase.
 
 The free result should not expose every diagnostic detail if the product uses a private report or email report for that.
 
@@ -96,7 +100,7 @@ The detailed report can contain:
 - evidence reasons;
 - CTAs.
 
-The software controls report structure. LLM text can explain within that structure, but must not invent facts or decide the score.
+The software controls report structure. LLM text can explain within that structure, but must not invent facts or decide final score, coverage, band, or gate.
 
 ## Paid transitions
 

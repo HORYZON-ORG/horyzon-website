@@ -60,14 +60,14 @@ The largest future changes are:
 - Check 06: strategy priority must shift from "popularity/company emphasis" to "most useful information for this search".
 - Check 08: must cover commitment, responsibility, and demanding conditions, not only qualification.
 - Check 02: responsibilities must become first-class evidence.
-- Score scale and anchors must migrate from V1 `PASS/PARTIAL/MISSING/CONFLICT/NOT_EVALUABLE` with 5-point checks to V2 `0..10/null` anchors if approved.
+- Score scale and anchors must migrate from V1 `PASS/PARTIAL/MISSING/CONFLICT/NOT_EVALUABLE` with 5-point checks to V2 provider-produced `0..10/null` per-control results with TypeScript aggregation.
 
 ## V2 sheet mapping to current Create flow
 
 | V2 sheet area | Current create/runtime location | State | Notes |
 | --- | --- | --- | --- |
 | 1. Ruolo | `ROLE_CONTEXT`, `CreateDraft.role`, `RoleCard.title` | PARTIAL_MATCH | Role exists. Company context is currently adjacent and should remain separate from role identity in V2. |
-| 2. Risultato principale | `PRIMARY_CONTRIBUTION`, `CreateDraft.primaryContribution`, `RoleCard.mission` / outcomes | MATCH | Current flow already asks for primary contribution. |
+| 2. Risultato principale | `PRIMARY_CONTRIBUTION`, `CreateDraft.primaryResult`, `RoleCard.mission` / outcomes | MATCH | Current flow already asks for primary result. |
 | 3. Attivita reali | `WORK_REALITY`, responsibilities, activities, operating context | MATCH | Current flow covers activities and work reality. |
 | 4. Indispensabili | `REQUIREMENTS.requiredRequirements` | MATCH | Current classifications support this. |
 | 5. Preferenziali | `REQUIREMENTS.preferredRequirements` | MATCH | Current classifications support this. |
@@ -88,9 +88,9 @@ The largest future changes are:
 
 ## Current EVALUATE prompt relationship
 
-Current `annunci10x.evaluate.v3` already has good V2-compatible boundaries:
+Current `annunci10x.evaluate.v3` already has useful V2-compatible boundaries:
 
-- provider must not calculate final score;
+- provider must not calculate final score `/100`, coverage, band, or gate;
 - original-ad evidence must come from original target text;
 - context cannot become score evidence unless present in the evaluated target;
 - `MISSING` and `NOT_EVALUABLE` remain separate;
@@ -102,7 +102,18 @@ Future V2 prompt changes should be narrow:
 - update check 06 semantics;
 - update check 08 semantics;
 - add responsibility evidence to check 02;
-- add `0..10/null` anchor support only after deterministic calculator migration is ready.
+- add provider `0..10/null` per-control schema support only after deterministic calculator migration is ready.
+
+## Technical reference verification
+
+The mapping references were checked against current code during this revision:
+
+- `CreateStepId` includes `ROLE_CONTEXT`, `PRIMARY_CONTRIBUTION`, `WORK_REALITY`, `REQUIREMENTS`, `ATTRACTION`, `OFFER`, and `CHANNEL_APPLICATION` in `src/components/annunci-10x/annunci-10x-client.tsx`.
+- `CreateDraft` uses `primaryResult`, not `primaryContribution`.
+- `composeCreateAnswers` maps `PRIMARY_CONTRIBUTION` from `primaryResult`.
+- `src/lib/annunci-10x/create-flow.ts` uses the same create step IDs and maps them to persisted interview steps.
+- `StrategyRuleInput` includes `rolePopularity`, `demand`, `workReality`, `qualification`, `technicality`, `companyAttractiveness`, and `offerStrength` in `src/lib/annunci-10x/strategy-rules.ts`.
+- `RoleCard` and `RoleProfile` remain the current runtime domain names in `src/lib/annunci-10x/types.ts`.
 
 ## V1 docs and assets disposition
 

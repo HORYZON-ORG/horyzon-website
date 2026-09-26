@@ -155,7 +155,11 @@ The guide asks the user to answer the 20 checks with:
 
 The human guide does not turn those answers into a numeric score.
 
-The software product may calculate a score only through deterministic scoring semantics.
+The software product may calculate a score only through structured per-control scoring and deterministic aggregation.
+
+In V2, the LLM/provider must return a bounded per-control evaluation for each of the 20 controls: `checkId`, `score` as integer `0..10` or `null`, evidence, reason, missing signals, confidence, and applicability/status. Those per-control scores must be constrained by explicit V2 anchors.
+
+The provider must not own final score `/100`, coverage, band, or publication gate. TypeScript validates the 20 control results and computes the final product result.
 
 ## 20 V2 controls
 
