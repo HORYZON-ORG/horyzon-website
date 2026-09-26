@@ -66,11 +66,16 @@ export interface RubricCheckDefinitionV2 {
   canonicalQuestion: string;
   label: string;
   maxScore: 10;
+  whatItMeasures: string;
+  targetEvidence: string;
+  contextAllowed: string;
   anchors: readonly RubricAnchorV2[];
   missingSemantics: string;
   notEvaluableSemantics: string;
+  conflictSemantics: string;
   gateRelevance: GateRelevanceV2;
   acceleratorSuitability: AcceleratorSuitabilityV2;
+  avoid: readonly string[];
   notes?: readonly string[];
 }
 
@@ -92,8 +97,8 @@ export interface EvaluationCheckV2 {
 export interface ScoreBandDefinitionV2 {
   code: ScoreBandCodeV2;
   label: string;
-  min: number;
-  max: number;
+  minInclusive: number;
+  maxExclusive: number | null;
 }
 
 export interface ScoreResultV2 {

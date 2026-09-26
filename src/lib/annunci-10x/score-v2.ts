@@ -13,11 +13,11 @@ import {
 } from './types-v2.ts';
 
 export const ANNUNCI10X_SCORE_BANDS_V2: readonly ScoreBandDefinitionV2[] = [
-  { code: 'CRITICAL', label: 'Critico', min: 0, max: 50 },
-  { code: 'WEAK', label: 'Debole', min: 50, max: 70 },
-  { code: 'GOOD_BASE', label: 'Buona base', min: 70, max: 85 },
-  { code: 'STRONG', label: 'Forte', min: 85, max: 95 },
-  { code: 'EXCELLENT', label: 'Eccellente', min: 95, max: 100 },
+  { code: 'CRITICAL', label: 'Critico', minInclusive: 0, maxExclusive: 50 },
+  { code: 'WEAK', label: 'Debole', minInclusive: 50, maxExclusive: 70 },
+  { code: 'GOOD_BASE', label: 'Buona base', minInclusive: 70, maxExclusive: 85 },
+  { code: 'STRONG', label: 'Forte', minInclusive: 85, maxExclusive: 95 },
+  { code: 'EXCELLENT', label: 'Eccellente', minInclusive: 95, maxExclusive: null },
 ] as const;
 
 const CHECK_COUNT_V2 = 20;

@@ -31,4 +31,5 @@ export function getAnnunci10xPrompt(operationType: AiOperationType): Annunci10xP
 }
 
 export * from './core-policy.ts';
+export * from './evaluate-v2.ts';
 export type { Annunci10xPromptDefinition } from './types.ts';

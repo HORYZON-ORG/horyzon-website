@@ -1,6 +1,6 @@
 # Annunci 10x V2 canonical specification
 
-Status: planning and product documentation only.
+Status: V2 specification plus isolated shadow-runtime building blocks. Not public runtime.
 
 Canonical route: `/annunci-10x`
 
@@ -10,7 +10,7 @@ Legacy route, not part of this domain: `/annuncio-10x` is `NON TOCCARE`.
 
 This folder defines the V2 product, method, funnel, scoring semantics, UX, data, commercial, and migration contract for Annunci 10x.
 
-It does not implement V2 runtime behavior. It does not change UI, API routes, prompts, score calculation, Supabase schema, checkout, email delivery, HighLevel, Vercel, AI Score, or the legacy `/annuncio-10x` prototype.
+It does not change UI, API routes, Supabase schema, checkout, email delivery, HighLevel, Vercel, AI Score, or the legacy `/annuncio-10x` prototype.
 
 ## Source hierarchy
 
@@ -43,7 +43,18 @@ The product must not sell volume guarantees. "10x" means quality and decision va
 
 Current public runtime is still V1-oriented and remains valid until a future migration is explicitly implemented.
 
-Fase 1B added an isolated TypeScript V2 scoring core for rubric definitions, per-check validation, deterministic aggregation, coverage, and band mapping. It is additive only and is not wired to `/annunci-10x`, OpenAI, persistence, UI, API routes, or public product behavior.
+Fase 1B added an isolated TypeScript V2 scoring core for rubric definitions, per-check validation, deterministic aggregation, coverage, and band mapping.
+
+Fase 1C added an isolated V2 provider contract and shadow runner:
+
+- prompt version `annunci10x.evaluate.v2.1`;
+- schema name `annunci10x_evaluate_v2`;
+- structured TARGET vs CONTEXT input projection;
+- one schema-repair retry;
+- deterministic aggregation through `calculateAnnunci10xScoreV2()`;
+- deterministic tests only, including `OpenAiAnnunci10xProvider` with fake fetch.
+
+These additions are not wired to `/annunci-10x`, V1 `EVALUATE`, persistence, UI, API routes, or public product behavior. No live OpenAI calibration is claimed.
 
 Important current files:
 
@@ -62,6 +73,13 @@ Isolated V2 scoring files:
 - `src/lib/annunci-10x/rubric-v2.ts`
 - `src/lib/annunci-10x/score-v2.ts`
 - `scripts/verify-annunci-10x-score-v2.mjs`
+
+Isolated V2 provider contract files:
+
+- `src/lib/annunci-10x/ai/prompts/evaluate-v2.ts`
+- `src/lib/annunci-10x/ai/schemas-v2.ts`
+- `src/lib/annunci-10x/ai/evaluate-v2.ts`
+- `scripts/verify-annunci-10x-ai-v2.mjs`
 
 The V2 docs identify future changes. They do not claim those changes are already implemented.
 

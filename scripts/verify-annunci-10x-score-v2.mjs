@@ -69,6 +69,8 @@ assert.equal(getScoreBandV2(70)?.code, 'GOOD_BASE');
 assert.equal(getScoreBandV2(85)?.code, 'STRONG');
 assert.equal(getScoreBandV2(95)?.code, 'EXCELLENT');
 assert.equal(getScoreBandV2(null), null);
+assert.deepEqual(getScoreBandV2(50), { code: 'WEAK', label: 'Debole', minInclusive: 50, maxExclusive: 70 });
+assert.equal(getScoreBandV2(100)?.maxExclusive, null);
 
 const someNotEvaluable = calculateAnnunci10xScoreV2([
   ...ids.slice(0, 18).map((id) => makeCheck(id, 8)),

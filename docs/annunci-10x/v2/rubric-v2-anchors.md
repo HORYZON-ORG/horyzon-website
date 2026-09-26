@@ -1,6 +1,6 @@
 # Annunci 10x rubric v2 anchors
 
-Status: methodological design. Not implemented in runtime.
+Status: methodological design plus isolated runtime source for V2 shadow evaluation. Not public runtime.
 
 This document defines provider-agnostic 0-10 anchors for the 20 Annunci 10x V2 controls before any runtime scoring implementation.
 

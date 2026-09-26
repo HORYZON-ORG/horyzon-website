@@ -8,6 +8,151 @@ import type {
 
 const REQUIRED_ANCHORS: readonly AnchorScoreV2[] = [0, 2, 4, 6, 8, 10] as const;
 
+type RubricCheckMetadataV2 = Pick<RubricCheckDefinitionV2, 'whatItMeasures' | 'targetEvidence' | 'contextAllowed' | 'conflictSemantics' | 'avoid'>;
+
+const CHECK_METADATA_V2: Record<CheckIdV2, RubricCheckMetadataV2> = {
+  '01': {
+    whatItMeasures: 'Whether the target title lets a candidate immediately understand the role family and role identity.',
+    targetEvidence: 'Title line, heading, role label, visible job title metadata, or repeated role naming inside the target.',
+    contextAllowed: 'Role hints can help interpret ambiguous wording, but cannot replace an absent or unclear target title.',
+    conflictSemantics: 'Conflicting titles for different roles can create a conflict and possible gate issue.',
+    avoid: ['Do not reward keyword stuffing.', 'Do not reward brand-like creativity over recognizability.'],
+  },
+  '02': {
+    whatItMeasures: 'Whether the target clarifies seniority or operating level, scope, and responsibility perimeter.',
+    targetEvidence: 'Seniority, autonomy, reporting line, scope, area, responsibility statements, decision rights, or accountability.',
+    contextAllowed: 'Role type can explain what level or perimeter would normally matter, but cannot add absent responsibilities.',
+    conflictSemantics: 'Contradictory seniority or responsibility statements can trigger conflict.',
+    avoid: ['Do not require formal junior/mid/senior labels when operational perimeter is clear.'],
+  },
+  '03': {
+    whatItMeasures: 'Whether the target describes observable work instead of generic traits or slogans.',
+    targetEvidence: 'Recurring tasks, workflows, tools, handoffs, actions, frequency, or observable responsibilities.',
+    contextAllowed: 'RoleCard or declared context can suggest what activities to look for, but cannot supply target evidence.',
+    conflictSemantics: 'Contradictory activity descriptions can create conflict.',
+    avoid: ['Do not confuse activities with the role result.'],
+  },
+  '04': {
+    whatItMeasures: 'Whether the target explains why the role exists and what improves because of the role.',
+    targetEvidence: 'Mission, outcome, effect, result, improved condition, service level, reliability, speed, safety, or continuity.',
+    contextAllowed: 'Context can clarify the expected outcome, but cannot score as target evidence if absent.',
+    conflictSemantics: 'Conflicting result promises or impossible outcomes can trigger conflict.',
+    avoid: ['Do not let an activity list automatically produce a high result score.'],
+  },
+  '05': {
+    whatItMeasures: 'Whether the target makes the work setting and main interactions understandable.',
+    targetEvidence: 'Team, manager, stakeholders, customers, suppliers, tools, work environment, autonomy, or collaboration model.',
+    contextAllowed: 'Company or role context can identify relevant interlocutors, but cannot replace target evidence.',
+    conflictSemantics: 'Incompatible environment statements can trigger conflict.',
+    avoid: ['Do not reward generic corporate description.'],
+  },
+  '06': {
+    whatItMeasures: 'Whether the target gives priority to the facts that matter most for this specific search.',
+    targetEvidence: 'Visible order, emphasis, opening, section weight, repeated facts, and placement of key facts.',
+    contextAllowed: 'The four lenses help determine what should matter, but context may not become target evidence.',
+    conflictSemantics: 'Target emphasis on facts contradicted elsewhere can trigger conflict.',
+    avoid: ['Do not reduce this to role popularity only.', 'Do not apply duplicate penalty automatically for every fact already missing in another control.'],
+  },
+  '07': {
+    whatItMeasures: 'Whether the target represents the real rhythm of work without glamourizing or hiding it.',
+    targetEvidence: 'Routine, cadence, recurring tasks, unexpected events, challenge level, problem types, variability, or pressure.',
+    contextAllowed: 'RoleProfile or context can indicate expected routine/challenge, but cannot provide positive target evidence.',
+    conflictSemantics: 'Target contradicting known target evidence about work rhythm can trigger conflict.',
+    avoid: ['Do not automatically reward glamour.', 'Faithful routine can score 10.'],
+  },
+  '08': {
+    whatItMeasures: 'Whether material demands are visible when they affect fit.',
+    targetEvidence: 'Shifts, on-call, physical effort, peaks, variable priorities, responsibility, pressure, complexity, travel, or urgency.',
+    contextAllowed: 'Context can identify which demands matter, but cannot invent demands or count as target evidence.',
+    conflictSemantics: 'Contradictory or hidden material demand can trigger conflict.',
+    avoid: ['Do not invent difficulties.', 'Do not treat generic challenging-language as concrete demand evidence.'],
+  },
+  '09': {
+    whatItMeasures: 'Whether technical wording is proportionate to the actual role and candidate audience.',
+    targetEvidence: 'Role-specific tools, methods, technical terms, level-appropriate jargon, and necessary specialist detail.',
+    contextAllowed: 'Role context can clarify which technicality is expected, but cannot supply absent target wording.',
+    conflictSemantics: 'Technical requirements that contradict the role reality can trigger conflict.',
+    avoid: ['Simple does not mean poor.', 'Technical does not mean bureaucratic.'],
+  },
+  '10': {
+    whatItMeasures: 'Whether indispensable, preferred, trainable, and disqualifying requirements are semantically distinct.',
+    targetEvidence: 'Requirement labels, grouped lists, explicit must-have/nice-to-have/trainable wording, or unequivocal priority signals.',
+    contextAllowed: 'Context can identify which requirements should exist, but target must show the distinction for positive scoring.',
+    conflictSemantics: 'Requirements that contradict role facts or exclude impossible profiles can trigger conflict.',
+    avoid: ['Exact labels are not mandatory when the distinction is unequivocal.'],
+  },
+  '11': {
+    whatItMeasures: 'Whether each material requirement is connected to real activities, outcomes, or conditions.',
+    targetEvidence: 'Explicit or strongly inferable link between requirement and activity, result, tool, responsibility, or condition.',
+    contextAllowed: 'Role context can explain why a requirement may matter, but original-ad score needs target evidence or target basis.',
+    conflictSemantics: 'A requirement contradicting role facts or conditions can trigger conflict.',
+    avoid: ['Do not accept years of experience or problem solving by habit.'],
+  },
+  '12': {
+    whatItMeasures: 'Whether the target clearly states where and how work happens.',
+    targetEvidence: 'City, site, remote, hybrid, on-site, travel, mobility, territory, or branch information.',
+    contextAllowed: 'Structured fields can clarify only if they are part of the evaluated target bundle.',
+    conflictSemantics: 'Remote/on-site/hybrid contradictions are material conflicts.',
+    avoid: ['Do not invent legal or policy obligations not present.'],
+  },
+  '13': {
+    whatItMeasures: 'Whether time and contract conditions are clear enough for candidate decision.',
+    targetEvidence: 'Contract type, full/part time, duration, days, hours, shift windows, cadence, availability, or start timing.',
+    contextAllowed: 'Role context can identify relevant timing facts, but cannot fill target gaps.',
+    conflictSemantics: 'Contradictory hours, contract, or availability can trigger conflict.',
+    avoid: ['Do not treat "turni" alone as complete information.'],
+  },
+  '14': {
+    whatItMeasures: 'Whether compensation is clear when known, available, necessary, or required.',
+    targetEvidence: 'Salary, range, hourly rate, commission, bonus, CCNL/level, disclosure policy, or explicit compensation handling.',
+    contextAllowed: 'Known context can determine availability/necessity, but absent original target compensation cannot become positive evidence.',
+    conflictSemantics: 'Contradictory compensation figures or formulas can trigger conflict.',
+    avoid: ['Do not invent legal obligations.', 'Do not turn genuine N/D into zero.', 'Do not give high score to a bare editorial excuse for hiding compensation.'],
+  },
+  '15': {
+    whatItMeasures: 'Whether the target gives factual reasons to consider the opportunity.',
+    targetEvidence: 'Onboarding, training, autonomy, real problems, technologies, schedule, flexibility, support, team structure, or concrete benefits.',
+    contextAllowed: 'Company context can identify supportable proof points, but target must contain them for positive scoring.',
+    conflictSemantics: 'Unsupported, contradicted, or inflated benefits can trigger unsupported-claim flags and gate issues.',
+    avoid: ['Do not call a normal baseline a benefit without context.', 'Do not reward slogans.'],
+  },
+  '16': {
+    whatItMeasures: 'Whether the target structure fits the declared publication channel.',
+    targetEvidence: 'Channel, format, length, sectioning, field usage, opening, ordering, or required structured fields.',
+    contextAllowed: 'Channel policy can define expectations; without explicit policy, do not invent platform rules.',
+    conflictSemantics: 'A channel variant that alters Master facts or violates required fields can trigger conflict.',
+    avoid: ['Do not invent LinkedIn, Indeed, Meta, ATS, or other platform rules without explicit policy.'],
+  },
+  '17': {
+    whatItMeasures: 'Whether ad body, structured fields, and application destination tell the same facts.',
+    targetEvidence: 'Body text, structured portal fields, metadata, destination URL/email, and application instructions.',
+    contextAllowed: 'System fields can be compared when they are part of the evaluated target bundle.',
+    conflictSemantics: 'Material contradiction across text, fields, or destination is a conflict by definition.',
+    avoid: ['Do not penalize lack of portal fields when only free text is available; use N/D.'],
+  },
+  '18': {
+    whatItMeasures: 'Whether the target is easy to read, scan, and navigate.',
+    targetEvidence: 'Sections, headings, paragraph length, bullet structure, order, density, and hierarchy.',
+    contextAllowed: 'Channel can influence expected length and structure, but cannot replace target readability evidence.',
+    conflictSemantics: 'Usually not a conflict unless structure hides contradictory required facts.',
+    avoid: ['Do not turn readability into subjective visual taste.'],
+  },
+  '19': {
+    whatItMeasures: 'Whether wording avoids vagueness, cliches, bloating, and repetition.',
+    targetEvidence: 'Concrete verbs, specific nouns, repetition, cliches, buzzwords, bureaucratic phrases, or inflated language.',
+    contextAllowed: 'Role context can identify terms that are precise versus decorative.',
+    conflictSemantics: 'Inflated unsupported claims can also trigger unsupported flags.',
+    avoid: ['Do not penalize necessary technical terms when they are precise.'],
+  },
+  '20': {
+    whatItMeasures: 'Whether the candidate has a usable next action.',
+    targetEvidence: 'Email, URL, application button/path, required subject, documents, deadline, or next step.',
+    contextAllowed: 'Structured destination can count only if part of the evaluated target bundle.',
+    conflictSemantics: 'Invalid destination or conflicting destinations can trigger conflict.',
+    avoid: ['Do not assume a visible platform button exists unless the evaluated target includes it.'],
+  },
+};
+
 export const ANNUNCI10X_RUBRIC_CHECKS_V2: readonly RubricCheckDefinitionV2[] = [
   check('01', 'Il titolo rende immediatamente riconoscibile il ruolo?', 'Riconoscibilita del titolo', [
     [0, 'Titolo assente o inutilizzabile per identificare il ruolo.'],
@@ -210,9 +355,14 @@ export function validateAnnunci10xRubricV2(): RubricValidationResultV2 {
     }
     if (!definition.canonicalQuestion.trim()) errors.push(`Check ${definition.id} has empty canonicalQuestion`);
     if (!definition.label.trim()) errors.push(`Check ${definition.id} has empty label`);
+    if (!definition.whatItMeasures.trim()) errors.push(`Check ${definition.id} has empty whatItMeasures`);
+    if (!definition.targetEvidence.trim()) errors.push(`Check ${definition.id} has empty targetEvidence`);
+    if (!definition.contextAllowed.trim()) errors.push(`Check ${definition.id} has empty contextAllowed`);
     if (!definition.missingSemantics.trim()) errors.push(`Check ${definition.id} has empty missingSemantics`);
     if (!definition.notEvaluableSemantics.trim()) errors.push(`Check ${definition.id} has empty notEvaluableSemantics`);
+    if (!definition.conflictSemantics.trim()) errors.push(`Check ${definition.id} has empty conflictSemantics`);
     if (!definition.gateRelevance.notes.trim()) errors.push(`Check ${definition.id} has empty gate relevance notes`);
+    if (!definition.avoid.length || definition.avoid.some((item) => !item.trim())) errors.push(`Check ${definition.id} has empty avoid/caveat metadata`);
   }
 
   return { ok: errors.length === 0, errors };
@@ -229,19 +379,25 @@ function check(
   acceleratorSuitability: RubricCheckDefinitionV2['acceleratorSuitability'],
   notes: readonly string[] = [],
 ): RubricCheckDefinitionV2 {
+  const metadata = CHECK_METADATA_V2[id];
   return {
     id,
     canonicalQuestion,
     label,
     maxScore: 10,
+    whatItMeasures: metadata.whatItMeasures,
+    targetEvidence: metadata.targetEvidence,
+    contextAllowed: metadata.contextAllowed,
     anchors: anchors.map(([score, description]) => ({ score, description })),
     missingSemantics,
     notEvaluableSemantics,
+    conflictSemantics: metadata.conflictSemantics,
     gateRelevance: {
       relevant: gateRelevant,
       notes: gateRelevant ? 'Can contribute to future V2 gate/flags when material.' : 'Quality signal; not a default hard gate by itself.',
     },
     acceleratorSuitability,
+    avoid: metadata.avoid,
     notes,
   };
 }

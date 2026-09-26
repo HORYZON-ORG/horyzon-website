@@ -1,3 +1,4 @@
+export * from './evaluate-v2.ts';
 export * from './errors.ts';
 export * from './mock-provider.ts';
 export * from './models.ts';
@@ -6,4 +7,5 @@ export * from './orchestrator.ts';
 export * from './provider.ts';
 export * from './projections.ts';
 export * from './schemas.ts';
+export * from './schemas-v2.ts';
 export * from './prompts/index.ts';

@@ -55,14 +55,22 @@ The provider must produce bounded per-control numeric evaluations. Do not let th
 
 ## Phase 3: prompt and schema alignment
 
-Future work:
+Fase 1C implemented an isolated V2 provider contract for shadow evaluation:
 
-- update `EVALUATE` prompt wording to V2 controls;
-- keep original target evidence rules;
-- require structured per-control results with `checkId`, `score`, `evidence`, `reason`, `missing`, `confidence`, and applicability/status;
-- prevent chain-of-thought storage;
+- `src/lib/annunci-10x/ai/prompts/evaluate-v2.ts` renders prompt version `annunci10x.evaluate.v2.1` from the TypeScript V2 rubric;
+- `src/lib/annunci-10x/ai/schemas-v2.ts` validates the V2 structured output and rejects provider-owned aggregate fields;
+- `src/lib/annunci-10x/ai/evaluate-v2.ts` projects TARGET and CONTEXT separately, runs the provider with operation type `EVALUATE`, retries schema repair once, and aggregates through `calculateAnnunci10xScoreV2()`;
+- `scripts/verify-annunci-10x-ai-v2.mjs` tests the contract with a fake provider and `OpenAiAnnunci10xProvider` fake fetch only.
+
+This remains additive and isolated. It is not wired into public `/annunci-10x`, V1 `EVALUATE`, persistence, UI, API routes, Supabase, checkout, or commercial runtime.
+
+Remaining future work:
+
+- live-calibrate the V2 prompt with controlled benchmark fixtures;
 - preserve unsupported-claim detection;
-- regression-test prompt injection and unsupported benefit claims.
+- benchmark prompt cost and semantic quality;
+- define minimum coverage policy and publication gate V2;
+- decide if and when the public product can switch from V1 to V2.
 
 ## Phase 3A: context capsule
 
@@ -75,7 +83,7 @@ Future work:
 - keep capsule generation deterministic in TypeScript first;
 - use any future semantic accelerator only after benchmark validation.
 
-Do not implement Context Capsule during Fase 1B.
+Do not implement Context Capsule during Fase 1C.
 
 ## Phase 4: data model
 

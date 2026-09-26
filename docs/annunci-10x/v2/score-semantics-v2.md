@@ -1,6 +1,6 @@
 # Annunci 10x score semantics v2
 
-Status: future scoring specification. Not implemented.
+Status: V2 scoring specification plus isolated runtime implementation. Not public runtime.
 
 ## Human guide vs software score
 
@@ -130,6 +130,16 @@ Current V2 product bands:
 | 85-94 | Forte | The ad is materially clear, coherent, and candidate-oriented. |
 | 95-100 | Eccellente | The ad is exceptionally complete and coherent under the rubric. |
 
+Runtime metadata uses explicit half-open ranges:
+
+- `CRITICAL`: `minInclusive = 0`, `maxExclusive = 50`.
+- `WEAK`: `minInclusive = 50`, `maxExclusive = 70`.
+- `GOOD_BASE`: `minInclusive = 70`, `maxExclusive = 85`.
+- `STRONG`: `minInclusive = 85`, `maxExclusive = 95`.
+- `EXCELLENT`: `minInclusive = 95`, `maxExclusive = null`.
+
+This preserves the existing thresholds while making the exclusive upper bounds explicit.
+
 Future calibration must verify evaluation quality, monotonicity, stability, anchor distributions, and public wording. It does not authorize Codex or implementation work to change the thresholds autonomously. If benchmarks suggest the numeric thresholds are problematic, the question must return to the product owner.
 
 Band wording must not imply hiring guarantees.
@@ -162,6 +172,16 @@ The deterministic TypeScript layer owns:
 - treatment of N/D and missing values.
 
 Confidence is preserved as provider-reported diagnostic metadata only. It is validated as integer `0..100`, but it is not a calibrated probability and must not affect score, coverage, band, gate, fallback, or retry automation until real calibration exists.
+
+Fase 1C adds a provider contract and isolated shadow runner for V2 evaluation:
+
+- prompt version `annunci10x.evaluate.v2.1`;
+- output schema `annunci10x_evaluate_v2`;
+- explicit TARGET vs CONTEXT input boundary;
+- one schema-repair retry after invalid provider output;
+- deterministic aggregation through the V2 scoring core.
+
+The Fase 1C runner does not persist operations, does not calculate a publication gate, does not replace V1 `EVALUATE`, and has not been live-calibrated against OpenAI.
 
 The provider may return:
 
