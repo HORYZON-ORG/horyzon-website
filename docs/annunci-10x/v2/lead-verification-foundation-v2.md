@@ -1,6 +1,6 @@
 # Annunci 10x Lead Verification Foundation
 
-Status: FASE 2B foundation. No public UX redesign, no real email provider, no checkout, no HighLevel, no Rizzo Flow, no V2.3 public activation.
+Status: FASE 2B foundation plus FASE 2B.1 email-verification hardening. No public UX redesign, no real email provider, no checkout, no HighLevel, no Rizzo Flow, no V2.3 public activation.
 
 ## Funnel Scope
 
@@ -52,6 +52,7 @@ Default operational policy:
 - OTP length: 6 digits, generated with Node CSPRNG via `crypto.randomInt`.
 - TTL: 10 minutes.
 - Resend cooldown: 60 seconds.
+- Pending-send concurrency grace: 15 seconds.
 - Max attempts per OTP: 5.
 - Send rate limit: 5 sends per hour per private session/email/request fingerprint subject.
 - Verify rate limit: separate brute-force defense scope.
@@ -64,7 +65,16 @@ Verification status:
 - `INVALIDATED`
 - `FAILED_SEND`
 
-Only one active verification can exist for a lead/email. Creating a new verification invalidates previous unconsumed verification rows.
+Only one active verification can exist for a lead/email. Creating a new verification invalidates previous unconsumed verification rows, except that a duplicate request inside the pending-send grace window reuses the existing `PENDING_SEND` row and does not trigger a second provider send.
+
+Legal state transitions are intentionally narrow:
+
+- `PENDING_SEND -> SENT`
+- `PENDING_SEND -> FAILED_SEND`
+- `SENT -> CONSUMED`
+- `SENT -> INVALIDATED`
+
+Invalidated, consumed, and failed-send verifications cannot be moved back to `SENT`.
 
 ## OTP Hashing
 
@@ -77,6 +87,8 @@ The stored value is:
 The pepper is server-only and must not be committed, logged, exposed to the browser, or stored in Supabase.
 
 Production fails closed if the pepper or email provider is unavailable.
+
+At verification time, the runtime hashes the user-entered code and performs the constant-time comparison against the active verification hash. Persistence receives only the exact verification id and the boolean comparison result; it does not receive the plaintext OTP or candidate hash.
 
 ## Provider Abstraction
 
@@ -161,7 +173,9 @@ FASE 2A migration: NOT APPLIED to production.
 
 FASE 2B migration: NOT APPLIED to production.
 
-Because these migrations are pending, tests use memory/fake adapters only. Do not claim Supabase live writes until both migrations are applied and verified separately.
+FASE 2B.1 migration: NOT APPLIED to production.
+
+Because these migrations are pending, tests use memory/fake adapters only. Do not claim Supabase live writes until all pending migrations are applied and verified separately.
 
 ## Future Work
 

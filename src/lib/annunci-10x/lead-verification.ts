@@ -9,6 +9,7 @@ import type {
 export const ANNUNCI10X_MARKETING_CONSENT_VERSION = 'annunci10x-marketing-consent-v1';
 export const ANNUNCI10X_OTP_TTL_SECONDS = boundedInt(process.env.ANNUNCI10X_EMAIL_VERIFICATION_TTL_SECONDS, 60 * 10, 60, 60 * 60);
 export const ANNUNCI10X_OTP_RESEND_COOLDOWN_SECONDS = boundedInt(process.env.ANNUNCI10X_EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS, 60, 15, 15 * 60);
+export const ANNUNCI10X_OTP_PENDING_SEND_GRACE_SECONDS = boundedInt(process.env.ANNUNCI10X_EMAIL_VERIFICATION_PENDING_GRACE_SECONDS, 15, 5, 120);
 export const ANNUNCI10X_OTP_MAX_ATTEMPTS = boundedInt(process.env.ANNUNCI10X_EMAIL_VERIFICATION_MAX_ATTEMPTS, 5, 1, 10);
 export const ANNUNCI10X_OTP_SEND_LIMIT = boundedInt(process.env.ANNUNCI10X_EMAIL_VERIFICATION_SEND_LIMIT, 5, 1, 20);
 export const ANNUNCI10X_OTP_SEND_WINDOW_SECONDS = boundedInt(process.env.ANNUNCI10X_EMAIL_VERIFICATION_SEND_WINDOW_SECONDS, 60 * 60, 60, 24 * 60 * 60);
@@ -108,10 +109,14 @@ export async function requestAnnunci10xEmailVerification(input: RequestEmailVeri
   const provider = input.provider ?? createAnnunci10xEmailProvider(env);
   const lead = await requireCurrentLead(input.context, input.session);
 
-  const active = await input.context.persistence.getActiveEmailVerification(input.session.sessionId, input.session.sessionSecret);
-  const cooldown = active?.sentAt ? remainingSeconds(active.sentAt, ANNUNCI10X_OTP_RESEND_COOLDOWN_SECONDS) : 0;
-  if (active && cooldown > 0) {
-    return { sent: false, expiresInSeconds: secondsUntil(active.expiresAt), resendAfterSeconds: cooldown };
+  const open = await input.context.persistence.getOpenEmailVerification(input.session.sessionId, input.session.sessionSecret);
+  const pendingGrace = open?.status === 'PENDING_SEND' ? remainingSeconds(open.createdAt, ANNUNCI10X_OTP_PENDING_SEND_GRACE_SECONDS) : 0;
+  if (open && pendingGrace > 0) {
+    return { sent: false, expiresInSeconds: secondsUntil(open.expiresAt), resendAfterSeconds: pendingGrace };
+  }
+  const cooldown = open?.status === 'SENT' && open.sentAt ? remainingSeconds(open.sentAt, ANNUNCI10X_OTP_RESEND_COOLDOWN_SECONDS) : 0;
+  if (open && cooldown > 0) {
+    return { sent: false, expiresInSeconds: secondsUntil(open.expiresAt), resendAfterSeconds: cooldown };
   }
 
   const rate = await input.context.persistence.checkRateLimit({
@@ -136,13 +141,25 @@ export async function requestAnnunci10xEmailVerification(input: RequestEmailVeri
     codeHash: hashEmailVerificationCode(pepper, verificationId, lead.emailNormalized, code),
     expiresAt,
     maxAttempts: ANNUNCI10X_OTP_MAX_ATTEMPTS,
+    pendingGraceSeconds: ANNUNCI10X_OTP_PENDING_SEND_GRACE_SECONDS,
   });
+  if (verification.id !== verificationId) {
+    return {
+      sent: false,
+      expiresInSeconds: secondsUntil(verification.expiresAt),
+      resendAfterSeconds: remainingSeconds(verification.createdAt, ANNUNCI10X_OTP_PENDING_SEND_GRACE_SECONDS),
+    };
+  }
 
   try {
     await provider.sendVerificationCode({ recipient: lead.emailNormalized, code, expiresAt, firstName: lead.firstName });
     await input.context.persistence.markEmailVerificationSent(verification.id, input.session.sessionSecret);
   } catch (error) {
-    await input.context.persistence.markEmailVerificationFailed(verification.id, input.session.sessionSecret);
+    try {
+      await input.context.persistence.markEmailVerificationFailed(verification.id, input.session.sessionSecret);
+    } catch {
+      // The provider outcome is already unsafe for this OTP; surface one controlled public error.
+    }
     if (error instanceof Annunci10xPublicError) throw error;
     throw new Annunci10xPublicError('EMAIL_PROVIDER_UNAVAILABLE', 'Provider email non disponibile.', 503);
   }
@@ -180,11 +197,12 @@ export async function verifyAnnunci10xEmailCode(input: VerifyEmailInput): Promis
   }
 
   const candidateHash = hashEmailVerificationCode(pepper, active.id, active.emailNormalized, code);
-  if (active.codeHash) constantTimeHashEquals(active.codeHash, candidateHash);
+  const codeMatches = Boolean(active.codeHash && constantTimeHashEquals(active.codeHash, candidateHash));
   const result = await input.context.persistence.verifyEmailCode({
     sessionId: input.session.sessionId,
     sessionSecret: input.session.sessionSecret,
-    codeHash: candidateHash,
+    verificationId: active.id,
+    codeMatches,
   });
 
   if (result.outcome !== 'VERIFIED') {

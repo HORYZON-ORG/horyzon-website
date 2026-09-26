@@ -354,6 +354,7 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
       p_code_hash: input.codeHash,
       p_expires_at: input.expiresAt,
       p_max_attempts: input.maxAttempts,
+      p_pending_grace_seconds: input.pendingGraceSeconds,
     });
     return parseEmailVerificationRow(row, { includeHash: true });
   }
@@ -363,6 +364,20 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
     const rows = await this.select('annunci10x_email_verifications', {
       session_id: `eq.${sessionId}`,
       status: 'eq.SENT',
+      consumed_at: 'is.null',
+      invalidated_at: 'is.null',
+      select: '*',
+      order: 'created_at.desc',
+      limit: '1',
+    });
+    return rows[0] ? parseEmailVerificationRow(rows[0], { includeHash: true }) : null;
+  }
+
+  async getOpenEmailVerification(sessionId: string, sessionSecret: string): Promise<PersistedEmailVerification | null> {
+    await this.requireOwnership(sessionId, sessionSecret);
+    const rows = await this.select('annunci10x_email_verifications', {
+      session_id: `eq.${sessionId}`,
+      status: 'in.(PENDING_SEND,SENT)',
       consumed_at: 'is.null',
       invalidated_at: 'is.null',
       select: '*',
@@ -392,7 +407,8 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
     const row = await this.rpc<DbRow>('annunci10x_verify_email_code', {
       p_session_id: input.sessionId,
       p_owner_secret_hash: hashAnnunci10xSessionSecret(input.sessionSecret),
-      p_code_hash: input.codeHash,
+      p_verification_id: input.verificationId,
+      p_code_matches: input.codeMatches,
     });
     return parseVerifyEmailCodeResult(row);
   }
@@ -801,7 +817,9 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
     row.email_normalized = input.emailNormalized;
     if (!existing || emailChanged) row.email_verified_at = null;
     row.marketing_consent = input.marketingConsent;
-    row.marketing_consent_at = input.marketingConsent ? existing?.marketing_consent_at ?? now : null;
+    row.marketing_consent_at = input.marketingConsent && existing?.marketing_consent_version === input.marketingConsentVersion
+      ? existing.marketing_consent_at ?? now
+      : input.marketingConsent ? now : null;
     row.marketing_consent_version = input.marketingConsent ? input.marketingConsentVersion : null;
     row.updated_at = now;
     this.leads.set(input.sessionId, row);
@@ -820,6 +838,10 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
     const lead = this.leads.get(input.sessionId);
     if (!lead || lead.id !== input.leadId || lead.email_normalized !== input.emailNormalized) {
       throw new Annunci10xPersistenceError('Annunci 10x lead ownership verification failed.', 'OWNERSHIP');
+    }
+    const pending = this.findOpenMemoryVerification(input.sessionId, input.leadId, input.emailNormalized, ['PENDING_SEND']);
+    if (pending && remainingMemorySeconds(String(pending.created_at), input.pendingGraceSeconds) > 0) {
+      return parseEmailVerificationRow(pending, { includeHash: true });
     }
     this.invalidateActiveMemoryVerifications(input.sessionId, input.leadId);
     const now = new Date().toISOString();
@@ -845,14 +867,21 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
 
   async getActiveEmailVerification(sessionId: string, sessionSecret: string): Promise<PersistedEmailVerification | null> {
     this.requireMemoryOwnership(sessionId, sessionSecret);
-    const row = [...this.verifications.values()]
-      .filter((item) => item.session_id === sessionId && item.status === 'SENT' && !item.consumed_at && !item.invalidated_at)
-      .sort((left, right) => String(right.created_at).localeCompare(String(left.created_at)))[0];
+    const row = this.findOpenMemoryVerification(sessionId, undefined, undefined, ['SENT']);
+    return row ? parseEmailVerificationRow(row, { includeHash: true }) : null;
+  }
+
+  async getOpenEmailVerification(sessionId: string, sessionSecret: string): Promise<PersistedEmailVerification | null> {
+    this.requireMemoryOwnership(sessionId, sessionSecret);
+    const row = this.findOpenMemoryVerification(sessionId, undefined, undefined, ['PENDING_SEND', 'SENT']);
     return row ? parseEmailVerificationRow(row, { includeHash: true }) : null;
   }
 
   async markEmailVerificationSent(verificationId: string, sessionSecret: string): Promise<PersistedEmailVerification> {
     const row = this.findOwnedVerification(verificationId, sessionSecret);
+    if (row.status !== 'PENDING_SEND' || row.consumed_at || row.invalidated_at) {
+      throw new Annunci10xPersistenceError('Annunci 10x email verification cannot transition to sent.', 'VALIDATION');
+    }
     row.status = 'SENT';
     row.sent_at = new Date().toISOString();
     row.updated_at = row.sent_at;
@@ -861,6 +890,9 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
 
   async markEmailVerificationFailed(verificationId: string, sessionSecret: string): Promise<PersistedEmailVerification> {
     const row = this.findOwnedVerification(verificationId, sessionSecret);
+    if (row.status !== 'PENDING_SEND' || row.consumed_at || row.invalidated_at) {
+      throw new Annunci10xPersistenceError('Annunci 10x email verification cannot transition to failed.', 'VALIDATION');
+    }
     row.status = 'FAILED_SEND';
     row.invalidated_at = new Date().toISOString();
     row.updated_at = row.invalidated_at;
@@ -869,11 +901,15 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
 
   async verifyEmailCode(input: VerifyEmailCodeInput): Promise<VerifyEmailCodeResult> {
     this.requireMemoryOwnership(input.sessionId, input.sessionSecret);
-    const row = [...this.verifications.values()]
-      .filter((item) => item.session_id === input.sessionId && item.status === 'SENT' && !item.consumed_at && !item.invalidated_at)
-      .sort((left, right) => String(right.created_at).localeCompare(String(left.created_at)))[0];
+    const row = this.verifications.get(input.verificationId);
     if (!row) return { outcome: 'VERIFICATION_INVALID', lead: await this.getLead(input.sessionId, input.sessionSecret), verification: null };
+    if (row.session_id !== input.sessionId) {
+      throw new Annunci10xPersistenceError('Annunci 10x email verification ownership failed.', 'OWNERSHIP');
+    }
     const now = new Date();
+    if (row.status !== 'SENT' || row.consumed_at || row.invalidated_at) {
+      return { outcome: 'VERIFICATION_INVALID', lead: await this.getLead(input.sessionId, input.sessionSecret), verification: parseEmailVerificationRow(row, { includeHash: true }) };
+    }
     if (Date.parse(String(row.expires_at)) <= now.getTime()) {
       row.status = 'INVALIDATED';
       row.invalidated_at = now.toISOString();
@@ -886,7 +922,7 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
       row.updated_at = row.invalidated_at;
       return { outcome: 'MAX_ATTEMPTS_REACHED', lead: await this.getLead(input.sessionId, input.sessionSecret), verification: parseEmailVerificationRow(row, { includeHash: true }) };
     }
-    if (row.code_hash !== input.codeHash) {
+    if (!input.codeMatches) {
       row.attempt_count = Number(row.attempt_count) + 1;
       if (Number(row.attempt_count) >= Number(row.max_attempts)) {
         row.status = 'INVALIDATED';
@@ -977,6 +1013,16 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
     return row;
   }
 
+  private findOpenMemoryVerification(sessionId: string, leadId: string | undefined, emailNormalized: string | undefined, statuses: string[]): DbRow | undefined {
+    return [...this.verifications.values()]
+      .filter((item) => item.session_id === sessionId)
+      .filter((item) => !leadId || item.lead_id === leadId)
+      .filter((item) => !emailNormalized || item.email_normalized === emailNormalized)
+      .filter((item) => statuses.includes(String(item.status)))
+      .filter((item) => !item.consumed_at && !item.invalidated_at)
+      .sort((left, right) => String(right.created_at).localeCompare(String(left.created_at)))[0];
+  }
+
   private invalidateActiveMemoryVerifications(sessionId: string, leadId: string): void {
     const now = new Date().toISOString();
     for (const row of this.verifications.values()) {
@@ -1041,6 +1087,10 @@ function parseVerifyEmailCodeResult(row: DbRow): VerifyEmailCodeResult {
   const lead = row.lead && typeof row.lead === 'object' ? parseLeadRow(row.lead as DbRow) : null;
   const verification = row.verification && typeof row.verification === 'object' ? parseEmailVerificationRow(row.verification as DbRow, { includeHash: true }) : null;
   return { outcome, lead, verification };
+}
+
+function remainingMemorySeconds(fromIso: string, windowSeconds: number): number {
+  return Math.max(0, Math.ceil((Date.parse(fromIso) + windowSeconds * 1000 - Date.now()) / 1000));
 }
 
 function validateCommercialContextOrThrow(value: unknown): void {

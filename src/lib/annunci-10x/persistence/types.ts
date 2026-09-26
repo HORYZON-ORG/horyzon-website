@@ -281,6 +281,7 @@ export interface CreateEmailVerificationInput {
   codeHash: string;
   expiresAt: string;
   maxAttempts: number;
+  pendingGraceSeconds: number;
 }
 
 export interface PersistedEmailVerification {
@@ -303,7 +304,8 @@ export interface PersistedEmailVerification {
 export interface VerifyEmailCodeInput {
   sessionId: string;
   sessionSecret: string;
-  codeHash: string;
+  verificationId: string;
+  codeMatches: boolean;
 }
 
 export interface VerifyEmailCodeResult {
@@ -378,6 +380,7 @@ export interface Annunci10xPersistenceAdapter {
   getLead(sessionId: string, sessionSecret: string): Promise<PersistedLead | null>;
   createEmailVerification(input: CreateEmailVerificationInput): Promise<PersistedEmailVerification>;
   getActiveEmailVerification(sessionId: string, sessionSecret: string): Promise<PersistedEmailVerification | null>;
+  getOpenEmailVerification(sessionId: string, sessionSecret: string): Promise<PersistedEmailVerification | null>;
   markEmailVerificationSent(verificationId: string, sessionSecret: string): Promise<PersistedEmailVerification>;
   markEmailVerificationFailed(verificationId: string, sessionSecret: string): Promise<PersistedEmailVerification>;
   verifyEmailCode(input: VerifyEmailCodeInput): Promise<VerifyEmailCodeResult>;

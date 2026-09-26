@@ -111,11 +111,28 @@ await assert.rejects(
   () => verifyAnnunci10xEmailCode({ session, context, code: '000000' === firstCode ? '000001' : '000000', requestFingerprint: '127.0.0.1', env: process.env }),
   (error) => error instanceof Annunci10xPublicError && error.code === 'VERIFICATION_INVALID',
 );
+let capturedVerifyInput = null;
+const originalVerifyEmailCode = context.persistence.verifyEmailCode.bind(context.persistence);
+context.persistence.verifyEmailCode = async (input) => {
+  capturedVerifyInput = input;
+  return originalVerifyEmailCode(input);
+};
+await assert.rejects(
+  () => verifyAnnunci10xEmailCode({ session, context, code: '000000' === firstCode ? '000001' : '000000', requestFingerprint: 'constant-time-false', env: process.env }),
+  (error) => error instanceof Annunci10xPublicError && error.code === 'VERIFICATION_INVALID',
+);
+assert.equal(capturedVerifyInput.verificationId, active.id, 'runtime verifies the exact active verification');
+assert.equal(capturedVerifyInput.codeMatches, false, 'runtime compare result is authoritative for wrong code');
+assert.equal('codeHash' in capturedVerifyInput, false, 'candidate hash is not passed to persistence verification');
 active = await context.persistence.getActiveEmailVerification(session.sessionId, session.sessionSecret);
-assert.equal(active.attemptCount, 1);
+assert.equal(active.attemptCount, 2);
 
 const runningRun = await createRun(context, session, 'RUNNING');
+capturedVerifyInput = null;
 let verified = await verifyAnnunci10xEmailCode({ session, context, code: firstCode, analysisRunId: runningRun.id, requestFingerprint: '127.0.0.1', env: process.env });
+assert.equal(capturedVerifyInput.verificationId, active.id, 'runtime keeps the same verification id for a matching code');
+assert.equal(capturedVerifyInput.codeMatches, true, 'runtime compare result is authoritative for correct code');
+context.persistence.verifyEmailCode = originalVerifyEmailCode;
 assert.equal(verified.verified, true);
 assert.equal(verified.resultEligible, false, 'RUNNING + verified is not eligible');
 lead = await context.persistence.getLead(session.sessionId, session.sessionSecret);
@@ -170,6 +187,7 @@ await context.persistence.createEmailVerification({
   codeHash: hashEmailVerificationCode(TEST_PEPPER, expiredId, 'ada.changed@example.com', '111111'),
   expiresAt: new Date(Date.now() - 1000).toISOString(),
   maxAttempts: 5,
+  pendingGraceSeconds: 15,
 });
 await context.persistence.markEmailVerificationSent(expiredId, session.sessionSecret);
 await assert.rejects(
@@ -224,6 +242,7 @@ await unverifiedContext.persistence.createEmailVerification({
   codeHash: hashEmailVerificationCode(TEST_PEPPER, verifiedLeadId, 'grace@example.com', '222222'),
   expiresAt: new Date(Date.now() + 60_000).toISOString(),
   maxAttempts: 5,
+  pendingGraceSeconds: 15,
 });
 await unverifiedContext.persistence.markEmailVerificationSent(verifiedLeadId, unverifiedSession.sessionSecret);
 await verifyAnnunci10xEmailCode({ session: unverifiedSession, context: unverifiedContext, code: '222222', analysisRunId: failedRun.id, requestFingerprint: 'grace', env: process.env });
@@ -240,15 +259,178 @@ await assert.rejects(
   'run from another session is denied',
 );
 
+await runConcurrencyAndSecurityHardeningChecks();
+
 console.log('Annunci 10x lead verification verifier passed');
 
-function makeContext() {
+async function runConcurrencyAndSecurityHardeningChecks() {
+  const concurrencyContext = makeContext({ emailProvider: makeDelayedEmailProvider() });
+  const concurrencyCreated = await createAnonymousAnalyzeSession(concurrencyContext);
+  const concurrencySession = { sessionId: concurrencyCreated.session.id, sessionSecret: concurrencyCreated.sessionSecret };
+  await saveAnnunci10xLeadContact({
+    session: concurrencySession,
+    context: concurrencyContext,
+    firstName: 'Katherine',
+    lastName: 'Johnson',
+    companyName: 'Horyzon',
+    businessRole: 'HR',
+    email: 'katherine@example.com',
+  });
+  const concurrentResults = await Promise.all([
+    requestAnnunci10xEmailVerification({ session: concurrencySession, context: concurrencyContext, provider: concurrencyContext.emailProvider, requestFingerprint: 'concurrent', env: process.env }),
+    requestAnnunci10xEmailVerification({ session: concurrencySession, context: concurrencyContext, provider: concurrencyContext.emailProvider, requestFingerprint: 'concurrent', env: process.env }),
+  ]);
+  assert.equal(concurrencyContext.emailProvider.sent.length, 1, 'concurrent requests send at most one OTP');
+  assert.equal(concurrentResults.filter((item) => item.sent).length, 1, 'only one concurrent request reports sent');
+  assert.equal(concurrentResults.filter((item) => !item.sent).length, 1, 'duplicate concurrent request is safely deferred');
+  const concurrencyOpen = await concurrencyContext.persistence.getOpenEmailVerification(concurrencySession.sessionId, concurrencySession.sessionSecret);
+  assert.equal(concurrencyOpen.status, 'SENT', 'single concurrent verification is sent');
+
+  const raceContext = makeContext();
+  const race = await createContactSession(raceContext, 'dorothy@example.com');
+  const first = await createPendingVerification(raceContext, race.session, 'dorothy@example.com', '123456');
+  await raceContext.persistence.markEmailVerificationSent(first.id, race.session.sessionSecret);
+  const second = await createPendingVerification(raceContext, race.session, 'dorothy@example.com', '654321');
+  await raceContext.persistence.markEmailVerificationSent(second.id, race.session.sessionSecret);
+  const oldCodeResult = await raceContext.persistence.verifyEmailCode({
+    sessionId: race.session.sessionId,
+    sessionSecret: race.session.sessionSecret,
+    verificationId: first.id,
+    codeMatches: true,
+  });
+  assert.equal(oldCodeResult.outcome, 'VERIFICATION_INVALID', 'old verification id cannot verify after resend invalidation');
+  const raceActive = await raceContext.persistence.getActiveEmailVerification(race.session.sessionId, race.session.sessionSecret);
+  assert.equal(raceActive.id, second.id, 'new verification remains active after old-code replay');
+  assert.equal(raceActive.attemptCount, 0, 'old-code replay does not increment the new OTP attempts');
+  assert.equal((await raceContext.persistence.getLead(race.session.sessionId, race.session.sessionSecret)).emailVerifiedAt, null);
+
+  const transitionContext = makeContext();
+  const transition = await createContactSession(transitionContext, 'mary@example.com');
+  const pendingToSent = await createPendingVerification(transitionContext, transition.session, 'mary@example.com', '111111');
+  assert.equal((await transitionContext.persistence.markEmailVerificationSent(pendingToSent.id, transition.session.sessionSecret)).status, 'SENT');
+  await assert.rejects(
+    () => transitionContext.persistence.markEmailVerificationFailed(pendingToSent.id, transition.session.sessionSecret),
+    /transition|failed/i,
+    'SENT cannot transition to FAILED_SEND',
+  );
+
+  const pendingToFailed = await createPendingVerification(transitionContext, transition.session, 'mary@example.com', '222222');
+  assert.equal((await transitionContext.persistence.markEmailVerificationFailed(pendingToFailed.id, transition.session.sessionSecret)).status, 'FAILED_SEND');
+  await assert.rejects(
+    () => transitionContext.persistence.markEmailVerificationSent(pendingToFailed.id, transition.session.sessionSecret),
+    /transition|sent/i,
+    'FAILED_SEND cannot transition to SENT',
+  );
+
+  const invalidated = await createPendingVerification(transitionContext, transition.session, 'mary@example.com', '333333');
+  await createPendingVerification(transitionContext, transition.session, 'mary@example.com', '444444');
+  await assert.rejects(
+    () => transitionContext.persistence.markEmailVerificationSent(invalidated.id, transition.session.sessionSecret),
+    /transition|sent/i,
+    'INVALIDATED cannot transition to SENT',
+  );
+
+  const consumed = await createPendingVerification(transitionContext, transition.session, 'mary@example.com', '555555');
+  await transitionContext.persistence.markEmailVerificationSent(consumed.id, transition.session.sessionSecret);
+  const consumedResult = await transitionContext.persistence.verifyEmailCode({
+    sessionId: transition.session.sessionId,
+    sessionSecret: transition.session.sessionSecret,
+    verificationId: consumed.id,
+    codeMatches: true,
+  });
+  assert.equal(consumedResult.outcome, 'VERIFIED');
+  await assert.rejects(
+    () => transitionContext.persistence.markEmailVerificationSent(consumed.id, transition.session.sessionSecret),
+    /transition|sent/i,
+    'CONSUMED cannot transition back to SENT',
+  );
+
+  const maxContext = makeContext();
+  const max = await createContactSession(maxContext, 'max@example.com');
+  const limited = await createPendingVerification(maxContext, max.session, 'max@example.com', '121212', 2);
+  await maxContext.persistence.markEmailVerificationSent(limited.id, max.session.sessionSecret);
+  assert.equal((await maxContext.persistence.verifyEmailCode({ sessionId: max.session.sessionId, sessionSecret: max.session.sessionSecret, verificationId: limited.id, codeMatches: false })).outcome, 'VERIFICATION_INVALID');
+  assert.equal((await maxContext.persistence.verifyEmailCode({ sessionId: max.session.sessionId, sessionSecret: max.session.sessionSecret, verificationId: limited.id, codeMatches: false })).outcome, 'MAX_ATTEMPTS_REACHED');
+  assert.equal((await maxContext.persistence.verifyEmailCode({ sessionId: max.session.sessionId, sessionSecret: max.session.sessionSecret, verificationId: limited.id, codeMatches: true })).outcome, 'VERIFICATION_INVALID');
+
+  const consentContext = makeContext();
+  const consentCreated = await createAnonymousAnalyzeSession(consentContext);
+  const consentSession = { sessionId: consentCreated.session.id, sessionSecret: consentCreated.sessionSecret };
+  const consentInput = {
+    sessionId: consentSession.sessionId,
+    sessionSecret: consentSession.sessionSecret,
+    firstName: 'Sophie',
+    lastName: 'Wilson',
+    companyName: 'Horyzon',
+    businessRole: 'OTHER',
+    emailNormalized: 'sophie@example.com',
+    marketingConsent: true,
+  };
+  const v1 = await consentContext.persistence.saveLead({ ...consentInput, marketingConsentVersion: 'annunci10x-marketing-consent-v1' });
+  await delay(5);
+  const v1Again = await consentContext.persistence.saveLead({ ...consentInput, marketingConsentVersion: 'annunci10x-marketing-consent-v1' });
+  assert.equal(v1Again.marketingConsentAt, v1.marketingConsentAt, 'same marketing consent version keeps the original timestamp');
+  await delay(5);
+  const v2 = await consentContext.persistence.saveLead({ ...consentInput, marketingConsentVersion: 'annunci10x-marketing-consent-v2' });
+  assert.notEqual(v2.marketingConsentAt, v1.marketingConsentAt, 'new marketing consent version records a new timestamp');
+  assert.equal(v2.marketingConsentVersion, 'annunci10x-marketing-consent-v2');
+}
+
+function makeContext(options = {}) {
   return {
     persistence: new MemoryAnnunci10xPersistenceAdapter(),
     provider: { run: async () => { throw new Error('not used'); } },
     configuredProvider: 'MOCK',
-    emailProvider: new MockAnnunci10xEmailProvider(),
+    emailProvider: options.emailProvider ?? new MockAnnunci10xEmailProvider(),
   };
+}
+
+async function createContactSession(context, email) {
+  const created = await createAnonymousAnalyzeSession(context);
+  const session = { sessionId: created.session.id, sessionSecret: created.sessionSecret };
+  const saved = await saveAnnunci10xLeadContact({
+    session,
+    context,
+    firstName: 'Test',
+    lastName: 'User',
+    companyName: 'Horyzon',
+    businessRole: 'HR',
+    email,
+  });
+  return { session, lead: saved.lead };
+}
+
+async function createPendingVerification(context, session, email, code, maxAttempts = 5) {
+  const lead = await context.persistence.getLead(session.sessionId, session.sessionSecret);
+  const id = randomUUID();
+  await context.persistence.createEmailVerification({
+    id,
+    sessionId: session.sessionId,
+    sessionSecret: session.sessionSecret,
+    leadId: lead.id,
+    emailNormalized: email,
+    codeHash: hashEmailVerificationCode(TEST_PEPPER, id, email, code),
+    expiresAt: new Date(Date.now() + 60_000).toISOString(),
+    maxAttempts,
+    pendingGraceSeconds: 0,
+  });
+  return { id, code };
+}
+
+function makeDelayedEmailProvider() {
+  return {
+    kind: 'MOCK',
+    sent: [],
+    async sendVerificationCode(input) {
+      await delay(10);
+      this.sent.push(input);
+      return { providerRequestId: `delayed-${this.sent.length}` };
+    },
+  };
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function createRun(context, session, status, withReference = true) {
