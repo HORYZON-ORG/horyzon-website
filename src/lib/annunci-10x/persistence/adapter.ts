@@ -172,6 +172,17 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
     return rows[0] ? parseSnapshotRow(rows[0]) : null;
   }
 
+  async getSnapshotById(snapshotId: string, sessionId: string, sessionSecret: string): Promise<PersistedSnapshot | null> {
+    const rows = await this.select('annunci10x_snapshots', {
+      id: `eq.${snapshotId}`,
+      session_id: `eq.${sessionId}`,
+      select: '*,annunci10x_sessions!inner(owner_secret_hash,expires_at)',
+      'annunci10x_sessions.owner_secret_hash': `eq.${hashAnnunci10xSessionSecret(sessionSecret)}`,
+      limit: '1',
+    });
+    return rows[0] ? parseSnapshotRow(rows[0]) : null;
+  }
+
   async startAiOperation(input: StartAiOperationInput): Promise<PersistedAiOperation> {
     const row = await this.rpc<DbRow>('annunci10x_register_ai_operation', {
       p_session_id: input.sessionId,
@@ -183,6 +194,16 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
       p_model: input.model ?? null,
     });
     return parseAiOperationRow(row);
+  }
+
+  async getAiOperation(operationId: string, sessionSecret: string): Promise<PersistedAiOperation | null> {
+    const rows = await this.select('annunci10x_ai_operations', {
+      id: `eq.${operationId}`,
+      select: '*,annunci10x_sessions!inner(owner_secret_hash,expires_at)',
+      'annunci10x_sessions.owner_secret_hash': `eq.${hashAnnunci10xSessionSecret(sessionSecret)}`,
+      limit: '1',
+    });
+    return rows[0] ? parseAiOperationRow(rows[0]) : null;
   }
 
   async completeAiOperation(input: CompleteAiOperationInput): Promise<PersistedAiOperation> {
@@ -243,6 +264,18 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
       id: `eq.${evaluationId}`,
       session_id: `eq.${sessionId}`,
       select: '*',
+      limit: '1',
+    });
+    return rows[0] ? parseEvaluationRow(rows[0]) : null;
+  }
+
+  async getEvaluationByTarget(sessionId: string, sessionSecret: string, targetRef: string): Promise<PersistedEvaluation | null> {
+    await this.requireOwnership(sessionId, sessionSecret);
+    const rows = await this.select('annunci10x_evaluations', {
+      session_id: `eq.${sessionId}`,
+      target_ref: `eq.${targetRef}`,
+      select: '*',
+      order: 'created_at.desc',
       limit: '1',
     });
     return rows[0] ? parseEvaluationRow(rows[0]) : null;
@@ -637,6 +670,12 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
     return row ? parseSnapshotRow(row) : null;
   }
 
+  async getSnapshotById(snapshotId: string, sessionId: string, sessionSecret: string): Promise<PersistedSnapshot | null> {
+    this.requireMemoryOwnership(sessionId, sessionSecret);
+    const row = this.snapshots.find((item) => item.id === snapshotId && item.session_id === sessionId);
+    return row ? parseSnapshotRow(row) : null;
+  }
+
   async startAiOperation(input: StartAiOperationInput): Promise<PersistedAiOperation> {
     this.requireMemoryOwnership(input.sessionId, input.sessionSecret);
     const identity = input.inputSnapshotId ?? '00000000-0000-0000-0000-000000000000';
@@ -654,6 +693,16 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
     });
     this.operations.set(key, row);
     return parseAiOperationRow(row);
+  }
+
+  async getAiOperation(operationId: string, sessionSecret: string): Promise<PersistedAiOperation | null> {
+    for (const row of this.operations.values()) {
+      if (row.id === operationId) {
+        this.requireMemoryOwnership(String(row.session_id), sessionSecret);
+        return parseAiOperationRow(row);
+      }
+    }
+    return null;
   }
 
   async completeAiOperation(input: CompleteAiOperationInput): Promise<PersistedAiOperation> {
@@ -710,6 +759,14 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
   async getEvaluationById(evaluationId: string, sessionId: string, sessionSecret: string): Promise<PersistedEvaluation | null> {
     this.requireMemoryOwnership(sessionId, sessionSecret);
     const row = this.evaluations.find((item) => item.id === evaluationId && item.session_id === sessionId);
+    return row ? parseEvaluationRow(row) : null;
+  }
+
+  async getEvaluationByTarget(sessionId: string, sessionSecret: string, targetRef: string): Promise<PersistedEvaluation | null> {
+    this.requireMemoryOwnership(sessionId, sessionSecret);
+    const row = this.evaluations
+      .filter((item) => item.session_id === sessionId && item.target_ref === targetRef)
+      .sort((left, right) => String(right.created_at).localeCompare(String(left.created_at)))[0];
     return row ? parseEvaluationRow(row) : null;
   }
 

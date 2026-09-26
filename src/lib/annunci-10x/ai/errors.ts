@@ -1,4 +1,5 @@
 import type { Annunci10xErrorCode } from '../types.ts';
+import type { PersistedAiOperation } from '../persistence/types.ts';
 
 export type Annunci10xAiErrorCode = Extract<Annunci10xErrorCode, 'AI_PROVIDER_ERROR' | 'AI_INVALID_OUTPUT' | 'RATE_LIMITED' | 'INTERNAL_ERROR' | 'INTERNAL'>;
 
@@ -16,11 +17,25 @@ export class Annunci10xAiError extends Error {
   }
 }
 
+export class Annunci10xAiOperationInProgressError extends Error {
+  readonly operation: PersistedAiOperation;
+
+  constructor(operation: PersistedAiOperation) {
+    super('Annunci 10x AI operation is already running.');
+    this.name = 'Annunci10xAiOperationInProgressError';
+    this.operation = operation;
+  }
+}
+
 export interface PublicAnnunci10xAiError {
   code: Annunci10xAiErrorCode;
   message: string;
   retryable: boolean;
   status?: number;
+}
+
+export function isAnnunci10xAiOperationInProgressError(error: unknown): error is Annunci10xAiOperationInProgressError {
+  return error instanceof Annunci10xAiOperationInProgressError;
 }
 
 export function toPublicAiError(error: unknown): PublicAnnunci10xAiError {

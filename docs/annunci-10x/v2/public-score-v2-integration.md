@@ -38,6 +38,46 @@ After the shared snapshot, `V2_PUBLIC` calls the V2.3 EVALUATE adapter and skips
 
 The V2 adapter persists the same AI-operation contract used by the rest of Annunci 10x, with the V2.3 prompt version included in the idempotency key. Same session, snapshot, prompt version, model, and input identity reuse the stored operation.
 
+## Durable stage runner
+
+The free-analysis `AnalysisRun` is advanced as a durable state machine. Each
+runner invocation claims the run lease, executes at most one new provider
+operation, persists its durable refs, advances `analysis_runs.stage`, releases
+the lease, and returns. Polling or a later `after()` kick continues from the
+next stage instead of replaying the whole pipeline.
+
+Durable refs are stored in `analysis_runs.operation_refs`. They include AI
+operation IDs for `PRECHECK`, `EXTRACT`, `PROFILE`, `STRATEGY`, `EVALUATE`,
+and V1 `CLARIFY`, plus internal snapshot refs `ROLE_SNAPSHOT` and
+`CONTEXT_SNAPSHOT`. These refs are not customer-facing API data.
+
+Stage order differs by evaluation mode:
+
+- V1: `SOURCE_VALIDATION` -> `PRECHECK` -> `EXTRACT` -> `PROFILE` -> `STRATEGY` -> `EVALUATE` -> `CLARIFY` -> `COMPLETE`.
+- V2_PUBLIC: `SOURCE_VALIDATION` -> `PRECHECK` -> `EXTRACT` -> `PROFILE` -> `STRATEGY` -> `EVALUATE` -> `COMPLETE`.
+
+`ROLE_SNAPSHOT` is created once after `EXTRACT` and reused by `PROFILE` and
+`STRATEGY`. `CONTEXT_SNAPSHOT` is created once after `STRATEGY` and reused by
+`EVALUATE`. AI operation identities are derived from the stable
+`AnalysisRun.input_identity`, stage, versions, and model, not from regenerated
+snapshot UUIDs.
+
+The lease remains the anti-concurrency authority. A second kick while one stage
+is running cannot claim the run and therefore cannot start a duplicate provider
+call. After a successful stage, the lease is cleared so the next poll can
+advance the next stage quickly.
+
+The POST and GET status routes that schedule `after()` work declare
+`maxDuration = 120`, giving one provider operation enough room above the
+default 90 second AI timeout for persistence and cleanup. `after()` is still
+treated as finite Function work, not as an unbounded queue.
+
+If an idempotent AI operation is found in `RUNNING` state from a previous
+invocation, the runtime does not immediately call the provider again. A recent
+`RUNNING` operation is treated as in progress and the run remains resumable.
+If the operation is older than the provider timeout plus a grace margin, it is
+failed closed with a retry-safe error policy instead of entering a cost loop.
+
 ## Score and gate semantics
 
 V2 public score persists:

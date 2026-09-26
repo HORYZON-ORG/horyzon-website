@@ -7,7 +7,7 @@ import {
 import { calculateAnnunci10xScoreV2 } from '../score-v2.ts';
 import type { Annunci10xPersistenceAdapter, PersistedAiOperation } from '../persistence/types.ts';
 import type { ScoreResultV2 } from '../types-v2.ts';
-import { Annunci10xAiError, sanitizeAiErrorPayload } from './errors.ts';
+import { Annunci10xAiError, Annunci10xAiOperationInProgressError, sanitizeAiErrorPayload } from './errors.ts';
 import { getAnnunci10xAiTimeoutMs, getAnnunci10xModelForOperation } from './models.ts';
 import { createAnnunci10xAiIdempotencyKey } from './orchestrator.ts';
 import {
@@ -74,6 +74,9 @@ export interface RunPersistedAnnunci10xEvaluateV2Result extends RunAnnunci10xEva
   operation: PersistedAiOperation;
   idempotencyHit: boolean;
 }
+
+const NEW_RUNNING_OPERATION_GRACE_MS = 5_000;
+const STALE_RUNNING_OPERATION_GRACE_MS = 30_000;
 
 export function projectEvaluateInputV2(input: Annunci10xEvaluateInputV2): Annunci10xEvaluateInputV2 {
   return {
@@ -172,13 +175,23 @@ export async function runPersistedAnnunci10xEvaluateV2(options: RunPersistedAnnu
   if (operation.status === 'FAILED') {
     throw new Annunci10xAiError('AI_PROVIDER_ERROR', 'Annunci 10x V2 evaluate operation previously failed for the same idempotency key.', { retryable: false });
   }
+  const timeoutMs = options.timeoutMs ?? getAnnunci10xAiTimeoutMs(env);
+  if (operation.status === 'RUNNING' && !isNewlyStartedRunningOperation(operation)) {
+    if (!isStaleRunningOperation(operation, timeoutMs)) throw new Annunci10xAiOperationInProgressError(operation);
+    await options.persistence.failAiOperation({
+      operationId: operation.id,
+      sessionSecret: options.sessionSecret,
+      errorPayload: sanitizeAiErrorPayload(new Annunci10xAiError('AI_PROVIDER_ERROR', 'Annunci 10x V2 evaluate operation was left running past the provider timeout and was failed closed.', { retryable: false })),
+    });
+    throw new Annunci10xAiError('AI_PROVIDER_ERROR', 'Annunci 10x V2 evaluate operation was left running past the provider timeout and was failed closed.', { retryable: false });
+  }
 
   try {
     const result = await runAnnunci10xEvaluateV2({
       input: projectedInput,
       provider: options.provider,
       model,
-      timeoutMs: options.timeoutMs,
+      timeoutMs,
       operationId: operation.id,
       env,
     });
@@ -205,6 +218,20 @@ export async function runPersistedAnnunci10xEvaluateV2(options: RunPersistedAnnu
     });
     throw error;
   }
+}
+
+function isNewlyStartedRunningOperation(operation: PersistedAiOperation): boolean {
+  return operationAgeMs(operation) <= NEW_RUNNING_OPERATION_GRACE_MS;
+}
+
+function isStaleRunningOperation(operation: PersistedAiOperation, timeoutMs: number): boolean {
+  return operationAgeMs(operation) > timeoutMs + STALE_RUNNING_OPERATION_GRACE_MS;
+}
+
+function operationAgeMs(operation: PersistedAiOperation): number {
+  const started = Date.parse(operation.startedAt);
+  if (!Number.isFinite(started)) return Number.POSITIVE_INFINITY;
+  return Math.max(0, Date.now() - started);
 }
 
 export function createEvaluateOperationIdV2(input: { input: Annunci10xEvaluateInputV2; model: string }): string {

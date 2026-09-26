@@ -3,7 +3,7 @@ import { calculateAnnunci10xScore } from '../score.ts';
 import { evaluatePublicationGate, materialConflict, unconfirmedClaim } from '../gates.ts';
 import type { AiOperationType, GeneratedAd, RoleCard } from '../types.ts';
 import type { Annunci10xPersistenceAdapter, PersistedAiOperation } from '../persistence/types.ts';
-import { Annunci10xAiError, sanitizeAiErrorPayload } from './errors.ts';
+import { Annunci10xAiError, Annunci10xAiOperationInProgressError, sanitizeAiErrorPayload } from './errors.ts';
 import { getAnnunci10xAiTimeoutMs, getAnnunci10xModelForOperation } from './models.ts';
 import type { Annunci10xAiProvider, Annunci10xAiProviderResult } from './provider.ts';
 import { getAnnunci10xPrompt } from './prompts/index.ts';
@@ -45,6 +45,9 @@ export interface Annunci10xAiOrchestratorConfig {
   persistence: Annunci10xPersistenceAdapter;
   env?: Record<string, string | undefined>;
 }
+
+const NEW_RUNNING_OPERATION_GRACE_MS = 5_000;
+const STALE_RUNNING_OPERATION_GRACE_MS = 30_000;
 
 export class Annunci10xAiOrchestrator {
   private readonly provider: Annunci10xAiProvider;
@@ -98,8 +101,19 @@ export class Annunci10xAiOrchestrator {
       throw new Annunci10xAiError('AI_PROVIDER_ERROR', 'Annunci 10x AI operation previously failed for the same idempotency key.');
     }
 
+    const timeoutMs = input.timeoutMs ?? getAnnunci10xAiTimeoutMs(this.env);
+    if (operation.status === 'RUNNING' && !isNewlyStartedRunningOperation(operation)) {
+      if (!isStaleRunningOperation(operation, timeoutMs)) throw new Annunci10xAiOperationInProgressError(operation);
+      await this.persistence.failAiOperation({
+        operationId: operation.id,
+        sessionSecret: input.sessionSecret,
+        errorPayload: sanitizeAiErrorPayload(new Annunci10xAiError('AI_PROVIDER_ERROR', 'Annunci 10x AI operation was left running past the provider timeout and was failed closed.', { retryable: false })),
+      });
+      throw new Annunci10xAiError('AI_PROVIDER_ERROR', 'Annunci 10x AI operation was left running past the provider timeout and was failed closed.', { retryable: false });
+    }
+
     try {
-      const attempt = await this.executeAndValidate(input.operationType, prompt.instructions, projectedInput, prompt.outputSchema, model, input.timeoutMs ?? getAnnunci10xAiTimeoutMs(this.env), operation.id);
+      const attempt = await this.executeAndValidate(input.operationType, prompt.instructions, projectedInput, prompt.outputSchema, model, timeoutMs, operation.id);
       operation = await this.persistence.completeAiOperation({
         operationId: operation.id,
         sessionSecret: input.sessionSecret,
@@ -175,6 +189,20 @@ export class Annunci10xAiOrchestrator {
       }
     }
   }
+}
+
+function isNewlyStartedRunningOperation(operation: PersistedAiOperation): boolean {
+  return operationAgeMs(operation) <= NEW_RUNNING_OPERATION_GRACE_MS;
+}
+
+function isStaleRunningOperation(operation: PersistedAiOperation, timeoutMs: number): boolean {
+  return operationAgeMs(operation) > timeoutMs + STALE_RUNNING_OPERATION_GRACE_MS;
+}
+
+function operationAgeMs(operation: PersistedAiOperation): number {
+  const started = Date.parse(operation.startedAt);
+  if (!Number.isFinite(started)) return Number.POSITIVE_INFINITY;
+  return Math.max(0, Date.now() - started);
 }
 
 export interface GenerateValidateReviseInput {

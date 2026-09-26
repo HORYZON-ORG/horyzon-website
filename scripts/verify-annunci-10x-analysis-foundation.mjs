@@ -129,11 +129,22 @@ const duplicate = await startAnnunci10xAnalysisRun({
 });
 assert.equal(duplicate.run.id, started.run.id);
 
-const [firstRun, secondRun] = await Promise.all([
-  runAnnunci10xAnalysisRun({ analysisRunId: started.run.id, session, context }),
-  runAnnunci10xAnalysisRun({ analysisRunId: started.run.id, session, context }),
-]);
-const completed = firstRun ?? secondRun;
+let currentRun = await runAnnunci10xAnalysisRun({ analysisRunId: started.run.id, session, context });
+assert.equal(currentRun?.stage, 'EXTRACT');
+assert.equal(context.provider.calls.length, 1);
+currentRun = await runAnnunci10xAnalysisRun({ analysisRunId: started.run.id, session, context });
+assert.equal(currentRun?.stage, 'PROFILE');
+assert.equal(context.provider.calls.length, 2);
+currentRun = await runAnnunci10xAnalysisRun({ analysisRunId: started.run.id, session, context });
+assert.equal(currentRun?.stage, 'STRATEGY');
+assert.equal(context.provider.calls.length, 3);
+currentRun = await runAnnunci10xAnalysisRun({ analysisRunId: started.run.id, session, context });
+assert.equal(currentRun?.stage, 'EVALUATE');
+assert.equal(context.provider.calls.length, 4);
+currentRun = await runAnnunci10xAnalysisRun({ analysisRunId: started.run.id, session, context });
+assert.equal(currentRun?.stage, 'CLARIFY');
+assert.equal(context.provider.calls.length, 5);
+const completed = await runAnnunci10xAnalysisRun({ analysisRunId: started.run.id, session, context });
 assert.equal(completed?.status, 'READY');
 assert.equal(completed?.stage, 'COMPLETE');
 assert.ok(completed?.evaluationId);
@@ -223,6 +234,18 @@ assert.equal(v2Started.run.methodVersion, 'annunci10x-method-v2');
 assert.equal(v2Started.run.rubricVersion, 'annunci10x-rubric-v2');
 assert.equal(v2Started.run.promptVersion, ANNUNCI10X_EVALUATE_PROMPT_VERSION_V2);
 assert.equal(v2Started.run.scoreSemanticsVersion, 'annunci10x-score-semantics-v2');
+let v2Current = await runAnnunci10xAnalysisRun({ analysisRunId: v2Started.run.id, session: v2Session, context: v2Context });
+assert.equal(v2Current?.stage, 'EXTRACT');
+assert.equal(v2Context.provider.calls.length, 1);
+v2Current = await runAnnunci10xAnalysisRun({ analysisRunId: v2Started.run.id, session: v2Session, context: v2Context });
+assert.equal(v2Current?.stage, 'PROFILE');
+assert.equal(v2Context.provider.calls.length, 2);
+v2Current = await runAnnunci10xAnalysisRun({ analysisRunId: v2Started.run.id, session: v2Session, context: v2Context });
+assert.equal(v2Current?.stage, 'STRATEGY');
+assert.equal(v2Context.provider.calls.length, 3);
+v2Current = await runAnnunci10xAnalysisRun({ analysisRunId: v2Started.run.id, session: v2Session, context: v2Context });
+assert.equal(v2Current?.stage, 'EVALUATE');
+assert.equal(v2Context.provider.calls.length, 4);
 const v2Completed = await runAnnunci10xAnalysisRun({ analysisRunId: v2Started.run.id, session: v2Session, context: v2Context });
 assert.equal(v2Completed?.status, 'READY');
 assert.equal(v2Context.provider.calls.length, 5, 'V2 public uses shared preprocessing plus EVALUATE only');

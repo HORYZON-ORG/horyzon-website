@@ -367,12 +367,15 @@ export interface Annunci10xPersistenceAdapter {
   getAnswers(sessionId: string, sessionSecret: string): Promise<PersistedAnswer[]>;
   appendSnapshot(input: AppendSnapshotInput): Promise<PersistedSnapshot>;
   getLatestSnapshot(sessionId: string, sessionSecret: string): Promise<PersistedSnapshot | null>;
+  getSnapshotById(snapshotId: string, sessionId: string, sessionSecret: string): Promise<PersistedSnapshot | null>;
   startAiOperation(input: StartAiOperationInput): Promise<PersistedAiOperation>;
+  getAiOperation(operationId: string, sessionSecret: string): Promise<PersistedAiOperation | null>;
   completeAiOperation(input: CompleteAiOperationInput): Promise<PersistedAiOperation>;
   failAiOperation(input: FailAiOperationInput): Promise<PersistedAiOperation>;
   saveEvaluation(input: SaveEvaluationInput): Promise<PersistedEvaluation>;
   getLatestEvaluation(sessionId: string, sessionSecret: string): Promise<PersistedEvaluation | null>;
   getEvaluationById(evaluationId: string, sessionId: string, sessionSecret: string): Promise<PersistedEvaluation | null>;
+  getEvaluationByTarget(sessionId: string, sessionSecret: string, targetRef: string): Promise<PersistedEvaluation | null>;
   createOrGetAnalysisRun(input: CreateAnalysisRunInput): Promise<PersistedAnalysisRun>;
   getAnalysisRun(analysisRunId: string, sessionSecret: string): Promise<PersistedAnalysisRun | null>;
   getLatestAnalysisRun(sessionId: string, sessionSecret: string): Promise<PersistedAnalysisRun | null>;

@@ -107,7 +107,7 @@ function interpretationForResult(
     if (band.code === 'STRONG') return "L'annuncio è chiaro, coerente e orientato alla decisione del candidato.";
     return "L'annuncio è molto completo e coerente rispetto ai criteri Annunci 10x.";
   }
-  if ('interval' in score && score.interval) return 'Risultato calcolato con semantica V1: il range viene preservato senza applicare fasce V2.';
-  if (typeof score.value === 'number') return 'Risultato calcolato con semantica V1. La valutazione completa resta protetta dal gate email.';
-  return 'Risultato V1 non esprimibile con un punteggio singolo.';
+  if ('interval' in score && score.interval) return 'Il risultato offre una prima lettura della chiarezza e completezza del tuo annuncio.';
+  if (typeof score.value === 'number') return 'Il risultato offre una prima lettura della chiarezza e completezza del tuo annuncio.';
+  return 'Non ci sono abbastanza elementi per esprimere un risultato completo.';
 }

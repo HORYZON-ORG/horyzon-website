@@ -463,7 +463,7 @@ async function requireOwnedSession(context: Annunci10xRuntimeContext, sessionId:
   return session;
 }
 
-function buildRoleCardFromExtract(rawText: string, extract: Annunci10xExtractOutput, roleHint?: string, companyHint?: string): RoleCard {
+export function buildRoleCardFromExtract(rawText: string, extract: Annunci10xExtractOutput, roleHint?: string, companyHint?: string): RoleCard {
   const facts = new Map(extract.extractedFacts.map((fact) => [fact.targetPath, fact]));
   const extractedTitle = facts.get('title')?.value;
   const title = extractedTitle
@@ -495,7 +495,7 @@ function buildRoleCardFromExtract(rawText: string, extract: Annunci10xExtractOut
   };
 }
 
-function buildRoleProfile(roleCard: RoleCard, profile: Annunci10xProfileOutput): RoleProfile {
+export function buildRoleProfile(roleCard: RoleCard, profile: Annunci10xProfileOutput): RoleProfile {
   const levelFact = (value: string, sourceId: string) => createFact(value, 'SYSTEM_INFERRED', { sourceId, publishable: false, confidence: 70 }) as never;
   return {
     roleCard,
@@ -509,7 +509,7 @@ function buildRoleProfile(roleCard: RoleCard, profile: Annunci10xProfileOutput):
   };
 }
 
-function normalizeStrategy(strategy: CommunicationStrategy, sessionId: string): CommunicationStrategy {
+export function normalizeStrategy(strategy: CommunicationStrategy, sessionId: string): CommunicationStrategy {
   return {
     ...strategy,
     id: strategy.id || randomUUID(),
@@ -518,7 +518,7 @@ function normalizeStrategy(strategy: CommunicationStrategy, sessionId: string): 
   };
 }
 
-function scoreAndGate(output: Annunci10xEvaluateOutput, extract: Annunci10xExtractOutput): { score: PublicAnalysisScore; gate: PublicationGate } {
+export function scoreAndGate(output: Annunci10xEvaluateOutput, extract: Annunci10xExtractOutput): { score: PublicAnalysisScore; gate: PublicationGate } {
   const deterministic = calculateScoreAndGateFromEvaluateOutput(output);
   const findings = [];
   for (const conflict of extract.possibleConflicts) findings.push(materialConflict(conflict.reason, 'BLOCKING'));
@@ -598,7 +598,7 @@ async function publicResult(input: {
   };
 }
 
-function buildEvaluateInputV2(input: {
+export function buildEvaluateInputV2(input: {
   rawAdText: string;
   channelHint?: PublicationChannel;
   roleCard: RoleCard;
