@@ -333,7 +333,7 @@ export function Annunci10xClient() {
     <section className={styles.hero}>
       <Image
         src="/annunci-10x/hero.jpeg"
-        alt="Professionisti che camminano verso una citta al tramonto"
+        alt="Professionisti che camminano verso una città al tramonto"
         fill
         sizes="100vw"
         preload
@@ -343,7 +343,8 @@ export function Annunci10xClient() {
       <div className={styles.heroContent}>
         <p className={styles.eyebrow}>Horyzon / Annunci 10x</p>
         <h1>Le persone giuste esistono. Il tuo annuncio riesce ad attirarle?</h1>
-        <p className={styles.heroLead}>Se ricevi CV fuori target, fai colloqui che non portano a nulla o rimandi una sostituzione perche temi di non trovare alternative, il problema puo iniziare da come stai presentando il ruolo. Scoprilo gratis con Annunci 10x Score.</p>
+        <p className={styles.heroLead}>Ricevi CV fuori target? Fai colloqui che non portano a una scelta? O rimandi una sostituzione perché temi di non trovare alternative? Prima di aumentare budget o cambiare portale, verifica se il problema parte dall’annuncio.</p>
+        <p className={styles.heroMicroLead}>Scoprilo gratis con Annunci 10x Score.</p>
         <div className={styles.heroActions} aria-label="Percorsi iniziali">
           <button type="button" onClick={() => selectMode('ANALYZE')}>Calcola gratis il tuo Annunci 10x Score</button>
           <button type="button" onClick={() => selectMode('CREATE')}>Devo creare un annuncio da zero</button>
@@ -351,24 +352,20 @@ export function Annunci10xClient() {
       </div>
     </section>
 
-    <PainSection />
-    <ConsequenceSection />
-    <AudienceSection />
-    <SolutionSection />
+    <EditorialFlow />
     <HowItWorksSection />
-    <PathChoiceSection onAnalyze={() => selectMode('ANALYZE')} onCreate={() => selectMode('CREATE')} />
 
     <section ref={workspaceRef} className={styles.workspace} aria-labelledby="annunci10x-workspace-title">
       <div className={styles.workspaceIntro}>
         <p>Workspace</p>
         <h2 id="annunci10x-workspace-title">Parti dal punto in cui sei.</h2>
-        <p>Analizza un testo gia pronto oppure ricostruisci prima il ruolo reale. In entrambi i casi, il metodo resta lo stesso: prima i fatti, poi le parole.</p>
+        <p>Analizza un testo già pronto oppure ricostruisci prima il ruolo reale. In entrambi i casi, il metodo resta lo stesso: prima i fatti, poi le parole.</p>
       </div>
       <div className={styles.workspaceBody}>
         <div className={styles.modeTabs} role="tablist" aria-label="Scegli percorso">
           <button type="button" role="tab" aria-selected={mode === 'ANALYZE'} data-active={mode === 'ANALYZE'} onClick={() => selectMode('ANALYZE')}>
             <span>Calcola lo Score</span>
-            <small>Ho gia un annuncio</small>
+            <small>Ho già un annuncio</small>
           </button>
           <button type="button" role="tab" aria-selected={mode === 'CREATE'} data-active={mode === 'CREATE'} onClick={() => selectMode('CREATE')}>
             <span>Crea da zero</span>
@@ -410,100 +407,74 @@ export function Annunci10xClient() {
   </div>;
 }
 
-const painItems = [
-  ['Tanti CV. Pochi candidati davvero adatti.', 'Tempo perso a leggere profili che non corrispondono al lavoro reale.'],
-  ['Colloqui che non portano a una scelta.', 'Le candidature sembrano interessanti finche non emerge che ruolo e aspettative non erano stati capiti allo stesso modo.'],
-  ['Hai bisogno di sostituire qualcuno, ma non trovi alternative.', 'Quando trovare una persona nuova sembra impossibile, anche una situazione che non funziona rischia di trascinarsi.'],
-  ['La crescita si ferma perche manca la persona giusta.', 'Nuovi clienti, nuovi turni, nuove responsabilita o nuove sedi richiedono persone che l azienda non riesce a inserire.'],
+const storyBeats = [
+  'Pubblichi un annuncio. Arrivano candidature. Ma molte non c’entrano davvero con il lavoro.',
+  'Fai colloqui. Sulla carta sembravano candidati adatti. Poi scopri che ruolo, responsabilità e aspettative erano stati capiti in modo diverso.',
+  'Intanto il team copre il vuoto, i manager perdono tempo e una posizione che doveva sostenere la crescita diventa un freno.',
 ];
 
-const consequenceItems = ['tempo dell imprenditore', 'tempo dei manager', 'errori', 'ritardi', 'opportunita perse', 'team sovraccarico', 'crescita rallentata'];
-const audienceSituations = [
-  'Stai cercando da settimane e continuano ad arrivare candidati fuori target.',
-  'Devi sostituire una persona ma temi di non trovare nessuno di meglio.',
-  'La tua azienda potrebbe crescere, ma non riesci a inserire le persone necessarie.',
-  'Il tuo HR o recruiter passa ore tra CV e colloqui senza arrivare alle persone giuste.',
-  'Stai assumendo un ruolo operativo e vuoi spiegare bene fin dall inizio cosa dovra fare davvero.',
+const targetLines = [
+  'Se sei un imprenditore e una posizione scoperta sta rallentando l’azienda.',
+  'Se gestisci HR o recruiting e passi ore tra candidature e colloqui senza arrivare alle persone giuste.',
+  'Se devi sostituire qualcuno ma continui a rimandare perché trovare un’alternativa sembra impossibile.',
+  'Se l’azienda potrebbe crescere, ma non riesci a inserire le persone necessarie.',
+];
+
+const howSteps = [
+  ['01', 'Annuncio'],
+  ['02', 'Analisi'],
+  ['03', 'Verifica email'],
+  ['04', 'Score'],
 ];
 const methodSteps = ['Lavoro reale', 'Persona necessaria', 'Strategia', 'Annuncio', 'Verifica'];
 const lenses = [
-  ['Popolarita', 'Un ruolo raro non va raccontato come uno molto comune.'],
-  ['Sfida / Routine', 'Cambia il peso tra stabilita, ritmo, autonomia e complessita.'],
-  ['Qualificazione', 'Distingue cio che serve subito da cio che si puo imparare.'],
-  ['Tecnicita', 'Evita di parlare a tutti quando serve parlare a chi capisce quel lavoro.'],
+  ['Popolarità', 'Un ruolo raro non va raccontato come uno molto comune.'],
+  ['Sfida / Routine', 'Pesa stabilità, ritmo, autonomia e complessità.'],
+  ['Qualificazione', 'Distingue ciò che serve subito da ciò che si può imparare.'],
+  ['Tecnicità', 'Evita di parlare a tutti quando serve parlare a chi capisce quel lavoro.'],
 ];
-const checkCategories = ['chiarezza del ruolo', 'attivita reali', 'risultato atteso', 'requisiti', 'condizioni', 'offerta', 'candidatura', 'coerenza complessiva'];
+const checkCategories = ['chiarezza del ruolo', 'attività reali', 'risultato atteso', 'requisiti', 'condizioni', 'offerta', 'candidatura', 'coerenza complessiva'];
 const roles = ['Magazziniere', 'Cameriere', 'Cuoco', 'Venditore / Commerciale', 'Customer Care', 'Tecnico', 'Impiegato amministrativo', 'Automation Engineer'];
 
-function PainSection() {
-  return <section className={styles.sectionBlock}>
+function EditorialFlow() {
+  return <section className={styles.editorialFlow}>
     <div className={styles.sectionHeading}>
       <p>Il problema</p>
-      <h2>Il problema non e avere piu CV. E trovare la persona giusta.</h2>
+      <h2>Il problema non è avere più CV. È arrivare alle persone giuste.</h2>
     </div>
-    <div className={styles.cardGrid}>{painItems.map(([title, copy], index) => <article key={title} className={styles.editorialCard}><span>{String(index + 1).padStart(2, '0')}</span><h3>{title}</h3><p>{copy}</p></article>)}</div>
-  </section>;
-}
 
-function ConsequenceSection() {
-  return <section className={styles.consequence}>
-    <div>
-      <p>Conseguenze</p>
-      <h2>Una posizione scoperta o coperta dalla persona sbagliata non resta un problema HR.</h2>
+    <div className={styles.storyRows}>
+      {storyBeats.map((beat, index) => <p key={beat}><span>{String(index + 1).padStart(2, '0')}</span>{beat}</p>)}
     </div>
-    <p>Assorbe tempo dell imprenditore, carica i manager, aumenta errori e ritardi, fa perdere opportunita e lascia il team a compensare finche la crescita rallenta.</p>
-    <div className={styles.chips}>{consequenceItems.map((item) => <span key={item}>{item}</span>)}</div>
-  </section>;
-}
 
-function AudienceSection() {
-  return <section className={styles.audienceGrid}>
-    <article>
-      <p>Per chi e</p>
-      <h2>Se assumere sta diventando un freno, Annunci 10x e per te.</h2>
-      <ul>{audienceSituations.map((item) => <li key={item}>{item}</li>)}</ul>
-      <span>Pensato soprattutto per imprenditori, responsabili HR e recruiter interni nelle PMI. I consulenti HR restano un pubblico secondario quando lavorano su ruoli concreti per i loro clienti.</span>
-    </article>
-  </section>;
-}
-
-function SolutionSection() {
-  return <section className={styles.solutionBlock}>
-    <div className={styles.sectionHeading}>
-      <p>Da dove partire</p>
-      <h2>Prima di cambiare portale, aumentare budget o concludere che i candidati non esistono, controlla il punto da cui tutto comincia: l annuncio.</h2>
+    <div className={styles.targetStatement}>
+      <p>Annunci 10x nasce soprattutto per chi questo problema lo sente sul business, non soltanto nel reparto HR.</p>
+      <div>{targetLines.map((line) => <span key={line}>{line}</span>)}</div>
     </div>
-    <p>Annunci 10x Score analizza gratuitamente il testo per capire se sta spiegando il ruolo reale alla persona giusta: che lavoro c e da fare, quali requisiti servono davvero, quali condizioni sono chiare e perche una persona coerente dovrebbe scegliere quell opportunita.</p>
+
+    <div className={styles.insightBlock}>
+      <h2>L’annuncio inizia a selezionare prima ancora che arrivi il primo CV.</h2>
+      <p>Se il ruolo è vago, attirerà persone diverse da quelle che servono. Se responsabilità, condizioni e risultato atteso non sono chiari, l’ambiguità continua anche durante colloqui e selezione.</p>
+      <strong>È qui che entra Annunci 10x.</strong>
+    </div>
+
+    <div className={styles.solutionCopy}>
+      <h3>Annunci 10x Score controlla gratuitamente se il tuo annuncio sta spiegando il lavoro reale alla persona giusta.</h3>
+      <p>Non cerca di rendere ogni lavoro più bello: rende più chiari ruolo, attività, requisiti, condizioni e aspettative.</p>
+    </div>
   </section>;
 }
 
 function HowItWorksSection() {
-  return <section className={styles.sectionBlock}>
-    <div className={styles.sectionHeading}>
+  return <section className={styles.howSection}>
+    <div>
       <p>Come funziona</p>
-      <h2>Quattro passaggi semplici.</h2>
+      <h2>Dal testo allo Score, senza disperdere il percorso.</h2>
     </div>
-    <div className={styles.steps}>
-      {['Inserisci l annuncio', 'Lo analizziamo', 'Verifica la tua email', 'Visualizza il tuo Score'].map((item, index) => <article key={item}><span>{String(index + 1).padStart(2, '0')}</span><h3>{item}</h3></article>)}
+    <div className={styles.timeline} aria-label="Come funziona Annunci 10x">
+      {howSteps.map(([number, label]) => <div key={label}><span>{number}</span><strong>{label}</strong></div>)}
     </div>
-    <p className={styles.valueLine}>Il risultato gratuito ti aiuta a capire se il tuo annuncio e una base solida o se sta lasciando fuori informazioni decisive.</p>
-  </section>;
-}
-
-function PathChoiceSection({ onAnalyze, onCreate }: { onAnalyze: () => void; onCreate: () => void }) {
-  return <section className={styles.pathSplit}>
-    <article data-primary="true">
-      <p>Percorso 1</p>
-      <h2>Ho gia un annuncio</h2>
-      <span>Scopri cosa funziona e cosa sta limitando chiarezza e rilevanza.</span>
-      <button type="button" onClick={onAnalyze}>Calcola lo Score</button>
-    </article>
-    <article>
-      <p>Percorso 2</p>
-      <h2>Parto da zero</h2>
-      <span>Costruisci prima la realta del ruolo, poi l annuncio.</span>
-      <button type="button" onClick={onCreate}>Crea da zero</button>
-    </article>
+    <p>Inserisci l’annuncio, avviamo l’analisi, verifichi l’email e visualizzi il tuo Score gratuito.</p>
   </section>;
 }
 
@@ -511,11 +482,12 @@ function MethodSection() {
   return <section className={styles.methodSection}>
     <div className={styles.sectionHeading}>
       <p>Metodo Annunci 10x</p>
-      <h2>Prima la realta del ruolo. Poi le parole.</h2>
+      <h2>Prima la realtà del ruolo. Poi le parole.</h2>
+      <span>Un annuncio efficace non nasce da una frase più creativa. Nasce da una comprensione più precisa del lavoro e della persona che serve.</span>
     </div>
     <div className={styles.methodFlow}>{methodSteps.map((step) => <span key={step}>{step}</span>)}</div>
     <div className={styles.lensGrid}>{lenses.map(([title, copy]) => <article key={title}><h3>{title}</h3><p>{copy}</p></article>)}</div>
-    <div className={styles.checksBand}><h3>20 controlli, senza mostrare la rubrica completa.</h3><div className={styles.chips}>{checkCategories.map((item) => <span key={item}>{item}</span>)}</div></div>
+    <div className={styles.checksBand}><h3>20 controlli. Una domanda sola: questo annuncio aiuta la persona giusta a capire se questo è davvero il lavoro per lei?</h3><div className={styles.chips}>{checkCategories.map((item) => <span key={item}>{item}</span>)}</div></div>
   </section>;
 }
 
@@ -531,9 +503,9 @@ function RolesSection() {
 
 function RecruitingBridge() {
   return <section className={styles.bridge}>
-    <p>Quando serve piu dell annuncio</p>
-    <h2>Se il problema e piu ampio dell annuncio, possiamo aiutarti anche nel recruiting.</h2>
-    <span>Annunci 10x resta il primo controllo. Se emergono problemi di fabbisogno, processo o selezione, Horyzon puo aiutarti a capire dove intervenire senza interrompere questo percorso.</span>
+    <p>Quando serve più dell’annuncio</p>
+    <h2>Se il problema è più ampio dell’annuncio, possiamo aiutarti anche nel recruiting.</h2>
+    <span>Annunci 10x resta il primo controllo. Se emergono problemi di fabbisogno, processo o selezione, Horyzon può aiutarti a capire dove intervenire senza interrompere questo percorso.</span>
   </section>;
 }
 
@@ -569,7 +541,7 @@ function CreateFlow(props: {
 }) {
   return <section className={styles.createShell} aria-label="Crea da zero">
     {props.state && <div className={styles.createNotice}>
-      <div><p>Hai un lavoro in corso.</p><strong>{props.state.currentStep === 'COMMERCIAL' ? 'La posizione e confermata.' : props.state.currentStep === 'SUMMARY' ? 'La scheda e pronta da verificare.' : 'Stiamo raccogliendo i fatti.'}</strong></div>
+      <div><p>Hai un lavoro in corso.</p><strong>{props.state.currentStep === 'COMMERCIAL' ? 'La posizione è confermata.' : props.state.currentStep === 'SUMMARY' ? 'La scheda è pronta da verificare.' : 'Stiamo raccogliendo i fatti.'}</strong></div>
       <div><span>{props.state.completion.coverage}%</span><small>copertura raccolta</small></div>
     </div>}
     {!props.state?.paymentRequired && props.state?.currentStep !== 'SUMMARY' && <StructuredCreateForm draft={props.draft} unknowns={props.unknowns} running={props.running} error={props.error} onDraft={props.onDraft} onUnknowns={props.onUnknowns} onSubmit={props.onSubmitStructured} />}
@@ -602,14 +574,14 @@ function StructuredCreateForm(props: {
   const update = (key: keyof CreateDraft, value: string) => props.onDraft({ ...props.draft, [key]: value });
   const toggleUnknown = (key: UnknownKey) => props.onUnknowns({ ...props.unknowns, [key]: !props.unknowns[key] });
   return <form className={styles.form} onSubmit={props.onSubmit} aria-labelledby="create-title">
-    <div className={styles.formHead}><p>Crealo</p><h2 id="create-title">Racconta il lavoro reale. L&apos;annuncio arriva dopo.</h2></div>
+    <div className={styles.formHead}><p>Crealo</p><h2 id="create-title">Racconta il lavoro reale. L’annuncio arriva dopo.</h2></div>
     <FormSection number="01" title="Ruolo e risultato">
       <div className={styles.fieldGrid}>
         <Field label="Ruolo" htmlFor="create-role" required><input id="create-role" required value={props.draft.role} onChange={(event) => update('role', event.target.value)} disabled={props.running} placeholder="Es. Addetto customer care" /></Field>
         <Field label="Azienda / contesto" htmlFor="create-company" optional><input id="create-company" value={props.draft.companyContext} onChange={(event) => update('companyContext', event.target.value)} disabled={props.running} placeholder="Es. sede di Bari, team assistenza clienti" /></Field>
       </div>
       <Field label="Risultato principale" htmlFor="create-result" required><textarea id="create-result" required rows={4} value={props.draft.primaryResult} onChange={(event) => update('primaryResult', event.target.value)} disabled={props.running} placeholder="Che cosa deve produrre o far funzionare meglio questa persona?" /></Field>
-      <Field label="Attivita reali" htmlFor="create-activities" required><textarea id="create-activities" required rows={4} value={props.draft.activities} onChange={(event) => update('activities', event.target.value)} disabled={props.running} placeholder="Che cosa fara concretamente nel lavoro quotidiano?" /></Field>
+      <Field label="Attività reali" htmlFor="create-activities" required><textarea id="create-activities" required rows={4} value={props.draft.activities} onChange={(event) => update('activities', event.target.value)} disabled={props.running} placeholder="Che cosa farà concretamente nel lavoro quotidiano?" /></Field>
     </FormSection>
     <FormSection number="02" title="Persona e lavoro">
       <div className={styles.requirementGrid}>
@@ -617,7 +589,7 @@ function StructuredCreateForm(props: {
         <Field label="Preferenziali" htmlFor="create-preferred" optional><textarea id="create-preferred" rows={3} value={props.draft.preferredRequirements} onChange={(event) => update('preferredRequirements', event.target.value)} disabled={props.running} placeholder="Es. esperienza CRM" /></Field>
         <Field label="Apprendibili" htmlFor="create-trainable" optional><textarea id="create-trainable" rows={3} value={props.draft.trainableRequirements} onChange={(event) => update('trainableRequirements', event.target.value)} disabled={props.running} placeholder="Es. software ticketing interno" /></Field>
       </div>
-      <Field label="Vincoli escludenti" htmlFor="create-disqualifying" optional><input id="create-disqualifying" value={props.draft.disqualifyingRequirements} onChange={(event) => update('disqualifyingRequirements', event.target.value)} disabled={props.running} placeholder="Es. indisponibilita ai turni" /></Field>
+      <Field label="Vincoli escludenti" htmlFor="create-disqualifying" optional><input id="create-disqualifying" value={props.draft.disqualifyingRequirements} onChange={(event) => update('disqualifyingRequirements', event.target.value)} disabled={props.running} placeholder="Es. indisponibilità ai turni" /></Field>
       <Field label="Contesto operativo / interlocutori" htmlFor="create-context" required><textarea id="create-context" required rows={4} value={props.draft.operatingContext} onChange={(event) => update('operatingContext', event.target.value)} disabled={props.running} placeholder="Con chi lavora? Quali strumenti, team, clienti o funzioni coinvolge?" /></Field>
       <div className={styles.fieldGrid}>
         <Field label="Autonomia" htmlFor="create-autonomy" optional><input id="create-autonomy" value={props.draft.autonomy} onChange={(event) => update('autonomy', event.target.value)} disabled={props.running} placeholder="Es. segue casi standard in autonomia" /></Field>
@@ -627,16 +599,16 @@ function StructuredCreateForm(props: {
     <FormSection number="03" title="Condizioni e candidatura">
       <div className={styles.fieldGrid}>
         <Field label="Sede" htmlFor="create-location"><input id="create-location" value={props.draft.location} onChange={(event) => update('location', event.target.value)} disabled={props.running} placeholder="Es. Bari" /></Field>
-        <Field label="Modalita" htmlFor="create-workmode"><input id="create-workmode" value={props.unknowns.workMode ? '' : props.draft.workMode} onChange={(event) => update('workMode', event.target.value)} disabled={props.running || props.unknowns.workMode} placeholder="Presenza, ibrido, remoto" /><UnknownToggle checked={props.unknowns.workMode} onChange={() => toggleUnknown('workMode')} /></Field>
+        <Field label="Modalità" htmlFor="create-workmode"><input id="create-workmode" value={props.unknowns.workMode ? '' : props.draft.workMode} onChange={(event) => update('workMode', event.target.value)} disabled={props.running || props.unknowns.workMode} placeholder="Presenza, ibrido, remoto" /><UnknownToggle checked={props.unknowns.workMode} onChange={() => toggleUnknown('workMode')} /></Field>
         <Field label="Contratto" htmlFor="create-contract"><input id="create-contract" value={props.unknowns.contract ? '' : props.draft.contract} onChange={(event) => update('contract', event.target.value)} disabled={props.running || props.unknowns.contract} placeholder="Tempo determinato, indeterminato..." /><UnknownToggle checked={props.unknowns.contract} onChange={() => toggleUnknown('contract')} /></Field>
         <Field label="Orario" htmlFor="create-schedule"><input id="create-schedule" value={props.unknowns.schedule ? '' : props.draft.schedule} onChange={(event) => update('schedule', event.target.value)} disabled={props.running || props.unknowns.schedule} placeholder="Part-time, full-time, fasce..." /><UnknownToggle checked={props.unknowns.schedule} onChange={() => toggleUnknown('schedule')} /></Field>
         <Field label="Turni" htmlFor="create-shifts" optional><input id="create-shifts" value={props.draft.shifts} onChange={(event) => update('shifts', event.target.value)} disabled={props.running} placeholder="Es. turni mattina/pomeriggio" /></Field>
-        <Field label="Reperibilita" htmlFor="create-availability" optional><input id="create-availability" value={props.draft.availability} onChange={(event) => update('availability', event.target.value)} disabled={props.running} placeholder="Es. non prevista" /></Field>
+        <Field label="Reperibilità" htmlFor="create-availability" optional><input id="create-availability" value={props.draft.availability} onChange={(event) => update('availability', event.target.value)} disabled={props.running} placeholder="Es. non prevista" /></Field>
         <Field label="Compenso" htmlFor="create-compensation" optional><input id="create-compensation" value={props.unknowns.compensation ? '' : props.draft.compensation} onChange={(event) => update('compensation', event.target.value)} disabled={props.running || props.unknowns.compensation} placeholder="Es. RAL 24-28k" /><UnknownToggle checked={props.unknowns.compensation} onChange={() => toggleUnknown('compensation')} /></Field>
         <Field label="Canale" htmlFor="create-channel" optional><select id="create-channel" value={props.unknowns.channel ? '' : props.draft.channel} onChange={(event) => update('channel', event.target.value)} disabled={props.running || props.unknowns.channel}><option value="">Da definire</option><option value="LINKEDIN">LinkedIn</option><option value="INDEED">Indeed</option><option value="ATS">ATS aziendale</option><option value="EMAIL">Email</option><option value="CUSTOM">Altro</option></select><UnknownToggle checked={props.unknowns.channel} onChange={() => toggleUnknown('channel')} /></Field>
       </div>
       <div className={styles.fieldGrid}>
-        <Field label="Benefit" htmlFor="create-benefits" optional><input id="create-benefits" value={props.unknowns.benefits ? '' : props.draft.benefits} onChange={(event) => update('benefits', event.target.value)} disabled={props.running || props.unknowns.benefits} placeholder="Solo fatti gia veri" /><UnknownToggle checked={props.unknowns.benefits} onChange={() => toggleUnknown('benefits')} /></Field>
+        <Field label="Benefit" htmlFor="create-benefits" optional><input id="create-benefits" value={props.unknowns.benefits ? '' : props.draft.benefits} onChange={(event) => update('benefits', event.target.value)} disabled={props.running || props.unknowns.benefits} placeholder="Solo fatti già veri" /><UnknownToggle checked={props.unknowns.benefits} onChange={() => toggleUnknown('benefits')} /></Field>
         <Field label="Formazione / crescita concreta" htmlFor="create-growth" optional><input id="create-growth" value={props.unknowns.growth ? '' : props.draft.growth} onChange={(event) => update('growth', event.target.value)} disabled={props.running || props.unknowns.growth} placeholder="Es. affiancamento iniziale" /><UnknownToggle checked={props.unknowns.growth} onChange={() => toggleUnknown('growth')} /></Field>
       </div>
       <Field label="Come ci si candida / destinazione" htmlFor="create-application" required><textarea id="create-application" required rows={3} value={props.draft.application} onChange={(event) => update('application', event.target.value)} disabled={props.running} placeholder="Es. candidatura via email con CV aggiornato" /></Field>
@@ -659,28 +631,28 @@ function CreateSummary(props: {
   const groups = groupRequirements(props.state.roleCard.requirements);
   return <section className={styles.result} aria-labelledby="create-summary-title">
     <div className={styles.resultHead}>
-      <div><p>Questa e la posizione che abbiamo capito.</p><h2 id="create-summary-title">{props.state.roleCard.title}</h2></div>
+      <div><p>Questa è la posizione che abbiamo capito.</p><h2 id="create-summary-title">{props.state.roleCard.title}</h2></div>
       <div className={styles.scoreBox}><span>Copertura raccolta</span><strong>{props.state.completion.coverage}%</strong></div>
       <div className={styles.gateBox}><span>Stato</span><strong>{props.state.paymentRequired ? 'Pronta per il confine commerciale' : 'Da confermare'}</strong></div>
     </div>
     <div className={styles.confirmationGrid}>
       <Panel title="Risultato" items={[props.state.roleCard.mission, ...props.state.roleCard.outcomes]} empty="Da definire." />
-      <Panel title="Attivita" items={props.state.roleCard.responsibilities} empty="Da definire." />
+      <Panel title="Attività" items={props.state.roleCard.responsibilities} empty="Da definire." />
       <Panel title="Indispensabili" items={groups.REQUIRED} empty="Da definire." />
       <Panel title="Preferenziali" items={groups.PREFERRED} empty="Nessuno indicato." />
       <Panel title="Apprendibili" items={groups.TRAINABLE} empty="Nessuno indicato." />
       <Panel title="Vincoli" items={groups.DISQUALIFYING} empty="Nessuno indicato." />
       <Panel title="Contesto" items={props.state.roleCard.attractionEvidence} empty="Da definire." />
-      <Panel title="Condizioni" items={[`Sede: ${displayValue(props.state.roleCard.location)}`, `Modalita: ${displayValue(props.state.roleCard.workMode)}`, `Contratto: ${displayValue(props.state.roleCard.contractType)}`, `Orario: ${displayValue(props.state.roleCard.schedule)}`, `Compenso: ${displayValue(props.state.roleCard.compensation)}`]} empty="Da definire." />
+      <Panel title="Condizioni" items={[`Sede: ${displayValue(props.state.roleCard.location)}`, `Modalità: ${displayValue(props.state.roleCard.workMode)}`, `Contratto: ${displayValue(props.state.roleCard.contractType)}`, `Orario: ${displayValue(props.state.roleCard.schedule)}`, `Compenso: ${displayValue(props.state.roleCard.compensation)}`]} empty="Da definire." />
       <Panel title="Candidatura" items={[props.state.roleCard.channel ? `Canale: ${props.state.roleCard.channel}` : 'Canale: Da definire']} empty="Da definire." />
     </div>
     {props.state.strategy && <div className={styles.strategyPanel}><p>Strategia</p><h3>{props.state.strategy.summary}</h3><span>{props.state.strategy.candidateAngle}</span></div>}
     {!props.state.paymentRequired && <form className={styles.inlineEdit} onSubmit={props.onSubmitEdit}>
-      <Field label="Modifica" htmlFor="create-edit-target"><select id="create-edit-target" value={props.editTarget} onChange={(event) => props.onEditTarget(event.target.value)} disabled={props.running}><option value="title">Ruolo</option><option value="mission">Risultato</option><option value="responsibilities">Attivita</option><option value="requirements">Requisiti</option><option value="attractionContext.location">Sede</option><option value="attractionContext.workMode">Modalita</option><option value="attractionContext.contractType">Contratto</option><option value="compensation.amountText">Compenso</option></select></Field>
+      <Field label="Modifica" htmlFor="create-edit-target"><select id="create-edit-target" value={props.editTarget} onChange={(event) => props.onEditTarget(event.target.value)} disabled={props.running}><option value="title">Ruolo</option><option value="mission">Risultato</option><option value="responsibilities">Attività</option><option value="requirements">Requisiti</option><option value="attractionContext.location">Sede</option><option value="attractionContext.workMode">Modalità</option><option value="attractionContext.contractType">Contratto</option><option value="compensation.amountText">Compenso</option></select></Field>
       <Field label="Nuovo valore" htmlFor="create-edit-value"><input id="create-edit-value" value={props.editValue} onChange={(event) => props.onEditValue(event.target.value)} disabled={props.running} /></Field>
       <button type="submit" disabled={props.running}>Modifica</button>
     </form>}
-    {props.state.paymentRequired ? <section className={styles.commercialPanel}><p>Prossimo passo</p><h3>La posizione e pronta. Ora possiamo costruire il tuo Annuncio 10x.</h3><span>La generazione online sara disponibile in una fase successiva.</span><OfferCards offers={props.state.commercial.availableOffers} empty="La generazione non e ancora disponibile per questo percorso." /></section> : <div className={styles.actions}><button type="button" onClick={props.onConfirm} disabled={props.running || !props.state.canConfirm}>Conferma</button><span>Puoi modificare i campi prima della conferma.</span></div>}
+    {props.state.paymentRequired ? <section className={styles.commercialPanel}><p>Prossimo passo</p><h3>La posizione è pronta. Ora possiamo costruire il tuo Annuncio 10x.</h3><span>La generazione online sarà disponibile in una fase successiva.</span><OfferCards offers={props.state.commercial.availableOffers} empty="La generazione non è ancora disponibile per questo percorso." /></section> : <div className={styles.actions}><button type="button" onClick={props.onConfirm} disabled={props.running || !props.state.canConfirm}>Conferma</button><span>Puoi modificare i campi prima della conferma.</span></div>}
   </section>;
 }
 
@@ -692,7 +664,7 @@ function PremiumOutputPanel(props: { output: PremiumOutput; copied: string | nul
 
 function OfferCards({ offers, empty }: { offers: CommercialOffer[]; empty: string }) {
   const visibleOffers = offers.filter((offer) => offer.productCode === 'AD_GENERATION');
-  if (!visibleOffers.length) return <div className={styles.offerPanel}><h3>{empty}</h3><p>Ti guideremo al passo successivo quando sara disponibile.</p><button type="button" disabled>In preparazione</button></div>;
+  if (!visibleOffers.length) return <div className={styles.offerPanel}><h3>{empty}</h3><p>Ti guideremo al passo successivo quando sarà disponibile.</p><button type="button" disabled>In preparazione</button></div>;
   return <div className={styles.offerList} aria-label="Prossimo passo">{visibleOffers.map((offer) => <article key={offer.id} className={styles.offerPanel}><h3>{offer.displayName}</h3><p>{offer.description}</p><button type="button" disabled>In preparazione</button></article>)}</div>;
 }
 
@@ -719,10 +691,10 @@ function composeCreateAnswers(draft: CreateDraft, unknowns: Record<UnknownKey, b
   return {
     ROLE_CONTEXT: `Ruolo: ${value('role')}. Azienda o contesto: ${value('companyContext')}.`,
     PRIMARY_CONTRIBUTION: `Risultato principale: ${value('primaryResult')}.`,
-    WORK_REALITY: [`Attivita reali: ${value('activities')}.`, `Contesto operativo e interlocutori: ${value('operatingContext')}.`, `Autonomia: ${value('autonomy')}.`, `Imprevisti o problemi da gestire: ${value('incidents')}.`].join('\n'),
+    WORK_REALITY: [`Attività reali: ${value('activities')}.`, `Contesto operativo e interlocutori: ${value('operatingContext')}.`, `Autonomia: ${value('autonomy')}.`, `Imprevisti o problemi da gestire: ${value('incidents')}.`].join('\n'),
     REQUIREMENTS: [`Indispensabili: ${value('requiredRequirements')}.`, `Preferenziali: ${value('preferredRequirements')}.`, `Apprendibili: ${value('trainableRequirements')}.`, `Vincoli: ${value('disqualifyingRequirements')}.`].join('\n'),
     ATTRACTION: [`Benefit: ${maybeUnknown('benefits', draft.benefits)}.`, `Formazione e crescita concreta: ${maybeUnknown('growth', draft.growth)}.`].join('\n'),
-    OFFER: [`Sede: ${value('location')}.`, `Modalita: ${maybeUnknown('workMode', draft.workMode)}.`, `Contratto: ${maybeUnknown('contract', draft.contract)}.`, `Orario: ${maybeUnknown('schedule', draft.schedule)}.`, `Turni: ${value('shifts')}.`, `Reperibilita: ${value('availability')}.`, `Compenso: ${maybeUnknown('compensation', draft.compensation)}.`].join('\n'),
+    OFFER: [`Sede: ${value('location')}.`, `Modalità: ${maybeUnknown('workMode', draft.workMode)}.`, `Contratto: ${maybeUnknown('contract', draft.contract)}.`, `Orario: ${maybeUnknown('schedule', draft.schedule)}.`, `Turni: ${value('shifts')}.`, `Reperibilità: ${value('availability')}.`, `Compenso: ${maybeUnknown('compensation', draft.compensation)}.`].join('\n'),
     CHANNEL_APPLICATION: `Canale: ${unknowns.channel ? 'Da definire' : draft.channel || 'Da definire'}.\nCandidatura: ${value('application')}.`,
   };
 }

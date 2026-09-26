@@ -37,9 +37,9 @@ interface FreeResult {
 }
 
 const sampleAd = `Cerchiamo un addetto customer care per la sede di Bari.
-La persona gestira richieste clienti, ticket e aggiornamento CRM.
+La persona gestirà richieste clienti, ticket e aggiornamento CRM.
 Contratto part-time, presenza in sede, affiancamento iniziale.
-Requisiti: italiano scritto chiaro, precisione, disponibilita al lavoro su turni.
+Requisiti: italiano scritto chiaro, precisione, disponibilità al lavoro su turni.
 Candidatura via email con CV aggiornato.`;
 
 const POLL_MS = 2500;
@@ -202,7 +202,7 @@ export function Annunci10xAnalyzeFlow() {
       setExpiresInSeconds(Number(payload.expiresInSeconds ?? 0));
       setStatusMessage(payload.sent ? 'Codice inviato.' : `Puoi richiedere un nuovo codice tra ${Number(payload.resendAfterSeconds ?? 0)} secondi.`);
     } catch (cause) {
-      setError(customerSafeError(cause, 'La verifica email e temporaneamente non disponibile.'));
+      setError(customerSafeError(cause, 'La verifica email è temporaneamente non disponibile.'));
     } finally {
       setBusy(null);
     }
@@ -223,7 +223,7 @@ export function Annunci10xAnalyzeFlow() {
       if (!response.ok || !payload.ok) throw new Error(payload.error?.message ?? 'Codice non valido.');
       setEmailVerified(true);
       setAnalysisRun((current) => current ? { ...current, emailVerified: true, resultEligible: Boolean(payload.resultEligible) } : current);
-      setStatusMessage(payload.resultEligible ? 'Email verificata. Il risultato e pronto.' : 'Email verificata. Stiamo completando l analisi.');
+      setStatusMessage(payload.resultEligible ? 'Email verificata. Il risultato è pronto.' : 'Email verificata. Stiamo completando l’analisi.');
     } catch (cause) {
       setError(customerSafeError(cause, 'Codice non valido.'));
     } finally {
@@ -305,7 +305,7 @@ export function Annunci10xAnalyzeFlow() {
       </form>
     </section>}
 
-    {showResultLocked && <div className={styles.lockedNotice} role="status"><strong>Il tuo risultato e pronto.</strong><span>Verifica la tua email per visualizzarlo.</span></div>}
+    {showResultLocked && <div className={styles.lockedNotice} role="status"><strong>Il tuo risultato è pronto.</strong><span>Verifica la tua email per visualizzarlo.</span></div>}
     {showVerifiedWaiting && <div className={styles.lockedNotice} role="status"><strong>Email verificata.</strong><span>Stiamo completando l&apos;analisi.</span></div>}
     {analysisRun?.status === 'FAILED' && !sourceFailed && <div className={styles.error} role="alert">Non siamo riusciti a completare l&apos;analisi. Riprova.</div>}
     {statusMessage && <p className={styles.coverageNote} aria-live="polite">{statusMessage}</p>}
@@ -324,7 +324,7 @@ function FreeResultCard({ result }: { result: FreeResult }) {
       {result.band && <div className={styles.gateBox}><span>Fascia</span><strong>{result.band.label}</strong></div>}
     </div>
     <div className={styles.panel}><h3>Interpretazione</h3><p>{result.interpretation}</p></div>
-    <section className={styles.improveCta}><p>Prossimo passo</p><h3>{result.nextAction.label}</h3><span>Potrai trasformare il testo in una versione piu chiara e pronta da adattare al canale.</span></section>
+    <section className={styles.improveCta}><p>Prossimo passo</p><h3>{result.nextAction.label}</h3><span>Potrai trasformare il testo in una versione più chiara e pronta da adattare al canale.</span></section>
   </section>;
 }
 
@@ -347,7 +347,7 @@ function fallbackProgressLabel(stage?: AnalysisStage): string {
   if (stage === 'SOURCE_VALIDATION' || stage === 'PRECHECK' || stage === 'EXTRACT') return 'Stiamo leggendo il tuo annuncio';
   if (stage === 'PROFILE' || stage === 'STRATEGY') return 'Stiamo ricostruendo il ruolo';
   if (stage === 'EVALUATE' || stage === 'CLARIFY') return 'Stiamo verificando i criteri Annunci 10x';
-  return 'Il risultato e pronto';
+  return 'Il risultato è pronto';
 }
 
 function formatFreeScore(score: FreeResult['score']): string {
@@ -362,6 +362,6 @@ function formatDecimal(value: number): string {
 
 function customerSafeError(cause: unknown, fallback: string): string {
   const message = cause instanceof Error ? cause.message : fallback;
-  if (/EMAIL_PROVIDER_UNAVAILABLE|EMAIL_VERIFICATION_UNAVAILABLE|provider email|verifica email/i.test(message)) return 'La verifica email e temporaneamente non disponibile.';
+  if (/EMAIL_PROVIDER_UNAVAILABLE|EMAIL_VERIFICATION_UNAVAILABLE|provider email|verifica email/i.test(message)) return 'La verifica email è temporaneamente non disponibile.';
   return message || fallback;
 }

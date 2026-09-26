@@ -1,35 +1,41 @@
 # Annunci 10x funnel redesign
 
-Status: FASE 2E.1 implemented. This phase is visual, copy, UX, and commercial
-positioning only.
+Status: FASE 2E.2 implemented. This phase is visual, copy, UX, and editorial
+flow only.
 
-## Page Order
+## Editorial Flow
 
-Final page order:
+The landing now follows a simpler Hook -> Story -> Offer structure:
 
-1. Hero compatta e pain-first
-2. Pain
-3. Conseguenze
-4. Per chi e / beneficio
-5. Soluzione: perche partire dall annuncio
-6. Come funziona
-7. Analyze vs Create
-8. Workspace / flow interattivo
-9. Metodo Annunci 10x
-10. 20 controlli / 4 lenti
-11. Esempi ruoli
-12. Horyzon Recruiting bridge
-13. Final CTA
+1. Hero compatta
+2. Story / pain narrative
+3. Central insight
+4. Free-score solution
+5. Compact how-it-works timeline
+6. Workspace
+7. Method / reason to believe
+8. Role examples
+9. Horyzon Recruiting bridge
+10. Final CTA
 
-Removed from the landing:
+The previous pain cards, isolated audience section, solution block, and
+Analyze/Create marketing choice cards were merged into a continuous editorial
+area before the workspace.
 
-- "Per chi non e"
-- Product ladder
-- Price grid
-- Agent Recruiter promotional block
-- Credit note
+## Language Pass
 
-## Hero Correction
+The public Annunci 10x UI received an Italian grammar, accent, and apostrophe
+pass across the landing, Analyze flow, and Create flow.
+
+Examples corrected include:
+
+- perché, può, più, finché, già;
+- realtà, responsabilità, opportunità, attività, modalità;
+- tecnicità, stabilità, complessità, ciò, sarà, dovrà;
+- l’annuncio, dell’annuncio, l’azienda, dell’imprenditore;
+- un’alternativa, l’analisi, c’è, quell’opportunità.
+
+## Hero
 
 Canonical headline:
 
@@ -37,7 +43,11 @@ Canonical headline:
 
 Supporting copy:
 
-`Se ricevi CV fuori target, fai colloqui che non portano a nulla o rimandi una sostituzione perche temi di non trovare alternative, il problema puo iniziare da come stai presentando il ruolo. Scoprilo gratis con Annunci 10x Score.`
+`Ricevi CV fuori target? Fai colloqui che non portano a una scelta? O rimandi una sostituzione perché temi di non trovare alternative? Prima di aumentare budget o cambiare portale, verifica se il problema parte dall’annuncio.`
+
+Micro-line:
+
+`Scoprilo gratis con Annunci 10x Score.`
 
 Primary CTA:
 
@@ -47,109 +57,109 @@ Secondary CTA:
 
 `Devo creare un annuncio da zero`
 
-The hero was corrected from a near-full-viewport section to a compact commercial
-hero. The target behavior is that eyebrow, H1, supporting copy, primary CTA, and
-secondary CTA are visible above the fold on common laptop viewports.
+The hero keeps the compact 2E.1 behavior and does not return to a near-full
+viewport layout.
 
-## Hero Asset
+## Story
 
-Final asset path:
+Story headline:
 
-`public/annunci-10x/hero.jpeg`
+`Il problema non è avere più CV. È arrivare alle persone giuste.`
 
-The page uses the user-provided canonical image through `next/image` with
-`fill`, `sizes="100vw"`, and `preload`. Desktop and mobile use the same image;
-only CSS object position, overlay, and spacing adapt by viewport.
+Story beats:
 
-## Pain Positioning
+- Pubblichi un annuncio. Arrivano candidature. Ma molte non c’entrano davvero
+  con il lavoro.
+- Fai colloqui. Sulla carta sembravano candidati adatti. Poi scopri che ruolo,
+  responsabilità e aspettative erano stati capiti in modo diverso.
+- Intanto il team copre il vuoto, i manager perdono tempo e una posizione che
+  doveva sostenere la crescita diventa un freno.
+- Oppure rimandi una sostituzione perché trovare un’alternativa sembra ancora
+  più difficile che convivere con il problema.
 
-Pain headline:
+The target is integrated into the story, with primary focus on entrepreneurs and
+business owners, followed by HR and internal recruiting teams.
 
-`Il problema non e avere piu CV. E trovare la persona giusta.`
+## Central Insight And Offer
 
-Four primary pains:
+Central insight:
 
-- Tanti CV. Pochi candidati davvero adatti.
-- Colloqui che non portano a una scelta.
-- Hai bisogno di sostituire qualcuno, ma non trovi alternative.
-- La crescita si ferma perche manca la persona giusta.
+`L’annuncio inizia a selezionare prima ancora che arrivi il primo CV.`
 
-Consequence framing:
+Offer explanation:
 
-`Una posizione scoperta o coperta dalla persona sbagliata non resta un problema HR.`
+`Annunci 10x Score controlla gratuitamente se il tuo annuncio sta spiegando il lavoro reale alla persona giusta.`
 
-The page focuses on time, manager load, errors, delays, lost opportunities, team
-overload, and slowed growth. No invented statistics are used.
+The copy intentionally avoids promising hiring outcomes. It states that the
+product clarifies role, activities, requirements, conditions, and expectations.
 
-## Audience Focus
+## Cards Reduction
 
-Audience headline:
+Marketing content moved away from repeated boxed sections. The page now uses:
 
-`Se assumere sta diventando un freno, Annunci 10x e per te.`
+- open editorial rows;
+- large statements;
+- subtle dividers;
+- wider reading measures;
+- one compact timeline;
+- functional boxes only for forms, OTP, result, and Create workflow states.
 
-The section is situation-first rather than role-list-first. The primary target
-is an entrepreneur or business owner with a real hiring problem, followed by HR
-or internal recruiters, growing companies blocked by hiring, and companies that
-need to replace a mismatched person.
+The workspace remains the main visual mode change.
 
-Consultants remain a secondary audience only when they work on concrete client
-roles.
+## Typography And Measure
 
-## Solution Framing
+Marketing body copy was raised toward a 1.15rem-1.3rem range, important leads
+toward 1.3rem+, and story statements toward large editorial sizes. Paragraphs
+use comfortable reading widths around 55-66ch where appropriate.
 
-The solution appears only after pain, consequences, and audience:
+## Workspace Position
 
-`Prima di cambiare portale, aumentare budget o concludere che i candidati non esistono, controlla il punto da cui tutto comincia: l annuncio.`
+The workspace now appears immediately after:
 
-Annunci 10x Score is presented as the free first check to understand whether the
-ad explains the real role to the right person.
+Hero -> Story -> Insight / Solution -> How it works
 
-## Commercial Reveal Principle
-
-The landing exposes only the free score entry point.
-
-Paid offers are intentionally not shown as a catalog:
-
-- rewrite appears only after an analyzed existing ad and a user decision to
-  improve it;
-- create appears only after the user completes the information needed to create
-  from zero, immediately before generation;
-- Agent Recruiter appears only as a contextual upsell at the appropriate moment.
-
-This phase does not implement purchase moments, checkout, or provider
-integrations.
-
-## Analyze And Create
-
-Unchanged:
-
-- Analyze behavior
-- Create behavior
-- result gate
-- AnalysisRun architecture
-- email verification
-- Supabase persistence
-- scoring
-- OpenAI provider
-- premium backend
-- commercial domain logic
-
-Visual priority is Analyze / free score. Create remains available as a
-secondary path.
+This removes the long marketing runway from 2E.1 and brings the interactive
+product closer to the initial hook.
 
 ## Method Presentation
 
-Central principle:
+The reason-to-believe section remains after the workspace:
 
-`Prima la realta del ruolo. Poi le parole.`
+`Prima la realtà del ruolo. Poi le parole.`
 
-The method section supports the commercial promise: Annunci 10x does not polish
-a wrong description. It starts from work, person, conditions, and attractiveness.
+Subcopy:
 
-## Pending
+`Un annuncio efficace non nasce da una frase più creativa. Nasce da una comprensione più precisa del lavoro e della persona che serve.`
 
-Still pending by design:
+The method sequence and four lenses remain, but they are presented as a flow and
+open columns instead of heavy cards.
 
-- real email provider integration;
-- payment / checkout implementation;
-- public V2.3 scoring activation.
+The 20-controls statement is now a large editorial question rather than a box:
+
+`20 controlli. Una domanda sola: questo annuncio aiuta la persona giusta a capire se questo è davvero il lavoro per lei?`
+
+## Commercial Reveal
+
+No commercial price reveal is shown on the landing.
+
+Paid moments remain contextual and out of scope for this phase:
+
+- rewrite after an analyzed existing ad and a user decision to improve it;
+- create after the user completes the role information needed for generation;
+- Agent Recruiter only as a contextual upsell at the appropriate later moment.
+
+## Unchanged
+
+Unchanged by design:
+
+- Analyze behavior;
+- Create behavior;
+- result gate;
+- AnalysisRun architecture;
+- email verification;
+- Supabase persistence;
+- scoring;
+- OpenAI provider;
+- premium backend;
+- commercial domain logic;
+- checkout state.
