@@ -1,31 +1,35 @@
 # Annunci 10x funnel redesign
 
-Status: FASE 2E implemented. This phase is visual, copy, UX, and commercial
-presentation only.
+Status: FASE 2E.1 implemented. This phase is visual, copy, UX, and commercial
+positioning only.
 
-## Information Architecture
+## Page Order
 
 Final page order:
 
-1. Hero
-2. Pain / problema
+1. Hero compatta e pain-first
+2. Pain
 3. Conseguenze
-4. Come funziona
-5. Analyze vs Create
-6. Workspace / flow interattivo
-7. Metodo Annunci 10x
-8. 20 controlli / 4 lenti
-9. Esempi ruoli
-10. Per chi e / per chi non e
-11. Value ladder
-12. Agent Recruiter
-13. Horyzon Recruiting bridge
-14. Final CTA
+4. Per chi e / beneficio
+5. Soluzione: perche partire dall annuncio
+6. Come funziona
+7. Analyze vs Create
+8. Workspace / flow interattivo
+9. Metodo Annunci 10x
+10. 20 controlli / 4 lenti
+11. Esempi ruoli
+12. Horyzon Recruiting bridge
+13. Final CTA
 
-The page is intentionally concise. It does not expose rubric, provider,
-scoring, prompt, or database internals.
+Removed from the landing:
 
-## Hero
+- "Per chi non e"
+- Product ladder
+- Price grid
+- Agent Recruiter promotional block
+- Credit note
+
+## Hero Correction
 
 Canonical headline:
 
@@ -33,7 +37,7 @@ Canonical headline:
 
 Supporting copy:
 
-`Scopri in pochi minuti quanto il tuo annuncio riesce davvero a spiegare il ruolo, attirare persone coerenti e ridurre candidature fuori target.`
+`Se ricevi CV fuori target, fai colloqui che non portano a nulla o rimandi una sostituzione perche temi di non trovare alternative, il problema puo iniziare da come stai presentando il ruolo. Scoprilo gratis con Annunci 10x Score.`
 
 Primary CTA:
 
@@ -43,8 +47,9 @@ Secondary CTA:
 
 `Devo creare un annuncio da zero`
 
-Both CTAs select the corresponding path and scroll/focus to the interactive
-workspace.
+The hero was corrected from a near-full-viewport section to a compact commercial
+hero. The target behavior is that eyebrow, H1, supporting copy, primary CTA, and
+secondary CTA are visible above the fold on common laptop viewports.
 
 ## Hero Asset
 
@@ -52,50 +57,85 @@ Final asset path:
 
 `public/annunci-10x/hero.jpeg`
 
-The file was copied from the user-provided canonical image without generative
-editing, scene changes, skyline changes, people changes, relighting, or stock
-image replacement.
+The page uses the user-provided canonical image through `next/image` with
+`fill`, `sizes="100vw"`, and `preload`. Desktop and mobile use the same image;
+only CSS object position, overlay, and spacing adapt by viewport.
 
-The original image is 1600x900. The page uses `next/image` with `fill`,
-`sizes="100vw"`, and `preload` for the above-the-fold hero.
+## Pain Positioning
 
-Desktop composition preserves the full cinematic image and uses the darker left
-side as the text area with a light left-weighted overlay.
+Pain headline:
 
-Mobile composition keeps the same file and changes only CSS crop/overlay. It
-keeps the hero legible and avoids a separate mobile image.
+`Il problema non e avere piu CV. E trovare la persona giusta.`
 
-## Visual Direction
+Four primary pains:
 
-The visual system uses:
+- Tanti CV. Pochi candidati davvero adatti.
+- Colloqui che non portano a una scelta.
+- Hai bisogno di sostituire qualcuno, ma non trovi alternative.
+- La crescita si ferma perche manca la persona giusta.
 
-- blue / blue-gray Horyzon base;
-- light editorial surfaces;
-- warm sunset-inspired neutrals;
-- disciplined lime accent for primary action and progress.
+Consequence framing:
 
-It avoids generic AI gradients, neon, glassmorphism, heavy black filters, fake
-glow, and stock-style replacements.
+`Una posizione scoperta o coperta dalla persona sbagliata non resta un problema HR.`
 
-## Pain And Consequences
+The page focuses on time, manager load, errors, delays, lost opportunities, team
+overload, and slowed growth. No invented statistics are used.
 
-Pain framing:
+## Audience Focus
 
-- tanti CV, pochi davvero coerenti;
-- annunci che sembrano tutti uguali;
-- ruoli descritti in modo troppo vago;
-- difficolta nel sostituire una persona sbagliata.
+Audience headline:
 
-Business consequence framing:
+`Se assumere sta diventando un freno, Annunci 10x e per te.`
 
-- tempo perso;
-- selezioni piu lunghe;
-- manager assorbiti dal recruiting;
-- persone fuori ruolo;
-- errori operativi;
-- crescita frenata.
+The section is situation-first rather than role-list-first. The primary target
+is an entrepreneur or business owner with a real hiring problem, followed by HR
+or internal recruiters, growing companies blocked by hiring, and companies that
+need to replace a mismatched person.
 
-No unapproved statistics are used.
+Consultants remain a secondary audience only when they work on concrete client
+roles.
+
+## Solution Framing
+
+The solution appears only after pain, consequences, and audience:
+
+`Prima di cambiare portale, aumentare budget o concludere che i candidati non esistono, controlla il punto da cui tutto comincia: l annuncio.`
+
+Annunci 10x Score is presented as the free first check to understand whether the
+ad explains the real role to the right person.
+
+## Commercial Reveal Principle
+
+The landing exposes only the free score entry point.
+
+Paid offers are intentionally not shown as a catalog:
+
+- rewrite appears only after an analyzed existing ad and a user decision to
+  improve it;
+- create appears only after the user completes the information needed to create
+  from zero, immediately before generation;
+- Agent Recruiter appears only as a contextual upsell at the appropriate moment.
+
+This phase does not implement purchase moments, checkout, or provider
+integrations.
+
+## Analyze And Create
+
+Unchanged:
+
+- Analyze behavior
+- Create behavior
+- result gate
+- AnalysisRun architecture
+- email verification
+- Supabase persistence
+- scoring
+- OpenAI provider
+- premium backend
+- commercial domain logic
+
+Visual priority is Analyze / free score. Create remains available as a
+secondary path.
 
 ## Method Presentation
 
@@ -103,130 +143,13 @@ Central principle:
 
 `Prima la realta del ruolo. Poi le parole.`
 
-Visual sequence:
+The method section supports the commercial promise: Annunci 10x does not polish
+a wrong description. It starts from work, person, conditions, and attractiveness.
 
-`Lavoro reale -> Persona necessaria -> Strategia -> Annuncio -> Verifica`
+## Pending
 
-Four lenses:
-
-- Popolarita
-- Sfida / Routine
-- Qualificazione
-- Tecnicita
-
-The 20 controls are communicated through high-level categories only:
-
-- chiarezza del ruolo;
-- attivita reali;
-- risultato atteso;
-- requisiti;
-- condizioni;
-- offerta;
-- candidatura;
-- coerenza complessiva.
-
-The complete rubric is not rendered in the landing page.
-
-## Commercial Ladder
-
-The public commercial presentation shows:
-
-- €0 Annunci 10x Score
-- €7 Migliora il tuo annuncio
-- €9 Crea il tuo annuncio da zero
-- €49 Agent Recruiter
-
-This is presentation only. There is no payment implementation, no cart, no
-checkout modal, no coupon, no scarcity, and no fake purchasing action.
-
-The €7 product is described as improving an existing analyzed ad into a clearer,
-more coherent version ready to adapt to the channel.
-
-The €9 product is described as creating an ad from the real role facts, with
-generation available in a later step.
-
-Agent Recruiter is described as a future reusable package: Premium Guide,
-Annunci 10x method, assistant setup, and reusable recruiting process.
-
-The credit toward Agent Recruiter is mentioned only lightly and without
-transactional logic.
-
-## Analyze Integration
-
-`Annunci10xAnalyzeFlow` keeps the FASE 2D behavior:
-
-- pasted text and public URL source modes;
-- immediate AnalysisRun start;
-- polling while the contact form is available;
-- email verification gate;
-- locked result state before email verification;
-- verified-waiting state while analysis completes;
-- result fetch only through the gated result API.
-
-The visual treatment was redesigned:
-
-- segmented source selector;
-- premium form surfaces;
-- progress rail using safe status copy;
-- lighter contact form;
-- OTP form with customer-safe copy;
-- result card focused on score, coverage, optional band, interpretation, and
-  next action.
-
-The UI no longer displays internal migration terms, provider names, mock/test
-labels, runtime internals, prompt/stage names, or checkout status.
-
-## Create Integration
-
-The Create path remains semantically unchanged:
-
-- no wizard rewrite;
-- no backend changes;
-- no answer semantic changes;
-- no clarification behavior changes;
-- no entitlement or premium pipeline changes.
-
-Only spacing, hierarchy, and presentation were aligned to the new funnel.
-
-## Responsive And Accessibility
-
-Responsive decisions:
-
-- desktop hero uses the left dark image area for text;
-- mobile keeps one canonical image and changes only object position and overlay;
-- grids collapse to one column below tablet widths;
-- buttons expand to full width on narrow screens;
-- workspace cards keep stable widths and avoid horizontal overflow.
-
-Accessibility:
-
-- one H1;
-- semantic section headings;
-- real form labels;
-- focus-visible states;
-- button semantics for CTAs and selectors;
-- aria-live preserved for progress and status;
-- OTP attributes preserved;
-- reduced-motion media query gates progress animation.
-
-## Backend And Operations
-
-Unchanged:
-
-- AnalysisRun architecture;
-- result eligibility;
-- email verification persistence;
-- OTP lifecycle;
-- Supabase schema;
-- rate limits;
-- scoring formula;
-- V1 evaluation behavior;
-- V2 rubric and prompts;
-- provider selection.
-
-Pending:
+Still pending by design:
 
 - real email provider integration;
-- payment/checkout implementation;
+- payment / checkout implementation;
 - public V2.3 scoring activation.
-

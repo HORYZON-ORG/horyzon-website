@@ -343,7 +343,7 @@ export function Annunci10xClient() {
       <div className={styles.heroContent}>
         <p className={styles.eyebrow}>Horyzon / Annunci 10x</p>
         <h1>Le persone giuste esistono. Il tuo annuncio riesce ad attirarle?</h1>
-        <p className={styles.heroLead}>Scopri in pochi minuti quanto il tuo annuncio riesce davvero a spiegare il ruolo, attirare persone coerenti e ridurre candidature fuori target.</p>
+        <p className={styles.heroLead}>Se ricevi CV fuori target, fai colloqui che non portano a nulla o rimandi una sostituzione perche temi di non trovare alternative, il problema puo iniziare da come stai presentando il ruolo. Scoprilo gratis con Annunci 10x Score.</p>
         <div className={styles.heroActions} aria-label="Percorsi iniziali">
           <button type="button" onClick={() => selectMode('ANALYZE')}>Calcola gratis il tuo Annunci 10x Score</button>
           <button type="button" onClick={() => selectMode('CREATE')}>Devo creare un annuncio da zero</button>
@@ -353,6 +353,8 @@ export function Annunci10xClient() {
 
     <PainSection />
     <ConsequenceSection />
+    <AudienceSection />
+    <SolutionSection />
     <HowItWorksSection />
     <PathChoiceSection onAnalyze={() => selectMode('ANALYZE')} onCreate={() => selectMode('CREATE')} />
 
@@ -403,21 +405,26 @@ export function Annunci10xClient() {
 
     <MethodSection />
     <RolesSection />
-    <AudienceSection />
-    <ProductLadder />
     <RecruitingBridge />
     <FinalCta onAnalyze={() => selectMode('ANALYZE')} onCreate={() => selectMode('CREATE')} />
   </div>;
 }
 
 const painItems = [
-  ['Tanti CV. Pochi davvero coerenti.', 'L annuncio arriva a molte persone, ma non sempre a quelle che capiscono davvero il lavoro.'],
-  ['Annunci che sembrano tutti uguali.', 'Quando il testo e generico, anche un ruolo concreto perde riconoscibilita.'],
-  ['Ruoli descritti in modo troppo vago.', 'Attivita, condizioni e risultati attesi restano impliciti e aumentano le candidature fuori target.'],
-  ['Sostituire una persona sbagliata sembra impossibile.', 'La selezione si blocca quando trovare un alternativa sembra ancora piu difficile.'],
+  ['Tanti CV. Pochi candidati davvero adatti.', 'Tempo perso a leggere profili che non corrispondono al lavoro reale.'],
+  ['Colloqui che non portano a una scelta.', 'Le candidature sembrano interessanti finche non emerge che ruolo e aspettative non erano stati capiti allo stesso modo.'],
+  ['Hai bisogno di sostituire qualcuno, ma non trovi alternative.', 'Quando trovare una persona nuova sembra impossibile, anche una situazione che non funziona rischia di trascinarsi.'],
+  ['La crescita si ferma perche manca la persona giusta.', 'Nuovi clienti, nuovi turni, nuove responsabilita o nuove sedi richiedono persone che l azienda non riesce a inserire.'],
 ];
 
-const consequenceItems = ['tempo perso', 'selezioni che si allungano', 'manager assorbiti dal recruiting', 'persone fuori ruolo', 'errori operativi', 'crescita frenata'];
+const consequenceItems = ['tempo dell imprenditore', 'tempo dei manager', 'errori', 'ritardi', 'opportunita perse', 'team sovraccarico', 'crescita rallentata'];
+const audienceSituations = [
+  'Stai cercando da settimane e continuano ad arrivare candidati fuori target.',
+  'Devi sostituire una persona ma temi di non trovare nessuno di meglio.',
+  'La tua azienda potrebbe crescere, ma non riesci a inserire le persone necessarie.',
+  'Il tuo HR o recruiter passa ore tra CV e colloqui senza arrivare alle persone giuste.',
+  'Stai assumendo un ruolo operativo e vuoi spiegare bene fin dall inizio cosa dovra fare davvero.',
+];
 const methodSteps = ['Lavoro reale', 'Persona necessaria', 'Strategia', 'Annuncio', 'Verifica'];
 const lenses = [
   ['Popolarita', 'Un ruolo raro non va raccontato come uno molto comune.'],
@@ -432,7 +439,7 @@ function PainSection() {
   return <section className={styles.sectionBlock}>
     <div className={styles.sectionHeading}>
       <p>Il problema</p>
-      <h2>Quando non arrivano le persone giuste, il problema non e sempre il mercato.</h2>
+      <h2>Il problema non e avere piu CV. E trovare la persona giusta.</h2>
     </div>
     <div className={styles.cardGrid}>{painItems.map(([title, copy], index) => <article key={title} className={styles.editorialCard}><span>{String(index + 1).padStart(2, '0')}</span><h3>{title}</h3><p>{copy}</p></article>)}</div>
   </section>;
@@ -442,10 +449,31 @@ function ConsequenceSection() {
   return <section className={styles.consequence}>
     <div>
       <p>Conseguenze</p>
-      <h2>Un annuncio poco chiaro non rallenta solo il recruiting.</h2>
+      <h2>Una posizione scoperta o coperta dalla persona sbagliata non resta un problema HR.</h2>
     </div>
-    <p>Assorbe tempo, allunga le decisioni, aumenta i colloqui inutili e rende piu difficile capire se il problema e il mercato, il ruolo o il modo in cui lo stai presentando.</p>
+    <p>Assorbe tempo dell imprenditore, carica i manager, aumenta errori e ritardi, fa perdere opportunita e lascia il team a compensare finche la crescita rallenta.</p>
     <div className={styles.chips}>{consequenceItems.map((item) => <span key={item}>{item}</span>)}</div>
+  </section>;
+}
+
+function AudienceSection() {
+  return <section className={styles.audienceGrid}>
+    <article>
+      <p>Per chi e</p>
+      <h2>Se assumere sta diventando un freno, Annunci 10x e per te.</h2>
+      <ul>{audienceSituations.map((item) => <li key={item}>{item}</li>)}</ul>
+      <span>Pensato soprattutto per imprenditori, responsabili HR e recruiter interni nelle PMI. I consulenti HR restano un pubblico secondario quando lavorano su ruoli concreti per i loro clienti.</span>
+    </article>
+  </section>;
+}
+
+function SolutionSection() {
+  return <section className={styles.solutionBlock}>
+    <div className={styles.sectionHeading}>
+      <p>Da dove partire</p>
+      <h2>Prima di cambiare portale, aumentare budget o concludere che i candidati non esistono, controlla il punto da cui tutto comincia: l annuncio.</h2>
+    </div>
+    <p>Annunci 10x Score analizza gratuitamente il testo per capire se sta spiegando il ruolo reale alla persona giusta: che lavoro c e da fare, quali requisiti servono davvero, quali condizioni sono chiare e perche una persona coerente dovrebbe scegliere quell opportunita.</p>
   </section>;
 }
 
@@ -453,18 +481,18 @@ function HowItWorksSection() {
   return <section className={styles.sectionBlock}>
     <div className={styles.sectionHeading}>
       <p>Come funziona</p>
-      <h2>Quattro passaggi, senza trasformare la valutazione in un manuale.</h2>
+      <h2>Quattro passaggi semplici.</h2>
     </div>
     <div className={styles.steps}>
-      {['Inserisci il tuo annuncio', 'Lo analizziamo con il metodo Annunci 10x', 'Verifica la tua email', 'Visualizza il tuo Score'].map((item, index) => <article key={item}><span>{String(index + 1).padStart(2, '0')}</span><h3>{item}</h3></article>)}
+      {['Inserisci l annuncio', 'Lo analizziamo', 'Verifica la tua email', 'Visualizza il tuo Score'].map((item, index) => <article key={item}><span>{String(index + 1).padStart(2, '0')}</span><h3>{item}</h3></article>)}
     </div>
-    <p className={styles.valueLine}>Gratis ricevi Annunci 10x Score e una breve interpretazione: capisci subito se il tuo annuncio e una base solida o se sta lasciando fuori informazioni decisive.</p>
+    <p className={styles.valueLine}>Il risultato gratuito ti aiuta a capire se il tuo annuncio e una base solida o se sta lasciando fuori informazioni decisive.</p>
   </section>;
 }
 
 function PathChoiceSection({ onAnalyze, onCreate }: { onAnalyze: () => void; onCreate: () => void }) {
   return <section className={styles.pathSplit}>
-    <article>
+    <article data-primary="true">
       <p>Percorso 1</p>
       <h2>Ho gia un annuncio</h2>
       <span>Scopri cosa funziona e cosa sta limitando chiarezza e rilevanza.</span>
@@ -501,42 +529,11 @@ function RolesSection() {
   </section>;
 }
 
-function AudienceSection() {
-  return <section className={styles.audienceGrid}>
-    <article>
-      <p>Per chi e</p>
-      <h2>Per chi assume direttamente.</h2>
-      <ul><li>Imprenditori e titolari</li><li>Responsabili HR</li><li>Recruiter interni</li><li>Consulenti HR</li><li>Aziende che vogliono chiarire il ruolo prima di pubblicare</li></ul>
-    </article>
-    <article>
-      <p>Per chi non e</p>
-      <h2>Non e una frase magica.</h2>
-      <ul><li>Chi vuole inventare benefit o condizioni</li><li>Chi cerca promesse non vere</li><li>Chi pensa che piu CV significhi automaticamente selezionare meglio</li><li>Chi vuole attirare tutti invece delle persone coerenti</li></ul>
-    </article>
-  </section>;
-}
-
-function ProductLadder() {
-  return <section className={styles.ladder}>
-    <div className={styles.sectionHeading}>
-      <p>Value ladder</p>
-      <h2>Dal primo Score al metodo riutilizzabile.</h2>
-    </div>
-    <div className={styles.ladderGrid}>
-      <article><span>€0</span><h3>Annunci 10x Score</h3><p>Una prima lettura gratuita per capire se il testo e una base solida.</p></article>
-      <article><span>€7</span><h3>Migliora il tuo annuncio</h3><p>Partiamo dal testo analizzato e costruiamo una versione piu chiara, coerente e pronta da adattare al canale.</p></article>
-      <article><span>€9</span><h3>Crea il tuo annuncio da zero</h3><p>Rispondi alle domande sul lavoro reale, conferma i fatti e genera l annuncio quando il percorso sara disponibile.</p></article>
-      <article><span>€49</span><h3>Agent Recruiter</h3><p>Guida Premium, metodo Annunci 10x, setup dell assistant e processo riutilizzabile per lavorare meglio sui ruoli futuri.</p></article>
-    </div>
-    <p className={styles.creditNote}>In futuro, i primi prodotti potranno essere riconosciuti come credito verso Agent Recruiter.</p>
-  </section>;
-}
-
 function RecruitingBridge() {
   return <section className={styles.bridge}>
-    <p>Oltre il self-service</p>
-    <h2>Quando il problema non e piu solo l annuncio.</h2>
-    <span>Se il recruiting richiede piu di un testo migliore, Horyzon puo aiutarti a chiarire fabbisogno, processo e selezione senza trasformare questa pagina in una promessa irrealistica.</span>
+    <p>Quando serve piu dell annuncio</p>
+    <h2>Se il problema e piu ampio dell annuncio, possiamo aiutarti anche nel recruiting.</h2>
+    <span>Annunci 10x resta il primo controllo. Se emergono problemi di fabbisogno, processo o selezione, Horyzon puo aiutarti a capire dove intervenire senza interrompere questo percorso.</span>
   </section>;
 }
 
