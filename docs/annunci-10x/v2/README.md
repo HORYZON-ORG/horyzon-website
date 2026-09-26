@@ -41,7 +41,9 @@ The product must not sell volume guarantees. "10x" means quality and decision va
 
 ## Current implementation relationship
 
-Current runtime is still V1-oriented and remains valid until a future migration is explicitly implemented.
+Current public runtime is still V1-oriented and remains valid until a future migration is explicitly implemented.
+
+Fase 1B added an isolated TypeScript V2 scoring core for rubric definitions, per-check validation, deterministic aggregation, coverage, and band mapping. It is additive only and is not wired to `/annunci-10x`, OpenAI, persistence, UI, API routes, or public product behavior.
 
 Important current files:
 
@@ -53,6 +55,13 @@ Important current files:
 - `src/lib/annunci-10x/commercial.ts`
 - `src/components/annunci-10x/annunci-10x-client.tsx`
 - `src/lib/annunci-10x/ai/prompts/evaluate.ts`
+
+Isolated V2 scoring files:
+
+- `src/lib/annunci-10x/types-v2.ts`
+- `src/lib/annunci-10x/rubric-v2.ts`
+- `src/lib/annunci-10x/score-v2.ts`
+- `scripts/verify-annunci-10x-score-v2.mjs`
 
 The V2 docs identify future changes. They do not claim those changes are already implemented.
 

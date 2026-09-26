@@ -53,6 +53,8 @@ For evaluable controls:
 
 Customer-facing rounding is still an implementation decision, with integer rounding preferred.
 
+The V2 core preserves the raw deterministic decimal value internally. Future UI may decide display rounding, but banding uses the raw value. For example, `49.9` remains `CRITICAL`, while `50.0` is `WEAK`.
+
 Example:
 
 - evaluable controls: `18`;
@@ -68,19 +70,17 @@ V2 produces one final score. It must not reintroduce V1-style `minScore` / `maxS
 
 If future coverage is too low for a reliable score, the system may refuse to publish the score according to a future minimum coverage threshold. That threshold is `OPEN`.
 
-## Suggested status model
+## Status model
 
-Future V2 can keep status language while adding anchors:
+Fase 1B runtime status names are final for the isolated V2 scoring core:
 
-- `STRONG`: clear direct evidence.
-- `ADEQUATE`: enough evidence, some room to improve.
-- `WEAK`: partial or vague evidence.
-- `MISSING`: expected information absent.
-- `UNSUPPORTED`: claim present but unsupported by source facts.
-- `CONFLICT`: material contradiction.
-- `NOT_EVALUABLE`: not applicable or not determinable.
+- `EVALUATED`: criterion is normally evaluable.
+- `MISSING`: expected information/quality is completely absent.
+- `UNSUPPORTED`: a relevant claim is present but not supported.
+- `CONFLICT`: a material contradiction exists for that control.
+- `NOT_EVALUABLE`: criterion is not applicable or cannot be determined legitimately.
 
-The exact enum names are implementation decisions. The required distinction is semantic, not naming.
+Do not use `STRONG`, `WEAK`, or `ADEQUATE` as runtime status names. Quality is represented by the numeric `0..10` score.
 
 ## N/D vs MISSING
 
@@ -160,6 +160,8 @@ The deterministic TypeScript layer owns:
 - gate;
 - control status mapping;
 - treatment of N/D and missing values.
+
+Confidence is preserved as provider-reported diagnostic metadata only. It is validated as integer `0..100`, but it is not a calibrated probability and must not affect score, coverage, band, gate, fallback, or retry automation until real calibration exists.
 
 The provider may return:
 

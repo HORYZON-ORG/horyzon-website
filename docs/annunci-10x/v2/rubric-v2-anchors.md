@@ -118,6 +118,8 @@ It does not mean:
 
 Example: `score = 0` and `confidence = 99` is valid when a title is clearly absent.
 
+Fase 1B implementation note: confidence is validated and preserved, but not used for score, coverage, band, gate, fallback, retry, or automation thresholds.
+
 ## Provider-Agnostic Design
 
 Anchors must be usable by:
@@ -393,6 +395,8 @@ M. Synthetic examples:
 - Strong: routine precision role foregrounds reliability, schedule, real activities, and concrete conditions.
 
 N. Avoid: do not reduce this to high/low role popularity; use all four lenses.
+
+Implementation caveat: Check 06 must not apply an automatic duplicate penalty for every fact already handled by another control. Example: missing compensation is primarily Check 14. Check 06 worsens for compensation only when, given the search context, wrong/missing emphasis on compensation is itself a strategic priority problem.
 
 O. Future accelerator suitability: `LLM_COMPLEX`.
 
@@ -738,6 +742,8 @@ M. Synthetic examples:
 
 N. Avoid: do not invent legal obligations; do not turn genuine N/D into zero.
 
+Implementation caveat: a sentence that merely justifies not communicating compensation must not by itself produce a high score. Positive score must come from correct compensation handling according to available policy/context, not from an editorial excuse.
+
 O. Future accelerator suitability: `CLOSED_DECISION_CANDIDATE`.
 
 ## Check 15 - Concrete Verifiable Offer Reasons
@@ -823,6 +829,8 @@ M. Synthetic examples:
 - Strong: Master adapted into channel fields without changing facts.
 
 N. Avoid: do not invent platform rules without a documented channel policy.
+
+Implementation caveat: complete V2 channel policies do not exist yet. Until a channel policy is explicit, Check 16 can be `NOT_EVALUABLE`; the scoring core must not invent LinkedIn, Indeed, Meta, ATS, or other platform rules.
 
 O. Future accelerator suitability: `CLOSED_DECISION_CANDIDATE`.
 

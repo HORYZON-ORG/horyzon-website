@@ -3,6 +3,9 @@ export const ANNUNCI10X_RUBRIC_VERSION = 'annunci10x-rubric-v1';
 export const ANNUNCI10X_STRATEGY_VERSION = 'annunci10x-strategy-v1';
 export const ANNUNCI10X_PROMPT_PACK_VERSION = 'annunci10x-prompts-v1';
 export const ANNUNCI10X_DATA_CONTRACT_VERSION = 'annunci10x-data-contracts-v1';
+export const ANNUNCI10X_METHOD_VERSION_V2 = 'annunci10x-method-v2';
+export const ANNUNCI10X_RUBRIC_VERSION_V2 = 'annunci10x-rubric-v2';
+export const ANNUNCI10X_SCORE_SEMANTICS_VERSION_V2 = 'annunci10x-score-semantics-v2';
 
 export const FACT_SOURCES = ['EXTRACTED', 'USER_DECLARED', 'SYSTEM_INFERRED', 'USER_CONFIRMED'] as const;
 export const FACT_STATUSES = ['RAW', 'NORMALIZED', 'CONFIRMED', 'REJECTED', 'STALE'] as const;

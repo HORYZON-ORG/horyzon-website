@@ -31,15 +31,25 @@ Future work:
 
 ## Phase 2: rubric and score anchors
 
-Future work:
+Fase 1B implemented the isolated TypeScript scoring core for:
 
-- add V2 20-control rubric labels;
-- implement check 06 semantic change;
-- implement check 08 semantic change;
-- add responsibilities to check 02;
-- add V2 anchors for `0..10/null`;
-- preserve N/D vs MISSING;
-- add deterministic calculator tests for aggregation, coverage, bands, and gate.
+- V2 20-control rubric representation;
+- V2 status enum `EVALUATED`, `MISSING`, `UNSUPPORTED`, `CONFLICT`, `NOT_EVALUABLE`;
+- per-check validation of `score`, `evidence`, `reason`, `missing`, and `confidence`;
+- deterministic aggregation;
+- coverage calculation;
+- raw score band mapping;
+- V2 unit/regression verifier.
+
+This core remains additive and isolated. It is not wired into public `/annunci-10x`, the V1 EVALUATE prompt, providers, persistence, UI, or API routes.
+
+Remaining future work:
+
+- connect provider output to the V2 per-control schema;
+- write full channel policies;
+- define customer-facing rounding;
+- define minimum coverage policy;
+- implement future V2 gate interface.
 
 The provider must produce bounded per-control numeric evaluations. Do not let the provider calculate final score `/100`, final coverage, final band, or final publication gate.
 
@@ -65,7 +75,7 @@ Future work:
 - keep capsule generation deterministic in TypeScript first;
 - use any future semantic accelerator only after benchmark validation.
 
-Do not implement Context Capsule during Fase 1A.
+Do not implement Context Capsule during Fase 1B.
 
 ## Phase 4: data model
 
