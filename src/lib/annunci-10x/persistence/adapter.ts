@@ -14,8 +14,10 @@ import {
   parseAnalysisRunRow,
   parseAiOperationRow,
   parseAnswerRow,
+  parseEmailVerificationRow,
   parseEvaluationRow,
   parseEventRow,
+  parseLeadRow,
   parseOutputRow,
   parseSessionRow,
   parseSnapshotRow,
@@ -27,6 +29,7 @@ import type {
   AppendSnapshotInput,
   CheckRateLimitInput,
   CheckRateLimitResult,
+  CreateEmailVerificationInput,
   CreateAnalysisRunInput,
   CompleteAiOperationInput,
   CreateSessionInput,
@@ -36,15 +39,20 @@ import type {
   PersistedAiOperation,
   PersistedAnnunci10xSession,
   PersistedAnswer,
+  PersistedEmailVerification,
   PersistedEvaluation,
   PersistedEvent,
+  PersistedLead,
   PersistedOutput,
   PersistedSnapshot,
   SaveEvaluationInput,
+  SaveLeadInput,
   SaveOutputInput,
   StartAiOperationInput,
   UpdateAnalysisRunInput,
   UpdateSessionInput,
+  VerifyEmailCodeInput,
+  VerifyEmailCodeResult,
 } from './types.ts';
 
 type DbRow = Record<string, unknown>;
@@ -260,6 +268,17 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
     return rows[0] ? parseAnalysisRunRow(rows[0]) : null;
   }
 
+  async getLatestAnalysisRun(sessionId: string, sessionSecret: string): Promise<PersistedAnalysisRun | null> {
+    await this.requireOwnership(sessionId, sessionSecret);
+    const rows = await this.select('annunci10x_analysis_runs', {
+      session_id: `eq.${sessionId}`,
+      select: '*',
+      order: 'created_at.desc',
+      limit: '1',
+    });
+    return rows[0] ? parseAnalysisRunRow(rows[0]) : null;
+  }
+
   async claimAnalysisRun(analysisRunId: string, sessionSecret: string, leaseSeconds: number): Promise<PersistedAnalysisRun | null> {
     const row = await this.rpc<DbRow | null>('annunci10x_claim_analysis_run', {
       p_analysis_run_id: analysisRunId,
@@ -298,6 +317,84 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
       p_window_seconds: input.windowSeconds,
     });
     return parseRateLimitRow(row);
+  }
+
+  async saveLead(input: SaveLeadInput): Promise<PersistedLead> {
+    const row = await this.rpc<DbRow>('annunci10x_save_lead', {
+      p_session_id: input.sessionId,
+      p_owner_secret_hash: hashAnnunci10xSessionSecret(input.sessionSecret),
+      p_first_name: input.firstName,
+      p_last_name: input.lastName,
+      p_company_name: input.companyName,
+      p_business_role: input.businessRole,
+      p_email_normalized: input.emailNormalized,
+      p_marketing_consent: input.marketingConsent,
+      p_marketing_consent_version: input.marketingConsentVersion,
+    });
+    return parseLeadRow(row);
+  }
+
+  async getLead(sessionId: string, sessionSecret: string): Promise<PersistedLead | null> {
+    await this.requireOwnership(sessionId, sessionSecret);
+    const rows = await this.select('annunci10x_leads', {
+      session_id: `eq.${sessionId}`,
+      select: '*',
+      limit: '1',
+    });
+    return rows[0] ? parseLeadRow(rows[0]) : null;
+  }
+
+  async createEmailVerification(input: CreateEmailVerificationInput): Promise<PersistedEmailVerification> {
+    const row = await this.rpc<DbRow>('annunci10x_create_email_verification', {
+      p_verification_id: input.id ?? randomUUID(),
+      p_session_id: input.sessionId,
+      p_owner_secret_hash: hashAnnunci10xSessionSecret(input.sessionSecret),
+      p_lead_id: input.leadId,
+      p_email_normalized: input.emailNormalized,
+      p_code_hash: input.codeHash,
+      p_expires_at: input.expiresAt,
+      p_max_attempts: input.maxAttempts,
+    });
+    return parseEmailVerificationRow(row, { includeHash: true });
+  }
+
+  async getActiveEmailVerification(sessionId: string, sessionSecret: string): Promise<PersistedEmailVerification | null> {
+    await this.requireOwnership(sessionId, sessionSecret);
+    const rows = await this.select('annunci10x_email_verifications', {
+      session_id: `eq.${sessionId}`,
+      status: 'eq.SENT',
+      consumed_at: 'is.null',
+      invalidated_at: 'is.null',
+      select: '*',
+      order: 'created_at.desc',
+      limit: '1',
+    });
+    return rows[0] ? parseEmailVerificationRow(rows[0], { includeHash: true }) : null;
+  }
+
+  async markEmailVerificationSent(verificationId: string, sessionSecret: string): Promise<PersistedEmailVerification> {
+    const row = await this.rpc<DbRow>('annunci10x_mark_email_verification_sent', {
+      p_verification_id: verificationId,
+      p_owner_secret_hash: hashAnnunci10xSessionSecret(sessionSecret),
+    });
+    return parseEmailVerificationRow(row, { includeHash: true });
+  }
+
+  async markEmailVerificationFailed(verificationId: string, sessionSecret: string): Promise<PersistedEmailVerification> {
+    const row = await this.rpc<DbRow>('annunci10x_mark_email_verification_failed', {
+      p_verification_id: verificationId,
+      p_owner_secret_hash: hashAnnunci10xSessionSecret(sessionSecret),
+    });
+    return parseEmailVerificationRow(row, { includeHash: true });
+  }
+
+  async verifyEmailCode(input: VerifyEmailCodeInput): Promise<VerifyEmailCodeResult> {
+    const row = await this.rpc<DbRow>('annunci10x_verify_email_code', {
+      p_session_id: input.sessionId,
+      p_owner_secret_hash: hashAnnunci10xSessionSecret(input.sessionSecret),
+      p_code_hash: input.codeHash,
+    });
+    return parseVerifyEmailCodeResult(row);
   }
 
   async saveOutput(input: SaveOutputInput): Promise<PersistedOutput> {
@@ -402,6 +499,8 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
   private snapshots: DbRow[] = [];
   private operations = new Map<string, DbRow>();
   private analysisRuns = new Map<string, DbRow>();
+  private leads = new Map<string, DbRow>();
+  private verifications = new Map<string, DbRow>();
   private outputs = new Map<string, DbRow>();
   private evaluations: DbRow[] = [];
   private events: DbRow[] = [];
@@ -621,6 +720,14 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
     return parseAnalysisRunRow(row);
   }
 
+  async getLatestAnalysisRun(sessionId: string, sessionSecret: string): Promise<PersistedAnalysisRun | null> {
+    this.requireMemoryOwnership(sessionId, sessionSecret);
+    const row = [...this.analysisRuns.values()]
+      .filter((item) => item.session_id === sessionId)
+      .sort((left, right) => String(right.created_at).localeCompare(String(left.created_at)))[0];
+    return row ? parseAnalysisRunRow(row) : null;
+  }
+
   async claimAnalysisRun(analysisRunId: string, sessionSecret: string, leaseSeconds: number): Promise<PersistedAnalysisRun | null> {
     const row = this.analysisRuns.get(analysisRunId);
     if (!row) return null;
@@ -675,6 +782,130 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
       retryAfterSeconds: allowed ? 0 : Math.max(1, Math.ceil((current.resetAt - now) / 1000)),
       resetAt: new Date(current.resetAt).toISOString(),
     };
+  }
+
+  async saveLead(input: SaveLeadInput): Promise<PersistedLead> {
+    this.requireMemoryOwnership(input.sessionId, input.sessionSecret);
+    const now = new Date().toISOString();
+    const existing = this.leads.get(input.sessionId);
+    const emailChanged = Boolean(existing && existing.email_normalized !== input.emailNormalized);
+    const row: DbRow = existing ?? {
+      id: randomUUID(),
+      session_id: input.sessionId,
+      created_at: now,
+    };
+    row.first_name = input.firstName;
+    row.last_name = input.lastName;
+    row.company_name = input.companyName;
+    row.business_role = input.businessRole;
+    row.email_normalized = input.emailNormalized;
+    if (!existing || emailChanged) row.email_verified_at = null;
+    row.marketing_consent = input.marketingConsent;
+    row.marketing_consent_at = input.marketingConsent ? existing?.marketing_consent_at ?? now : null;
+    row.marketing_consent_version = input.marketingConsent ? input.marketingConsentVersion : null;
+    row.updated_at = now;
+    this.leads.set(input.sessionId, row);
+    if (emailChanged) this.invalidateActiveMemoryVerifications(input.sessionId, String(existing?.id ?? row.id));
+    return parseLeadRow(row);
+  }
+
+  async getLead(sessionId: string, sessionSecret: string): Promise<PersistedLead | null> {
+    this.requireMemoryOwnership(sessionId, sessionSecret);
+    const row = this.leads.get(sessionId);
+    return row ? parseLeadRow(row) : null;
+  }
+
+  async createEmailVerification(input: CreateEmailVerificationInput): Promise<PersistedEmailVerification> {
+    this.requireMemoryOwnership(input.sessionId, input.sessionSecret);
+    const lead = this.leads.get(input.sessionId);
+    if (!lead || lead.id !== input.leadId || lead.email_normalized !== input.emailNormalized) {
+      throw new Annunci10xPersistenceError('Annunci 10x lead ownership verification failed.', 'OWNERSHIP');
+    }
+    this.invalidateActiveMemoryVerifications(input.sessionId, input.leadId);
+    const now = new Date().toISOString();
+    const row: DbRow = {
+      id: input.id ?? randomUUID(),
+      session_id: input.sessionId,
+      lead_id: input.leadId,
+      email_normalized: input.emailNormalized,
+      code_hash: input.codeHash,
+      status: 'PENDING_SEND',
+      expires_at: input.expiresAt,
+      sent_at: null,
+      attempt_count: 0,
+      max_attempts: input.maxAttempts,
+      consumed_at: null,
+      invalidated_at: null,
+      created_at: now,
+      updated_at: now,
+    };
+    this.verifications.set(String(row.id), row);
+    return parseEmailVerificationRow(row, { includeHash: true });
+  }
+
+  async getActiveEmailVerification(sessionId: string, sessionSecret: string): Promise<PersistedEmailVerification | null> {
+    this.requireMemoryOwnership(sessionId, sessionSecret);
+    const row = [...this.verifications.values()]
+      .filter((item) => item.session_id === sessionId && item.status === 'SENT' && !item.consumed_at && !item.invalidated_at)
+      .sort((left, right) => String(right.created_at).localeCompare(String(left.created_at)))[0];
+    return row ? parseEmailVerificationRow(row, { includeHash: true }) : null;
+  }
+
+  async markEmailVerificationSent(verificationId: string, sessionSecret: string): Promise<PersistedEmailVerification> {
+    const row = this.findOwnedVerification(verificationId, sessionSecret);
+    row.status = 'SENT';
+    row.sent_at = new Date().toISOString();
+    row.updated_at = row.sent_at;
+    return parseEmailVerificationRow(row, { includeHash: true });
+  }
+
+  async markEmailVerificationFailed(verificationId: string, sessionSecret: string): Promise<PersistedEmailVerification> {
+    const row = this.findOwnedVerification(verificationId, sessionSecret);
+    row.status = 'FAILED_SEND';
+    row.invalidated_at = new Date().toISOString();
+    row.updated_at = row.invalidated_at;
+    return parseEmailVerificationRow(row, { includeHash: true });
+  }
+
+  async verifyEmailCode(input: VerifyEmailCodeInput): Promise<VerifyEmailCodeResult> {
+    this.requireMemoryOwnership(input.sessionId, input.sessionSecret);
+    const row = [...this.verifications.values()]
+      .filter((item) => item.session_id === input.sessionId && item.status === 'SENT' && !item.consumed_at && !item.invalidated_at)
+      .sort((left, right) => String(right.created_at).localeCompare(String(left.created_at)))[0];
+    if (!row) return { outcome: 'VERIFICATION_INVALID', lead: await this.getLead(input.sessionId, input.sessionSecret), verification: null };
+    const now = new Date();
+    if (Date.parse(String(row.expires_at)) <= now.getTime()) {
+      row.status = 'INVALIDATED';
+      row.invalidated_at = now.toISOString();
+      row.updated_at = row.invalidated_at;
+      return { outcome: 'VERIFICATION_EXPIRED', lead: await this.getLead(input.sessionId, input.sessionSecret), verification: parseEmailVerificationRow(row, { includeHash: true }) };
+    }
+    if (Number(row.attempt_count) >= Number(row.max_attempts)) {
+      row.status = 'INVALIDATED';
+      row.invalidated_at = now.toISOString();
+      row.updated_at = row.invalidated_at;
+      return { outcome: 'MAX_ATTEMPTS_REACHED', lead: await this.getLead(input.sessionId, input.sessionSecret), verification: parseEmailVerificationRow(row, { includeHash: true }) };
+    }
+    if (row.code_hash !== input.codeHash) {
+      row.attempt_count = Number(row.attempt_count) + 1;
+      if (Number(row.attempt_count) >= Number(row.max_attempts)) {
+        row.status = 'INVALIDATED';
+        row.invalidated_at = now.toISOString();
+        row.updated_at = row.invalidated_at;
+        return { outcome: 'MAX_ATTEMPTS_REACHED', lead: await this.getLead(input.sessionId, input.sessionSecret), verification: parseEmailVerificationRow(row, { includeHash: true }) };
+      }
+      row.updated_at = now.toISOString();
+      return { outcome: 'VERIFICATION_INVALID', lead: await this.getLead(input.sessionId, input.sessionSecret), verification: parseEmailVerificationRow(row, { includeHash: true }) };
+    }
+    row.status = 'CONSUMED';
+    row.consumed_at = now.toISOString();
+    row.updated_at = row.consumed_at;
+    const lead = this.leads.get(input.sessionId);
+    if (lead && lead.id === row.lead_id && lead.email_normalized === row.email_normalized) {
+      lead.email_verified_at = row.consumed_at;
+      lead.updated_at = row.consumed_at;
+    }
+    return { outcome: 'VERIFIED', lead: lead ? parseLeadRow(lead) : null, verification: parseEmailVerificationRow(row, { includeHash: true }) };
   }
 
   async saveOutput(input: SaveOutputInput): Promise<PersistedOutput> {
@@ -738,6 +969,24 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
     }
     throw new Annunci10xPersistenceError('Annunci 10x operation not found.', 'OWNERSHIP');
   }
+
+  private findOwnedVerification(verificationId: string, sessionSecret: string): DbRow {
+    const row = this.verifications.get(verificationId);
+    if (!row) throw new Annunci10xPersistenceError('Annunci 10x email verification not found.', 'OWNERSHIP');
+    this.requireMemoryOwnership(String(row.session_id), sessionSecret);
+    return row;
+  }
+
+  private invalidateActiveMemoryVerifications(sessionId: string, leadId: string): void {
+    const now = new Date().toISOString();
+    for (const row of this.verifications.values()) {
+      if (row.session_id === sessionId && row.lead_id === leadId && !row.consumed_at && !row.invalidated_at && (row.status === 'PENDING_SEND' || row.status === 'SENT')) {
+        row.status = 'INVALIDATED';
+        row.invalidated_at = now;
+        row.updated_at = now;
+      }
+    }
+  }
 }
 
 export function createAnnunci10xPersistenceAdapter(): SupabaseAnnunci10xPersistenceAdapter {
@@ -785,6 +1034,13 @@ function parseRateLimitRow(row: DbRow): CheckRateLimitResult {
     remaining: typeof row.remaining === 'number' ? row.remaining : 0,
     resetAt: typeof row.reset_at === 'string' ? row.reset_at : new Date().toISOString(),
   };
+}
+
+function parseVerifyEmailCodeResult(row: DbRow): VerifyEmailCodeResult {
+  const outcome = typeof row.outcome === 'string' ? row.outcome as VerifyEmailCodeResult['outcome'] : 'VERIFICATION_INVALID';
+  const lead = row.lead && typeof row.lead === 'object' ? parseLeadRow(row.lead as DbRow) : null;
+  const verification = row.verification && typeof row.verification === 'object' ? parseEmailVerificationRow(row.verification as DbRow, { includeHash: true }) : null;
+  return { outcome, lead, verification };
 }
 
 function validateCommercialContextOrThrow(value: unknown): void {

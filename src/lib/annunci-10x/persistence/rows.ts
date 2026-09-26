@@ -23,8 +23,10 @@ import type {
   PersistedAiOperation,
   PersistedAnnunci10xSession,
   PersistedAnswer,
+  PersistedEmailVerification,
   PersistedEvaluation,
   PersistedEvent,
+  PersistedLead,
   PersistedOutput,
   PersistedSnapshot,
 } from './types.ts';
@@ -161,6 +163,44 @@ export function parseAnalysisRunRow(row: Record<string, unknown>): PersistedAnal
     completedAt: optionalString(row.completed_at),
     failedAt: optionalString(row.failed_at),
   };
+}
+
+export function parseLeadRow(row: Record<string, unknown>): PersistedLead {
+  return {
+    id: requireString(row.id, 'lead.id'),
+    sessionId: requireString(row.session_id, 'lead.session_id'),
+    firstName: requireString(row.first_name, 'lead.first_name'),
+    lastName: requireString(row.last_name, 'lead.last_name'),
+    companyName: requireString(row.company_name, 'lead.company_name'),
+    businessRole: requireString(row.business_role, 'lead.business_role') as PersistedLead['businessRole'],
+    emailNormalized: requireString(row.email_normalized, 'lead.email_normalized'),
+    emailVerifiedAt: optionalString(row.email_verified_at),
+    marketingConsent: row.marketing_consent === true,
+    marketingConsentAt: optionalString(row.marketing_consent_at),
+    marketingConsentVersion: optionalString(row.marketing_consent_version),
+    createdAt: requireString(row.created_at, 'lead.created_at'),
+    updatedAt: requireString(row.updated_at, 'lead.updated_at'),
+  };
+}
+
+export function parseEmailVerificationRow(row: Record<string, unknown>, options: { includeHash?: boolean } = {}): PersistedEmailVerification {
+  const parsed: PersistedEmailVerification = {
+    id: requireString(row.id, 'emailVerification.id'),
+    sessionId: requireString(row.session_id, 'emailVerification.session_id'),
+    leadId: requireString(row.lead_id, 'emailVerification.lead_id'),
+    emailNormalized: requireString(row.email_normalized, 'emailVerification.email_normalized'),
+    status: requireString(row.status, 'emailVerification.status') as PersistedEmailVerification['status'],
+    expiresAt: requireString(row.expires_at, 'emailVerification.expires_at'),
+    sentAt: optionalString(row.sent_at),
+    attemptCount: requireNumber(row.attempt_count, 'emailVerification.attempt_count'),
+    maxAttempts: requireNumber(row.max_attempts, 'emailVerification.max_attempts'),
+    consumedAt: optionalString(row.consumed_at),
+    invalidatedAt: optionalString(row.invalidated_at),
+    createdAt: requireString(row.created_at, 'emailVerification.created_at'),
+    updatedAt: requireString(row.updated_at, 'emailVerification.updated_at'),
+  };
+  if (options.includeHash) parsed.codeHash = requireString(row.code_hash, 'emailVerification.code_hash');
+  return parsed;
 }
 
 export function parseOutputRow(row: Record<string, unknown>): PersistedOutput {

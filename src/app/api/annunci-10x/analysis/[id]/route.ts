@@ -1,5 +1,6 @@
 import { after, NextResponse } from 'next/server';
 import {
+  getAnnunci10xResultEligibility,
   getAnnunci10xAnalysisRunStatus,
   runAnnunci10xAnalysisRun,
 } from '@/lib/annunci-10x';
@@ -26,7 +27,16 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
         await runAnnunci10xAnalysisRun({ analysisRunId: id, session: cookie, context });
       });
     }
-    return NextResponse.json({ ok: true, run: status }, { headers: { 'Cache-Control': 'no-store' } });
+    const eligibility = await getAnnunci10xResultEligibility({ session: cookie, analysisRunId: id, context });
+    return NextResponse.json({
+      ok: true,
+      run: {
+        ...status,
+        verificationRequired: true,
+        emailVerified: eligibility.emailVerified,
+        resultEligible: eligibility.resultEligible,
+      },
+    }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
     return toErrorResponse(error);
   }

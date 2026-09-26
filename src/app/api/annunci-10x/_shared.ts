@@ -105,13 +105,20 @@ export function toErrorResponse(error: unknown): NextResponse {
   const record = typeof error === 'object' && error !== null ? error as { code?: unknown; message?: unknown; status?: unknown } : {};
   const code = typeof record.code === 'string' ? record.code : 'INTERNAL';
   const status = code === 'RATE_LIMITED' ? 429
+    : code === 'VERIFICATION_INVALID' || code === 'VERIFICATION_EXPIRED' ? 400
     : code === 'PAYMENT_REQUIRED' || code === 'ENTITLEMENT_MISSING' ? 402
       : code === 'GENERATION_BLOCKED' || code === 'NEEDS_VERIFICATION' ? 409
-        : code === 'AI_PROVIDER_ERROR' ? 503
+        : code === 'AI_PROVIDER_ERROR' || code === 'EMAIL_PROVIDER_UNAVAILABLE' || code === 'EMAIL_VERIFICATION_UNAVAILABLE' ? 503
           : code === 'AI_INVALID_OUTPUT' ? 502
             : 500;
   const message = code === 'AI_PROVIDER_ERROR'
     ? 'Provider AI non disponibile per Annunci 10x.'
+    : code === 'EMAIL_PROVIDER_UNAVAILABLE' || code === 'EMAIL_VERIFICATION_UNAVAILABLE'
+      ? 'Verifica email non disponibile.'
+      : code === 'VERIFICATION_EXPIRED'
+        ? 'Codice scaduto.'
+        : code === 'VERIFICATION_INVALID'
+          ? 'Codice non valido.'
     : code === 'RATE_LIMITED'
       ? 'Provider AI temporaneamente limitato.'
       : code === 'PAYMENT_REQUIRED'
@@ -130,4 +137,8 @@ function clientIp(request: Request): string {
   return request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
     || request.headers.get('x-real-ip')?.trim()
     || 'anonymous';
+}
+
+export function clientFingerprint(request: Request): string {
+  return clientIp(request);
 }

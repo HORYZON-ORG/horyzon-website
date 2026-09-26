@@ -67,6 +67,8 @@ Important current files:
 - `src/lib/annunci-10x/gates.ts`
 
 FASE 2A adds a durable analysis foundation documented in `analysis-run-foundation-v2.md`: `AnalysisRun`, source ingestion for pasted text/public URLs, SSRF-aware URL retrieval, persistent start rate limiting, stage checkpointing, and customer-safe status APIs. It does not activate V2.3 publicly.
+
+FASE 2B adds the session-bound lead identity, MOCK-only email verification, and result eligibility foundation documented in `lead-verification-foundation-v2.md`. It does not redesign public UX, integrate a real email provider, implement checkout, integrate HighLevel/Rizzo Flow, or activate V2.3 publicly.
 - `src/lib/annunci-10x/strategy-rules.ts`
 - `src/lib/annunci-10x/create-flow.ts`
 - `src/lib/annunci-10x/commercial.ts`
@@ -103,6 +105,8 @@ The V2 docs identify future changes. They do not claim those changes are already
 - `data-contracts-v2.md`: conceptual data model and migration needs.
 - `commercial-v2.md`: decided commercial architecture without checkout implementation.
 - `migration-plan-v2.md`: safe migration plan from current V1 runtime.
+- `analysis-run-foundation-v2.md`: durable source ingestion and AnalysisRun lifecycle foundation.
+- `lead-verification-foundation-v2.md`: contact data, OTP verification, marketing consent separation, and result eligibility foundation.
 
 ## Safety rules
 

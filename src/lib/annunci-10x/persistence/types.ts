@@ -23,6 +23,8 @@ export type Annunci10xAnalysisSourceStatus = 'READY' | 'URL_FETCH_FAILED' | 'INV
 export type Annunci10xAnalysisRunStatus = 'QUEUED' | 'RUNNING' | 'READY' | 'FAILED';
 export type Annunci10xAnalysisRunStage = 'SOURCE_VALIDATION' | 'PRECHECK' | 'EXTRACT' | 'PROFILE' | 'STRATEGY' | 'EVALUATE' | 'CLARIFY' | 'COMPLETE';
 export type Annunci10xAnalysisEvaluationMode = 'V1' | 'V2_SHADOW';
+export type Annunci10xBusinessRole = 'OWNER_ENTREPRENEUR' | 'HR' | 'INTERNAL_RECRUITER' | 'CONSULTANT' | 'OTHER';
+export type Annunci10xEmailVerificationStatus = 'PENDING_SEND' | 'SENT' | 'CONSUMED' | 'INVALIDATED' | 'FAILED_SEND';
 
 export interface PersistedAnnunci10xSession extends Annunci10xSession {
   flow: Annunci10xPersistenceFlow;
@@ -242,6 +244,80 @@ export interface CheckRateLimitResult {
   resetAt: string;
 }
 
+export interface SaveLeadInput {
+  sessionId: string;
+  sessionSecret: string;
+  firstName: string;
+  lastName: string;
+  companyName: string;
+  businessRole: Annunci10xBusinessRole;
+  emailNormalized: string;
+  marketingConsent: boolean;
+  marketingConsentVersion: string;
+}
+
+export interface PersistedLead {
+  id: string;
+  sessionId: string;
+  firstName: string;
+  lastName: string;
+  companyName: string;
+  businessRole: Annunci10xBusinessRole;
+  emailNormalized: string;
+  emailVerifiedAt?: string | null;
+  marketingConsent: boolean;
+  marketingConsentAt?: string | null;
+  marketingConsentVersion?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateEmailVerificationInput {
+  id?: string;
+  sessionId: string;
+  sessionSecret: string;
+  leadId: string;
+  emailNormalized: string;
+  codeHash: string;
+  expiresAt: string;
+  maxAttempts: number;
+}
+
+export interface PersistedEmailVerification {
+  id: string;
+  sessionId: string;
+  leadId: string;
+  emailNormalized: string;
+  codeHash?: string;
+  status: Annunci10xEmailVerificationStatus;
+  expiresAt: string;
+  sentAt?: string | null;
+  attemptCount: number;
+  maxAttempts: number;
+  consumedAt?: string | null;
+  invalidatedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VerifyEmailCodeInput {
+  sessionId: string;
+  sessionSecret: string;
+  codeHash: string;
+}
+
+export interface VerifyEmailCodeResult {
+  outcome: 'VERIFIED' | 'VERIFICATION_INVALID' | 'VERIFICATION_EXPIRED' | 'MAX_ATTEMPTS_REACHED';
+  lead?: PersistedLead | null;
+  verification?: PersistedEmailVerification | null;
+}
+
+export interface ResultEligibility {
+  analysisReady: boolean;
+  emailVerified: boolean;
+  resultEligible: boolean;
+}
+
 export interface SaveOutputInput {
   sessionId: string;
   sessionSecret: string;
@@ -294,9 +370,17 @@ export interface Annunci10xPersistenceAdapter {
   getLatestEvaluation(sessionId: string, sessionSecret: string): Promise<PersistedEvaluation | null>;
   createOrGetAnalysisRun(input: CreateAnalysisRunInput): Promise<PersistedAnalysisRun>;
   getAnalysisRun(analysisRunId: string, sessionSecret: string): Promise<PersistedAnalysisRun | null>;
+  getLatestAnalysisRun(sessionId: string, sessionSecret: string): Promise<PersistedAnalysisRun | null>;
   claimAnalysisRun(analysisRunId: string, sessionSecret: string, leaseSeconds: number): Promise<PersistedAnalysisRun | null>;
   updateAnalysisRun(input: UpdateAnalysisRunInput): Promise<PersistedAnalysisRun>;
   checkRateLimit(input: CheckRateLimitInput): Promise<CheckRateLimitResult>;
+  saveLead(input: SaveLeadInput): Promise<PersistedLead>;
+  getLead(sessionId: string, sessionSecret: string): Promise<PersistedLead | null>;
+  createEmailVerification(input: CreateEmailVerificationInput): Promise<PersistedEmailVerification>;
+  getActiveEmailVerification(sessionId: string, sessionSecret: string): Promise<PersistedEmailVerification | null>;
+  markEmailVerificationSent(verificationId: string, sessionSecret: string): Promise<PersistedEmailVerification>;
+  markEmailVerificationFailed(verificationId: string, sessionSecret: string): Promise<PersistedEmailVerification>;
+  verifyEmailCode(input: VerifyEmailCodeInput): Promise<VerifyEmailCodeResult>;
   saveOutput(input: SaveOutputInput): Promise<PersistedOutput>;
   getLatestOutput(sessionId: string, sessionSecret: string, outputType?: Annunci10xOutputType, parentMasterId?: string | null): Promise<PersistedOutput | null>;
   appendEvent(input: AppendEventInput): Promise<PersistedEvent>;

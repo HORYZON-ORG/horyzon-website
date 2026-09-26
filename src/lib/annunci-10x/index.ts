@@ -6,6 +6,7 @@ export * from './constants.ts';
 export * from './create-flow.ts';
 export * from './fixtures.ts';
 export * from './gates.ts';
+export * from './lead-verification.ts';
 export * from './persistence/index.ts';
 export * from './premium/index.ts';
 export * from './presentation.ts';
