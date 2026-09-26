@@ -370,6 +370,7 @@ export interface Annunci10xPersistenceAdapter {
   failAiOperation(input: FailAiOperationInput): Promise<PersistedAiOperation>;
   saveEvaluation(input: SaveEvaluationInput): Promise<PersistedEvaluation>;
   getLatestEvaluation(sessionId: string, sessionSecret: string): Promise<PersistedEvaluation | null>;
+  getEvaluationById(evaluationId: string, sessionId: string, sessionSecret: string): Promise<PersistedEvaluation | null>;
   createOrGetAnalysisRun(input: CreateAnalysisRunInput): Promise<PersistedAnalysisRun>;
   getAnalysisRun(analysisRunId: string, sessionSecret: string): Promise<PersistedAnalysisRun | null>;
   getLatestAnalysisRun(sessionId: string, sessionSecret: string): Promise<PersistedAnalysisRun | null>;

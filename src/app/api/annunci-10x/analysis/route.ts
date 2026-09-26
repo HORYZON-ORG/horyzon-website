@@ -2,6 +2,7 @@ import { after, NextResponse } from 'next/server';
 import {
   runAnnunci10xAnalysisRun,
   startAnnunci10xAnalysisRun,
+  progressLabelForAnalysisStage,
   toPublicAnalysisRunStatus,
   type PublicationChannel,
 } from '@/lib/annunci-10x';
@@ -47,7 +48,10 @@ export async function POST(request: Request) {
       status: started.run.status,
       stage: started.run.stage,
       sourceStatus: started.run.sourceStatus,
-      run: toPublicAnalysisRunStatus(started.run),
+      run: {
+        ...toPublicAnalysisRunStatus(started.run),
+        progressLabel: progressLabelForAnalysisStage(started.run.stage),
+      },
     }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
     return toErrorResponse(error);

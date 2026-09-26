@@ -105,6 +105,9 @@ export function toErrorResponse(error: unknown): NextResponse {
   const record = typeof error === 'object' && error !== null ? error as { code?: unknown; message?: unknown; status?: unknown } : {};
   const code = typeof record.code === 'string' ? record.code : 'INTERNAL';
   const status = code === 'RATE_LIMITED' ? 429
+    : code === 'NOT_FOUND' ? 404
+    : code === 'EMAIL_VERIFICATION_REQUIRED' ? 403
+    : code === 'ANALYSIS_NOT_READY' || code === 'RESULT_NOT_AVAILABLE' ? 409
     : code === 'VERIFICATION_INVALID' || code === 'VERIFICATION_EXPIRED' ? 400
     : code === 'PAYMENT_REQUIRED' || code === 'ENTITLEMENT_MISSING' ? 402
       : code === 'GENERATION_BLOCKED' || code === 'NEEDS_VERIFICATION' ? 409
@@ -113,6 +116,12 @@ export function toErrorResponse(error: unknown): NextResponse {
             : 500;
   const message = code === 'AI_PROVIDER_ERROR'
     ? 'Provider AI non disponibile per Annunci 10x.'
+    : code === 'ANALYSIS_NOT_READY'
+      ? 'Il risultato non e ancora pronto.'
+      : code === 'EMAIL_VERIFICATION_REQUIRED'
+        ? 'Verifica la tua email per visualizzare il risultato.'
+        : code === 'RESULT_NOT_AVAILABLE'
+          ? 'Il risultato non e disponibile per questa analisi.'
     : code === 'EMAIL_PROVIDER_UNAVAILABLE' || code === 'EMAIL_VERIFICATION_UNAVAILABLE'
       ? 'Verifica email non disponibile.'
       : code === 'VERIFICATION_EXPIRED'

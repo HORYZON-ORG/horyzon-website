@@ -169,13 +169,22 @@ Email is not globally unique. A person may legitimately create multiple sessions
 
 ## Migration State
 
-FASE 2A migration: NOT APPLIED to production.
+FASE 2A migration: APPLIED TO PRODUCTION SUPABASE AND ROUND-TRIP VERIFIED.
 
-FASE 2B migration: NOT APPLIED to production.
+FASE 2B migration: APPLIED TO PRODUCTION SUPABASE AND ROUND-TRIP VERIFIED.
 
-FASE 2B.1 migration: NOT APPLIED to production.
+FASE 2B.1 migration: APPLIED TO PRODUCTION SUPABASE AND ROUND-TRIP VERIFIED.
 
-Because these migrations are pending, tests use memory/fake adapters only. Do not claim Supabase live writes until all pending migrations are applied and verified separately.
+FASE 2C cleanup migration: APPLIED TO PRODUCTION SUPABASE AND ROUND-TRIP VERIFIED.
+
+Canonical Supabase project:
+
+- project: horyzon
+- project ref: pmkyeqrfkunypfkbjnyg
+
+The old RPC overloads for `annunci10x_create_email_verification(...8 args)` and `annunci10x_verify_email_code(uuid,text,text)` were removed during FASE 2C. The canonical round-trip verified durable AnalysisRun, lead persistence, hardened email verification, and `resultEligible = true`. Synthetic test data was removed after verification.
+
+Real email delivery remains pending provider integration. Do not weaken the email gate to work around that operational blocker.
 
 ## Future Work
 

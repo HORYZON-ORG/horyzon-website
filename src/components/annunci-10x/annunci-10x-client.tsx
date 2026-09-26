@@ -1,11 +1,11 @@
 "use client";
 
 import type { FormEvent, ReactNode } from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { formatAnnunci10xScore, formatCheckScore, priorityHeading, publicationCopy } from '@/lib/annunci-10x/presentation.ts';
+import { useEffect, useRef, useState } from 'react';
+import { formatAnnunci10xScore } from '@/lib/annunci-10x/presentation.ts';
+import { Annunci10xAnalyzeFlow } from './annunci-10x-analyze-flow';
 import styles from './annunci-10x.module.css';
 
-type CheckStatus = 'PASS' | 'PARTIAL' | 'MISSING' | 'CONFLICT' | 'NOT_EVALUABLE';
 type Mode = 'ANALYZE' | 'CREATE';
 type CreateStepId = 'ROLE_CONTEXT' | 'PRIMARY_CONTRIBUTION' | 'WORK_REALITY' | 'REQUIREMENTS' | 'ATTRACTION' | 'OFFER' | 'CHANNEL_APPLICATION';
 type ProductCode = 'GUIDE' | 'AD_GENERATION' | 'GUIDE_PLUS_AD';
@@ -42,39 +42,17 @@ interface PublicOperation {
   idempotencyHit: boolean;
 }
 
-interface PublicResult {
-  sessionId: string;
-  evaluationId: string;
-  score: {
-    value: number | null;
-    interval?: { min: number; max: number };
-    coverage: number;
-    checks: { id: string; label: string; status: CheckStatus; score: number | null; maxScore: number; evidence: string[] }[];
-  };
-  gate: { status: string; blockingReasons: string[]; warnings: string[] };
-  roleSummary: {
-    title: string;
-    titleSource: 'OBSERVED' | 'DECLARED_CONTEXT' | 'UNKNOWN';
-    observedTitle: string | null;
-    declaredTitle: string | null;
-    roleMismatch: { status: 'MATCH' | 'POSSIBLE_MISMATCH' | 'UNKNOWN'; message: string | null; evidence: string[] };
-    companyName: string;
-    location: string;
-    workMode: string;
-    contractType: string;
-    missingFacts: string[];
-  };
-  strengths: string[];
-  priorities: string[];
-  clarification?: { id: string; targetPath: string; question: string; reason: string; blocking: boolean; canSkip: boolean } | null;
-  offers: {
-    checkoutEnabled: false;
-    pricingStatus: 'OPEN_DECISION';
-    availableOffers: CommercialOffer[];
-    entitlements: { guide: boolean; adGenerationCredits: number; source: string };
-  };
-  operations: PublicOperation[];
-  provider: 'MOCK' | 'OPENAI';
+interface PublicScore {
+  value: number | null;
+  interval?: { min: number; max: number };
+  coverage: number;
+  checks?: unknown[];
+}
+
+interface PublicGate {
+  status: string;
+  blockingReasons: string[];
+  warnings: string[];
 }
 
 interface CreateState {
@@ -115,19 +93,12 @@ interface CreateState {
   operations: PublicOperation[];
 }
 
-interface ResumePayload {
-  ok: boolean;
-  session: { id: string; entryMode: string } | null;
-  snapshot?: { id: string; version: number; roleTitle: string | null; createdAt: string } | null;
-  evaluation?: { id: string; score: PublicResult['score']; gate: PublicResult['gate']; createdAt: string } | null;
-}
-
 interface PremiumOutput {
   outputId: string;
   masterText: string;
   channelVariant: { channel: string; sections: { id: string; title: string; body: string }[] } | null;
-  score: PublicResult['score'];
-  gate: PublicResult['gate'];
+  score: PublicScore;
+  gate: PublicGate;
   validationState: string;
   claimCheck: { id: string; claim: string; status: string; publishable: boolean }[];
   comparison: { improvements: string[]; regressionsToReview: string[]; changes: { label: string; before?: string; after?: string }[] } | null;
@@ -197,30 +168,10 @@ const defaultUnknowns: Record<UnknownKey, boolean> = {
   channel: false,
 };
 
-const sampleAd = `Cerchiamo un addetto customer care per la sede di Bari.
-La persona gestira richieste clienti, ticket e aggiornamento CRM.
-Contratto part-time, presenza in sede, affiancamento iniziale.
-Requisiti: italiano scritto chiaro, precisione, disponibilita al lavoro su turni.
-Candidatura via email con CV aggiornato.`;
-
 const createStepOrder: CreateStepId[] = ['ROLE_CONTEXT', 'PRIMARY_CONTRIBUTION', 'WORK_REALITY', 'REQUIREMENTS', 'ATTRACTION', 'OFFER', 'CHANNEL_APPLICATION'];
-
-const statusLabels: Record<CheckStatus, string> = {
-  PASS: 'Ok',
-  PARTIAL: 'In parte',
-  MISSING: 'Manca',
-  CONFLICT: 'Contraddizione',
-  NOT_EVALUABLE: 'N/D',
-};
 
 export function Annunci10xClient() {
   const [mode, setMode] = useState<Mode>('ANALYZE');
-  const [rawAdText, setRawAdText] = useState('');
-  const [roleHint, setRoleHint] = useState('');
-  const [companyHint, setCompanyHint] = useState('');
-  const [channelHint, setChannelHint] = useState<AnalyzeChannel>('');
-  const [result, setResult] = useState<PublicResult | null>(null);
-  const [resume, setResume] = useState<ResumePayload | null>(null);
   const [, setCommercial] = useState<CommercialState | null>(null);
   const [premiumOutput, setPremiumOutput] = useState<PremiumOutput | null>(null);
   const [createState, setCreateState] = useState<CreateState | null>(null);
@@ -231,18 +182,10 @@ export function Annunci10xClient() {
   const [editValue, setEditValue] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
-  const [activeStage, setActiveStage] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const workspaceRef = useRef<HTMLElement | null>(null);
-  const resultRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    fetch('/api/annunci-10x/session/resume', { cache: 'no-store' })
-      .then((response) => response.json())
-      .then((payload: ResumePayload) => {
-        if (payload.ok) setResume(payload);
-      })
-      .catch(() => undefined);
     fetch('/api/annunci-10x/create/state', { cache: 'no-store' })
       .then((response) => response.json())
       .then((payload: { ok: boolean; result: CreateState | null }) => {
@@ -263,85 +206,12 @@ export function Annunci10xClient() {
       .catch(() => undefined);
   }, []);
 
-  useEffect(() => {
-    if (!result || !resultRef.current) return;
-    resultRef.current.focus({ preventScroll: true });
-    scrollToElement(resultRef.current);
-  }, [result]);
-
-  const scoreLabel = useMemo(() => result ? formatAnnunci10xScore(result.score) : 'N/D', [result]);
-
   function selectMode(nextMode: Mode) {
     setMode(nextMode);
     setError(null);
     window.setTimeout(() => {
       if (workspaceRef.current) scrollToElement(workspaceRef.current);
     }, 0);
-  }
-
-  async function loadPremiumOutput() {
-    try {
-      const response = await fetch('/api/annunci-10x/premium/output', { cache: 'no-store' });
-      const payload = await response.json();
-      if (payload.ok) setPremiumOutput(payload.result ?? null);
-    } catch {
-      setPremiumOutput(null);
-    }
-  }
-
-  async function submitAnalyze(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-    setResult(null);
-    setRunning(true);
-    setActiveStage('PRECHECK');
-    try {
-      for (const stage of ['PRECHECK', 'EXTRACT', 'PROFILE', 'STRATEGY', 'EVALUATE']) {
-        setActiveStage(stage);
-        await pause(90);
-      }
-      const response = await fetch('/api/annunci-10x/analyze', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ rawAdText, roleHint, companyHint, channelHint: channelHint || undefined }),
-      });
-      const payload = await response.json();
-      if (!response.ok || !payload.ok) throw new Error(payload.error?.message ?? 'Analisi non riuscita.');
-      setActiveStage('CLARIFY');
-      setResult(payload.result);
-      loadPremiumOutput();
-      setResume(null);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Analisi non riuscita.');
-      setActiveStage(null);
-    } finally {
-      setRunning(false);
-    }
-  }
-
-  async function answerClarification(skip = false) {
-    if (!result?.clarification) return;
-    setError(null);
-    setRunning(true);
-    try {
-      const response = await fetch('/api/annunci-10x/clarify', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          clarificationId: result.clarification.id,
-          targetPath: result.clarification.targetPath,
-          answer: skip ? 'Non lo so' : clarificationAnswer,
-        }),
-      });
-      const payload = await response.json();
-      if (!response.ok || !payload.ok) throw new Error(payload.error?.message ?? 'Risposta non salvata.');
-      setResult(payload.result);
-      setClarificationAnswer('');
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Risposta non salvata.');
-    } finally {
-      setRunning(false);
-    }
   }
 
   async function startCreate(): Promise<CreateState | null> {
@@ -353,7 +223,6 @@ export function Annunci10xClient() {
       const payload = await response.json();
       if (!response.ok || !payload.ok) throw new Error(payload.error?.message ?? 'Avvio non riuscito.');
       setCreateState(payload.result);
-      setResult(null);
       return payload.result;
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Avvio non riuscito.');
@@ -511,23 +380,8 @@ export function Annunci10xClient() {
           </button>
         </div>
 
-        {resume?.session && mode === 'ANALYZE' && <ResumeNotice resume={resume} onContinue={() => selectMode('ANALYZE')} />}
-
         {mode === 'ANALYZE'
-          ? <AnalyzeForm
-              rawAdText={rawAdText}
-              roleHint={roleHint}
-              companyHint={companyHint}
-              channelHint={channelHint}
-              running={running}
-              activeStage={activeStage}
-              error={error}
-              onSubmit={submitAnalyze}
-              onRawAdText={setRawAdText}
-              onRoleHint={setRoleHint}
-              onCompanyHint={setCompanyHint}
-              onChannelHint={setChannelHint}
-            />
+          ? <Annunci10xAnalyzeFlow />
           : <CreateFlow
               state={createState}
               draft={createDraft}
@@ -551,66 +405,12 @@ export function Annunci10xClient() {
       </div>
     </section>
 
-    {result && <div ref={resultRef} tabIndex={-1}>
-      <AnalysisResult result={result} scoreLabel={scoreLabel} running={running} clarificationAnswer={clarificationAnswer} onClarificationAnswer={setClarificationAnswer} onAnswerClarification={answerClarification} />
-    </div>}
-
     {premiumOutput && <PremiumOutputPanel output={premiumOutput} copied={copied} onCopy={copyText} />}
 
     <BeforeAfter />
     <MethodStatement />
     <FaqSection />
   </div>;
-}
-
-function AnalyzeForm(props: {
-  rawAdText: string;
-  roleHint: string;
-  companyHint: string;
-  channelHint: AnalyzeChannel;
-  running: boolean;
-  activeStage: string | null;
-  error: string | null;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  onRawAdText: (value: string) => void;
-  onRoleHint: (value: string) => void;
-  onCompanyHint: (value: string) => void;
-  onChannelHint: (value: AnalyzeChannel) => void;
-}) {
-  return <form className={styles.form} onSubmit={props.onSubmit} aria-labelledby="analyze-title">
-    <div className={styles.formHead}><p>Valutalo</p><h2 id="analyze-title">Incolla un annuncio da verificare.</h2></div>
-    <Field label="Il tuo annuncio" htmlFor="annunci10x-ad" required>
-      <textarea id="annunci10x-ad" required value={props.rawAdText} onChange={(event) => props.onRawAdText(event.target.value)} placeholder={sampleAd} rows={12} disabled={props.running} aria-describedby="annunci10x-ad-help" />
-      <small id="annunci10x-ad-help">Il testo incollato viene trattato come dato utente, non come istruzione.</small>
-    </Field>
-    <div className={styles.fieldGrid}>
-      <Field label="Ruolo" htmlFor="annunci10x-role" optional>
-        <input id="annunci10x-role" value={props.roleHint} onChange={(event) => props.onRoleHint(event.target.value)} disabled={props.running} placeholder="Es. Customer care specialist" />
-        <small>Aiuta a interpretare correttamente l&apos;annuncio. Non aumenta il punteggio da solo.</small>
-      </Field>
-      <Field label="Azienda" htmlFor="annunci10x-company" optional>
-        <input id="annunci10x-company" value={props.companyHint} onChange={(event) => props.onCompanyHint(event.target.value)} disabled={props.running} placeholder="Nome o contesto aziendale" />
-        <small>Serve come contesto per l&apos;analisi. Il nome dell&apos;azienda non aumenta il punteggio.</small>
-      </Field>
-      <Field label="Canale" htmlFor="annunci10x-channel" optional>
-        <select id="annunci10x-channel" value={props.channelHint} onChange={(event) => props.onChannelHint(event.target.value as AnalyzeChannel)} disabled={props.running}>
-          <option value="">Da definire</option>
-          <option value="LINKEDIN">LinkedIn</option>
-          <option value="INDEED">Indeed</option>
-          <option value="ATS">ATS aziendale</option>
-          <option value="EMAIL">Email</option>
-          <option value="CUSTOM">Altro</option>
-        </select>
-        <small>Se non lo sai, resta N/D. Non viene inventato.</small>
-      </Field>
-    </div>
-    <div className={styles.actions}>
-      <button type="submit" disabled={props.running}>{props.running ? 'Analisi in corso' : 'Valuta gratis'}</button>
-      <button type="button" disabled={props.running} onClick={() => props.onRawAdText(sampleAd)}>Usa esempio</button>
-    </div>
-    {props.running && <Progress activeStage={props.activeStage} />}
-    {props.error && <p className={styles.error} role="alert">{props.error}</p>}
-  </form>;
 }
 
 function CreateFlow(props: {
@@ -750,44 +550,6 @@ function CreateSummary(props: {
   </section>;
 }
 
-function AnalysisResult(props: {
-  result: PublicResult;
-  scoreLabel: string;
-  running: boolean;
-  clarificationAnswer: string;
-  onClarificationAnswer: (value: string) => void;
-  onAnswerClarification: (skip?: boolean) => void;
-}) {
-  const publication = publicationCopy(props.result.gate.status);
-  const prioritiesTitle = priorityHeading(props.result.priorities.length);
-  const showRoleMismatch = props.result.roleSummary.roleMismatch.status === 'POSSIBLE_MISMATCH' && props.result.roleSummary.roleMismatch.message;
-  return <section className={styles.result} aria-labelledby="annunci10x-result-title">
-    {props.result.provider === 'MOCK' && <div className={styles.testNotice} role="status"><strong>Modalita test - valutazione dimostrativa</strong><span>Il risultato usa una configurazione di test per sviluppo e verifica. Non e una validazione live del servizio finale.</span></div>}
-    <div className={styles.resultHead}>
-      <div><p>Ruolo osservato</p><h2 id="annunci10x-result-title">{props.result.roleSummary.title}</h2><small>{props.result.roleSummary.titleSource === 'OBSERVED' ? "Trovato nell'annuncio" : props.result.roleSummary.titleSource === 'DECLARED_CONTEXT' ? 'Dichiarato come contesto' : 'Da chiarire'}</small></div>
-      <div className={styles.scoreBox}><span>Score Annunci 10x</span><strong>{props.scoreLabel}</strong><small>Forza del testo, separata dal gate.</small></div>
-      <div className={styles.scoreBox}><span>Copertura analisi</span><strong>{props.result.score.coverage}%</strong><small>Quanto e valutabile sui 20 controlli.</small></div>
-      <div className={styles.gateBox}><span>Stato pubblicazione</span><strong>{publication.label}</strong><small>{publication.description}</small></div>
-    </div>
-    {showRoleMismatch && <div className={styles.warningPanel} role="status" aria-live="polite"><p>Possibile incoerenza sul ruolo</p><strong>{props.result.roleSummary.roleMismatch.message}</strong></div>}
-    <div className={styles.metricGrid}>
-      <Metric label="Ruolo dichiarato" value={props.result.roleSummary.declaredTitle ?? 'N/D'} />
-      <Metric label="Azienda" value={props.result.roleSummary.companyName} />
-      <Metric label="Sede" value={props.result.roleSummary.location} />
-      <Metric label="Modalita" value={props.result.roleSummary.workMode} />
-      <Metric label="Contratto" value={props.result.roleSummary.contractType} />
-    </div>
-    {props.result.score.coverage < 100 && <p className={styles.coverageNote}>N/D significa che il controllo non e valutabile con le informazioni disponibili. Non equivale a zero.</p>}
-    <div className={styles.columns}>
-      <Panel title="Punti forti" items={props.result.strengths} empty="Nessun punto forte solido ancora." />
-      <Panel title={props.result.priorities.length > 0 ? prioritiesTitle : 'Priorita'} items={props.result.priorities} empty="Nessuna priorita rilevata." />
-    </div>
-    {props.result.clarification && <div className={styles.clarification}><p>Chiarimento utile</p><h3>{props.result.clarification.question}</h3><small>{props.result.clarification.reason}</small><Field label="Risposta" htmlFor="annunci10x-clarification"><textarea id="annunci10x-clarification" rows={3} value={props.clarificationAnswer} onChange={(event) => props.onClarificationAnswer(event.target.value)} disabled={props.running} /></Field><div className={styles.actions}><button type="button" onClick={() => props.onAnswerClarification(false)} disabled={props.running}>Aggiorna analisi</button><button type="button" onClick={() => props.onAnswerClarification(true)} disabled={props.running}>Non lo so</button></div></div>}
-    <section className={styles.checkSection} aria-labelledby="annunci10x-checks-title"><div className={styles.sectionHeading}><p>20 controlli</p><h3 id="annunci10x-checks-title">Dove l&apos;annuncio regge e dove si ferma.</h3></div><div className={styles.checks}>{props.result.score.checks.map((check) => <article key={check.id}><span>{check.id}</span><strong>{check.label}</strong><em data-status={check.status}>{statusLabels[check.status]}</em><small>{formatCheckScore(check.score, check.maxScore)}</small></article>)}</div></section>
-    <section className={styles.improveCta}><p>Vuoi trasformare queste priorita in un Annuncio 10x?</p><h3>Migliora il mio annuncio</h3><OfferCards offers={props.result.offers.availableOffers} empty="La generazione non e disponibile in questo stato." /></section>
-  </section>;
-}
-
 function PremiumOutputPanel(props: { output: PremiumOutput; copied: string | null; onCopy: (label: string, value: string) => void }) {
   const score = formatAnnunci10xScore(props.output.score);
   const channelText = props.output.channelVariant ? props.output.channelVariant.sections.map((section) => `${section.title}\n${section.body}`).join('\n\n') : '';
@@ -798,10 +560,6 @@ function OfferCards({ offers, empty }: { offers: CommercialOffer[]; empty: strin
   const visibleOffers = offers.filter((offer) => offer.productCode === 'AD_GENERATION');
   if (!visibleOffers.length) return <div className={styles.offerPanel}><h3>{empty}</h3><p>La disponibilita viene calcolata lato server in base allo stato del percorso.</p><button type="button" disabled>Non attivo</button></div>;
   return <div className={styles.offerList} aria-label="Prossimo passo">{visibleOffers.map((offer) => <article key={offer.id} className={styles.offerPanel}><h3>{offer.displayName}</h3><p>{offer.description}</p><button type="button" disabled>{offer.purchaseEnabled ? 'Continua' : 'Acquisto non attivo'}</button></article>)}</div>;
-}
-
-function ResumeNotice({ resume, onContinue }: { resume: ResumePayload; onContinue: () => void }) {
-  return <aside className={styles.resume} aria-label="Lavoro in corso"><div><strong>Hai un lavoro in corso.</strong><p>{resume.snapshot ? `Ultima scheda: ${resume.snapshot.roleTitle ?? 'ruolo da chiarire'}` : 'Sessione iniziata, nessuna analisi salvata.'}</p></div>{resume.evaluation && <span>{formatAnnunci10xScore(resume.evaluation.score)}</span>}<button type="button" onClick={onContinue}>Continua</button></aside>;
 }
 
 function BeforeAfter() {
@@ -826,15 +584,6 @@ function FormSection(props: { number: string; title: string; children: ReactNode
 
 function UnknownToggle(props: { checked: boolean; onChange: () => void }) {
   return <label className={styles.unknownToggle}><input type="checkbox" checked={props.checked} onChange={props.onChange} /><span>Non lo so / da definire</span></label>;
-}
-
-function Progress({ activeStage }: { activeStage: string | null }) {
-  const stages = ['PRECHECK', 'EXTRACT', 'PROFILE', 'STRATEGY', 'EVALUATE', 'CLARIFY'];
-  return <div className={styles.progress} aria-live="polite" aria-label="Stato analisi">{stages.map((stage) => <span key={stage} data-active={stage === activeStage}>{stage}</span>)}</div>;
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return <article className={styles.metric}><span>{label}</span><strong>{displayValue(value)}</strong></article>;
 }
 
 function Panel({ title, items, empty }: { title: string; items: string[]; empty: string }) {
@@ -875,8 +624,4 @@ function cleanDraft(value: string) {
 
 function scrollToElement(element: HTMLElement) {
   element.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-}
-
-function pause(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }

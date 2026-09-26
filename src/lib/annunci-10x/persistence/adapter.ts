@@ -230,6 +230,17 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
     return rows[0] ? parseEvaluationRow(rows[0]) : null;
   }
 
+  async getEvaluationById(evaluationId: string, sessionId: string, sessionSecret: string): Promise<PersistedEvaluation | null> {
+    await this.requireOwnership(sessionId, sessionSecret);
+    const rows = await this.select('annunci10x_evaluations', {
+      id: `eq.${evaluationId}`,
+      session_id: `eq.${sessionId}`,
+      select: '*',
+      limit: '1',
+    });
+    return rows[0] ? parseEvaluationRow(rows[0]) : null;
+  }
+
   async createOrGetAnalysisRun(input: CreateAnalysisRunInput): Promise<PersistedAnalysisRun> {
     const row = await this.rpc<DbRow>('annunci10x_create_or_get_analysis_run', {
       p_session_id: input.sessionId,
@@ -681,6 +692,12 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
     const row = this.evaluations
       .filter((item) => item.session_id === sessionId)
       .sort((left, right) => String(right.created_at).localeCompare(String(left.created_at)))[0];
+    return row ? parseEvaluationRow(row) : null;
+  }
+
+  async getEvaluationById(evaluationId: string, sessionId: string, sessionSecret: string): Promise<PersistedEvaluation | null> {
+    this.requireMemoryOwnership(sessionId, sessionSecret);
+    const row = this.evaluations.find((item) => item.id === evaluationId && item.session_id === sessionId);
     return row ? parseEvaluationRow(row) : null;
   }
 

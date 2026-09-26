@@ -5,6 +5,7 @@ export * from './commercial.ts';
 export * from './constants.ts';
 export * from './create-flow.ts';
 export * from './fixtures.ts';
+export * from './free-result.ts';
 export * from './gates.ts';
 export * from './lead-verification.ts';
 export * from './persistence/index.ts';

@@ -2,6 +2,7 @@ import { after, NextResponse } from 'next/server';
 import {
   getAnnunci10xResultEligibility,
   getAnnunci10xAnalysisRunStatus,
+  progressLabelForAnalysisStage,
   runAnnunci10xAnalysisRun,
 } from '@/lib/annunci-10x';
 import { createContext, getSessionCookie, toErrorResponse } from '../../_shared';
@@ -32,6 +33,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       ok: true,
       run: {
         ...status,
+        progressLabel: progressLabelForAnalysisStage(status.stage),
         verificationRequired: true,
         emailVerified: eligibility.emailVerified,
         resultEligible: eligibility.resultEligible,

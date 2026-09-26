@@ -303,6 +303,28 @@
   margin-top: .5rem;
 }
 
+.sourceToggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .6rem;
+}
+
+.sourceToggle button {
+  min-height: 46px;
+  border: 1px solid #aeb8b1;
+  background: #fbfaf5;
+  color: var(--ink);
+  font: 900 .78rem/1 var(--font-sans);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  cursor: pointer;
+}
+
+.sourceToggle button[data-active="true"] {
+  background: var(--acid);
+  border-color: #7e9b32;
+}
+
 .form,
 .result,
 .resume,
@@ -663,6 +685,27 @@
   padding-top: 1rem;
 }
 
+.inlineVerify {
+  display: grid;
+  grid-template-columns: minmax(160px, 260px) auto;
+  gap: .8rem;
+  align-items: end;
+}
+
+.inlineVerify button,
+.warningPanel button {
+  min-height: 46px;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  background: transparent;
+  color: inherit;
+  padding: 0 1rem;
+  font: 900 .78rem/1 var(--font-sans);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  cursor: pointer;
+}
+
 .beforeAfter header {
   display: grid;
   gap: .6rem;
@@ -732,6 +775,11 @@
   .columns,
   .comparison,
   .inlineEdit {
+    grid-template-columns: 1fr;
+  }
+
+  .sourceToggle,
+  .inlineVerify {
     grid-template-columns: 1fr;
   }
 
