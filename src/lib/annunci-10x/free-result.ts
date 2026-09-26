@@ -5,10 +5,10 @@ import { Annunci10xPublicError, createAnnunci10xRuntimeContext } from './product
 import { getAnnunci10xResultEligibility } from './lead-verification.ts';
 import type {
   Annunci10xAnalysisRunStage,
+  Annunci10xPersistedScoreResult,
   PersistedAnalysisRun,
   PersistedEvaluation,
 } from './persistence/types.ts';
-import type { ScoreResult } from './types.ts';
 
 export type FreeResultVersion = 'V1_COMPAT' | 'V2';
 
@@ -61,7 +61,7 @@ export function buildFreeAnnunci10xResult(input: {
 }): FreeAnnunci10xResult {
   const score = input.evaluation.score;
   const resultVersion = resultVersionForScore(score);
-  const range = score.interval ? { min: score.interval.min, max: score.interval.max } : undefined;
+  const range = 'interval' in score && score.interval ? { min: score.interval.min, max: score.interval.max } : undefined;
   const v2Band = resultVersion === 'V2' ? getScoreBandV2(score.value) : null;
   const band = v2Band ? { code: v2Band.code, label: v2Band.label } : null;
 
@@ -90,13 +90,13 @@ export function progressLabelForAnalysisStage(stage: Annunci10xAnalysisRunStage)
   return 'Il risultato e pronto';
 }
 
-function resultVersionForScore(score: ScoreResult): FreeResultVersion {
+function resultVersionForScore(score: Annunci10xPersistedScoreResult): FreeResultVersion {
   return score.rubricVersion === ANNUNCI10X_RUBRIC_VERSION_V2 ? 'V2' : 'V1_COMPAT';
 }
 
 function interpretationForResult(
   resultVersion: FreeResultVersion,
-  score: ScoreResult,
+  score: Annunci10xPersistedScoreResult,
   band: FreeAnnunci10xResult['band'],
 ): string {
   if (resultVersion === 'V2') {
@@ -107,7 +107,7 @@ function interpretationForResult(
     if (band.code === 'STRONG') return "L'annuncio e chiaro, coerente e orientato alla decisione del candidato.";
     return "L'annuncio e molto completo e coerente rispetto ai criteri Annunci 10x.";
   }
-  if (score.interval) return 'Risultato calcolato con semantica V1: il range viene preservato senza applicare fasce V2.';
+  if ('interval' in score && score.interval) return 'Risultato calcolato con semantica V1: il range viene preservato senza applicare fasce V2.';
   if (typeof score.value === 'number') return 'Risultato calcolato con semantica V1. La valutazione completa resta protetta dal gate email.';
   return 'Risultato V1 non esprimibile con un punteggio singolo.';
 }

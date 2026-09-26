@@ -5,12 +5,15 @@ import {
   ANNUNCI10X_PROMPT_REGISTRY,
   ANNUNCI10X_RUBRIC_CHECKS_V2,
   Annunci10xAiError,
+  MemoryAnnunci10xPersistenceAdapter,
   OpenAiAnnunci10xProvider,
   calculateAnnunci10xScoreV2,
+  createAnonymousAnalyzeSession,
   getEvaluatePromptV2CharacterCount,
   projectEvaluateInputV2,
   renderEvaluatePromptV2,
   runAnnunci10xEvaluateV2,
+  runPersistedAnnunci10xEvaluateV2,
   validateEvaluateOutputV2,
 } from '../src/lib/annunci-10x/index.ts';
 import { EVALUATE_PROMPT } from '../src/lib/annunci-10x/ai/prompts/evaluate.ts';
@@ -157,6 +160,63 @@ await assert.rejects(
 );
 assert.equal(invalidProvider.calls.length, 2);
 
+const persisted = await makePersistedSession();
+const persistedProvider = new FakeProvider(makeOutput(8));
+const persistedFirst = await runPersistedAnnunci10xEvaluateV2({
+  sessionId: persisted.session.sessionId,
+  sessionSecret: persisted.session.sessionSecret,
+  persistence: persisted.persistence,
+  provider: persistedProvider,
+  input: makeInput(),
+  inputSnapshotId: '00000000-0000-0000-0000-000000000001',
+  idempotencyInputIdentity: 'snapshot-1',
+  model: 'fake-model',
+});
+const persistedSecond = await runPersistedAnnunci10xEvaluateV2({
+  sessionId: persisted.session.sessionId,
+  sessionSecret: persisted.session.sessionSecret,
+  persistence: persisted.persistence,
+  provider: persistedProvider,
+  input: makeInput(),
+  inputSnapshotId: '00000000-0000-0000-0000-000000000001',
+  idempotencyInputIdentity: 'snapshot-1',
+  model: 'fake-model',
+});
+assert.equal(persistedFirst.idempotencyHit, false);
+assert.equal(persistedSecond.idempotencyHit, true);
+assert.equal(persistedFirst.operation.id, persistedSecond.operation.id);
+assert.equal(persistedProvider.calls.length, 1, 'same session/snapshot/prompt/model reuses V2 operation');
+assert.equal(persistedFirst.operation.promptVersion, ANNUNCI10X_EVALUATE_PROMPT_VERSION_V2);
+
+const repairedPersisted = await makePersistedSession();
+const repairedPersistedProvider = new FakeProvider([{ checks: [] }, makeOutput(7)]);
+const repairedPersistedResult = await runPersistedAnnunci10xEvaluateV2({
+  sessionId: repairedPersisted.session.sessionId,
+  sessionSecret: repairedPersisted.session.sessionSecret,
+  persistence: repairedPersisted.persistence,
+  provider: repairedPersistedProvider,
+  input: makeInput(),
+  model: 'fake-model',
+});
+assert.equal(repairedPersistedResult.retryCount, 1);
+assert.equal(repairedPersistedResult.operation.status, 'SUCCEEDED');
+assert.equal(repairedPersistedProvider.calls.length, 2);
+
+const failedPersisted = await makePersistedSession();
+const failedPersistedProvider = new FakeProvider([{ checks: [] }, { checks: [] }]);
+await assert.rejects(
+  () => runPersistedAnnunci10xEvaluateV2({
+    sessionId: failedPersisted.session.sessionId,
+    sessionSecret: failedPersisted.session.sessionSecret,
+    persistence: failedPersisted.persistence,
+    provider: failedPersistedProvider,
+    input: makeInput(),
+    model: 'fake-model',
+  }),
+  (error) => error instanceof Annunci10xAiError && error.code === 'AI_INVALID_OUTPUT',
+);
+assert.equal(failedPersistedProvider.calls.length, 2, 'V2 failure does not fall back to V1');
+
 const highConfidence = await runAnnunci10xEvaluateV2({ input: makeInput(), provider: new FakeProvider(makeOutput(6, { '01': { confidence: 100 } })), model: 'fake-model' });
 const lowConfidence = await runAnnunci10xEvaluateV2({ input: makeInput(), provider: new FakeProvider(makeOutput(6, { '01': { confidence: 0 } })), model: 'fake-model' });
 assert.equal(highConfidence.score.value, lowConfidence.score.value, 'confidence must not affect final score');
@@ -261,3 +321,17 @@ assert.equal(ANNUNCI10X_PROMPT_REGISTRY.EVALUATE.version, 'annunci10x.evaluate.v
 assert.notEqual(ANNUNCI10X_PROMPT_REGISTRY.EVALUATE.version, ANNUNCI10X_EVALUATE_PROMPT_VERSION_V2);
 
 console.log('Annunci 10x AI V2 verifier passed');
+
+async function makePersistedSession() {
+  const persistence = new MemoryAnnunci10xPersistenceAdapter();
+  const provider = new FakeProvider(makeOutput(8));
+  const created = await createAnonymousAnalyzeSession({
+    persistence,
+    provider,
+    configuredProvider: 'MOCK',
+  });
+  return {
+    persistence,
+    session: { sessionId: created.session.id, sessionSecret: created.sessionSecret },
+  };
+}

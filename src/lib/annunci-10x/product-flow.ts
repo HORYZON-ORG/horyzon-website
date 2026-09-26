@@ -7,8 +7,10 @@ import {
   ANNUNCI10X_METHOD_VERSION,
 } from './constants.ts';
 import { ANNUNCI10X_RUBRIC } from './rubric.ts';
+import { ANNUNCI10X_RUBRIC_CHECKS_V2 } from './rubric-v2.ts';
 import { criticalMissingData, evaluatePublicationGate, materialConflict } from './gates.ts';
 import { calculateScoreAndGateFromEvaluateOutput } from './ai/orchestrator.ts';
+import { runPersistedAnnunci10xEvaluateV2, type Annunci10xEvaluateInputV2 } from './ai/evaluate-v2.ts';
 import { Annunci10xAiError } from './ai/errors.ts';
 import { MockAnnunci10xProvider } from './ai/mock-provider.ts';
 import { OpenAiAnnunci10xProvider } from './ai/openai-provider.ts';
@@ -17,10 +19,11 @@ import { resolveAnnunci10xCommercial, type Annunci10xCommercialOffer } from './c
 import { buildRoleContextPresentation, deriveResultPriorities, deriveResultStrengths, type RoleContextMismatch } from './presentation.ts';
 import type { Annunci10xEvaluateOutput, Annunci10xExtractOutput, Annunci10xProfileOutput } from './ai/schemas.ts';
 import { createFact } from './validation.ts';
-import type { Annunci10xPersistenceAdapter, PersistedAnnunci10xSession, PersistedEvaluation, PersistedSnapshot } from './persistence/types.ts';
+import type { Annunci10xAnalysisEvaluationMode, Annunci10xPersistenceAdapter, PersistedAnnunci10xSession, PersistedEvaluation, PersistedSnapshot } from './persistence/types.ts';
 import { createAnnunci10xPersistenceAdapter } from './persistence/adapter.ts';
 import type { Annunci10xAiProvider } from './ai/provider.ts';
 import type { CommercialContext, CommunicationStrategy, EvaluationCheck, PublicationChannel, PublicationGate, RoleCard, RoleProfile, ScoreResult } from './types.ts';
+import type { EvaluationCheckV2, ScoreResultV2 } from './types-v2.ts';
 
 export const ANNUNCI10X_COOKIE_NAME = 'horyzon_annunci10x_session';
 export const ANNUNCI10X_MAX_AD_CHARS = 12_000;
@@ -58,8 +61,8 @@ export interface PublicAnnunci10xAnalysisResult {
   sessionId: string;
   snapshotId: string;
   evaluationId: string;
-  score: ScoreResult & { minScore?: number; maxScore?: number; finalScore?: number | null };
-  gate: PublicationGate;
+  score: PublicAnalysisScore;
+  gate: PublicationGate | null;
   coverage: number;
   roleSummary: {
     title: string;
@@ -75,7 +78,7 @@ export interface PublicAnnunci10xAnalysisResult {
   };
   strengths: string[];
   priorities: string[];
-  checks: EvaluationCheck[];
+  checks: PublicAnalysisCheck[];
   clarification?: {
     id: string;
     targetPath: string;
@@ -112,7 +115,11 @@ export interface RunFreeAnalysisInput {
   channelHint?: PublicationChannel;
   context?: Annunci10xRuntimeContext;
   stageObserver?: (stage: 'PRECHECK' | 'EXTRACT' | 'PROFILE' | 'STRATEGY' | 'EVALUATE' | 'CLARIFY', event: Record<string, unknown>) => Promise<void>;
+  evaluationMode?: Extract<Annunci10xAnalysisEvaluationMode, 'V1' | 'V2_PUBLIC'>;
 }
+
+type PublicAnalysisScore = (ScoreResult | ScoreResultV2) & { minScore?: number; maxScore?: number; finalScore?: number | null };
+type PublicAnalysisCheck = EvaluationCheck | EvaluationCheckV2;
 
 export interface AnswerClarificationInput {
   sessionId: string;
@@ -235,6 +242,55 @@ export async function runFreeAnnunci10xAnalysis(input: RunFreeAnalysisInput): Pr
     communicationStrategy,
     reason: 'INITIAL_EXTRACTION',
   });
+
+  if (input.evaluationMode === 'V2_PUBLIC') {
+    const evaluate = await runPersistedAnnunci10xEvaluateV2({
+      sessionId: input.sessionId,
+      sessionSecret: input.sessionSecret,
+      provider: context.provider,
+      persistence: context.persistence,
+      inputSnapshotId: snapshot.id,
+      idempotencyInputIdentity: snapshot.id,
+      input: buildEvaluateInputV2({
+        rawAdText: input.rawAdText,
+        channelHint: input.channelHint,
+        roleCard,
+        roleProfile,
+        communicationStrategy,
+      }),
+    });
+    operations.push(toPublicOperation(evaluate, 'EVALUATE', context.configuredProvider));
+    await input.stageObserver?.('EVALUATE', { operationId: evaluate.operation.id, resultVersion: 'V2', evaluationMode: 'V2_PUBLIC' });
+
+    const evaluation = await context.persistence.saveEvaluation({
+      sessionId: input.sessionId,
+      sessionSecret: input.sessionSecret,
+      target: { kind: 'ORIGINAL_AD', originalAdId: originalAd.id },
+      targetRef: originalAd.id,
+      score: evaluate.score,
+      gate: null,
+    });
+
+    await context.persistence.appendEvent({
+      sessionId: input.sessionId,
+      eventName: 'analysis_completed',
+      metadata: { coverage: evaluate.score.coverage, resultVersion: 'V2', evaluationMode: 'V2_PUBLIC' },
+    });
+
+    return await publicResult({
+      sessionId: input.sessionId,
+      snapshot,
+      evaluation,
+      score: evaluate.score,
+      gate: null,
+      roleCard,
+      declaredRole: input.roleHint,
+      clarification: null,
+      operations,
+      provider: context.configuredProvider,
+      stages: ['PRECHECK', 'EXTRACT', 'PROFILE', 'STRATEGY', 'EVALUATE'],
+    });
+  }
 
   const evaluate = await orchestrator.runTask({
     sessionId: input.sessionId,
@@ -462,7 +518,7 @@ function normalizeStrategy(strategy: CommunicationStrategy, sessionId: string): 
   };
 }
 
-function scoreAndGate(output: Annunci10xEvaluateOutput, extract: Annunci10xExtractOutput): { score: ScoreResult & { minScore?: number; maxScore?: number; finalScore?: number | null }; gate: PublicationGate } {
+function scoreAndGate(output: Annunci10xEvaluateOutput, extract: Annunci10xExtractOutput): { score: PublicAnalysisScore; gate: PublicationGate } {
   const deterministic = calculateScoreAndGateFromEvaluateOutput(output);
   const findings = [];
   for (const conflict of extract.possibleConflicts) findings.push(materialConflict(conflict.reason, 'BLOCKING'));
@@ -478,13 +534,14 @@ async function publicResult(input: {
   sessionId: string;
   snapshot: PersistedSnapshot;
   evaluation: PersistedEvaluation;
-  score: ScoreResult & { minScore?: number; maxScore?: number; finalScore?: number | null };
-  gate: PublicationGate;
+  score: PublicAnalysisScore;
+  gate: PublicationGate | null;
   roleCard: RoleCard;
   declaredRole?: string | null;
   clarification: PublicAnnunci10xAnalysisResult['clarification'];
   operations: PublicAnnunci10xOperation[];
   provider: Annunci10xConfiguredProvider;
+  stages?: string[];
 }): Promise<PublicAnnunci10xAnalysisResult> {
   const observedTitle = input.roleCard.title?.source === 'EXTRACTED' || input.roleCard.title?.source === 'USER_CONFIRMED'
     ? textValue(input.roleCard.title)
@@ -517,8 +574,8 @@ async function publicResult(input: {
       contractType: textValue(input.roleCard.attractionContext.contractType),
       missingFacts: missingFacts(input.roleCard),
     },
-    strengths: deriveResultStrengths(input.score.checks),
-    priorities: deriveResultPriorities(input.score.checks),
+    strengths: derivePublicStrengths(input.score.checks),
+    priorities: derivePublicPriorities(input.score.checks),
     checks: input.score.checks,
     clarification: input.clarification,
     offers: {
@@ -534,11 +591,68 @@ async function publicResult(input: {
         source: commercial.entitlements.source,
       },
     },
-    stages: ['PRECHECK', 'EXTRACT', 'PROFILE', 'STRATEGY', 'EVALUATE', 'CLARIFY'],
+    stages: input.stages ?? ['PRECHECK', 'EXTRACT', 'PROFILE', 'STRATEGY', 'EVALUATE', 'CLARIFY'],
     operations: input.operations,
     provider: input.provider,
     analyzedAt: new Date().toISOString(),
   };
+}
+
+function buildEvaluateInputV2(input: {
+  rawAdText: string;
+  channelHint?: PublicationChannel;
+  roleCard: RoleCard;
+  roleProfile: RoleProfile;
+  communicationStrategy: CommunicationStrategy;
+}): Annunci10xEvaluateInputV2 {
+  return {
+    target: {
+      kind: 'ORIGINAL_AD',
+      text: input.rawAdText,
+      channel: input.channelHint ?? null,
+      structuredFields: {
+        declaredChannel: input.channelHint ?? null,
+      },
+      applicationDestination: null,
+      channelPolicy: null,
+    },
+    context: {
+      roleCard: input.roleCard,
+      roleProfile: input.roleProfile,
+      communicationStrategy: input.communicationStrategy,
+    },
+  };
+}
+
+function derivePublicStrengths(checks: readonly PublicAnalysisCheck[], limit = 4): string[] {
+  if (isV2Checks(checks)) {
+    return checks
+      .filter((check) => check.status === 'EVALUATED' && typeof check.score === 'number' && check.score >= 8)
+      .slice(0, limit)
+      .map((check) => labelForV2Check(check.id));
+  }
+  return deriveResultStrengths(checks as readonly EvaluationCheck[], limit);
+}
+
+function derivePublicPriorities(checks: readonly PublicAnalysisCheck[], limit = 3): string[] {
+  if (isV2Checks(checks)) {
+    const priority = [
+      ...checks.filter((check) => check.status === 'CONFLICT' || check.status === 'UNSUPPORTED'),
+      ...checks.filter((check) => check.status === 'MISSING'),
+      ...checks.filter((check) => check.status === 'EVALUATED' && typeof check.score === 'number' && check.score <= 5),
+      ...checks.filter((check) => check.status === 'NOT_EVALUABLE'),
+    ];
+    return priority.slice(0, limit).map((check) => labelForV2Check(check.id));
+  }
+  return deriveResultPriorities(checks as readonly EvaluationCheck[], limit);
+}
+
+function isV2Checks(checks: readonly PublicAnalysisCheck[]): checks is readonly EvaluationCheckV2[] {
+  return checks.some((check) => 'score' in check && !('label' in check));
+}
+
+function labelForV2Check(id: string): string {
+  return ANNUNCI10X_RUBRIC_CHECKS_V2.find((definition) => definition.id === id)?.label ?? `Check ${id}`;
 }
 
 function toPublicOperation(result: { operation: { promptVersion: string }; model: string; provider: string; usage?: { inputTokens?: number | null; outputTokens?: number | null; totalTokens?: number | null; cachedTokens?: number | null }; providerRequestId?: string | null; latencyMs: number; idempotencyHit: boolean }, type: string, provider: Annunci10xConfiguredProvider): PublicAnnunci10xOperation {

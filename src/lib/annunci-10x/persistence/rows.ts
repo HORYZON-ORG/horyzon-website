@@ -3,8 +3,10 @@ import {
   ANNUNCI10X_METHOD_VERSION,
   ANNUNCI10X_PROMPT_PACK_VERSION,
   ANNUNCI10X_RUBRIC_VERSION,
+  ANNUNCI10X_RUBRIC_VERSION_V2,
   ANNUNCI10X_STRATEGY_VERSION,
 } from '../constants.ts';
+import { validateScoreResultV2 } from '../score-v2.ts';
 import {
   validateChannelVariant,
   validateCommercialContext,
@@ -111,9 +113,11 @@ export function parseAiOperationRow(row: Record<string, unknown>): PersistedAiOp
 }
 
 export function parseEvaluationRow(row: Record<string, unknown>): PersistedEvaluation {
-  const score = validateScoreResult(row.score_result);
+  const isV2 = row.rubric_version === ANNUNCI10X_RUBRIC_VERSION_V2
+    || (typeof row.score_result === 'object' && row.score_result !== null && (row.score_result as Record<string, unknown>).rubricVersion === ANNUNCI10X_RUBRIC_VERSION_V2);
+  const score = isV2 ? validateScoreResultV2(row.score_result) : validateScoreResult(row.score_result);
   if (!score.ok) throw new Error(`Malformed Annunci 10x score_result JSONB: ${score.errors.join('; ')}`);
-  const gate = validatePublicationGate(row.gates);
+  const gate = isV2 ? validateV2GateEnvelope(row.gates) : validatePublicationGate(row.gates);
   if (!gate.ok) throw new Error(`Malformed Annunci 10x gates JSONB: ${gate.errors.join('; ')}`);
   return {
     id: requireString(row.id, 'evaluation.id'),
@@ -122,7 +126,7 @@ export function parseEvaluationRow(row: Record<string, unknown>): PersistedEvalu
     targetRef: requireString(row.target_ref, 'evaluation.target_ref'),
     targetOutputId: optionalString(row.target_output_id),
     score: score.value,
-    gate: gate.value,
+    gate: isV2 ? null : gate.value,
     createdAt: requireString(row.created_at, 'evaluation.created_at'),
   };
 }
@@ -243,6 +247,17 @@ function validateGeneratedContent(outputType: Annunci10xOutputType, value: unkno
 function assertFlow(value: unknown): Annunci10xPersistenceFlow {
   if (value === 'ANALYZE' || value === 'CREATE') return value;
   throw new Error('Malformed Annunci 10x session flow.');
+}
+
+function validateV2GateEnvelope(value: unknown): { ok: true; value: null } | { ok: false; errors: string[] } {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return { ok: false, errors: ['V2 gates envelope must be an object.'] };
+  }
+  const record = value as Record<string, unknown>;
+  if (record.status !== 'NOT_EVALUATED' || record.reason !== 'V2_SCORE_ONLY') {
+    return { ok: false, errors: ['V2 gates envelope must declare NOT_EVALUATED / V2_SCORE_ONLY.'] };
+  }
+  return { ok: true, value: null };
 }
 
 function requireString(value: unknown, path: string): string {

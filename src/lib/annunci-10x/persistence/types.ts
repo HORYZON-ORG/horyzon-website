@@ -14,6 +14,7 @@ import type {
   ScoreResult,
   SessionState,
 } from '../types.ts';
+import type { ScoreResultV2 } from '../types-v2.ts';
 
 export type Annunci10xPersistenceFlow = 'ANALYZE' | 'CREATE';
 export type Annunci10xSnapshotReason = 'INITIAL_EXTRACTION' | 'USER_ANSWER' | 'USER_EDIT' | 'USER_CONFIRMATION' | 'POST_GENERATION_EDIT';
@@ -22,9 +23,10 @@ export type Annunci10xAnalysisSourceKind = 'PASTED_TEXT' | 'PUBLIC_URL';
 export type Annunci10xAnalysisSourceStatus = 'READY' | 'URL_FETCH_FAILED' | 'INVALID_SOURCE';
 export type Annunci10xAnalysisRunStatus = 'QUEUED' | 'RUNNING' | 'READY' | 'FAILED';
 export type Annunci10xAnalysisRunStage = 'SOURCE_VALIDATION' | 'PRECHECK' | 'EXTRACT' | 'PROFILE' | 'STRATEGY' | 'EVALUATE' | 'CLARIFY' | 'COMPLETE';
-export type Annunci10xAnalysisEvaluationMode = 'V1' | 'V2_SHADOW';
+export type Annunci10xAnalysisEvaluationMode = 'V1' | 'V2_SHADOW' | 'V2_PUBLIC';
 export type Annunci10xBusinessRole = 'OWNER_ENTREPRENEUR' | 'HR' | 'INTERNAL_RECRUITER' | 'CONSULTANT' | 'OTHER';
 export type Annunci10xEmailVerificationStatus = 'PENDING_SEND' | 'SENT' | 'CONSUMED' | 'INVALIDATED' | 'FAILED_SEND';
+export type Annunci10xPersistedScoreResult = ScoreResult | ScoreResultV2;
 
 export interface PersistedAnnunci10xSession extends Annunci10xSession {
   flow: Annunci10xPersistenceFlow;
@@ -136,8 +138,8 @@ export interface SaveEvaluationInput {
   target: EvaluationTarget;
   targetRef: string;
   targetOutputId?: string | null;
-  score: ScoreResult;
-  gate: PublicationGate;
+  score: Annunci10xPersistedScoreResult;
+  gate: PublicationGate | null;
 }
 
 export interface PersistedEvaluation {
@@ -146,8 +148,8 @@ export interface PersistedEvaluation {
   target: EvaluationTarget['kind'];
   targetRef: string;
   targetOutputId?: string | null;
-  score: ScoreResult;
-  gate: PublicationGate;
+  score: Annunci10xPersistedScoreResult;
+  gate: PublicationGate | null;
   createdAt: string;
 }
 

@@ -35,7 +35,7 @@ export async function POST(request: Request) {
       ? { kind: 'PUBLIC_URL' as const, url: typeof payload.url === 'string' ? payload.url : '', declaredChannel }
       : { kind: 'PASTED_TEXT' as const, text: typeof payload.text === 'string' ? payload.text : typeof payload.rawAdText === 'string' ? payload.rawAdText : '', declaredChannel };
 
-    const started = await startAnnunci10xAnalysisRun({ session, source, context, evaluationMode: 'V1' });
+    const started = await startAnnunci10xAnalysisRun({ session, source, context });
     if (started.run.status === 'QUEUED' || started.run.status === 'RUNNING') {
       after(async () => {
         await runAnnunci10xAnalysisRun({ analysisRunId: started.run.id, session, context });

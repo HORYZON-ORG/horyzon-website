@@ -2,8 +2,10 @@ import assert from 'node:assert/strict';
 import {
   ANNUNCI10X_PROMPT_PACK_VERSION,
   ANNUNCI10X_RUBRIC,
+  ANNUNCI10X_RUBRIC_CHECKS_V2,
   MemoryAnnunci10xPersistenceAdapter,
   calculateAnnunci10xScore,
+  calculateAnnunci10xScoreV2,
   createFact,
   evaluatePublicationGate,
   parseSnapshotRow,
@@ -219,6 +221,54 @@ const evaluation = await adapter.saveEvaluation({
 });
 assert.equal(evaluation.target, 'GENERATED_MASTER');
 assert.equal(evaluation.score.value, 100);
+
+const v2Score = calculateAnnunci10xScoreV2(ANNUNCI10X_RUBRIC_CHECKS_V2.map((definition) => ({
+  id: definition.id,
+  score: 8,
+  status: 'EVALUATED',
+  evidence: [`${definition.id} evidence`],
+  reason: `Synthetic V2 reason ${definition.id}.`,
+  missing: [],
+  confidence: 80,
+})));
+const v2Evaluation = await adapter.saveEvaluation({
+  sessionId: sessionA.session.id,
+  sessionSecret: sessionA.sessionSecret,
+  target: { kind: 'ORIGINAL_AD', originalAdId: 'original-v2' },
+  targetRef: 'original-v2',
+  score: v2Score,
+  gate: null,
+});
+assert.equal(v2Evaluation.score.rubricVersion, 'annunci10x-rubric-v2');
+assert.equal(v2Evaluation.score.value, 80);
+assert.equal(v2Evaluation.gate, null, 'V2 public score stores an internal gate envelope but exposes no PublicationGate');
+assert.equal(v2Evaluation.score.checks.length, 20);
+
+await assert.rejects(
+  () => adapter.saveEvaluation({
+    sessionId: sessionA.session.id,
+    sessionSecret: sessionA.sessionSecret,
+    target: { kind: 'ORIGINAL_AD', originalAdId: 'original-v2-bad' },
+    targetRef: 'original-v2-bad',
+    score: { ...v2Score, value: 100 },
+    gate: null,
+  }),
+  /deterministic V2 aggregate/,
+  'malformed V2 aggregate is rejected instead of trusted',
+);
+
+await assert.rejects(
+  () => adapter.saveEvaluation({
+    sessionId: sessionA.session.id,
+    sessionSecret: sessionA.sessionSecret,
+    target: { kind: 'ORIGINAL_AD', originalAdId: 'original-v2-gate' },
+    targetRef: 'original-v2-gate',
+    score: v2Score,
+    gate,
+  }),
+  /must not store a PublicationGate/,
+  'V2 public score cannot persist a V1 publication gate',
+);
 
 assert.throws(
   () => parseSnapshotRow({

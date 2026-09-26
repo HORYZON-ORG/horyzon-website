@@ -6,10 +6,12 @@ process.env.ANNUNCI10X_EMAIL_PROVIDER = 'MOCK';
 process.env.ANNUNCI10X_EMAIL_VERIFICATION_PEPPER = `${randomUUID()}${randomUUID()}`;
 
 const {
+  ANNUNCI10X_RUBRIC_CHECKS_V2,
   Annunci10xPublicError,
   MemoryAnnunci10xPersistenceAdapter,
   MockAnnunci10xEmailProvider,
   buildFreeAnnunci10xResult,
+  calculateAnnunci10xScoreV2,
   createAnonymousAnalyzeSession,
   getGatedAnnunci10xFreeResult,
   hashEmailVerificationCode,
@@ -93,6 +95,26 @@ assert.equal(futureV2.resultVersion, 'V2');
 assert.equal(futureV2.score.value, 87);
 assert.equal(futureV2.score.range, undefined);
 assert.deepEqual(futureV2.band, { code: 'STRONG', label: 'Forte' });
+
+const allNotEvaluableV2 = buildFreeAnnunci10xResult({
+  analysisRun: { id: 'v2-empty-run' },
+  evaluation: {
+    score: calculateAnnunci10xScoreV2(ANNUNCI10X_RUBRIC_CHECKS_V2.map((definition) => ({
+      id: definition.id,
+      score: null,
+      status: 'NOT_EVALUABLE',
+      evidence: [],
+      reason: `Synthetic not evaluable reason ${definition.id}.`,
+      missing: [],
+      confidence: 40,
+    }))),
+  },
+});
+assert.equal(allNotEvaluableV2.resultVersion, 'V2');
+assert.equal(allNotEvaluableV2.score.value, null);
+assert.equal(allNotEvaluableV2.score.coverage, 0);
+assert.equal(allNotEvaluableV2.band, null);
+assertForbiddenKeys(allNotEvaluableV2);
 
 await assertMovedRoute('src/app/api/annunci-10x/analyze/route.ts');
 await assertMovedRoute('src/app/api/annunci-10x/clarify/route.ts');

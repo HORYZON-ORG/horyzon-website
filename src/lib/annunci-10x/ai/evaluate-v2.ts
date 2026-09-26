@@ -5,9 +5,11 @@ import {
   ANNUNCI10X_SCORE_SEMANTICS_VERSION_V2,
 } from '../constants.ts';
 import { calculateAnnunci10xScoreV2 } from '../score-v2.ts';
+import type { Annunci10xPersistenceAdapter, PersistedAiOperation } from '../persistence/types.ts';
 import type { ScoreResultV2 } from '../types-v2.ts';
-import { Annunci10xAiError } from './errors.ts';
+import { Annunci10xAiError, sanitizeAiErrorPayload } from './errors.ts';
 import { getAnnunci10xAiTimeoutMs, getAnnunci10xModelForOperation } from './models.ts';
+import { createAnnunci10xAiIdempotencyKey } from './orchestrator.ts';
 import {
   ANNUNCI10X_EVALUATE_PROMPT_VERSION_V2,
   EVALUATE_PROMPT_V2,
@@ -46,6 +48,14 @@ export interface RunAnnunci10xEvaluateV2Options {
   env?: Record<string, string | undefined>;
 }
 
+export interface RunPersistedAnnunci10xEvaluateV2Options extends RunAnnunci10xEvaluateV2Options {
+  sessionId: string;
+  sessionSecret: string;
+  persistence: Annunci10xPersistenceAdapter;
+  inputSnapshotId?: string | null;
+  idempotencyInputIdentity?: string;
+}
+
 export interface RunAnnunci10xEvaluateV2Result extends Annunci10xEvaluateOutputV2 {
   score: ScoreResultV2;
   provider: Annunci10xAiProviderResult['provider'];
@@ -58,6 +68,11 @@ export interface RunAnnunci10xEvaluateV2Result extends Annunci10xEvaluateOutputV
   scoreSemanticsVersion: typeof ANNUNCI10X_SCORE_SEMANTICS_VERSION_V2;
   operationId: string;
   providerRequestId?: string | null;
+}
+
+export interface RunPersistedAnnunci10xEvaluateV2Result extends RunAnnunci10xEvaluateV2Result {
+  operation: PersistedAiOperation;
+  idempotencyHit: boolean;
 }
 
 export function projectEvaluateInputV2(input: Annunci10xEvaluateInputV2): Annunci10xEvaluateInputV2 {
@@ -125,6 +140,73 @@ export async function runAnnunci10xEvaluateV2(options: RunAnnunci10xEvaluateV2Op
   throw new Annunci10xAiError('AI_INVALID_OUTPUT', 'Annunci 10x V2 AI output failed schema validation after one retry.', { retryable: false });
 }
 
+export async function runPersistedAnnunci10xEvaluateV2(options: RunPersistedAnnunci10xEvaluateV2Options): Promise<RunPersistedAnnunci10xEvaluateV2Result> {
+  const env = options.env ?? process.env;
+  const model = options.model ?? getAnnunci10xModelForOperation('EVALUATE', env);
+  const projectedInput = projectEvaluateInputV2(options.input);
+  const inputIdentity = options.idempotencyInputIdentity ?? stableHash(projectedInput);
+  const idempotencyKey = createAnnunci10xAiIdempotencyKey({
+    sessionId: options.sessionId,
+    operationType: 'EVALUATE',
+    inputIdentity,
+    promptVersion: ANNUNCI10X_EVALUATE_PROMPT_VERSION_V2,
+    model,
+  });
+  let operation = await options.persistence.startAiOperation({
+    sessionId: options.sessionId,
+    sessionSecret: options.sessionSecret,
+    operationType: 'EVALUATE',
+    inputSnapshotId: options.inputSnapshotId ?? null,
+    promptVersion: ANNUNCI10X_EVALUATE_PROMPT_VERSION_V2,
+    idempotencyKey,
+    model,
+  });
+
+  if (operation.status === 'SUCCEEDED' && operation.outputPayload?.output !== undefined) {
+    return {
+      ...resultFromPersistedPayload(operation.outputPayload, operation, model),
+      operation,
+      idempotencyHit: true,
+    };
+  }
+  if (operation.status === 'FAILED') {
+    throw new Annunci10xAiError('AI_PROVIDER_ERROR', 'Annunci 10x V2 evaluate operation previously failed for the same idempotency key.', { retryable: false });
+  }
+
+  try {
+    const result = await runAnnunci10xEvaluateV2({
+      input: projectedInput,
+      provider: options.provider,
+      model,
+      timeoutMs: options.timeoutMs,
+      operationId: operation.id,
+      env,
+    });
+    operation = await options.persistence.completeAiOperation({
+      operationId: operation.id,
+      sessionSecret: options.sessionSecret,
+      outputPayload: {
+        output: { checks: result.checks },
+        provider: result.provider,
+        model: result.model,
+        promptVersion: ANNUNCI10X_EVALUATE_PROMPT_VERSION_V2,
+        usage: result.usage ?? null,
+        providerRequestId: result.providerRequestId ?? null,
+        latencyMs: result.latencyMs,
+        retryCount: result.retryCount,
+      },
+    });
+    return { ...result, operation, idempotencyHit: false };
+  } catch (error) {
+    await options.persistence.failAiOperation({
+      operationId: operation.id,
+      sessionSecret: options.sessionSecret,
+      errorPayload: sanitizeAiErrorPayload(error),
+    });
+    throw error;
+  }
+}
+
 export function createEvaluateOperationIdV2(input: { input: Annunci10xEvaluateInputV2; model: string }): string {
   return `annunci10x-evaluate-v2-${stableHash({
     input: input.input,
@@ -175,6 +257,25 @@ function buildEvaluateResultV2(output: Annunci10xEvaluateOutputV2, providerResul
     scoreSemanticsVersion: ANNUNCI10X_SCORE_SEMANTICS_VERSION_V2,
     operationId,
     providerRequestId: providerResult.providerRequestId,
+  };
+}
+
+function resultFromPersistedPayload(payload: Record<string, unknown>, operation: PersistedAiOperation, fallbackModel: string): RunAnnunci10xEvaluateV2Result {
+  const output = validateEvaluateOutputV2(payload.output);
+  const model = typeof payload.model === 'string' ? payload.model : fallbackModel;
+  return {
+    checks: output.checks,
+    score: calculateAnnunci10xScoreV2(output.checks),
+    provider: payload.provider === 'OPENAI' ? 'OPENAI' : 'MOCK',
+    model,
+    usage: usageFromPayload(payload.usage),
+    latencyMs: typeof payload.latencyMs === 'number' ? payload.latencyMs : 0,
+    retryCount: payload.retryCount === 1 ? 1 : 0,
+    promptVersion: ANNUNCI10X_EVALUATE_PROMPT_VERSION_V2,
+    rubricVersion: ANNUNCI10X_RUBRIC_VERSION_V2,
+    scoreSemanticsVersion: ANNUNCI10X_SCORE_SEMANTICS_VERSION_V2,
+    operationId: operation.id,
+    providerRequestId: typeof payload.providerRequestId === 'string' ? payload.providerRequestId : null,
   };
 }
 
@@ -268,6 +369,11 @@ function mergeUsage(first?: Annunci10xAiUsage, second?: Annunci10xAiUsage): Annu
     totalTokens: addOptional(first?.totalTokens, second?.totalTokens),
     cachedTokens: addOptional(first?.cachedTokens, second?.cachedTokens),
   };
+}
+
+function usageFromPayload(value: unknown): Annunci10xAiUsage | undefined {
+  if (typeof value !== 'object' || value === null) return undefined;
+  return value as Annunci10xAiUsage;
 }
 
 function addOptional(first?: number | null, second?: number | null): number | null {

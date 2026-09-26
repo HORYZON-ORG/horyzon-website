@@ -88,6 +88,7 @@ function makeMockOutput(request: Annunci10xAiProviderRequest, mode: MockAnnunci1
     return { claims: [], unsupportedClaims: [], contradictions: [], omittedCriticalFacts: [], alteredRequirements: [], result: 'PASS' };
   }
   if (request.operationType === 'EVALUATE') {
+    if (request.outputSchemaName === 'annunci10x_evaluate_v2') return makeMockEvaluationV2(request.input);
     return makeMockEvaluation(request.input);
   }
   if (request.operationType === 'CHANNEL_ADAPTER') return mockChannelVariant();
@@ -257,6 +258,46 @@ function makeMockEvaluation(input: unknown): unknown {
   return { checks };
 }
 
+function makeMockEvaluationV2(input: unknown): unknown {
+  const text = targetTextV2(input);
+  const lower = text.toLowerCase();
+  const channel = readStringPath(input, ['target', 'channel']).toUpperCase();
+  const hasRemotePresenceConflict = /\bremot[oea]\b/.test(lower) && /presenza|in sede/.test(lower);
+  const values: Array<[string, number | null, string, string]> = [
+    ['01', hasRoleTitle(lower) ? 8 : 0, hasRoleTitle(lower) ? 'EVALUATED' : 'MISSING', 'Target text identifies the role.'],
+    ['02', /senior|junior|responsabile|coordin|perimetro|riporterai|gestirai/i.test(text) ? 7 : 4, 'EVALUATED', 'Role perimeter is partly visible.'],
+    ['03', hasActivity(lower) ? 8 : 0, hasActivity(lower) ? 'EVALUATED' : 'MISSING', 'Daily activities are visible in the target text.'],
+    ['04', hasOutcome(lower) ? 8 : 0, hasOutcome(lower) ? 'EVALUATED' : 'MISSING', 'Observable expected result is checked from target evidence.'],
+    ['05', /team|reparto|client[ei]|responsabile|fornitori|stakeholder|crm/i.test(text) ? 6 : 0, /team|reparto|client[ei]|responsabile|fornitori|stakeholder|crm/i.test(text) ? 'EVALUATED' : 'MISSING', 'Operating context is partial or absent.'],
+    ['06', hasAttractionReason(lower) ? 5 : null, hasAttractionReason(lower) ? 'EVALUATED' : 'NOT_EVALUABLE', 'Role popularity and company attractiveness require target evidence.'],
+    ['07', hasActivity(lower) ? 6 : 0, hasActivity(lower) ? 'EVALUATED' : 'MISSING', 'Challenge/routine balance is partially represented.'],
+    ['08', /turni|part-?time|full-?time|requisiti|disponibil/i.test(text) ? 6 : 0, /turni|part-?time|full-?time|requisiti|disponibil/i.test(text) ? 'EVALUATED' : 'MISSING', 'Qualification or commitment is partly explicit.'],
+    ['09', /crm|ticket|software|impianti|normativa|macchinari|excel|gestionale/i.test(text) ? 8 : 5, 'EVALUATED', 'Technical detail fit is limited but not misleading.'],
+    ['10', /preferibil|plus|nice to have|formazione|apprend/i.test(text) ? 8 : lower.includes('requisit') ? 0 : null, lower.includes('requisit') || /preferibil|plus|nice to have|formazione|apprend/i.test(text) ? (/preferibil|plus|nice to have|formazione|apprend/i.test(text) ? 'EVALUATED' : 'MISSING') : 'NOT_EVALUABLE', 'Requirement classes are checked from target text.'],
+    ['11', lower.includes('requisit') && hasActivity(lower) ? 8 : lower.includes('requisit') ? 5 : null, lower.includes('requisit') ? 'EVALUATED' : 'NOT_EVALUABLE', 'Requirement relevance depends on visible work evidence.'],
+    ['12', hasRemotePresenceConflict ? 0 : /bari|milano|roma|modena|lecce|sede|presenza|ibrid|remot/i.test(text) ? 8 : 0, hasRemotePresenceConflict ? 'CONFLICT' : /bari|milano|roma|modena|lecce|sede|presenza|ibrid|remot/i.test(text) ? 'EVALUATED' : 'MISSING', hasRemotePresenceConflict ? 'Target text contains incompatible work-mode statements.' : 'Location or work mode evidence checked in target text.'],
+    ['13', hasDetailedSchedule(lower) ? 8 : /part-?time|full-?time|turni|orari/i.test(text) ? 5 : 0, /part-?time|full-?time|turni|orari/i.test(text) || hasDetailedSchedule(lower) ? 'EVALUATED' : 'MISSING', 'Contract or schedule evidence is incomplete without concrete hours/cadence.'],
+    ['14', /ral|stipendio|compenso|retribuzione|euro|€|\d+\s?k/i.test(text) ? 8 : null, /ral|stipendio|compenso|retribuzione|euro|€|\d+\s?k/i.test(text) ? 'EVALUATED' : 'NOT_EVALUABLE', 'Compensation is not visible in the target text.'],
+    ['15', hasAttractionReason(lower) ? 6 : 0, hasAttractionReason(lower) ? 'EVALUATED' : 'MISSING', 'Company attractiveness needs concrete target-text reasons.'],
+    ['16', channel && channel !== 'UNKNOWN' && channel !== 'CUSTOM' ? 5 : null, channel && channel !== 'UNKNOWN' && channel !== 'CUSTOM' ? 'EVALUATED' : 'NOT_EVALUABLE', 'Generic or unknown channel is not automatic channel-fit evidence.'],
+    ['17', channel && channel !== 'UNKNOWN' && channel !== 'CUSTOM' ? 5 : null, channel && channel !== 'UNKNOWN' && channel !== 'CUSTOM' ? 'EVALUATED' : 'NOT_EVALUABLE', 'Destination/field consistency cannot be evaluated without channel fields.'],
+    ['18', text.length >= 180 ? 8 : text.length >= 80 ? 5 : 0, text.length >= 80 ? 'EVALUATED' : 'MISSING', 'Readability is estimated from target-text structure.'],
+    ['19', /dinamic[oa]|leader|stimolante|giovane/i.test(text) ? 5 : text.length >= 80 ? 8 : 0, text.length >= 80 ? 'EVALUATED' : 'MISSING', 'Language is concrete enough when it avoids generic promotional wording.'],
+    ['20', /candidat|candidatura|cv|invia|email|mail/i.test(text) ? /@|https?:\/\/|portale|form/i.test(text) ? 8 : 5 : 0, /candidat|candidatura|cv|invia|email|mail/i.test(text) ? 'EVALUATED' : 'MISSING', 'CTA exists only if target text gives a usable application path.'],
+  ];
+  return {
+    checks: values.map(([id, score, statusValue, reason]) => ({
+      id,
+      score,
+      status: statusValue,
+      evidence: statusValue === 'NOT_EVALUABLE' || statusValue === 'MISSING' ? [] : [`mock target evidence for check ${id}`],
+      reason,
+      missing: statusValue === 'MISSING' ? [`missing target evidence for check ${id}`] : [],
+      confidence: statusValue === 'NOT_EVALUABLE' ? 45 : 82,
+    })),
+  };
+}
+
 function status(id: string, value: string, reason: string): unknown {
   return {
     id,
@@ -281,6 +322,15 @@ function targetText(input: unknown): string {
       .join('\n');
   }
   return '';
+}
+
+function targetTextV2(input: unknown): string {
+  if (typeof input !== 'object' || input === null) return '';
+  const target = (input as Record<string, unknown>).target;
+  if (typeof target === 'object' && target !== null && typeof (target as Record<string, unknown>).text === 'string') {
+    return String((target as Record<string, unknown>).text);
+  }
+  return targetText(input);
 }
 
 function readStringPath(input: unknown, path: readonly string[]): string {

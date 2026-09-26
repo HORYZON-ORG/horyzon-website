@@ -18,7 +18,7 @@ import type {
   Annunci10xReviseOutput,
   Annunci10xValidateOutput,
 } from '../ai/schemas.ts';
-import type { PersistedAnnunci10xSession, PersistedOutput, PersistedSnapshot } from '../persistence/types.ts';
+import type { PersistedAnnunci10xSession, PersistedEvaluation, PersistedOutput, PersistedSnapshot } from '../persistence/types.ts';
 import type {
   ChannelVariant,
   ClaimCheck,
@@ -210,7 +210,7 @@ export async function runAnnunci10xPremiumGeneration(input: Annunci10xPremiumGen
     const deterministic = calculateScoreAndGateFromEvaluateOutput(evaluateResult.output as Annunci10xEvaluateOutput);
     const gate = gateFromValidation(finalValidation, deterministic.gate);
     const claimCheck = claimCheckFromValidation(finalValidation);
-    const comparison = buildComparison(session, finalMaster, deterministic.score, await context.persistence.getLatestEvaluation(input.sessionId, input.sessionSecret));
+    const comparison = buildComparison(session, finalMaster, deterministic.score, previousV1Evaluation(await context.persistence.getLatestEvaluation(input.sessionId, input.sessionSecret)));
     const masterToPersist = attachPremiumPayload(finalMaster, {
       comparison,
       claimCheck,
@@ -308,6 +308,7 @@ export async function resumeAnnunci10xPremiumOutput(input: { sessionId: string; 
   const snapshot = await context.persistence.getLatestSnapshot(input.sessionId, input.sessionSecret);
   const evaluation = await context.persistence.getLatestEvaluation(input.sessionId, input.sessionSecret);
   if (!snapshot || !evaluation) return null;
+  const v1Evaluation = requireV1Evaluation(evaluation);
   const variant = await context.persistence.getLatestOutput(input.sessionId, input.sessionSecret, 'CHANNEL_VARIANT', output.id);
   await context.persistence.appendEvent({ sessionId: input.sessionId, eventName: 'output_viewed', metadata: { outputId: output.id } });
   return publicPremiumOutput({
@@ -316,8 +317,8 @@ export async function resumeAnnunci10xPremiumOutput(input: { sessionId: string; 
     output,
     master: validation.value,
     channelVariant: variant?.generatedContent as ChannelVariant | null ?? null,
-    score: evaluation.score,
-    gate: evaluation.gate,
+    score: v1Evaluation.score,
+    gate: v1Evaluation.gate,
     claimCheck: readPremiumPayload(validation.value).claimCheck,
     comparison: readPremiumPayload(validation.value).comparison,
     operations: [],
@@ -412,7 +413,7 @@ export async function requestAnnunci10xPremiumEdit(input: PremiumEditInput): Pro
   const deterministic = calculateScoreAndGateFromEvaluateOutput(evaluate.output as Annunci10xEvaluateOutput);
   const gate = gateFromValidation(validate, deterministic.gate);
   const claimCheck = claimCheckFromValidation(validate);
-  const comparison = buildComparison(session, master, deterministic.score, await context.persistence.getLatestEvaluation(input.sessionId, input.sessionSecret));
+  const comparison = buildComparison(session, master, deterministic.score, previousV1Evaluation(await context.persistence.getLatestEvaluation(input.sessionId, input.sessionSecret)));
   const masterToPersist = attachPremiumPayload(master, {
     comparison,
     claimCheck,
@@ -656,6 +657,22 @@ function stepFromPath(path: string) {
 
 function fact(value: string, source: 'USER_DECLARED' | 'SYSTEM_INFERRED', sourceId: string): Fact<string> {
   return createFact(value.trim() || 'N/D', source, { sourceId, publishable: source !== 'SYSTEM_INFERRED', confidence: source === 'SYSTEM_INFERRED' ? 35 : 82 });
+}
+
+function previousV1Evaluation(evaluation: PersistedEvaluation | null): { score: ScoreResult; target: string } | null {
+  if (!evaluation || !isV1Evaluation(evaluation)) return null;
+  return { score: evaluation.score, target: evaluation.target };
+}
+
+function requireV1Evaluation(evaluation: PersistedEvaluation): PersistedEvaluation & { score: ScoreResult; gate: PublicationGate } {
+  if (!isV1Evaluation(evaluation)) {
+    throw new Annunci10xPublicError('INTERNAL', 'Evaluation premium Annunci 10x non valida.', 500);
+  }
+  return evaluation;
+}
+
+function isV1Evaluation(evaluation: PersistedEvaluation): evaluation is PersistedEvaluation & { score: ScoreResult; gate: PublicationGate } {
+  return evaluation.score.rubricVersion === ANNUNCI10X_RUBRIC_VERSION && evaluation.gate !== null;
 }
 
 function scoreLabel(score?: ScoreResult): string {

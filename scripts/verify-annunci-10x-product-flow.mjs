@@ -80,6 +80,26 @@ assert.equal(JSON.stringify(result.operations).includes(fullAd), false, 'raw ad 
 assert.equal(result.strengths.every((label) => result.score.checks.some((check) => check.label === label && check.status === 'PASS')), true, 'strengths must come only from PASS checks');
 assert.equal(result.priorities.every((label) => result.score.checks.some((check) => label === check.label && ['MISSING', 'CONFLICT', 'PARTIAL', 'NOT_EVALUABLE'].includes(check.status))), true, 'priorities must come from actionable non-PASS checks');
 
+const v2Context = makeContext();
+const v2Created = await createAnonymousAnalyzeSession(v2Context);
+const v2Result = await runFreeAnnunci10xAnalysis({
+  sessionId: v2Created.session.id,
+  sessionSecret: v2Created.sessionSecret,
+  rawAdText: fullAd,
+  roleHint: 'Addetto pulizie',
+  companyHint: 'Horyzon Test',
+  context: v2Context,
+  evaluationMode: 'V2_PUBLIC',
+});
+assert.equal(v2Result.gate, null);
+assert.equal(v2Result.score.rubricVersion, 'annunci10x-rubric-v2');
+assert.equal(v2Result.score.scoreSemanticsVersion, 'annunci10x-score-semantics-v2');
+assert.equal(v2Result.score.checks.length, 20);
+assert.deepEqual(v2Result.stages, ['PRECHECK', 'EXTRACT', 'PROFILE', 'STRATEGY', 'EVALUATE']);
+assert.deepEqual(v2Result.operations.map((operation) => operation.type), ['PRECHECK', 'EXTRACT', 'PROFILE', 'STRATEGY', 'EVALUATE']);
+assert.equal(v2Context.provider.calls.some((call) => call.operationType === 'CLARIFY'), false, 'V2 public analysis does not call V1 clarification');
+assert.equal(v2Result.priorities.every((label) => typeof label === 'string' && label.length > 0), true);
+
 const customerCareContext = makeContext();
 const customerCareSession = await createAnonymousAnalyzeSession(customerCareContext);
 const customerCareResult = await runFreeAnnunci10xAnalysis({

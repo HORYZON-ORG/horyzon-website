@@ -1,9 +1,13 @@
 import {
   ANNUNCI10X_METHOD_VERSION,
+  ANNUNCI10X_METHOD_VERSION_V2,
   ANNUNCI10X_PROMPT_PACK_VERSION,
   ANNUNCI10X_RUBRIC_VERSION,
+  ANNUNCI10X_RUBRIC_VERSION_V2,
+  ANNUNCI10X_SCORE_SEMANTICS_VERSION_V2,
 } from './constants.ts';
 import { getAnnunci10xModelForOperation } from './ai/models.ts';
+import { ANNUNCI10X_EVALUATE_PROMPT_VERSION_V2 } from './ai/prompts/evaluate-v2.ts';
 import { Annunci10xAiError, sanitizeAiErrorPayload } from './ai/errors.ts';
 import type { Annunci10xRuntimeContext, Annunci10xSessionCookie } from './product-flow.ts';
 import {
@@ -49,12 +53,13 @@ const ANALYSIS_RUN_LEASE_SECONDS = 120;
 
 export async function startAnnunci10xAnalysisRun(input: StartAnalysisRunInput): Promise<StartAnalysisRunResult> {
   const context = input.context ?? createAnnunci10xRuntimeContext();
-  const evaluationMode = input.evaluationMode ?? 'V1';
+  const evaluationMode = input.evaluationMode ?? resolveAnnunci10xPublicScoreEvaluationMode();
   if (evaluationMode === 'V2_SHADOW') {
     throw new Annunci10xPublicError('INVALID_INPUT', 'EVALUATE V2 shadow non e attivo su questa route.', 409);
   }
   const source = await prepareAnnunci10xSource(input.source);
   const model = getAnnunci10xModelForOperation('EVALUATE');
+  const versions = versionsForEvaluationMode(evaluationMode);
   const identity = buildRunIdentity(source, model, evaluationMode);
   const run = await context.persistence.createOrGetAnalysisRun({
     sessionId: input.session.sessionId,
@@ -72,10 +77,10 @@ export async function startAnnunci10xAnalysisRun(input: StartAnalysisRunInput): 
     declaredChannel: source.declaredChannel ?? null,
     sourceHash: source.sourceHash,
     inputIdentity: identity,
-    methodVersion: ANNUNCI10X_METHOD_VERSION,
-    rubricVersion: ANNUNCI10X_RUBRIC_VERSION,
-    promptVersion: ANNUNCI10X_PROMPT_PACK_VERSION,
-    scoreSemanticsVersion: SCORE_SEMANTICS_VERSION_V1,
+    methodVersion: versions.methodVersion,
+    rubricVersion: versions.rubricVersion,
+    promptVersion: versions.promptVersion,
+    scoreSemanticsVersion: versions.scoreSemanticsVersion,
     model,
     provider: context.configuredProvider,
     evaluationMode,
@@ -112,7 +117,7 @@ export async function runAnnunci10xAnalysisRun(input: {
       leaseExpiresAt: null,
     });
   }
-  if (claimed.evaluationMode !== 'V1') {
+  if (claimed.evaluationMode === 'V2_SHADOW') {
     return context.persistence.updateAnalysisRun({
       analysisRunId: claimed.id,
       sessionSecret: input.session.sessionSecret,
@@ -141,6 +146,7 @@ export async function runAnnunci10xAnalysisRun(input: {
           leaseExpiresAt: leaseFromNow(),
         });
       },
+      evaluationMode: claimed.evaluationMode,
     });
     return context.persistence.updateAnalysisRun({
       analysisRunId: claimed.id,
@@ -180,17 +186,47 @@ export function toPublicAnalysisRunStatus(run: PersistedAnalysisRun): PublicAnal
 }
 
 function buildRunIdentity(source: Annunci10xPreparedSource, model: string, evaluationMode: Annunci10xAnalysisEvaluationMode): string {
+  const versions = versionsForEvaluationMode(evaluationMode);
   return createAnalysisInputIdentity({
     sourceHash: source.sourceHash,
     targetKind: 'ORIGINAL_AD',
     declaredChannel: source.declaredChannel ?? null,
+    methodVersion: versions.methodVersion,
+    rubricVersion: versions.rubricVersion,
+    promptVersion: versions.promptVersion,
+    scoreSemanticsVersion: versions.scoreSemanticsVersion,
+    model,
+    evaluationMode,
+  });
+}
+
+export function resolveAnnunci10xPublicScoreEvaluationMode(env: Record<string, string | undefined> = process.env): Annunci10xAnalysisEvaluationMode {
+  const configured = env.ANNUNCI10X_PUBLIC_SCORE_VERSION?.trim().toUpperCase();
+  if (!configured || configured === 'V1') return 'V1';
+  if (configured === 'V2') return 'V2_PUBLIC';
+  throw new Annunci10xPublicError('INVALID_INPUT', 'ANNUNCI10X_PUBLIC_SCORE_VERSION deve essere V1 o V2.', 500);
+}
+
+function versionsForEvaluationMode(evaluationMode: Annunci10xAnalysisEvaluationMode): {
+  methodVersion: string;
+  rubricVersion: string;
+  promptVersion: string;
+  scoreSemanticsVersion: string;
+} {
+  if (evaluationMode === 'V2_PUBLIC') {
+    return {
+      methodVersion: ANNUNCI10X_METHOD_VERSION_V2,
+      rubricVersion: ANNUNCI10X_RUBRIC_VERSION_V2,
+      promptVersion: ANNUNCI10X_EVALUATE_PROMPT_VERSION_V2,
+      scoreSemanticsVersion: ANNUNCI10X_SCORE_SEMANTICS_VERSION_V2,
+    };
+  }
+  return {
     methodVersion: ANNUNCI10X_METHOD_VERSION,
     rubricVersion: ANNUNCI10X_RUBRIC_VERSION,
     promptVersion: ANNUNCI10X_PROMPT_PACK_VERSION,
     scoreSemanticsVersion: SCORE_SEMANTICS_VERSION_V1,
-    model,
-    evaluationMode,
-  });
+  };
 }
 
 function mergeOperationRefs(current: Record<string, unknown>, stage: Annunci10xAnalysisRunStage, event: Record<string, unknown>): Record<string, unknown> {

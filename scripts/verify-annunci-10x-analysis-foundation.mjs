@@ -2,11 +2,13 @@ import assert from 'node:assert/strict';
 import {
   MemoryAnnunci10xPersistenceAdapter,
   MockAnnunci10xProvider,
+  ANNUNCI10X_EVALUATE_PROMPT_VERSION_V2,
   createAnonymousAnalyzeSession,
   createAnalysisInputIdentity,
   fetchPublicJobAd,
   getAnnunci10xAnalysisRunStatus,
   prepareAnnunci10xSource,
+  resolveAnnunci10xPublicScoreEvaluationMode,
   runAnnunci10xAnalysisRun,
   startAnnunci10xAnalysisRun,
 } from '../src/lib/annunci-10x/index.ts';
@@ -136,6 +138,7 @@ assert.equal(completed?.status, 'READY');
 assert.equal(completed?.stage, 'COMPLETE');
 assert.ok(completed?.evaluationId);
 assert.equal(context.provider.calls.length, 6);
+assert.ok('CLARIFY' in completed.operationRefs, 'V1 keeps clarification operation refs');
 
 const status = await getAnnunci10xAnalysisRunStatus({ analysisRunId: started.run.id, session, context });
 assert.deepEqual(status && {
@@ -177,6 +180,11 @@ assert.equal(failed.status, 'FAILED');
 const failedStatus = await getAnnunci10xAnalysisRunStatus({ analysisRunId: failed.id, session, context });
 assert.equal(failedStatus?.failureCode, 'URL_FETCH_FAILED');
 
+assert.equal(resolveAnnunci10xPublicScoreEvaluationMode({}), 'V1');
+assert.equal(resolveAnnunci10xPublicScoreEvaluationMode({ ANNUNCI10X_PUBLIC_SCORE_VERSION: 'V1' }), 'V1');
+assert.equal(resolveAnnunci10xPublicScoreEvaluationMode({ ANNUNCI10X_PUBLIC_SCORE_VERSION: 'v2' }), 'V2_PUBLIC');
+assert.throws(() => resolveAnnunci10xPublicScoreEvaluationMode({ ANNUNCI10X_PUBLIC_SCORE_VERSION: 'V2_SHADOW' }), /V1 o V2/);
+
 const identityV1 = createAnalysisInputIdentity({
   sourceHash: pasted.sourceHash,
   targetKind: 'ORIGINAL_AD',
@@ -192,14 +200,37 @@ const identityV2 = createAnalysisInputIdentity({
   sourceHash: pasted.sourceHash,
   targetKind: 'ORIGINAL_AD',
   declaredChannel: 'LINKEDIN',
-  methodVersion: 'annunci10x-method-v1',
-  rubricVersion: 'annunci10x-rubric-v1',
-  promptVersion: 'annunci10x-prompts-v1',
-  scoreSemanticsVersion: 'annunci10x-score-semantics-v1',
+  methodVersion: 'annunci10x-method-v2',
+  rubricVersion: 'annunci10x-rubric-v2',
+  promptVersion: ANNUNCI10X_EVALUATE_PROMPT_VERSION_V2,
+  scoreSemanticsVersion: 'annunci10x-score-semantics-v2',
   model: 'gpt-5-mini',
-  evaluationMode: 'V2_SHADOW',
+  evaluationMode: 'V2_PUBLIC',
 });
 assert.notEqual(identityV1, identityV2);
+
+const v2Context = makeContext();
+const v2Created = await createAnonymousAnalyzeSession(v2Context);
+const v2Session = { sessionId: v2Created.session.id, sessionSecret: v2Created.sessionSecret };
+const v2Started = await startAnnunci10xAnalysisRun({
+  session: v2Session,
+  source: { kind: 'PASTED_TEXT', text: VALID_AD, declaredChannel: 'LINKEDIN' },
+  context: v2Context,
+  evaluationMode: 'V2_PUBLIC',
+});
+assert.equal(v2Started.run.evaluationMode, 'V2_PUBLIC');
+assert.equal(v2Started.run.methodVersion, 'annunci10x-method-v2');
+assert.equal(v2Started.run.rubricVersion, 'annunci10x-rubric-v2');
+assert.equal(v2Started.run.promptVersion, ANNUNCI10X_EVALUATE_PROMPT_VERSION_V2);
+assert.equal(v2Started.run.scoreSemanticsVersion, 'annunci10x-score-semantics-v2');
+const v2Completed = await runAnnunci10xAnalysisRun({ analysisRunId: v2Started.run.id, session: v2Session, context: v2Context });
+assert.equal(v2Completed?.status, 'READY');
+assert.equal(v2Context.provider.calls.length, 5, 'V2 public uses shared preprocessing plus EVALUATE only');
+assert.deepEqual(v2Context.provider.calls.map((call) => call.operationType), ['PRECHECK', 'EXTRACT', 'PROFILE', 'STRATEGY', 'EVALUATE']);
+assert.equal('CLARIFY' in (v2Completed?.operationRefs ?? {}), false, 'V2 public skips V1 clarification');
+const v2Evaluation = await v2Context.persistence.getLatestEvaluation(v2Session.sessionId, v2Session.sessionSecret);
+assert.equal(v2Evaluation?.score.rubricVersion, 'annunci10x-rubric-v2');
+assert.equal(v2Evaluation?.gate, null);
 
 const rateOne = await context.persistence.checkRateLimit({ scope: 'analysis_test', subject: 's1', limit: 1, windowSeconds: 60 });
 const rateTwo = await context.persistence.checkRateLimit({ scope: 'analysis_test', subject: 's1', limit: 1, windowSeconds: 60 });

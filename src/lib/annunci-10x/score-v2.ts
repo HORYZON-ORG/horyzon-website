@@ -100,6 +100,41 @@ export function calculateAnnunci10xScoreV2(checks: readonly EvaluationCheckV2[])
   };
 }
 
+export function validateScoreResultV2(value: unknown): { ok: true; value: ScoreResultV2 } | { ok: false; errors: string[] } {
+  const errors: string[] = [];
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return { ok: false, errors: ['score_result must be an object.'] };
+  }
+
+  const record = value as Record<string, unknown>;
+  if (record.rubricVersion !== ANNUNCI10X_RUBRIC_VERSION_V2) errors.push('rubricVersion must be annunci10x-rubric-v2.');
+  if (record.scoreSemanticsVersion !== ANNUNCI10X_SCORE_SEMANTICS_VERSION_V2) errors.push('scoreSemanticsVersion must be annunci10x-score-semantics-v2.');
+  if (record.max !== 100) errors.push('max must be 100.');
+  if (!Array.isArray(record.checks)) errors.push('checks must be an array.');
+
+  if (errors.length) return { ok: false, errors };
+
+  const checkValidation = validateEvaluationChecksV2(record.checks as EvaluationCheckV2[]);
+  if (!checkValidation.ok) return { ok: false, errors: checkValidation.errors };
+
+  const deterministic = calculateAnnunci10xScoreV2(record.checks as EvaluationCheckV2[]);
+  compareNumberOrNull(record.value, deterministic.value, 'value', errors);
+  compareNumber(record.coverage, deterministic.coverage, 'coverage', errors);
+  compareNumber(record.evaluableCheckCount, deterministic.evaluableCheckCount, 'evaluableCheckCount', errors);
+  compareNumber(record.totalCheckCount, deterministic.totalCheckCount, 'totalCheckCount', errors);
+  compareBand(record.band, deterministic.band, errors);
+
+  if (errors.length) return { ok: false, errors };
+  return { ok: true, value: deterministic };
+}
+
+export function isScoreResultV2(value: unknown): value is ScoreResultV2 {
+  return typeof value === 'object'
+    && value !== null
+    && (value as Record<string, unknown>).rubricVersion === ANNUNCI10X_RUBRIC_VERSION_V2
+    && (value as Record<string, unknown>).scoreSemanticsVersion === ANNUNCI10X_SCORE_SEMANTICS_VERSION_V2;
+}
+
 function cloneCheck(check: EvaluationCheckV2): EvaluationCheckV2 {
   return {
     id: check.id,
@@ -110,4 +145,34 @@ function cloneCheck(check: EvaluationCheckV2): EvaluationCheckV2 {
     missing: [...check.missing],
     confidence: check.confidence,
   };
+}
+
+function compareNumber(actual: unknown, expected: number, path: string, errors: string[]): void {
+  if (typeof actual !== 'number' || !Number.isFinite(actual) || Math.abs(actual - expected) > 0.000001) {
+    errors.push(`${path} must match deterministic V2 aggregate.`);
+  }
+}
+
+function compareNumberOrNull(actual: unknown, expected: number | null, path: string, errors: string[]): void {
+  if (expected === null) {
+    if (actual !== null) errors.push(`${path} must be null.`);
+    return;
+  }
+  compareNumber(actual, expected, path, errors);
+}
+
+function compareBand(actual: unknown, expected: ScoreBandDefinitionV2 | null, errors: string[]): void {
+  if (expected === null) {
+    if (actual !== null) errors.push('band must be null.');
+    return;
+  }
+  if (typeof actual !== 'object' || actual === null || Array.isArray(actual)) {
+    errors.push('band must be an object.');
+    return;
+  }
+  const band = actual as Record<string, unknown>;
+  if (band.code !== expected.code) errors.push(`band.code must be ${expected.code}.`);
+  if (band.label !== expected.label) errors.push(`band.label must be ${expected.label}.`);
+  if (band.minInclusive !== expected.minInclusive) errors.push('band.minInclusive must match deterministic V2 band.');
+  if (band.maxExclusive !== expected.maxExclusive) errors.push('band.maxExclusive must match deterministic V2 band.');
 }

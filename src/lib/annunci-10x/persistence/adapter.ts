@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { ANNUNCI10X_RUBRIC_VERSION_V2 } from '../constants.ts';
+import { isScoreResultV2, validateScoreResultV2 } from '../score-v2.ts';
 import {
   validateCommercialContext,
   validateGeneratedAd,
@@ -204,8 +206,13 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
 
   async saveEvaluation(input: SaveEvaluationInput): Promise<PersistedEvaluation> {
     await this.requireOwnership(input.sessionId, input.sessionSecret);
-    validateScoreResultOrThrow(input.score);
-    validatePublicationGateOrThrow(input.gate);
+    validatePersistedScoreOrThrow(input.score);
+    if (isScoreResultV2(input.score)) {
+      if (input.gate !== null) throw new Annunci10xPersistenceError('V2 evaluations must not store a PublicationGate.', 'VALIDATION');
+    } else {
+      if (!input.gate) throw new Annunci10xPersistenceError('V1 evaluations require a PublicationGate.', 'VALIDATION');
+      validatePublicationGateOrThrow(input.gate);
+    }
     const rows = await this.insert('annunci10x_evaluations', {
       session_id: input.sessionId,
       target: input.target.kind,
@@ -213,7 +220,7 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
       target_output_id: input.targetOutputId ?? null,
       checks: input.score.checks,
       score_result: input.score,
-      gates: input.gate,
+      gates: isScoreResultV2(input.score) ? v2GateEnvelope() : input.gate,
       rubric_version: input.score.rubricVersion,
     });
     return parseEvaluationRow(first(rows, 'save evaluation'));
@@ -669,8 +676,13 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
 
   async saveEvaluation(input: SaveEvaluationInput): Promise<PersistedEvaluation> {
     this.requireMemoryOwnership(input.sessionId, input.sessionSecret);
-    validateScoreResultOrThrow(input.score);
-    validatePublicationGateOrThrow(input.gate);
+    validatePersistedScoreOrThrow(input.score);
+    if (isScoreResultV2(input.score)) {
+      if (input.gate !== null) throw new Annunci10xPersistenceError('V2 evaluations must not store a PublicationGate.', 'VALIDATION');
+    } else {
+      if (!input.gate) throw new Annunci10xPersistenceError('V1 evaluations require a PublicationGate.', 'VALIDATION');
+      validatePublicationGateOrThrow(input.gate);
+    }
     const row = {
       id: randomUUID(),
       session_id: input.sessionId,
@@ -679,7 +691,7 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
       target_output_id: input.targetOutputId ?? null,
       checks: input.score.checks,
       score_result: input.score,
-      gates: input.gate,
+      gates: isScoreResultV2(input.score) ? v2GateEnvelope() : input.gate,
       rubric_version: input.score.rubricVersion,
       created_at: new Date().toISOString(),
     };
@@ -1128,6 +1140,22 @@ function validateRoleProfileOrThrow(value: unknown): void {
 function validateScoreResultOrThrow(value: unknown): void {
   const validation = validateScoreResult(value);
   if (!validation.ok) throw new Annunci10xPersistenceError(validation.errors.join('; '), 'VALIDATION');
+}
+
+function validatePersistedScoreOrThrow(value: unknown): void {
+  if (isScoreResultV2(value) || (typeof value === 'object' && value !== null && (value as Record<string, unknown>).rubricVersion === ANNUNCI10X_RUBRIC_VERSION_V2)) {
+    const validation = validateScoreResultV2(value);
+    if (!validation.ok) throw new Annunci10xPersistenceError(validation.errors.join('; '), 'VALIDATION');
+    return;
+  }
+  validateScoreResultOrThrow(value);
+}
+
+function v2GateEnvelope(): Record<string, string> {
+  return {
+    status: 'NOT_EVALUATED',
+    reason: 'V2_SCORE_ONLY',
+  };
 }
 
 function validatePublicationGateOrThrow(value: unknown): void {
