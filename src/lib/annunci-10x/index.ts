@@ -1,5 +1,6 @@
 export * from './completeness.ts';
 export * from './ai/index.ts';
+export * from './analysis-run.ts';
 export * from './commercial.ts';
 export * from './constants.ts';
 export * from './create-flow.ts';
@@ -13,6 +14,7 @@ export * from './rubric.ts';
 export * from './rubric-v2.ts';
 export * from './score.ts';
 export * from './score-v2.ts';
+export * from './source-ingestion.ts';
 export * from './state-machine.ts';
 export * from './strategy-rules.ts';
 export * from './types.ts';

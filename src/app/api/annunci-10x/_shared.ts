@@ -14,6 +14,8 @@ import {
 const MAX_JSON_BYTES = 32_000;
 const WINDOW_MS = 60_000;
 const MAX_REQUESTS = 12;
+const ANALYSIS_START_LIMIT = 4;
+const ANALYSIS_START_WINDOW_SECONDS = 60 * 10;
 const limits = new Map<string, { count: number; resetAt: number }>();
 
 export async function readJsonBody(request: Request): Promise<Record<string, unknown>> {
@@ -78,6 +80,21 @@ export function checkAnnunci10xRateLimit(request: Request, sessionId?: string): 
   return NextResponse.json(publicErrorPayload('RATE_LIMITED', 'Troppe richieste ravvicinate. Riprova tra poco.'), {
     status: 429,
     headers: { 'Retry-After': String(retryAfter), 'Cache-Control': 'no-store' },
+  });
+}
+
+export async function checkAnnunci10xPersistentStartLimit(context: Annunci10xRuntimeContext, request: Request, sessionId: string): Promise<NextResponse | null> {
+  const subject = `${clientIp(request)}:${sessionId}`;
+  const result = await context.persistence.checkRateLimit({
+    scope: 'annunci10x_analysis_start',
+    subject,
+    limit: ANALYSIS_START_LIMIT,
+    windowSeconds: ANALYSIS_START_WINDOW_SECONDS,
+  });
+  if (result.allowed) return null;
+  return NextResponse.json(publicErrorPayload('RATE_LIMITED', 'Troppe analisi avviate ravvicinate. Riprova tra poco.'), {
+    status: 429,
+    headers: { 'Retry-After': String(result.retryAfterSeconds), 'Cache-Control': 'no-store' },
   });
 }
 

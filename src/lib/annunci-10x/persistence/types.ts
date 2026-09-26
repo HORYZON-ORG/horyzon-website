@@ -18,6 +18,11 @@ import type {
 export type Annunci10xPersistenceFlow = 'ANALYZE' | 'CREATE';
 export type Annunci10xSnapshotReason = 'INITIAL_EXTRACTION' | 'USER_ANSWER' | 'USER_EDIT' | 'USER_CONFIRMATION' | 'POST_GENERATION_EDIT';
 export type Annunci10xOutputType = 'MASTER' | 'CHANNEL_VARIANT';
+export type Annunci10xAnalysisSourceKind = 'PASTED_TEXT' | 'PUBLIC_URL';
+export type Annunci10xAnalysisSourceStatus = 'READY' | 'URL_FETCH_FAILED' | 'INVALID_SOURCE';
+export type Annunci10xAnalysisRunStatus = 'QUEUED' | 'RUNNING' | 'READY' | 'FAILED';
+export type Annunci10xAnalysisRunStage = 'SOURCE_VALIDATION' | 'PRECHECK' | 'EXTRACT' | 'PROFILE' | 'STRATEGY' | 'EVALUATE' | 'CLARIFY' | 'COMPLETE';
+export type Annunci10xAnalysisEvaluationMode = 'V1' | 'V2_SHADOW';
 
 export interface PersistedAnnunci10xSession extends Annunci10xSession {
   flow: Annunci10xPersistenceFlow;
@@ -144,6 +149,99 @@ export interface PersistedEvaluation {
   createdAt: string;
 }
 
+export interface CreateAnalysisRunInput {
+  sessionId: string;
+  sessionSecret: string;
+  sourceKind: Annunci10xAnalysisSourceKind;
+  sourceStatus: Annunci10xAnalysisSourceStatus;
+  originalInput: string;
+  sourceUrl?: string | null;
+  fetchedText?: string | null;
+  targetText?: string | null;
+  retrievalMetadata?: Record<string, unknown> | null;
+  failureCode?: string | null;
+  failureMessage?: string | null;
+  targetKind: EvaluationTarget['kind'];
+  sourceHash: string;
+  inputIdentity: string;
+  methodVersion: string;
+  rubricVersion: string;
+  promptVersion: string;
+  scoreSemanticsVersion: string;
+  model: string;
+  provider: string;
+  evaluationMode: Annunci10xAnalysisEvaluationMode;
+  declaredChannel?: PublicationChannel | null;
+}
+
+export interface PersistedAnalysisRun {
+  id: string;
+  sessionId: string;
+  sourceKind: Annunci10xAnalysisSourceKind;
+  sourceStatus: Annunci10xAnalysisSourceStatus;
+  sourceUrl?: string | null;
+  originalInput: string;
+  fetchedText?: string | null;
+  targetText?: string | null;
+  retrievalMetadata: Record<string, unknown>;
+  targetKind: EvaluationTarget['kind'];
+  declaredChannel?: PublicationChannel | null;
+  sourceHash: string;
+  inputIdentity: string;
+  methodVersion: string;
+  rubricVersion: string;
+  promptVersion: string;
+  scoreSemanticsVersion: string;
+  model: string;
+  provider: string;
+  evaluationMode: Annunci10xAnalysisEvaluationMode;
+  status: Annunci10xAnalysisRunStatus;
+  stage: Annunci10xAnalysisRunStage;
+  evaluationId?: string | null;
+  resultReference?: string | null;
+  operationRefs: Record<string, unknown>;
+  errorPayload?: Record<string, unknown> | null;
+  attemptCount: number;
+  leaseExpiresAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  failedAt?: string | null;
+}
+
+export interface UpdateAnalysisRunInput {
+  analysisRunId: string;
+  sessionSecret: string;
+  status?: Annunci10xAnalysisRunStatus;
+  stage?: Annunci10xAnalysisRunStage;
+  sourceStatus?: Annunci10xAnalysisSourceStatus;
+  evaluationId?: string | null;
+  resultReference?: string | null;
+  operationRefs?: Record<string, unknown>;
+  retrievalMetadata?: Record<string, unknown>;
+  errorPayload?: Record<string, unknown> | null;
+  leaseExpiresAt?: string | null;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  failedAt?: string | null;
+  incrementAttemptCount?: boolean;
+}
+
+export interface CheckRateLimitInput {
+  scope: string;
+  subject: string;
+  limit: number;
+  windowSeconds: number;
+}
+
+export interface CheckRateLimitResult {
+  allowed: boolean;
+  retryAfterSeconds: number;
+  remaining: number;
+  resetAt: string;
+}
+
 export interface SaveOutputInput {
   sessionId: string;
   sessionSecret: string;
@@ -194,6 +292,11 @@ export interface Annunci10xPersistenceAdapter {
   failAiOperation(input: FailAiOperationInput): Promise<PersistedAiOperation>;
   saveEvaluation(input: SaveEvaluationInput): Promise<PersistedEvaluation>;
   getLatestEvaluation(sessionId: string, sessionSecret: string): Promise<PersistedEvaluation | null>;
+  createOrGetAnalysisRun(input: CreateAnalysisRunInput): Promise<PersistedAnalysisRun>;
+  getAnalysisRun(analysisRunId: string, sessionSecret: string): Promise<PersistedAnalysisRun | null>;
+  claimAnalysisRun(analysisRunId: string, sessionSecret: string, leaseSeconds: number): Promise<PersistedAnalysisRun | null>;
+  updateAnalysisRun(input: UpdateAnalysisRunInput): Promise<PersistedAnalysisRun>;
+  checkRateLimit(input: CheckRateLimitInput): Promise<CheckRateLimitResult>;
   saveOutput(input: SaveOutputInput): Promise<PersistedOutput>;
   getLatestOutput(sessionId: string, sessionSecret: string, outputType?: Annunci10xOutputType, parentMasterId?: string | null): Promise<PersistedOutput | null>;
   appendEvent(input: AppendEventInput): Promise<PersistedEvent>;

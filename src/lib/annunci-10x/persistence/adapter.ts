@@ -11,6 +11,7 @@ import type { AiOperationStatus } from '../types.ts';
 import { assertSafeEventMetadata, createAnnunci10xSessionSecret, hashAnnunci10xSessionSecret } from './security.ts';
 import {
   ANNUNCI10X_PERSISTENCE_VERSIONS,
+  parseAnalysisRunRow,
   parseAiOperationRow,
   parseAnswerRow,
   parseEvaluationRow,
@@ -24,10 +25,14 @@ import type {
   AppendAnswerInput,
   AppendEventInput,
   AppendSnapshotInput,
+  CheckRateLimitInput,
+  CheckRateLimitResult,
+  CreateAnalysisRunInput,
   CompleteAiOperationInput,
   CreateSessionInput,
   CreateSessionResult,
   FailAiOperationInput,
+  PersistedAnalysisRun,
   PersistedAiOperation,
   PersistedAnnunci10xSession,
   PersistedAnswer,
@@ -38,6 +43,7 @@ import type {
   SaveEvaluationInput,
   SaveOutputInput,
   StartAiOperationInput,
+  UpdateAnalysisRunInput,
   UpdateSessionInput,
 } from './types.ts';
 
@@ -216,6 +222,84 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
     return rows[0] ? parseEvaluationRow(rows[0]) : null;
   }
 
+  async createOrGetAnalysisRun(input: CreateAnalysisRunInput): Promise<PersistedAnalysisRun> {
+    const row = await this.rpc<DbRow>('annunci10x_create_or_get_analysis_run', {
+      p_session_id: input.sessionId,
+      p_owner_secret_hash: hashAnnunci10xSessionSecret(input.sessionSecret),
+      p_source_kind: input.sourceKind,
+      p_source_status: input.sourceStatus,
+      p_original_input: input.originalInput,
+      p_source_url: input.sourceUrl ?? null,
+      p_fetched_text: input.fetchedText ?? null,
+      p_target_text: input.targetText ?? null,
+      p_retrieval_metadata: input.retrievalMetadata ?? {},
+      p_failure_code: input.failureCode ?? null,
+      p_failure_message: input.failureMessage ?? null,
+      p_target_kind: input.targetKind,
+      p_declared_channel: input.declaredChannel ?? null,
+      p_source_hash: input.sourceHash,
+      p_input_identity: input.inputIdentity,
+      p_method_version: input.methodVersion,
+      p_rubric_version: input.rubricVersion,
+      p_prompt_version: input.promptVersion,
+      p_score_semantics_version: input.scoreSemanticsVersion,
+      p_model: input.model,
+      p_provider: input.provider,
+      p_evaluation_mode: input.evaluationMode,
+    });
+    return parseAnalysisRunRow(row);
+  }
+
+  async getAnalysisRun(analysisRunId: string, sessionSecret: string): Promise<PersistedAnalysisRun | null> {
+    const rows = await this.select('annunci10x_analysis_runs', {
+      id: `eq.${analysisRunId}`,
+      select: '*,annunci10x_sessions!inner(owner_secret_hash,expires_at)',
+      'annunci10x_sessions.owner_secret_hash': `eq.${hashAnnunci10xSessionSecret(sessionSecret)}`,
+      limit: '1',
+    });
+    return rows[0] ? parseAnalysisRunRow(rows[0]) : null;
+  }
+
+  async claimAnalysisRun(analysisRunId: string, sessionSecret: string, leaseSeconds: number): Promise<PersistedAnalysisRun | null> {
+    const row = await this.rpc<DbRow | null>('annunci10x_claim_analysis_run', {
+      p_analysis_run_id: analysisRunId,
+      p_owner_secret_hash: hashAnnunci10xSessionSecret(sessionSecret),
+      p_lease_seconds: leaseSeconds,
+    });
+    return row ? parseAnalysisRunRow(row) : null;
+  }
+
+  async updateAnalysisRun(input: UpdateAnalysisRunInput): Promise<PersistedAnalysisRun> {
+    const row = await this.rpc<DbRow>('annunci10x_update_analysis_run', {
+      p_analysis_run_id: input.analysisRunId,
+      p_owner_secret_hash: hashAnnunci10xSessionSecret(input.sessionSecret),
+      p_status: input.status ?? null,
+      p_stage: input.stage ?? null,
+      p_source_status: input.sourceStatus ?? null,
+      p_evaluation_id: input.evaluationId ?? null,
+      p_result_reference: input.resultReference ?? null,
+      p_operation_refs: input.operationRefs ?? null,
+      p_retrieval_metadata: input.retrievalMetadata ?? null,
+      p_error_payload: input.errorPayload ?? null,
+      p_lease_expires_at: input.leaseExpiresAt ?? null,
+      p_started_at: input.startedAt ?? null,
+      p_completed_at: input.completedAt ?? null,
+      p_failed_at: input.failedAt ?? null,
+      p_increment_attempt_count: input.incrementAttemptCount ?? false,
+    });
+    return parseAnalysisRunRow(row);
+  }
+
+  async checkRateLimit(input: CheckRateLimitInput): Promise<CheckRateLimitResult> {
+    const row = await this.rpc<DbRow>('annunci10x_check_rate_limit', {
+      p_scope: input.scope,
+      p_subject: input.subject,
+      p_limit: input.limit,
+      p_window_seconds: input.windowSeconds,
+    });
+    return parseRateLimitRow(row);
+  }
+
   async saveOutput(input: SaveOutputInput): Promise<PersistedOutput> {
     await this.requireOwnership(input.sessionId, input.sessionSecret);
     if (input.outputType === 'MASTER') validateGeneratedAdOrThrow(input.generatedContent);
@@ -317,9 +401,11 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
   private answers: DbRow[] = [];
   private snapshots: DbRow[] = [];
   private operations = new Map<string, DbRow>();
+  private analysisRuns = new Map<string, DbRow>();
   private outputs = new Map<string, DbRow>();
   private evaluations: DbRow[] = [];
   private events: DbRow[] = [];
+  private rateLimits = new Map<string, { count: number; resetAt: number }>();
 
   async createSession(input: CreateSessionInput): Promise<CreateSessionResult> {
     validateCommercialContextOrThrow(input.commercialContext);
@@ -483,6 +569,114 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
     return row ? parseEvaluationRow(row) : null;
   }
 
+  async createOrGetAnalysisRun(input: CreateAnalysisRunInput): Promise<PersistedAnalysisRun> {
+    this.requireMemoryOwnership(input.sessionId, input.sessionSecret);
+    const existing = [...this.analysisRuns.values()].find((row) => row.session_id === input.sessionId && row.input_identity === input.inputIdentity);
+    if (existing) return parseAnalysisRunRow(existing);
+    const now = new Date().toISOString();
+    const status = input.sourceStatus === 'READY' ? 'QUEUED' : 'FAILED';
+    const row: DbRow = {
+      id: randomUUID(),
+      session_id: input.sessionId,
+      source_kind: input.sourceKind,
+      source_status: input.sourceStatus,
+      source_url: input.sourceUrl ?? null,
+      original_input: input.originalInput,
+      fetched_text: input.fetchedText ?? null,
+      target_text: input.targetText ?? null,
+      retrieval_metadata: input.retrievalMetadata ?? {},
+      target_kind: input.targetKind,
+      declared_channel: input.declaredChannel ?? null,
+      source_hash: input.sourceHash,
+      input_identity: input.inputIdentity,
+      method_version: input.methodVersion,
+      rubric_version: input.rubricVersion,
+      prompt_version: input.promptVersion,
+      score_semantics_version: input.scoreSemanticsVersion,
+      model: input.model,
+      provider: input.provider,
+      evaluation_mode: input.evaluationMode,
+      status,
+      stage: 'SOURCE_VALIDATION',
+      evaluation_id: null,
+      result_reference: null,
+      operation_refs: {},
+      error_payload: input.failureCode ? { code: input.failureCode, message: input.failureMessage ?? 'Source ingestion failed.' } : null,
+      attempt_count: 0,
+      lease_expires_at: null,
+      created_at: now,
+      updated_at: now,
+      started_at: null,
+      completed_at: null,
+      failed_at: status === 'FAILED' ? now : null,
+    };
+    this.analysisRuns.set(String(row.id), row);
+    return parseAnalysisRunRow(row);
+  }
+
+  async getAnalysisRun(analysisRunId: string, sessionSecret: string): Promise<PersistedAnalysisRun | null> {
+    const row = this.analysisRuns.get(analysisRunId);
+    if (!row) return null;
+    this.requireMemoryOwnership(String(row.session_id), sessionSecret);
+    return parseAnalysisRunRow(row);
+  }
+
+  async claimAnalysisRun(analysisRunId: string, sessionSecret: string, leaseSeconds: number): Promise<PersistedAnalysisRun | null> {
+    const row = this.analysisRuns.get(analysisRunId);
+    if (!row) return null;
+    this.requireMemoryOwnership(String(row.session_id), sessionSecret);
+    const now = Date.now();
+    const leaseExpiresAt = typeof row.lease_expires_at === 'string' ? Date.parse(row.lease_expires_at) : 0;
+    if (row.status === 'READY' || row.status === 'FAILED') return null;
+    if (row.status === 'RUNNING' && leaseExpiresAt > now) return null;
+    row.status = 'RUNNING';
+    row.started_at = row.started_at ?? new Date(now).toISOString();
+    row.lease_expires_at = new Date(now + leaseSeconds * 1000).toISOString();
+    row.attempt_count = Number(row.attempt_count ?? 0) + 1;
+    row.updated_at = new Date(now).toISOString();
+    return parseAnalysisRunRow(row);
+  }
+
+  async updateAnalysisRun(input: UpdateAnalysisRunInput): Promise<PersistedAnalysisRun> {
+    const row = this.analysisRuns.get(input.analysisRunId);
+    if (!row) throw new Annunci10xPersistenceError('Annunci 10x analysis run not found.', 'OWNERSHIP');
+    this.requireMemoryOwnership(String(row.session_id), input.sessionSecret);
+    if (input.status !== undefined) row.status = input.status;
+    if (input.stage !== undefined) row.stage = input.stage;
+    if (input.sourceStatus !== undefined) row.source_status = input.sourceStatus;
+    if (input.evaluationId !== undefined) row.evaluation_id = input.evaluationId;
+    if (input.resultReference !== undefined) row.result_reference = input.resultReference;
+    if (input.operationRefs !== undefined) row.operation_refs = input.operationRefs;
+    if (input.retrievalMetadata !== undefined) row.retrieval_metadata = input.retrievalMetadata;
+    if (input.errorPayload !== undefined) row.error_payload = input.errorPayload;
+    if (input.leaseExpiresAt !== undefined) row.lease_expires_at = input.leaseExpiresAt;
+    if (input.startedAt !== undefined) row.started_at = input.startedAt;
+    if (input.completedAt !== undefined) row.completed_at = input.completedAt;
+    if (input.failedAt !== undefined) row.failed_at = input.failedAt;
+    if (input.incrementAttemptCount) row.attempt_count = Number(row.attempt_count ?? 0) + 1;
+    row.updated_at = new Date().toISOString();
+    return parseAnalysisRunRow(row);
+  }
+
+  async checkRateLimit(input: CheckRateLimitInput): Promise<CheckRateLimitResult> {
+    const key = `${input.scope}:${input.subject}`;
+    const now = Date.now();
+    const current = this.rateLimits.get(key);
+    if (!current || current.resetAt <= now) {
+      const resetAt = now + input.windowSeconds * 1000;
+      this.rateLimits.set(key, { count: 1, resetAt });
+      return { allowed: true, remaining: Math.max(0, input.limit - 1), retryAfterSeconds: 0, resetAt: new Date(resetAt).toISOString() };
+    }
+    current.count += 1;
+    const allowed = current.count <= input.limit;
+    return {
+      allowed,
+      remaining: Math.max(0, input.limit - current.count),
+      retryAfterSeconds: allowed ? 0 : Math.max(1, Math.ceil((current.resetAt - now) / 1000)),
+      resetAt: new Date(current.resetAt).toISOString(),
+    };
+  }
+
   async saveOutput(input: SaveOutputInput): Promise<PersistedOutput> {
     this.requireMemoryOwnership(input.sessionId, input.sessionSecret);
     if (input.outputType === 'MASTER') validateGeneratedAdOrThrow(input.generatedContent);
@@ -582,6 +776,15 @@ function operationRow(input: {
 function first(rows: DbRow[], label: string): DbRow {
   if (!rows[0]) throw new Annunci10xPersistenceError(`Annunci 10x ${label} did not return a row.`, 'DATABASE');
   return rows[0];
+}
+
+function parseRateLimitRow(row: DbRow): CheckRateLimitResult {
+  return {
+    allowed: row.allowed === true,
+    retryAfterSeconds: typeof row.retry_after_seconds === 'number' ? row.retry_after_seconds : 0,
+    remaining: typeof row.remaining === 'number' ? row.remaining : 0,
+    resetAt: typeof row.reset_at === 'string' ? row.reset_at : new Date().toISOString(),
+  };
 }
 
 function validateCommercialContextOrThrow(value: unknown): void {

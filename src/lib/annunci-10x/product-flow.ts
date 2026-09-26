@@ -111,6 +111,7 @@ export interface RunFreeAnalysisInput {
   companyHint?: string;
   channelHint?: PublicationChannel;
   context?: Annunci10xRuntimeContext;
+  stageObserver?: (stage: 'PRECHECK' | 'EXTRACT' | 'PROFILE' | 'STRATEGY' | 'EVALUATE' | 'CLARIFY', event: Record<string, unknown>) => Promise<void>;
 }
 
 export interface AnswerClarificationInput {
@@ -180,6 +181,7 @@ export async function runFreeAnnunci10xAnalysis(input: RunFreeAnalysisInput): Pr
     input: { rawText: input.rawAdText, declaredChannel: input.channelHint ?? 'LINKEDIN', roleHint: input.roleHint ?? null, companyHint: input.companyHint ?? null, entryMode: 'ANALYZE' },
   });
   operations.push(toPublicOperation(precheck, 'PRECHECK', context.configuredProvider));
+  await input.stageObserver?.('PRECHECK', { operationId: precheck.operation.id });
   await context.persistence.appendEvent({ sessionId: input.sessionId, eventName: 'precheck_completed', metadata: { detectedType: precheck.output.detectedType, canRunFullAnalysis: precheck.output.canRunFullAnalysis } });
 
   if (!precheck.output.canRunFullAnalysis || precheck.output.detectedType === 'NOT_JOB_AD' || precheck.output.detectedType === 'UNUSABLE') {
@@ -193,6 +195,7 @@ export async function runFreeAnnunci10xAnalysis(input: RunFreeAnalysisInput): Pr
     input: { originalAd, existingRoleCard: null },
   });
   operations.push(toPublicOperation(extract, 'EXTRACT', context.configuredProvider));
+  await input.stageObserver?.('EXTRACT', { operationId: extract.operation.id });
 
   const roleCard = buildRoleCardFromExtract(input.rawAdText, extract.output as Annunci10xExtractOutput, input.roleHint, input.companyHint);
   const initialSnapshot = await context.persistence.appendSnapshot({
@@ -210,6 +213,7 @@ export async function runFreeAnnunci10xAnalysis(input: RunFreeAnalysisInput): Pr
     inputSnapshotId: initialSnapshot.id,
   });
   operations.push(toPublicOperation(profileTask, 'PROFILE', context.configuredProvider));
+  await input.stageObserver?.('PROFILE', { operationId: profileTask.operation.id });
   const roleProfile = buildRoleProfile(roleCard, profileTask.output as Annunci10xProfileOutput);
 
   const strategyTask = await orchestrator.runTask({
@@ -220,6 +224,7 @@ export async function runFreeAnnunci10xAnalysis(input: RunFreeAnalysisInput): Pr
     inputSnapshotId: initialSnapshot.id,
   });
   operations.push(toPublicOperation(strategyTask, 'STRATEGY', context.configuredProvider));
+  await input.stageObserver?.('STRATEGY', { operationId: strategyTask.operation.id });
   const communicationStrategy = normalizeStrategy(strategyTask.output.communicationStrategy, input.sessionId);
 
   const snapshot = await context.persistence.appendSnapshot({
@@ -239,6 +244,7 @@ export async function runFreeAnnunci10xAnalysis(input: RunFreeAnalysisInput): Pr
     inputSnapshotId: snapshot.id,
   });
   operations.push(toPublicOperation(evaluate, 'EVALUATE', context.configuredProvider));
+  await input.stageObserver?.('EVALUATE', { operationId: evaluate.operation.id });
 
   const { score, gate } = scoreAndGate(evaluate.output as Annunci10xEvaluateOutput, extract.output as Annunci10xExtractOutput);
   const evaluation = await context.persistence.saveEvaluation({
@@ -258,6 +264,7 @@ export async function runFreeAnnunci10xAnalysis(input: RunFreeAnalysisInput): Pr
     inputSnapshotId: snapshot.id,
   });
   operations.push(toPublicOperation(clarify, 'CLARIFY', context.configuredProvider));
+  await input.stageObserver?.('CLARIFY', { operationId: clarify.operation.id });
 
   await context.persistence.appendEvent({ sessionId: input.sessionId, eventName: 'analysis_completed', metadata: { coverage: score.coverage, gateStatus: gate.status } });
   if (clarify.output.status === 'NEEDS_CLARIFICATION') {

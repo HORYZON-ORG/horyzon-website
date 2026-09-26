@@ -19,6 +19,7 @@ import type { Annunci10xSession, ChannelVariant, EvaluationTarget, GeneratedAd }
 import type {
   Annunci10xOutputType,
   Annunci10xPersistenceFlow,
+  PersistedAnalysisRun,
   PersistedAiOperation,
   PersistedAnnunci10xSession,
   PersistedAnswer,
@@ -121,6 +122,44 @@ export function parseEvaluationRow(row: Record<string, unknown>): PersistedEvalu
     score: score.value,
     gate: gate.value,
     createdAt: requireString(row.created_at, 'evaluation.created_at'),
+  };
+}
+
+export function parseAnalysisRunRow(row: Record<string, unknown>): PersistedAnalysisRun {
+  return {
+    id: requireString(row.id, 'analysisRun.id'),
+    sessionId: requireString(row.session_id, 'analysisRun.session_id'),
+    sourceKind: requireString(row.source_kind, 'analysisRun.source_kind') as PersistedAnalysisRun['sourceKind'],
+    sourceStatus: requireString(row.source_status, 'analysisRun.source_status') as PersistedAnalysisRun['sourceStatus'],
+    sourceUrl: optionalString(row.source_url),
+    originalInput: requireString(row.original_input, 'analysisRun.original_input'),
+    fetchedText: optionalString(row.fetched_text),
+    targetText: optionalString(row.target_text),
+    retrievalMetadata: optionalRecord(row.retrieval_metadata, 'analysisRun.retrieval_metadata') ?? {},
+    targetKind: requireString(row.target_kind, 'analysisRun.target_kind') as PersistedAnalysisRun['targetKind'],
+    declaredChannel: optionalString(row.declared_channel) as PersistedAnalysisRun['declaredChannel'],
+    sourceHash: requireString(row.source_hash, 'analysisRun.source_hash'),
+    inputIdentity: requireString(row.input_identity, 'analysisRun.input_identity'),
+    methodVersion: requireString(row.method_version, 'analysisRun.method_version'),
+    rubricVersion: requireString(row.rubric_version, 'analysisRun.rubric_version'),
+    promptVersion: requireString(row.prompt_version, 'analysisRun.prompt_version'),
+    scoreSemanticsVersion: requireString(row.score_semantics_version, 'analysisRun.score_semantics_version'),
+    model: requireString(row.model, 'analysisRun.model'),
+    provider: requireString(row.provider, 'analysisRun.provider'),
+    evaluationMode: requireString(row.evaluation_mode, 'analysisRun.evaluation_mode') as PersistedAnalysisRun['evaluationMode'],
+    status: requireString(row.status, 'analysisRun.status') as PersistedAnalysisRun['status'],
+    stage: requireString(row.stage, 'analysisRun.stage') as PersistedAnalysisRun['stage'],
+    evaluationId: optionalString(row.evaluation_id),
+    resultReference: optionalString(row.result_reference),
+    operationRefs: optionalRecord(row.operation_refs, 'analysisRun.operation_refs') ?? {},
+    errorPayload: optionalRecord(row.error_payload, 'analysisRun.error_payload'),
+    attemptCount: requireNumber(row.attempt_count, 'analysisRun.attempt_count'),
+    leaseExpiresAt: optionalString(row.lease_expires_at),
+    createdAt: requireString(row.created_at, 'analysisRun.created_at'),
+    updatedAt: requireString(row.updated_at, 'analysisRun.updated_at'),
+    startedAt: optionalString(row.started_at),
+    completedAt: optionalString(row.completed_at),
+    failedAt: optionalString(row.failed_at),
   };
 }
 

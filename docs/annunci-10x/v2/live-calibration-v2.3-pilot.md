@@ -53,7 +53,7 @@ Cached/input ratio observed: 85.4%.
 | Mean input tokens | 6617.89 | 6964.47 | 346.58 |
 | Cached input ratio | 86.18% | 85.4% | -0.78 pp |
 | Mean output tokens | 4019.83 | 3837.33 | 4.54% reduction |
-| Mean total tokens | 10637.72 | 10801.8 | -1.54% reduction |
+| Mean total tokens | 10637.72 | 10801.8 | 1.54% increase |
 | Median latency ms | 32902 | 32514 | 1.18% reduction |
 
 ## Latency

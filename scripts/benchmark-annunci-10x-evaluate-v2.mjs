@@ -675,7 +675,7 @@ Cached/input ratio observed: ${round(analysis.usage.cachedInputRatio * 100)}%.
 | Mean input tokens | ${analysis.metadata.baselineV22.inputMean} | ${round(analysis.usage.inputTokens.mean)} | ${round(analysis.usage.inputTokens.mean - analysis.metadata.baselineV22.inputMean)} |
 | Cached input ratio | ${round(analysis.metadata.baselineV22.cachedInputRatio * 100)}% | ${round(analysis.usage.cachedInputRatio * 100)}% | ${round((analysis.usage.cachedInputRatio - analysis.metadata.baselineV22.cachedInputRatio) * 100)} pp |
 | Mean output tokens | ${analysis.metadata.baselineV22.outputMean} | ${round(analysis.usage.outputTokens.mean)} | ${outputReduction === null ? 'n/a' : `${round(outputReduction)}% reduction`} |
-| Mean total tokens | ${analysis.metadata.baselineV22.totalMean} | ${round(analysis.usage.totalTokens.mean)} | ${totalReduction === null ? 'n/a' : `${round(totalReduction)}% reduction`} |
+| Mean total tokens | ${analysis.metadata.baselineV22.totalMean} | ${round(analysis.usage.totalTokens.mean)} | ${formatReduction(totalReduction)} |
 | Median latency ms | ${analysis.metadata.baselineV22.latencyMedianMs} | ${analysis.latency.median} | ${latencyReduction === null ? 'n/a' : `${round(latencyReduction)}% reduction`} |
 
 ## Latency
@@ -840,6 +840,12 @@ function round(value) {
 function pctReduction(previous, current) {
   if (!previous) return null;
   return ((previous - current) / previous) * 100;
+}
+
+function formatReduction(value) {
+  if (value === null) return 'n/a';
+  if (value >= 0) return `${round(value)}% reduction`;
+  return `${round(Math.abs(value))}% increase`;
 }
 
 function mdCell(value) {
