@@ -175,11 +175,13 @@ Confidence is preserved as provider-reported diagnostic metadata only. It is val
 
 Fase 1C adds a provider contract and isolated shadow runner for V2 evaluation:
 
-- prompt version `annunci10x.evaluate.v2.1`;
+- prompt version `annunci10x.evaluate.v2.2`;
 - output schema `annunci10x_evaluate_v2`;
 - explicit TARGET vs CONTEXT input boundary;
 - one schema-repair retry after invalid provider output;
 - deterministic aggregation through the V2 scoring core.
+
+Fase 1C.1 keeps the output schema and scoring semantics unchanged, but refines input minimization: TARGET preserves legitimate application/contact evidence that belongs to the evaluated ad or bundle; CONTEXT strips lead PII, secrets, payment, entitlement, pricing, discount, and commercial metadata. The prompt also excludes per-check gate and accelerator metadata because the provider evaluates controls while TypeScript owns gate and architecture decisions.
 
 The Fase 1C runner does not persist operations, does not calculate a publication gate, does not replace V1 `EVALUATE`, and has not been live-calibrated against OpenAI.
 

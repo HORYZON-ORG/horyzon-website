@@ -57,12 +57,14 @@ The provider must produce bounded per-control numeric evaluations. Do not let th
 
 Fase 1C implemented an isolated V2 provider contract for shadow evaluation:
 
-- `src/lib/annunci-10x/ai/prompts/evaluate-v2.ts` renders prompt version `annunci10x.evaluate.v2.1` from the TypeScript V2 rubric;
+- `src/lib/annunci-10x/ai/prompts/evaluate-v2.ts` renders prompt version `annunci10x.evaluate.v2.2` from the TypeScript V2 rubric;
 - `src/lib/annunci-10x/ai/schemas-v2.ts` validates the V2 structured output and rejects provider-owned aggregate fields;
 - `src/lib/annunci-10x/ai/evaluate-v2.ts` projects TARGET and CONTEXT separately, runs the provider with operation type `EVALUATE`, retries schema repair once, and aggregates through `calculateAnnunci10xScoreV2()`;
 - `scripts/verify-annunci-10x-ai-v2.mjs` tests the contract with a fake provider and `OpenAiAnnunci10xProvider` fake fetch only.
 
 This remains additive and isolated. It is not wired into public `/annunci-10x`, V1 `EVALUATE`, persistence, UI, API routes, Supabase, checkout, or commercial runtime.
+
+Fase 1C.1 refined the projection boundary: TARGET preserves legitimate target-bundle evidence such as application email/phone/URL/name fields while removing technical secret keys; CONTEXT remains whitelisted to `roleCard`, `roleProfile`, and `communicationStrategy` and removes lead PII plus commercial/payment metadata. The V2 prompt no longer renders per-check `gateRelevance` or `acceleratorSuitability` metadata; those remain TypeScript/runtime architecture metadata, not provider scoring instructions.
 
 Remaining future work:
 

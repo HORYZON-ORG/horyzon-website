@@ -8,7 +8,7 @@ import { ANNUNCI10X_EVALUATE_OUTPUT_SCHEMA_V2 } from '../schemas-v2.ts';
 import { renderPrompt } from './helpers.ts';
 import type { Annunci10xPromptDefinition } from './types.ts';
 
-export const ANNUNCI10X_EVALUATE_PROMPT_VERSION_V2 = 'annunci10x.evaluate.v2.1';
+export const ANNUNCI10X_EVALUATE_PROMPT_VERSION_V2 = 'annunci10x.evaluate.v2.2';
 
 const invariants = [
   `Prompt pack: ${ANNUNCI10X_PROMPT_PACK_VERSION_V2}; rubric: ${ANNUNCI10X_RUBRIC_VERSION_V2}; score semantics: ${ANNUNCI10X_SCORE_SEMANTICS_VERSION_V2}.`,
@@ -67,8 +67,6 @@ function renderCheck(definition: (typeof ANNUNCI10X_RUBRIC_CHECKS_V2)[number]): 
     `MISSING: ${definition.missingSemantics}`,
     `N/D: ${definition.notEvaluableSemantics}`,
     `CONFLICT: ${definition.conflictSemantics}`,
-    `Gate: ${definition.gateRelevance.relevant ? 'material issues may affect future gate' : 'quality signal only by default'}. ${definition.gateRelevance.notes}`,
     `Caveats: ${[...definition.avoid, ...(definition.notes ?? [])].join(' ')}`,
-    `Accelerator: ${definition.acceleratorSuitability}`,
   ].join('\n');
 }

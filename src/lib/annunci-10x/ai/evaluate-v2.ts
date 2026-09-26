@@ -61,15 +61,23 @@ export interface RunAnnunci10xEvaluateV2Result extends Annunci10xEvaluateOutputV
 
 export function projectEvaluateInputV2(input: Annunci10xEvaluateInputV2): Annunci10xEvaluateInputV2 {
   return {
-    target: sanitizeValue({
+    target: {
       kind: input.target.kind,
       text: input.target.text,
       channel: input.target.channel ?? null,
-      structuredFields: input.target.structuredFields ?? null,
-      applicationDestination: input.target.applicationDestination ?? null,
-      channelPolicy: input.target.channelPolicy ?? null,
-    }) as Annunci10xEvaluateTargetV2,
-    context: sanitizeValue(input.context ?? {}) as Annunci10xEvaluateContextV2,
+      structuredFields: sanitizeTargetValue(input.target.structuredFields ?? null) as Record<string, unknown> | null,
+      applicationDestination: sanitizeTargetValue(input.target.applicationDestination ?? null) as string | Record<string, unknown> | null,
+      channelPolicy: sanitizeTargetValue(input.target.channelPolicy ?? null) as Record<string, unknown> | null,
+    },
+    context: projectEvaluateContextV2(input.context ?? {}),
+  };
+}
+
+export function projectEvaluateContextV2(context: Annunci10xEvaluateContextV2): Annunci10xEvaluateContextV2 {
+  return {
+    roleCard: sanitizeContextValue(context.roleCard),
+    roleProfile: sanitizeContextValue(context.roleProfile),
+    communicationStrategy: sanitizeContextValue(context.communicationStrategy),
   };
 }
 
@@ -168,20 +176,55 @@ function buildEvaluateResultV2(output: Annunci10xEvaluateOutputV2, providerResul
   };
 }
 
-function sanitizeValue(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(sanitizeValue);
+function sanitizeTargetValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sanitizeTargetValue).filter((item) => item !== undefined);
+  if (!isJsonPrimitiveOrObject(value)) return undefined;
   if (typeof value !== 'object' || value === null) return value;
 
   const output: Record<string, unknown> = {};
   for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
-    if (shouldRemoveProviderInputKey(key)) continue;
-    const sanitized = sanitizeValue(nested);
+    if (shouldRemoveTargetKey(key)) continue;
+    const sanitized = sanitizeTargetValue(nested);
     if (sanitized !== undefined) output[key] = sanitized;
   }
   return output;
 }
 
-function shouldRemoveProviderInputKey(key: string): boolean {
+function sanitizeContextValue(value: unknown): unknown {
+  if (value === undefined) return undefined;
+  if (Array.isArray(value)) return value.map(sanitizeContextValue).filter((item) => item !== undefined);
+  if (!isJsonPrimitiveOrObject(value)) return undefined;
+  if (typeof value !== 'object' || value === null) return value;
+
+  const output: Record<string, unknown> = {};
+  for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
+    if (shouldRemoveContextKey(key)) continue;
+    const sanitized = sanitizeContextValue(nested);
+    if (sanitized !== undefined) output[key] = sanitized;
+  }
+  return output;
+}
+
+function isJsonPrimitiveOrObject(value: unknown): boolean {
+  return value === null || ['string', 'number', 'boolean', 'object'].includes(typeof value);
+}
+
+function shouldRemoveTargetKey(key: string): boolean {
+  const normalized = key.toLowerCase();
+  return [
+    'sessionsecret',
+    'cookie',
+    'apikey',
+    'api_key',
+    'openai_api_key',
+    'authorization',
+    'access_token',
+    'refresh_token',
+    'secret',
+  ].includes(normalized);
+}
+
+function shouldRemoveContextKey(key: string): boolean {
   const normalized = key.toLowerCase();
   return [
     'sessionsecret',
@@ -197,12 +240,21 @@ function shouldRemoveProviderInputKey(key: string): boolean {
     'discount',
     'name',
     'firstname',
+    'first_name',
     'lastname',
+    'last_name',
     'surname',
     'customername',
+    'customer_name',
+    'leadname',
+    'lead_name',
     'email',
     'phone',
     'telefono',
+    'authorization',
+    'access_token',
+    'refresh_token',
+    'secret',
   ].includes(normalized);
 }
 
