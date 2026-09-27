@@ -242,7 +242,6 @@ export function Annunci10xAnalyzeFlow() {
       <div className={styles.formHead}>
         <p>Score gratuito</p>
         <h2 id="analyze-source-title">Analizza gratis il tuo annuncio</h2>
-        <span>Incolla il testo o il link pubblico. Ti mostriamo lo Score e ti mandiamo il report via email.</span>
       </div>
       <div className={styles.sourceToggle} role="radiogroup" aria-label="Sorgente annuncio">
         <button type="button" data-active={sourceMode === 'PASTED_TEXT'} onClick={() => setSourceMode('PASTED_TEXT')} disabled={busy === 'source'}>Testo</button>
@@ -250,7 +249,7 @@ export function Annunci10xAnalyzeFlow() {
       </div>
       {sourceMode === 'PASTED_TEXT'
         ? <Field label="Testo annuncio" htmlFor="annunci10x-source-text" required>
-            <textarea id="annunci10x-source-text" required value={text} onChange={(event) => setText(event.target.value)} placeholder="Incolla qui il testo del tuo annuncio" rows={12} disabled={busy === 'source'} />
+            <textarea id="annunci10x-source-text" className={styles.sourceTextarea} data-empty={!text.trim()} required value={text} onChange={(event) => setText(event.target.value)} placeholder="Incolla qui il testo del tuo annuncio" rows={text.trim() ? 10 : 3} disabled={busy === 'source'} />
           </Field>
         : <Field label="URL annuncio" htmlFor="annunci10x-source-url" required>
             <input id="annunci10x-source-url" type="url" required value={url} onChange={(event) => setUrl(event.target.value)} placeholder="Incolla il link pubblico dell'annuncio" disabled={busy === 'source'} />
@@ -343,7 +342,7 @@ function FreeResultCard({ result }: { result: FreeResult }) {
 }
 
 function ScoreBandBar({ activeLabel }: { activeLabel?: string }) {
-  const labels = ['Critico', 'Debole', 'Base', 'Buono', 'Forte'];
+  const labels = ['Critico', 'Debole', 'Buona base', 'Forte', 'Eccellente'];
   return <div className={styles.scoreBandBar} aria-label="Fasce Score">{labels.map((label) => <span key={label} data-active={activeLabel === label}>{label}</span>)}</div>;
 }
 

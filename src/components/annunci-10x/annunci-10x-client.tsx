@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import type { CSSProperties, FormEvent, ReactNode } from 'react';
+import type { FormEvent, ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { Annunci10xAnalyzeFlow } from './annunci-10x-analyze-flow';
 import styles from './annunci-10x.module.css';
@@ -137,9 +137,11 @@ const defaultUnknowns: Record<UnknownKey, boolean> = {
 const createStepOrder: CreateStepId[] = ['ROLE_CONTEXT', 'PRIMARY_CONTRIBUTION', 'WORK_REALITY', 'REQUIREMENTS', 'ATTRACTION', 'OFFER', 'CHANNEL_APPLICATION'];
 const proofItems = ['Metodo Performia', 'Dal 2001, in oltre 26 paesi', '20 controlli per ogni annuncio'];
 const storyBeats = [
-  'Pubblichi un annuncio. Arrivano candidature, ma molte persone non c’entrano davvero con il lavoro.',
-  'Fai colloqui. Sulla carta sembravano candidati adatti, poi scopri che ruolo e aspettative erano stati capiti in modo diverso.',
-  'Intanto il team copre il vuoto, i manager perdono tempo e una posizione che doveva sostenere la crescita diventa un freno.',
+  'Pubblichi un annuncio e arrivano CV fuori target: persone motivate, magari, ma lontane dal lavoro reale.',
+  'Aumenti il budget o cambi portale, però il problema resta: poche candidature utili e candidati che avevano capito un altro ruolo.',
+  'Fai colloqui per chiarire ciò che l’annuncio non aveva spiegato: attività, condizioni, ritmo, responsabilità, aspettative.',
+  'La sostituzione slitta, il team compensa, i manager si caricano urgenze che non dovrebbero più gestire.',
+  'Alla fine assumi di fretta e il rischio è scoprire dopo pochi mesi che la persona non era davvero allineata.',
 ];
 const targetLines = [
   'Se sei un imprenditore e una posizione scoperta sta rallentando l’azienda.',
@@ -147,38 +149,44 @@ const targetLines = [
   'Se devi sostituire qualcuno ma continui a rimandare perché trovare un’alternativa sembra impossibile.',
   'Se l’azienda potrebbe crescere, ma non riesci a inserire le persone necessarie.',
 ];
-const funnelRows = [
-  ['Tanti visualizzano', 'curiosità generica'],
-  ['Alcuni si candidano', 'motivazione ancora incerta'],
-  ['Pochi sono coerenti', 'qui si vede la qualità dell’annuncio'],
-  ['Le persone giuste capiscono', 'l’obiettivo non è allargare: è filtrare meglio'],
+const funnelExamples = [
+  {
+    title: 'ANNUNCIO VAGO',
+    rows: ['Filtro largo', 'Messaggio ambiguo', 'Poca coerenza tra CV e lavoro reale'],
+  },
+  {
+    title: 'ANNUNCIO CHIARO',
+    rows: ['Filtro più selettivo', 'Lavoro comprensibile', 'Maggiore coerenza tra aspettative e ruolo'],
+  },
 ];
 const costItems = [
-  ['Tempo perso', 'Candidature da leggere, telefonate, colloqui e follow-up che non avvicinano la scelta.'],
-  ['Ruolo fermo', 'Una posizione scoperta scarica lavoro sul team e rallenta clienti, consegne o vendite.'],
-  ['Aspettative confuse', 'Quando l’annuncio promette o omette troppo, il problema esplode dopo.'],
+  ['Tempo sui CV', 'Leggi candidature, fai telefonate e organizzi colloqui che non avvicinano una scelta concreta.'],
+  ['Colloqui inutili', 'Usi il colloquio per spiegare il lavoro invece che per capire se la persona è adatta.'],
+  ['Posto scoperto', 'Una posizione vuota rallenta consegne, vendite, clienti o produzione.'],
+  ['Team che compensa', 'Le persone già in azienda coprono attività non loro, con urgenza e fatica crescente.'],
+  ['Clienti che aspettano', 'Quando manca la persona giusta, anche il servizio o la risposta commerciale si allunga.'],
+  ['Rischio di assumere persona sbagliata', 'Una scelta frettolosa può costare più del tempo perso a scrivere meglio l’annuncio.'],
 ];
-const controls = [
-  'Risultato atteso', 'Attività reali', 'Responsabilità', 'Requisiti obbligatori', 'Requisiti preferenziali',
-  'Cosa si può imparare', 'Sede', 'Orario', 'Contratto', 'Compenso', 'Benefit', 'Crescita concreta',
-  'Contesto operativo', 'Autonomia', 'Ritmo del lavoro', 'Vincoli reali', 'Tono e chiarezza', 'Candidatura',
-  'Coerenza complessiva', 'Informazioni mancanti',
+const roleGroups: Array<[string, string[]]> = [
+  ['Produzione', ['Operaio di produzione', 'Saldatore', 'Manutentore meccanico', 'Elettricista', 'Tecnico installatore']],
+  ['Logistica', ['Magazziniere carrellista', 'Autista patente C']],
+  ['Commerciale e ufficio', ['Commerciale B2B', 'Impiegato amministrativo', 'Addetto alla contabilità']],
+  ['Ristorazione', ['Cuoco', 'Cameriere di sala']],
 ];
-const roles = ['Magazziniere', 'Cameriere', 'Cuoco', 'Venditore / Commerciale', 'Customer Care', 'Tecnico', 'Impiegato amministrativo', 'Automation Engineer'];
 const methodSteps = ['Lavoro reale', 'Persona necessaria', 'Strategia', 'Annuncio', 'Verifica'];
 const faqItems = [
-  ['È davvero gratis?', 'Sì. Lo Score gratuito richiede solo il testo o il link dell’annuncio e una verifica email per mostrarti il report.'],
-  ['Quanto tempo serve?', 'Di solito circa 2 minuti per avviare l’analisi, poi ricevi il risultato appena il sistema completa i controlli.'],
-  ['Devo inserire la carta di credito?', 'No. La carta di credito non è richiesta per l’analisi gratuita.'],
-  ['Posso usare un link invece del testo?', 'Sì, se il link è pubblico e leggibile. Se non riusciamo a leggerlo, puoi incollare il testo.'],
-  ['Lo Score decide se devo assumere qualcuno?', 'No. Lo Score valuta la chiarezza dell’annuncio, non prende decisioni di selezione.'],
-  ['Cosa succede se mancano informazioni?', 'Il report ti indica quali parti non erano valutabili e quali dati conviene chiarire prima di pubblicare.'],
-  ['Funziona anche per ruoli operativi?', 'Sì. Il metodo è pensato per ruoli concreti, ricorrenti e spesso difficili da spiegare bene.'],
-  ['Funziona per ruoli commerciali o tecnici?', 'Sì. I controlli aiutano a distinguere risultato atteso, requisiti e condizioni reali del lavoro.'],
-  ['Posso creare un annuncio da zero?', 'Sì. Il percorso guidato parte dai fatti del ruolo e costa 9 € quando è disponibile.'],
-  ['Che differenza c’è con la guida?', 'La guida premium da 49 € spiega il metodo completo e ti aiuta a riscrivere con più autonomia.'],
-  ['Cosa include il prodotto da 7 €?', 'È il percorso leggero per trasformare un annuncio già analizzato in una versione più chiara.'],
-  ['Quando serve una consulenza?', 'Quando il problema non è solo il testo, ma il fabbisogno, il processo o la selezione complessiva.'],
+  ['Quanto costa?', 'Lo Score è gratuito. Se vuoi intervenire sul testo, la riscrittura costa 7 € per versione e canale, la creazione da zero costa 9 € e la Guida Annunci 10x + Agent Recruiter costa 49 €.'],
+  ['Cosa ricevo con lo Score gratuito?', 'Ricevi uno Score su 100, le aree principali da guardare, le priorità e il significato del risultato. Il report completo arriva via email dopo la verifica.'],
+  ['Perché mi chiedete l’email?', 'Serve per collegare il report alla tua richiesta e inviartelo. Comunicazioni marketing solo con consenso separato.'],
+  ['Che differenza c’è tra riscrittura e creazione da zero?', 'La riscrittura parte da un annuncio già esistente e lo lavora per il canale scelto. La creazione da zero parte dal lavoro reale in un percorso guidato.'],
+  ['Perché comprare la Guida se la riscrittura costa 7 €?', 'La riscrittura risolve un testo specifico. La Guida Annunci 10x + Agent Recruiter ti dà il metodo per i prossimi annunci, con prompt per ChatGPT e Claude.'],
+  ['Usate l’intelligenza artificiale?', 'Sì. L’intelligenza artificiale applica i controlli del metodo. Il sistema è progettato per non riempire informazioni mancanti con fatti professionali inventati.'],
+  ['Funziona anche per ruoli operativi?', 'Sì. Annunci 10x è pensato anche per ruoli operativi, tecnici, logistici, amministrativi, commerciali e di ristorazione.'],
+  ['Ho già un’agenzia o un consulente. Mi serve comunque?', 'Può esserti utile come controllo sul testo e sul modo in cui il ruolo viene spiegato. Non sostituisce il processo di selezione o il lavoro consulenziale.'],
+  ['Mi garantite più candidature?', 'No. Le candidature dipendono da mercato, canale, condizioni e attrattività dell’offerta. Annunci 10x lavora su chiarezza e coerenza dell’annuncio.'],
+  ['Come funziona "soddisfatti o rimborsati"?', 'I prodotti a pagamento saranno coperti da “Soddisfatti o rimborsati”. Se il risultato acquistato non ti convince, potrai richiedere il rimborso.'],
+  ['Chi c’è dietro Annunci 10x?', 'Annunci 10x è un prodotto di Horyzon Consulting, sviluppato in collaborazione con Performia. Performia lavora dal 2001 in oltre 26 paesi.'],
+  ['E se il problema non è l’annuncio?', 'A volte l’annuncio è solo il primo segnale. Il blocco può riguardare fabbisogno, canale, processo di selezione o attrattività dell’offerta. In quel caso puoi parlarne con Horyzon.'],
 ];
 
 export function Annunci10xClient() {
@@ -339,7 +347,7 @@ export function Annunci10xClient() {
             <p className={styles.heroMicroLead}>Gratis · 2 minuti · nessuna carta di credito</p>
             <div className={styles.heroActions} aria-label="Percorsi iniziali">
               <button type="button" onClick={() => selectMode('ANALYZE')}>Analizza il mio annuncio — gratis</button>
-              <button type="button" onClick={() => selectMode('CREATE')}>Devi ancora scriverlo? Crea l&apos;annuncio da zero — 9 €</button>
+              <button type="button" className={styles.heroSecondaryAction} onClick={() => selectMode('CREATE')}>Devi ancora scriverlo? Crea l&apos;annuncio da zero</button>
             </div>
             <HeroProofStrip />
           </div>
@@ -374,7 +382,7 @@ export function Annunci10xClient() {
       <GuaranteeSection />
       <ConsultingSection />
       <FaqSection />
-      <FinalCta onAnalyze={() => selectMode('ANALYZE')} onCreate={() => selectMode('CREATE')} />
+      <FinalCta onAnalyze={() => selectMode('ANALYZE')} />
     </main>
     <FunnelFooter />
   </div>;
@@ -383,7 +391,6 @@ export function Annunci10xClient() {
 function FunnelHeader({ onAnalyze }: { onAnalyze: () => void }) {
   return <header className={styles.funnelHeader} aria-label="Annunci 10x">
     <Link href="/" className={styles.brand}>Horyzon</Link>
-    <nav aria-label="Navigazione Annunci 10x"><a href="#metodo">Metodo</a><a href="#prodotti">Prodotti</a><a href="#faq">FAQ</a></nav>
     <button type="button" onClick={onAnalyze}>Analizza gratis</button>
   </header>;
 }
@@ -401,15 +408,15 @@ function HeroProofStrip() {
 
 function ScoreDemoCard() {
   return <aside className={styles.scoreDemo} aria-label="Esempio di Score">
-    <p>Esempio di Score</p>
-    <div><span>Commerciale B2B</span><strong>67<small>/100</small></strong><em>Debole</em></div>
-    <ScoreBandBar activeIndex={1} />
-    <small>Una fotografia sintetica: abbastanza chiaro da partire, non abbastanza preciso da filtrare bene.</small>
+    <p>Esempio di Score · Commerciale B2B</p>
+    <div className={styles.scoreDemoTop}><span>Anteprima secondaria</span><strong>37<small>/100</small></strong><em>Critico</em></div>
+    <ScoreBandBar activeIndex={0} />
+    <small>Così com&apos;è, questo annuncio rischia di non attirare le persone giuste per questo lavoro.</small>
   </aside>;
 }
 
 function ScoreBandBar({ activeIndex }: { activeIndex: number }) {
-  const bands = ['Critico', 'Debole', 'Base', 'Buono', 'Forte'];
+  const bands = ['Critico', 'Debole', 'Buona base', 'Forte', 'Eccellente'];
   return <div className={styles.scoreBandBar} aria-label="Fasce Score">{bands.map((band, index) => <span key={band} data-active={index === activeIndex}>{band}</span>)}</div>;
 }
 
@@ -431,7 +438,7 @@ function CentralIdeaSection() {
 function InverseFunnelSection() {
   return <section className={styles.inverseFunnel}>
     <div className={styles.sectionHeading}><p>Funnel inverso</p><h2>Non devi piacere a tutti. Devi farti capire da chi può fare bene quel lavoro.</h2></div>
-    <div className={styles.funnelVisual}>{funnelRows.map(([title, copy], index) => <article key={title} style={{ '--row': String(index + 1) } as CSSProperties}><strong>{title}</strong><span>{copy}</span></article>)}</div>
+    <div className={styles.funnelVisual}>{funnelExamples.map((example) => <article key={example.title}><h3>{example.title}</h3>{example.rows.map((row) => <span key={row}>{row}</span>)}</article>)}</div>
   </section>;
 }
 
@@ -445,34 +452,33 @@ function CostProblemSection() {
 function ProductExplainerSection() {
   return <section className={styles.explainerSection}>
     <div className={styles.sectionHeading}><p>Che cosa fa</p><h2>Annunci 10x guarda il testo come lo leggerà una persona reale.</h2><span>Non abbellisce l’offerta e non inventa benefit. Evidenzia cosa è chiaro, cosa manca e dove l’annuncio rischia di attrarre candidature sbagliate.</span></div>
-    <div className={styles.explainerGrid}><article><h3>Capisce il ruolo</h3><p>Ricostruisce attività, risultato atteso e condizioni dichiarate.</p></article><article><h3>Misura la chiarezza</h3><p>Applica 20 controlli e distingue fatti presenti da informazioni mancanti.</p></article><article><h3>Indica priorità</h3><p>Mostra punti forti, rischi e prime correzioni pratiche.</p></article></div>
+    <div className={styles.explainerGrid}><article><h3>Capisce il ruolo</h3><p>Ricostruisce attività, risultato atteso e condizioni dichiarate.</p></article><article><h3>Misura la chiarezza</h3><p>Applica 20 controlli e distingue fatti presenti da informazioni mancanti.</p></article><article><h3>Indica priorità</h3><p>Mostra punti forti, rischi e significato del risultato. Le indicazioni operative arrivano nel report via email.</p></article></div>
   </section>;
 }
 
 function ControlsSection() {
   return <section className={styles.controlsSection}>
     <div className={styles.sectionHeading}><p>20 controlli</p><h2>Ogni controllo serve a una domanda semplice.</h2><span>La persona giusta capisce che lavoro è, quali condizioni troverà e perché dovrebbe candidarsi?</span></div>
-    <div className={styles.controlsGrid}>{controls.map((item, index) => <span key={item}>{String(index + 1).padStart(2, '0')} · {item}</span>)}</div>
   </section>;
 }
 
 function RoleStrip() {
   return <section className={styles.rolesSection}>
     <div className={styles.sectionHeading}><p>Esempi ruoli</p><h2>Funziona sui ruoli che assumono davvero le PMI.</h2></div>
-    <div className={styles.roleChips}>{roles.map((role) => <span key={role}>{role}</span>)}</div>
+    <div className={styles.roleGroups}>{roleGroups.map(([group, items]) => <article key={group}><h3>{group}</h3><p>{items.join(' · ')}</p></article>)}</div>
   </section>;
 }
 
 function BeforeAfterSection() {
   return <section className={styles.beforeAfterSection}>
-    <div className={styles.sectionHeading}><p>Prima / dopo</p><h2>Non promettiamo magie. Rendiamo il lavoro più leggibile.</h2></div>
-    <div className={styles.beforeAfterGrid}><article><span>Prima</span><p>Un testo generico, pieno di formule comuni, con poche informazioni sul lavoro reale.</p></article><article><span>Dopo</span><p>Un annuncio più concreto: risultato atteso, attività, condizioni e candidatura diventano verificabili.</p></article></div>
+    <div className={styles.sectionHeading}><p>Prima / dopo</p><h2>Stesso lavoro. Due annunci.</h2></div>
+    <div className={styles.casePending}><span>Caso reale in preparazione</span><p>Stiamo preparando un confronto con un annuncio reale, anonimizzato e valutato con lo stesso Score.</p></div>
   </section>;
 }
 
 function MethodSection() {
   return <section id="metodo" className={styles.methodSection}>
-    <div className={styles.sectionHeading}><p>Metodo</p><h2>Prima la realtà del ruolo. Poi le parole.</h2><span>Annunci 10x è costruito con Horyzon in collaborazione con Performia: il testo viene valutato partendo da lavoro reale, persona necessaria e chiarezza operativa.</span></div>
+    <div className={styles.sectionHeading}><p>Metodo</p><h2>Prima la realtà del ruolo. Poi le parole.</h2><span>Annunci 10x è costruito da Horyzon Consulting in collaborazione con Performia, realtà attiva dal 2001 in oltre 26 paesi. Il testo viene valutato partendo da lavoro reale, persona necessaria e chiarezza operativa.</span></div>
     <div className={styles.methodFlow}>{methodSteps.map((step) => <span key={step}>{step}</span>)}</div>
   </section>;
 }
@@ -480,25 +486,24 @@ function MethodSection() {
 function ProductChoiceSection({ onAnalyze, onCreate }: { onAnalyze: () => void; onCreate: () => void }) {
   return <section id="prodotti" className={styles.productChoice}>
     <div className={styles.sectionHeading}><p>Scegli il passo</p><h2>Parti gratis. Compra solo se vuoi trasformare il risultato.</h2></div>
-    <div className={styles.productGrid}>
-      <article data-featured="true"><p>Score gratuito</p><h3>Analizza un annuncio</h3><strong>0 €</strong><span>Score su 100, report via email, priorità di correzione.</span><button type="button" onClick={onAnalyze}>Analizza gratis</button></article>
-      <article><p>Correzione leggera</p><h3>Migliora un annuncio esistente</h3><strong>7 €</strong><span>Per chi parte da un testo già analizzato e vuole renderlo più chiaro.</span><button type="button" disabled>In preparazione</button></article>
-      <article><p>Da zero</p><h3>Crea l&apos;annuncio da zero</h3><strong>9 €</strong><span>Per chi deve partire dai fatti del ruolo prima di scrivere.</span><button type="button" onClick={onCreate}>Apri percorso</button></article>
-      <article><p>Metodo completo</p><h3>Guida Premium</h3><strong>49 €</strong><span>Per capire il metodo e applicarlo su più annunci.</span><button type="button" disabled>In preparazione</button></article>
+    <div className={styles.productPaths}>
+      <article data-featured="true"><p>HO GIÀ UN ANNUNCIO</p><h3>Score Annunci 10x</h3><strong>Gratis</strong><span>Score su 100, aree principali e priorità del risultato.</span><button type="button" onClick={onAnalyze}>Analizza gratis</button><small>Riscrittura 7 € per versione e canale. Riscriviamo il tuo annuncio secondo i controlli Annunci 10x, per il canale che scegli.</small></article>
+      <article><p>DEVO ANCORA SCRIVERLO</p><h3>Creazione da zero</h3><strong>9 €</strong><span>Parti dal lavoro reale in un percorso guidato.</span><button type="button" onClick={onCreate}>Apri il percorso</button></article>
+      <article className={styles.guideOffer}><p>Assumi spesso?</p><h3>Guida Annunci 10x + Agent Recruiter</h3><strong>49 €</strong><span>Il metodo per i prossimi annunci, con prompt per ChatGPT e Claude.</span><button type="button" disabled>In preparazione</button></article>
     </div>
   </section>;
 }
 
 function GuideSection() {
-  return <section className={styles.guideSection}><div><p>Guida Premium</p><h2>La guida da 49 € ti aiuta a correggere anche i prossimi annunci.</h2></div><p>È pensata per imprenditori, HR e recruiter interni che vogliono smettere di riscrivere annunci a tentativi.</p></section>;
+  return <section className={styles.guideSection}><div><p>Guida Premium</p><h2>La guida da 49 € ti aiuta a correggere anche i prossimi annunci.</h2></div><p>È pensata per imprenditori, HR e recruiter interni che vogliono smettere di riscrivere annunci a tentativi, con il supporto dell’Agent Recruiter e prompt per ChatGPT e Claude.</p></section>;
 }
 
 function GuaranteeSection() {
-  return <section className={styles.guaranteeSection}><p>Garanzia semplice</p><h2>Se il materiale acquistato non ti dà indicazioni utilizzabili, lo rivediamo con te.</h2><span>L’obiettivo è che tu esca con un annuncio più chiaro, non con una promessa astratta.</span></section>;
+  return <section className={styles.guaranteeSection}><p>Garanzia semplice</p><h2>Soddisfatti o rimborsati.</h2><span>Se il risultato acquistato non ti convince, potrai richiedere il rimborso.</span></section>;
 }
 
 function ConsultingSection() {
-  return <section className={styles.consultingSection}><div className={styles.sectionHeading}><p>Quando serve aiuto</p><h2>Se il problema non è solo l’annuncio, Horyzon può aiutarti sul recruiting.</h2><span>Alcune difficoltà nascono prima del testo: ruolo poco definito, selezione disordinata, aspettative interne non allineate. In quel caso Annunci 10x diventa il primo segnale per aprire un lavoro più ampio.</span></div></section>;
+  return <section className={styles.consultingSection}><div className={styles.sectionHeading}><p>Quando serve aiuto</p><h2>E se il problema non è l&apos;annuncio?</h2><span>A volte l’annuncio è buono e le persone giuste non arrivano comunque. Il blocco può essere nel fabbisogno, nel canale, nel processo di selezione o nell’attrattività dell’offerta.</span><Link href="/contatti" className={styles.textCta}>Parla con Horyzon</Link></div></section>;
 }
 
 function FaqSection() {
@@ -513,8 +518,8 @@ function FaqSection() {
   </section>;
 }
 
-function FinalCta({ onAnalyze, onCreate }: { onAnalyze: () => void; onCreate: () => void }) {
-  return <section className={styles.finalCta}><p>Primo passo</p><h2>Inizia dal prossimo annuncio che devi pubblicare.</h2><div className={styles.heroActions}><button type="button" onClick={onAnalyze}>Analizza il mio annuncio — gratis</button><button type="button" onClick={onCreate}>Crea l&apos;annuncio da zero — 9 €</button></div></section>;
+function FinalCta({ onAnalyze }: { onAnalyze: () => void }) {
+  return <section className={styles.finalCta}><p>Primo passo</p><h2>Il prossimo annuncio che pubblichi sceglierà i tuoi candidati.</h2><span>Fai in modo che scelga quelli giusti.</span><div className={styles.heroActions}><button type="button" onClick={onAnalyze}>Analizza il mio annuncio — gratis</button></div><small>Gratis · 2 minuti · nessuna carta di credito</small></section>;
 }
 
 function CreateFlow(props: {

@@ -134,7 +134,7 @@
 .strategyPanel p,
 .commercialPanel p,
 .improveCta p,
-.productGrid p,
+.productPaths p,
 .guideSection p:first-child,
 .guaranteeSection p,
 .finalCta p {
@@ -206,7 +206,7 @@
 .startCreate button,
 .offerPanel button,
 .inlineEdit button,
-.productGrid button,
+.productPaths button,
 .warningPanel button,
 .inlineVerify button,
 .funnelHeader button {
@@ -224,7 +224,7 @@
 
 .heroActions button + button,
 .actions button + button,
-.productGrid button:disabled,
+.productPaths button:disabled,
 .offerPanel button,
 .inlineEdit button,
 .warningPanel button,
@@ -239,11 +239,21 @@
 .startCreate button:disabled,
 .offerPanel button:disabled,
 .inlineEdit button:disabled,
-.productGrid button:disabled,
+.productPaths button:disabled,
 .warningPanel button:disabled,
 .inlineVerify button:disabled {
   cursor: not-allowed;
   opacity: .6;
+}
+
+.heroActions .heroSecondaryAction {
+  min-height: auto;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 253, 245, .88);
+  padding: .15rem 0;
+  text-decoration: underline;
+  text-underline-offset: .2em;
 }
 
 .proofStrip {
@@ -254,7 +264,6 @@
 }
 
 .proofStrip span,
-.roleChips span,
 .controlsGrid span {
   border: 1px solid rgba(255, 255, 255, .26);
   border-radius: 6px;
@@ -296,21 +305,29 @@
 
 .scoreDemo {
   display: grid;
-  gap: .8rem;
+  justify-self: end;
+  width: min(100%, 360px);
+  gap: .65rem;
   background: rgba(255, 253, 245, .95);
+  padding: clamp(.85rem, 1.6vw, 1.15rem);
 }
 
-.scoreDemo div {
+.scoreDemoTop {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: .2rem 1rem;
   align-items: end;
 }
 
-.scoreDemo strong,
 .freeScoreHero strong,
 .scoreBox strong {
   font-size: clamp(2.6rem, 5vw, 4.6rem);
+  font-weight: 900;
+  line-height: .9;
+}
+
+.scoreDemo strong {
+  font-size: clamp(2.2rem, 3.4vw, 3.1rem);
   font-weight: 900;
   line-height: .9;
 }
@@ -396,11 +413,14 @@
 .commercialPanel span,
 .strategyPanel span,
 .improveCta span,
-.costGrid p,
-.explainerGrid p,
-.beforeAfterGrid p,
-.targetStatement span,
-.scoreDemo > small {
+  .costGrid p,
+  .explainerGrid p,
+  .casePending p,
+  .roleGroups p,
+  .productPaths span,
+  .productPaths small,
+  .targetStatement span,
+  .scoreDemo > small {
   color: var(--muted);
   line-height: 1.62;
 }
@@ -490,32 +510,36 @@
 
 .funnelVisual {
   display: grid;
-  gap: .45rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
   margin-top: 2rem;
   max-width: 940px;
 }
 
 .funnelVisual article {
   display: grid;
-  grid-template-columns: minmax(0, .45fr) minmax(0, 1fr);
-  gap: 1rem;
-  width: calc(100% - (var(--row) - 1) * 10%);
-  margin-left: calc((var(--row) - 1) * 5%);
+  gap: .8rem;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
-  padding: 1rem;
+  padding: clamp(1rem, 2.2vw, 1.5rem);
 }
 
-.funnelVisual strong,
+.funnelVisual h3 {
+  margin: 0;
+  font-size: clamp(1.05rem, 1.4vw, 1.25rem);
+  letter-spacing: .05em;
+}
+
 .funnelVisual span {
+  border-top: 1px solid rgba(16, 34, 41, .12);
+  padding-top: .7rem;
   line-height: 1.35;
 }
 
 .costGrid,
 .explainerGrid,
-.beforeAfterGrid,
-.productGrid,
+.productPaths,
 .confirmationGrid,
 .requirementGrid {
   display: grid;
@@ -526,8 +550,7 @@
 
 .costGrid article,
 .explainerGrid article,
-.beforeAfterGrid article,
-.productGrid article {
+.productPaths article {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
@@ -536,8 +559,7 @@
 
 .costGrid h3,
 .explainerGrid h3,
-.beforeAfterGrid h3,
-.productGrid h3,
+.productPaths h3,
 .panel h3,
 .offerPanel h3,
 .clarification h3,
@@ -549,6 +571,31 @@
   line-height: 1.22;
 }
 
+.costGrid {
+  max-width: 980px;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+.costGrid article {
+  display: grid;
+  grid-template-columns: minmax(180px, .32fr) minmax(0, 1fr);
+  gap: 1rem;
+  border-width: 1px 0 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 1rem 0;
+}
+
+.costGrid article:last-child {
+  border-bottom: 1px solid var(--line);
+}
+
+.costGrid h3,
+.costGrid p {
+  margin: 0;
+}
+
 .controlsGrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -556,25 +603,41 @@
   margin-top: 2rem;
 }
 
-.controlsGrid span,
-.roleChips span {
-  border-color: rgba(16, 34, 41, .16);
-  background: rgba(255, 255, 255, .58);
-  color: var(--ink);
-}
-
-.roleChips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .65rem;
+.roleGroups {
+  display: grid;
+  max-width: 980px;
   margin-top: 2rem;
+  border-top: 1px solid var(--line);
 }
 
-.beforeAfterGrid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.roleGroups article {
+  display: grid;
+  grid-template-columns: minmax(160px, .28fr) minmax(0, 1fr);
+  gap: 1rem;
+  border-bottom: 1px solid var(--line);
+  padding: .9rem 0;
 }
 
-.beforeAfterGrid span {
+.roleGroups h3,
+.roleGroups p {
+  margin: 0;
+}
+
+.roleGroups h3 {
+  font-size: 1rem;
+}
+
+.casePending {
+  display: grid;
+  gap: .5rem;
+  max-width: 760px;
+  margin-top: 2rem;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 1.2rem 0;
+}
+
+.casePending span {
   color: var(--rust);
   font-size: .82rem;
   font-weight: 900;
@@ -600,24 +663,41 @@
   border-right: 0;
 }
 
-.productGrid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+.casePending p {
+  margin: 0;
 }
 
-.productGrid article {
+.productPaths {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.productPaths article {
   display: grid;
   gap: .85rem;
 }
 
-.productGrid article[data-featured="true"] {
+.productPaths article[data-featured="true"] {
   background: #e8f6c8;
   border-color: #a8b66e;
 }
 
-.productGrid strong {
+.productPaths strong {
   font-size: clamp(2.2rem, 4vw, 3.6rem);
   font-weight: 900;
   line-height: .95;
+}
+
+.productPaths .guideOffer {
+  grid-column: 1 / -1;
+}
+
+.textCta {
+  width: fit-content;
+  margin-top: .4rem;
+  color: var(--deep);
+  font-weight: 900;
+  text-decoration: underline;
+  text-underline-offset: .2em;
 }
 
 .guideSection,
@@ -736,6 +816,15 @@
 .field textarea {
   min-height: 132px;
   resize: vertical;
+}
+
+.sourceTextarea {
+  min-height: 220px;
+  transition: min-height .2s ease;
+}
+
+.sourceTextarea[data-empty="true"] {
+  min-height: 84px;
 }
 
 .fieldGrid,
@@ -990,6 +1079,12 @@
   justify-items: start;
 }
 
+.finalCta span,
+.finalCta small {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
 .funnelFooter {
   align-items: flex-start;
   background: #051014;
@@ -1008,7 +1103,8 @@
 .sourceToggle button:focus-visible,
 .actions button:focus-visible,
 .heroActions button:focus-visible,
-.productGrid button:focus-visible,
+.productPaths button:focus-visible,
+.textCta:focus-visible,
 .funnelHeader button:focus-visible,
 .funnelHeader a:focus-visible,
 .funnelFooter a:focus-visible,
@@ -1041,7 +1137,7 @@
     grid-template-columns: 1fr;
   }
 
-  .productGrid,
+  .productPaths,
   .controlsGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1053,17 +1149,12 @@
 
 @media (max-width: 760px) {
   .funnelHeader {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .funnelHeader nav {
-    width: 100%;
-    justify-content: space-between;
+    align-items: center;
+    flex-direction: row;
   }
 
   .funnelHeader button {
-    width: 100%;
+    width: auto;
   }
 
   .hero {
@@ -1094,10 +1185,15 @@
 
   .heroActions button,
   .actions button,
-  .productGrid button,
+  .productPaths button,
   .warningPanel button,
   .inlineVerify button {
     width: 100%;
+  }
+
+  .heroActions .heroSecondaryAction {
+    width: auto;
+    align-self: flex-start;
   }
 
   .problemSection,
@@ -1127,15 +1223,20 @@
   .confirmationGrid,
   .costGrid,
   .explainerGrid,
-  .beforeAfterGrid,
-  .productGrid,
+  .productPaths,
   .controlsGrid,
+  .funnelVisual,
+  .roleGroups article,
   .inlineEdit,
   .inlineVerify,
   .sourceToggle,
-  .methodFlow,
-  .scoreBandBar {
+  .methodFlow {
     grid-template-columns: 1fr;
+  }
+
+  .scoreBandBar span {
+    padding: .4rem .12rem;
+    font-size: .62rem;
   }
 
   .storyRows p {
