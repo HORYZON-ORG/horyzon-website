@@ -94,6 +94,7 @@ const firstCode = context.emailProvider.sent[0].code;
 assert.match(firstCode, /^\d{6}$/);
 let active = await context.persistence.getActiveEmailVerification(session.sessionId, session.sessionSecret);
 assert.ok(active);
+assert.equal(context.emailProvider.sent[0].verificationId, active.id, 'provider receives the exact persisted verification id');
 assert.notEqual(active.codeHash, firstCode, 'plain OTP is never stored');
 assert.match(active.codeHash, /^[0-9a-f]{64}$/);
 

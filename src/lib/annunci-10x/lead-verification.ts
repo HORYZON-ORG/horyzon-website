@@ -47,6 +47,7 @@ export interface VerifyEmailInput {
 export interface Annunci10xEmailProvider {
   readonly kind: string;
   sendVerificationCode(input: {
+    verificationId: string;
     recipient: string;
     code: string;
     expiresAt: string;
@@ -54,11 +55,19 @@ export interface Annunci10xEmailProvider {
   }): Promise<{ providerRequestId?: string | null }>;
 }
 
+interface VerificationEmailInput {
+  verificationId: string;
+  recipient: string;
+  code: string;
+  expiresAt: string;
+  firstName?: string | null;
+}
+
 export class MockAnnunci10xEmailProvider implements Annunci10xEmailProvider {
   readonly kind = 'MOCK';
-  readonly sent: Array<{ recipient: string; code: string; expiresAt: string; firstName?: string | null }> = [];
+  readonly sent: VerificationEmailInput[] = [];
 
-  async sendVerificationCode(input: { recipient: string; code: string; expiresAt: string; firstName?: string | null }): Promise<{ providerRequestId: string }> {
+  async sendVerificationCode(input: VerificationEmailInput): Promise<{ providerRequestId: string }> {
     if (process.env.NODE_ENV === 'production') {
       throw new Annunci10xPublicError('EMAIL_PROVIDER_UNAVAILABLE', 'Provider email non disponibile.', 503);
     }
@@ -67,11 +76,83 @@ export class MockAnnunci10xEmailProvider implements Annunci10xEmailProvider {
   }
 }
 
+export interface ResendAnnunci10xEmailProviderConfig {
+  apiKey: string;
+  from: string;
+  replyTo?: string | null;
+  endpoint?: string;
+  fetchImpl?: typeof fetch;
+  timeoutMs?: number;
+}
+
+export class ResendAnnunci10xEmailProvider implements Annunci10xEmailProvider {
+  readonly kind = 'RESEND';
+  private readonly apiKey: string;
+  private readonly from: string;
+  private readonly replyTo: string | null;
+  private readonly endpoint: string;
+  private readonly fetchImpl: typeof fetch;
+  private readonly timeoutMs: number;
+
+  constructor(config: ResendAnnunci10xEmailProviderConfig) {
+    this.apiKey = config.apiKey;
+    this.from = config.from;
+    this.replyTo = cleanOptionalConfig(config.replyTo);
+    this.endpoint = config.endpoint ?? 'https://api.resend.com/emails';
+    this.fetchImpl = config.fetchImpl ?? fetch;
+    this.timeoutMs = config.timeoutMs ?? 12_000;
+    if (!this.apiKey || !this.from) throw emailProviderUnavailable();
+  }
+
+  async sendVerificationCode(input: VerificationEmailInput): Promise<{ providerRequestId?: string | null }> {
+    const idempotencyKey = resendOtpIdempotencyKey(input.verificationId);
+    const payload = buildResendOtpPayload({
+      from: this.from,
+      replyTo: this.replyTo,
+      recipient: input.recipient,
+      code: input.code,
+      expiresAt: input.expiresAt,
+      firstName: input.firstName,
+    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      const response = await this.fetchImpl(this.endpoint, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+          'Idempotency-Key': idempotencyKey,
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+      if (!response.ok) throw emailProviderUnavailable();
+      const data = await safeJson(response);
+      return { providerRequestId: typeof data.id === 'string' ? data.id : null };
+    } catch {
+      throw emailProviderUnavailable();
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+}
+
 export function createAnnunci10xEmailProvider(env: Record<string, string | undefined> = process.env): Annunci10xEmailProvider {
   const configured = env.ANNUNCI10X_EMAIL_PROVIDER?.trim().toUpperCase();
+  if (configured === 'RESEND') {
+    const apiKey = cleanRequiredConfig(env.RESEND_API_KEY);
+    const from = cleanRequiredConfig(env.ANNUNCI10X_EMAIL_FROM);
+    if (!apiKey || !from) throw emailProviderUnavailable();
+    return new ResendAnnunci10xEmailProvider({
+      apiKey,
+      from,
+      replyTo: env.ANNUNCI10X_EMAIL_REPLY_TO,
+    });
+  }
   if (configured === 'MOCK' && env.NODE_ENV !== 'production') return new MockAnnunci10xEmailProvider();
   if (!configured && env.NODE_ENV !== 'production') return new MockAnnunci10xEmailProvider();
-  throw new Annunci10xPublicError('EMAIL_PROVIDER_UNAVAILABLE', 'Provider email non disponibile.', 503);
+  throw emailProviderUnavailable();
 }
 
 export async function saveAnnunci10xLeadContact(input: SaveLeadContactInput): Promise<{
@@ -152,7 +233,7 @@ export async function requestAnnunci10xEmailVerification(input: RequestEmailVeri
   }
 
   try {
-    await provider.sendVerificationCode({ recipient: lead.emailNormalized, code, expiresAt, firstName: lead.firstName });
+    await provider.sendVerificationCode({ verificationId: verification.id, recipient: lead.emailNormalized, code, expiresAt, firstName: lead.firstName });
     await input.context.persistence.markEmailVerificationSent(verification.id, input.session.sessionSecret);
   } catch (error) {
     try {
@@ -161,7 +242,7 @@ export async function requestAnnunci10xEmailVerification(input: RequestEmailVeri
       // The provider outcome is already unsafe for this OTP; surface one controlled public error.
     }
     if (error instanceof Annunci10xPublicError) throw error;
-    throw new Annunci10xPublicError('EMAIL_PROVIDER_UNAVAILABLE', 'Provider email non disponibile.', 503);
+    throw emailProviderUnavailable();
   }
 
   await input.context.persistence.appendEvent({
@@ -294,6 +375,91 @@ function readPepper(env: Record<string, string | undefined>): string {
   const pepper = env.ANNUNCI10X_EMAIL_VERIFICATION_PEPPER;
   if (!pepper || pepper.length < 32) throw new Annunci10xPublicError('EMAIL_VERIFICATION_UNAVAILABLE', 'Verifica email non disponibile.', 503);
   return pepper;
+}
+
+export function resendOtpIdempotencyKey(verificationId: string): string {
+  return `annunci10x-otp/${verificationId}`;
+}
+
+export function buildResendOtpPayload(input: {
+  from: string;
+  replyTo?: string | null;
+  recipient: string;
+  code: string;
+  expiresAt: string;
+  firstName?: string | null;
+}): Record<string, unknown> {
+  const firstName = cleanOptionalEmailName(input.firstName);
+  const greeting = firstName ? `Ciao ${firstName},` : 'Ciao,';
+  const minutes = Math.max(1, Math.ceil((Date.parse(input.expiresAt) - Date.now()) / 60_000));
+  const text = [
+    greeting,
+    '',
+    'questo è il codice per visualizzare il tuo Annunci 10x Score:',
+    '',
+    input.code,
+    '',
+    `Il codice scade tra ${minutes} minuti.`,
+    '',
+    'Se non hai richiesto questa analisi, puoi ignorare questa email.',
+    '',
+    'Horyzon',
+  ].join('\n');
+  const html = [
+    '<div style="font-family:Arial,sans-serif;color:#102229;line-height:1.55">',
+    `<p>${escapeHtml(greeting)}</p>`,
+    '<p>questo è il codice per visualizzare il tuo Annunci 10x Score:</p>',
+    `<p style="font-size:28px;font-weight:700;letter-spacing:0.08em">${input.code}</p>`,
+    `<p>Il codice scade tra ${minutes} minuti.</p>`,
+    '<p>Se non hai richiesto questa analisi, puoi ignorare questa email.</p>',
+    '<p>Horyzon</p>',
+    '</div>',
+  ].join('');
+  const payload: Record<string, unknown> = {
+    from: input.from,
+    to: [input.recipient],
+    subject: 'Il tuo codice Annunci 10x',
+    html,
+    text,
+  };
+  if (input.replyTo) payload.reply_to = input.replyTo;
+  return payload;
+}
+
+function cleanRequiredConfig(value: string | undefined): string {
+  return value?.trim() ?? '';
+}
+
+function cleanOptionalConfig(value: string | null | undefined): string | null {
+  const cleaned = value?.trim();
+  return cleaned || null;
+}
+
+function cleanOptionalEmailName(value: string | null | undefined): string | null {
+  const cleaned = value?.replace(/\s+/g, ' ').trim();
+  return cleaned || null;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+async function safeJson(response: Response): Promise<{ id?: unknown }> {
+  try {
+    const parsed = await response.json();
+    return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed) ? parsed as { id?: unknown } : {};
+  } catch {
+    return {};
+  }
+}
+
+function emailProviderUnavailable(): Annunci10xPublicError {
+  return new Annunci10xPublicError('EMAIL_PROVIDER_UNAVAILABLE', 'Provider email non disponibile.', 503);
 }
 
 async function requireCurrentLead(context: Annunci10xRuntimeContext, session: Annunci10xSessionCookie): Promise<PersistedLead> {
