@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   ANNUNCI10X_METHOD_VERSION_V2,
@@ -27,16 +29,52 @@ const SYNTHETIC_AD = [
   'Offriamo tempo indeterminato, RAL 38.000-45.000 euro piu variabile, onboarding strutturato, budget formazione e colloquio con il Sales Lead.',
 ].join('\n');
 
-main().catch((error) => {
-  const report = {
+if (isDirectExecution()) {
+  main().catch((error) => {
+    const report = buildCanaryFailureReport(error);
+    console.log(JSON.stringify(report, null, 2));
+    process.exitCode = blockerExitCode(report.blocker);
+  });
+}
+
+export function resolveCanaryCleanupSettings(env = process.env) {
+  const configured = env.ANNUNCI10X_CANARY_CLEANUP_MODE?.trim().toUpperCase() || 'INTERNAL';
+  if (configured !== 'INTERNAL' && configured !== 'EXTERNAL') {
+    throw blocked('OPENAI_CANARY_BLOCKED_INVALID_CLEANUP_MODE', 'ANNUNCI10X_CANARY_CLEANUP_MODE must be INTERNAL or EXTERNAL.', {
+      cleanupMode: configured,
+    });
+  }
+  if (configured === 'EXTERNAL' && env.ANNUNCI10X_CANARY_ALLOW_EXTERNAL_CLEANUP !== '1') {
+    throw annotateCanaryCleanupContext(
+      blocked('OPENAI_CANARY_BLOCKED_EXTERNAL_CLEANUP_GUARD', 'Set ANNUNCI10X_CANARY_ALLOW_EXTERNAL_CLEANUP=1 to run with external cleanup.'),
+      { cleanupMode: 'EXTERNAL', sessionId: null },
+    );
+  }
+  return {
+    cleanupMode: configured,
+    shouldAssertCleanupPermission: configured === 'INTERNAL',
+    shouldAutoCleanup: configured === 'INTERNAL',
+  };
+}
+
+export function annotateCanaryCleanupContext(error, input) {
+  error.cleanupMode = input.cleanupMode;
+  error.cleanupRequired = input.cleanupMode === 'EXTERNAL' && Boolean(input.sessionId);
+  error.canarySessionId = input.cleanupMode === 'EXTERNAL' && input.sessionId ? input.sessionId : null;
+  return error;
+}
+
+export function buildCanaryFailureReport(error) {
+  return {
     run: 'BLOCKED',
     blocker: classifyBlocker(error),
+    cleanupMode: error?.cleanupMode ?? null,
+    cleanupRequired: error?.cleanupRequired ?? false,
+    canarySessionId: error?.canarySessionId ?? null,
     error: sanitizeError(error),
     cleanup: error?.cleanupReport ?? null,
   };
-  console.log(JSON.stringify(report, null, 2));
-  process.exitCode = blockerExitCode(report.blocker);
-});
+}
 
 async function main() {
   if (process.env.ANNUNCI10X_RUN_LIVE_CANARY !== '1') {
@@ -45,8 +83,9 @@ async function main() {
   if (!process.env.OPENAI_API_KEY) {
     throw blocked('OPENAI_CANARY_BLOCKED_KEY_MISSING', 'OPENAI_API_KEY is not available in the server environment.');
   }
+  const cleanupSettings = resolveCanaryCleanupSettings(process.env);
   const supabase = supabaseConfig();
-  await assertCleanupPermission(supabase);
+  if (cleanupSettings.shouldAssertCleanupPermission) await assertCleanupPermission(supabase);
 
   const startedAt = Date.now();
   const timeoutMs = getAnnunci10xAiTimeoutMs(process.env);
@@ -111,14 +150,21 @@ async function main() {
       throw blocked('OPENAI_CANARY_ASSERTION_FAILED', 'Canary assertions failed.', { assertions: assertions.failures });
     }
 
-    const cleanup = await cleanupCanaryRows(supabase, sessionCookie.sessionId);
-    const residual = await collectDbState(supabase, sessionCookie.sessionId);
-    assertCleanupComplete(residual);
+    const cleanup = cleanupSettings.shouldAutoCleanup
+      ? await cleanupCanaryRows(supabase, sessionCookie.sessionId)
+      : null;
+    const residual = cleanupSettings.shouldAutoCleanup
+      ? await collectDbState(supabase, sessionCookie.sessionId)
+      : null;
+    if (cleanupSettings.shouldAutoCleanup) assertCleanupComplete(residual);
 
     const report = {
       run: 'RUN',
       blocker: null,
       canaryExecuted: true,
+      cleanupMode: cleanupSettings.cleanupMode,
+      cleanupRequired: cleanupSettings.cleanupMode === 'EXTERNAL',
+      canarySessionId: cleanupSettings.cleanupMode === 'EXTERNAL' ? sessionCookie.sessionId : null,
       providerInjected: 'OPENAI',
       configuredProviderInjected: context.configuredProvider,
       supabaseProjectRef: SUPABASE_PROJECT_REF,
@@ -153,11 +199,17 @@ async function main() {
         noProviderOwnedAggregateFields: !operations.find((operation) => operation.type === 'EVALUATE')?.providerAggregateFieldsPresent,
       },
       cleanup,
-      residualAfterCleanup: residual,
+      ...(cleanupSettings.cleanupMode === 'EXTERNAL'
+        ? { residualBeforeExternalCleanup: dbState }
+        : { residualAfterCleanup: residual }),
     };
     console.log(JSON.stringify(report, null, 2));
   } catch (error) {
-    if (sessionCookie) {
+    annotateCanaryCleanupContext(error, {
+      cleanupMode: cleanupSettings.cleanupMode,
+      sessionId: sessionCookie?.sessionId ?? null,
+    });
+    if (sessionCookie && cleanupSettings.shouldAutoCleanup) {
       const cleanup = await cleanupCanaryRows(supabase, sessionCookie.sessionId).catch((cleanupError) => ({
         ok: false,
         error: sanitizeError(cleanupError),
@@ -459,6 +511,28 @@ function sanitizeError(error) {
     status: error?.status ?? null,
     retryable: error?.retryable ?? false,
     message: error?.message ?? 'Unknown error',
-    details: error?.details ?? null,
+    details: redactSecretFields(error?.details ?? null),
   };
+}
+
+function isDirectExecution() {
+  return process.argv[1] ? fileURLToPath(import.meta.url) === resolve(process.argv[1]) : false;
+}
+
+function redactSecretFields(value) {
+  if (Array.isArray(value)) return value.map(redactSecretFields);
+  if (typeof value !== 'object' || value === null) return value;
+  const output = {};
+  for (const [key, child] of Object.entries(value)) {
+    if (isSecretLikeKey(key)) {
+      output.redacted = '[REDACTED]';
+      continue;
+    }
+    output[key] = redactSecretFields(child);
+  }
+  return output;
+}
+
+function isSecretLikeKey(key) {
+  return /sessionsecret|session_secret|authorization|api[_-]?key|openai|service[_-]?role|supabase_service_role_key/i.test(key);
 }
