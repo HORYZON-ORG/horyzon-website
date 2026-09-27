@@ -16,6 +16,7 @@
     "test:ai-score:phase7b0-preflight": "node --no-warnings --experimental-strip-types scripts/verify-ai-score-phase7b0-preflight.mjs",
     "ai-score:test-provider": "node --no-warnings --experimental-strip-types scripts/ai-score-test-provider.mjs",
     "ai-score:test-runtime-store": "node --no-warnings --experimental-strip-types scripts/ai-score-test-runtime-store.mjs",
+    "annunci10x:canary-openai": "node --env-file=.env.local --no-warnings --experimental-strip-types scripts/annunci10x-openai-v2-canary.mjs",
     "assets:build": "node scripts/build-landscape.mjs",
     "higgsfield:seedance": "node --env-file=.env.local --no-warnings --experimental-strip-types index.ts",
     "test": "node scripts/verify-build.mjs && node scripts/verify-editorial.mjs && node scripts/verify-narrative.mjs && node --no-warnings --experimental-strip-types scripts/verify-scrub-controller.mjs && node scripts/verify-video-scrub.mjs && node --no-warnings --experimental-strip-types scripts/verify-mobile-controls.mjs && node --no-warnings --experimental-strip-types scripts/verify-higgsfield-seedance.mjs && npm run test:annunci-10x && npm run test:ai-score"
