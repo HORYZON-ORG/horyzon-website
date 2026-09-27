@@ -4,6 +4,7 @@ import {
   ANNUNCI10X_RUBRIC,
   ANNUNCI10X_RUBRIC_CHECKS_V2,
   MemoryAnnunci10xPersistenceAdapter,
+  SupabaseAnnunci10xPersistenceAdapter,
   calculateAnnunci10xScore,
   calculateAnnunci10xScoreV2,
   createFact,
@@ -304,5 +305,41 @@ assert.equal(validateCommercialContext({
   ...commercialContext,
   entitlements: { ...serverEntitlements, guide: true, verification: 'CLIENT_DECLARED' },
 }).ok, false, 'client-declared entitlement cannot satisfy runtime contract');
+
+const capturedSnapshotRequests = [];
+const supabaseAdapter = new SupabaseAnnunci10xPersistenceAdapter({
+  url: 'https://pmkyeqrfkunypfkbjnyg.supabase.co',
+  serviceRoleKey: 'test-service-role-key',
+  fetchImpl: async (url, init) => {
+    capturedSnapshotRequests.push({ url: String(url), init });
+    return {
+      ok: true,
+      json: async () => [],
+    };
+  },
+});
+await supabaseAdapter.getSnapshotById(
+  '11111111-1111-4111-8111-111111111111',
+  '22222222-2222-4222-8222-222222222222',
+  'owned-session-secret-long-enough',
+);
+assert.equal(capturedSnapshotRequests.length, 1);
+const snapshotRequestUrl = new URL(capturedSnapshotRequests[0].url);
+assert.equal(snapshotRequestUrl.pathname, '/rest/v1/annunci10x_snapshots');
+assert.equal(
+  snapshotRequestUrl.searchParams.get('select'),
+  '*,annunci10x_sessions!annunci10x_snapshots_session_id_fkey!inner(owner_secret_hash,expires_at)',
+  'getSnapshotById disambiguates the snapshots.session_id -> sessions.id relationship',
+);
+assert.notEqual(
+  snapshotRequestUrl.searchParams.get('select'),
+  '*,annunci10x_sessions!inner(owner_secret_hash,expires_at)',
+  'getSnapshotById must not use ambiguous session embedding',
+);
+assert.equal(
+  snapshotRequestUrl.searchParams.has('annunci10x_sessions.owner_secret_hash'),
+  true,
+  'snapshot ownership filter still targets the embedded session',
+);
 
 console.log('Annunci 10x persistence verifier passed');

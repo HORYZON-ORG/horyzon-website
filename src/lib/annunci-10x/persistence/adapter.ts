@@ -176,7 +176,7 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
     const rows = await this.select('annunci10x_snapshots', {
       id: `eq.${snapshotId}`,
       session_id: `eq.${sessionId}`,
-      select: '*,annunci10x_sessions!inner(owner_secret_hash,expires_at)',
+      select: '*,annunci10x_sessions!annunci10x_snapshots_session_id_fkey!inner(owner_secret_hash,expires_at)',
       'annunci10x_sessions.owner_secret_hash': `eq.${hashAnnunci10xSessionSecret(sessionSecret)}`,
       limit: '1',
     });
