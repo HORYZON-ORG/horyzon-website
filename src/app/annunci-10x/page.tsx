@@ -1,17 +1,17 @@
 import { Annunci10xClient } from '@/components/annunci-10x/annunci-10x-client';
-import { SiteFooter, SiteHeader } from '@/components/site-shell';
 import { SITE_URL } from '@/content/seo';
 import type { Metadata } from 'next';
 
-const description = 'Annunci 10x valuta annunci di lavoro esistenti o raccoglie i fatti necessari per crearne uno nuovo, senza inventare informazioni mancanti.';
+const title = 'Annunci 10x — Il tuo annuncio attira i candidati giusti? Scoprilo gratis';
+const description = 'Incolla il tuo annuncio di lavoro e scopri in 2 minuti se sta attirando le persone giuste. Score gratuito su 100, report via email.';
 
 export const metadata: Metadata = {
-  title: { absolute: 'ANNUNCI 10x — Horyzon' },
+  title: { absolute: title },
   description,
   alternates: { canonical: `${SITE_URL}/annunci-10x` },
   robots: { index: false, follow: false, nocache: true },
   openGraph: {
-    title: 'ANNUNCI 10x — Horyzon',
+    title,
     description,
     url: `${SITE_URL}/annunci-10x`,
     siteName: 'Horyzon Consulting',
@@ -21,11 +21,5 @@ export const metadata: Metadata = {
 };
 
 export default function Annunci10xPage() {
-  return <>
-    <SiteHeader />
-    <main id="content" data-page="annunci-10x">
-      <Annunci10xClient />
-    </main>
-    <SiteFooter />
-  </>;
+  return <Annunci10xClient />;
 }

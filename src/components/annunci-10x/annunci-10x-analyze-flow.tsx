@@ -161,7 +161,7 @@ export function Annunci10xAnalyzeFlow() {
       const payload = await response.json();
       if (!response.ok || !payload.ok) throw new Error(payload.error?.message ?? 'Analisi non avviata.');
       setAnalysisRun(normalizeRun(payload.run));
-      setStatusMessage('Analisi avviata. Puoi compilare i dati mentre lavoriamo sul testo.');
+      setStatusMessage('Analisi avviata. Puoi lasciare i dati per ricevere il report via email.');
     } catch (cause) {
       setError(customerSafeError(cause, 'Analisi non avviata.'));
     } finally {
@@ -237,27 +237,29 @@ export function Annunci10xAnalyzeFlow() {
   const showResultLocked = analysisReady && !emailVerified;
   const showVerifiedWaiting = emailVerified && !analysisReady && analysisRun?.status !== 'FAILED';
 
-  return <section className={styles.createShell} aria-label="Analizza gratis">
+  return <section className={styles.createShell} aria-label="Analizza gratis il tuo annuncio">
     <form className={styles.form} onSubmit={submitSource} aria-labelledby="analyze-source-title">
       <div className={styles.formHead}>
-        <p>Analizza gratis</p>
-        <h2 id="analyze-source-title">Calcola il tuo Annunci 10x Score.</h2>
+        <p>Score gratuito</p>
+        <h2 id="analyze-source-title">Analizza gratis il tuo annuncio</h2>
+        <span>Incolla il testo o il link pubblico. Ti mostriamo lo Score e ti mandiamo il report via email.</span>
       </div>
       <div className={styles.sourceToggle} role="radiogroup" aria-label="Sorgente annuncio">
-        <button type="button" data-active={sourceMode === 'PASTED_TEXT'} onClick={() => setSourceMode('PASTED_TEXT')} disabled={busy === 'source'}>Incolla testo</button>
-        <button type="button" data-active={sourceMode === 'PUBLIC_URL'} onClick={() => setSourceMode('PUBLIC_URL')} disabled={busy === 'source'}>URL annuncio</button>
+        <button type="button" data-active={sourceMode === 'PASTED_TEXT'} onClick={() => setSourceMode('PASTED_TEXT')} disabled={busy === 'source'}>Testo</button>
+        <button type="button" data-active={sourceMode === 'PUBLIC_URL'} onClick={() => setSourceMode('PUBLIC_URL')} disabled={busy === 'source'}>Link</button>
       </div>
       {sourceMode === 'PASTED_TEXT'
         ? <Field label="Testo annuncio" htmlFor="annunci10x-source-text" required>
-            <textarea id="annunci10x-source-text" required value={text} onChange={(event) => setText(event.target.value)} placeholder={sampleAd} rows={12} disabled={busy === 'source'} />
+            <textarea id="annunci10x-source-text" required value={text} onChange={(event) => setText(event.target.value)} placeholder="Incolla qui il testo del tuo annuncio" rows={12} disabled={busy === 'source'} />
           </Field>
         : <Field label="URL annuncio" htmlFor="annunci10x-source-url" required>
-            <input id="annunci10x-source-url" type="url" required value={url} onChange={(event) => setUrl(event.target.value)} placeholder="https://..." disabled={busy === 'source'} />
+            <input id="annunci10x-source-url" type="url" required value={url} onChange={(event) => setUrl(event.target.value)} placeholder="Incolla il link pubblico dell'annuncio" disabled={busy === 'source'} />
           </Field>}
       <div className={styles.actions}>
-        <button type="submit" disabled={busy === 'source'}>{busy === 'source' ? 'Avvio in corso' : 'Calcola gratis il tuo Score'}</button>
+        <button type="submit" disabled={busy === 'source'}>{busy === 'source' ? 'Avvio in corso' : 'Analizza il mio annuncio — gratis'}</button>
         {sourceMode === 'PASTED_TEXT' && <button type="button" disabled={busy === 'source'} onClick={() => setText(sampleAd)}>Usa esempio</button>}
       </div>
+      <p className={styles.formMicrocopy}>Gratis · 2 minuti · nessuna carta di credito</p>
     </form>
 
     {analysisRun && <div className={styles.progressCard} aria-live="polite">
@@ -279,22 +281,24 @@ export function Annunci10xAnalyzeFlow() {
 
     {canShowContact && <form className={styles.form} onSubmit={submitContact} aria-labelledby="analyze-contact-title">
       <div className={styles.formHead}>
-        <p>Dati contatto</p>
-        <h2 id="analyze-contact-title">Completa i dati mentre analizziamo il testo.</h2>
+        <p>Report via email</p>
+        <h2 id="analyze-contact-title">Dove ti mandiamo il report?</h2>
+        <span>Ti chiediamo questi dati per collegare il risultato alla tua richiesta e inviarti il report.</span>
       </div>
       <div className={styles.fieldGrid}>
         <Field label="Nome" htmlFor="lead-first-name" required><input id="lead-first-name" required value={contact.firstName} onChange={(event) => setContact({ ...contact, firstName: event.target.value })} disabled={contactSaved || busy === 'contact'} /></Field>
         <Field label="Cognome" htmlFor="lead-last-name" required><input id="lead-last-name" required value={contact.lastName} onChange={(event) => setContact({ ...contact, lastName: event.target.value })} disabled={contactSaved || busy === 'contact'} /></Field>
         <Field label="Azienda" htmlFor="lead-company" required><input id="lead-company" required value={contact.companyName} onChange={(event) => setContact({ ...contact, companyName: event.target.value })} disabled={contactSaved || busy === 'contact'} /></Field>
-        <Field label="Ruolo aziendale" htmlFor="lead-role" required><select id="lead-role" required value={contact.businessRole} onChange={(event) => setContact({ ...contact, businessRole: event.target.value as BusinessRole })} disabled={contactSaved || busy === 'contact'}><option value="OWNER_ENTREPRENEUR">Imprenditore / titolare</option><option value="HR">HR</option><option value="INTERNAL_RECRUITER">Recruiter interno</option><option value="CONSULTANT">Consulente</option><option value="OTHER">Altro</option></select></Field>
+        <Field label="Ruolo aziendale" htmlFor="lead-role" required><select id="lead-role" required value={contact.businessRole} onChange={(event) => setContact({ ...contact, businessRole: event.target.value as BusinessRole })} disabled={contactSaved || busy === 'contact'}><option value="OWNER_ENTREPRENEUR">Titolare</option><option value="HR">HR</option><option value="INTERNAL_RECRUITER">Recruiter interno</option><option value="CONSULTANT">Consulente</option><option value="OTHER">Altro</option></select></Field>
       </div>
       <Field label="Email aziendale" htmlFor="lead-email" required><input id="lead-email" type="email" required value={contact.email} onChange={(event) => setContact({ ...contact, email: event.target.value })} disabled={contactSaved || busy === 'contact'} /></Field>
-      <label className={styles.unknownToggle}><input type="checkbox" checked={contact.marketingConsent} onChange={(event) => setContact({ ...contact, marketingConsent: event.target.checked })} disabled={contactSaved || busy === 'contact'} /><span>Acconsento a ricevere comunicazioni marketing opzionali.</span></label>
+      <label className={styles.unknownToggle}><input type="checkbox" checked={contact.marketingConsent} onChange={(event) => setContact({ ...contact, marketingConsent: event.target.checked })} disabled={contactSaved || busy === 'contact'} /><span>Voglio ricevere anche consigli e novità da Horyzon.</span></label>
+      <p className={styles.formMicrocopy}>Niente spam. Ti cancelli con un clic.</p>
       <div className={styles.actions}><button type="submit" disabled={contactSaved || busy === 'contact'}>{contactSaved ? 'Dati salvati' : 'Salva contatto'}</button></div>
     </form>}
 
     {contactSaved && !emailVerified && <section className={styles.form} aria-labelledby="email-verification-title">
-      <div className={styles.formHead}><p>Verifica email</p><h2 id="email-verification-title">Verifica la tua email per visualizzare il risultato.</h2></div>
+      <div className={styles.formHead}><p>Verifica email</p><h2 id="email-verification-title">Ti mandiamo un codice di 6 cifre: è l&apos;ultimo passo prima dello Score.</h2></div>
       <div className={styles.actions}>
         <button type="button" onClick={requestCode} disabled={busy === 'request-code' || resendAfterSeconds > 0}>{resendAfterSeconds > 0 ? `Nuovo codice tra ${resendAfterSeconds}s` : 'Invia codice'}</button>
         {expiresInSeconds > 0 && <span>Codice valido per circa {expiresInSeconds}s.</span>}
@@ -316,16 +320,31 @@ export function Annunci10xAnalyzeFlow() {
 }
 
 function FreeResultCard({ result }: { result: FreeResult }) {
+  const scoreText = formatFreeScore(result.score);
+  const isPartialV2 = result.resultVersion === 'V2' && result.score.coverage < 100;
+  const evaluableChecks = Math.round(result.score.coverage / 5);
   return <section className={styles.result} aria-labelledby="free-result-title">
-    <div className={styles.resultHead}>
-      <div><p>Annunci 10x Score</p><h2 id="free-result-title">Risultato gratuito</h2></div>
-      <div className={styles.scoreBox}><span>Score</span><strong>{formatFreeScore(result.score)}</strong></div>
-      <div className={styles.scoreBox}><span>Copertura</span><strong>{Math.round(result.score.coverage)}%</strong></div>
-      {result.band && <div className={styles.gateBox}><span>Fascia</span><strong>{result.band.label}</strong></div>}
+    <div className={styles.freeResultLayout}>
+      <div className={styles.freeScoreHero}>
+        <p>Annunci 10x Score</p>
+        <h2 id="free-result-title">Risultato gratuito</h2>
+        <strong>{scoreText}</strong>
+        {result.band && <span>{result.band.label}</span>}
+        <ScoreBandBar activeLabel={result.band?.label} />
+      </div>
+      <div className={styles.freeResultCopy}>
+        <h3>Interpretazione</h3>
+        <p>{result.interpretation}</p>
+        {isPartialV2 && <p className={styles.coverageNote}>Abbiamo potuto valutare {evaluableChecks} controlli su 20, perché nel testo mancano alcune informazioni.</p>}
+        <section className={styles.improveCta}><p>Prossimo passo</p><h3>{result.nextAction.label}</h3><span>Potrai trasformare il testo in una versione più chiara e pronta da adattare al canale.</span></section>
+      </div>
     </div>
-    <div className={styles.panel}><h3>Interpretazione</h3><p>{result.interpretation}</p></div>
-    <section className={styles.improveCta}><p>Prossimo passo</p><h3>{result.nextAction.label}</h3><span>Potrai trasformare il testo in una versione più chiara e pronta da adattare al canale.</span></section>
   </section>;
+}
+
+function ScoreBandBar({ activeLabel }: { activeLabel?: string }) {
+  const labels = ['Critico', 'Debole', 'Base', 'Buono', 'Forte'];
+  return <div className={styles.scoreBandBar} aria-label="Fasce Score">{labels.map((label) => <span key={label} data-active={activeLabel === label}>{label}</span>)}</div>;
 }
 
 function Field(props: { label: string; htmlFor: string; required?: boolean; children: ReactNode }) {
@@ -346,7 +365,7 @@ function fallbackProgressLabel(stage?: AnalysisStage): string {
   if (!stage) return 'Stiamo leggendo il tuo annuncio';
   if (stage === 'SOURCE_VALIDATION' || stage === 'PRECHECK' || stage === 'EXTRACT') return 'Stiamo leggendo il tuo annuncio';
   if (stage === 'PROFILE' || stage === 'STRATEGY') return 'Stiamo ricostruendo il ruolo';
-  if (stage === 'EVALUATE' || stage === 'CLARIFY') return 'Stiamo verificando i criteri Annunci 10x';
+  if (stage === 'EVALUATE' || stage === 'CLARIFY') return 'Stiamo applicando i 20 controlli';
   return 'Il risultato è pronto';
 }
 
