@@ -32,6 +32,8 @@ export type Annunci10xPersistedOfferCode = 'ANNUNCI10X_REWRITE' | 'ANNUNCI10X_CR
 export type Annunci10xPurchaseStatus = 'PENDING' | 'PAID' | 'FAILED' | 'CANCELED' | 'REFUNDED';
 export type Annunci10xPurchaseProvider = 'STRIPE';
 export type Annunci10xPersistedEntitlementCapability = 'REWRITE_CREDIT' | 'CREATE_CREDIT' | 'GUIDE_ACCESS' | 'AGENT_RECRUITER_ACCESS';
+export type Annunci10xReservableCapability = Extract<Annunci10xPersistedEntitlementCapability, 'REWRITE_CREDIT' | 'CREATE_CREDIT'>;
+export type Annunci10xCreditReservationStatus = 'RESERVED' | 'CONSUMED' | 'RELEASED' | 'EXPIRED';
 export type Annunci10xStripeEventStatus = 'RECEIVED' | 'PROCESSED' | 'IGNORED' | 'FAILED';
 export type Annunci10xPersistedScoreResult = ScoreResult | ScoreResultV2;
 
@@ -395,6 +397,24 @@ export interface PersistedEntitlementGrant {
   createdAt: string;
 }
 
+export interface PersistedCreditReservation {
+  id: string;
+  sessionId: string;
+  grantId: string;
+  capability: Annunci10xReservableCapability;
+  status: Annunci10xCreditReservationStatus;
+  quantity: 1;
+  leaseExpiresAt: string;
+  outputId?: string | null;
+  releaseReasonCode?: string | null;
+  reservedAt: string;
+  consumedAt?: string | null;
+  releasedAt?: string | null;
+  expiredAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface PersistedStripeEvent {
   id: string;
   stripeEventId: string;
@@ -451,6 +471,25 @@ export interface CompletePaidPurchaseInput {
   currency: string;
   stripePaymentIntentId?: string | null;
   stripeCustomerId?: string | null;
+}
+
+export interface ReserveGenerationCreditInput {
+  sessionId: string;
+  sessionSecret: string;
+  capability: Annunci10xReservableCapability;
+  leaseSeconds: number;
+}
+
+export interface ConsumeGenerationCreditInput {
+  reservationId: string;
+  sessionSecret: string;
+  outputId: string;
+}
+
+export interface ReleaseGenerationCreditInput {
+  reservationId: string;
+  sessionSecret: string;
+  reasonCode: string;
 }
 
 export interface MarkPurchaseCanceledInput {
@@ -555,6 +594,10 @@ export interface Annunci10xPersistenceAdapter {
   markPurchaseFailed(input: MarkPurchaseFailedInput): Promise<PersistedPurchase | null>;
   markPurchaseRefunded(input: MarkPurchaseRefundedInput): Promise<PersistedPurchase | null>;
   getEffectiveEntitlements(sessionId: string, sessionSecret: string): Promise<EffectiveEntitlements>;
+  reserveGenerationCredit(input: ReserveGenerationCreditInput): Promise<PersistedCreditReservation | null>;
+  consumeGenerationCredit(input: ConsumeGenerationCreditInput): Promise<PersistedCreditReservation>;
+  releaseGenerationCredit(input: ReleaseGenerationCreditInput): Promise<PersistedCreditReservation>;
+  getCreditReservationById(reservationId: string, sessionSecret: string): Promise<PersistedCreditReservation | null>;
   saveOutput(input: SaveOutputInput): Promise<PersistedOutput>;
   getLatestOutput(sessionId: string, sessionSecret: string, outputType?: Annunci10xOutputType, parentMasterId?: string | null): Promise<PersistedOutput | null>;
   appendEvent(input: AppendEventInput): Promise<PersistedEvent>;

@@ -208,6 +208,11 @@ export function isAnnunci10xCheckoutEnabled(env: Record<string, string | undefin
   return value === '1' || value === 'true' || value === 'yes';
 }
 
+export function isAnnunci10xFulfillmentEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  const value = env.ANNUNCI10X_FULFILLMENT_ENABLED?.trim().toLowerCase();
+  return value === '1' || value === 'true' || value === 'yes';
+}
+
 export async function resolveAnnunci10xCommercial(input: ResolveAnnunci10xCommercialInput): Promise<Annunci10xCommercialState> {
   const subject = input.subject ?? { kind: 'ANONYMOUS' };
   const provider = input.entitlementProvider ?? createOpenDecisionEntitlementProvider();

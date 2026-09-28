@@ -21,6 +21,7 @@ import {
   parseEffectiveEntitlementsRow,
   parseEvaluationRow,
   parseEventRow,
+  parseCreditReservationRow,
   parseLeadRow,
   parseOutputRow,
   parsePurchaseRow,
@@ -36,6 +37,7 @@ import type {
   AppendSnapshotInput,
   CheckRateLimitInput,
   CheckRateLimitResult,
+  ConsumeGenerationCreditInput,
   CreateEmailVerificationInput,
   CreateAnalysisRunInput,
   CreateOrGetPurchaseInput,
@@ -61,11 +63,14 @@ import type {
   PersistedEmailVerification,
   PersistedEvaluation,
   PersistedEvent,
+  PersistedCreditReservation,
   PersistedLead,
   PersistedOutput,
   PersistedPurchase,
   PersistedSnapshot,
   PersistedStripeEvent,
+  ReleaseGenerationCreditInput,
+  ReserveGenerationCreditInput,
   SaveEvaluationInput,
   SaveLeadInput,
   SaveOutputInput,
@@ -615,6 +620,44 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
     return parseEffectiveEntitlementsRow(row);
   }
 
+  async reserveGenerationCredit(input: ReserveGenerationCreditInput): Promise<PersistedCreditReservation | null> {
+    const row = await this.rpc<DbRow | null>('annunci10x_reserve_generation_credit', {
+      p_session_id: input.sessionId,
+      p_owner_secret_hash: hashAnnunci10xSessionSecret(input.sessionSecret),
+      p_capability: input.capability,
+      p_lease_seconds: input.leaseSeconds,
+    });
+    return row ? parseCreditReservationRow(row) : null;
+  }
+
+  async consumeGenerationCredit(input: ConsumeGenerationCreditInput): Promise<PersistedCreditReservation> {
+    const row = await this.rpc<DbRow>('annunci10x_consume_generation_credit', {
+      p_reservation_id: input.reservationId,
+      p_owner_secret_hash: hashAnnunci10xSessionSecret(input.sessionSecret),
+      p_output_id: input.outputId,
+    });
+    return parseCreditReservationRow(row);
+  }
+
+  async releaseGenerationCredit(input: ReleaseGenerationCreditInput): Promise<PersistedCreditReservation> {
+    const row = await this.rpc<DbRow>('annunci10x_release_generation_credit', {
+      p_reservation_id: input.reservationId,
+      p_owner_secret_hash: hashAnnunci10xSessionSecret(input.sessionSecret),
+      p_reason_code: input.reasonCode,
+    });
+    return parseCreditReservationRow(row);
+  }
+
+  async getCreditReservationById(reservationId: string, sessionSecret: string): Promise<PersistedCreditReservation | null> {
+    const rows = await this.select('annunci10x_credit_reservations', {
+      id: `eq.${reservationId}`,
+      'annunci10x_sessions.owner_secret_hash': `eq.${hashAnnunci10xSessionSecret(sessionSecret)}`,
+      select: '*,annunci10x_sessions!annunci10x_credit_reservations_session_id_fkey!inner(owner_secret_hash)',
+      limit: '1',
+    });
+    return rows[0] ? parseCreditReservationRow(rows[0]) : null;
+  }
+
   async saveOutput(input: SaveOutputInput): Promise<PersistedOutput> {
     await this.requireOwnership(input.sessionId, input.sessionSecret);
     if (input.outputType === 'MASTER') validateGeneratedAdOrThrow(input.generatedContent);
@@ -722,6 +765,7 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
   private emailDeliveries = new Map<string, DbRow>();
   private purchases = new Map<string, DbRow>();
   private entitlementGrants = new Map<string, DbRow>();
+  private creditReservations = new Map<string, DbRow>();
   private stripeEvents = new Map<string, DbRow>();
   private outputs = new Map<string, DbRow>();
   private evaluations: DbRow[] = [];
@@ -1446,7 +1490,117 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
 
   async getEffectiveEntitlements(sessionId: string, sessionSecret: string): Promise<EffectiveEntitlements> {
     this.requireMemoryOwnership(sessionId, sessionSecret);
-    return effectiveEntitlementsFromRows([...this.purchases.values()], [...this.entitlementGrants.values()], sessionId);
+    this.expireMemoryReservations(sessionId);
+    return effectiveEntitlementsFromRows([...this.purchases.values()], [...this.entitlementGrants.values()], sessionId, [...this.creditReservations.values()]);
+  }
+
+  async reserveGenerationCredit(input: ReserveGenerationCreditInput): Promise<PersistedCreditReservation | null> {
+    this.requireMemoryOwnership(input.sessionId, input.sessionSecret);
+    if (input.leaseSeconds < 60 || input.leaseSeconds > 1800) {
+      throw new Annunci10xPersistenceError('Annunci 10x generation credit lease must be between 60 and 1800 seconds.', 'VALIDATION');
+    }
+    const session = this.sessions.get(input.sessionId);
+    if (!session) throw new Annunci10xPersistenceError('Annunci 10x session not found.', 'OWNERSHIP');
+    if (typeof session.expires_at === 'string' && Date.parse(session.expires_at) <= Date.now()) {
+      throw new Annunci10xPersistenceError('Annunci 10x session expired.', 'OWNERSHIP');
+    }
+    const lead = this.leads.get(input.sessionId);
+    if (!lead || !lead.email_verified_at) {
+      throw new Annunci10xPersistenceError('Annunci 10x verified lead required for generation credit reservation.', 'OWNERSHIP');
+    }
+    this.assertMemoryReservationReadiness(session, input.capability);
+    this.expireMemoryReservations(input.sessionId, input.capability);
+    const active = [...this.creditReservations.values()].find((row) => (
+      row.session_id === input.sessionId
+      && row.capability === input.capability
+      && row.status === 'RESERVED'
+      && Date.parse(String(row.lease_expires_at)) > Date.now()
+    ));
+    if (active) return parseCreditReservationRow(active);
+    const grant = this.findAvailableMemoryGrant(input.sessionId, input.capability);
+    if (!grant) return null;
+    const nowMs = Date.now();
+    const now = new Date(nowMs).toISOString();
+    const row: DbRow = {
+      id: randomUUID(),
+      session_id: input.sessionId,
+      grant_id: grant.id,
+      capability: input.capability,
+      status: 'RESERVED',
+      quantity: 1,
+      lease_expires_at: new Date(nowMs + input.leaseSeconds * 1000).toISOString(),
+      output_id: null,
+      release_reason_code: null,
+      reserved_at: now,
+      consumed_at: null,
+      released_at: null,
+      expired_at: null,
+      created_at: now,
+      updated_at: now,
+    };
+    this.creditReservations.set(String(row.id), row);
+    return parseCreditReservationRow(row);
+  }
+
+  async consumeGenerationCredit(input: ConsumeGenerationCreditInput): Promise<PersistedCreditReservation> {
+    const row = this.findOwnedCreditReservation(input.reservationId, input.sessionSecret);
+    const purchase = this.purchaseForGrant(String(row.grant_id));
+    if (!purchase || purchase.status !== 'PAID') {
+      throw new Annunci10xPersistenceError('Annunci 10x paid purchase required to consume generation credit.', 'VALIDATION');
+    }
+    const output = this.outputs.get(input.outputId);
+    if (!output || output.session_id !== row.session_id) {
+      throw new Annunci10xPersistenceError('Annunci 10x output must belong to the reserved session.', 'VALIDATION');
+    }
+    const outputAlreadyConsumed = [...this.creditReservations.values()].find((reservation) => (
+      reservation.id !== row.id
+      && reservation.output_id === input.outputId
+      && reservation.status === 'CONSUMED'
+    ));
+    if (outputAlreadyConsumed) {
+      throw new Annunci10xPersistenceError('Annunci 10x output already consumed a generation credit.', 'VALIDATION');
+    }
+    if (row.status === 'CONSUMED') {
+      if (row.output_id === input.outputId) return parseCreditReservationRow(row);
+      throw new Annunci10xPersistenceError('Annunci 10x generation credit was consumed by a different output.', 'VALIDATION');
+    }
+    if (row.status === 'RELEASED' || row.status === 'EXPIRED') {
+      throw new Annunci10xPersistenceError('Annunci 10x generation credit reservation is no longer consumable.', 'VALIDATION');
+    }
+    if (Date.parse(String(row.lease_expires_at)) <= Date.now()) {
+      const now = new Date().toISOString();
+      row.status = 'EXPIRED';
+      row.expired_at = row.expired_at ?? now;
+      row.updated_at = now;
+      throw new Annunci10xPersistenceError('Annunci 10x generation credit reservation expired.', 'VALIDATION');
+    }
+    const now = new Date().toISOString();
+    row.status = 'CONSUMED';
+    row.output_id = input.outputId;
+    row.consumed_at = now;
+    row.updated_at = now;
+    return parseCreditReservationRow(row);
+  }
+
+  async releaseGenerationCredit(input: ReleaseGenerationCreditInput): Promise<PersistedCreditReservation> {
+    const row = this.findOwnedCreditReservation(input.reservationId, input.sessionSecret);
+    if (row.status === 'CONSUMED') {
+      throw new Annunci10xPersistenceError('Annunci 10x consumed generation credit cannot be released.', 'VALIDATION');
+    }
+    if (row.status === 'RELEASED' || row.status === 'EXPIRED') return parseCreditReservationRow(row);
+    const now = new Date().toISOString();
+    row.status = 'RELEASED';
+    row.released_at = now;
+    row.release_reason_code = sanitizeMemoryReservationReason(input.reasonCode);
+    row.updated_at = now;
+    return parseCreditReservationRow(row);
+  }
+
+  async getCreditReservationById(reservationId: string, sessionSecret: string): Promise<PersistedCreditReservation | null> {
+    const row = this.creditReservations.get(reservationId);
+    if (!row) return null;
+    this.requireMemoryOwnership(String(row.session_id), sessionSecret);
+    return parseCreditReservationRow(row);
   }
 
   async saveOutput(input: SaveOutputInput): Promise<PersistedOutput> {
@@ -1530,6 +1684,73 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
     if (!row) throw new Annunci10xPersistenceError('Annunci 10x purchase not found.', 'OWNERSHIP');
     this.requireMemoryOwnership(String(row.session_id), sessionSecret);
     return row;
+  }
+
+  private findOwnedCreditReservation(reservationId: string, sessionSecret: string): DbRow {
+    const row = this.creditReservations.get(reservationId);
+    if (!row) throw new Annunci10xPersistenceError('Annunci 10x generation credit reservation not found.', 'OWNERSHIP');
+    this.requireMemoryOwnership(String(row.session_id), sessionSecret);
+    return row;
+  }
+
+  private assertMemoryReservationReadiness(session: DbRow, capability: ReserveGenerationCreditInput['capability']): void {
+    if (session.flow === 'ANALYZE') {
+      if (capability !== 'REWRITE_CREDIT') {
+        throw new Annunci10xPersistenceError('ANALYZE sessions can reserve only REWRITE_CREDIT.', 'VALIDATION');
+      }
+      const readyAnalysis = [...this.analysisRuns.values()].some((row) => (
+        row.session_id === session.id
+        && row.status === 'READY'
+        && row.source_status === 'READY'
+        && typeof row.evaluation_id === 'string'
+        && row.evaluation_id.trim()
+      ));
+      if (!readyAnalysis) {
+        throw new Annunci10xPersistenceError('READY analysis run required for REWRITE_CREDIT reservation.', 'VALIDATION');
+      }
+      return;
+    }
+    if (session.flow === 'CREATE') {
+      if (capability !== 'CREATE_CREDIT') {
+        throw new Annunci10xPersistenceError('CREATE sessions can reserve only CREATE_CREDIT.', 'VALIDATION');
+      }
+      if (!['PAYMENT_REQUIRED', 'ENTITLED', 'OUTPUT_READY', 'NEEDS_VERIFICATION'].includes(String(session.state))) {
+        throw new Annunci10xPersistenceError('CREATE session is not ready for generation credit reservation.', 'VALIDATION');
+      }
+      if (!this.snapshots.some((row) => row.session_id === session.id)) {
+        throw new Annunci10xPersistenceError('CREATE session snapshot required for generation credit reservation.', 'VALIDATION');
+      }
+      return;
+    }
+    throw new Annunci10xPersistenceError('Unsupported Annunci 10x reservation flow.', 'VALIDATION');
+  }
+
+  private expireMemoryReservations(sessionId: string, capability?: ReserveGenerationCreditInput['capability']): void {
+    const nowMs = Date.now();
+    const now = new Date(nowMs).toISOString();
+    for (const row of this.creditReservations.values()) {
+      if (row.session_id !== sessionId || row.status !== 'RESERVED') continue;
+      if (capability && row.capability !== capability) continue;
+      if (Date.parse(String(row.lease_expires_at)) <= nowMs) {
+        row.status = 'EXPIRED';
+        row.expired_at = row.expired_at ?? now;
+        row.updated_at = now;
+      }
+    }
+  }
+
+  private findAvailableMemoryGrant(sessionId: string, capability: ReserveGenerationCreditInput['capability']): DbRow | null {
+    return [...this.entitlementGrants.values()].find((grant) => {
+      if (grant.session_id !== sessionId || grant.capability !== capability) return false;
+      const purchase = this.purchases.get(String(grant.purchase_id));
+      if (!purchase || purchase.status !== 'PAID') return false;
+      return memoryGrantAvailableQuantity(grant, [...this.creditReservations.values()]) > 0;
+    }) ?? null;
+  }
+
+  private purchaseForGrant(grantId: string): DbRow | null {
+    const grant = [...this.entitlementGrants.values()].find((row) => row.id === grantId);
+    return grant ? this.purchases.get(String(grant.purchase_id)) ?? null : null;
   }
 
   private findOpenMemoryVerification(sessionId: string, leadId: string | undefined, emailNormalized: string | undefined, statuses: string[]): DbRow | undefined {
@@ -1630,7 +1851,7 @@ function grantsForOffer(offerCode: string): { capability: string; quantity: numb
   return [];
 }
 
-function effectiveEntitlementsFromRows(purchases: DbRow[], grants: DbRow[], sessionId: string): EffectiveEntitlements {
+function effectiveEntitlementsFromRows(purchases: DbRow[], grants: DbRow[], sessionId: string, reservations: DbRow[] = []): EffectiveEntitlements {
   const paidPurchaseIds = new Set(purchases
     .filter((row) => row.session_id === sessionId && row.status === 'PAID')
     .map((row) => String(row.id)));
@@ -1640,13 +1861,28 @@ function effectiveEntitlementsFromRows(purchases: DbRow[], grants: DbRow[], sess
   let agentRecruiterAccess = false;
   for (const grant of grants) {
     if (grant.session_id !== sessionId || !paidPurchaseIds.has(String(grant.purchase_id))) continue;
-    const quantity = Math.max(0, Math.floor(Number(grant.quantity) || 0));
+    const quantity = memoryGrantAvailableQuantity(grant, reservations);
     if (grant.capability === 'REWRITE_CREDIT') rewriteCredits += quantity;
     if (grant.capability === 'CREATE_CREDIT') createCredits += quantity;
     if (grant.capability === 'GUIDE_ACCESS' && quantity > 0) guideAccess = true;
     if (grant.capability === 'AGENT_RECRUITER_ACCESS' && quantity > 0) agentRecruiterAccess = true;
   }
   return { rewriteCredits, createCredits, guideAccess, agentRecruiterAccess, checkedAt: new Date().toISOString() };
+}
+
+function memoryGrantAvailableQuantity(grant: DbRow, reservations: DbRow[]): number {
+  const quantity = Math.max(0, Math.floor(Number(grant.quantity) || 0));
+  if (grant.capability !== 'REWRITE_CREDIT' && grant.capability !== 'CREATE_CREDIT') return quantity;
+  const now = Date.now();
+  const used = reservations
+    .filter((row) => row.grant_id === grant.id)
+    .filter((row) => row.status === 'CONSUMED' || (row.status === 'RESERVED' && Date.parse(String(row.lease_expires_at)) > now))
+    .reduce((total, row) => total + Math.max(0, Math.floor(Number(row.quantity) || 0)), 0);
+  return Math.max(0, quantity - used);
+}
+
+function sanitizeMemoryReservationReason(value: string): string {
+  return value.replace(/[^A-Za-z0-9_.:-]/g, '_').slice(0, 80) || 'UNSPECIFIED';
 }
 
 function validateCommercialContextOrThrow(value: unknown): void {

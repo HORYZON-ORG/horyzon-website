@@ -28,6 +28,7 @@ import type {
   PersistedEmailDelivery,
   PersistedEmailVerification,
   PersistedEntitlementGrant,
+  PersistedCreditReservation,
   PersistedEvaluation,
   PersistedEvent,
   PersistedLead,
@@ -265,6 +266,26 @@ export function parseEntitlementGrantRow(row: Record<string, unknown>): Persiste
     capability: requireString(row.capability, 'entitlementGrant.capability') as PersistedEntitlementGrant['capability'],
     quantity: requireNumber(row.quantity, 'entitlementGrant.quantity'),
     createdAt: requireString(row.created_at, 'entitlementGrant.created_at'),
+  };
+}
+
+export function parseCreditReservationRow(row: Record<string, unknown>): PersistedCreditReservation {
+  return {
+    id: requireString(row.id, 'creditReservation.id'),
+    sessionId: requireString(row.session_id, 'creditReservation.session_id'),
+    grantId: requireString(row.grant_id, 'creditReservation.grant_id'),
+    capability: requireString(row.capability, 'creditReservation.capability') as PersistedCreditReservation['capability'],
+    status: requireString(row.status, 'creditReservation.status') as PersistedCreditReservation['status'],
+    quantity: requireNumber(row.quantity, 'creditReservation.quantity') as 1,
+    leaseExpiresAt: requireString(row.lease_expires_at, 'creditReservation.lease_expires_at'),
+    outputId: optionalString(row.output_id),
+    releaseReasonCode: optionalString(row.release_reason_code),
+    reservedAt: requireString(row.reserved_at, 'creditReservation.reserved_at'),
+    consumedAt: optionalString(row.consumed_at),
+    releasedAt: optionalString(row.released_at),
+    expiredAt: optionalString(row.expired_at),
+    createdAt: requireString(row.created_at, 'creditReservation.created_at'),
+    updatedAt: requireString(row.updated_at, 'creditReservation.updated_at'),
   };
 }
 

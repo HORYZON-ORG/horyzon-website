@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       journeyState,
       checkoutEnabled,
       identityVerified: Boolean(lead?.emailVerifiedAt),
-      entitlementProvider: checkoutEnabled && session
+      entitlementProvider: session
         ? createPersistenceAnnunci10xCommerceEntitlementProvider({
           persistence: context.persistence,
           sessionId: cookie!.sessionId,

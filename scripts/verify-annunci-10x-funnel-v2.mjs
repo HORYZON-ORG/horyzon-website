@@ -157,7 +157,7 @@ for (const staleField of ['price?: string', 'discountValue?: string', 'entitleme
 }
 assert.match(createFlow, /const identityVerified = Boolean\(lead\?\.emailVerifiedAt\)/, 'identityVerified must be server-derived from lead');
 assert.match(createFlow, /const checkoutEnabled = isAnnunci10xCheckoutEnabled\(\)/, 'checkoutEnabled must be server-derived from env helper');
-assert.match(createFlow, /identityVerified,\s*\n\s*entitlementProvider:\s*checkoutEnabled/s, 'commercial resolver must receive identityVerified and checkoutEnabled-gated provider');
+assert.match(createFlow, /identityVerified,\s*\n\s*entitlementProvider:\s*createPersistenceAnnunci10xCommerceEntitlementProvider/s, 'commercial resolver must receive identityVerified and session entitlement provider independently from checkout');
 assert.match(createFlow, /createPersistenceAnnunci10xCommerceEntitlementProvider\(\{[\s\S]*persistence: input\.context\.persistence[\s\S]*sessionId: input\.sessionId[\s\S]*sessionSecret: input\.sessionSecret/s, 'persistence entitlement provider must be wired for CREATE state');
 assert.match(client, /function commerceStateFingerprint\(commercial: Annunci10xCommercialState\): string/, 'commercial fingerprint helper missing');
 assert.match(client, /baselineFingerprint === null[\s\S]*baselineFingerprint = fingerprint[\s\S]*fingerprint !== baselineFingerprint[\s\S]*setCommerceRefreshToken[\s\S]*stopPolling\(\)/s, 'success polling must stop after fingerprint change');

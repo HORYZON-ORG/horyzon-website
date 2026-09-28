@@ -388,13 +388,11 @@ async function publicCreateState(input: {
     journeyState: session.state,
     checkoutEnabled,
     identityVerified,
-    entitlementProvider: checkoutEnabled
-      ? createPersistenceAnnunci10xCommerceEntitlementProvider({
-        persistence: input.context.persistence,
-        sessionId: input.sessionId,
-        sessionSecret: input.sessionSecret,
-      })
-      : undefined,
+    entitlementProvider: createPersistenceAnnunci10xCommerceEntitlementProvider({
+      persistence: input.context.persistence,
+      sessionId: input.sessionId,
+      sessionSecret: input.sessionSecret,
+    }),
   });
   return {
     sessionId: input.sessionId,
