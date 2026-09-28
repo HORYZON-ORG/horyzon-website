@@ -1544,22 +1544,6 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
 
   async consumeGenerationCredit(input: ConsumeGenerationCreditInput): Promise<PersistedCreditReservation> {
     const row = this.findOwnedCreditReservation(input.reservationId, input.sessionSecret);
-    const purchase = this.purchaseForGrant(String(row.grant_id));
-    if (!purchase || purchase.status !== 'PAID') {
-      throw new Annunci10xPersistenceError('Annunci 10x paid purchase required to consume generation credit.', 'VALIDATION');
-    }
-    const output = this.outputs.get(input.outputId);
-    if (!output || output.session_id !== row.session_id) {
-      throw new Annunci10xPersistenceError('Annunci 10x output must belong to the reserved session.', 'VALIDATION');
-    }
-    const outputAlreadyConsumed = [...this.creditReservations.values()].find((reservation) => (
-      reservation.id !== row.id
-      && reservation.output_id === input.outputId
-      && reservation.status === 'CONSUMED'
-    ));
-    if (outputAlreadyConsumed) {
-      throw new Annunci10xPersistenceError('Annunci 10x output already consumed a generation credit.', 'VALIDATION');
-    }
     if (row.status === 'CONSUMED') {
       if (row.output_id === input.outputId) return parseCreditReservationRow(row);
       throw new Annunci10xPersistenceError('Annunci 10x generation credit was consumed by a different output.', 'VALIDATION');
@@ -1572,7 +1556,23 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
       row.status = 'EXPIRED';
       row.expired_at = row.expired_at ?? now;
       row.updated_at = now;
-      throw new Annunci10xPersistenceError('Annunci 10x generation credit reservation expired.', 'VALIDATION');
+      return parseCreditReservationRow(row);
+    }
+    const output = this.outputs.get(input.outputId);
+    if (!output || output.session_id !== row.session_id) {
+      throw new Annunci10xPersistenceError('Annunci 10x output must belong to the reserved session.', 'VALIDATION');
+    }
+    const purchase = this.purchaseForGrant(String(row.grant_id));
+    if (!purchase || purchase.status !== 'PAID') {
+      throw new Annunci10xPersistenceError('Annunci 10x paid purchase required to consume generation credit.', 'VALIDATION');
+    }
+    const outputAlreadyConsumed = [...this.creditReservations.values()].find((reservation) => (
+      reservation.id !== row.id
+      && reservation.output_id === input.outputId
+      && reservation.status === 'CONSUMED'
+    ));
+    if (outputAlreadyConsumed) {
+      throw new Annunci10xPersistenceError('Annunci 10x output already consumed a generation credit.', 'VALIDATION');
     }
     const now = new Date().toISOString();
     row.status = 'CONSUMED';

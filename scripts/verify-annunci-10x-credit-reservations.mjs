@@ -124,6 +124,28 @@ async function assertExpiryAndConcurrentReserve() {
   assert.equal([...concurrentContext.persistence.creditReservations.values()].filter((row) => row.status === 'RESERVED').length, 1);
 }
 
+async function assertExpiredConsumePersistsAndRestoresCredit() {
+  const { context, session } = await readyAnalyzeCase();
+  const reserved = await context.persistence.reserveGenerationCredit({
+    sessionId: session.sessionId,
+    sessionSecret: session.sessionSecret,
+    capability: 'REWRITE_CREDIT',
+    leaseSeconds: 60,
+  });
+  context.persistence.creditReservations.get(reserved.id).lease_expires_at = new Date(Date.now() - 1000).toISOString();
+  const output = await saveSyntheticOutput(context, session);
+  const expired = await context.persistence.consumeGenerationCredit({
+    reservationId: reserved.id,
+    sessionSecret: session.sessionSecret,
+    outputId: output.id,
+  });
+  assert.equal(expired.status, 'EXPIRED');
+  assert.equal(expired.outputId, null);
+  assert.ok(expired.expiredAt);
+  assert.equal((await context.persistence.getCreditReservationById(reserved.id, session.sessionSecret)).status, 'EXPIRED');
+  assert.equal((await context.persistence.getEffectiveEntitlements(session.sessionId, session.sessionSecret)).rewriteCredits, 1);
+}
+
 async function assertWrongFlowAndReadiness() {
   const analyze = await readyAnalyzeCase();
   await assert.rejects(
@@ -331,6 +353,8 @@ async function assertMigration() {
   assert.doesNotMatch(sql, /grant\s+delete/i, 'reservation table must not grant DELETE');
   assert.doesNotMatch(tableDefinition, /email|first_name|last_name|company_name|prompt|job_ad|stripe_customer|payment_intent|card/i, 'reservation table must not store PII, raw prompts, or payment artifacts');
   assert.match(sql, /p_lease_seconds < 60 or p_lease_seconds > 1800/i);
+  assert.match(sql, /if v_reservation\.lease_expires_at <= v_now then[\s\S]*status = 'EXPIRED'[\s\S]*return to_jsonb\(v_reservation\);[\s\S]*end if;/i);
+  assert.doesNotMatch(sql, /raise exception 'generation credit reservation expired'/i);
 }
 
 async function assertStaticWiring() {
@@ -542,6 +566,7 @@ const commercialContext = {
 
 await assertMigration();
 await assertRewriteReserveReleaseConsume();
+await assertExpiredConsumePersistsAndRestoresCredit();
 await assertExpiryAndConcurrentReserve();
 await assertWrongFlowAndReadiness();
 await assertCreateCreditReadiness();

@@ -243,7 +243,7 @@ begin
         updated_at = v_now
     where id = v_reservation.id
     returning * into v_reservation;
-    raise exception 'generation credit reservation expired';
+    return to_jsonb(v_reservation);
   end if;
 
   select * into v_output
