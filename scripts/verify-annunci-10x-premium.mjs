@@ -118,7 +118,15 @@ async function createReadySession(context, flow = 'CREATE') {
 }
 
 assert.deepEqual(
-  sanitizeGenerationClientPayload({ authorized: true, credits: 99, paid: true, testAuthorization: true, channel: 'LINKEDIN' }),
+  sanitizeGenerationClientPayload({
+    authorized: true,
+    credits: 99,
+    paid: true,
+    testAuthorization: true,
+    reservationId: 'reservation-client-value',
+    capability: 'CREATE_CREDIT',
+    channel: 'LINKEDIN',
+  }),
   { channel: 'LINKEDIN' },
   'browser payload cannot authorize premium generation',
 );

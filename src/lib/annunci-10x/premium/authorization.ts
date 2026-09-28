@@ -66,6 +66,8 @@ export function sanitizeGenerationClientPayload(payload: Record<string, unknown>
     'paid',
     'purchase',
     'receipt',
+    'reservationId',
+    'capability',
     'serverReceiptId',
     'testAuthorization',
     'entitlements',

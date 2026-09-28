@@ -18,7 +18,7 @@ import type {
   Annunci10xReviseOutput,
   Annunci10xValidateOutput,
 } from '../ai/schemas.ts';
-import type { PersistedAnnunci10xSession, PersistedEvaluation, PersistedOutput, PersistedSnapshot } from '../persistence/types.ts';
+import type { Annunci10xReservableCapability, PersistedAnnunci10xSession, PersistedCreditReservation, PersistedEvaluation, PersistedOutput, PersistedSnapshot } from '../persistence/types.ts';
 import type {
   ChannelVariant,
   ClaimCheck,
@@ -37,6 +37,8 @@ import {
   type Annunci10xRuntimeContext,
   type PublicAnnunci10xOperation,
 } from '../product-flow.ts';
+import { isAnnunci10xAiOperationInProgressError } from '../ai/errors.ts';
+import { isAnnunci10xFulfillmentEnabled } from '../commercial.ts';
 import {
   createProductionGenerationAuthorizationProvider,
   isGeneratableState,
@@ -50,6 +52,14 @@ export interface Annunci10xPremiumGenerationInput {
   channel?: PublicationChannel;
   context?: Annunci10xRuntimeContext;
   authorizationProvider?: GenerationAuthorizationProvider;
+}
+
+export interface ReservationBackedPremiumGenerationInput {
+  sessionId: string;
+  sessionSecret: string;
+  channel?: PublicationChannel;
+  context?: Annunci10xRuntimeContext;
+  fulfillmentEnabled?: boolean;
 }
 
 export interface PublicAnnunci10xPremiumOutput {
@@ -298,9 +308,118 @@ export async function runAnnunci10xPremiumGeneration(input: Annunci10xPremiumGen
   }
 }
 
-export async function resumeAnnunci10xPremiumOutput(input: { sessionId: string; sessionSecret: string; context?: Annunci10xRuntimeContext }): Promise<PublicAnnunci10xPremiumOutput | null> {
+export async function runAnnunci10xReservationBackedPremiumGeneration(input: ReservationBackedPremiumGenerationInput): Promise<PublicAnnunci10xPremiumOutput> {
   const context = input.context ?? createAnnunci10xRuntimeContext();
   const session = await requireOwnedSession(context, input.sessionId, input.sessionSecret);
+  if (!(input.fulfillmentEnabled ?? isAnnunci10xFulfillmentEnabled())) {
+    throw new Annunci10xPublicError('GENERATION_BLOCKED', 'Generazione temporaneamente non disponibile.', 503);
+  }
+
+  const snapshot = await requireGeneratableSnapshot(context, input.sessionId, input.sessionSecret);
+  const capability = capabilityForSession(session);
+  const existing = await resumeConsumedReservationOutput({ context, session, sessionSecret: input.sessionSecret, capability });
+  if (existing) return existing;
+
+  const reservation = await context.persistence.reserveGenerationCredit({
+    sessionId: input.sessionId,
+    sessionSecret: input.sessionSecret,
+    capability,
+    leaseSeconds: 1800,
+  });
+  if (!reservation) throw new Annunci10xPublicError('PAYMENT_REQUIRED', 'Completa l\'acquisto per generare il tuo Annuncio 10x.', 402);
+
+  const channel = input.channel ?? preferredChannel(snapshot);
+  await appendEventBestEffort(context, input.sessionId, 'generation_credit_reserved', { reservationId: reservation.id, capability });
+  await appendEventBestEffort(context, input.sessionId, 'generation_started', { flow: session.flow, channel, capability, reservationId: reservation.id });
+
+  let consumed = false;
+  try {
+    const authIdentity = stableHash({
+      reservationId: reservation.id,
+      sessionId: session.id,
+      snapshotId: snapshot.id,
+      capability,
+    });
+    const generated = await executePremiumPipeline({
+      context,
+      session,
+      sessionSecret: input.sessionSecret,
+      snapshot,
+      channel,
+      authIdentity,
+    });
+
+    try {
+      await context.persistence.consumeGenerationCredit({
+        reservationId: reservation.id,
+        sessionSecret: input.sessionSecret,
+        outputId: generated.masterOutput.id,
+      });
+      consumed = true;
+    } catch {
+      await releaseGenerationCreditBestEffort(context, input.sessionSecret, reservation, capability, 'CONSUME_FAILED');
+      throw new Annunci10xPublicError('PAYMENT_REQUIRED', 'Completa l\'acquisto per generare il tuo Annuncio 10x.', 402);
+    }
+
+    await appendEventBestEffort(context, input.sessionId, 'generation_credit_consumed', {
+      reservationId: reservation.id,
+      capability,
+      outputId: generated.masterOutput.id,
+    });
+    await appendEventBestEffort(context, input.sessionId, 'generation_completed', {
+      outputId: generated.masterOutput.id,
+      evaluationId: generated.evaluation.id,
+      gateStatus: generated.gate.status,
+      variantOutputId: generated.variantOutput?.id ?? null,
+      capability,
+    });
+    if (session.flow === 'CREATE') {
+      await updateSessionBestEffort(context, input.sessionId, input.sessionSecret, generated.gate.status === 'READY' || generated.gate.status === 'READY_WITH_WARNINGS' ? 'OUTPUT_READY' : 'NEEDS_VERIFICATION');
+    }
+
+    return publicPremiumOutput({
+      session,
+      snapshot,
+      output: generated.masterOutput,
+      master: generated.masterToPersist,
+      channelVariant: generated.channelVariant,
+      score: generated.score,
+      gate: generated.gate,
+      claimCheck: generated.claimCheck,
+      comparison: generated.comparison,
+      operations: generated.operations,
+      provider: context.configuredProvider,
+    });
+  } catch (error) {
+    if (isAnnunci10xAiOperationInProgressError(error)) {
+      throw new Annunci10xPublicError('GENERATION_BLOCKED', 'Il tuo Annuncio 10x è già in preparazione.', 409);
+    }
+    if (!consumed) {
+      const reasonCode = releaseReasonCode(error);
+      await releaseGenerationCreditBestEffort(context, input.sessionSecret, reservation, capability, reasonCode);
+      await appendEventBestEffort(context, input.sessionId, 'generation_failed', {
+        flow: session.flow,
+        capability,
+        reservationId: reservation.id,
+        reasonCode,
+      });
+      if (session.flow === 'CREATE') await updateSessionBestEffort(context, input.sessionId, input.sessionSecret, 'ENTITLED');
+    }
+    throw customerSafeGenerationError(error);
+  }
+}
+
+export async function resumeAnnunci10xPremiumOutput(input: { sessionId: string; sessionSecret: string; context?: Annunci10xRuntimeContext; fulfillmentEnabled?: boolean }): Promise<PublicAnnunci10xPremiumOutput | null> {
+  const context = input.context ?? createAnnunci10xRuntimeContext();
+  const session = await requireOwnedSession(context, input.sessionId, input.sessionSecret);
+  if (input.fulfillmentEnabled ?? isAnnunci10xFulfillmentEnabled()) {
+    return resumeConsumedReservationOutput({
+      context,
+      session,
+      sessionSecret: input.sessionSecret,
+      capability: capabilityForSession(session),
+    });
+  }
   const output = await context.persistence.getLatestOutput(input.sessionId, input.sessionSecret, 'MASTER');
   if (!output) return null;
   const validation = validateGeneratedAd(output.generatedContent);
@@ -461,6 +580,180 @@ export async function requestAnnunci10xPremiumEdit(input: PremiumEditInput): Pro
   };
 }
 
+async function executePremiumPipeline(input: {
+  context: Annunci10xRuntimeContext;
+  session: PersistedAnnunci10xSession;
+  sessionSecret: string;
+  snapshot: PersistedSnapshot;
+  channel: PublicationChannel;
+  authIdentity: string;
+}): Promise<{
+  masterOutput: PersistedOutput;
+  evaluation: PersistedEvaluation;
+  variantOutput: PersistedOutput | null;
+  masterToPersist: GeneratedAd;
+  channelVariant: ChannelVariant | null;
+  score: ScoreResult;
+  gate: PublicationGate;
+  claimCheck: ClaimCheck[];
+  comparison: ComparisonResult | null;
+  operations: PublicAnnunci10xOperation[];
+}> {
+  const orchestrator = new Annunci10xAiOrchestrator({ provider: input.context.provider, persistence: input.context.persistence });
+  const operations: PublicAnnunci10xOperation[] = [];
+  const generatedResult = await orchestrator.runTask({
+    sessionId: input.session.id,
+    sessionSecret: input.sessionSecret,
+    operationType: 'GENERATE',
+    input: {
+      roleCard: input.snapshot.roleCard,
+      roleProfile: input.snapshot.roleProfile,
+      communicationStrategy: input.snapshot.communicationStrategy,
+    },
+    inputSnapshotId: input.snapshot.id,
+    idempotencyInputIdentityOverride: stableHash({ snapshotId: input.snapshot.id, authIdentity: input.authIdentity, operation: 'GENERATE' }),
+  });
+  operations.push(toPublicOperation(generatedResult, 'GENERATE', input.context.configuredProvider));
+  const generated = generatedResult.output as Annunci10xGenerateOutput;
+
+  const firstValidation = await validateMaster({
+    orchestrator,
+    sessionId: input.session.id,
+    sessionSecret: input.sessionSecret,
+    snapshot: input.snapshot,
+    master: generated.generatedAd,
+    authIdentity: input.authIdentity,
+    provider: input.context.configuredProvider,
+    operations,
+    phase: 'initial',
+  });
+
+  let finalMaster = generated.generatedAd;
+  let finalValidation = firstValidation;
+  let automaticRevisionCount: 0 | 1 = 0;
+  if (firstValidation.result === 'NEEDS_REVISION') {
+    const revisionResult = await orchestrator.runTask({
+      sessionId: input.session.id,
+      sessionSecret: input.sessionSecret,
+      operationType: 'REVISE',
+      input: {
+        currentMaster: generated.generatedAd,
+        roleCard: input.snapshot.roleCard,
+        communicationStrategy: input.snapshot.communicationStrategy,
+        validationIssues: firstValidation,
+      },
+      inputSnapshotId: input.snapshot.id,
+      idempotencyInputIdentityOverride: stableHash({ snapshotId: input.snapshot.id, authIdentity: input.authIdentity, operation: 'REVISE', masterId: generated.generatedAd.id }),
+    });
+    operations.push(toPublicOperation(revisionResult, 'REVISE', input.context.configuredProvider));
+    const revision = revisionResult.output as Annunci10xReviseOutput;
+    finalMaster = {
+      ...generated.generatedAd,
+      sections: mergeRevisedSections(generated.generatedAd.sections, revision.revisedSections),
+      generatedAt: new Date().toISOString(),
+    };
+    automaticRevisionCount = 1;
+    finalValidation = await validateMaster({
+      orchestrator,
+      sessionId: input.session.id,
+      sessionSecret: input.sessionSecret,
+      snapshot: input.snapshot,
+      master: finalMaster,
+      authIdentity: input.authIdentity,
+      provider: input.context.configuredProvider,
+      operations,
+      phase: 'post-revise',
+    });
+  }
+
+  const evaluateResult = await orchestrator.runTask({
+    sessionId: input.session.id,
+    sessionSecret: input.sessionSecret,
+    operationType: 'EVALUATE',
+    input: {
+      target: { kind: 'GENERATED_MASTER', generatedAdId: finalMaster.id },
+      generatedAd: finalMaster,
+      roleCard: input.snapshot.roleCard,
+      roleProfile: input.snapshot.roleProfile,
+      communicationStrategy: input.snapshot.communicationStrategy,
+      channel: input.channel,
+      rubric: ANNUNCI10X_RUBRIC,
+    },
+    inputSnapshotId: input.snapshot.id,
+    idempotencyInputIdentityOverride: stableHash({ snapshotId: input.snapshot.id, authIdentity: input.authIdentity, operation: 'EVALUATE', master: finalMaster.sections }),
+  });
+  operations.push(toPublicOperation(evaluateResult, 'EVALUATE', input.context.configuredProvider));
+
+  const deterministic = calculateScoreAndGateFromEvaluateOutput(evaluateResult.output as Annunci10xEvaluateOutput);
+  const gate = gateFromValidation(finalValidation, deterministic.gate);
+  const claimCheck = claimCheckFromValidation(finalValidation);
+  const comparison = buildComparison(input.session, finalMaster, deterministic.score, await baselineEvaluationForComparison(input.context, input.session, input.sessionSecret));
+  const masterToPersist = attachPremiumPayload(finalMaster, {
+    comparison,
+    claimCheck,
+    rationale: rationaleFromSnapshot(input.snapshot),
+    automaticRevisionCount,
+    validationResult: finalValidation.result,
+  });
+  const masterOutput = await input.context.persistence.saveOutput({
+    sessionId: input.session.id,
+    sessionSecret: input.sessionSecret,
+    snapshotId: input.snapshot.id,
+    outputType: 'MASTER',
+    generatedContent: masterToPersist,
+    validationState: gate.status,
+  });
+
+  const evaluation = await input.context.persistence.saveEvaluation({
+    sessionId: input.session.id,
+    sessionSecret: input.sessionSecret,
+    target: { kind: 'GENERATED_MASTER', generatedAdId: finalMaster.id },
+    targetRef: finalMaster.id,
+    targetOutputId: masterOutput.id,
+    score: deterministic.score,
+    gate,
+  });
+
+  let variantOutput: PersistedOutput | null = null;
+  let channelVariant: ChannelVariant | null = null;
+  if (gate.status !== 'BLOCKED') {
+    const channelResult = await orchestrator.runTask({
+      sessionId: input.session.id,
+      sessionSecret: input.sessionSecret,
+      operationType: 'CHANNEL_ADAPTER',
+      input: { master: finalMaster, roleCard: input.snapshot.roleCard, targetChannel: input.channel },
+      inputSnapshotId: input.snapshot.id,
+      idempotencyInputIdentityOverride: stableHash({ snapshotId: input.snapshot.id, authIdentity: input.authIdentity, operation: 'CHANNEL_ADAPTER', master: finalMaster.sections, channel: input.channel }),
+    });
+    operations.push(toPublicOperation(channelResult, 'CHANNEL_ADAPTER', input.context.configuredProvider));
+    channelVariant = (channelResult.output as Annunci10xChannelAdapterOutput).channelVariant;
+    variantOutput = await input.context.persistence.saveOutput({
+      sessionId: input.session.id,
+      sessionSecret: input.sessionSecret,
+      snapshotId: input.snapshot.id,
+      outputType: 'CHANNEL_VARIANT',
+      generatedContent: channelVariant,
+      channel: channelVariant.channel,
+      parentMasterId: masterOutput.id,
+      validationState: gate.status,
+    });
+    await appendEventBestEffort(input.context, input.session.id, 'channel_variant_created', { channel: channelVariant.channel, masterOutputId: masterOutput.id });
+  }
+
+  return {
+    masterOutput,
+    evaluation,
+    variantOutput,
+    masterToPersist,
+    channelVariant,
+    score: deterministic.score,
+    gate,
+    claimCheck,
+    comparison,
+    operations,
+  };
+}
+
 async function validateMaster(input: {
   orchestrator: Annunci10xAiOrchestrator;
   sessionId: string;
@@ -591,6 +884,98 @@ async function requireOwnedSession(context: Annunci10xRuntimeContext, sessionId:
   const session = await context.persistence.getSession(sessionId, sessionSecret);
   if (!session) throw new Annunci10xPublicError('INVALID_INPUT', 'Sessione Annunci 10x non valida o scaduta.', 401);
   return session;
+}
+
+function capabilityForSession(session: PersistedAnnunci10xSession): Annunci10xReservableCapability {
+  if (session.flow === 'ANALYZE') return 'REWRITE_CREDIT';
+  if (session.flow === 'CREATE') return 'CREATE_CREDIT';
+  throw new Annunci10xPublicError('GENERATION_BLOCKED', 'Sessione non compatibile con la generazione Annunci 10x.', 409);
+}
+
+async function resumeConsumedReservationOutput(input: {
+  context: Annunci10xRuntimeContext;
+  session: PersistedAnnunci10xSession;
+  sessionSecret: string;
+  capability: Annunci10xReservableCapability;
+}): Promise<PublicAnnunci10xPremiumOutput | null> {
+  const reservation = await input.context.persistence.getLatestConsumedGenerationReservation(input.session.id, input.sessionSecret, input.capability);
+  if (!reservation?.outputId) return null;
+  const output = await input.context.persistence.getOutputById(reservation.outputId, input.session.id, input.sessionSecret);
+  if (!output || output.outputType !== 'MASTER') return null;
+  const validation = validateGeneratedAd(output.generatedContent);
+  if (!validation.ok) throw new Annunci10xPublicError('INTERNAL', 'Output Annunci 10x non valido.', 500);
+  const snapshot = await input.context.persistence.getSnapshotById(output.snapshotId, input.session.id, input.sessionSecret);
+  const evaluation = await input.context.persistence.getEvaluationByOutputId(output.id, input.session.id, input.sessionSecret);
+  if (!snapshot || !evaluation) return null;
+  const v1Evaluation = requireV1Evaluation(evaluation);
+  const variant = await input.context.persistence.getLatestOutput(input.session.id, input.sessionSecret, 'CHANNEL_VARIANT', output.id);
+  await appendEventBestEffort(input.context, input.session.id, 'output_viewed', { outputId: output.id });
+  return publicPremiumOutput({
+    session: input.session,
+    snapshot,
+    output,
+    master: validation.value,
+    channelVariant: variant?.generatedContent as ChannelVariant | null ?? null,
+    score: v1Evaluation.score,
+    gate: v1Evaluation.gate,
+    claimCheck: readPremiumPayload(validation.value).claimCheck,
+    comparison: readPremiumPayload(validation.value).comparison,
+    operations: [],
+    provider: input.context.configuredProvider,
+  });
+}
+
+async function baselineEvaluationForComparison(context: Annunci10xRuntimeContext, session: PersistedAnnunci10xSession, sessionSecret: string): Promise<{ score: ScoreResult; target: string } | null> {
+  if (session.flow !== 'ANALYZE') return null;
+  const run = await context.persistence.getLatestAnalysisRun(session.id, sessionSecret);
+  if (!run || run.status !== 'READY' || !run.evaluationId) return null;
+  return previousV1Evaluation(await context.persistence.getEvaluationById(run.evaluationId, session.id, sessionSecret));
+}
+
+async function appendEventBestEffort(context: Annunci10xRuntimeContext, sessionId: string, eventName: string, metadata: Record<string, unknown>): Promise<void> {
+  try {
+    await context.persistence.appendEvent({ sessionId, eventName, metadata });
+  } catch {
+    // Events are observability only and must not decide fulfillment.
+  }
+}
+
+async function updateSessionBestEffort(context: Annunci10xRuntimeContext, sessionId: string, sessionSecret: string, state: PersistedAnnunci10xSession['state']): Promise<void> {
+  try {
+    await context.persistence.updateSession({ sessionId, sessionSecret, state });
+  } catch {
+    // Session state is not the fulfillment authority after a credit is consumed.
+  }
+}
+
+async function releaseGenerationCreditBestEffort(
+  context: Annunci10xRuntimeContext,
+  sessionSecret: string,
+  reservation: PersistedCreditReservation,
+  capability: Annunci10xReservableCapability,
+  reasonCode: string,
+): Promise<void> {
+  try {
+    await context.persistence.releaseGenerationCredit({ reservationId: reservation.id, sessionSecret, reasonCode });
+    await appendEventBestEffort(context, reservation.sessionId, 'generation_credit_released', { reservationId: reservation.id, capability, reasonCode });
+  } catch {
+    // A failed release must not leak internals to the browser.
+  }
+}
+
+function releaseReasonCode(error: unknown): string {
+  if (error instanceof Annunci10xPublicError) return sanitizeReasonCode(error.code);
+  if (error instanceof Error && error.name) return sanitizeReasonCode(error.name);
+  return 'GENERATION_FAILED';
+}
+
+function sanitizeReasonCode(value: string): string {
+  return value.replace(/[^A-Za-z0-9_.:-]/g, '_').slice(0, 80) || 'GENERATION_FAILED';
+}
+
+function customerSafeGenerationError(error: unknown): Error {
+  if (error instanceof Annunci10xPublicError) return error;
+  return new Annunci10xPublicError('GENERATION_BLOCKED', 'Generazione temporaneamente non disponibile.', 503);
 }
 
 async function requireGeneratableSnapshot(context: Annunci10xRuntimeContext, sessionId: string, sessionSecret: string): Promise<PersistedSnapshot> {

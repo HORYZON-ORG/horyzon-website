@@ -31,6 +31,7 @@ import {
 } from './rows.ts';
 import type {
   Annunci10xPersistenceAdapter,
+  Annunci10xReservableCapability,
   AttachCheckoutSessionInput,
   AppendAnswerInput,
   AppendEventInput,
@@ -662,6 +663,20 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
     return rows[0] ? parseCreditReservationRow(rows[0]) : null;
   }
 
+  async getLatestConsumedGenerationReservation(sessionId: string, sessionSecret: string, capability: Annunci10xReservableCapability): Promise<PersistedCreditReservation | null> {
+    await this.requireOwnership(sessionId, sessionSecret);
+    const rows = await this.select('annunci10x_credit_reservations', {
+      session_id: `eq.${sessionId}`,
+      capability: `eq.${capability}`,
+      status: 'eq.CONSUMED',
+      output_id: 'not.is.null',
+      select: '*',
+      order: 'consumed_at.desc',
+      limit: '1',
+    });
+    return rows[0] ? parseCreditReservationRow(rows[0]) : null;
+  }
+
   async saveOutput(input: SaveOutputInput): Promise<PersistedOutput> {
     await this.requireOwnership(input.sessionId, input.sessionSecret);
     if (input.outputType === 'MASTER') validateGeneratedAdOrThrow(input.generatedContent);
@@ -689,6 +704,29 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
     if (parentMasterId !== undefined) query.parent_master_id = parentMasterId === null ? 'is.null' : `eq.${parentMasterId}`;
     const rows = await this.select('annunci10x_outputs', query);
     return rows[0] ? parseOutputRow(rows[0]) : null;
+  }
+
+  async getOutputById(outputId: string, sessionId: string, sessionSecret: string): Promise<PersistedOutput | null> {
+    await this.requireOwnership(sessionId, sessionSecret);
+    const rows = await this.select('annunci10x_outputs', {
+      id: `eq.${outputId}`,
+      session_id: `eq.${sessionId}`,
+      select: '*',
+      limit: '1',
+    });
+    return rows[0] ? parseOutputRow(rows[0]) : null;
+  }
+
+  async getEvaluationByOutputId(outputId: string, sessionId: string, sessionSecret: string): Promise<PersistedEvaluation | null> {
+    await this.requireOwnership(sessionId, sessionSecret);
+    const rows = await this.select('annunci10x_evaluations', {
+      session_id: `eq.${sessionId}`,
+      target_output_id: `eq.${outputId}`,
+      select: '*',
+      order: 'created_at.desc',
+      limit: '1',
+    });
+    return rows[0] ? parseEvaluationRow(rows[0]) : null;
   }
 
   async appendEvent(input: AppendEventInput): Promise<PersistedEvent> {
@@ -1607,6 +1645,17 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
     return parseCreditReservationRow(row);
   }
 
+  async getLatestConsumedGenerationReservation(sessionId: string, sessionSecret: string, capability: Annunci10xReservableCapability): Promise<PersistedCreditReservation | null> {
+    this.requireMemoryOwnership(sessionId, sessionSecret);
+    const row = [...this.creditReservations.values()]
+      .filter((item) => item.session_id === sessionId)
+      .filter((item) => item.capability === capability)
+      .filter((item) => item.status === 'CONSUMED')
+      .filter((item) => typeof item.output_id === 'string' && String(item.output_id).trim().length > 0)
+      .sort((left, right) => String(right.consumed_at ?? '').localeCompare(String(left.consumed_at ?? '')))[0];
+    return row ? parseCreditReservationRow(row) : null;
+  }
+
   async saveOutput(input: SaveOutputInput): Promise<PersistedOutput> {
     this.requireMemoryOwnership(input.sessionId, input.sessionSecret);
     if (input.outputType === 'MASTER') validateGeneratedAdOrThrow(input.generatedContent);
@@ -1636,6 +1685,21 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
       .filter((item) => parentMasterId === undefined || item.parent_master_id === parentMasterId)
       .sort((left, right) => String(right.created_at).localeCompare(String(left.created_at)))[0];
     return row ? parseOutputRow(row) : null;
+  }
+
+  async getOutputById(outputId: string, sessionId: string, sessionSecret: string): Promise<PersistedOutput | null> {
+    this.requireMemoryOwnership(sessionId, sessionSecret);
+    const row = this.outputs.get(outputId);
+    return row && row.session_id === sessionId ? parseOutputRow(row) : null;
+  }
+
+  async getEvaluationByOutputId(outputId: string, sessionId: string, sessionSecret: string): Promise<PersistedEvaluation | null> {
+    this.requireMemoryOwnership(sessionId, sessionSecret);
+    const row = [...this.evaluations.values()]
+      .filter((item) => item.session_id === sessionId)
+      .filter((item) => item.target_output_id === outputId)
+      .sort((left, right) => String(right.created_at).localeCompare(String(left.created_at)))[0];
+    return row ? parseEvaluationRow(row) : null;
   }
 
   async appendEvent(input: AppendEventInput): Promise<PersistedEvent> {

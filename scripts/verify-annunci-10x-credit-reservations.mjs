@@ -419,6 +419,14 @@ async function assertStaticWiring() {
   const premiumAuth = await readFile('src/lib/annunci-10x/premium/authorization.ts', 'utf8');
   assert.match(premiumAuth, /createProductionGenerationAuthorizationProvider\(\)[\s\S]*NOT_AUTHORIZED/s);
   assert.doesNotMatch(premiumAuth, /isAnnunci10xFulfillmentEnabled|reserveGenerationCredit|consumeGenerationCredit/s);
+
+  const premiumGenerateRoute = await readFile('src/app/api/annunci-10x/premium/generate/route.ts', 'utf8');
+  assert.match(premiumGenerateRoute, /isAnnunci10xFulfillmentEnabled\(\)/);
+  assert.match(premiumGenerateRoute, /runAnnunci10xReservationBackedPremiumGeneration/);
+  assert.doesNotMatch(premiumGenerateRoute, /createProductionGenerationAuthorizationProvider|authorizationProvider/s);
+
+  const premiumEditRoute = await readFile('src/app/api/annunci-10x/premium/edit/route.ts', 'utf8');
+  assert.match(premiumEditRoute, /createProductionGenerationAuthorizationProvider\(\)/);
 }
 
 async function readyAnalyzeCase() {
