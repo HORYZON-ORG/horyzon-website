@@ -61,6 +61,7 @@ export class StripeAnnunci10xPaymentGateway implements Annunci10xPaymentGateway 
     const session = await this.client.checkout.sessions.create({
       mode: 'payment',
       line_items: [{ price: input.stripePriceId, quantity: 1 }],
+      payment_method_types: ['card'],
       payment_method_collection: 'if_required',
       success_url: input.successUrl,
       cancel_url: input.cancelUrl,

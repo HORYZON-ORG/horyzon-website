@@ -546,6 +546,7 @@ export interface Annunci10xPersistenceAdapter {
   markEmailDeliveryFailed(input: MarkEmailDeliveryFailedInput): Promise<PersistedEmailDelivery>;
   createOrGetPurchase(input: CreateOrGetPurchaseInput): Promise<PersistedPurchase>;
   attachCheckoutSession(input: AttachCheckoutSessionInput): Promise<PersistedPurchase>;
+  getPurchaseById(purchaseId: string): Promise<PersistedPurchase | null>;
   getPurchaseByCheckoutSessionId(stripeCheckoutSessionId: string): Promise<PersistedPurchase | null>;
   claimStripeEvent(input: ClaimStripeEventInput): Promise<PersistedStripeEvent | null>;
   markStripeEvent(input: MarkStripeEventInput): Promise<PersistedStripeEvent>;

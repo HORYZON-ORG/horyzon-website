@@ -193,11 +193,17 @@ async function processCheckoutExpired(event: Annunci10xStripeWebhookEvent, conte
 }
 
 async function processPaymentFailed(event: Annunci10xStripeWebhookEvent, context: Annunci10xRuntimeContext): Promise<'PROCESSED' | 'IGNORED'> {
-  const purchase = await context.persistence.markPurchaseFailed({
-    stripePaymentIntentId: requiredString(event.object.id, 'PAYMENT_INTENT_ID_MISSING'),
-    purchaseId: purchaseIdFromMetadata(event.object),
+  requiredString(event.object.id, 'PAYMENT_INTENT_ID_MISSING');
+  const purchaseId = purchaseIdFromMetadata(event.object);
+  if (!purchaseId) return 'IGNORED';
+  const purchase = await context.persistence.getPurchaseById(purchaseId);
+  if (!purchase) return 'IGNORED';
+  await context.persistence.appendEvent({
+    sessionId: purchase.sessionId,
+    eventName: 'payment_attempt_failed',
+    metadata: { offerCode: purchase.offerCode, purchaseId: purchase.id },
   });
-  return purchase ? 'PROCESSED' : 'IGNORED';
+  return 'PROCESSED';
 }
 
 async function processChargeRefunded(event: Annunci10xStripeWebhookEvent, context: Annunci10xRuntimeContext): Promise<'PROCESSED' | 'IGNORED'> {

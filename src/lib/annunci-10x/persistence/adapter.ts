@@ -536,6 +536,15 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
     return parsePurchaseRow(row);
   }
 
+  async getPurchaseById(purchaseId: string): Promise<PersistedPurchase | null> {
+    const rows = await this.select('annunci10x_purchases', {
+      id: `eq.${purchaseId}`,
+      select: '*',
+      limit: '1',
+    });
+    return rows[0] ? parsePurchaseRow(rows[0]) : null;
+  }
+
   async getPurchaseByCheckoutSessionId(stripeCheckoutSessionId: string): Promise<PersistedPurchase | null> {
     const rows = await this.select('annunci10x_purchases', {
       stripe_checkout_session_id: `eq.${stripeCheckoutSessionId}`,
@@ -1312,6 +1321,11 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
     row.checkout_created_at = row.checkout_created_at ?? now;
     row.updated_at = now;
     return parsePurchaseRow(row);
+  }
+
+  async getPurchaseById(purchaseId: string): Promise<PersistedPurchase | null> {
+    const row = this.purchases.get(purchaseId);
+    return row ? parsePurchaseRow(row) : null;
   }
 
   async getPurchaseByCheckoutSessionId(stripeCheckoutSessionId: string): Promise<PersistedPurchase | null> {

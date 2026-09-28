@@ -30,6 +30,7 @@ await assertClientTamperingAndUnverified();
 await assertStripeWrapper();
 await assertPaidWebhookDuplicateAndConcurrent();
 await assertMismatchAndLifecycleEvents();
+await assertPaymentFailureLifecycle();
 await assertTransientRetryAndRouteStatus();
 await assertPendingPriceStability();
 await assertEffectiveEntitlements();
@@ -202,6 +203,8 @@ async function assertStripeWrapper() {
   });
   assert.equal(created.id, 'cs_fake');
   assert.equal(calls[0].options.idempotencyKey, 'annunci10x-checkout/purchase-123');
+  assert.deepEqual(calls[0].payload.payment_method_types, ['card']);
+  assert.equal(calls[0].payload.payment_method_collection, 'if_required');
   assert.deepEqual(calls[0].payload.metadata, {
     annunci10x_purchase_id: 'purchase-123',
     annunci10x_offer_code: 'AGENT_RECRUITER',
@@ -284,17 +287,65 @@ async function assertMismatchAndLifecycleEvents() {
   assert.equal((await processWebhook(expiredCase.context, stripeEvent({ id: 'evt_expired', type: 'checkout.session.expired', object: { id: expiredCheckout.sessionId } }))).status, 'PROCESSED');
   assert.equal((await expiredCase.context.persistence.getPurchaseByCheckoutSessionId(expiredCheckout.sessionId)).status, 'CANCELED');
 
-  const failedCase = await verifiedSession('ANALYZE');
-  const failedCheckout = await createCheckout(failedCase.context, failedCase.session, 'ANNUNCI10X_REWRITE');
-  assert.equal((await processWebhook(failedCase.context, stripeEvent({
-    id: 'evt_failed',
+}
+
+async function assertPaymentFailureLifecycle() {
+  const failureCase = await verifiedSession('ANALYZE');
+  const checkout = await createCheckout(failureCase.context, failureCase.session, 'ANNUNCI10X_REWRITE');
+  const failed = await processWebhook(failureCase.context, stripeEvent({
+    id: 'evt_payment_failed_once',
     type: 'payment_intent.payment_failed',
-    object: { id: 'pi_failed', metadata: { annunci10x_purchase_id: failedCheckout.purchaseId, annunci10x_offer_code: 'ANNUNCI10X_REWRITE' } },
+    object: { id: 'pi_failed_once', metadata: { annunci10x_purchase_id: checkout.purchaseId, annunci10x_offer_code: 'ANNUNCI10X_REWRITE' } },
+  }));
+  assert.equal(failed.status, 'PROCESSED');
+  let purchase = await failureCase.context.persistence.getPurchaseByCheckoutSessionId(checkout.sessionId);
+  assert.equal(purchase.status, 'PENDING');
+  assert.equal(purchase.failedAt, null);
+  assert.equal((await failureCase.context.persistence.getEffectiveEntitlements(failureCase.session.sessionId, failureCase.session.sessionSecret)).rewriteCredits, 0);
+  assert.equal(failureCase.context.persistence.stripeEvents.get('evt_payment_failed_once').status, 'PROCESSED');
+
+  const repeated = await processWebhook(failureCase.context, stripeEvent({
+    id: 'evt_payment_failed_twice',
+    type: 'payment_intent.payment_failed',
+    object: { id: 'pi_failed_twice', metadata: { annunci10x_purchase_id: checkout.purchaseId, annunci10x_offer_code: 'ANNUNCI10X_REWRITE' } },
+  }));
+  assert.equal(repeated.status, 'PROCESSED');
+  purchase = await failureCase.context.persistence.getPurchaseByCheckoutSessionId(checkout.sessionId);
+  assert.equal(purchase.status, 'PENDING');
+  assert.equal((await failureCase.context.persistence.getEffectiveEntitlements(failureCase.session.sessionId, failureCase.session.sessionSecret)).rewriteCredits, 0);
+  assert.equal(failureCase.context.persistence.stripeEvents.get('evt_payment_failed_twice').status, 'PROCESSED');
+
+  const paidAfterFailure = await processWebhook(failureCase.context, stripeEvent({
+    id: 'evt_paid_after_failure',
+    type: 'checkout.session.completed',
+    object: {
+      id: checkout.sessionId,
+      payment_status: 'paid',
+      amount_total: 700,
+      currency: 'eur',
+      payment_intent: 'pi_paid_after_failure',
+    },
+  }));
+  assert.equal(paidAfterFailure.status, 'PROCESSED');
+  purchase = await failureCase.context.persistence.getPurchaseByCheckoutSessionId(checkout.sessionId);
+  assert.equal(purchase.status, 'PAID');
+  assert.equal((await failureCase.context.persistence.getEffectiveEntitlements(failureCase.session.sessionId, failureCase.session.sessionSecret)).rewriteCredits, 1);
+
+  const expiredCase = await verifiedSession('ANALYZE');
+  const expiredCheckout = await createCheckout(expiredCase.context, expiredCase.session, 'ANNUNCI10X_REWRITE');
+  assert.equal((await processWebhook(expiredCase.context, stripeEvent({
+    id: 'evt_failure_before_expiry',
+    type: 'payment_intent.payment_failed',
+    object: { id: 'pi_failure_before_expiry', metadata: { annunci10x_purchase_id: expiredCheckout.purchaseId, annunci10x_offer_code: 'ANNUNCI10X_REWRITE' } },
   }))).status, 'PROCESSED');
-  const failedPurchase = await failedCase.context.persistence.getPurchaseByCheckoutSessionId(failedCheckout.sessionId);
-  assert.equal(failedPurchase.status, 'FAILED');
-  assert.ok(failedPurchase.failedAt);
-  assert.equal((await failedCase.context.persistence.getEffectiveEntitlements(failedCase.session.sessionId, failedCase.session.sessionSecret)).rewriteCredits, 0);
+  assert.equal((await expiredCase.context.persistence.getPurchaseByCheckoutSessionId(expiredCheckout.sessionId)).status, 'PENDING');
+  assert.equal((await processWebhook(expiredCase.context, stripeEvent({
+    id: 'evt_expired_after_failure',
+    type: 'checkout.session.expired',
+    object: { id: expiredCheckout.sessionId },
+  }))).status, 'PROCESSED');
+  assert.equal((await expiredCase.context.persistence.getPurchaseByCheckoutSessionId(expiredCheckout.sessionId)).status, 'CANCELED');
+  assert.equal((await expiredCase.context.persistence.getEffectiveEntitlements(expiredCase.session.sessionId, expiredCase.session.sessionSecret)).rewriteCredits, 0);
 }
 
 async function assertTransientRetryAndRouteStatus() {
@@ -449,6 +500,10 @@ async function assertMigrationAndRoutes() {
   assert.doesNotMatch(webhookRoute, /request\.json\(\)/);
   const contactRoute = await readFile('src/app/api/annunci-10x/contact/route.ts', 'utf8');
   assert.match(contactRoute, /session\.flow !== 'ANALYZE' && session\.flow !== 'CREATE'/);
+  const commerceRuntime = await readFile('src/lib/annunci-10x/payments/commerce.ts', 'utf8');
+  assert.doesNotMatch(commerceRuntime, /markPurchaseFailed\(/, 'payment_intent.payment_failed must not mark purchases FAILED');
+  const stripeRuntime = await readFile('src/lib/annunci-10x/payments/stripe.ts', 'utf8');
+  assert.match(stripeRuntime, /payment_method_types:\s*\['card'\]/);
 }
 
 async function verifiedSession(flow) {
