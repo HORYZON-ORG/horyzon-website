@@ -62,12 +62,15 @@ interface CreateState {
   emailVerified?: boolean;
   commercial: {
     checkoutEnabled: boolean;
-    price?: string;
-    discountValue?: string;
-    entitlements: string;
     pricingStatus: 'FIXED';
     availableOffers: Annunci10xCommercialOffer[];
-    entitlementSummary: { guide: boolean; adGenerationCredits: number; source: string };
+    entitlementSummary: {
+      guide: boolean;
+      rewriteCredits: number;
+      createCredits: number;
+      agentRecruiterAccess: boolean;
+      source: string;
+    };
   };
   operations: PublicOperation[];
 }
@@ -216,19 +219,33 @@ export function Annunci10xClient() {
 
     const delays = [0, 1500, 3000, 5000];
     let cancelled = false;
-    const timers = delays.map((delay) => window.setTimeout(async () => {
-      if (cancelled) return;
-      try {
-        await fetchAnnunci10xCommercialOffers();
-        setCommerceRefreshToken((value) => value + 1);
-      } catch {
-        // Query params are UX only; failed refresh must not unlock anything.
-      }
-    }, delay));
-    return () => {
+    let baselineFingerprint: string | null = null;
+    const timers: number[] = [];
+    const stopPolling = () => {
       cancelled = true;
       timers.forEach((timer) => window.clearTimeout(timer));
     };
+    delays.forEach((delay) => {
+      const timer = window.setTimeout(async () => {
+        if (cancelled) return;
+        try {
+          const commercial = await fetchAnnunci10xCommercialOffers();
+          const fingerprint = commerceStateFingerprint(commercial);
+          if (baselineFingerprint === null) {
+            baselineFingerprint = fingerprint;
+            return;
+          }
+          if (fingerprint !== baselineFingerprint) {
+            setCommerceRefreshToken((value) => value + 1);
+            stopPolling();
+          }
+        } catch {
+          // Query params are UX only; failed refresh must not unlock anything.
+        }
+      }, delay);
+      timers.push(timer);
+    });
+    return stopPolling;
   }, [checkoutNotice]);
 
   function selectMode(nextMode: Mode) {
@@ -799,6 +816,21 @@ function initialCheckoutNotice(): 'success' | 'cancelled' | null {
   if (typeof window === 'undefined') return null;
   const checkout = new URLSearchParams(window.location.search).get('checkout');
   return checkout === 'success' || checkout === 'cancelled' ? checkout : null;
+}
+
+function commerceStateFingerprint(commercial: Annunci10xCommercialState): string {
+  return JSON.stringify({
+    checkoutEnabled: commercial.checkoutEnabled,
+    guide: Boolean(commercial.entitlements?.guide),
+    rewriteCredits: Number(commercial.entitlements?.rewriteCredits ?? 0),
+    createCredits: Number(commercial.entitlements?.createCredits ?? 0),
+    agentRecruiterAccess: Boolean(commercial.entitlements?.agentRecruiterAccess),
+    offers: commercial.availableOffers.map((offer) => ({
+      offerCode: offer.offerCode,
+      eligibility: offer.eligibility,
+      reasonUnavailable: offer.reasonUnavailable ?? null,
+    })),
+  });
 }
 
 function scrollToElement(element: HTMLElement) {

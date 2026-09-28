@@ -298,8 +298,11 @@ assert.equal(confirmedCreate.state, 'PAYMENT_REQUIRED');
 assert.equal(confirmedCreate.currentStep, 'COMMERCIAL');
 assert.equal(confirmedCreate.paymentRequired, true);
 assert.equal(confirmedCreate.commercial.checkoutEnabled, false);
-assert.equal(confirmedCreate.commercial.price, 'OPEN_DECISION');
+assert.equal('price' in confirmedCreate.commercial, false);
+assert.equal('discountValue' in confirmedCreate.commercial, false);
+assert.equal('entitlements' in confirmedCreate.commercial, false);
 assert.equal(confirmedCreate.commercial.pricingStatus, 'FIXED');
+assert.deepEqual(Object.keys(confirmedCreate.commercial.entitlementSummary).sort(), ['agentRecruiterAccess', 'createCredits', 'guide', 'rewriteCredits', 'source']);
 assert.deepEqual(confirmedCreate.commercial.availableOffers.map((offer) => offer.offerCode), ['ANNUNCI10X_CREATE', 'AGENT_RECRUITER']);
 assert.equal(confirmedCreate.commercial.availableOffers.every((offer) => offer.purchaseEnabled === false), true);
 

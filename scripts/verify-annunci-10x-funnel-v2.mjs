@@ -14,6 +14,7 @@ const page = await text('src/app/annunci-10x/page.tsx');
 const client = await text('src/components/annunci-10x/annunci-10x-client.tsx');
 const flow = await text('src/components/annunci-10x/annunci-10x-analyze-flow.tsx');
 const commerceClient = await text('src/components/annunci-10x/annunci-10x-commerce-client.ts');
+const createFlow = await text('src/lib/annunci-10x/create-flow.ts');
 const identityGate = await text('src/components/annunci-10x/annunci-10x-identity-gate.tsx');
 const css = await text('src/components/annunci-10x/annunci-10x.module.css');
 const sitemap = await text('src/app/sitemap.ts');
@@ -143,6 +144,31 @@ assert.match(identityGate, /analysisRunId \? \{ code: otpCode, analysisRunId: pr
 assert.match(client, /Pagamento ricevuto\./, 'checkout success banner missing');
 assert.match(client, /Pagamento annullato\./, 'checkout cancel banner missing');
 assert.match(client, /delays = \[0, 1500, 3000, 5000\]/, 'success refresh must be bounded to four attempts');
+assert.match(createFlow, /checkoutEnabled:\s*boolean/, 'PublicCreateState checkoutEnabled must be boolean');
+assert.match(createFlow, /pricingStatus:\s*'FIXED'/, 'PublicCreateState pricingStatus must be FIXED');
+assert.match(createFlow, /entitlementSummary:\s*\{[\s\S]*guide:\s*boolean[\s\S]*rewriteCredits:\s*number[\s\S]*createCredits:\s*number[\s\S]*agentRecruiterAccess:\s*boolean[\s\S]*source:\s*string/s, 'PublicCreateState V2 entitlement summary missing');
+const createCommercialInterface = createFlow.match(/commercial:\s*\{[\s\S]*?\n  \};/)?.[0] ?? '';
+for (const staleField of ["price: 'OPEN_DECISION'", "discountValue: 'OPEN_DECISION'", "entitlements: 'SERVER_VERIFIED_OPEN_DECISION'"]) {
+  assert.equal(createCommercialInterface.includes(staleField), false, `PublicCreateState commercial must not expose stale field ${staleField}`);
+}
+const clientCreateCommercialInterface = client.match(/commercial:\s*\{[\s\S]*?\n  \};/)?.[0] ?? '';
+for (const staleField of ['price?: string', 'discountValue?: string', 'entitlements: string', 'adGenerationCredits']) {
+  assert.equal(clientCreateCommercialInterface.includes(staleField), false, `client CreateState commercial must not expose stale field ${staleField}`);
+}
+assert.match(createFlow, /const identityVerified = Boolean\(lead\?\.emailVerifiedAt\)/, 'identityVerified must be server-derived from lead');
+assert.match(createFlow, /const checkoutEnabled = isAnnunci10xCheckoutEnabled\(\)/, 'checkoutEnabled must be server-derived from env helper');
+assert.match(createFlow, /identityVerified,\s*\n\s*entitlementProvider:\s*checkoutEnabled/s, 'commercial resolver must receive identityVerified and checkoutEnabled-gated provider');
+assert.match(createFlow, /createPersistenceAnnunci10xCommerceEntitlementProvider\(\{[\s\S]*persistence: input\.context\.persistence[\s\S]*sessionId: input\.sessionId[\s\S]*sessionSecret: input\.sessionSecret/s, 'persistence entitlement provider must be wired for CREATE state');
+assert.match(client, /function commerceStateFingerprint\(commercial: Annunci10xCommercialState\): string/, 'commercial fingerprint helper missing');
+assert.match(client, /baselineFingerprint === null[\s\S]*baselineFingerprint = fingerprint[\s\S]*fingerprint !== baselineFingerprint[\s\S]*setCommerceRefreshToken[\s\S]*stopPolling\(\)/s, 'success polling must stop after fingerprint change');
+assert.match(client, /if \(checkoutNotice !== 'success'\) return;/, 'cancelled checkout must not start polling');
+const checkoutSuccessEffectStart = client.indexOf("if (checkoutNotice !== 'success') return;");
+const checkoutSuccessEffectEnd = client.indexOf('}, [checkoutNotice]);', checkoutSuccessEffectStart);
+const checkoutSuccessEffect = checkoutSuccessEffectStart >= 0 && checkoutSuccessEffectEnd > checkoutSuccessEffectStart
+  ? client.slice(checkoutSuccessEffectStart, checkoutSuccessEffectEnd)
+  : '';
+assert.equal(checkoutSuccessEffect.includes('setCreateState'), false, 'checkout=success must not authoritatively mutate create state');
+assert.equal(checkoutSuccessEffect.includes('setCommercial('), false, 'checkout=success must not authoritatively mutate commercial state');
 
 for (const fakeProof of ['STERIMED', 'Ahumados', 'De Ridder', '181%', 'testimonial']) {
   assert.equal(client.includes(fakeProof), false, `fake proof/testimonial marker found: ${fakeProof}`);

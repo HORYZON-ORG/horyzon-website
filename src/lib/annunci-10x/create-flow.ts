@@ -7,7 +7,12 @@ import {
   ANNUNCI10X_STRATEGY_VERSION,
 } from './constants.ts';
 import { Annunci10xAiOrchestrator } from './ai/orchestrator.ts';
-import { resolveAnnunci10xCommercial, type Annunci10xCommercialOffer } from './commercial.ts';
+import {
+  createPersistenceAnnunci10xCommerceEntitlementProvider,
+  isAnnunci10xCheckoutEnabled,
+  resolveAnnunci10xCommercial,
+  type Annunci10xCommercialOffer,
+} from './commercial.ts';
 import type { Annunci10xProfileOutput, Annunci10xStrategyOutput } from './ai/schemas.ts';
 import { deriveAnnunci10xStrategyRules, type StrategyRuleInput } from './strategy-rules.ts';
 import { canTransition } from './state-machine.ts';
@@ -52,15 +57,14 @@ export interface PublicAnnunci10xCreateState {
   contactSaved: boolean;
   emailVerified: boolean;
   commercial: {
-    checkoutEnabled: false;
-    price: 'OPEN_DECISION';
-    discountValue: 'OPEN_DECISION';
-    entitlements: 'SERVER_VERIFIED_OPEN_DECISION';
+    checkoutEnabled: boolean;
     pricingStatus: 'FIXED';
     availableOffers: Annunci10xCommercialOffer[];
     entitlementSummary: {
       guide: boolean;
-      adGenerationCredits: number;
+      rewriteCredits: number;
+      createCredits: number;
+      agentRecruiterAccess: boolean;
       source: string;
     };
   };
@@ -376,10 +380,21 @@ async function publicCreateState(input: {
   const clarification = deriveBlockingClarification(answers);
   const ready = isRoleCardReady(answers, roleCard) && !clarification;
   const lead = await input.context.persistence.getLead(input.sessionId, input.sessionSecret);
+  const identityVerified = Boolean(lead?.emailVerifiedAt);
+  const checkoutEnabled = isAnnunci10xCheckoutEnabled();
   const commercial = await resolveAnnunci10xCommercial({
     subject: { kind: 'SESSION', sessionId: input.sessionId },
     flow: 'CREATE',
     journeyState: session.state,
+    checkoutEnabled,
+    identityVerified,
+    entitlementProvider: checkoutEnabled
+      ? createPersistenceAnnunci10xCommerceEntitlementProvider({
+        persistence: input.context.persistence,
+        sessionId: input.sessionId,
+        sessionSecret: input.sessionSecret,
+      })
+      : undefined,
   });
   return {
     sessionId: input.sessionId,
@@ -399,17 +414,16 @@ async function publicCreateState(input: {
     canConfirm: session.state === 'ROLE_CARD_READY' && ready,
     paymentRequired: session.state === 'PAYMENT_REQUIRED',
     contactSaved: Boolean(lead),
-    emailVerified: Boolean(lead?.emailVerifiedAt),
+    emailVerified: identityVerified,
     commercial: {
-      checkoutEnabled: false,
-      price: 'OPEN_DECISION',
-      discountValue: 'OPEN_DECISION',
-      entitlements: 'SERVER_VERIFIED_OPEN_DECISION',
+      checkoutEnabled: commercial.checkoutEnabled,
       pricingStatus: commercial.pricingStatus,
       availableOffers: commercial.availableOffers,
       entitlementSummary: {
         guide: commercial.entitlements.guide,
-        adGenerationCredits: commercial.entitlements.adGenerationCredits,
+        rewriteCredits: commercial.entitlements.rewriteCredits,
+        createCredits: commercial.entitlements.createCredits,
+        agentRecruiterAccess: commercial.entitlements.agentRecruiterAccess,
         source: commercial.entitlements.source,
       },
     },
