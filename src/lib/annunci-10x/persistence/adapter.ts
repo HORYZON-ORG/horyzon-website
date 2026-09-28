@@ -18,15 +18,19 @@ import {
   parseAnswerRow,
   parseEmailDeliveryRow,
   parseEmailVerificationRow,
+  parseEffectiveEntitlementsRow,
   parseEvaluationRow,
   parseEventRow,
   parseLeadRow,
   parseOutputRow,
+  parsePurchaseRow,
   parseSessionRow,
   parseSnapshotRow,
+  parseStripeEventRow,
 } from './rows.ts';
 import type {
   Annunci10xPersistenceAdapter,
+  AttachCheckoutSessionInput,
   AppendAnswerInput,
   AppendEventInput,
   AppendSnapshotInput,
@@ -34,13 +38,21 @@ import type {
   CheckRateLimitResult,
   CreateEmailVerificationInput,
   CreateAnalysisRunInput,
+  CreateOrGetPurchaseInput,
   CompleteAiOperationInput,
+  CompletePaidPurchaseInput,
   CreateSessionInput,
   CreateSessionResult,
   FailAiOperationInput,
   ClaimEmailDeliveryInput,
+  ClaimStripeEventInput,
+  EffectiveEntitlements,
   MarkEmailDeliveryFailedInput,
   MarkEmailDeliverySentInput,
+  MarkPurchaseCanceledInput,
+  MarkPurchaseFailedInput,
+  MarkPurchaseRefundedInput,
+  MarkStripeEventInput,
   PersistedAnalysisRun,
   PersistedAiOperation,
   PersistedAnnunci10xSession,
@@ -51,7 +63,9 @@ import type {
   PersistedEvent,
   PersistedLead,
   PersistedOutput,
+  PersistedPurchase,
   PersistedSnapshot,
+  PersistedStripeEvent,
   SaveEvaluationInput,
   SaveLeadInput,
   SaveOutputInput,
@@ -500,6 +514,98 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
     return parseEmailDeliveryRow(row);
   }
 
+  async createOrGetPurchase(input: CreateOrGetPurchaseInput): Promise<PersistedPurchase> {
+    const row = await this.rpc<DbRow>('annunci10x_create_or_get_purchase', {
+      p_session_id: input.sessionId,
+      p_owner_secret_hash: hashAnnunci10xSessionSecret(input.sessionSecret),
+      p_lead_id: input.leadId,
+      p_offer_code: input.offerCode,
+      p_expected_amount_cents: input.expectedAmountCents,
+      p_currency: input.currency,
+      p_stripe_price_id: input.stripePriceId,
+    });
+    return parsePurchaseRow(row);
+  }
+
+  async attachCheckoutSession(input: AttachCheckoutSessionInput): Promise<PersistedPurchase> {
+    const row = await this.rpc<DbRow>('annunci10x_attach_checkout_session', {
+      p_purchase_id: input.purchaseId,
+      p_owner_secret_hash: hashAnnunci10xSessionSecret(input.sessionSecret),
+      p_stripe_checkout_session_id: input.stripeCheckoutSessionId,
+    });
+    return parsePurchaseRow(row);
+  }
+
+  async getPurchaseByCheckoutSessionId(stripeCheckoutSessionId: string): Promise<PersistedPurchase | null> {
+    const rows = await this.select('annunci10x_purchases', {
+      stripe_checkout_session_id: `eq.${stripeCheckoutSessionId}`,
+      select: '*',
+      limit: '1',
+    });
+    return rows[0] ? parsePurchaseRow(rows[0]) : null;
+  }
+
+  async claimStripeEvent(input: ClaimStripeEventInput): Promise<PersistedStripeEvent | null> {
+    const row = await this.rpc<DbRow | null>('annunci10x_claim_stripe_event', {
+      p_stripe_event_id: input.stripeEventId,
+      p_event_type: input.eventType,
+      p_object_id: input.objectId ?? null,
+    });
+    return row ? parseStripeEventRow(row) : null;
+  }
+
+  async markStripeEvent(input: MarkStripeEventInput): Promise<PersistedStripeEvent> {
+    const row = await this.rpc<DbRow>('annunci10x_mark_stripe_event', {
+      p_stripe_event_id: input.stripeEventId,
+      p_status: input.status,
+      p_error_code: input.errorCode ?? null,
+    });
+    return parseStripeEventRow(row);
+  }
+
+  async completePaidPurchase(input: CompletePaidPurchaseInput): Promise<PersistedPurchase> {
+    const row = await this.rpc<DbRow>('annunci10x_complete_paid_purchase', {
+      p_purchase_id: input.purchaseId,
+      p_stripe_checkout_session_id: input.stripeCheckoutSessionId,
+      p_amount_cents: input.amountCents,
+      p_currency: input.currency,
+      p_stripe_payment_intent_id: input.stripePaymentIntentId ?? null,
+      p_stripe_customer_id: input.stripeCustomerId ?? null,
+    });
+    return parsePurchaseRow(row);
+  }
+
+  async markPurchaseCanceled(input: MarkPurchaseCanceledInput): Promise<PersistedPurchase | null> {
+    const row = await this.rpc<DbRow | null>('annunci10x_mark_purchase_canceled', {
+      p_stripe_checkout_session_id: input.stripeCheckoutSessionId,
+    });
+    return row ? parsePurchaseRow(row) : null;
+  }
+
+  async markPurchaseFailed(input: MarkPurchaseFailedInput): Promise<PersistedPurchase | null> {
+    const row = await this.rpc<DbRow | null>('annunci10x_mark_purchase_failed', {
+      p_stripe_payment_intent_id: input.stripePaymentIntentId,
+      p_purchase_id: input.purchaseId ?? null,
+    });
+    return row ? parsePurchaseRow(row) : null;
+  }
+
+  async markPurchaseRefunded(input: MarkPurchaseRefundedInput): Promise<PersistedPurchase | null> {
+    const row = await this.rpc<DbRow | null>('annunci10x_mark_purchase_refunded', {
+      p_stripe_payment_intent_id: input.stripePaymentIntentId,
+      p_purchase_id: input.purchaseId ?? null,
+    });
+    return row ? parsePurchaseRow(row) : null;
+  }
+
+  async getEffectiveEntitlements(sessionId: string, sessionSecret: string): Promise<EffectiveEntitlements> {
+    const row = await this.rpc<DbRow>('annunci10x_get_effective_entitlements', {
+      p_session_id: sessionId,
+      p_owner_secret_hash: hashAnnunci10xSessionSecret(sessionSecret),
+    });
+    return parseEffectiveEntitlementsRow(row);
+  }
+
   async saveOutput(input: SaveOutputInput): Promise<PersistedOutput> {
     await this.requireOwnership(input.sessionId, input.sessionSecret);
     if (input.outputType === 'MASTER') validateGeneratedAdOrThrow(input.generatedContent);
@@ -605,6 +711,9 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
   private leads = new Map<string, DbRow>();
   private verifications = new Map<string, DbRow>();
   private emailDeliveries = new Map<string, DbRow>();
+  private purchases = new Map<string, DbRow>();
+  private entitlementGrants = new Map<string, DbRow>();
+  private stripeEvents = new Map<string, DbRow>();
   private outputs = new Map<string, DbRow>();
   private evaluations: DbRow[] = [];
   private events: DbRow[] = [];
@@ -1147,6 +1256,185 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
     return parseEmailDeliveryRow(row);
   }
 
+  async createOrGetPurchase(input: CreateOrGetPurchaseInput): Promise<PersistedPurchase> {
+    this.requireMemoryOwnership(input.sessionId, input.sessionSecret);
+    if (!isMemoryOfferCode(input.offerCode) || input.currency !== 'EUR' || input.expectedAmountCents <= 0 || !input.stripePriceId) {
+      throw new Annunci10xPersistenceError('Invalid Annunci 10x purchase input.', 'VALIDATION');
+    }
+    const session = this.sessions.get(input.sessionId);
+    if (typeof session?.expires_at === 'string' && Date.parse(session.expires_at) <= Date.now()) {
+      throw new Annunci10xPersistenceError('Annunci 10x session expired.', 'OWNERSHIP');
+    }
+    const lead = this.leads.get(input.sessionId);
+    if (!lead || lead.id !== input.leadId || !lead.email_verified_at) {
+      throw new Annunci10xPersistenceError('Annunci 10x verified lead required for purchase.', 'OWNERSHIP');
+    }
+    const existing = [...this.purchases.values()].find((row) => (
+      row.session_id === input.sessionId
+      && row.offer_code === input.offerCode
+      && row.status === 'PENDING'
+    ));
+    if (existing) return parsePurchaseRow(existing);
+    const now = new Date().toISOString();
+    const row: DbRow = {
+      id: randomUUID(),
+      session_id: input.sessionId,
+      lead_id: input.leadId,
+      offer_code: input.offerCode,
+      status: 'PENDING',
+      provider: 'STRIPE',
+      currency: input.currency,
+      expected_amount_cents: input.expectedAmountCents,
+      stripe_price_id: input.stripePriceId,
+      stripe_checkout_session_id: null,
+      stripe_payment_intent_id: null,
+      stripe_customer_id: null,
+      checkout_created_at: null,
+      paid_at: null,
+      failed_at: null,
+      canceled_at: null,
+      refunded_at: null,
+      created_at: now,
+      updated_at: now,
+    };
+    this.purchases.set(String(row.id), row);
+    return parsePurchaseRow(row);
+  }
+
+  async attachCheckoutSession(input: AttachCheckoutSessionInput): Promise<PersistedPurchase> {
+    const row = this.findOwnedPurchase(input.purchaseId, input.sessionSecret);
+    if (row.status !== 'PENDING') throw new Annunci10xPersistenceError('Annunci 10x purchase is not pending.', 'VALIDATION');
+    if (row.stripe_checkout_session_id && row.stripe_checkout_session_id !== input.stripeCheckoutSessionId) {
+      throw new Annunci10xPersistenceError('Annunci 10x purchase already has a different checkout session.', 'VALIDATION');
+    }
+    const now = new Date().toISOString();
+    row.stripe_checkout_session_id = input.stripeCheckoutSessionId;
+    row.checkout_created_at = row.checkout_created_at ?? now;
+    row.updated_at = now;
+    return parsePurchaseRow(row);
+  }
+
+  async getPurchaseByCheckoutSessionId(stripeCheckoutSessionId: string): Promise<PersistedPurchase | null> {
+    const row = [...this.purchases.values()].find((item) => item.stripe_checkout_session_id === stripeCheckoutSessionId);
+    return row ? parsePurchaseRow(row) : null;
+  }
+
+  async claimStripeEvent(input: ClaimStripeEventInput): Promise<PersistedStripeEvent | null> {
+    const nowMs = Date.now();
+    const now = new Date(nowMs).toISOString();
+    let row = this.stripeEvents.get(input.stripeEventId);
+    if (!row) {
+      row = {
+        id: randomUUID(),
+        stripe_event_id: input.stripeEventId,
+        event_type: input.eventType,
+        object_id: input.objectId ?? null,
+        status: 'RECEIVED',
+        error_code: null,
+        attempt_count: 0,
+        processing_started_at: null,
+        received_at: now,
+        processed_at: null,
+      };
+      this.stripeEvents.set(input.stripeEventId, row);
+    }
+    if (row.status === 'PROCESSED' || row.status === 'IGNORED') return null;
+    if (Number(row.attempt_count) >= 5) return null;
+    const started = typeof row.processing_started_at === 'string' ? Date.parse(row.processing_started_at) : 0;
+    if (row.status === 'RECEIVED' && started && nowMs - started < 120_000) return null;
+    row.status = 'RECEIVED';
+    row.event_type = input.eventType;
+    row.object_id = input.objectId ?? row.object_id ?? null;
+    row.attempt_count = Number(row.attempt_count ?? 0) + 1;
+    row.processing_started_at = now;
+    row.error_code = null;
+    return parseStripeEventRow(row);
+  }
+
+  async markStripeEvent(input: MarkStripeEventInput): Promise<PersistedStripeEvent> {
+    const row = this.stripeEvents.get(input.stripeEventId);
+    if (!row) throw new Annunci10xPersistenceError('Stripe event not claimed.', 'VALIDATION');
+    const now = new Date().toISOString();
+    row.status = input.status;
+    row.error_code = input.errorCode ? input.errorCode.slice(0, 80) : null;
+    row.processed_at = input.status === 'PROCESSED' || input.status === 'IGNORED' ? now : null;
+    if (input.status !== 'FAILED') row.processing_started_at = null;
+    return parseStripeEventRow(row);
+  }
+
+  async completePaidPurchase(input: CompletePaidPurchaseInput): Promise<PersistedPurchase> {
+    const row = this.purchases.get(input.purchaseId);
+    if (!row) throw new Annunci10xPersistenceError('Annunci 10x purchase not found.', 'OWNERSHIP');
+    if (row.stripe_checkout_session_id !== input.stripeCheckoutSessionId) throw new Annunci10xPersistenceError('Checkout session mismatch.', 'VALIDATION');
+    if (Number(row.expected_amount_cents) !== input.amountCents) throw new Annunci10xPersistenceError('Checkout amount mismatch.', 'VALIDATION');
+    if (String(row.currency).toLowerCase() !== input.currency.toLowerCase()) throw new Annunci10xPersistenceError('Checkout currency mismatch.', 'VALIDATION');
+    if (row.status !== 'PENDING' && row.status !== 'PAID') throw new Annunci10xPersistenceError('Purchase cannot be completed.', 'VALIDATION');
+    const now = new Date().toISOString();
+    row.status = 'PAID';
+    row.paid_at = row.paid_at ?? now;
+    row.stripe_payment_intent_id = input.stripePaymentIntentId ?? row.stripe_payment_intent_id ?? null;
+    row.stripe_customer_id = input.stripeCustomerId ?? row.stripe_customer_id ?? null;
+    row.updated_at = now;
+    for (const grant of grantsForOffer(String(row.offer_code))) {
+      const key = `${row.id}:${grant.capability}`;
+      if (!this.entitlementGrants.has(key)) {
+        this.entitlementGrants.set(key, {
+          id: randomUUID(),
+          session_id: row.session_id,
+          lead_id: row.lead_id,
+          purchase_id: row.id,
+          capability: grant.capability,
+          quantity: grant.quantity,
+          created_at: now,
+        });
+      }
+    }
+    return parsePurchaseRow(row);
+  }
+
+  async markPurchaseCanceled(input: MarkPurchaseCanceledInput): Promise<PersistedPurchase | null> {
+    const row = [...this.purchases.values()].find((item) => item.stripe_checkout_session_id === input.stripeCheckoutSessionId);
+    if (!row) return null;
+    if (row.status === 'PENDING') {
+      const now = new Date().toISOString();
+      row.status = 'CANCELED';
+      row.canceled_at = now;
+      row.updated_at = now;
+    }
+    return parsePurchaseRow(row);
+  }
+
+  async markPurchaseFailed(input: MarkPurchaseFailedInput): Promise<PersistedPurchase | null> {
+    const row = input.purchaseId ? this.purchases.get(input.purchaseId) : [...this.purchases.values()].find((item) => item.stripe_payment_intent_id === input.stripePaymentIntentId);
+    if (!row) return null;
+    if (row.status === 'PENDING') {
+      const now = new Date().toISOString();
+      row.status = 'FAILED';
+      row.stripe_payment_intent_id = input.stripePaymentIntentId;
+      row.failed_at = now;
+      row.updated_at = now;
+    }
+    return parsePurchaseRow(row);
+  }
+
+  async markPurchaseRefunded(input: MarkPurchaseRefundedInput): Promise<PersistedPurchase | null> {
+    const row = input.purchaseId ? this.purchases.get(input.purchaseId) : [...this.purchases.values()].find((item) => item.stripe_payment_intent_id === input.stripePaymentIntentId);
+    if (!row) return null;
+    if (row.status === 'PAID') {
+      const now = new Date().toISOString();
+      row.status = 'REFUNDED';
+      row.stripe_payment_intent_id = input.stripePaymentIntentId;
+      row.refunded_at = now;
+      row.updated_at = now;
+    }
+    return parsePurchaseRow(row);
+  }
+
+  async getEffectiveEntitlements(sessionId: string, sessionSecret: string): Promise<EffectiveEntitlements> {
+    this.requireMemoryOwnership(sessionId, sessionSecret);
+    return effectiveEntitlementsFromRows([...this.purchases.values()], [...this.entitlementGrants.values()], sessionId);
+  }
+
   async saveOutput(input: SaveOutputInput): Promise<PersistedOutput> {
     this.requireMemoryOwnership(input.sessionId, input.sessionSecret);
     if (input.outputType === 'MASTER') validateGeneratedAdOrThrow(input.generatedContent);
@@ -1219,6 +1507,13 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
   private findOwnedEmailDelivery(deliveryId: string, sessionSecret: string): DbRow {
     const row = this.emailDeliveries.get(deliveryId);
     if (!row) throw new Annunci10xPersistenceError('Annunci 10x email delivery not found.', 'OWNERSHIP');
+    this.requireMemoryOwnership(String(row.session_id), sessionSecret);
+    return row;
+  }
+
+  private findOwnedPurchase(purchaseId: string, sessionSecret: string): DbRow {
+    const row = this.purchases.get(purchaseId);
+    if (!row) throw new Annunci10xPersistenceError('Annunci 10x purchase not found.', 'OWNERSHIP');
     this.requireMemoryOwnership(String(row.session_id), sessionSecret);
     return row;
   }
@@ -1305,6 +1600,39 @@ function remainingMemorySeconds(fromIso: string, windowSeconds: number): number 
 
 function normalizeMemoryRecipient(value: string): string {
   return value.trim().toLowerCase();
+}
+
+function isMemoryOfferCode(value: unknown): value is 'ANNUNCI10X_REWRITE' | 'ANNUNCI10X_CREATE' | 'AGENT_RECRUITER' {
+  return value === 'ANNUNCI10X_REWRITE' || value === 'ANNUNCI10X_CREATE' || value === 'AGENT_RECRUITER';
+}
+
+function grantsForOffer(offerCode: string): { capability: string; quantity: number }[] {
+  if (offerCode === 'ANNUNCI10X_REWRITE') return [{ capability: 'REWRITE_CREDIT', quantity: 1 }];
+  if (offerCode === 'ANNUNCI10X_CREATE') return [{ capability: 'CREATE_CREDIT', quantity: 1 }];
+  if (offerCode === 'AGENT_RECRUITER') return [
+    { capability: 'GUIDE_ACCESS', quantity: 1 },
+    { capability: 'AGENT_RECRUITER_ACCESS', quantity: 1 },
+  ];
+  return [];
+}
+
+function effectiveEntitlementsFromRows(purchases: DbRow[], grants: DbRow[], sessionId: string): EffectiveEntitlements {
+  const paidPurchaseIds = new Set(purchases
+    .filter((row) => row.session_id === sessionId && row.status === 'PAID')
+    .map((row) => String(row.id)));
+  let rewriteCredits = 0;
+  let createCredits = 0;
+  let guideAccess = false;
+  let agentRecruiterAccess = false;
+  for (const grant of grants) {
+    if (grant.session_id !== sessionId || !paidPurchaseIds.has(String(grant.purchase_id))) continue;
+    const quantity = Math.max(0, Math.floor(Number(grant.quantity) || 0));
+    if (grant.capability === 'REWRITE_CREDIT') rewriteCredits += quantity;
+    if (grant.capability === 'CREATE_CREDIT') createCredits += quantity;
+    if (grant.capability === 'GUIDE_ACCESS' && quantity > 0) guideAccess = true;
+    if (grant.capability === 'AGENT_RECRUITER_ACCESS' && quantity > 0) agentRecruiterAccess = true;
+  }
+  return { rewriteCredits, createCredits, guideAccess, agentRecruiterAccess, checkedAt: new Date().toISOString() };
 }
 
 function validateCommercialContextOrThrow(value: unknown): void {

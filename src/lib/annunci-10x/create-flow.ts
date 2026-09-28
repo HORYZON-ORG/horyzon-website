@@ -54,7 +54,7 @@ export interface PublicAnnunci10xCreateState {
     price: 'OPEN_DECISION';
     discountValue: 'OPEN_DECISION';
     entitlements: 'SERVER_VERIFIED_OPEN_DECISION';
-    pricingStatus: 'OPEN_DECISION';
+    pricingStatus: 'FIXED';
     availableOffers: Annunci10xCommercialOffer[];
     entitlementSummary: {
       guide: boolean;

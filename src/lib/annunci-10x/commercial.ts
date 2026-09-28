@@ -1,6 +1,11 @@
 import type { ProductCode, SessionState } from './types.ts';
+import type { Annunci10xPersistenceAdapter, EffectiveEntitlements } from './persistence/types.ts';
 
-export const ANNUNCI10X_COMMERCIAL_VERSION = 'annunci10x-commercial-v1';
+export const ANNUNCI10X_COMMERCIAL_VERSION = 'annunci10x-commercial-v2';
+
+export const ANNUNCI10X_OFFER_CODES = ['ANNUNCI10X_REWRITE', 'ANNUNCI10X_CREATE', 'AGENT_RECRUITER'] as const;
+export type Annunci10xOfferCode = (typeof ANNUNCI10X_OFFER_CODES)[number];
+export type Annunci10xEntitlementCapability = 'REWRITE_CREDIT' | 'CREATE_CREDIT' | 'GUIDE_ACCESS' | 'AGENT_RECRUITER_ACCESS';
 
 export const ANNUNCI10X_PRODUCT_CATALOG: readonly Annunci10xProductCatalogItem[] = [
   {
@@ -32,14 +37,59 @@ export const ANNUNCI10X_PRODUCT_CATALOG: readonly Annunci10xProductCatalogItem[]
   },
 ] as const;
 
+export const ANNUNCI10X_OFFER_CATALOG: readonly Annunci10xOfferCatalogItem[] = [
+  {
+    offerCode: 'ANNUNCI10X_REWRITE',
+    displayName: 'Migliora annuncio',
+    description: "Miglioramento dell'annuncio esistente. 1 acquisto = 1 versione / 1 canale.",
+    price: { amountCents: 700, currency: 'EUR', display: '7,00 EUR' },
+    capabilities: [{ capability: 'REWRITE_CREDIT', quantity: 1 }],
+    flows: ['ANALYZE'],
+  },
+  {
+    offerCode: 'ANNUNCI10X_CREATE',
+    displayName: 'Crea annuncio',
+    description: 'Creazione di un nuovo annuncio partendo dal percorso guidato.',
+    price: { amountCents: 900, currency: 'EUR', display: '9,00 EUR' },
+    capabilities: [{ capability: 'CREATE_CREDIT', quantity: 1 }],
+    flows: ['CREATE'],
+  },
+  {
+    offerCode: 'AGENT_RECRUITER',
+    displayName: 'Agent Recruiter',
+    description: 'Guida Annunci 10x + Agent Recruiter.',
+    price: { amountCents: 4900, currency: 'EUR', display: '49,00 EUR' },
+    capabilities: [
+      { capability: 'GUIDE_ACCESS', quantity: 1 },
+      { capability: 'AGENT_RECRUITER_ACCESS', quantity: 1 },
+    ],
+    flows: ['ANALYZE', 'CREATE'],
+  },
+] as const;
+
 export type Annunci10xProductStatus = 'COMING_SOON';
-export type Annunci10xPricingStatus = 'OPEN_DECISION';
+export type Annunci10xPricingStatus = 'OPEN_DECISION' | 'FIXED';
 export type Annunci10xCommercialFlow = 'ANALYZE' | 'CREATE';
 export type Annunci10xCommercialSubjectKind = 'ACCOUNT' | 'EMAIL_VERIFIED' | 'PAYMENT_CUSTOMER' | 'SESSION' | 'ANONYMOUS';
 export type Annunci10xCommercialDiscountReason = 'NONE' | 'GUIDE_OWNER' | 'BUNDLE';
 export type Annunci10xCommercialEligibility = 'AVAILABLE' | 'UNAVAILABLE';
-export type Annunci10xCommercialUnavailableReason = 'PURCHASE_DISABLED' | 'ALREADY_ENTITLED';
+export type Annunci10xCommercialUnavailableReason =
+  | 'PURCHASE_DISABLED'
+  | 'EMAIL_NOT_VERIFIED'
+  | 'FLOW_NOT_APPLICABLE'
+  | 'ALREADY_ENTITLED';
 export type Annunci10xEntitlementSource = 'NO_TRUSTED_SOURCE' | 'PURCHASE' | 'BUNDLE' | 'ADMIN' | 'TEST';
+
+export interface Annunci10xPrice {
+  amountCents: number;
+  currency: 'EUR';
+  display: string;
+}
+
+export interface Annunci10xOfferCapability {
+  capability: Annunci10xEntitlementCapability;
+  quantity: number;
+}
 
 export interface Annunci10xProductCatalogItem {
   productCode: ProductCode;
@@ -47,8 +97,17 @@ export interface Annunci10xProductCatalogItem {
   description: string;
   includedCapabilities: readonly ('GUIDE_ACCESS' | 'AD_GENERATION_CREDIT')[];
   status: Annunci10xProductStatus;
-  pricingStatus: Annunci10xPricingStatus;
+  pricingStatus: 'OPEN_DECISION';
   purchaseEnabled: false;
+}
+
+export interface Annunci10xOfferCatalogItem {
+  offerCode: Annunci10xOfferCode;
+  displayName: string;
+  description: string;
+  price: Annunci10xPrice;
+  capabilities: readonly Annunci10xOfferCapability[];
+  flows: readonly Annunci10xCommercialFlow[];
 }
 
 export interface Annunci10xCommercialSubject {
@@ -60,6 +119,9 @@ export interface Annunci10xCommercialSubject {
 export interface Annunci10xCommercialEntitlements {
   guide: boolean;
   adGenerationCredits: number;
+  rewriteCredits: number;
+  createCredits: number;
+  agentRecruiterAccess: boolean;
   source: Annunci10xEntitlementSource;
   verification: 'SERVER_VERIFIED';
   checkedAt: string;
@@ -83,19 +145,20 @@ export interface Annunci10xOfferEngineInput {
   entitlements: Annunci10xCommercialEntitlements;
   flow: Annunci10xCommercialFlow;
   journeyState: SessionState | 'PRODUCT_PAGE';
+  checkoutEnabled?: boolean;
+  identityVerified?: boolean;
 }
 
 export interface Annunci10xCommercialOffer {
   id: string;
-  productCode: ProductCode;
+  offerCode: Annunci10xOfferCode;
   displayName: string;
   description: string;
-  includedCapabilities: readonly ('GUIDE_ACCESS' | 'AD_GENERATION_CREDIT')[];
+  price: Annunci10xPrice;
+  capabilities: Annunci10xOfferCapability[];
   eligibility: Annunci10xCommercialEligibility;
-  pricingStatus: Annunci10xPricingStatus;
-  discountReason: Annunci10xCommercialDiscountReason;
-  purchaseEnabled: false;
-  reasonUnavailable: Annunci10xCommercialUnavailableReason;
+  purchaseEnabled: boolean;
+  reasonUnavailable?: Annunci10xCommercialUnavailableReason;
 }
 
 export interface Annunci10xCommercialState {
@@ -103,8 +166,8 @@ export interface Annunci10xCommercialState {
   subject: Annunci10xCommercialSubject;
   entitlements: Annunci10xCommercialEntitlements;
   availableOffers: Annunci10xCommercialOffer[];
-  checkoutEnabled: false;
-  pricingStatus: Annunci10xPricingStatus;
+  checkoutEnabled: boolean;
+  pricingStatus: 'FIXED';
 }
 
 export interface ResolveAnnunci10xCommercialInput {
@@ -112,6 +175,12 @@ export interface ResolveAnnunci10xCommercialInput {
   flow: Annunci10xCommercialFlow;
   journeyState: SessionState | 'PRODUCT_PAGE';
   entitlementProvider?: Annunci10xEntitlementProvider;
+  checkoutEnabled?: boolean;
+  identityVerified?: boolean;
+}
+
+export function isAnnunci10xOfferCode(value: unknown): value is Annunci10xOfferCode {
+  return ANNUNCI10X_OFFER_CODES.includes(value as Annunci10xOfferCode);
 }
 
 export function getAnnunci10xProductCatalog(): Annunci10xProductCatalogItem[] {
@@ -124,42 +193,47 @@ export function getAnnunci10xCatalogItem(productCode: ProductCode): Annunci10xPr
   return { ...item, includedCapabilities: [...item.includedCapabilities] };
 }
 
+export function getAnnunci10xOfferCatalog(): Annunci10xOfferCatalogItem[] {
+  return ANNUNCI10X_OFFER_CATALOG.map(cloneOfferCatalogItem);
+}
+
+export function getAnnunci10xOffer(offerCode: Annunci10xOfferCode): Annunci10xOfferCatalogItem {
+  const item = ANNUNCI10X_OFFER_CATALOG.find((catalogItem) => catalogItem.offerCode === offerCode);
+  if (!item) throw new Error(`Unknown Annunci 10x offer: ${offerCode}`);
+  return cloneOfferCatalogItem(item);
+}
+
+export function isAnnunci10xCheckoutEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  const value = env.ANNUNCI10X_CHECKOUT_ENABLED?.trim().toLowerCase();
+  return value === '1' || value === 'true' || value === 'yes';
+}
+
 export async function resolveAnnunci10xCommercial(input: ResolveAnnunci10xCommercialInput): Promise<Annunci10xCommercialState> {
   const subject = input.subject ?? { kind: 'ANONYMOUS' };
   const provider = input.entitlementProvider ?? createOpenDecisionEntitlementProvider();
-  const entitlements = await provider.get(subject);
+  const entitlements = normalizeEntitlements(await provider.get(subject));
+  const checkoutEnabled = Boolean(input.checkoutEnabled);
   return {
     version: ANNUNCI10X_COMMERCIAL_VERSION,
     subject,
-    entitlements: normalizeEntitlements(entitlements),
+    entitlements,
     availableOffers: buildAnnunci10xOffers({
       subject,
-      entitlements: normalizeEntitlements(entitlements),
+      entitlements,
       flow: input.flow,
       journeyState: input.journeyState,
+      checkoutEnabled,
+      identityVerified: Boolean(input.identityVerified),
     }),
-    checkoutEnabled: false,
-    pricingStatus: 'OPEN_DECISION',
+    checkoutEnabled,
+    pricingStatus: 'FIXED',
   };
 }
 
 export function buildAnnunci10xOffers(input: Annunci10xOfferEngineInput): Annunci10xCommercialOffer[] {
-  if (input.flow === 'CREATE' && input.journeyState === 'COLLECTING') return [];
-
-  const ownsGuide = input.entitlements.guide;
-  if (input.flow === 'ANALYZE') {
-    return ownsGuide
-      ? [offerFor('AD_GENERATION', 'GUIDE_OWNER')]
-      : [offerFor('GUIDE', 'NONE'), offerFor('AD_GENERATION', 'NONE'), offerFor('GUIDE_PLUS_AD', 'BUNDLE')];
-  }
-
-  if (input.flow === 'CREATE' && input.journeyState === 'PAYMENT_REQUIRED') {
-    return ownsGuide
-      ? [offerFor('AD_GENERATION', 'GUIDE_OWNER')]
-      : [offerFor('AD_GENERATION', 'NONE'), offerFor('GUIDE_PLUS_AD', 'BUNDLE')];
-  }
-
-  return [];
+  return ANNUNCI10X_OFFER_CATALOG
+    .filter((item) => item.flows.includes(input.flow))
+    .map((item) => offerFor(item, input));
 }
 
 export function createOpenDecisionEntitlementProvider(): Annunci10xEntitlementProvider {
@@ -176,10 +250,31 @@ export function createOpenDecisionEntitlementProvider(): Annunci10xEntitlementPr
   };
 }
 
-export function createTestEntitlementProvider(seed: Partial<Pick<Annunci10xCommercialEntitlements, 'guide' | 'adGenerationCredits' | 'source'>> = {}): Annunci10xEntitlementProvider {
+export function createPersistenceAnnunci10xCommerceEntitlementProvider(input: {
+  persistence: Annunci10xPersistenceAdapter;
+  sessionId: string;
+  sessionSecret: string;
+}): Annunci10xEntitlementProvider {
+  return {
+    async get() {
+      return entitlementsFromEffective(await input.persistence.getEffectiveEntitlements(input.sessionId, input.sessionSecret), 'PURCHASE');
+    },
+    async grant() {
+      throw new Error('Annunci 10x commerce grants are created only by paid purchase reconciliation.');
+    },
+    async consumeAdGenerationCredit() {
+      throw new Error('Annunci 10x V2 commerce credits are not consumable in this phase.');
+    },
+  };
+}
+
+export function createTestEntitlementProvider(seed: Partial<Pick<Annunci10xCommercialEntitlements, 'guide' | 'adGenerationCredits' | 'rewriteCredits' | 'createCredits' | 'agentRecruiterAccess' | 'source'>> = {}): Annunci10xEntitlementProvider {
   let current = normalizeEntitlements({
     guide: seed.guide ?? false,
     adGenerationCredits: seed.adGenerationCredits ?? 0,
+    rewriteCredits: seed.rewriteCredits ?? 0,
+    createCredits: seed.createCredits ?? 0,
+    agentRecruiterAccess: seed.agentRecruiterAccess ?? false,
     source: seed.source ?? 'TEST',
     verification: 'SERVER_VERIFIED',
     checkedAt: new Date().toISOString(),
@@ -190,10 +285,10 @@ export function createTestEntitlementProvider(seed: Partial<Pick<Annunci10xComme
     },
     async grant(input) {
       current = normalizeEntitlements({
+        ...current,
         guide: current.guide || input.productCode === 'GUIDE' || input.productCode === 'GUIDE_PLUS_AD',
         adGenerationCredits: current.adGenerationCredits + (input.productCode === 'AD_GENERATION' || input.productCode === 'GUIDE_PLUS_AD' ? 1 : 0),
         source: input.reason === 'TEST' ? 'TEST' : input.reason,
-        verification: 'SERVER_VERIFIED',
         checkedAt: new Date().toISOString(),
       });
       return current;
@@ -219,29 +314,52 @@ export function isVerifiedCommercialSessionClaim(claimedSessionId: string | null
   return !claimedSessionId || claimedSessionId === trustedSessionId;
 }
 
-function offerFor(productCode: ProductCode, discountReason: Annunci10xCommercialDiscountReason): Annunci10xCommercialOffer {
-  const product = getAnnunci10xCatalogItem(productCode);
+function offerFor(item: Annunci10xOfferCatalogItem, input: Annunci10xOfferEngineInput): Annunci10xCommercialOffer {
+  const unavailableReason = unavailableReasonFor(item, input);
   return {
-    id: `annunci10x-offer-${productCode.toLowerCase()}`,
-    productCode,
-    displayName: product.displayName,
-    description: product.description,
-    includedCapabilities: product.includedCapabilities,
-    eligibility: 'AVAILABLE',
-    pricingStatus: 'OPEN_DECISION',
-    discountReason,
-    purchaseEnabled: false,
-    reasonUnavailable: 'PURCHASE_DISABLED',
+    id: `annunci10x-offer-${item.offerCode.toLowerCase()}`,
+    offerCode: item.offerCode,
+    displayName: item.displayName,
+    description: item.description,
+    price: { ...item.price },
+    capabilities: item.capabilities.map((capability) => ({ ...capability })),
+    eligibility: unavailableReason ? 'UNAVAILABLE' : 'AVAILABLE',
+    purchaseEnabled: !unavailableReason,
+    ...(unavailableReason ? { reasonUnavailable: unavailableReason } : {}),
   };
+}
+
+function unavailableReasonFor(item: Annunci10xOfferCatalogItem, input: Annunci10xOfferEngineInput): Annunci10xCommercialUnavailableReason | null {
+  if (!item.flows.includes(input.flow)) return 'FLOW_NOT_APPLICABLE';
+  if (item.offerCode === 'AGENT_RECRUITER' && input.entitlements.agentRecruiterAccess) return 'ALREADY_ENTITLED';
+  if (!input.checkoutEnabled) return 'PURCHASE_DISABLED';
+  if (!input.identityVerified || input.subject.kind === 'ANONYMOUS') return 'EMAIL_NOT_VERIFIED';
+  return null;
 }
 
 function noneEntitled(source: Annunci10xEntitlementSource): Annunci10xCommercialEntitlements {
   return normalizeEntitlements({
     guide: false,
     adGenerationCredits: 0,
+    rewriteCredits: 0,
+    createCredits: 0,
+    agentRecruiterAccess: false,
     source,
     verification: 'SERVER_VERIFIED',
     checkedAt: new Date().toISOString(),
+  });
+}
+
+function entitlementsFromEffective(effective: EffectiveEntitlements, source: Annunci10xEntitlementSource): Annunci10xCommercialEntitlements {
+  return normalizeEntitlements({
+    guide: effective.guideAccess,
+    adGenerationCredits: 0,
+    rewriteCredits: effective.rewriteCredits,
+    createCredits: effective.createCredits,
+    agentRecruiterAccess: effective.agentRecruiterAccess,
+    source,
+    verification: 'SERVER_VERIFIED',
+    checkedAt: effective.checkedAt,
   });
 }
 
@@ -249,8 +367,20 @@ function normalizeEntitlements(entitlements: Annunci10xCommercialEntitlements): 
   return {
     guide: Boolean(entitlements.guide),
     adGenerationCredits: Math.max(0, Math.floor(Number(entitlements.adGenerationCredits) || 0)),
+    rewriteCredits: Math.max(0, Math.floor(Number(entitlements.rewriteCredits) || 0)),
+    createCredits: Math.max(0, Math.floor(Number(entitlements.createCredits) || 0)),
+    agentRecruiterAccess: Boolean(entitlements.agentRecruiterAccess),
     source: entitlements.source,
     verification: 'SERVER_VERIFIED',
     checkedAt: entitlements.checkedAt,
+  };
+}
+
+function cloneOfferCatalogItem(item: Annunci10xOfferCatalogItem): Annunci10xOfferCatalogItem {
+  return {
+    ...item,
+    price: { ...item.price },
+    capabilities: item.capabilities.map((capability) => ({ ...capability })),
+    flows: [...item.flows],
   };
 }

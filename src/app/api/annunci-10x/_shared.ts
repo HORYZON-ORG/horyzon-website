@@ -107,11 +107,12 @@ export function toErrorResponse(error: unknown): NextResponse {
   const status = code === 'RATE_LIMITED' ? 429
     : code === 'NOT_FOUND' ? 404
     : code === 'EMAIL_VERIFICATION_REQUIRED' ? 403
+    : code === 'PAYMENT_INVALID' ? 400
     : code === 'ANALYSIS_NOT_READY' || code === 'RESULT_NOT_AVAILABLE' ? 409
     : code === 'VERIFICATION_INVALID' || code === 'VERIFICATION_EXPIRED' ? 400
     : code === 'PAYMENT_REQUIRED' || code === 'ENTITLEMENT_MISSING' ? 402
       : code === 'GENERATION_BLOCKED' || code === 'NEEDS_VERIFICATION' ? 409
-        : code === 'AI_PROVIDER_ERROR' || code === 'EMAIL_PROVIDER_UNAVAILABLE' || code === 'EMAIL_VERIFICATION_UNAVAILABLE' ? 503
+        : code === 'AI_PROVIDER_ERROR' || code === 'EMAIL_PROVIDER_UNAVAILABLE' || code === 'EMAIL_VERIFICATION_UNAVAILABLE' || code === 'CHECKOUT_DISABLED' || code === 'CHECKOUT_UNAVAILABLE' ? 503
           : code === 'AI_INVALID_OUTPUT' ? 502
             : 500;
   const message = code === 'AI_PROVIDER_ERROR'
@@ -124,6 +125,10 @@ export function toErrorResponse(error: unknown): NextResponse {
           ? 'Il risultato non e disponibile per questa analisi.'
     : code === 'EMAIL_PROVIDER_UNAVAILABLE' || code === 'EMAIL_VERIFICATION_UNAVAILABLE'
       ? 'Verifica email non disponibile.'
+      : code === 'CHECKOUT_DISABLED' || code === 'CHECKOUT_UNAVAILABLE'
+        ? 'Checkout Annunci 10x non disponibile.'
+        : code === 'PAYMENT_INVALID'
+          ? 'Pagamento Annunci 10x non valido.'
       : code === 'VERIFICATION_EXPIRED'
         ? 'Codice scaduto.'
         : code === 'VERIFICATION_INVALID'

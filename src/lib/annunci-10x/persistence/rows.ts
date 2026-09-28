@@ -27,11 +27,15 @@ import type {
   PersistedAnswer,
   PersistedEmailDelivery,
   PersistedEmailVerification,
+  PersistedEntitlementGrant,
   PersistedEvaluation,
   PersistedEvent,
   PersistedLead,
   PersistedOutput,
+  PersistedPurchase,
   PersistedSnapshot,
+  PersistedStripeEvent,
+  EffectiveEntitlements,
 } from './types.ts';
 
 export const ANNUNCI10X_PERSISTENCE_VERSIONS = {
@@ -225,6 +229,67 @@ export function parseEmailDeliveryRow(row: Record<string, unknown>): PersistedEm
     lastErrorCode: optionalString(row.last_error_code),
     createdAt: requireString(row.created_at, 'emailDelivery.created_at'),
     updatedAt: requireString(row.updated_at, 'emailDelivery.updated_at'),
+  };
+}
+
+export function parsePurchaseRow(row: Record<string, unknown>): PersistedPurchase {
+  return {
+    id: requireString(row.id, 'purchase.id'),
+    sessionId: requireString(row.session_id, 'purchase.session_id'),
+    leadId: requireString(row.lead_id, 'purchase.lead_id'),
+    offerCode: requireString(row.offer_code, 'purchase.offer_code') as PersistedPurchase['offerCode'],
+    status: requireString(row.status, 'purchase.status') as PersistedPurchase['status'],
+    provider: requireString(row.provider, 'purchase.provider') as PersistedPurchase['provider'],
+    currency: requireString(row.currency, 'purchase.currency') as PersistedPurchase['currency'],
+    expectedAmountCents: requireNumber(row.expected_amount_cents, 'purchase.expected_amount_cents'),
+    stripePriceId: optionalString(row.stripe_price_id),
+    stripeCheckoutSessionId: optionalString(row.stripe_checkout_session_id),
+    stripePaymentIntentId: optionalString(row.stripe_payment_intent_id),
+    stripeCustomerId: optionalString(row.stripe_customer_id),
+    checkoutCreatedAt: optionalString(row.checkout_created_at),
+    paidAt: optionalString(row.paid_at),
+    failedAt: optionalString(row.failed_at),
+    canceledAt: optionalString(row.canceled_at),
+    refundedAt: optionalString(row.refunded_at),
+    createdAt: requireString(row.created_at, 'purchase.created_at'),
+    updatedAt: requireString(row.updated_at, 'purchase.updated_at'),
+  };
+}
+
+export function parseEntitlementGrantRow(row: Record<string, unknown>): PersistedEntitlementGrant {
+  return {
+    id: requireString(row.id, 'entitlementGrant.id'),
+    sessionId: requireString(row.session_id, 'entitlementGrant.session_id'),
+    leadId: requireString(row.lead_id, 'entitlementGrant.lead_id'),
+    purchaseId: requireString(row.purchase_id, 'entitlementGrant.purchase_id'),
+    capability: requireString(row.capability, 'entitlementGrant.capability') as PersistedEntitlementGrant['capability'],
+    quantity: requireNumber(row.quantity, 'entitlementGrant.quantity'),
+    createdAt: requireString(row.created_at, 'entitlementGrant.created_at'),
+  };
+}
+
+export function parseStripeEventRow(row: Record<string, unknown>): PersistedStripeEvent {
+  return {
+    id: requireString(row.id, 'stripeEvent.id'),
+    stripeEventId: requireString(row.stripe_event_id, 'stripeEvent.stripe_event_id'),
+    eventType: requireString(row.event_type, 'stripeEvent.event_type'),
+    objectId: optionalString(row.object_id),
+    status: requireString(row.status, 'stripeEvent.status') as PersistedStripeEvent['status'],
+    errorCode: optionalString(row.error_code),
+    attemptCount: requireNumber(row.attempt_count, 'stripeEvent.attempt_count'),
+    processingStartedAt: optionalString(row.processing_started_at),
+    receivedAt: requireString(row.received_at, 'stripeEvent.received_at'),
+    processedAt: optionalString(row.processed_at),
+  };
+}
+
+export function parseEffectiveEntitlementsRow(row: Record<string, unknown>): EffectiveEntitlements {
+  return {
+    rewriteCredits: requireNumber(row.rewrite_credits, 'effectiveEntitlements.rewrite_credits'),
+    createCredits: requireNumber(row.create_credits, 'effectiveEntitlements.create_credits'),
+    guideAccess: row.guide_access === true,
+    agentRecruiterAccess: row.agent_recruiter_access === true,
+    checkedAt: requireString(row.checked_at, 'effectiveEntitlements.checked_at'),
   };
 }
 

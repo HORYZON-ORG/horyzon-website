@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Annunci10xPublicError, isVerifiedCommercialSessionClaim, resolveAnnunci10xCommercial, sanitizeCommercialClientPayload } from '@/lib/annunci-10x';
+import {
+  Annunci10xPublicError,
+  createPersistenceAnnunci10xCommerceEntitlementProvider,
+  isAnnunci10xCheckoutEnabled,
+  isVerifiedCommercialSessionClaim,
+  resolveAnnunci10xCommercial,
+  sanitizeCommercialClientPayload,
+} from '@/lib/annunci-10x';
 import { checkAnnunci10xRateLimit, createContext, getSessionCookie, toErrorResponse } from '../../_shared';
 import type { Annunci10xCommercialFlow, SessionState } from '@/lib/annunci-10x';
 
@@ -24,7 +31,22 @@ export async function GET(request: NextRequest) {
     const subject = session
       ? { kind: 'SESSION' as const, sessionId: session.id }
       : { kind: 'ANONYMOUS' as const };
-    const commercial = await resolveAnnunci10xCommercial({ subject, flow, journeyState });
+    const lead = session ? await context.persistence.getLead(cookie!.sessionId, cookie!.sessionSecret) : null;
+    const checkoutEnabled = isAnnunci10xCheckoutEnabled();
+    const commercial = await resolveAnnunci10xCommercial({
+      subject,
+      flow,
+      journeyState,
+      checkoutEnabled,
+      identityVerified: Boolean(lead?.emailVerifiedAt),
+      entitlementProvider: checkoutEnabled && session
+        ? createPersistenceAnnunci10xCommerceEntitlementProvider({
+          persistence: context.persistence,
+          sessionId: cookie!.sessionId,
+          sessionSecret: cookie!.sessionSecret,
+        })
+        : undefined,
+    });
 
     return NextResponse.json({ ok: true, commercial }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {

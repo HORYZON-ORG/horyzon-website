@@ -28,6 +28,11 @@ export type Annunci10xBusinessRole = 'OWNER_ENTREPRENEUR' | 'HR' | 'INTERNAL_REC
 export type Annunci10xEmailVerificationStatus = 'PENDING_SEND' | 'SENT' | 'CONSUMED' | 'INVALIDATED' | 'FAILED_SEND';
 export type Annunci10xEmailDeliveryKind = 'SCORE_REPORT';
 export type Annunci10xEmailDeliveryStatus = 'PENDING' | 'SENDING' | 'SENT' | 'FAILED';
+export type Annunci10xPersistedOfferCode = 'ANNUNCI10X_REWRITE' | 'ANNUNCI10X_CREATE' | 'AGENT_RECRUITER';
+export type Annunci10xPurchaseStatus = 'PENDING' | 'PAID' | 'FAILED' | 'CANCELED' | 'REFUNDED';
+export type Annunci10xPurchaseProvider = 'STRIPE';
+export type Annunci10xPersistedEntitlementCapability = 'REWRITE_CREDIT' | 'CREATE_CREDIT' | 'GUIDE_ACCESS' | 'AGENT_RECRUITER_ACCESS';
+export type Annunci10xStripeEventStatus = 'RECEIVED' | 'PROCESSED' | 'IGNORED' | 'FAILED';
 export type Annunci10xPersistedScoreResult = ScoreResult | ScoreResultV2;
 
 export interface PersistedAnnunci10xSession extends Annunci10xSession {
@@ -358,6 +363,110 @@ export interface MarkEmailDeliveryFailedInput {
   errorCode: string;
 }
 
+export interface PersistedPurchase {
+  id: string;
+  sessionId: string;
+  leadId: string;
+  offerCode: Annunci10xPersistedOfferCode;
+  status: Annunci10xPurchaseStatus;
+  provider: Annunci10xPurchaseProvider;
+  currency: 'EUR';
+  expectedAmountCents: number;
+  stripePriceId?: string | null;
+  stripeCheckoutSessionId?: string | null;
+  stripePaymentIntentId?: string | null;
+  stripeCustomerId?: string | null;
+  checkoutCreatedAt?: string | null;
+  paidAt?: string | null;
+  failedAt?: string | null;
+  canceledAt?: string | null;
+  refundedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PersistedEntitlementGrant {
+  id: string;
+  sessionId: string;
+  leadId: string;
+  purchaseId: string;
+  capability: Annunci10xPersistedEntitlementCapability;
+  quantity: number;
+  createdAt: string;
+}
+
+export interface PersistedStripeEvent {
+  id: string;
+  stripeEventId: string;
+  eventType: string;
+  objectId?: string | null;
+  status: Annunci10xStripeEventStatus;
+  errorCode?: string | null;
+  attemptCount: number;
+  processingStartedAt?: string | null;
+  receivedAt: string;
+  processedAt?: string | null;
+}
+
+export interface EffectiveEntitlements {
+  rewriteCredits: number;
+  createCredits: number;
+  guideAccess: boolean;
+  agentRecruiterAccess: boolean;
+  checkedAt: string;
+}
+
+export interface CreateOrGetPurchaseInput {
+  sessionId: string;
+  sessionSecret: string;
+  leadId: string;
+  offerCode: Annunci10xPersistedOfferCode;
+  expectedAmountCents: number;
+  currency: 'EUR';
+  stripePriceId: string;
+}
+
+export interface AttachCheckoutSessionInput {
+  purchaseId: string;
+  sessionSecret: string;
+  stripeCheckoutSessionId: string;
+}
+
+export interface ClaimStripeEventInput {
+  stripeEventId: string;
+  eventType: string;
+  objectId?: string | null;
+}
+
+export interface MarkStripeEventInput {
+  stripeEventId: string;
+  status: Exclude<Annunci10xStripeEventStatus, 'RECEIVED'>;
+  errorCode?: string | null;
+}
+
+export interface CompletePaidPurchaseInput {
+  purchaseId: string;
+  stripeCheckoutSessionId: string;
+  amountCents: number;
+  currency: string;
+  stripePaymentIntentId?: string | null;
+  stripeCustomerId?: string | null;
+}
+
+export interface MarkPurchaseCanceledInput {
+  stripeCheckoutSessionId: string;
+}
+
+export interface MarkPurchaseFailedInput {
+  stripePaymentIntentId: string;
+  purchaseId?: string | null;
+}
+
+export interface MarkPurchaseRefundedInput {
+  stripePaymentIntentId: string;
+  purchaseId?: string | null;
+}
+
 export interface ResultEligibility {
   analysisReady: boolean;
   emailVerified: boolean;
@@ -435,6 +544,16 @@ export interface Annunci10xPersistenceAdapter {
   claimEmailDelivery(input: ClaimEmailDeliveryInput): Promise<PersistedEmailDelivery | null>;
   markEmailDeliverySent(input: MarkEmailDeliverySentInput): Promise<PersistedEmailDelivery>;
   markEmailDeliveryFailed(input: MarkEmailDeliveryFailedInput): Promise<PersistedEmailDelivery>;
+  createOrGetPurchase(input: CreateOrGetPurchaseInput): Promise<PersistedPurchase>;
+  attachCheckoutSession(input: AttachCheckoutSessionInput): Promise<PersistedPurchase>;
+  getPurchaseByCheckoutSessionId(stripeCheckoutSessionId: string): Promise<PersistedPurchase | null>;
+  claimStripeEvent(input: ClaimStripeEventInput): Promise<PersistedStripeEvent | null>;
+  markStripeEvent(input: MarkStripeEventInput): Promise<PersistedStripeEvent>;
+  completePaidPurchase(input: CompletePaidPurchaseInput): Promise<PersistedPurchase>;
+  markPurchaseCanceled(input: MarkPurchaseCanceledInput): Promise<PersistedPurchase | null>;
+  markPurchaseFailed(input: MarkPurchaseFailedInput): Promise<PersistedPurchase | null>;
+  markPurchaseRefunded(input: MarkPurchaseRefundedInput): Promise<PersistedPurchase | null>;
+  getEffectiveEntitlements(sessionId: string, sessionSecret: string): Promise<EffectiveEntitlements>;
   saveOutput(input: SaveOutputInput): Promise<PersistedOutput>;
   getLatestOutput(sessionId: string, sessionSecret: string, outputType?: Annunci10xOutputType, parentMasterId?: string | null): Promise<PersistedOutput | null>;
   appendEvent(input: AppendEventInput): Promise<PersistedEvent>;

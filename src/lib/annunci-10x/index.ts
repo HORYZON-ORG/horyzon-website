@@ -9,6 +9,8 @@ export * from './free-result.ts';
 export * from './gates.ts';
 export * from './lead-verification.ts';
 export * from './persistence/index.ts';
+export * from './payments/commerce.ts';
+export * from './payments/stripe.ts';
 export * from './premium/index.ts';
 export * from './presentation.ts';
 export * from './product-flow.ts';

@@ -92,7 +92,7 @@ export interface PublicAnnunci10xAnalysisResult {
     adGeneration: 'OPEN_DECISION';
     bundle: 'OPEN_DECISION';
     checkoutEnabled: false;
-    pricingStatus: 'OPEN_DECISION';
+    pricingStatus: 'FIXED';
     availableOffers: Annunci10xCommercialOffer[];
     entitlements: {
       guide: boolean;

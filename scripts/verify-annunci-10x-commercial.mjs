@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import {
+  ANNUNCI10X_COMMERCIAL_VERSION,
   buildAnnunci10xOffers,
   createTestEntitlementProvider,
+  getAnnunci10xOfferCatalog,
   getAnnunci10xProductCatalog,
   isVerifiedCommercialSessionClaim,
   resolveAnnunci10xCommercial,
@@ -12,72 +14,54 @@ const subject = { kind: 'SESSION', sessionId: 'session-test-commercial' };
 const none = {
   guide: false,
   adGenerationCredits: 0,
+  rewriteCredits: 0,
+  createCredits: 0,
+  agentRecruiterAccess: false,
   source: 'NO_TRUSTED_SOURCE',
   verification: 'SERVER_VERIFIED',
   checkedAt: '2026-09-23T00:00:00.000Z',
 };
-const guideOwner = { ...none, guide: true, source: 'PURCHASE' };
-const creditOwner = { ...none, adGenerationCredits: 2, source: 'PURCHASE' };
+const agentOwner = { ...none, guide: true, agentRecruiterAccess: true, source: 'PURCHASE' };
 
-const catalog = getAnnunci10xProductCatalog();
-assert.deepEqual(catalog.map((item) => item.productCode), ['GUIDE', 'AD_GENERATION', 'GUIDE_PLUS_AD']);
-for (const item of catalog) {
+const legacyCatalog = getAnnunci10xProductCatalog();
+assert.deepEqual(legacyCatalog.map((item) => item.productCode), ['GUIDE', 'AD_GENERATION', 'GUIDE_PLUS_AD']);
+for (const item of legacyCatalog) {
   assert.equal(item.status, 'COMING_SOON');
   assert.equal(item.pricingStatus, 'OPEN_DECISION');
   assert.equal(item.purchaseEnabled, false);
-  assert.equal('price' in item, false, 'catalog must not expose numeric prices or zero-price semantics');
 }
 
-assert.deepEqual(
-  buildAnnunci10xOffers({ subject, entitlements: none, flow: 'ANALYZE', journeyState: 'PRODUCT_PAGE' }).map((offer) => offer.productCode),
-  ['GUIDE', 'AD_GENERATION', 'GUIDE_PLUS_AD'],
-  'ANALYZE without guide shows guide, ad generation and bundle',
-);
-assert.deepEqual(
-  buildAnnunci10xOffers({ subject, entitlements: guideOwner, flow: 'ANALYZE', journeyState: 'PRODUCT_PAGE' }).map((offer) => [offer.productCode, offer.discountReason]),
-  [['AD_GENERATION', 'GUIDE_OWNER']],
-  'ANALYZE with guide avoids guide and bundle repurchase',
-);
-assert.deepEqual(
-  buildAnnunci10xOffers({ subject, entitlements: none, flow: 'CREATE', journeyState: 'PAYMENT_REQUIRED' }).map((offer) => offer.productCode),
-  ['AD_GENERATION', 'GUIDE_PLUS_AD'],
-  'CREATE payment required without guide shows ad generation and bundle',
-);
-assert.deepEqual(
-  buildAnnunci10xOffers({ subject, entitlements: guideOwner, flow: 'CREATE', journeyState: 'PAYMENT_REQUIRED' }).map((offer) => [offer.productCode, offer.discountReason]),
-  [['AD_GENERATION', 'GUIDE_OWNER']],
-  'CREATE payment required with guide shows ad generation owner condition',
-);
-assert.deepEqual(
-  buildAnnunci10xOffers({ subject, entitlements: none, flow: 'CREATE', journeyState: 'COLLECTING' }),
-  [],
-  'CREATE collecting has no early ad generation paywall',
-);
-assert.deepEqual(
-  buildAnnunci10xOffers({ subject, entitlements: creditOwner, flow: 'CREATE', journeyState: 'COLLECTING' }),
-  [],
-  'existing credits still do not create an early paywall during collection',
-);
+const offerCatalog = getAnnunci10xOfferCatalog();
+assert.deepEqual(offerCatalog.map((item) => item.offerCode), ['ANNUNCI10X_REWRITE', 'ANNUNCI10X_CREATE', 'AGENT_RECRUITER']);
+assert.deepEqual(offerCatalog.map((item) => item.price.amountCents), [700, 900, 4900]);
+assert.ok(offerCatalog.every((item) => item.price.currency === 'EUR'));
+assert.deepEqual(offerCatalog.find((item) => item.offerCode === 'AGENT_RECRUITER').capabilities.map((item) => item.capability), ['GUIDE_ACCESS', 'AGENT_RECRUITER_ACCESS']);
 
-for (const offer of buildAnnunci10xOffers({ subject, entitlements: none, flow: 'ANALYZE', journeyState: 'PRODUCT_PAGE' })) {
-  assert.equal(offer.pricingStatus, 'OPEN_DECISION');
-  assert.equal(offer.purchaseEnabled, false);
-  assert.equal(offer.reasonUnavailable, 'PURCHASE_DISABLED');
-  assert.equal(JSON.stringify(offer).includes('"price":0'), false);
-}
+assert.deepEqual(
+  buildAnnunci10xOffers({ subject, entitlements: none, flow: 'ANALYZE', journeyState: 'PRODUCT_PAGE', checkoutEnabled: false, identityVerified: true }).map((offer) => [offer.offerCode, offer.purchaseEnabled, offer.reasonUnavailable]),
+  [
+    ['ANNUNCI10X_REWRITE', false, 'PURCHASE_DISABLED'],
+    ['AGENT_RECRUITER', false, 'PURCHASE_DISABLED'],
+  ],
+);
+assert.deepEqual(
+  buildAnnunci10xOffers({ subject, entitlements: none, flow: 'ANALYZE', journeyState: 'PRODUCT_PAGE', checkoutEnabled: true, identityVerified: true }).map((offer) => [offer.offerCode, offer.purchaseEnabled]),
+  [
+    ['ANNUNCI10X_REWRITE', true],
+    ['AGENT_RECRUITER', true],
+  ],
+);
+assert.deepEqual(
+  buildAnnunci10xOffers({ subject, entitlements: none, flow: 'CREATE', journeyState: 'COLLECTING', checkoutEnabled: true, identityVerified: true }).map((offer) => offer.offerCode),
+  ['ANNUNCI10X_CREATE', 'AGENT_RECRUITER'],
+);
+assert.deepEqual(
+  buildAnnunci10xOffers({ subject, entitlements: agentOwner, flow: 'ANALYZE', journeyState: 'PRODUCT_PAGE', checkoutEnabled: true, identityVerified: true }).find((offer) => offer.offerCode === 'AGENT_RECRUITER').reasonUnavailable,
+  'ALREADY_ENTITLED',
+);
 
 const noEntitlementProvider = createTestEntitlementProvider();
-assert.deepEqual(await noEntitlementProvider.get(subject), {
-  guide: false,
-  adGenerationCredits: 0,
-  source: 'TEST',
-  verification: 'SERVER_VERIFIED',
-  checkedAt: (await noEntitlementProvider.get(subject)).checkedAt,
-});
-
-const guideProvider = createTestEntitlementProvider({ guide: true });
-assert.equal((await guideProvider.get(subject)).guide, true);
-
+assert.equal((await noEntitlementProvider.get(subject)).rewriteCredits, 0);
 const creditProvider = createTestEntitlementProvider({ adGenerationCredits: 1 });
 assert.equal((await creditProvider.consumeAdGenerationCredit({ subject, sessionId: subject.sessionId })).adGenerationCredits, 0);
 await assert.rejects(
@@ -85,21 +69,20 @@ await assert.rejects(
   /No Annunci 10x ad-generation credit/,
 );
 
-const bundleProvider = createTestEntitlementProvider();
-const bundleEntitlements = await bundleProvider.grant({ subject, productCode: 'GUIDE_PLUS_AD', reason: 'TEST' });
-assert.equal(bundleEntitlements.guide, true);
-assert.equal(bundleEntitlements.adGenerationCredits, 1);
-
 const maliciousPayload = { guide: true, adGenerationCredits: 100, paid: true, price: 0, discount: 100 };
 assert.deepEqual(sanitizeCommercialClientPayload(maliciousPayload), {}, 'client commercial payload is ignored');
 const resolved = await resolveAnnunci10xCommercial({
   subject,
   flow: 'ANALYZE',
   journeyState: 'PRODUCT_PAGE',
+  checkoutEnabled: false,
+  identityVerified: false,
 });
-assert.equal(resolved.entitlements.guide, false);
-assert.equal(resolved.entitlements.adGenerationCredits, 0);
+assert.equal(resolved.version, ANNUNCI10X_COMMERCIAL_VERSION);
 assert.equal(resolved.checkoutEnabled, false);
+assert.equal(resolved.pricingStatus, 'FIXED');
+assert.equal(resolved.availableOffers[0].price.amountCents, 700);
+assert.equal(resolved.availableOffers[0].purchaseEnabled, false);
 
 assert.equal(isVerifiedCommercialSessionClaim(undefined, undefined), true);
 assert.equal(isVerifiedCommercialSessionClaim('session-a', 'session-a'), true);
