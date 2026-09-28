@@ -284,6 +284,7 @@
 .scoreDemo,
 .form,
 .result,
+.checkoutBanner,
 .createNotice,
 .progressCard,
 .startCreate,
@@ -301,6 +302,26 @@
   color: var(--ink);
   padding: clamp(1rem, 2.2vw, 1.6rem);
   box-shadow: 0 20px 70px rgba(0, 0, 0, .12);
+}
+
+.checkoutBanner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem .8rem;
+  align-items: baseline;
+  width: min(1180px, calc(100% - 10vw));
+  margin: clamp(1rem, 3vw, 2rem) auto 0;
+  border-color: #a8b66e;
+  background: #e8f6c8;
+}
+
+.checkoutBanner strong {
+  font-size: 1.05rem;
+}
+
+.checkoutBanner span {
+  color: var(--muted);
+  line-height: 1.5;
 }
 
 .scoreDemo {
@@ -1022,6 +1043,39 @@
   gap: 1rem;
 }
 
+.offerPanel[data-secondary="true"] {
+  background: #fffaf0;
+  box-shadow: none;
+}
+
+.offerPanel[data-featured="true"] {
+  border-color: #a8b66e;
+  background: #e8f6c8;
+}
+
+.offerMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem .75rem;
+  align-items: baseline;
+}
+
+.offerMeta strong {
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  line-height: .95;
+}
+
+.offerMeta span,
+.offerStatus {
+  color: var(--muted);
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.offerStatus {
+  display: block;
+}
+
 .inlineEdit {
   display: grid;
   grid-template-columns: minmax(180px, 260px) minmax(0, 1fr) auto;
@@ -1110,7 +1164,8 @@
 .funnelFooter a:focus-visible,
 .faqItem button:focus-visible,
 .warningPanel button:focus-visible,
-.inlineVerify button:focus-visible {
+.inlineVerify button:focus-visible,
+.offerPanel button:focus-visible {
   outline: 3px solid rgba(216, 255, 66, .95);
   outline-offset: 3px;
 }

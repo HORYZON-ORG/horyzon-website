@@ -5,26 +5,22 @@ import Link from 'next/link';
 import type { FormEvent, ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { Annunci10xAnalyzeFlow } from './annunci-10x-analyze-flow';
+import {
+  checkoutCtaLabel,
+  customerSafeCheckoutError,
+  fetchAnnunci10xCommercialOffers,
+  offerPriceLabel,
+  startAnnunci10xCheckout,
+  type Annunci10xCommercialOffer,
+  type Annunci10xCommercialState,
+} from './annunci-10x-commerce-client';
+import { Annunci10xIdentityGate } from './annunci-10x-identity-gate';
 import styles from './annunci-10x.module.css';
 
 type Mode = 'ANALYZE' | 'CREATE';
 type CreateStepId = 'ROLE_CONTEXT' | 'PRIMARY_CONTRIBUTION' | 'WORK_REALITY' | 'REQUIREMENTS' | 'ATTRACTION' | 'OFFER' | 'CHANNEL_APPLICATION';
-type ProductCode = 'GUIDE' | 'AD_GENERATION' | 'GUIDE_PLUS_AD';
 type AnalyzeChannel = '' | 'LINKEDIN' | 'INDEED' | 'ATS' | 'EMAIL' | 'CUSTOM';
 type UnknownKey = 'workMode' | 'contract' | 'schedule' | 'compensation' | 'benefits' | 'growth' | 'channel';
-
-interface CommercialOffer {
-  id: string;
-  productCode: ProductCode;
-  displayName: string;
-  description: string;
-  includedCapabilities: string[];
-  eligibility: 'AVAILABLE' | 'UNAVAILABLE';
-  pricingStatus: 'OPEN_DECISION';
-  discountReason: 'NONE' | 'GUIDE_OWNER' | 'BUNDLE';
-  purchaseEnabled: false;
-  reasonUnavailable: string;
-}
 
 interface PublicOperation {
   type: string;
@@ -62,13 +58,15 @@ interface CreateState {
   clarification: { id: string; targetPath: string; question: string; reason: string; blocking: boolean; canAdvance: boolean } | null;
   canConfirm: boolean;
   paymentRequired: boolean;
+  contactSaved?: boolean;
+  emailVerified?: boolean;
   commercial: {
-    checkoutEnabled: false;
-    price: 'OPEN_DECISION';
-    discountValue: 'OPEN_DECISION';
+    checkoutEnabled: boolean;
+    price?: string;
+    discountValue?: string;
     entitlements: string;
-    pricingStatus: 'OPEN_DECISION';
-    availableOffers: CommercialOffer[];
+    pricingStatus: 'FIXED';
+    availableOffers: Annunci10xCommercialOffer[];
     entitlementSummary: { guide: boolean; adGenerationCredits: number; source: string };
   };
   operations: PublicOperation[];
@@ -199,6 +197,8 @@ export function Annunci10xClient() {
   const [editValue, setEditValue] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
+  const [checkoutNotice] = useState<'success' | 'cancelled' | null>(() => initialCheckoutNotice());
+  const [commerceRefreshToken, setCommerceRefreshToken] = useState(0);
   const analyzeRef = useRef<HTMLDivElement | null>(null);
   const createRef = useRef<HTMLElement | null>(null);
 
@@ -210,6 +210,26 @@ export function Annunci10xClient() {
       })
       .catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    if (checkoutNotice !== 'success') return;
+
+    const delays = [0, 1500, 3000, 5000];
+    let cancelled = false;
+    const timers = delays.map((delay) => window.setTimeout(async () => {
+      if (cancelled) return;
+      try {
+        await fetchAnnunci10xCommercialOffers();
+        setCommerceRefreshToken((value) => value + 1);
+      } catch {
+        // Query params are UX only; failed refresh must not unlock anything.
+      }
+    }, delay));
+    return () => {
+      cancelled = true;
+      timers.forEach((timer) => window.clearTimeout(timer));
+    };
+  }, [checkoutNotice]);
 
   function selectMode(nextMode: Mode) {
     setMode(nextMode);
@@ -353,10 +373,13 @@ export function Annunci10xClient() {
           </div>
           <div ref={analyzeRef} className={styles.heroPanel} aria-label="Analisi gratuita Annunci 10x">
             <ScoreDemoCard />
-            <Annunci10xAnalyzeFlow />
+            <Annunci10xAnalyzeFlow commerceRefreshToken={commerceRefreshToken} />
           </div>
         </div>
       </section>
+
+      {checkoutNotice === 'success' && <div className={styles.checkoutBanner} role="status" aria-live="polite"><strong>Pagamento ricevuto.</strong><span>Stiamo preparando il tuo accesso.</span></div>}
+      {checkoutNotice === 'cancelled' && <div className={styles.checkoutBanner} role="status" aria-live="polite"><strong>Pagamento annullato.</strong><span>Non è stato completato alcun acquisto.</span></div>}
 
       <ProblemNarrative />
       <CentralIdeaSection />
@@ -375,7 +398,7 @@ export function Annunci10xClient() {
           <h2 id="create-route-title">Crea il tuo annuncio da zero</h2>
           <span>Se il testo non esiste ancora, parti dai fatti del ruolo. La logica resta la stessa: prima chiarezza, poi scrittura.</span>
         </div>
-        <CreateFlow state={createState} draft={createDraft} unknowns={unknowns} running={running} clarificationAnswer={clarificationAnswer} editTarget={editTarget} editValue={editValue} error={error} onStart={startCreate} onDraft={setCreateDraft} onUnknowns={setUnknowns} onSubmitStructured={submitStructuredCreate} onClarificationAnswer={setClarificationAnswer} onSubmitClarification={submitCreateClarification} onEditTarget={setEditTarget} onEditValue={setEditValue} onSubmitEdit={submitEdit} onConfirm={confirmCreate} />
+        <CreateFlow state={createState} draft={createDraft} unknowns={unknowns} running={running} clarificationAnswer={clarificationAnswer} editTarget={editTarget} editValue={editValue} error={error} commerceRefreshToken={commerceRefreshToken} onStart={startCreate} onDraft={setCreateDraft} onUnknowns={setUnknowns} onSubmitStructured={submitStructuredCreate} onClarificationAnswer={setClarificationAnswer} onSubmitClarification={submitCreateClarification} onEditTarget={setEditTarget} onEditValue={setEditValue} onSubmitEdit={submitEdit} onConfirm={confirmCreate} />
       </section>}
 
       <GuideSection />
@@ -487,9 +510,9 @@ function ProductChoiceSection({ onAnalyze, onCreate }: { onAnalyze: () => void; 
   return <section id="prodotti" className={styles.productChoice}>
     <div className={styles.sectionHeading}><p>Scegli il passo</p><h2>Parti gratis. Compra solo se vuoi trasformare il risultato.</h2></div>
     <div className={styles.productPaths}>
-      <article data-featured="true"><p>HO GIÀ UN ANNUNCIO</p><h3>Score Annunci 10x</h3><strong>Gratis</strong><span>Score su 100, aree principali e priorità del risultato.</span><button type="button" onClick={onAnalyze}>Analizza gratis</button><small>Riscrittura 7 € per versione e canale. Riscriviamo il tuo annuncio secondo i controlli Annunci 10x, per il canale che scegli.</small></article>
+      <article data-featured="true"><p>HO GIÀ UN ANNUNCIO</p><h3>Score gratuito</h3><strong>Gratis</strong><span>Score su 100, aree principali e priorità del risultato.</span><button type="button" onClick={onAnalyze}>Analizza gratis</button><small>Riscrittura: 7 € per versione e canale.</small></article>
       <article><p>DEVO ANCORA SCRIVERLO</p><h3>Creazione da zero</h3><strong>9 €</strong><span>Parti dal lavoro reale in un percorso guidato.</span><button type="button" onClick={onCreate}>Apri il percorso</button></article>
-      <article className={styles.guideOffer}><p>Assumi spesso?</p><h3>Guida Annunci 10x + Agent Recruiter</h3><strong>49 €</strong><span>Il metodo per i prossimi annunci, con prompt per ChatGPT e Claude.</span><button type="button" disabled>In preparazione</button></article>
+      <article className={styles.guideOffer}><p>Assumi spesso?</p><h3>Guida Annunci 10x + Agent Recruiter</h3><strong>49 €</strong><span>Il metodo per i prossimi annunci, con prompt per ChatGPT e Claude.</span><button type="button" disabled>Disponibile a breve</button></article>
     </div>
   </section>;
 }
@@ -531,6 +554,7 @@ function CreateFlow(props: {
   editTarget: string;
   editValue: string;
   error: string | null;
+  commerceRefreshToken: number;
   onStart: () => Promise<CreateState | null>;
   onDraft: (value: CreateDraft) => void;
   onUnknowns: (value: Record<UnknownKey, boolean>) => void;
@@ -546,7 +570,7 @@ function CreateFlow(props: {
     {props.state && <div className={styles.createNotice}><div><p>Hai un lavoro in corso.</p><strong>{props.state.currentStep === 'COMMERCIAL' ? 'La posizione è confermata.' : props.state.currentStep === 'SUMMARY' ? 'La scheda è pronta da verificare.' : 'Stiamo raccogliendo i fatti.'}</strong></div><div><span>{props.state.completion.coverage}%</span><small>dati raccolti</small></div></div>}
     {!props.state?.paymentRequired && props.state?.currentStep !== 'SUMMARY' && <StructuredCreateForm draft={props.draft} unknowns={props.unknowns} running={props.running} error={props.error} onDraft={props.onDraft} onUnknowns={props.onUnknowns} onSubmit={props.onSubmitStructured} />}
     {props.state?.clarification && <div className={styles.clarification}><p>Chiarimento necessario</p><h3>{props.state.clarification.question}</h3><small>{props.state.clarification.reason}</small><Field label="Risposta" htmlFor="annunci10x-create-clarification"><textarea id="annunci10x-create-clarification" rows={3} value={props.clarificationAnswer} onChange={(event) => props.onClarificationAnswer(event.target.value)} disabled={props.running} /></Field><div className={styles.actions}><button type="button" onClick={() => props.onSubmitClarification(false)} disabled={props.running}>Salva chiarimento</button><button type="button" onClick={() => props.onSubmitClarification(true)} disabled={props.running}>Non lo so</button></div></div>}
-    {props.state && (props.state.currentStep === 'SUMMARY' || props.state.currentStep === 'COMMERCIAL') && <CreateSummary state={props.state} running={props.running} editTarget={props.editTarget} editValue={props.editValue} onEditTarget={props.onEditTarget} onEditValue={props.onEditValue} onSubmitEdit={props.onSubmitEdit} onConfirm={props.onConfirm} />}
+    {props.state && (props.state.currentStep === 'SUMMARY' || props.state.currentStep === 'COMMERCIAL') && <CreateSummary state={props.state} running={props.running} editTarget={props.editTarget} editValue={props.editValue} commerceRefreshToken={props.commerceRefreshToken} onEditTarget={props.onEditTarget} onEditValue={props.onEditValue} onSubmitEdit={props.onSubmitEdit} onConfirm={props.onConfirm} />}
     {!props.state && <div className={styles.startCreate}><p>Puoi compilare i campi e preparare direttamente la scheda. Salviamo il percorso quando inizi.</p><button type="button" onClick={props.onStart} disabled={props.running}>Inizia da zero</button></div>}
   </section>;
 }
@@ -612,12 +636,41 @@ function CreateSummary(props: {
   running: boolean;
   editTarget: string;
   editValue: string;
+  commerceRefreshToken: number;
   onEditTarget: (value: string) => void;
   onEditValue: (value: string) => void;
   onSubmitEdit: (event: FormEvent<HTMLFormElement>) => void;
   onConfirm: () => void;
 }) {
   const groups = groupRequirements(props.state.roleCard.requirements);
+  const [contactSavedLocally, setContactSavedLocally] = useState(false);
+  const [emailVerifiedLocally, setEmailVerifiedLocally] = useState(false);
+  const [commercial, setCommercial] = useState<Annunci10xCommercialState | null>(null);
+  const [commercialStatus, setCommercialStatus] = useState<string | null>(null);
+  const contactSaved = contactSavedLocally || Boolean(props.state.contactSaved);
+  const emailVerified = emailVerifiedLocally || Boolean(props.state.emailVerified);
+
+  useEffect(() => {
+    if (!props.state.paymentRequired || !emailVerified) return;
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      setCommercialStatus('Caricamento offerte in corso.');
+      fetchAnnunci10xCommercialOffers()
+        .then((nextCommercial) => {
+          if (cancelled) return;
+          setCommercial(nextCommercial);
+          setCommercialStatus(null);
+        })
+        .catch((cause) => {
+          if (!cancelled) setCommercialStatus(customerSafeCheckoutError(cause));
+        });
+    }, 0);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [props.state.paymentRequired, emailVerified, props.commerceRefreshToken]);
+
   return <section className={styles.result} aria-labelledby="create-summary-title">
     <div className={styles.resultHead}><div><p>Questa è la posizione che abbiamo capito.</p><h2 id="create-summary-title">{props.state.roleCard.title}</h2></div><div className={styles.scoreBox}><span>Dati raccolti</span><strong>{props.state.completion.coverage}%</strong></div><div className={styles.gateBox}><span>Stato</span><strong>{props.state.paymentRequired ? 'Pronta per il confine commerciale' : 'Da confermare'}</strong></div></div>
     <div className={styles.confirmationGrid}>
@@ -633,14 +686,65 @@ function CreateSummary(props: {
     </div>
     {props.state.strategy && <div className={styles.strategyPanel}><p>Strategia</p><h3>{props.state.strategy.summary}</h3><span>{props.state.strategy.candidateAngle}</span></div>}
     {!props.state.paymentRequired && <form className={styles.inlineEdit} onSubmit={props.onSubmitEdit}><Field label="Modifica" htmlFor="create-edit-target"><select id="create-edit-target" value={props.editTarget} onChange={(event) => props.onEditTarget(event.target.value)} disabled={props.running}><option value="title">Ruolo</option><option value="mission">Risultato</option><option value="responsibilities">Attività</option><option value="requirements">Requisiti</option><option value="attractionContext.location">Sede</option><option value="attractionContext.workMode">Modalità</option><option value="attractionContext.contractType">Contratto</option><option value="compensation.amountText">Compenso</option></select></Field><Field label="Nuovo valore" htmlFor="create-edit-value"><input id="create-edit-value" value={props.editValue} onChange={(event) => props.onEditValue(event.target.value)} disabled={props.running} /></Field><button type="submit" disabled={props.running}>Modifica</button></form>}
-    {props.state.paymentRequired ? <section className={styles.commercialPanel}><p>Prossimo passo</p><h3>La posizione è pronta. Ora possiamo costruire il tuo Annuncio 10x.</h3><span>La generazione online sarà disponibile in una fase successiva.</span><OfferCards offers={props.state.commercial.availableOffers} empty="La generazione non è ancora disponibile per questo percorso." /></section> : <div className={styles.actions}><button type="button" onClick={props.onConfirm} disabled={props.running || !props.state.canConfirm}>Conferma</button><span>Puoi modificare i campi prima della conferma.</span></div>}
+    {props.state.paymentRequired ? <section className={styles.commercialPanel} aria-labelledby="create-commercial-title">
+      <p>Prossimo passo</p>
+      <h3 id="create-commercial-title">Abbiamo capito il lavoro. Ora possiamo trasformarlo in un annuncio pronto da usare.</h3>
+      {!emailVerified
+        ? <Annunci10xIdentityGate
+            eyebrow="Prima del pagamento"
+            title="Dove ti mandiamo il tuo annuncio?"
+            description="Verifichiamo l'email aziendale prima di mostrarti le opzioni di acquisto."
+            submitLabel="Salva contatto"
+            otpTitle="Ti mandiamo un codice di 6 cifre per proseguire."
+            idPrefix="create-lead"
+            initialContactSaved={contactSaved}
+            initialEmailVerified={emailVerified}
+            onContactSaved={({ emailVerified: verified }) => {
+              setContactSavedLocally(true);
+              setEmailVerifiedLocally(verified);
+            }}
+            onVerified={() => setEmailVerifiedLocally(true)}
+          />
+        : <OfferCards offers={commercial?.availableOffers ?? []} status={commercialStatus} empty="Le opzioni di acquisto non sono disponibili in questo momento." />}
+    </section> : <div className={styles.actions}><button type="button" onClick={props.onConfirm} disabled={props.running || !props.state.canConfirm}>Conferma</button><span>Puoi modificare i campi prima della conferma.</span></div>}
   </section>;
 }
 
-function OfferCards({ offers, empty }: { offers: CommercialOffer[]; empty: string }) {
-  const visibleOffers = offers.filter((offer) => offer.productCode === 'AD_GENERATION');
-  if (!visibleOffers.length) return <div className={styles.offerPanel}><h3>{empty}</h3><p>Ti guideremo al passo successivo quando sarà disponibile.</p><button type="button" disabled>In preparazione</button></div>;
-  return <div className={styles.offerList} aria-label="Prossimo passo">{visibleOffers.map((offer) => <article key={offer.id} className={styles.offerPanel}><h3>{offer.displayName}</h3><p>{offer.description}</p><button type="button" disabled>In preparazione</button></article>)}</div>;
+function OfferCards({ offers, status, empty }: { offers: Annunci10xCommercialOffer[]; status: string | null; empty: string }) {
+  const createOffer = offers.find((offer) => offer.offerCode === 'ANNUNCI10X_CREATE');
+  const agentOffer = offers.find((offer) => offer.offerCode === 'AGENT_RECRUITER');
+  if (!createOffer && !agentOffer) return <div className={styles.offerPanel}><h3>{empty}</h3><p>{status ?? 'Riprova tra qualche minuto.'}</p><button type="button" disabled>Pagamento temporaneamente non disponibile</button></div>;
+  return <div className={styles.offerList} aria-label="Opzioni di acquisto Annunci 10x">
+    {createOffer && <CheckoutOfferCard offer={createOffer} detail="Annuncio finale post-pagamento" primary />}
+    {agentOffer && <CheckoutOfferCard offer={agentOffer} detail="Guida Annunci 10x + Agent Recruiter" />}
+  </div>;
+}
+
+function CheckoutOfferCard({ offer, detail, primary = false }: { offer: Annunci10xCommercialOffer; detail: string; primary?: boolean }) {
+  const [status, setStatus] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  async function checkout() {
+    if (!offer.purchaseEnabled || offer.reasonUnavailable === 'EMAIL_NOT_VERIFIED') {
+      setStatus(offer.reasonUnavailable === 'EMAIL_NOT_VERIFIED' ? 'Verifica prima la tua email' : null);
+      return;
+    }
+    setLoading(true);
+    setStatus('Preparazione pagamento…');
+    try {
+      await startAnnunci10xCheckout(offer.offerCode);
+    } catch (cause) {
+      setStatus(customerSafeCheckoutError(cause));
+      setLoading(false);
+    }
+  }
+
+  return <article className={styles.offerPanel} data-featured={primary} data-secondary={!primary}>
+    <h3>{offer.offerCode === 'AGENT_RECRUITER' ? 'Guida Annunci 10x + Agent Recruiter' : offer.displayName}</h3>
+    <div className={styles.offerMeta}><strong>{offerPriceLabel(offer)}</strong><span>{detail}</span></div>
+    <p>{offer.description}</p>
+    <button type="button" onClick={checkout} disabled={!offer.purchaseEnabled || loading}>{loading ? 'Preparazione pagamento…' : checkoutCtaLabel(offer)}</button>
+    {status && <span className={styles.offerStatus} aria-live="polite">{status}</span>}
+  </article>;
 }
 
 function Field(props: { label: string; htmlFor: string; required?: boolean; optional?: boolean; children: ReactNode }) {
@@ -689,6 +793,12 @@ function displayValue(value: string) {
 
 function cleanDraft(value: string) {
   return value.replace(/\s+/g, ' ').trim();
+}
+
+function initialCheckoutNotice(): 'success' | 'cancelled' | null {
+  if (typeof window === 'undefined') return null;
+  const checkout = new URLSearchParams(window.location.search).get('checkout');
+  return checkout === 'success' || checkout === 'cancelled' ? checkout : null;
 }
 
 function scrollToElement(element: HTMLElement) {

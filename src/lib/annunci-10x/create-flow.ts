@@ -49,6 +49,8 @@ export interface PublicAnnunci10xCreateState {
   clarification: PublicCreateClarification | null;
   canConfirm: boolean;
   paymentRequired: boolean;
+  contactSaved: boolean;
+  emailVerified: boolean;
   commercial: {
     checkoutEnabled: false;
     price: 'OPEN_DECISION';
@@ -373,6 +375,7 @@ async function publicCreateState(input: {
   const completedSteps = completedCreateSteps(answers);
   const clarification = deriveBlockingClarification(answers);
   const ready = isRoleCardReady(answers, roleCard) && !clarification;
+  const lead = await input.context.persistence.getLead(input.sessionId, input.sessionSecret);
   const commercial = await resolveAnnunci10xCommercial({
     subject: { kind: 'SESSION', sessionId: input.sessionId },
     flow: 'CREATE',
@@ -395,6 +398,8 @@ async function publicCreateState(input: {
     clarification,
     canConfirm: session.state === 'ROLE_CARD_READY' && ready,
     paymentRequired: session.state === 'PAYMENT_REQUIRED',
+    contactSaved: Boolean(lead),
+    emailVerified: Boolean(lead?.emailVerifiedAt),
     commercial: {
       checkoutEnabled: false,
       price: 'OPEN_DECISION',

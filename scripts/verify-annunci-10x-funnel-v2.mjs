@@ -13,6 +13,8 @@ function count(source, needle) {
 const page = await text('src/app/annunci-10x/page.tsx');
 const client = await text('src/components/annunci-10x/annunci-10x-client.tsx');
 const flow = await text('src/components/annunci-10x/annunci-10x-analyze-flow.tsx');
+const commerceClient = await text('src/components/annunci-10x/annunci-10x-commerce-client.ts');
+const identityGate = await text('src/components/annunci-10x/annunci-10x-identity-gate.tsx');
 const css = await text('src/components/annunci-10x/annunci-10x.module.css');
 const sitemap = await text('src/app/sitemap.ts');
 const shell = await text('src/components/site-shell.tsx');
@@ -101,8 +103,10 @@ assert.match(client, /Stesso lavoro\. Due annunci\./, 'before/after heading miss
 assert.match(client, /Caso reale in preparazione/, 'case-real-in-preparation block missing');
 assert.equal(/[0-9]{1,3}\s*(?:→|->)\s*[0-9]{1,3}/.test(client), false, 'before/after must not invent numeric score improvement');
 
-assert.match(client, /7 € per versione e canale/, 'rewrite price/copy missing');
+assert.match(client, /Riscrittura: 7 € per versione e canale/, 'rewrite price/copy missing');
 assert.match(client, /Agent Recruiter/, 'Agent Recruiter guide copy missing');
+assert.equal(client.includes('In preparazione</button>'), false, 'Agent Recruiter card must not show In preparazione');
+assert.match(client, /Disponibile a breve/, 'checkout-disabled customer-safe CTA missing');
 assert.match(client, /ChatGPT/, 'ChatGPT guide prompt copy missing');
 assert.match(client, /Claude/, 'Claude guide prompt copy missing');
 assert.match(client, /Soddisfatti o rimborsati/, 'guarantee title missing');
@@ -114,8 +118,31 @@ assert.equal(client.includes('Copertura'), false, 'funnel must not expose Copert
 assert.equal(client.includes('/checkout'), false, 'funnel must not wire checkout route');
 assert.equal(client.toLowerCase().includes('stripe'), false, 'funnel must not wire Stripe');
 assert.equal(client.includes('/api/annunci-10x/commercial/purchase'), false, 'funnel must not add paid purchase API calls');
-assert.equal(client.includes('/api/annunci-10x/commercial/offers'), false, 'funnel must not fetch commercial offers on page load');
 assert.equal(client.includes('/api/annunci-10x/premium/output'), false, 'funnel must not fetch premium output on page load');
+
+assert.equal(client.includes('type ProductCode'), false, 'client commercial type must not use legacy ProductCode');
+assert.equal(client.includes("productCode: ProductCode"), false, 'client offers must not use legacy productCode');
+assert.equal(client.includes('GUIDE_PLUS_AD'), false, 'client must not expose legacy GUIDE_PLUS_AD commerce code');
+assert.equal(client.includes('AD_GENERATION'), false, 'client must not expose legacy AD_GENERATION commerce code');
+assert.equal(client.includes('discountReason'), false, 'client must not use legacy discountReason');
+assert.match(commerceClient, /type Annunci10xOfferCode = 'ANNUNCI10X_REWRITE' \| 'ANNUNCI10X_CREATE' \| 'AGENT_RECRUITER'/, 'V2 offer code union missing');
+assert.match(commerceClient, /fetch\('\/api\/annunci-10x\/commercial\/offers'/, 'commercial offers fetch helper missing');
+assert.match(commerceClient, /fetch\('\/api\/annunci-10x\/commercial\/checkout'/, 'checkout helper missing');
+assert.match(commerceClient, /JSON\.stringify\(\{\s*offerCode\s*\}\)/s, 'checkout helper must post offerCode only');
+const checkoutBody = commerceClient.match(/body:\s*JSON\.stringify\(([\s\S]*?)\),/)?.[1] ?? '';
+assert.equal(checkoutBody.trim(), '{ offerCode }', 'checkout POST body must contain offerCode only');
+for (const forbidden of ['amountCents', 'stripePriceId', 'successUrl', 'cancelUrl', 'customerEmail', 'entitlements', 'paid']) {
+  assert.equal(checkoutBody.includes(forbidden), false, `checkout helper must not send ${forbidden}`);
+}
+assert.match(flow, /Vuoi correggerlo\?/, 'free result correction section missing');
+assert.match(flow, /ANNUNCI10X_REWRITE/, 'analyze rewrite offer must be wired');
+assert.match(flow, /AGENT_RECRUITER/, 'analyze Agent Recruiter offer must be wired');
+assert.match(client, /ANNUNCI10X_CREATE/, 'create offer must be wired');
+assert.match(client, /Dove ti mandiamo il tuo annuncio\?/, 'CREATE identity gate title missing');
+assert.match(identityGate, /analysisRunId \? \{ code: otpCode, analysisRunId: props\.analysisRunId \} : \{ code: otpCode \}/, 'CREATE OTP verify must omit analysisRunId');
+assert.match(client, /Pagamento ricevuto\./, 'checkout success banner missing');
+assert.match(client, /Pagamento annullato\./, 'checkout cancel banner missing');
+assert.match(client, /delays = \[0, 1500, 3000, 5000\]/, 'success refresh must be bounded to four attempts');
 
 for (const fakeProof of ['STERIMED', 'Ahumados', 'De Ridder', '181%', 'testimonial']) {
   assert.equal(client.includes(fakeProof), false, `fake proof/testimonial marker found: ${fakeProof}`);

@@ -2,12 +2,21 @@
 
 import type { FormEvent, ReactNode } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  customerSafeCheckoutError,
+  fetchAnnunci10xCommercialOffers,
+  startAnnunci10xCheckout,
+  checkoutCtaLabel,
+  offerPriceLabel,
+  type Annunci10xCommercialOffer,
+  type Annunci10xCommercialState,
+} from './annunci-10x-commerce-client';
+import { Annunci10xIdentityGate } from './annunci-10x-identity-gate';
 import styles from './annunci-10x.module.css';
 
 type SourceMode = 'PASTED_TEXT' | 'PUBLIC_URL';
 type AnalysisStatus = 'QUEUED' | 'RUNNING' | 'READY' | 'FAILED';
 type AnalysisStage = 'SOURCE_VALIDATION' | 'PRECHECK' | 'EXTRACT' | 'PROFILE' | 'STRATEGY' | 'EVALUATE' | 'CLARIFY' | 'COMPLETE';
-type BusinessRole = 'OWNER_ENTREPRENEUR' | 'HR' | 'INTERNAL_RECRUITER' | 'CONSULTANT' | 'OTHER';
 
 interface AnalysisRunState {
   id: string;
@@ -44,30 +53,31 @@ Candidatura via email con CV aggiornato.`;
 
 const POLL_MS = 2500;
 
-export function Annunci10xAnalyzeFlow() {
+export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRefreshToken?: number }) {
   const [sourceMode, setSourceMode] = useState<SourceMode>('PASTED_TEXT');
   const [text, setText] = useState('');
   const [url, setUrl] = useState('');
   const [analysisRun, setAnalysisRun] = useState<AnalysisRunState | null>(null);
-  const [contact, setContact] = useState({
-    firstName: '',
-    lastName: '',
-    companyName: '',
-    businessRole: 'HR' as BusinessRole,
-    email: '',
-    marketingConsent: false,
-  });
   const [contactSaved, setContactSaved] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
-  const [otpCode, setOtpCode] = useState('');
-  const [resendAfterSeconds, setResendAfterSeconds] = useState(0);
-  const [expiresInSeconds, setExpiresInSeconds] = useState(0);
   const [result, setResult] = useState<FreeResult | null>(null);
+  const [commercial, setCommercial] = useState<Annunci10xCommercialState | null>(null);
+  const [commercialStatus, setCommercialStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const resultFetchRef = useRef<string | null>(null);
   const resultRef = useRef<HTMLDivElement | null>(null);
+
+  const loadCommercialOffers = useCallback(async () => {
+    setCommercialStatus('Caricamento offerte in corso.');
+    try {
+      setCommercial(await fetchAnnunci10xCommercialOffers());
+      setCommercialStatus(null);
+    } catch (cause) {
+      setCommercialStatus(customerSafeCheckoutError(cause));
+    }
+  }, []);
 
   const loadResult = useCallback(async (id: string) => {
     setBusy('result');
@@ -76,13 +86,14 @@ export function Annunci10xAnalyzeFlow() {
       const payload = await response.json();
       if (!response.ok || !payload.ok) throw new Error(payload.error?.message ?? 'Risultato non disponibile.');
       setResult(payload.result);
+      await loadCommercialOffers();
     } catch (cause) {
       resultFetchRef.current = null;
       setError(customerSafeError(cause, 'Risultato non disponibile.'));
     } finally {
       setBusy(null);
     }
-  }, []);
+  }, [loadCommercialOffers]);
 
   useEffect(() => {
     let cancelled = false;
@@ -131,19 +142,18 @@ export function Annunci10xAnalyzeFlow() {
   }, [analysisRun?.resultEligible, analysisRun?.id, loadResult]);
 
   useEffect(() => {
+    if (!commerceRefreshToken || !result) return;
+    const timer = window.setTimeout(() => {
+      void loadCommercialOffers();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [commerceRefreshToken, result, loadCommercialOffers]);
+
+  useEffect(() => {
     if (!result || !resultRef.current) return;
     resultRef.current.focus({ preventScroll: true });
     resultRef.current.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
   }, [result]);
-
-  useEffect(() => {
-    if (resendAfterSeconds <= 0 && expiresInSeconds <= 0) return;
-    const timer = window.setInterval(() => {
-      setResendAfterSeconds((value) => Math.max(0, value - 1));
-      setExpiresInSeconds((value) => Math.max(0, value - 1));
-    }, 1000);
-    return () => window.clearInterval(timer);
-  }, [resendAfterSeconds, expiresInSeconds]);
 
   async function submitSource(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -164,68 +174,6 @@ export function Annunci10xAnalyzeFlow() {
       setStatusMessage('Analisi avviata. Puoi lasciare i dati per ricevere il report via email.');
     } catch (cause) {
       setError(customerSafeError(cause, 'Analisi non avviata.'));
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  async function submitContact(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-    setBusy('contact');
-    try {
-      const response = await fetch('/api/annunci-10x/contact', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(contact),
-      });
-      const payload = await response.json();
-      if (!response.ok || !payload.ok) throw new Error(payload.error?.message ?? 'Dati non salvati.');
-      setContactSaved(true);
-      setEmailVerified(Boolean(payload.emailVerified));
-      setAnalysisRun((current) => current ? { ...current, contactSaved: true, emailVerified: Boolean(payload.emailVerified), resultEligible: current.ready && Boolean(payload.emailVerified) } : current);
-    } catch (cause) {
-      setError(customerSafeError(cause, 'Dati non salvati.'));
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  async function requestCode() {
-    setError(null);
-    setBusy('request-code');
-    try {
-      const response = await fetch('/api/annunci-10x/email-verification/request', { method: 'POST' });
-      const payload = await response.json();
-      if (!response.ok || !payload.ok) throw new Error(payload.error?.code ?? payload.error?.message ?? 'EMAIL_PROVIDER_UNAVAILABLE');
-      setResendAfterSeconds(Number(payload.resendAfterSeconds ?? 0));
-      setExpiresInSeconds(Number(payload.expiresInSeconds ?? 0));
-      setStatusMessage(payload.sent ? 'Codice inviato.' : `Puoi richiedere un nuovo codice tra ${Number(payload.resendAfterSeconds ?? 0)} secondi.`);
-    } catch (cause) {
-      setError(customerSafeError(cause, 'La verifica email è temporaneamente non disponibile.'));
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  async function verifyCode(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!analysisRun?.id) return;
-    setError(null);
-    setBusy('verify-code');
-    try {
-      const response = await fetch('/api/annunci-10x/email-verification/verify', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ code: otpCode, analysisRunId: analysisRun.id }),
-      });
-      const payload = await response.json();
-      if (!response.ok || !payload.ok) throw new Error(payload.error?.message ?? 'Codice non valido.');
-      setEmailVerified(true);
-      setAnalysisRun((current) => current ? { ...current, emailVerified: true, resultEligible: Boolean(payload.resultEligible) } : current);
-      setStatusMessage(payload.resultEligible ? 'Email verificata. Il risultato è pronto.' : 'Email verificata. Stiamo completando l’analisi.');
-    } catch (cause) {
-      setError(customerSafeError(cause, 'Codice non valido.'));
     } finally {
       setBusy(null);
     }
@@ -278,35 +226,26 @@ export function Annunci10xAnalyzeFlow() {
       <button type="button" onClick={() => setSourceMode('PASTED_TEXT')}>Incolla il testo</button>
     </div>}
 
-    {canShowContact && <form className={styles.form} onSubmit={submitContact} aria-labelledby="analyze-contact-title">
-      <div className={styles.formHead}>
-        <p>Report via email</p>
-        <h2 id="analyze-contact-title">Dove ti mandiamo il report?</h2>
-        <span>Ti chiediamo questi dati per collegare il risultato alla tua richiesta e inviarti il report.</span>
-      </div>
-      <div className={styles.fieldGrid}>
-        <Field label="Nome" htmlFor="lead-first-name" required><input id="lead-first-name" required value={contact.firstName} onChange={(event) => setContact({ ...contact, firstName: event.target.value })} disabled={contactSaved || busy === 'contact'} /></Field>
-        <Field label="Cognome" htmlFor="lead-last-name" required><input id="lead-last-name" required value={contact.lastName} onChange={(event) => setContact({ ...contact, lastName: event.target.value })} disabled={contactSaved || busy === 'contact'} /></Field>
-        <Field label="Azienda" htmlFor="lead-company" required><input id="lead-company" required value={contact.companyName} onChange={(event) => setContact({ ...contact, companyName: event.target.value })} disabled={contactSaved || busy === 'contact'} /></Field>
-        <Field label="Ruolo aziendale" htmlFor="lead-role" required><select id="lead-role" required value={contact.businessRole} onChange={(event) => setContact({ ...contact, businessRole: event.target.value as BusinessRole })} disabled={contactSaved || busy === 'contact'}><option value="OWNER_ENTREPRENEUR">Titolare</option><option value="HR">HR</option><option value="INTERNAL_RECRUITER">Recruiter interno</option><option value="CONSULTANT">Consulente</option><option value="OTHER">Altro</option></select></Field>
-      </div>
-      <Field label="Email aziendale" htmlFor="lead-email" required><input id="lead-email" type="email" required value={contact.email} onChange={(event) => setContact({ ...contact, email: event.target.value })} disabled={contactSaved || busy === 'contact'} /></Field>
-      <label className={styles.unknownToggle}><input type="checkbox" checked={contact.marketingConsent} onChange={(event) => setContact({ ...contact, marketingConsent: event.target.checked })} disabled={contactSaved || busy === 'contact'} /><span>Voglio ricevere anche consigli e novità da Horyzon.</span></label>
-      <p className={styles.formMicrocopy}>Niente spam. Ti cancelli con un clic.</p>
-      <div className={styles.actions}><button type="submit" disabled={contactSaved || busy === 'contact'}>{contactSaved ? 'Dati salvati' : 'Salva contatto'}</button></div>
-    </form>}
-
-    {contactSaved && !emailVerified && <section className={styles.form} aria-labelledby="email-verification-title">
-      <div className={styles.formHead}><p>Verifica email</p><h2 id="email-verification-title">Ti mandiamo un codice di 6 cifre: è l&apos;ultimo passo prima dello Score.</h2></div>
-      <div className={styles.actions}>
-        <button type="button" onClick={requestCode} disabled={busy === 'request-code' || resendAfterSeconds > 0}>{resendAfterSeconds > 0 ? `Nuovo codice tra ${resendAfterSeconds}s` : 'Invia codice'}</button>
-        {expiresInSeconds > 0 && <span>Codice valido per circa {expiresInSeconds}s.</span>}
-      </div>
-      <form onSubmit={verifyCode} className={styles.inlineVerify}>
-        <Field label="Codice OTP" htmlFor="lead-otp" required><input id="lead-otp" required inputMode="numeric" autoComplete="one-time-code" maxLength={6} pattern="[0-9]{6}" value={otpCode} onChange={(event) => setOtpCode(event.target.value)} disabled={busy === 'verify-code'} /></Field>
-        <button type="submit" disabled={busy === 'verify-code' || otpCode.length !== 6}>Verifica email</button>
-      </form>
-    </section>}
+    {canShowContact && <Annunci10xIdentityGate
+      eyebrow="Report via email"
+      title="Dove ti mandiamo il report?"
+      description="Ti chiediamo questi dati per collegare il risultato alla tua richiesta e inviarti il report."
+      otpTitle="Ti mandiamo un codice di 6 cifre: è l'ultimo passo prima dello Score."
+      analysisRunId={analysisRun?.id}
+      idPrefix="analyze-lead"
+      initialContactSaved={contactSaved}
+      initialEmailVerified={emailVerified}
+      onContactSaved={({ emailVerified: verified }) => {
+        setContactSaved(true);
+        setEmailVerified(verified);
+        setAnalysisRun((current) => current ? { ...current, contactSaved: true, emailVerified: verified, resultEligible: current.ready && verified } : current);
+      }}
+      onVerified={({ resultEligible }) => {
+        setEmailVerified(true);
+        setAnalysisRun((current) => current ? { ...current, emailVerified: true, resultEligible } : current);
+        setStatusMessage(resultEligible ? 'Email verificata. Il risultato è pronto.' : 'Email verificata. Stiamo completando l’analisi.');
+      }}
+    />}
 
     {showResultLocked && <div className={styles.lockedNotice} role="status"><strong>Il tuo risultato è pronto.</strong><span>Verifica la tua email per visualizzarlo.</span></div>}
     {showVerifiedWaiting && <div className={styles.lockedNotice} role="status"><strong>Email verificata.</strong><span>Stiamo completando l&apos;analisi.</span></div>}
@@ -314,14 +253,16 @@ export function Annunci10xAnalyzeFlow() {
     {statusMessage && <p className={styles.coverageNote} aria-live="polite">{statusMessage}</p>}
     {error && <p className={styles.error} role="alert">{error}</p>}
 
-    {result && <div ref={resultRef} tabIndex={-1}><FreeResultCard result={result} /></div>}
+    {result && <div ref={resultRef} tabIndex={-1}><FreeResultCard result={result} offers={commercial?.availableOffers ?? []} commercialStatus={commercialStatus} /></div>}
   </section>;
 }
 
-function FreeResultCard({ result }: { result: FreeResult }) {
+function FreeResultCard({ result, offers, commercialStatus }: { result: FreeResult; offers: Annunci10xCommercialOffer[]; commercialStatus: string | null }) {
   const scoreText = formatFreeScore(result.score);
   const isPartialV2 = result.resultVersion === 'V2' && result.score.coverage < 100;
   const evaluableChecks = Math.round(result.score.coverage / 5);
+  const rewriteOffer = offers.find((offer) => offer.offerCode === 'ANNUNCI10X_REWRITE');
+  const agentOffer = offers.find((offer) => offer.offerCode === 'AGENT_RECRUITER');
   return <section className={styles.result} aria-labelledby="free-result-title">
     <div className={styles.freeResultLayout}>
       <div className={styles.freeScoreHero}>
@@ -335,10 +276,44 @@ function FreeResultCard({ result }: { result: FreeResult }) {
         <h3>Interpretazione</h3>
         <p>{result.interpretation}</p>
         {isPartialV2 && <p className={styles.coverageNote}>Abbiamo potuto valutare {evaluableChecks} controlli su 20, perché nel testo mancano alcune informazioni.</p>}
-        <section className={styles.improveCta}><p>Prossimo passo</p><h3>{result.nextAction.label}</h3><span>Potrai trasformare il testo in una versione più chiara e pronta da adattare al canale.</span></section>
+        <section className={styles.improveCta} aria-labelledby="rewrite-offer-title">
+          <p>Vuoi correggerlo?</p>
+          <h3 id="rewrite-offer-title">{result.nextAction.label}</h3>
+          {rewriteOffer
+            ? <CommerceOfferCard offer={rewriteOffer} tone="primary" detail="1 versione · 1 canale" />
+            : <span>{commercialStatus ?? 'Caricamento offerta in corso.'}</span>}
+        </section>
+        {agentOffer && <section className={styles.improveCta} data-secondary="true" aria-labelledby="agent-recruiter-offer-title">
+          <p>Devi pubblicare spesso?</p>
+          <h3 id="agent-recruiter-offer-title">Guida Annunci 10x + Agent Recruiter</h3>
+          <CommerceOfferCard offer={agentOffer} tone="secondary" detail="Metodo, guida e prompt operativi" />
+        </section>}
       </div>
     </div>
   </section>;
+}
+
+function CommerceOfferCard({ offer, tone, detail }: { offer: Annunci10xCommercialOffer; tone: 'primary' | 'secondary'; detail: string }) {
+  const [status, setStatus] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  async function checkout() {
+    if (!offer.purchaseEnabled) return;
+    setLoading(true);
+    setStatus('Preparazione pagamento…');
+    try {
+      await startAnnunci10xCheckout(offer.offerCode);
+    } catch (cause) {
+      setStatus(customerSafeCheckoutError(cause));
+      setLoading(false);
+    }
+  }
+
+  return <article className={styles.offerPanel} data-secondary={tone === 'secondary'}>
+    <div className={styles.offerMeta}><strong>{offerPriceLabel(offer)}</strong><span>{detail}</span></div>
+    <p>{offer.description}</p>
+    <button type="button" onClick={checkout} disabled={!offer.purchaseEnabled || loading}>{loading ? 'Preparazione pagamento…' : checkoutCtaLabel(offer)}</button>
+    {status && <span className={styles.offerStatus} aria-live="polite">{status}</span>}
+  </article>;
 }
 
 function ScoreBandBar({ activeLabel }: { activeLabel?: string }) {
