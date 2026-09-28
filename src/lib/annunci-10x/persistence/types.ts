@@ -599,6 +599,7 @@ export interface Annunci10xPersistenceAdapter {
   releaseGenerationCredit(input: ReleaseGenerationCreditInput): Promise<PersistedCreditReservation>;
   getCreditReservationById(reservationId: string, sessionSecret: string): Promise<PersistedCreditReservation | null>;
   getLatestConsumedGenerationReservation(sessionId: string, sessionSecret: string, capability: Annunci10xReservableCapability): Promise<PersistedCreditReservation | null>;
+  getLatestGenerationReservation(sessionId: string, sessionSecret: string, capability: Annunci10xReservableCapability): Promise<PersistedCreditReservation | null>;
   saveOutput(input: SaveOutputInput): Promise<PersistedOutput>;
   getLatestOutput(sessionId: string, sessionSecret: string, outputType?: Annunci10xOutputType, parentMasterId?: string | null): Promise<PersistedOutput | null>;
   getOutputById(outputId: string, sessionId: string, sessionSecret: string): Promise<PersistedOutput | null>;

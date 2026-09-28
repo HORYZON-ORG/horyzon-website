@@ -677,6 +677,18 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
     return rows[0] ? parseCreditReservationRow(rows[0]) : null;
   }
 
+  async getLatestGenerationReservation(sessionId: string, sessionSecret: string, capability: Annunci10xReservableCapability): Promise<PersistedCreditReservation | null> {
+    await this.requireOwnership(sessionId, sessionSecret);
+    const rows = await this.select('annunci10x_credit_reservations', {
+      session_id: `eq.${sessionId}`,
+      capability: `eq.${capability}`,
+      select: '*',
+      order: 'created_at.desc',
+      limit: '1',
+    });
+    return rows[0] ? parseCreditReservationRow(rows[0]) : null;
+  }
+
   async saveOutput(input: SaveOutputInput): Promise<PersistedOutput> {
     await this.requireOwnership(input.sessionId, input.sessionSecret);
     if (input.outputType === 'MASTER') validateGeneratedAdOrThrow(input.generatedContent);
@@ -1653,6 +1665,15 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
       .filter((item) => item.status === 'CONSUMED')
       .filter((item) => typeof item.output_id === 'string' && String(item.output_id).trim().length > 0)
       .sort((left, right) => String(right.consumed_at ?? '').localeCompare(String(left.consumed_at ?? '')))[0];
+    return row ? parseCreditReservationRow(row) : null;
+  }
+
+  async getLatestGenerationReservation(sessionId: string, sessionSecret: string, capability: Annunci10xReservableCapability): Promise<PersistedCreditReservation | null> {
+    this.requireMemoryOwnership(sessionId, sessionSecret);
+    const row = [...this.creditReservations.values()]
+      .filter((item) => item.session_id === sessionId)
+      .filter((item) => item.capability === capability)
+      .sort((left, right) => String(right.created_at).localeCompare(String(left.created_at)))[0];
     return row ? parseCreditReservationRow(row) : null;
   }
 

@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type { FormEvent, ReactNode } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Annunci10xAnalyzeFlow } from './annunci-10x-analyze-flow';
 import {
   checkoutCtaLabel,
@@ -15,6 +15,7 @@ import {
   type Annunci10xCommercialState,
 } from './annunci-10x-commerce-client';
 import { Annunci10xIdentityGate } from './annunci-10x-identity-gate';
+import { Annunci10xFulfillmentPanel } from './annunci-10x-fulfillment-panel';
 import styles from './annunci-10x.module.css';
 
 type Mode = 'ANALYZE' | 'CREATE';
@@ -199,15 +200,23 @@ export function Annunci10xClient() {
   const [commerceRefreshToken, setCommerceRefreshToken] = useState(0);
   const analyzeRef = useRef<HTMLDivElement | null>(null);
   const createRef = useRef<HTMLElement | null>(null);
+  const showCreateAfterCheckout = useCallback(() => {
+    setMode('CREATE');
+    window.setTimeout(() => {
+      if (createRef.current) scrollToElement(createRef.current);
+    }, 0);
+  }, []);
 
   useEffect(() => {
     fetch('/api/annunci-10x/create/state', { cache: 'no-store' })
       .then((response) => response.json())
       .then((payload: { ok: boolean; result: CreateState | null }) => {
-        if (payload.ok && payload.result) setCreateState(payload.result);
+        if (!payload.ok || !payload.result) return;
+        setCreateState(payload.result);
+        if (checkoutNotice === 'success' || checkoutNotice === 'cancelled') setMode('CREATE');
       })
       .catch(() => undefined);
-  }, []);
+  }, [checkoutNotice]);
 
   useEffect(() => {
     if (checkoutNotice !== 'success') return;
@@ -390,6 +399,7 @@ export function Annunci10xClient() {
 
       {checkoutNotice === 'success' && <div className={styles.checkoutBanner} role="status" aria-live="polite"><strong>Pagamento ricevuto.</strong><span>Stiamo preparando il tuo accesso.</span></div>}
       {checkoutNotice === 'cancelled' && <div className={styles.checkoutBanner} role="status" aria-live="polite"><strong>Pagamento annullato.</strong><span>Non è stato completato alcun acquisto.</span></div>}
+      <Annunci10xFulfillmentPanel checkoutNotice={checkoutNotice} onCreateReturn={showCreateAfterCheckout} />
 
       <ProblemNarrative />
       <CentralIdeaSection />

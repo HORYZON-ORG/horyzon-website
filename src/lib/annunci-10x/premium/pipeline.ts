@@ -88,6 +88,21 @@ export interface PublicAnnunci10xPremiumOutput {
   generatedAt: string;
 }
 
+export type Annunci10xPremiumFulfillmentPublicState =
+  | 'NONE'
+  | 'PAYMENT_CONFIRMED'
+  | 'READY_TO_GENERATE'
+  | 'PREPARING'
+  | 'READY'
+  | 'NEEDS_REVIEW';
+
+export interface PublicAnnunci10xPremiumFulfillmentStatus {
+  flow: PersistedAnnunci10xSession['flow'] | null;
+  state: Annunci10xPremiumFulfillmentPublicState;
+  canGenerate: boolean;
+  outputAvailable: boolean;
+}
+
 export interface PremiumEditInput {
   sessionId: string;
   sessionSecret: string;
@@ -413,12 +428,7 @@ export async function resumeAnnunci10xPremiumOutput(input: { sessionId: string; 
   const context = input.context ?? createAnnunci10xRuntimeContext();
   const session = await requireOwnedSession(context, input.sessionId, input.sessionSecret);
   if (input.fulfillmentEnabled ?? isAnnunci10xFulfillmentEnabled()) {
-    return resumeConsumedReservationOutput({
-      context,
-      session,
-      sessionSecret: input.sessionSecret,
-      capability: capabilityForSession(session),
-    });
+    return resumeAnnunci10xDeliverableOutput({ sessionId: input.sessionId, sessionSecret: input.sessionSecret, context });
   }
   const output = await context.persistence.getLatestOutput(input.sessionId, input.sessionSecret, 'MASTER');
   if (!output) return null;
@@ -443,6 +453,64 @@ export async function resumeAnnunci10xPremiumOutput(input: { sessionId: string; 
     operations: [],
     provider: context.configuredProvider,
   });
+}
+
+export async function resumeAnnunci10xDeliverableOutput(input: { sessionId: string; sessionSecret: string; context?: Annunci10xRuntimeContext }): Promise<PublicAnnunci10xPremiumOutput | null> {
+  const context = input.context ?? createAnnunci10xRuntimeContext();
+  const session = await requireOwnedSession(context, input.sessionId, input.sessionSecret);
+  return resumeConsumedReservationOutput({
+    context,
+    session,
+    sessionSecret: input.sessionSecret,
+    capability: capabilityForSession(session),
+    recordViewEvent: true,
+  });
+}
+
+export async function getAnnunci10xPremiumFulfillmentStatus(input: {
+  sessionId: string;
+  sessionSecret: string;
+  context?: Annunci10xRuntimeContext;
+  fulfillmentEnabled?: boolean;
+}): Promise<PublicAnnunci10xPremiumFulfillmentStatus> {
+  const context = input.context ?? createAnnunci10xRuntimeContext();
+  const session = await requireOwnedSession(context, input.sessionId, input.sessionSecret);
+  const capability = capabilityForSession(session);
+  const deliverable = await resumeConsumedReservationOutput({
+    context,
+    session,
+    sessionSecret: input.sessionSecret,
+    capability,
+    recordViewEvent: false,
+  });
+  if (deliverable) {
+    const ready = deliverable.validationState === 'READY' || deliverable.validationState === 'READY_WITH_WARNINGS';
+    return {
+      flow: session.flow,
+      state: ready ? 'READY' : 'NEEDS_REVIEW',
+      canGenerate: false,
+      outputAvailable: true,
+    };
+  }
+
+  const latestReservation = await context.persistence.getLatestGenerationReservation(session.id, input.sessionSecret, capability);
+  if (latestReservation?.status === 'RESERVED' && Date.parse(latestReservation.leaseExpiresAt) > Date.now()) {
+    return { flow: session.flow, state: 'PREPARING', canGenerate: false, outputAvailable: false };
+  }
+
+  const entitlements = await context.persistence.getEffectiveEntitlements(session.id, input.sessionSecret);
+  const creditCount = capability === 'REWRITE_CREDIT' ? entitlements.rewriteCredits : entitlements.createCredits;
+  if (creditCount > 0) {
+    const enabled = input.fulfillmentEnabled ?? isAnnunci10xFulfillmentEnabled();
+    return {
+      flow: session.flow,
+      state: enabled ? 'READY_TO_GENERATE' : 'PAYMENT_CONFIRMED',
+      canGenerate: enabled,
+      outputAvailable: false,
+    };
+  }
+
+  return { flow: session.flow, state: 'NONE', canGenerate: false, outputAvailable: false };
 }
 
 export async function requestAnnunci10xPremiumEdit(input: PremiumEditInput): Promise<PublicAnnunci10xPremiumEditResult> {
@@ -897,6 +965,7 @@ async function resumeConsumedReservationOutput(input: {
   session: PersistedAnnunci10xSession;
   sessionSecret: string;
   capability: Annunci10xReservableCapability;
+  recordViewEvent?: boolean;
 }): Promise<PublicAnnunci10xPremiumOutput | null> {
   const reservation = await input.context.persistence.getLatestConsumedGenerationReservation(input.session.id, input.sessionSecret, input.capability);
   if (!reservation?.outputId) return null;
@@ -909,7 +978,7 @@ async function resumeConsumedReservationOutput(input: {
   if (!snapshot || !evaluation) return null;
   const v1Evaluation = requireV1Evaluation(evaluation);
   const variant = await input.context.persistence.getLatestOutput(input.session.id, input.sessionSecret, 'CHANNEL_VARIANT', output.id);
-  await appendEventBestEffort(input.context, input.session.id, 'output_viewed', { outputId: output.id });
+  if (input.recordViewEvent !== false) await appendEventBestEffort(input.context, input.session.id, 'output_viewed', { outputId: output.id });
   return publicPremiumOutput({
     session: input.session,
     snapshot,
@@ -956,8 +1025,12 @@ async function releaseGenerationCreditBestEffort(
   reasonCode: string,
 ): Promise<void> {
   try {
-    await context.persistence.releaseGenerationCredit({ reservationId: reservation.id, sessionSecret, reasonCode });
-    await appendEventBestEffort(context, reservation.sessionId, 'generation_credit_released', { reservationId: reservation.id, capability, reasonCode });
+    const released = await context.persistence.releaseGenerationCredit({ reservationId: reservation.id, sessionSecret, reasonCode });
+    if (released.status === 'RELEASED') {
+      await appendEventBestEffort(context, reservation.sessionId, 'generation_credit_released', { reservationId: reservation.id, capability, reasonCode });
+    } else if (released.status === 'EXPIRED') {
+      await appendEventBestEffort(context, reservation.sessionId, 'generation_credit_expired', { reservationId: reservation.id, capability, reasonCode });
+    }
   } catch {
     // A failed release must not leak internals to the browser.
   }

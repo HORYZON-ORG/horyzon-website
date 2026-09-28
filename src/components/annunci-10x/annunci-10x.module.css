@@ -335,6 +335,156 @@
   line-height: 1.5;
 }
 
+.fulfillmentPanel {
+  display: grid;
+  gap: 1rem;
+  width: min(1180px, calc(100% - 10vw));
+  margin: clamp(1rem, 3vw, 2rem) auto 0;
+  scroll-margin-top: 96px;
+  border: 1px solid rgba(16, 34, 41, .16);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  padding: clamp(1rem, 2.6vw, 1.8rem);
+  box-shadow: 0 20px 70px rgba(0, 0, 0, .12);
+}
+
+.fulfillmentPanel:focus {
+  outline: 3px solid rgba(216, 255, 66, .95);
+  outline-offset: 4px;
+}
+
+.fulfillmentEyebrow {
+  margin: 0 0 .45rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  font-size: .78rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.fulfillmentPanel h2 {
+  margin: 0;
+  font-size: clamp(1.8rem, 3vw, 3.4rem);
+  line-height: 1.05;
+}
+
+.fulfillmentPanel span,
+.fulfillmentMessage,
+.guaranteeNote {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.fulfillmentSteps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .6rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fulfillmentSteps li {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #f8f5e8;
+  padding: .8rem;
+  font-weight: 800;
+}
+
+.fulfillmentHead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: start;
+  justify-content: space-between;
+}
+
+.fulfillmentHead > span,
+.channelBadge {
+  width: fit-content;
+  border: 1px solid #a8b66e;
+  border-radius: 6px;
+  background: #e8f6c8;
+  color: var(--deep);
+  padding: .45rem .65rem;
+  font-weight: 900;
+}
+
+.fulfillmentHead > span[data-review="true"] {
+  border-color: #d4b166;
+  background: #fff1ca;
+}
+
+.fulfillmentOutput,
+.outputSections,
+.reviewChecklist {
+  display: grid;
+  gap: 1rem;
+}
+
+.outputSections article,
+.reviewChecklist {
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+}
+
+.outputSections h3,
+.reviewChecklist h3 {
+  margin: 0;
+  font-size: clamp(1.05rem, 1.4vw, 1.25rem);
+  line-height: 1.25;
+}
+
+.outputSections p,
+.reviewChecklist li,
+.guaranteeNote {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.reviewChecklist ul {
+  display: grid;
+  gap: .45rem;
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.fulfillmentActions,
+.fulfillmentTimeout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem;
+  align-items: center;
+}
+
+.fulfillmentActions button,
+.fulfillmentTimeout button {
+  min-height: 48px;
+  border: 1px solid rgba(16, 34, 41, .35);
+  border-radius: 6px;
+  background: var(--lime);
+  color: var(--deep);
+  padding: 0 1.05rem;
+  font: 800 .92rem/1.2 var(--font-sans);
+  cursor: pointer;
+}
+
+.fulfillmentActions button:focus-visible,
+.fulfillmentTimeout button:focus-visible {
+  outline: 3px solid rgba(216, 255, 66, .95);
+  outline-offset: 3px;
+}
+
+.fulfillmentActions button:disabled,
+.fulfillmentTimeout button:disabled {
+  cursor: wait;
+  opacity: .7;
+}
+
 .scoreDemo {
   display: grid;
   justify-self: end;
@@ -1289,6 +1439,8 @@
 
   .heroActions,
   .actions,
+  .fulfillmentActions,
+  .fulfillmentTimeout,
   .createNotice,
   .warningPanel,
   .funnelFooter {
@@ -1298,6 +1450,8 @@
 
   .heroActions button,
   .actions button,
+  .fulfillmentActions button,
+  .fulfillmentTimeout button,
   .productPaths button,
   .warningPanel button,
   .inlineVerify button {
@@ -1369,5 +1523,9 @@
 
   .methodFlow span:last-child {
     border-bottom: 0;
+  }
+
+  .fulfillmentSteps {
+    grid-template-columns: 1fr;
   }
 }
