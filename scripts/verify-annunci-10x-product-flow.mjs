@@ -74,7 +74,7 @@ assert.equal(result.score.value, null, 'mock evaluates one N/D check and produce
 assert.equal(result.coverage < 100, true);
 assert.equal(result.offers.checkoutEnabled, false);
 assert.equal(result.offers.pricingStatus, 'FIXED');
-assert.deepEqual(result.offers.availableOffers.map((offer) => offer.offerCode), ['ANNUNCI10X_REWRITE', 'AGENT_RECRUITER']);
+assert.deepEqual(result.offers.availableOffers.map((offer) => offer.offerCode), ['ANNUNCI10X_REWRITE']);
 assert.equal(result.offers.availableOffers.every((offer) => offer.purchaseEnabled === false), true);
 assert.equal(result.roleSummary.title.length > 0, true);
 assert.equal(JSON.stringify(result.operations).includes(fullAd), false, 'raw ad must not be exposed in operation metadata');
@@ -303,12 +303,12 @@ assert.equal('discountValue' in confirmedCreate.commercial, false);
 assert.equal('entitlements' in confirmedCreate.commercial, false);
 assert.equal(confirmedCreate.commercial.pricingStatus, 'FIXED');
 assert.deepEqual(Object.keys(confirmedCreate.commercial.entitlementSummary).sort(), ['agentRecruiterAccess', 'createCredits', 'guide', 'rewriteCredits', 'source']);
-assert.deepEqual(confirmedCreate.commercial.availableOffers.map((offer) => offer.offerCode), ['ANNUNCI10X_CREATE', 'AGENT_RECRUITER']);
+assert.deepEqual(confirmedCreate.commercial.availableOffers.map((offer) => offer.offerCode), ['ANNUNCI10X_CREATE']);
 assert.equal(confirmedCreate.commercial.availableOffers.every((offer) => offer.purchaseEnabled === false), true);
 
 const resumedCreate = await resumeAnnunci10xCreate(startedCreate.cookie, createContext);
 assert.equal(resumedCreate.paymentRequired, true);
-assert.deepEqual(resumedCreate.commercial.availableOffers.map((offer) => offer.offerCode), ['ANNUNCI10X_CREATE', 'AGENT_RECRUITER']);
+assert.deepEqual(resumedCreate.commercial.availableOffers.map((offer) => offer.offerCode), ['ANNUNCI10X_CREATE']);
 
 const unknownCreateContext = makeContext();
 const startedUnknownCreate = await startAnnunci10xCreate({ context: unknownCreateContext });

@@ -433,7 +433,7 @@ async function assertEffectiveEntitlements() {
   await processWebhook(context, stripeEvent({
     id: 'evt_create_paid',
     type: 'checkout.session.completed',
-    object: { id: create.sessionId, payment_status: 'paid', amount_total: 900, currency: 'eur', payment_intent: 'pi_create' },
+    object: { id: create.sessionId, payment_status: 'paid', amount_total: 700, currency: 'eur', payment_intent: 'pi_create' },
   }));
   entitlements = await context.persistence.getEffectiveEntitlements(session.sessionId, session.sessionSecret);
   assert.equal(entitlements.createCredits, 1);

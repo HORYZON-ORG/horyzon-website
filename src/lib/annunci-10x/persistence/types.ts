@@ -260,8 +260,8 @@ export interface SaveLeadInput {
   sessionSecret: string;
   firstName: string;
   lastName: string;
-  companyName: string;
-  businessRole: Annunci10xBusinessRole;
+  companyName: string | null;
+  businessRole: Annunci10xBusinessRole | null;
   emailNormalized: string;
   marketingConsent: boolean;
   marketingConsentVersion: string;
@@ -272,8 +272,8 @@ export interface PersistedLead {
   sessionId: string;
   firstName: string;
   lastName: string;
-  companyName: string;
-  businessRole: Annunci10xBusinessRole;
+  companyName: string | null;
+  businessRole: Annunci10xBusinessRole | null;
   emailNormalized: string;
   emailVerifiedAt?: string | null;
   marketingConsent: boolean;

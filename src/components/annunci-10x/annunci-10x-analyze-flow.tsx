@@ -262,32 +262,28 @@ function FreeResultCard({ result, offers, commercialStatus }: { result: FreeResu
   const isPartialV2 = result.resultVersion === 'V2' && result.score.coverage < 100;
   const evaluableChecks = Math.round(result.score.coverage / 5);
   const rewriteOffer = offers.find((offer) => offer.offerCode === 'ANNUNCI10X_REWRITE');
-  const agentOffer = offers.find((offer) => offer.offerCode === 'AGENT_RECRUITER');
   return <section className={styles.result} aria-labelledby="free-result-title">
     <div className={styles.freeResultLayout}>
       <div className={styles.freeScoreHero}>
-        <p>Annunci 10x Score</p>
+        <p>Score di chiarezza</p>
         <h2 id="free-result-title">Risultato gratuito</h2>
         <strong>{scoreText}</strong>
         {result.band && <span>{result.band.label}</span>}
         <ScoreBandBar activeLabel={result.band?.label} />
+        <small>Le fasce descrivono chiarezza e completamento delle informazioni disponibili, non la probabilità di assunzione.</small>
       </div>
       <div className={styles.freeResultCopy}>
         <h3>Interpretazione</h3>
         <p>{result.interpretation}</p>
+        <p className={styles.disclaimer}>Il punteggio valuta la chiarezza e la completezza delle informazioni disponibili nell’annuncio. Non prevede il numero di candidature né sostituisce la valutazione delle persone.</p>
         {isPartialV2 && <p className={styles.coverageNote}>Abbiamo potuto valutare {evaluableChecks} controlli su 20, perché nel testo mancano alcune informazioni.</p>}
         <section className={styles.improveCta} aria-labelledby="rewrite-offer-title">
-          <p>Vuoi correggerlo?</p>
-          <h3 id="rewrite-offer-title">{result.nextAction.label}</h3>
+          <p>Vuoi trasformarlo?</p>
+          <h3 id="rewrite-offer-title">Annuncio 10x — 7 €</h3>
           {rewriteOffer
-            ? <CommerceOfferCard offer={rewriteOffer} tone="primary" detail="1 versione · 1 canale" />
+            ? <CommerceOfferCard offer={rewriteOffer} tone="primary" detail="1 annuncio · 1 versione · 1 canale" />
             : <span>{commercialStatus ?? 'Caricamento offerta in corso.'}</span>}
         </section>
-        {agentOffer && <section className={styles.improveCta} data-secondary="true" aria-labelledby="agent-recruiter-offer-title">
-          <p>Devi pubblicare spesso?</p>
-          <h3 id="agent-recruiter-offer-title">Guida Annunci 10x + Agent Recruiter</h3>
-          <CommerceOfferCard offer={agentOffer} tone="secondary" detail="Metodo, guida e prompt operativi" />
-        </section>}
       </div>
     </div>
   </section>;
@@ -311,6 +307,7 @@ function CommerceOfferCard({ offer, tone, detail }: { offer: Annunci10xCommercia
   return <article className={styles.offerPanel} data-secondary={tone === 'secondary'}>
     <div className={styles.offerMeta}><strong>{offerPriceLabel(offer)}</strong><span>{detail}</span></div>
     <p>{offer.description}</p>
+    <small>Output completo dopo pagamento confermato. Rimborso integrale entro 14 giorni dalla consegna, senza motivazione, scrivendo a info@horyzon.it dall’email usata per l’acquisto.</small>
     <button type="button" onClick={checkout} disabled={!offer.purchaseEnabled || loading}>{loading ? 'Preparazione pagamento…' : checkoutCtaLabel(offer)}</button>
     {status && <span className={styles.offerStatus} aria-live="polite">{status}</span>}
   </article>;

@@ -21,7 +21,7 @@ export interface Annunci10xCommercialOffer {
 }
 
 export interface Annunci10xCommercialState {
-  version: 'annunci10x-commercial-v2';
+  version: 'annunci10x-commercial-v3';
   availableOffers: Annunci10xCommercialOffer[];
   checkoutEnabled: boolean;
   pricingStatus: 'FIXED';
@@ -61,8 +61,7 @@ export function offerPriceLabel(offer: Annunci10xCommercialOffer): string {
 
 export function checkoutCtaLabel(offer: Annunci10xCommercialOffer): string {
   if (!offer.purchaseEnabled) return unavailableCtaLabel(offer.reasonUnavailable);
-  if (offer.offerCode === 'ANNUNCI10X_REWRITE') return `Migliora il mio annuncio — ${offerPriceLabel(offer)}`;
-  if (offer.offerCode === 'ANNUNCI10X_CREATE') return `Crea il mio annuncio — ${offerPriceLabel(offer)}`;
+  if (offer.offerCode === 'ANNUNCI10X_REWRITE' || offer.offerCode === 'ANNUNCI10X_CREATE') return 'Paga 7 € e genera il mio annuncio';
   return `Ottieni Guida + Agent Recruiter — ${offerPriceLabel(offer)}`;
 }
 
@@ -81,4 +80,3 @@ export function customerSafeCheckoutError(cause: unknown): string {
   if (/PAYMENT_INVALID|INVALID_INPUT/i.test(message)) return 'Non siamo riusciti ad aprire il pagamento';
   return 'Pagamento temporaneamente non disponibile';
 }
-

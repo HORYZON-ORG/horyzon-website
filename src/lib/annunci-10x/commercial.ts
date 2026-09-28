@@ -1,7 +1,7 @@
 import type { ProductCode, SessionState } from './types.ts';
 import type { Annunci10xPersistenceAdapter, EffectiveEntitlements } from './persistence/types.ts';
 
-export const ANNUNCI10X_COMMERCIAL_VERSION = 'annunci10x-commercial-v2';
+export const ANNUNCI10X_COMMERCIAL_VERSION = 'annunci10x-commercial-v3';
 
 export const ANNUNCI10X_OFFER_CODES = ['ANNUNCI10X_REWRITE', 'ANNUNCI10X_CREATE', 'AGENT_RECRUITER'] as const;
 export type Annunci10xOfferCode = (typeof ANNUNCI10X_OFFER_CODES)[number];
@@ -40,17 +40,17 @@ export const ANNUNCI10X_PRODUCT_CATALOG: readonly Annunci10xProductCatalogItem[]
 export const ANNUNCI10X_OFFER_CATALOG: readonly Annunci10xOfferCatalogItem[] = [
   {
     offerCode: 'ANNUNCI10X_REWRITE',
-    displayName: 'Migliora annuncio',
-    description: "Miglioramento dell'annuncio esistente. 1 acquisto = 1 versione / 1 canale.",
+    displayName: 'Annuncio 10x',
+    description: 'Potenziamento di un testo esistente. 1 annuncio, 1 versione, 1 canale.',
     price: { amountCents: 700, currency: 'EUR', display: '7,00 EUR' },
     capabilities: [{ capability: 'REWRITE_CREDIT', quantity: 1 }],
     flows: ['ANALYZE'],
   },
   {
     offerCode: 'ANNUNCI10X_CREATE',
-    displayName: 'Crea annuncio',
-    description: 'Creazione di un nuovo annuncio partendo dal percorso guidato.',
-    price: { amountCents: 900, currency: 'EUR', display: '9,00 EUR' },
+    displayName: 'Annuncio 10x',
+    description: 'Creazione di un nuovo annuncio partendo dai fatti del ruolo. 1 annuncio, 1 versione, 1 canale.',
+    price: { amountCents: 700, currency: 'EUR', display: '7,00 EUR' },
     capabilities: [{ capability: 'CREATE_CREDIT', quantity: 1 }],
     flows: ['CREATE'],
   },
@@ -147,6 +147,7 @@ export interface Annunci10xOfferEngineInput {
   journeyState: SessionState | 'PRODUCT_PAGE';
   checkoutEnabled?: boolean;
   identityVerified?: boolean;
+  agentRecruiterEnabled?: boolean;
 }
 
 export interface Annunci10xCommercialOffer {
@@ -177,6 +178,7 @@ export interface ResolveAnnunci10xCommercialInput {
   entitlementProvider?: Annunci10xEntitlementProvider;
   checkoutEnabled?: boolean;
   identityVerified?: boolean;
+  agentRecruiterEnabled?: boolean;
 }
 
 export function isAnnunci10xOfferCode(value: unknown): value is Annunci10xOfferCode {
@@ -213,6 +215,11 @@ export function isAnnunci10xFulfillmentEnabled(env: Record<string, string | unde
   return value === '1' || value === 'true' || value === 'yes';
 }
 
+export function isAnnunci10xAgentRecruiterEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  const value = env.ANNUNCI10X_AGENT_RECRUITER_ENABLED?.trim().toLowerCase();
+  return value === '1' || value === 'true' || value === 'yes';
+}
+
 export async function resolveAnnunci10xCommercial(input: ResolveAnnunci10xCommercialInput): Promise<Annunci10xCommercialState> {
   const subject = input.subject ?? { kind: 'ANONYMOUS' };
   const provider = input.entitlementProvider ?? createOpenDecisionEntitlementProvider();
@@ -229,6 +236,7 @@ export async function resolveAnnunci10xCommercial(input: ResolveAnnunci10xCommer
       journeyState: input.journeyState,
       checkoutEnabled,
       identityVerified: Boolean(input.identityVerified),
+      agentRecruiterEnabled: input.agentRecruiterEnabled ?? isAnnunci10xAgentRecruiterEnabled(),
     }),
     checkoutEnabled,
     pricingStatus: 'FIXED',
@@ -238,6 +246,7 @@ export async function resolveAnnunci10xCommercial(input: ResolveAnnunci10xCommer
 export function buildAnnunci10xOffers(input: Annunci10xOfferEngineInput): Annunci10xCommercialOffer[] {
   return ANNUNCI10X_OFFER_CATALOG
     .filter((item) => item.flows.includes(input.flow))
+    .filter((item) => item.offerCode !== 'AGENT_RECRUITER' || Boolean(input.agentRecruiterEnabled))
     .map((item) => offerFor(item, input));
 }
 

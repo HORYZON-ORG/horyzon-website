@@ -326,7 +326,21 @@ async function assertCheckoutOffVisibility() {
     }),
   });
   assert.equal(agentCommercial.entitlements.agentRecruiterAccess, true);
-  assert.equal(agentCommercial.availableOffers.find((offer) => offer.offerCode === 'AGENT_RECRUITER').reasonUnavailable, 'ALREADY_ENTITLED');
+  assert.equal(agentCommercial.availableOffers.some((offer) => offer.offerCode === 'AGENT_RECRUITER'), false, 'Agent Recruiter stays hidden by default even when entitled');
+  const explicitAgentCommercial = await resolveAnnunci10xCommercial({
+    subject: { kind: 'SESSION', sessionId: session.sessionId },
+    flow: 'ANALYZE',
+    journeyState: 'PRODUCT_PAGE',
+    checkoutEnabled: false,
+    identityVerified: true,
+    agentRecruiterEnabled: true,
+    entitlementProvider: createPersistenceAnnunci10xCommerceEntitlementProvider({
+      persistence: context.persistence,
+      sessionId: session.sessionId,
+      sessionSecret: session.sessionSecret,
+    }),
+  });
+  assert.equal(explicitAgentCommercial.availableOffers.find((offer) => offer.offerCode === 'AGENT_RECRUITER').reasonUnavailable, 'ALREADY_ENTITLED');
 }
 
 function assertFulfillmentFlag() {
@@ -467,7 +481,7 @@ async function verifiedSession(flow) {
 
 async function paidPurchase(context, session, offerCode) {
   const lead = await context.persistence.getLead(session.sessionId, session.sessionSecret);
-  const expectedAmountCents = offerCode === 'ANNUNCI10X_REWRITE' ? 700 : offerCode === 'ANNUNCI10X_CREATE' ? 900 : 4900;
+  const expectedAmountCents = offerCode === 'ANNUNCI10X_REWRITE' ? 700 : offerCode === 'ANNUNCI10X_CREATE' ? 700 : 4900;
   const purchase = await context.persistence.createOrGetPurchase({
     sessionId: session.sessionId,
     sessionSecret: session.sessionSecret,

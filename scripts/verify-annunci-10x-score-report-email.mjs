@@ -86,32 +86,28 @@ async function assertResendPayload() {
   assert.equal(resendScoreReportIdempotencyKey(deliveryId), resendScoreReportIdempotencyKey(deliveryId));
   assert.notEqual(resendScoreReportIdempotencyKey(deliveryId), resendScoreReportIdempotencyKey('22222222-2222-4222-8222-222222222222'));
 
-  const payload = buildResendScoreReportPayload({
-    from: 'Horyzon <noreply@example.com>',
-    replyTo: 'info@example.com',
-    deliveryId,
-    recipient: 'ada@example.com',
-    firstName: '<Ada>',
-    roleTitle: 'Responsabile Customer Success',
-    score: 67,
-    band: 'Debole',
-    coverage: 90,
-    evaluableCheckCount: 18,
-    priorities: [
-      { checkId: '03', label: 'Concretezza delle attivita', reason: 'Le attivita sono ancora troppo generiche.', missing: ['Esempi di attivita settimanali'] },
-      { checkId: '04', label: 'Risultato osservabile del ruolo', reason: 'Il risultato atteso non e esplicito.', missing: [] },
-      { checkId: '05', label: 'Contesto operativo', reason: 'Il contesto e poco chiaro.', missing: ['Team', 'Interlocutori'] },
-    ],
-  });
+  const previousPublicBaseUrl = process.env.ANNUNCI10X_PUBLIC_BASE_URL;
+  process.env.ANNUNCI10X_PUBLIC_BASE_URL = 'https://horyzon.test/';
+  const payload = buildResendScoreReportPayload(payloadInputFromPayload(deliveryId));
+  if (previousPublicBaseUrl === undefined) {
+    delete process.env.ANNUNCI10X_PUBLIC_BASE_URL;
+  } else {
+    process.env.ANNUNCI10X_PUBLIC_BASE_URL = previousPublicBaseUrl;
+  }
   assert.equal(payload.from, 'Horyzon <noreply@example.com>');
   assert.deepEqual(payload.to, ['ada@example.com']);
   assert.equal(payload.reply_to, 'info@example.com');
-  assert.equal(payload.subject, 'Il tuo Annunci 10x Score: 67/100 — ecco cosa lo frena');
+  assert.equal(payload.subject, 'Il tuo Score di chiarezza Annunci 10x: 67/100 — ecco cosa lo frena');
   assert.match(payload.text, /18 controlli su 20/);
   assert.doesNotMatch(payload.text, /Copertura 90%/i);
   assert.doesNotMatch(payload.html, /<Ada>/);
-  assert.match(payload.html, /&lt;Ada&gt;/);
-  for (const forbidden of ['7 €', '9 €', '49 €', 'checkout', 'Stripe', 'newsletter', 'marketing']) {
+  assert.match(payload.html, /Ciao Ada,/);
+  assert.match(payload.text, /Il punteggio valuta la chiarezza e la completezza/);
+  assert.match(payload.text, /Vuoi trasformarlo in un Annuncio 10x\? 7 € per un annuncio, una versione e un canale\./);
+  assert.match(payload.text, /https:\/\/horyzon\.test\/annunci-10x/);
+  assert.match(payload.html, /Score di chiarezza/);
+  assert.match(payload.html, /Vuoi trasformarlo in un Annuncio 10x\?/);
+  for (const forbidden of ['9 €', '49 €', 'checkout', 'Stripe', 'newsletter', 'marketing']) {
     assert.doesNotMatch(payload.text, new RegExp(escapeRegExp(forbidden), 'i'));
     assert.doesNotMatch(payload.html, new RegExp(escapeRegExp(forbidden), 'i'));
   }
@@ -133,7 +129,7 @@ async function assertResendPayload() {
   assert.equal(captured[0].init.method, 'POST');
   assert.equal(captured[0].init.headers['Idempotency-Key'], `annunci10x-score-report/${deliveryId}`);
   const body = JSON.parse(captured[0].init.body);
-  assert.equal(body.subject, 'Il tuo Annunci 10x Score: 67/100 — ecco cosa lo frena');
+  assert.equal(body.subject, 'Il tuo Score di chiarezza Annunci 10x: 67/100 — ecco cosa lo frena');
 }
 
 async function assertMarketingConsentDoesNotGate() {
@@ -249,7 +245,7 @@ async function readyV2Fixture({ marketingConsent }) {
   await saveAnnunci10xLeadContact({
     session,
     context,
-    firstName: 'Ada',
+    firstName: '<Ada>',
     lastName: 'Lovelace',
     companyName: 'Horyzon Test',
     businessRole: 'HR',
@@ -366,7 +362,10 @@ async function verifyWithSyntheticOtp(context, session, email) {
 
 function payloadInputFromPayload(deliveryId) {
   return {
+    from: 'Horyzon <noreply@example.com>',
+    replyTo: 'info@example.com',
     deliveryId,
+    recipient: 'ada@example.com',
     firstName: 'Ada',
     roleTitle: 'Responsabile Customer Success',
     score: 67,

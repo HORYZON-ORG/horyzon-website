@@ -25,7 +25,7 @@ export interface FreeAnnunci10xResult {
   interpretation: string;
   nextAction: {
     type: 'REWRITE_EXISTING_AD';
-    label: 'Migliora questo annuncio';
+    label: 'Annuncio 10x';
   };
 }
 
@@ -78,7 +78,7 @@ export function buildFreeAnnunci10xResult(input: {
     interpretation: interpretationForResult(resultVersion, score, band),
     nextAction: {
       type: 'REWRITE_EXISTING_AD',
-      label: 'Migliora questo annuncio',
+      label: 'Annuncio 10x',
     },
   };
 }

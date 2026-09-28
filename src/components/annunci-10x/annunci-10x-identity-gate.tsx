@@ -27,7 +27,7 @@ export function Annunci10xIdentityGate(props: IdentityGateProps) {
     firstName: '',
     lastName: '',
     companyName: '',
-    businessRole: 'HR' as BusinessRole,
+    businessRole: '' as BusinessRole | '',
     email: '',
     marketingConsent: false,
   });
@@ -125,10 +125,18 @@ export function Annunci10xIdentityGate(props: IdentityGateProps) {
       <div className={styles.fieldGrid}>
         <Field label="Nome" htmlFor={`${idPrefix}-first-name`} required><input id={`${idPrefix}-first-name`} required value={contact.firstName} onChange={(event) => setContact({ ...contact, firstName: event.target.value })} disabled={busy === 'contact'} /></Field>
         <Field label="Cognome" htmlFor={`${idPrefix}-last-name`} required><input id={`${idPrefix}-last-name`} required value={contact.lastName} onChange={(event) => setContact({ ...contact, lastName: event.target.value })} disabled={busy === 'contact'} /></Field>
-        <Field label="Azienda" htmlFor={`${idPrefix}-company`} required><input id={`${idPrefix}-company`} required value={contact.companyName} onChange={(event) => setContact({ ...contact, companyName: event.target.value })} disabled={busy === 'contact'} /></Field>
-        <Field label="Ruolo aziendale" htmlFor={`${idPrefix}-role`} required><select id={`${idPrefix}-role`} required value={contact.businessRole} onChange={(event) => setContact({ ...contact, businessRole: event.target.value as BusinessRole })} disabled={busy === 'contact'}><option value="OWNER_ENTREPRENEUR">Titolare</option><option value="HR">HR</option><option value="INTERNAL_RECRUITER">Recruiter interno</option><option value="CONSULTANT">Consulente</option><option value="OTHER">Altro</option></select></Field>
       </div>
       <Field label="Email aziendale" htmlFor={`${idPrefix}-email`} required><input id={`${idPrefix}-email`} type="email" required value={contact.email} onChange={(event) => setContact({ ...contact, email: event.target.value })} disabled={busy === 'contact'} /></Field>
+      <section className={styles.optionalFields} aria-label="Dati facoltativi">
+        <div className={styles.formHead}>
+          <p>Dati facoltativi</p>
+          <span>Puoi aggiungerli ora o lasciarli vuoti: non bloccano verifica email e Score.</span>
+        </div>
+        <div className={styles.fieldGrid}>
+          <Field label="Azienda" htmlFor={`${idPrefix}-company`} optional><input id={`${idPrefix}-company`} value={contact.companyName} onChange={(event) => setContact({ ...contact, companyName: event.target.value })} disabled={busy === 'contact'} /></Field>
+          <Field label="Ruolo aziendale" htmlFor={`${idPrefix}-role`} optional><select id={`${idPrefix}-role`} value={contact.businessRole} onChange={(event) => setContact({ ...contact, businessRole: event.target.value as BusinessRole | '' })} disabled={busy === 'contact'}><option value="">Non indicato</option><option value="OWNER_ENTREPRENEUR">Titolare</option><option value="HR">HR</option><option value="INTERNAL_RECRUITER">Recruiter interno</option><option value="CONSULTANT">Consulente</option><option value="OTHER">Altro</option></select></Field>
+        </div>
+      </section>
       <label className={styles.unknownToggle}><input type="checkbox" checked={contact.marketingConsent} onChange={(event) => setContact({ ...contact, marketingConsent: event.target.checked })} disabled={busy === 'contact'} /><span>Voglio ricevere anche consigli e novità da Horyzon.</span></label>
       <p className={styles.formMicrocopy}>Niente spam. Ti cancelli con un clic.</p>
       <div className={styles.actions}><button type="submit" disabled={busy === 'contact'}>{busy === 'contact' ? 'Salvataggio in corso' : props.submitLabel ?? 'Salva contatto'}</button></div>
@@ -151,8 +159,8 @@ export function Annunci10xIdentityGate(props: IdentityGateProps) {
   </>;
 }
 
-function Field(props: { label: string; htmlFor: string; required?: boolean; children: ReactNode }) {
-  return <label className={styles.field} htmlFor={props.htmlFor}><span>{props.label}{props.required && <b> *</b>}</span>{props.children}</label>;
+function Field(props: { label: string; htmlFor: string; required?: boolean; optional?: boolean; children: ReactNode }) {
+  return <label className={styles.field} htmlFor={props.htmlFor}><span>{props.label}{props.required && <b> *</b>}{props.optional && <em>opzionale</em>}</span>{props.children}</label>;
 }
 
 function customerSafeIdentityError(cause: unknown, fallback: string): string {

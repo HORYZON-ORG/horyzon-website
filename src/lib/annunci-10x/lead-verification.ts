@@ -212,7 +212,7 @@ export async function saveAnnunci10xLeadContact(input: SaveLeadContactInput): Pr
   await input.context.persistence.appendEvent({
     sessionId: input.session.sessionId,
     eventName: 'contact_saved',
-    metadata: { businessRole: lead.businessRole, marketingConsent: lead.marketingConsent },
+    metadata: { businessRole: lead.businessRole ?? 'NOT_PROVIDED', marketingConsent: lead.marketingConsent },
   });
   return {
     lead,
@@ -388,15 +388,17 @@ function normalizeLeadContact(input: SaveLeadContactInput) {
   return {
     firstName: cleanText(input.firstName, 'Nome', 80),
     lastName: cleanText(input.lastName, 'Cognome', 80),
-    companyName: cleanText(input.companyName, 'Azienda', 160),
-    businessRole: normalizeBusinessRole(input.businessRole),
+    companyName: cleanOptionalText(input.companyName, 'Azienda', 160),
+    businessRole: normalizeOptionalBusinessRole(input.businessRole),
     emailNormalized: normalizeEmailAddress(input.email),
     marketingConsent: input.marketingConsent === true,
     marketingConsentVersion: ANNUNCI10X_MARKETING_CONSENT_VERSION,
   };
 }
 
-function normalizeBusinessRole(value: unknown): Annunci10xBusinessRole {
+function normalizeOptionalBusinessRole(value: unknown): Annunci10xBusinessRole | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'string' && !value.trim()) return null;
   if (value === 'OWNER_ENTREPRENEUR' || value === 'HR' || value === 'INTERNAL_RECRUITER' || value === 'CONSULTANT' || value === 'OTHER') return value;
   throw new Annunci10xPublicError('INVALID_INPUT', 'Ruolo aziendale non valido.', 400);
 }
@@ -405,6 +407,15 @@ function cleanText(value: unknown, label: string, maxLength: number): string {
   if (typeof value !== 'string') throw new Annunci10xPublicError('INVALID_INPUT', `${label} non valido.`, 400);
   const cleaned = value.replace(/\s+/g, ' ').trim();
   if (!cleaned || cleaned.length > maxLength) throw new Annunci10xPublicError('INVALID_INPUT', `${label} non valido.`, 400);
+  return cleaned;
+}
+
+function cleanOptionalText(value: unknown, label: string, maxLength: number): string | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== 'string') throw new Annunci10xPublicError('INVALID_INPUT', `${label} non valido.`, 400);
+  const cleaned = value.replace(/\s+/g, ' ').trim();
+  if (!cleaned) return null;
+  if (cleaned.length > maxLength) throw new Annunci10xPublicError('INVALID_INPUT', `${label} non valido.`, 400);
   return cleaned;
 }
 
@@ -441,7 +452,7 @@ export function buildResendOtpPayload(input: {
   const text = [
     greeting,
     '',
-    'questo è il codice per visualizzare il tuo Annunci 10x Score:',
+    'questo è il codice per visualizzare il tuo Score di chiarezza Annunci 10x:',
     '',
     input.code,
     '',
@@ -454,7 +465,7 @@ export function buildResendOtpPayload(input: {
   const html = [
     '<div style="font-family:Arial,sans-serif;color:#102229;line-height:1.55">',
     `<p>${escapeHtml(greeting)}</p>`,
-    '<p>questo è il codice per visualizzare il tuo Annunci 10x Score:</p>',
+    '<p>questo è il codice per visualizzare il tuo Score di chiarezza Annunci 10x:</p>',
     `<p style="font-size:28px;font-weight:700;letter-spacing:0.08em">${input.code}</p>`,
     `<p>Il codice scade tra ${minutes} minuti.</p>`,
     '<p>Se non hai richiesto questa analisi, puoi ignorare questa email.</p>',
@@ -480,15 +491,18 @@ export function buildResendScoreReportPayload(input: ScoreReportEmailInput & {
   const greeting = firstName ? `Ciao ${firstName},` : 'Ciao,';
   const scoreLabel = input.score === null ? 'non disponibile' : `${formatScoreValue(input.score)}/100`;
   const subject = input.score === null
-    ? 'Il tuo report Annunci 10x Score'
-    : `Il tuo Annunci 10x Score: ${formatScoreValue(input.score)}/100 — ecco cosa lo frena`;
+    ? 'Il tuo report Score di chiarezza Annunci 10x'
+    : `Il tuo Score di chiarezza Annunci 10x: ${formatScoreValue(input.score)}/100 — ecco cosa lo frena`;
   const coverageLine = input.coverage < 100
     ? `Abbiamo potuto valutare ${input.evaluableCheckCount} controlli su 20, perché nel testo mancano alcune informazioni.`
     : null;
+  const disclaimer = 'Il punteggio valuta la chiarezza e la completezza delle informazioni disponibili nell’annuncio. Non prevede il numero di candidature né sostituisce la valutazione delle persone.';
+  const commercialBridge = 'Vuoi trasformarlo in un Annuncio 10x? 7 € per un annuncio, una versione e un canale.';
+  const publicBaseUrl = cleanPublicBaseUrl(process.env.ANNUNCI10X_PUBLIC_BASE_URL);
   const text = [
     greeting,
     '',
-    `il tuo annuncio "${input.roleTitle}" ha ottenuto:`,
+    `il tuo annuncio "${input.roleTitle}" ha ottenuto questo Score di chiarezza:`,
     '',
     scoreLabel,
     input.band ?? 'Fascia non assegnata',
@@ -502,6 +516,10 @@ export function buildResendScoreReportPayload(input: ScoreReportEmailInput & {
       '',
     ]),
     ...(coverageLine ? [coverageLine, ''] : []),
+    disclaimer,
+    '',
+    commercialBridge,
+    ...(publicBaseUrl ? [`${publicBaseUrl}/annunci-10x`, ''] : ['']),
     'Horyzon',
     'Annunci 10x',
   ].join('\n');
@@ -517,12 +535,14 @@ export function buildResendScoreReportPayload(input: ScoreReportEmailInput & {
   const html = [
     '<div style="font-family:Arial,sans-serif;color:#102229;line-height:1.55;max-width:640px">',
     `<p>${escapeHtml(greeting)}</p>`,
-    `<p>il tuo annuncio <strong>&quot;${escapeHtml(input.roleTitle)}&quot;</strong> ha ottenuto:</p>`,
+    `<p>il tuo annuncio <strong>&quot;${escapeHtml(input.roleTitle)}&quot;</strong> ha ottenuto questo Score di chiarezza:</p>`,
     `<p style="font-size:30px;font-weight:700;margin:0 0 4px">${escapeHtml(scoreLabel)}</p>`,
     `<p style="margin-top:0">${escapeHtml(input.band ?? 'Fascia non assegnata')}</p>`,
     '<p>Questi sono i punti che oggi lo frenano di più:</p>',
     `<ol style="padding-left:22px">${priorityHtml}</ol>`,
     coverageLine ? `<p>${escapeHtml(coverageLine)}</p>` : '',
+    `<p>${escapeHtml(disclaimer)}</p>`,
+    `<p>${escapeHtml(commercialBridge)}${publicBaseUrl ? ` <a href="${escapeHtml(`${publicBaseUrl}/annunci-10x`)}">Apri Annunci 10x</a>` : ''}</p>`,
     '<p>Horyzon<br>Annunci 10x</p>',
     '</div>',
   ].join('');
@@ -549,6 +569,12 @@ function cleanOptionalConfig(value: string | null | undefined): string | null {
 function cleanOptionalEmailName(value: string | null | undefined): string | null {
   const cleaned = value?.replace(/\s+/g, ' ').trim();
   return cleaned || null;
+}
+
+function cleanPublicBaseUrl(value: string | undefined): string | null {
+  const cleaned = value?.trim().replace(/\/+$/, '');
+  if (!cleaned || !/^https?:\/\/[^/\s]+/i.test(cleaned)) return null;
+  return cleaned;
 }
 
 function escapeHtml(value: string): string {

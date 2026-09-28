@@ -24,8 +24,8 @@ Do not expose Stripe secret values to the browser. Do not accept amount, currenc
 | Offer code | Price | Capability grants |
 | --- | ---: | --- |
 | `ANNUNCI10X_REWRITE` | 7,00 EUR | `REWRITE_CREDIT` x1 |
-| `ANNUNCI10X_CREATE` | 9,00 EUR | `CREATE_CREDIT` x1 |
-| `AGENT_RECRUITER` | 49,00 EUR | `GUIDE_ACCESS` x1, `AGENT_RECRUITER_ACCESS` x1 |
+| `ANNUNCI10X_CREATE` | 7,00 EUR | `CREATE_CREDIT` x1 |
+| `AGENT_RECRUITER` | 49,00 EUR | `GUIDE_ACCESS` x1, `AGENT_RECRUITER_ACCESS` x1; hidden from the public funnel unless explicitly enabled |
 
 ## Product and price mapping
 

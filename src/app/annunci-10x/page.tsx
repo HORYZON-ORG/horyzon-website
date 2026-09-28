@@ -2,8 +2,8 @@ import { Annunci10xClient } from '@/components/annunci-10x/annunci-10x-client';
 import { SITE_URL } from '@/content/seo';
 import type { Metadata } from 'next';
 
-const title = 'Annunci 10x — Il tuo annuncio attira i candidati giusti? Scoprilo gratis';
-const description = 'Incolla il tuo annuncio di lavoro e scopri in 2 minuti se sta attirando le persone giuste. Score gratuito su 100, report via email.';
+const title = 'Annunci 10x — Score di chiarezza e annuncio pronto a 7 €';
+const description = 'Valuta gratis chiarezza e completezza del tuo annuncio. Poi scegli Annuncio 10x: 7 € per un annuncio, una versione e un canale.';
 
 export const metadata: Metadata = {
   title: { absolute: title },
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     title,
     description,
     url: `${SITE_URL}/annunci-10x`,
-    siteName: 'Horyzon Consulting',
+    siteName: 'Horyzon Consulting Recruiting',
     locale: 'it_IT',
     type: 'website',
   },

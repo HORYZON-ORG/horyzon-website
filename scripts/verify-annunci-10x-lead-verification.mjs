@@ -62,6 +62,27 @@ assert.equal(resubmitted.lead.id, lead.id, 'identical resubmit updates same lead
 assert.equal(resubmitted.lead.marketingConsent, true);
 assert.ok(resubmitted.lead.marketingConsentAt);
 
+const optionalContext = makeContext();
+const optionalCreated = await createAnonymousAnalyzeSession(optionalContext);
+const optionalSession = { sessionId: optionalCreated.session.id, sessionSecret: optionalCreated.sessionSecret };
+const optionalSaved = await saveAnnunci10xLeadContact({
+  session: optionalSession,
+  context: optionalContext,
+  firstName: '  Maria ',
+  lastName: ' Montessori ',
+  companyName: '   ',
+  businessRole: '',
+  email: ' MARIA.MONTESSORI@EXAMPLE.COM ',
+  marketingConsent: false,
+});
+assert.equal(optionalSaved.contactSaved, true);
+const optionalLead = await optionalContext.persistence.getLead(optionalSession.sessionId, optionalSession.sessionSecret);
+assert.equal(optionalLead.firstName, 'Maria');
+assert.equal(optionalLead.lastName, 'Montessori');
+assert.equal(optionalLead.companyName, null);
+assert.equal(optionalLead.businessRole, null);
+assert.equal(optionalLead.emailNormalized, 'maria.montessori@example.com');
+
 await assert.rejects(
   () => saveAnnunci10xLeadContact({ session, context, firstName: 'Ada', lastName: 'Lovelace', companyName: 'Horyzon', businessRole: 'CEO', email: 'ada@example.com' }),
   /Ruolo aziendale non valido/,
