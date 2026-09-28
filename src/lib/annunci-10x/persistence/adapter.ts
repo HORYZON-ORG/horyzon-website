@@ -636,7 +636,11 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
       p_owner_secret_hash: hashAnnunci10xSessionSecret(input.sessionSecret),
       p_output_id: input.outputId,
     });
-    return parseCreditReservationRow(row);
+    const reservation = parseCreditReservationRow(row);
+    if (reservation.status !== 'CONSUMED') {
+      throw new Annunci10xPersistenceError('Annunci 10x generation credit was not consumed.', 'VALIDATION');
+    }
+    return reservation;
   }
 
   async releaseGenerationCredit(input: ReleaseGenerationCreditInput): Promise<PersistedCreditReservation> {
@@ -1556,7 +1560,7 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
       row.status = 'EXPIRED';
       row.expired_at = row.expired_at ?? now;
       row.updated_at = now;
-      return parseCreditReservationRow(row);
+      throw new Annunci10xPersistenceError('Annunci 10x generation credit was not consumed.', 'VALIDATION');
     }
     const output = this.outputs.get(input.outputId);
     if (!output || output.session_id !== row.session_id) {

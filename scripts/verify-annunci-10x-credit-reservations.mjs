@@ -5,7 +5,9 @@ import { readFile } from 'node:fs/promises';
 process.env.ANNUNCI10X_EMAIL_VERIFICATION_PEPPER = `${randomUUID()}${randomUUID()}`;
 
 const {
+  Annunci10xPersistenceError,
   MemoryAnnunci10xPersistenceAdapter,
+  SupabaseAnnunci10xPersistenceAdapter,
   createFact,
   createPersistenceAnnunci10xCommerceEntitlementProvider,
   createProductionGenerationAuthorizationProvider,
@@ -134,16 +136,48 @@ async function assertExpiredConsumePersistsAndRestoresCredit() {
   });
   context.persistence.creditReservations.get(reserved.id).lease_expires_at = new Date(Date.now() - 1000).toISOString();
   const output = await saveSyntheticOutput(context, session);
-  const expired = await context.persistence.consumeGenerationCredit({
-    reservationId: reserved.id,
-    sessionSecret: session.sessionSecret,
-    outputId: output.id,
-  });
-  assert.equal(expired.status, 'EXPIRED');
-  assert.equal(expired.outputId, null);
-  assert.ok(expired.expiredAt);
-  assert.equal((await context.persistence.getCreditReservationById(reserved.id, session.sessionSecret)).status, 'EXPIRED');
+  await assert.rejects(
+    () => context.persistence.consumeGenerationCredit({
+      reservationId: reserved.id,
+      sessionSecret: session.sessionSecret,
+      outputId: output.id,
+    }),
+    (error) => isValidationPersistenceError(error, /not consumed/),
+  );
+  const persisted = await context.persistence.getCreditReservationById(reserved.id, session.sessionSecret);
+  assert.equal(persisted.status, 'EXPIRED');
+  assert.equal(persisted.outputId, null);
+  assert.ok(persisted.expiredAt);
   assert.equal((await context.persistence.getEffectiveEntitlements(session.sessionId, session.sessionSecret)).rewriteCredits, 1);
+}
+
+async function assertSupabaseConsumeFailsClosed() {
+  for (const status of ['RESERVED', 'RELEASED', 'EXPIRED']) {
+    const { adapter, calls } = fakeSupabaseConsumeAdapter(creditReservationRpcRow(status));
+    await assert.rejects(
+      () => adapter.consumeGenerationCredit({
+        reservationId: randomUUID(),
+        sessionSecret: syntheticSessionSecret(),
+        outputId: randomUUID(),
+      }),
+      (error) => isValidationPersistenceError(error, /not consumed/),
+      `Supabase consume must reject ${status}.`,
+    );
+    assert.equal(calls.length, 1);
+    assert.match(calls[0].url, /\/rest\/v1\/rpc\/annunci10x_consume_generation_credit$/);
+  }
+
+  const consumedRow = creditReservationRpcRow('CONSUMED');
+  const { adapter, calls } = fakeSupabaseConsumeAdapter(consumedRow);
+  const consumed = await adapter.consumeGenerationCredit({
+    reservationId: String(consumedRow.id),
+    sessionSecret: syntheticSessionSecret(),
+    outputId: String(consumedRow.output_id),
+  });
+  assert.equal(consumed.status, 'CONSUMED');
+  assert.equal(consumed.outputId, consumedRow.output_id);
+  assert.equal(calls.length, 1);
+  assert.match(calls[0].url, /\/rest\/v1\/rpc\/annunci10x_consume_generation_credit$/);
 }
 
 async function assertWrongFlowAndReadiness() {
@@ -564,9 +598,57 @@ const commercialContext = {
   discountValue: 'OPEN_DECISION',
 };
 
+function isValidationPersistenceError(error, messagePattern) {
+  return error instanceof Annunci10xPersistenceError
+    && error.causeCode === 'VALIDATION'
+    && messagePattern.test(error.message);
+}
+
+function fakeSupabaseConsumeAdapter(row) {
+  const calls = [];
+  const adapter = new SupabaseAnnunci10xPersistenceAdapter({
+    url: 'https://supabase.test',
+    serviceRoleKey: 'service-role-test',
+    fetchImpl: async (url, init) => {
+      calls.push({ url: String(url), init });
+      return new Response(JSON.stringify(row), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    },
+  });
+  return { adapter, calls };
+}
+
+function syntheticSessionSecret() {
+  return `${randomUUID()}${randomUUID()}`;
+}
+
+function creditReservationRpcRow(status) {
+  const timestamp = new Date().toISOString();
+  return {
+    id: randomUUID(),
+    session_id: randomUUID(),
+    grant_id: randomUUID(),
+    capability: 'REWRITE_CREDIT',
+    status,
+    quantity: 1,
+    lease_expires_at: timestamp,
+    output_id: status === 'CONSUMED' ? randomUUID() : null,
+    release_reason_code: status === 'RELEASED' ? 'USER_CANCELLED' : null,
+    reserved_at: timestamp,
+    consumed_at: status === 'CONSUMED' ? timestamp : null,
+    released_at: status === 'RELEASED' ? timestamp : null,
+    expired_at: status === 'EXPIRED' ? timestamp : null,
+    created_at: timestamp,
+    updated_at: timestamp,
+  };
+}
+
 await assertMigration();
 await assertRewriteReserveReleaseConsume();
 await assertExpiredConsumePersistsAndRestoresCredit();
+await assertSupabaseConsumeFailsClosed();
 await assertExpiryAndConcurrentReserve();
 await assertWrongFlowAndReadiness();
 await assertCreateCreditReadiness();
