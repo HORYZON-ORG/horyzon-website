@@ -26,6 +26,8 @@ export type Annunci10xAnalysisRunStage = 'SOURCE_VALIDATION' | 'PRECHECK' | 'EXT
 export type Annunci10xAnalysisEvaluationMode = 'V1' | 'V2_SHADOW' | 'V2_PUBLIC';
 export type Annunci10xBusinessRole = 'OWNER_ENTREPRENEUR' | 'HR' | 'INTERNAL_RECRUITER' | 'CONSULTANT' | 'OTHER';
 export type Annunci10xEmailVerificationStatus = 'PENDING_SEND' | 'SENT' | 'CONSUMED' | 'INVALIDATED' | 'FAILED_SEND';
+export type Annunci10xEmailDeliveryKind = 'SCORE_REPORT';
+export type Annunci10xEmailDeliveryStatus = 'PENDING' | 'SENDING' | 'SENT' | 'FAILED';
 export type Annunci10xPersistedScoreResult = ScoreResult | ScoreResultV2;
 
 export interface PersistedAnnunci10xSession extends Annunci10xSession {
@@ -316,6 +318,46 @@ export interface VerifyEmailCodeResult {
   verification?: PersistedEmailVerification | null;
 }
 
+export interface PersistedEmailDelivery {
+  id: string;
+  sessionId: string;
+  leadId: string;
+  analysisRunId: string;
+  kind: Annunci10xEmailDeliveryKind;
+  recipientNormalized: string;
+  status: Annunci10xEmailDeliveryStatus;
+  provider?: string | null;
+  providerRequestId?: string | null;
+  attemptCount: number;
+  leaseExpiresAt?: string | null;
+  sentAt?: string | null;
+  lastErrorCode?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ClaimEmailDeliveryInput {
+  sessionId: string;
+  sessionSecret: string;
+  analysisRunId: string;
+  kind: Annunci10xEmailDeliveryKind;
+  recipient: string;
+  leaseSeconds: number;
+}
+
+export interface MarkEmailDeliverySentInput {
+  deliveryId: string;
+  sessionSecret: string;
+  provider: string;
+  providerRequestId?: string | null;
+}
+
+export interface MarkEmailDeliveryFailedInput {
+  deliveryId: string;
+  sessionSecret: string;
+  errorCode: string;
+}
+
 export interface ResultEligibility {
   analysisReady: boolean;
   emailVerified: boolean;
@@ -390,6 +432,9 @@ export interface Annunci10xPersistenceAdapter {
   markEmailVerificationSent(verificationId: string, sessionSecret: string): Promise<PersistedEmailVerification>;
   markEmailVerificationFailed(verificationId: string, sessionSecret: string): Promise<PersistedEmailVerification>;
   verifyEmailCode(input: VerifyEmailCodeInput): Promise<VerifyEmailCodeResult>;
+  claimEmailDelivery(input: ClaimEmailDeliveryInput): Promise<PersistedEmailDelivery | null>;
+  markEmailDeliverySent(input: MarkEmailDeliverySentInput): Promise<PersistedEmailDelivery>;
+  markEmailDeliveryFailed(input: MarkEmailDeliveryFailedInput): Promise<PersistedEmailDelivery>;
   saveOutput(input: SaveOutputInput): Promise<PersistedOutput>;
   getLatestOutput(sessionId: string, sessionSecret: string, outputType?: Annunci10xOutputType, parentMasterId?: string | null): Promise<PersistedOutput | null>;
   appendEvent(input: AppendEventInput): Promise<PersistedEvent>;

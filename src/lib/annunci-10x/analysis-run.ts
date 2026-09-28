@@ -37,6 +37,7 @@ import {
   type Annunci10xPreparedSource,
   type Annunci10xSourceInput,
 } from './source-ingestion.ts';
+import { maybeSendAnnunci10xScoreReport } from './score-report-email.ts';
 import type {
   Annunci10xAnalysisEvaluationMode,
   Annunci10xAnalysisRunStage,
@@ -330,7 +331,7 @@ async function runEvaluateStage(
       eventName: 'analysis_completed',
       metadata: { coverage: evaluate.score.coverage, resultVersion: 'V2', evaluationMode: 'V2_PUBLIC' },
     });
-    return context.persistence.updateAnalysisRun({
+    const readyRun = await context.persistence.updateAnalysisRun({
       analysisRunId: run.id,
       sessionSecret: session.sessionSecret,
       status: 'READY',
@@ -342,6 +343,8 @@ async function runEvaluateStage(
       errorPayload: null,
       leaseExpiresAt: null,
     });
+    await triggerScoreReportEmailAfterReady(readyRun, session, context);
+    return readyRun;
   }
 
   const evaluate = await orchestrator(context).runTask({
@@ -413,7 +416,7 @@ async function runClarifyStage(
       metadata: { targetPath: clarify.output.clarification?.targetPath ?? 'unknown' },
     });
   }
-  return context.persistence.updateAnalysisRun({
+  const readyRun = await context.persistence.updateAnalysisRun({
     analysisRunId: run.id,
     sessionSecret: session.sessionSecret,
     status: 'READY',
@@ -425,6 +428,8 @@ async function runClarifyStage(
     errorPayload: null,
     leaseExpiresAt: null,
   });
+  await triggerScoreReportEmailAfterReady(readyRun, session, context);
+  return readyRun;
 }
 
 async function getOrCreateRoleSnapshot(
@@ -592,6 +597,18 @@ function updateRunStage(
     errorPayload: null,
     leaseExpiresAt: null,
   });
+}
+
+async function triggerScoreReportEmailAfterReady(
+  run: PersistedAnalysisRun,
+  session: Annunci10xSessionCookie,
+  context: Annunci10xRuntimeContext,
+): Promise<void> {
+  try {
+    await maybeSendAnnunci10xScoreReport({ session, analysisRunId: run.id, context });
+  } catch {
+    // Transactional email delivery must not invalidate a completed analysis run.
+  }
 }
 
 function nextExecutableStage(stage: Annunci10xAnalysisRunStage): DurableOperationStage | 'COMPLETE' {

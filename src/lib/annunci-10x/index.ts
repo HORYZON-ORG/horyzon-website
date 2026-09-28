@@ -15,6 +15,7 @@ export * from './product-flow.ts';
 export * from './rubric.ts';
 export * from './rubric-v2.ts';
 export * from './score.ts';
+export * from './score-report-email.ts';
 export * from './score-v2.ts';
 export * from './source-ingestion.ts';
 export * from './state-machine.ts';

@@ -25,6 +25,7 @@ import type {
   PersistedAiOperation,
   PersistedAnnunci10xSession,
   PersistedAnswer,
+  PersistedEmailDelivery,
   PersistedEmailVerification,
   PersistedEvaluation,
   PersistedEvent,
@@ -205,6 +206,26 @@ export function parseEmailVerificationRow(row: Record<string, unknown>, options:
   };
   if (options.includeHash) parsed.codeHash = requireString(row.code_hash, 'emailVerification.code_hash');
   return parsed;
+}
+
+export function parseEmailDeliveryRow(row: Record<string, unknown>): PersistedEmailDelivery {
+  return {
+    id: requireString(row.id, 'emailDelivery.id'),
+    sessionId: requireString(row.session_id, 'emailDelivery.session_id'),
+    leadId: requireString(row.lead_id, 'emailDelivery.lead_id'),
+    analysisRunId: requireString(row.analysis_run_id, 'emailDelivery.analysis_run_id'),
+    kind: requireString(row.kind, 'emailDelivery.kind') as PersistedEmailDelivery['kind'],
+    recipientNormalized: requireString(row.recipient_normalized, 'emailDelivery.recipient_normalized'),
+    status: requireString(row.status, 'emailDelivery.status') as PersistedEmailDelivery['status'],
+    provider: optionalString(row.provider),
+    providerRequestId: optionalString(row.provider_request_id),
+    attemptCount: requireNumber(row.attempt_count, 'emailDelivery.attempt_count'),
+    leaseExpiresAt: optionalString(row.lease_expires_at),
+    sentAt: optionalString(row.sent_at),
+    lastErrorCode: optionalString(row.last_error_code),
+    createdAt: requireString(row.created_at, 'emailDelivery.created_at'),
+    updatedAt: requireString(row.updated_at, 'emailDelivery.updated_at'),
+  };
 }
 
 export function parseOutputRow(row: Record<string, unknown>): PersistedOutput {

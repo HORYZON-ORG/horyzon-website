@@ -53,6 +53,7 @@ export interface Annunci10xEmailProvider {
     expiresAt: string;
     firstName?: string | null;
   }): Promise<{ providerRequestId?: string | null }>;
+  sendScoreReport(input: ScoreReportEmailInput): Promise<{ providerRequestId?: string | null }>;
 }
 
 interface VerificationEmailInput {
@@ -63,9 +64,30 @@ interface VerificationEmailInput {
   firstName?: string | null;
 }
 
+export interface ScoreReportEmailPriorityInput {
+  checkId: string;
+  label: string;
+  reason: string;
+  missing: string[];
+}
+
+export interface ScoreReportEmailInput {
+  deliveryId: string;
+  recipient: string;
+  firstName?: string | null;
+  roleTitle: string;
+  score: number | null;
+  band: string | null;
+  coverage: number;
+  evaluableCheckCount: number;
+  priorities: ScoreReportEmailPriorityInput[];
+}
+
 export class MockAnnunci10xEmailProvider implements Annunci10xEmailProvider {
   readonly kind = 'MOCK';
   readonly sent: VerificationEmailInput[] = [];
+  readonly sentVerificationCodes = this.sent;
+  readonly sentScoreReports: ScoreReportEmailInput[] = [];
 
   async sendVerificationCode(input: VerificationEmailInput): Promise<{ providerRequestId: string }> {
     if (process.env.NODE_ENV === 'production') {
@@ -73,6 +95,14 @@ export class MockAnnunci10xEmailProvider implements Annunci10xEmailProvider {
     }
     this.sent.push(input);
     return { providerRequestId: `mock-${this.sent.length}` };
+  }
+
+  async sendScoreReport(input: ScoreReportEmailInput): Promise<{ providerRequestId: string }> {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Annunci10xPublicError('EMAIL_PROVIDER_UNAVAILABLE', 'Provider email non disponibile.', 503);
+    }
+    this.sentScoreReports.push(input);
+    return { providerRequestId: `mock-score-report-${this.sentScoreReports.length}` };
   }
 }
 
@@ -114,6 +144,18 @@ export class ResendAnnunci10xEmailProvider implements Annunci10xEmailProvider {
       expiresAt: input.expiresAt,
       firstName: input.firstName,
     });
+    return this.sendPayload(payload, idempotencyKey);
+  }
+
+  async sendScoreReport(input: ScoreReportEmailInput): Promise<{ providerRequestId?: string | null }> {
+    return this.sendPayload(buildResendScoreReportPayload({
+      from: this.from,
+      replyTo: this.replyTo,
+      ...input,
+    }), resendScoreReportIdempotencyKey(input.deliveryId));
+  }
+
+  private async sendPayload(payload: Record<string, unknown>, idempotencyKey: string): Promise<{ providerRequestId?: string | null }> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
     try {
@@ -381,6 +423,10 @@ export function resendOtpIdempotencyKey(verificationId: string): string {
   return `annunci10x-otp/${verificationId}`;
 }
 
+export function resendScoreReportIdempotencyKey(deliveryId: string): string {
+  return `annunci10x-score-report/${deliveryId}`;
+}
+
 export function buildResendOtpPayload(input: {
   from: string;
   replyTo?: string | null;
@@ -426,6 +472,71 @@ export function buildResendOtpPayload(input: {
   return payload;
 }
 
+export function buildResendScoreReportPayload(input: ScoreReportEmailInput & {
+  from: string;
+  replyTo?: string | null;
+}): Record<string, unknown> {
+  const firstName = cleanOptionalEmailName(input.firstName);
+  const greeting = firstName ? `Ciao ${firstName},` : 'Ciao,';
+  const scoreLabel = input.score === null ? 'non disponibile' : `${formatScoreValue(input.score)}/100`;
+  const subject = input.score === null
+    ? 'Il tuo report Annunci 10x Score'
+    : `Il tuo Annunci 10x Score: ${formatScoreValue(input.score)}/100 — ecco cosa lo frena`;
+  const coverageLine = input.coverage < 100
+    ? `Abbiamo potuto valutare ${input.evaluableCheckCount} controlli su 20, perché nel testo mancano alcune informazioni.`
+    : null;
+  const text = [
+    greeting,
+    '',
+    `il tuo annuncio "${input.roleTitle}" ha ottenuto:`,
+    '',
+    scoreLabel,
+    input.band ?? 'Fascia non assegnata',
+    '',
+    'Questi sono i punti che oggi lo frenano di più:',
+    '',
+    ...input.priorities.flatMap((priority, index) => [
+      `${index + 1}. ${priority.label}`,
+      `   ${priority.reason}`,
+      ...(priority.missing.length ? [`   Da chiarire: ${priority.missing.join('; ')}`] : []),
+      '',
+    ]),
+    ...(coverageLine ? [coverageLine, ''] : []),
+    'Horyzon',
+    'Annunci 10x',
+  ].join('\n');
+  const priorityHtml = input.priorities.map((priority, index) => [
+    '<li style="margin-bottom:14px">',
+    `<strong>${index + 1}. ${escapeHtml(priority.label)}</strong>`,
+    `<div>${escapeHtml(priority.reason)}</div>`,
+    priority.missing.length
+      ? `<div><strong>Da chiarire:</strong> ${escapeHtml(priority.missing.join('; '))}</div>`
+      : '',
+    '</li>',
+  ].join('')).join('');
+  const html = [
+    '<div style="font-family:Arial,sans-serif;color:#102229;line-height:1.55;max-width:640px">',
+    `<p>${escapeHtml(greeting)}</p>`,
+    `<p>il tuo annuncio <strong>&quot;${escapeHtml(input.roleTitle)}&quot;</strong> ha ottenuto:</p>`,
+    `<p style="font-size:30px;font-weight:700;margin:0 0 4px">${escapeHtml(scoreLabel)}</p>`,
+    `<p style="margin-top:0">${escapeHtml(input.band ?? 'Fascia non assegnata')}</p>`,
+    '<p>Questi sono i punti che oggi lo frenano di più:</p>',
+    `<ol style="padding-left:22px">${priorityHtml}</ol>`,
+    coverageLine ? `<p>${escapeHtml(coverageLine)}</p>` : '',
+    '<p>Horyzon<br>Annunci 10x</p>',
+    '</div>',
+  ].join('');
+  const payload: Record<string, unknown> = {
+    from: input.from,
+    to: [input.recipient],
+    subject,
+    html,
+    text,
+  };
+  if (input.replyTo) payload.reply_to = input.replyTo;
+  return payload;
+}
+
 function cleanRequiredConfig(value: string | undefined): string {
   return value?.trim() ?? '';
 }
@@ -447,6 +558,10 @@ function escapeHtml(value: string): string {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
+}
+
+function formatScoreValue(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1).replace(/\.0$/, '');
 }
 
 async function safeJson(response: Response): Promise<{ id?: unknown }> {

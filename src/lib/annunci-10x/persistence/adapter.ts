@@ -16,6 +16,7 @@ import {
   parseAnalysisRunRow,
   parseAiOperationRow,
   parseAnswerRow,
+  parseEmailDeliveryRow,
   parseEmailVerificationRow,
   parseEvaluationRow,
   parseEventRow,
@@ -37,10 +38,14 @@ import type {
   CreateSessionInput,
   CreateSessionResult,
   FailAiOperationInput,
+  ClaimEmailDeliveryInput,
+  MarkEmailDeliveryFailedInput,
+  MarkEmailDeliverySentInput,
   PersistedAnalysisRun,
   PersistedAiOperation,
   PersistedAnnunci10xSession,
   PersistedAnswer,
+  PersistedEmailDelivery,
   PersistedEmailVerification,
   PersistedEvaluation,
   PersistedEvent,
@@ -464,6 +469,37 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
     return parseVerifyEmailCodeResult(row);
   }
 
+  async claimEmailDelivery(input: ClaimEmailDeliveryInput): Promise<PersistedEmailDelivery | null> {
+    const row = await this.rpc<DbRow | null>('annunci10x_claim_email_delivery', {
+      p_session_id: input.sessionId,
+      p_owner_secret_hash: hashAnnunci10xSessionSecret(input.sessionSecret),
+      p_analysis_run_id: input.analysisRunId,
+      p_kind: input.kind,
+      p_recipient: input.recipient,
+      p_lease_seconds: input.leaseSeconds,
+    });
+    return row ? parseEmailDeliveryRow(row) : null;
+  }
+
+  async markEmailDeliverySent(input: MarkEmailDeliverySentInput): Promise<PersistedEmailDelivery> {
+    const row = await this.rpc<DbRow>('annunci10x_mark_email_delivery_sent', {
+      p_delivery_id: input.deliveryId,
+      p_owner_secret_hash: hashAnnunci10xSessionSecret(input.sessionSecret),
+      p_provider: input.provider,
+      p_provider_request_id: input.providerRequestId ?? null,
+    });
+    return parseEmailDeliveryRow(row);
+  }
+
+  async markEmailDeliveryFailed(input: MarkEmailDeliveryFailedInput): Promise<PersistedEmailDelivery> {
+    const row = await this.rpc<DbRow>('annunci10x_mark_email_delivery_failed', {
+      p_delivery_id: input.deliveryId,
+      p_owner_secret_hash: hashAnnunci10xSessionSecret(input.sessionSecret),
+      p_error_code: input.errorCode,
+    });
+    return parseEmailDeliveryRow(row);
+  }
+
   async saveOutput(input: SaveOutputInput): Promise<PersistedOutput> {
     await this.requireOwnership(input.sessionId, input.sessionSecret);
     if (input.outputType === 'MASTER') validateGeneratedAdOrThrow(input.generatedContent);
@@ -568,6 +604,7 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
   private analysisRuns = new Map<string, DbRow>();
   private leads = new Map<string, DbRow>();
   private verifications = new Map<string, DbRow>();
+  private emailDeliveries = new Map<string, DbRow>();
   private outputs = new Map<string, DbRow>();
   private evaluations: DbRow[] = [];
   private events: DbRow[] = [];
@@ -1030,6 +1067,86 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
     return { outcome: 'VERIFIED', lead: lead ? parseLeadRow(lead) : null, verification: parseEmailVerificationRow(row, { includeHash: true }) };
   }
 
+  async claimEmailDelivery(input: ClaimEmailDeliveryInput): Promise<PersistedEmailDelivery | null> {
+    this.requireMemoryOwnership(input.sessionId, input.sessionSecret);
+    const run = this.analysisRuns.get(input.analysisRunId);
+    const lead = this.leads.get(input.sessionId);
+    const recipient = normalizeMemoryRecipient(input.recipient);
+    if (
+      !run
+      || run.session_id !== input.sessionId
+      || run.status !== 'READY'
+      || run.source_status !== 'READY'
+      || !run.evaluation_id
+      || !lead
+      || !lead.email_verified_at
+      || lead.email_normalized !== recipient
+    ) {
+      return null;
+    }
+    const nowMs = Date.now();
+    const now = new Date(nowMs).toISOString();
+    let row = [...this.emailDeliveries.values()].find((item) => (
+      item.kind === input.kind
+      && item.analysis_run_id === input.analysisRunId
+      && item.recipient_normalized === recipient
+    ));
+    if (!row) {
+      row = {
+        id: randomUUID(),
+        session_id: input.sessionId,
+        lead_id: lead.id,
+        analysis_run_id: input.analysisRunId,
+        kind: input.kind,
+        recipient_normalized: recipient,
+        status: 'PENDING',
+        provider: null,
+        provider_request_id: null,
+        attempt_count: 0,
+        lease_expires_at: null,
+        sent_at: null,
+        last_error_code: null,
+        created_at: now,
+        updated_at: now,
+      };
+      this.emailDeliveries.set(String(row.id), row);
+    }
+    if (row.status === 'SENT') return null;
+    if (Number(row.attempt_count) >= 5) return null;
+    const leaseExpiresAt = typeof row.lease_expires_at === 'string' ? Date.parse(row.lease_expires_at) : 0;
+    if (row.status === 'SENDING' && leaseExpiresAt > nowMs) return null;
+    row.status = 'SENDING';
+    row.attempt_count = Number(row.attempt_count ?? 0) + 1;
+    row.lease_expires_at = new Date(nowMs + Math.max(1, input.leaseSeconds) * 1000).toISOString();
+    row.last_error_code = null;
+    row.updated_at = now;
+    return parseEmailDeliveryRow(row);
+  }
+
+  async markEmailDeliverySent(input: MarkEmailDeliverySentInput): Promise<PersistedEmailDelivery> {
+    const row = this.findOwnedEmailDelivery(input.deliveryId, input.sessionSecret);
+    if (row.status !== 'SENDING') throw new Annunci10xPersistenceError('Annunci 10x email delivery cannot transition to sent.', 'VALIDATION');
+    const now = new Date().toISOString();
+    row.status = 'SENT';
+    row.provider = input.provider;
+    row.provider_request_id = input.providerRequestId ?? null;
+    row.sent_at = now;
+    row.lease_expires_at = null;
+    row.last_error_code = null;
+    row.updated_at = now;
+    return parseEmailDeliveryRow(row);
+  }
+
+  async markEmailDeliveryFailed(input: MarkEmailDeliveryFailedInput): Promise<PersistedEmailDelivery> {
+    const row = this.findOwnedEmailDelivery(input.deliveryId, input.sessionSecret);
+    if (row.status !== 'SENDING') throw new Annunci10xPersistenceError('Annunci 10x email delivery cannot transition to failed.', 'VALIDATION');
+    row.status = 'FAILED';
+    row.lease_expires_at = null;
+    row.last_error_code = input.errorCode.slice(0, 80);
+    row.updated_at = new Date().toISOString();
+    return parseEmailDeliveryRow(row);
+  }
+
   async saveOutput(input: SaveOutputInput): Promise<PersistedOutput> {
     this.requireMemoryOwnership(input.sessionId, input.sessionSecret);
     if (input.outputType === 'MASTER') validateGeneratedAdOrThrow(input.generatedContent);
@@ -1095,6 +1212,13 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
   private findOwnedVerification(verificationId: string, sessionSecret: string): DbRow {
     const row = this.verifications.get(verificationId);
     if (!row) throw new Annunci10xPersistenceError('Annunci 10x email verification not found.', 'OWNERSHIP');
+    this.requireMemoryOwnership(String(row.session_id), sessionSecret);
+    return row;
+  }
+
+  private findOwnedEmailDelivery(deliveryId: string, sessionSecret: string): DbRow {
+    const row = this.emailDeliveries.get(deliveryId);
+    if (!row) throw new Annunci10xPersistenceError('Annunci 10x email delivery not found.', 'OWNERSHIP');
     this.requireMemoryOwnership(String(row.session_id), sessionSecret);
     return row;
   }
@@ -1177,6 +1301,10 @@ function parseVerifyEmailCodeResult(row: DbRow): VerifyEmailCodeResult {
 
 function remainingMemorySeconds(fromIso: string, windowSeconds: number): number {
   return Math.max(0, Math.ceil((Date.parse(fromIso) + windowSeconds * 1000 - Date.now()) / 1000));
+}
+
+function normalizeMemoryRecipient(value: string): string {
+  return value.trim().toLowerCase();
 }
 
 function validateCommercialContextOrThrow(value: unknown): void {
