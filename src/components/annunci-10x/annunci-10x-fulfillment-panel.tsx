@@ -2,9 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  MAX_PAYMENT_VERIFY_ATTEMPTS,
+  PAYMENT_VERIFY_POLL_MS,
+  PAYMENT_VERIFY_TIMEOUT_MESSAGE,
   fetchAnnunci10xFulfillmentStatus,
   fetchAnnunci10xPremiumOutput,
   generateAnnunci10xPremiumOutput,
+  isAnnunci10xPaymentVerificationStopState,
+  shouldPollAnnunci10xPaymentVerification,
+  shouldReturnToAnnunci10xCreate,
+  type PremiumCheckoutNotice,
   type PremiumFulfillmentState,
   type PremiumFulfillmentStatus,
   type PremiumOutput,
@@ -19,7 +26,7 @@ export function Annunci10xFulfillmentPanel({
   checkoutNotice,
   onCreateReturn,
 }: {
-  checkoutNotice: 'success' | 'cancelled' | null;
+  checkoutNotice: PremiumCheckoutNotice;
   onCreateReturn?: () => void;
 }) {
   const [status, setStatus] = useState<PremiumFulfillmentStatus | null>(null);
@@ -28,9 +35,17 @@ export function Annunci10xFulfillmentPanel({
   const [copyMessage, setCopyMessage] = useState('');
   const [manualRetryAvailable, setManualRetryAvailable] = useState(false);
   const [pollTimedOut, setPollTimedOut] = useState(false);
+  const [paymentVerifyTimedOut, setPaymentVerifyTimedOut] = useState(false);
   const [loading, setLoading] = useState(false);
   const generatedForCycle = useRef(false);
+  const createReturnNotified = useRef(false);
   const panelRef = useRef<HTMLElement | null>(null);
+
+  const notifyCreateReturn = useCallback((nextStatus: PremiumFulfillmentStatus) => {
+    if (!shouldReturnToAnnunci10xCreate(checkoutNotice, nextStatus.flow) || createReturnNotified.current) return;
+    createReturnNotified.current = true;
+    onCreateReturn?.();
+  }, [checkoutNotice, onCreateReturn]);
 
   const refresh = useCallback(async (focus = false) => {
     const nextStatus = await fetchAnnunci10xFulfillmentStatus();
@@ -45,6 +60,7 @@ export function Annunci10xFulfillmentPanel({
     setMessage(null);
     setManualRetryAvailable(false);
     setPollTimedOut(false);
+    setPaymentVerifyTimedOut(false);
     try {
       const result = await generateAnnunci10xPremiumOutput();
       setOutput(result);
@@ -77,7 +93,7 @@ export function Annunci10xFulfillmentPanel({
       refresh(checkoutNotice === 'success')
         .then((nextStatus) => {
           if (cancelled) return;
-          if ((checkoutNotice === 'success' || checkoutNotice === 'cancelled') && nextStatus.flow === 'CREATE') onCreateReturn?.();
+          notifyCreateReturn(nextStatus);
         })
         .catch(() => {
           if (!cancelled) setMessage('Serve aiuto? Scrivi a info@horyzon.it');
@@ -87,13 +103,49 @@ export function Annunci10xFulfillmentPanel({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [checkoutNotice, onCreateReturn, refresh]);
+  }, [checkoutNotice, notifyCreateReturn, refresh]);
 
   useEffect(() => {
     if (checkoutNotice === 'cancelled' || status?.state !== 'READY_TO_GENERATE' || !status.canGenerate || generatedForCycle.current) return;
     generatedForCycle.current = true;
     void startGeneration();
   }, [checkoutNotice, startGeneration, status?.canGenerate, status?.state]);
+
+  useEffect(() => {
+    if (!shouldPollAnnunci10xPaymentVerification(checkoutNotice, status?.state)) return;
+    let cancelled = false;
+    let attempts = 0;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    async function pollPayment() {
+      attempts += 1;
+      try {
+        const nextStatus = await fetchAnnunci10xFulfillmentStatus();
+        if (cancelled) return;
+        setStatus(nextStatus);
+        notifyCreateReturn(nextStatus);
+        if (isAnnunci10xPaymentVerificationStopState(nextStatus.state)) {
+          setPaymentVerifyTimedOut(false);
+          if (checkoutNotice === 'success') focusPanel(panelRef.current);
+          if (nextStatus.state === 'READY' || nextStatus.state === 'NEEDS_REVIEW') {
+            const nextOutput = await fetchAnnunci10xPremiumOutput();
+            if (!cancelled) setOutput(nextOutput);
+          }
+          return;
+        }
+      } catch {
+        // Payment reconciliation can be briefly delayed after Stripe redirects.
+      }
+      if (!cancelled && attempts < MAX_PAYMENT_VERIFY_ATTEMPTS) timer = setTimeout(pollPayment, PAYMENT_VERIFY_POLL_MS);
+      if (!cancelled && attempts >= MAX_PAYMENT_VERIFY_ATTEMPTS) setPaymentVerifyTimedOut(true);
+    }
+
+    timer = setTimeout(pollPayment, PAYMENT_VERIFY_POLL_MS);
+    return () => {
+      cancelled = true;
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [checkoutNotice, notifyCreateReturn, status?.state]);
 
   useEffect(() => {
     if (status?.state !== 'PREPARING') return;
@@ -147,6 +199,7 @@ export function Annunci10xFulfillmentPanel({
     {checkoutNotice === 'cancelled' && state === 'NONE' && <StatusBlock title="Pagamento annullato" body="Non è stato completato alcun acquisto." />}
     {message && <p className={styles.fulfillmentMessage}>{message}</p>}
     {manualRetryAvailable && <div className={styles.fulfillmentActions}><button type="button" onClick={() => void startGeneration()} disabled={loading}>Riprova</button></div>}
+    {paymentVerifyTimedOut && <div className={styles.fulfillmentTimeout}><p>{PAYMENT_VERIFY_TIMEOUT_MESSAGE}</p><button type="button" onClick={() => { setPaymentVerifyTimedOut(false); void refresh(true); }}>Aggiorna stato</button></div>}
     {pollTimedOut && <div className={styles.fulfillmentTimeout}><p>La preparazione sta richiedendo più del previsto.</p><button type="button" onClick={() => { setPollTimedOut(false); void refresh(true); }}>Aggiorna stato</button></div>}
   </section>;
 }

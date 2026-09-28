@@ -13,6 +13,14 @@ import {
   runAnnunci10xReservationBackedPremiumGeneration,
   sanitizeGenerationClientPayload,
 } from '../src/lib/annunci-10x/index.ts';
+import {
+  MAX_PAYMENT_VERIFY_ATTEMPTS,
+  PAYMENT_VERIFY_POLL_MS,
+  PAYMENT_VERIFY_TIMEOUT_MESSAGE,
+  isAnnunci10xPaymentVerificationStopState,
+  shouldPollAnnunci10xPaymentVerification,
+  shouldReturnToAnnunci10xCreate,
+} from '../src/components/annunci-10x/annunci-10x-premium-client.ts';
 
 process.env.ANNUNCI10X_EMAIL_VERIFICATION_PEPPER = `${randomUUID()}${randomUUID()}`;
 
@@ -550,16 +558,102 @@ function assertPostPaymentUxStaticContract() {
   assert.doesNotMatch(client, /reservationId|capability|credits|paid|entitlement|authorized/i);
   assert.match(panel, /const POLL_MS = 3000/);
   assert.match(panel, /const MAX_POLL_ATTEMPTS = 40/);
+  assert.match(panel, /PAYMENT_VERIFY_POLL_MS/);
+  assert.match(panel, /MAX_PAYMENT_VERIFY_ATTEMPTS/);
   assert.match(panel, /generatedForCycle/);
   assert.match(panel, /checkoutNotice === 'cancelled'/);
   assert.match(panel, /Copia annuncio/);
   assert.match(panel, /Annuncio copiato\./);
   assert.match(panel, /Da verificare prima della pubblicazione/);
   assert.match(panel, /La preparazione sta richiedendo più del previsto\./);
+  assert.match(panel, /PAYMENT_VERIFY_TIMEOUT_MESSAGE/);
   assert.match(panel, /Il tuo acquisto è registrato\. Riprova più tardi: il credito non viene perso\./);
   assert.doesNotMatch(panel, /Pronto da pubblicare/);
   assert.match(pageClient, /Annunci10xFulfillmentPanel/);
   assert.match(pageClient, /onCreateReturn/);
+}
+
+function assertPaymentVerificationPollingContract() {
+  assert.equal(PAYMENT_VERIFY_POLL_MS, 1500);
+  assert.equal(MAX_PAYMENT_VERIFY_ATTEMPTS, 12);
+  assert.equal(PAYMENT_VERIFY_TIMEOUT_MESSAGE, 'Stiamo ancora verificando il pagamento. Puoi aggiornare lo stato tra qualche secondo.');
+  assert.equal(shouldPollAnnunci10xPaymentVerification('success', 'NONE'), true);
+  assert.equal(shouldPollAnnunci10xPaymentVerification('cancelled', 'NONE'), false);
+  assert.equal(shouldPollAnnunci10xPaymentVerification('success', 'READY_TO_GENERATE'), false);
+  for (const state of ['PAYMENT_CONFIRMED', 'READY_TO_GENERATE', 'PREPARING', 'READY', 'NEEDS_REVIEW']) {
+    assert.equal(isAnnunci10xPaymentVerificationStopState(state), true);
+  }
+  assert.equal(isAnnunci10xPaymentVerificationStopState('NONE'), false);
+
+  assert.deepEqual(simulatePaymentVerification({ checkoutNotice: 'success', statuses: [status('NONE'), status('NONE'), status('READY_TO_GENERATE')] }), {
+    statusGets: 3,
+    generatePosts: 1,
+    outputGets: 0,
+    timedOut: false,
+    createReturns: 0,
+    finalState: 'READY_TO_GENERATE',
+    preparingHandoff: false,
+  });
+  assert.deepEqual(simulatePaymentVerification({ checkoutNotice: 'success', statuses: [status('NONE'), status('PAYMENT_CONFIRMED')] }).generatePosts, 0);
+  const preparing = simulatePaymentVerification({ checkoutNotice: 'success', statuses: [status('NONE'), status('PREPARING')] });
+  assert.equal(preparing.generatePosts, 0);
+  assert.equal(preparing.preparingHandoff, true);
+  assert.equal(simulatePaymentVerification({ checkoutNotice: 'success', statuses: [status('NONE'), status('READY')] }).outputGets, 1);
+  assert.equal(simulatePaymentVerification({ checkoutNotice: 'success', statuses: [status('NONE'), status('NEEDS_REVIEW')] }).outputGets, 1);
+  const timeout = simulatePaymentVerification({ checkoutNotice: 'success', statuses: [status('NONE'), ...Array.from({ length: MAX_PAYMENT_VERIFY_ATTEMPTS }, () => status('NONE'))] });
+  assert.equal(timeout.timedOut, true);
+  assert.equal(timeout.statusGets, MAX_PAYMENT_VERIFY_ATTEMPTS + 1);
+  assert.equal(timeout.generatePosts, 0);
+  assert.equal(timeout.outputGets, 0);
+  assert.equal(simulatePaymentVerification({ checkoutNotice: 'cancelled', statuses: [status('NONE'), status('READY_TO_GENERATE')] }).statusGets, 1);
+  assert.equal(simulatePaymentVerification({ checkoutNotice: 'cancelled', statuses: [status('NONE'), status('READY_TO_GENERATE')] }).generatePosts, 0);
+  const queryNotAuthoritative = simulatePaymentVerification({ checkoutNotice: 'success', statuses: [status('NONE'), ...Array.from({ length: MAX_PAYMENT_VERIFY_ATTEMPTS }, () => status('NONE'))] });
+  assert.equal(queryNotAuthoritative.finalState, 'NONE');
+  assert.equal(queryNotAuthoritative.generatePosts, 0);
+  assert.equal(queryNotAuthoritative.outputGets, 0);
+  assert.equal(simulatePaymentVerification({ checkoutNotice: 'success', statuses: [status('NONE', 'CREATE'), status('NONE', 'CREATE')] }).createReturns, 1);
+  assert.equal(simulatePaymentVerification({ checkoutNotice: 'success', statuses: [status('NONE', 'ANALYZE'), status('READY_TO_GENERATE', 'ANALYZE')] }).createReturns, 0);
+}
+
+function status(state, flow = 'ANALYZE') {
+  return { flow, state, canGenerate: state === 'READY_TO_GENERATE', outputAvailable: state === 'READY' || state === 'NEEDS_REVIEW' };
+}
+
+function simulatePaymentVerification({ checkoutNotice, statuses }) {
+  const initial = statuses[0] ?? status('NONE');
+  let current = initial;
+  let statusGets = 1;
+  let generatePosts = 0;
+  let outputGets = 0;
+  let createReturns = shouldReturnToAnnunci10xCreate(checkoutNotice, current.flow) ? 1 : 0;
+  let createReturned = createReturns > 0;
+  let timedOut = false;
+  let preparingHandoff = false;
+  let generatedForCycle = false;
+  const polled = statuses.slice(1);
+
+  if (shouldPollAnnunci10xPaymentVerification(checkoutNotice, current.state)) {
+    for (let attempt = 0; attempt < MAX_PAYMENT_VERIFY_ATTEMPTS; attempt += 1) {
+      current = polled[attempt] ?? current;
+      statusGets += 1;
+      if (shouldReturnToAnnunci10xCreate(checkoutNotice, current.flow) && !createReturned) {
+        createReturned = true;
+        createReturns += 1;
+      }
+      if (isAnnunci10xPaymentVerificationStopState(current.state)) {
+        if (current.state === 'READY_TO_GENERATE' && current.canGenerate && !generatedForCycle) {
+          generatedForCycle = true;
+          generatePosts += 1;
+        }
+        if (current.state === 'PREPARING') preparingHandoff = true;
+        if (current.state === 'READY' || current.state === 'NEEDS_REVIEW') outputGets += 1;
+        return { statusGets, generatePosts, outputGets, timedOut, createReturns, finalState: current.state, preparingHandoff };
+      }
+    }
+    timedOut = true;
+  }
+
+  return { statusGets, generatePosts, outputGets, timedOut, createReturns, finalState: current.state, preparingHandoff };
 }
 
 class SlowMockProvider extends MockAnnunci10xProvider {
@@ -611,5 +705,6 @@ await assertExpiredReleaseTelemetryIsNotReleased();
 await assertEditStillProductionBlocked();
 assertClientTamperingIgnored();
 assertPostPaymentUxStaticContract();
+assertPaymentVerificationPollingContract();
 
 console.log('Annunci 10x fulfillment verifier passed');
