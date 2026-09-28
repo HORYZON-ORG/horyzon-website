@@ -42,6 +42,35 @@ export interface ProcessAnnunci10xStripeWebhookResult {
   status: 'PROCESSED' | 'IGNORED' | 'FAILED' | 'DUPLICATE';
 }
 
+export class Annunci10xStripeWebhookRetryableError extends Error {
+  readonly code: string;
+
+  constructor(code = 'PAYMENT_RETRYABLE_PROCESSING_ERROR') {
+    super('Retryable Annunci 10x Stripe webhook processing error.');
+    this.name = 'Annunci10xStripeWebhookRetryableError';
+    this.code = code;
+  }
+}
+
+class Annunci10xStripeTerminalReconciliationError extends Error {
+  readonly code: string;
+
+  constructor(code: string) {
+    super(code);
+    this.name = 'Annunci10xStripeTerminalReconciliationError';
+    this.code = code;
+  }
+}
+
+export function isAnnunci10xStripeWebhookRetryableError(error: unknown): error is Annunci10xStripeWebhookRetryableError {
+  return error instanceof Annunci10xStripeWebhookRetryableError;
+}
+
+export function annunci10xStripeWebhookErrorStatus(error: unknown): 400 | 500 {
+  if (error instanceof Annunci10xPublicError && error.status === 400) return 400;
+  return 500;
+}
+
 export async function createAnnunci10xCheckoutSession(input: CreateAnnunci10xCheckoutInput): Promise<CreateAnnunci10xCheckoutResult> {
   const env = input.env ?? process.env;
   const offerCode = parseOfferCode(input.offerCode);
@@ -68,11 +97,14 @@ export async function createAnnunci10xCheckoutSession(input: CreateAnnunci10xChe
     currency: offer.price.currency,
     stripePriceId,
   });
+  assertPurchaseConsistentForCheckout({ purchase, offerCode, leadId: lead.id });
+  const persistedStripePriceId = purchase.stripePriceId;
+  if (!persistedStripePriceId) throw new Annunci10xPublicError('CHECKOUT_UNAVAILABLE', 'Checkout Annunci 10x non disponibile.', 503);
   const gateway = input.gateway ?? createAnnunci10xPaymentGateway(env);
   const checkout = await gateway.createCheckoutSession({
     purchaseId: purchase.id,
     offerCode,
-    stripePriceId,
+    stripePriceId: persistedStripePriceId,
     customerEmail: lead.emailNormalized,
     successUrl: `${baseUrl}/annunci-10x?checkout=success`,
     cancelUrl: `${baseUrl}/annunci-10x?checkout=cancelled`,
@@ -112,12 +144,18 @@ export async function processAnnunci10xStripeWebhook(input: ProcessAnnunci10xStr
     await input.context.persistence.markStripeEvent({ stripeEventId: event.id, status });
     return { received: true, status };
   } catch (error) {
-    await input.context.persistence.markStripeEvent({
-      stripeEventId: event.id,
-      status: 'FAILED',
-      errorCode: errorCode(error),
-    });
-    return { received: true, status: 'FAILED' };
+    const terminal = isTerminalReconciliationError(error);
+    try {
+      await input.context.persistence.markStripeEvent({
+        stripeEventId: event.id,
+        status: 'FAILED',
+        errorCode: errorCode(error),
+      });
+    } catch {
+      throw new Annunci10xStripeWebhookRetryableError('PAYMENT_EVENT_MARK_FAILED');
+    }
+    if (terminal) return { received: true, status: 'FAILED' };
+    throw new Annunci10xStripeWebhookRetryableError(errorCode(error));
   }
 }
 
@@ -130,12 +168,13 @@ async function processClaimedEvent(event: Annunci10xStripeWebhookEvent, context:
 }
 
 async function processCheckoutCompleted(event: Annunci10xStripeWebhookEvent, context: Annunci10xRuntimeContext): Promise<'PROCESSED'> {
-  const checkoutSessionId = requiredString(event.object.id);
-  if (event.object.payment_status !== 'paid') throw new Error('CHECKOUT_NOT_PAID');
-  const amountTotal = requiredInteger(event.object.amount_total);
-  const currency = requiredString(event.object.currency).toLowerCase();
+  const checkoutSessionId = requiredString(event.object.id, 'CHECKOUT_SESSION_ID_MISSING');
+  if (event.object.payment_status !== 'paid') throw terminalError('CHECKOUT_NOT_PAID');
+  const amountTotal = requiredInteger(event.object.amount_total, 'CHECKOUT_AMOUNT_INVALID');
+  const currency = requiredString(event.object.currency, 'CHECKOUT_CURRENCY_INVALID').toLowerCase();
   const purchase = await context.persistence.getPurchaseByCheckoutSessionId(checkoutSessionId);
-  if (!purchase) throw new Error('PURCHASE_NOT_FOUND');
+  if (!purchase) throw terminalError('PURCHASE_NOT_FOUND');
+  prevalidatePaidCheckout({ purchase, checkoutSessionId, amountTotal, currency });
   await context.persistence.completePaidPurchase({
     purchaseId: purchase.id,
     stripeCheckoutSessionId: checkoutSessionId,
@@ -149,13 +188,13 @@ async function processCheckoutCompleted(event: Annunci10xStripeWebhookEvent, con
 }
 
 async function processCheckoutExpired(event: Annunci10xStripeWebhookEvent, context: Annunci10xRuntimeContext): Promise<'PROCESSED' | 'IGNORED'> {
-  const purchase = await context.persistence.markPurchaseCanceled({ stripeCheckoutSessionId: requiredString(event.object.id) });
+  const purchase = await context.persistence.markPurchaseCanceled({ stripeCheckoutSessionId: requiredString(event.object.id, 'CHECKOUT_SESSION_ID_MISSING') });
   return purchase ? 'PROCESSED' : 'IGNORED';
 }
 
 async function processPaymentFailed(event: Annunci10xStripeWebhookEvent, context: Annunci10xRuntimeContext): Promise<'PROCESSED' | 'IGNORED'> {
   const purchase = await context.persistence.markPurchaseFailed({
-    stripePaymentIntentId: requiredString(event.object.id),
+    stripePaymentIntentId: requiredString(event.object.id, 'PAYMENT_INTENT_ID_MISSING'),
     purchaseId: purchaseIdFromMetadata(event.object),
   });
   return purchase ? 'PROCESSED' : 'IGNORED';
@@ -163,7 +202,7 @@ async function processPaymentFailed(event: Annunci10xStripeWebhookEvent, context
 
 async function processChargeRefunded(event: Annunci10xStripeWebhookEvent, context: Annunci10xRuntimeContext): Promise<'PROCESSED' | 'IGNORED'> {
   const purchase = await context.persistence.markPurchaseRefunded({
-    stripePaymentIntentId: requiredString(event.object.payment_intent),
+    stripePaymentIntentId: requiredString(event.object.payment_intent, 'PAYMENT_INTENT_ID_MISSING'),
     purchaseId: purchaseIdFromMetadata(event.object),
   });
   if (purchase) await appendPurchaseEvent(context, purchase, 'purchase_refunded');
@@ -193,8 +232,8 @@ function purchaseIdFromMetadata(object: Record<string, unknown>): string | null 
   return optionalString((metadata as Record<string, unknown>).annunci10x_purchase_id);
 }
 
-function requiredString(value: unknown): string {
-  if (typeof value !== 'string' || !value.trim()) throw new Error('PAYMENT_INVALID');
+function requiredString(value: unknown, code: string): string {
+  if (typeof value !== 'string' || !value.trim()) throw terminalError(code);
   return value;
 }
 
@@ -202,14 +241,52 @@ function optionalString(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value : null;
 }
 
-function requiredInteger(value: unknown): number {
-  if (typeof value !== 'number' || !Number.isInteger(value)) throw new Error('PAYMENT_INVALID');
+function requiredInteger(value: unknown, code: string): number {
+  if (typeof value !== 'number' || !Number.isInteger(value)) throw terminalError(code);
   return value;
 }
 
 function errorCode(error: unknown): string {
-  const message = error instanceof Error ? error.message : 'PAYMENT_RECONCILIATION_FAILED';
+  const message = error instanceof Annunci10xStripeTerminalReconciliationError ? error.code
+    : error instanceof Annunci10xStripeWebhookRetryableError ? error.code
+      : error instanceof Error ? error.message : 'PAYMENT_RECONCILIATION_FAILED';
   return message.replace(/[^A-Z0-9_]/gi, '_').toUpperCase().slice(0, 80) || 'PAYMENT_RECONCILIATION_FAILED';
+}
+
+function assertPurchaseConsistentForCheckout(input: {
+  purchase: PersistedPurchase;
+  offerCode: Annunci10xOfferCode;
+  leadId: string;
+}): void {
+  if (
+    input.purchase.offerCode !== input.offerCode
+    || input.purchase.leadId !== input.leadId
+    || input.purchase.currency !== 'EUR'
+    || input.purchase.expectedAmountCents <= 0
+    || !input.purchase.stripePriceId
+  ) {
+    throw new Annunci10xPublicError('CHECKOUT_UNAVAILABLE', 'Checkout Annunci 10x non disponibile.', 503);
+  }
+}
+
+function prevalidatePaidCheckout(input: {
+  purchase: PersistedPurchase;
+  checkoutSessionId: string;
+  amountTotal: number;
+  currency: string;
+}): void {
+  if (input.purchase.stripeCheckoutSessionId !== input.checkoutSessionId) throw terminalError('CHECKOUT_SESSION_MISMATCH');
+  if (input.purchase.expectedAmountCents !== input.amountTotal) throw terminalError('CHECKOUT_AMOUNT_MISMATCH');
+  if (input.currency !== 'eur' || input.purchase.currency.toLowerCase() !== input.currency) throw terminalError('CHECKOUT_CURRENCY_MISMATCH');
+  if (input.purchase.status !== 'PENDING' && input.purchase.status !== 'PAID') throw terminalError('PURCHASE_STATUS_INCOMPATIBLE');
+}
+
+function terminalError(code: string): Annunci10xStripeTerminalReconciliationError {
+  return new Annunci10xStripeTerminalReconciliationError(code);
+}
+
+function isTerminalReconciliationError(error: unknown): error is Annunci10xStripeTerminalReconciliationError {
+  return error instanceof Annunci10xStripeTerminalReconciliationError;
 }
 
 function paymentInvalid(): Annunci10xPublicError {

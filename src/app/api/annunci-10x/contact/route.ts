@@ -12,7 +12,9 @@ export async function POST(request: Request) {
     if (!cookie) throw new Annunci10xPublicError('INVALID_INPUT', 'Sessione Annunci 10x assente.', 401);
     const context = createContext();
     const session = await context.persistence.getSession(cookie.sessionId, cookie.sessionSecret);
-    if (!session || session.flow !== 'ANALYZE') throw new Annunci10xPublicError('INVALID_INPUT', 'Sessione Annunci 10x non valida o scaduta.', 401);
+    if (!session || (session.flow !== 'ANALYZE' && session.flow !== 'CREATE')) {
+      throw new Annunci10xPublicError('INVALID_INPUT', 'Sessione Annunci 10x non valida o scaduta.', 401);
+    }
     const payload = await readJsonBody(request);
     const saved = await saveAnnunci10xLeadContact({
       session: cookie,

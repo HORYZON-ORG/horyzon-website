@@ -54,6 +54,10 @@ export class StripeAnnunci10xPaymentGateway implements Annunci10xPaymentGateway 
   }
 
   async createCheckoutSession(input: CreateCheckoutSessionInput): Promise<CreatedCheckoutSession> {
+    const metadata = {
+      annunci10x_purchase_id: input.purchaseId,
+      annunci10x_offer_code: input.offerCode,
+    };
     const session = await this.client.checkout.sessions.create({
       mode: 'payment',
       line_items: [{ price: input.stripePriceId, quantity: 1 }],
@@ -62,10 +66,8 @@ export class StripeAnnunci10xPaymentGateway implements Annunci10xPaymentGateway 
       cancel_url: input.cancelUrl,
       client_reference_id: input.purchaseId,
       customer_email: input.customerEmail,
-      metadata: {
-        annunci10x_purchase_id: input.purchaseId,
-        annunci10x_offer_code: input.offerCode,
-      },
+      metadata,
+      payment_intent_data: { metadata },
     }, {
       idempotencyKey: stripeCheckoutIdempotencyKey(input.purchaseId),
     });

@@ -9,26 +9,78 @@ const {
   MockAnnunci10xEmailProvider,
   MockAnnunci10xPaymentGateway,
   StripeAnnunci10xPaymentGateway,
+  Annunci10xPublicError,
+  Annunci10xStripeWebhookRetryableError,
+  annunci10xStripeWebhookErrorStatus,
   createAnonymousAnalyzeSession,
   createAnonymousCreateSession,
   createAnnunci10xCheckoutSession,
   hashEmailVerificationCode,
   processAnnunci10xStripeWebhook,
+  requestAnnunci10xEmailVerification,
   saveAnnunci10xLeadContact,
   stripeCheckoutIdempotencyKey,
   verifyAnnunci10xEmailCode,
 } = await import('../src/lib/annunci-10x/index.ts');
 
+await assertCreateLeadReachability();
 await assertCheckoutDisabled();
 await assertCheckoutEnabledAndRetry();
 await assertClientTamperingAndUnverified();
 await assertStripeWrapper();
 await assertPaidWebhookDuplicateAndConcurrent();
 await assertMismatchAndLifecycleEvents();
+await assertTransientRetryAndRouteStatus();
+await assertPendingPriceStability();
 await assertEffectiveEntitlements();
 await assertMigrationAndRoutes();
 
 console.log('Annunci 10x Stripe commerce verifier passed');
+
+async function assertCreateLeadReachability() {
+  const context = makeContext();
+  const created = await createAnonymousCreateSession(context);
+  const session = { sessionId: created.session.id, sessionSecret: created.sessionSecret };
+  const saved = await saveAnnunci10xLeadContact({
+    session,
+    context,
+    firstName: 'Ada',
+    lastName: 'Lovelace',
+    companyName: 'Horyzon Test',
+    businessRole: 'HR',
+    email: `create.${randomUUID()}@example.com`,
+    marketingConsent: false,
+  });
+  assert.equal(saved.contactSaved, true);
+  const provider = new MockAnnunci10xEmailProvider();
+  const requested = await requestAnnunci10xEmailVerification({
+    session,
+    context,
+    provider,
+    requestFingerprint: 'create-checkout-contact-test',
+    env: process.env,
+  });
+  assert.equal(requested.sent, true);
+  assert.equal(provider.sentVerificationCodes.length, 1);
+  await verifyAnnunci10xEmailCode({
+    session,
+    context,
+    code: provider.sentVerificationCodes[0].code,
+    analysisRunId: null,
+    requestFingerprint: 'create-checkout-contact-test',
+    env: process.env,
+  });
+  const gateway = new MockAnnunci10xPaymentGateway();
+  const checkout = await createAnnunci10xCheckoutSession({
+    session,
+    offerCode: 'ANNUNCI10X_CREATE',
+    context,
+    gateway,
+    env: env({ checkoutEnabled: true }),
+  });
+  assert.equal(checkout.offerCode, 'ANNUNCI10X_CREATE');
+  assert.equal(gateway.checkoutSessions[0].stripePriceId, 'price_create_test');
+}
 
 async function assertCheckoutDisabled() {
   const { context, session } = await verifiedSession('ANALYZE');
@@ -154,6 +206,10 @@ async function assertStripeWrapper() {
     annunci10x_purchase_id: 'purchase-123',
     annunci10x_offer_code: 'AGENT_RECRUITER',
   });
+  assert.deepEqual(calls[0].payload.payment_intent_data.metadata, {
+    annunci10x_purchase_id: 'purchase-123',
+    annunci10x_offer_code: 'AGENT_RECRUITER',
+  });
   assert.equal(calls[0].payload.customer_email, 'verified@example.com');
   assert.equal(JSON.stringify(calls[0].payload).includes('sessionSecret'), false);
   assert.equal(JSON.stringify(calls[0].payload).includes('RoleCard'), false);
@@ -233,9 +289,81 @@ async function assertMismatchAndLifecycleEvents() {
   assert.equal((await processWebhook(failedCase.context, stripeEvent({
     id: 'evt_failed',
     type: 'payment_intent.payment_failed',
-    object: { id: 'pi_failed', metadata: { annunci10x_purchase_id: failedCheckout.purchaseId } },
+    object: { id: 'pi_failed', metadata: { annunci10x_purchase_id: failedCheckout.purchaseId, annunci10x_offer_code: 'ANNUNCI10X_REWRITE' } },
   }))).status, 'PROCESSED');
-  assert.equal((await failedCase.context.persistence.getPurchaseByCheckoutSessionId(failedCheckout.sessionId)).status, 'FAILED');
+  const failedPurchase = await failedCase.context.persistence.getPurchaseByCheckoutSessionId(failedCheckout.sessionId);
+  assert.equal(failedPurchase.status, 'FAILED');
+  assert.ok(failedPurchase.failedAt);
+  assert.equal((await failedCase.context.persistence.getEffectiveEntitlements(failedCase.session.sessionId, failedCase.session.sessionSecret)).rewriteCredits, 0);
+}
+
+async function assertTransientRetryAndRouteStatus() {
+  assert.equal(annunci10xStripeWebhookErrorStatus(new Annunci10xPublicError('PAYMENT_INVALID', 'Firma Stripe non valida.', 400)), 400);
+  assert.equal(annunci10xStripeWebhookErrorStatus(new Annunci10xStripeWebhookRetryableError()), 500);
+
+  const terminalCase = await verifiedSession('ANALYZE');
+  const terminalCheckout = await createCheckout(terminalCase.context, terminalCase.session, 'ANNUNCI10X_REWRITE');
+  const terminal = await processWebhook(terminalCase.context, stripeEvent({
+    id: 'evt_terminal_amount',
+    type: 'checkout.session.completed',
+    object: { id: terminalCheckout.sessionId, payment_status: 'paid', amount_total: 1, currency: 'eur' },
+  }));
+  assert.equal(terminal.status, 'FAILED');
+
+  const transientCase = await verifiedSession('ANALYZE');
+  const transientCheckout = await createCheckout(transientCase.context, transientCase.session, 'ANNUNCI10X_REWRITE');
+  const originalComplete = transientCase.context.persistence.completePaidPurchase.bind(transientCase.context.persistence);
+  let failedOnce = false;
+  transientCase.context.persistence.completePaidPurchase = async (input) => {
+    if (!failedOnce) {
+      failedOnce = true;
+      throw new Error('DATABASE_TIMEOUT');
+    }
+    return originalComplete(input);
+  };
+  const raw = stripeEvent({
+    id: 'evt_transient_retry',
+    type: 'checkout.session.completed',
+    object: { id: transientCheckout.sessionId, payment_status: 'paid', amount_total: 700, currency: 'eur', payment_intent: 'pi_transient_retry' },
+  });
+  await assert.rejects(
+    () => processWebhook(transientCase.context, raw),
+    (error) => error instanceof Annunci10xStripeWebhookRetryableError,
+  );
+  let eventRow = transientCase.context.persistence.stripeEvents.get('evt_transient_retry');
+  assert.equal(eventRow.status, 'FAILED');
+  assert.equal(eventRow.attempt_count, 1);
+  assert.equal((await transientCase.context.persistence.getPurchaseByCheckoutSessionId(transientCheckout.sessionId)).status, 'PENDING');
+
+  const retry = await processWebhook(transientCase.context, raw);
+  assert.equal(retry.status, 'PROCESSED');
+  eventRow = transientCase.context.persistence.stripeEvents.get('evt_transient_retry');
+  assert.equal(eventRow.status, 'PROCESSED');
+  assert.equal(eventRow.attempt_count, 2);
+  assert.equal((await transientCase.context.persistence.getPurchaseByCheckoutSessionId(transientCheckout.sessionId)).status, 'PAID');
+}
+
+async function assertPendingPriceStability() {
+  const { context, session } = await verifiedSession('ANALYZE');
+  const gateway = new MockAnnunci10xPaymentGateway();
+  const first = await createAnnunci10xCheckoutSession({
+    session,
+    offerCode: 'ANNUNCI10X_REWRITE',
+    context,
+    gateway,
+    env: env({ checkoutEnabled: true, rewritePrice: 'price_rewrite_old' }),
+  });
+  const second = await createAnnunci10xCheckoutSession({
+    session,
+    offerCode: 'ANNUNCI10X_REWRITE',
+    context,
+    gateway,
+    env: env({ checkoutEnabled: true, rewritePrice: 'price_rewrite_new' }),
+  });
+  assert.equal(second.purchaseId, first.purchaseId);
+  assert.equal(gateway.checkoutSessions[0].stripePriceId, 'price_rewrite_old');
+  assert.equal(gateway.checkoutSessions[1].stripePriceId, 'price_rewrite_old');
+  assert.equal(stripeCheckoutIdempotencyKey(gateway.checkoutSessions[0].purchaseId), stripeCheckoutIdempotencyKey(gateway.checkoutSessions[1].purchaseId));
 }
 
 async function assertEffectiveEntitlements() {
@@ -270,7 +398,7 @@ async function assertEffectiveEntitlements() {
   await processWebhook(refundedCase.context, stripeEvent({
     id: 'evt_refunded',
     type: 'charge.refunded',
-    object: { id: 'ch_refunded', payment_intent: 'pi_refund', metadata: { annunci10x_purchase_id: refunded.purchaseId } },
+    object: { id: 'ch_refunded', payment_intent: 'pi_refund' },
   }));
   assert.equal((await refundedCase.context.persistence.getPurchaseByCheckoutSessionId(refunded.sessionId)).status, 'REFUNDED');
   assert.equal((await refundedCase.context.persistence.getEffectiveEntitlements(refundedCase.session.sessionId, refundedCase.session.sessionSecret)).rewriteCredits, 0);
@@ -317,7 +445,10 @@ async function assertMigrationAndRoutes() {
   const webhookRoute = await readFile('src/app/api/annunci-10x/commercial/stripe/webhook/route.ts', 'utf8');
   assert.match(webhookRoute, /request\.text\(\)/);
   assert.match(webhookRoute, /stripe-signature/);
+  assert.match(webhookRoute, /annunci10xStripeWebhookErrorStatus/);
   assert.doesNotMatch(webhookRoute, /request\.json\(\)/);
+  const contactRoute = await readFile('src/app/api/annunci-10x/contact/route.ts', 'utf8');
+  assert.match(contactRoute, /session\.flow !== 'ANALYZE' && session\.flow !== 'CREATE'/);
 }
 
 async function verifiedSession(flow) {
@@ -407,12 +538,12 @@ function makeContext() {
   };
 }
 
-function env({ checkoutEnabled }) {
+function env({ checkoutEnabled, rewritePrice = 'price_rewrite_test' }) {
   return {
     NODE_ENV: 'test',
     ANNUNCI10X_CHECKOUT_ENABLED: checkoutEnabled ? '1' : '0',
     ANNUNCI10X_PUBLIC_BASE_URL: 'https://horyzon.test',
-    ANNUNCI10X_STRIPE_PRICE_REWRITE: 'price_rewrite_test',
+    ANNUNCI10X_STRIPE_PRICE_REWRITE: rewritePrice,
     ANNUNCI10X_STRIPE_PRICE_CREATE: 'price_create_test',
     ANNUNCI10X_STRIPE_PRICE_AGENT_RECRUITER: 'price_agent_test',
     STRIPE_WEBHOOK_SECRET: 'whsec_test',
