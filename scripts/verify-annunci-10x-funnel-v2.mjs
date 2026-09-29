@@ -171,6 +171,51 @@ assert.match(client, /Pagamento ricevuto\./, 'checkout success banner missing');
 assert.match(client, /Pagamento annullato\./, 'checkout cancel banner missing');
 assert.match(client, /delays = \[0, 1500, 3000, 5000\]/, 'success refresh must be bounded to four attempts');
 
+const createWizardConfig = client.match(/const createWizardSteps: readonly \{[\s\S]*?\n\];/)?.[0] ?? '';
+assert.match(client, /type CreateWizardStepId = 'ROLE_RESULT' \| 'PERSON_WORK' \| 'CONDITIONS_APPLICATION'/, 'create wizard step type missing');
+assert.match(createWizardConfig, /id:\s*'ROLE_RESULT'[\s\S]*title:\s*'Ruolo e risultato'[\s\S]*Partiamo da ciò che questa persona dovrà fare davvero e dal risultato che dovrà produrre\.[\s\S]*Avanti — Persona e lavoro[\s\S]*domainStepIds:\s*\['ROLE_CONTEXT', 'PRIMARY_CONTRIBUTION'\]/, 'create wizard step 1 mapping/copy missing');
+assert.match(createWizardConfig, /id:\s*'PERSON_WORK'[\s\S]*title:\s*'Persona e lavoro'[\s\S]*Descrivi il lavoro reale e la persona che serve davvero per svolgerlo\.[\s\S]*Avanti — Condizioni e candidatura[\s\S]*domainStepIds:\s*\['WORK_REALITY', 'REQUIREMENTS'\]/, 'create wizard step 2 mapping/copy missing');
+assert.match(createWizardConfig, /id:\s*'CONDITIONS_APPLICATION'[\s\S]*title:\s*'Condizioni e candidatura'[\s\S]*Completa l'offerta e spiega con chiarezza come candidarsi\.[\s\S]*domainStepIds:\s*\['ATTRACTION', 'OFFER', 'CHANNEL_APPLICATION'\]/, 'create wizard step 3 mapping/copy missing');
+assert.match(createWizardConfig, /requiredFields:\s*\[\{ key: 'role', id: 'create-role' \}, \{ key: 'primaryResult', id: 'create-result' \}\]/, 'step 1 required fields missing');
+assert.match(createWizardConfig, /requiredFields:\s*\[\{ key: 'activities', id: 'create-activities' \}, \{ key: 'requiredRequirements', id: 'create-required' \}, \{ key: 'operatingContext', id: 'create-context' \}\]/, 'step 2 required fields missing');
+assert.match(createWizardConfig, /requiredFields:\s*\[\{ key: 'application', id: 'create-application' \}\]/, 'step 3 required fields missing');
+
+const structuredFormBlock = client.match(/function StructuredCreateForm[\s\S]*?\nfunction CreateSummary/)?.[0] ?? '';
+assert.match(structuredFormBlock, /useState<CreateWizardStepId>\(\(\) => inferCreateWizardStep\(props\.state\)\)/, 'wizard must open from resume-aware state');
+assert.match(client, /key=\{createWizardResumeKey\(props\.state\)\}/, 'wizard must remount from resumed create state');
+assert.match(structuredFormBlock, /aria-current=\{isActive \? 'step' : undefined\}/, 'active wizard step must expose aria-current="step"');
+assert.match(structuredFormBlock, /Step \{activeStepIndex \+ 1\}\/3/, 'wizard must show current step count');
+assert.match(structuredFormBlock, /const invalid = validateCreateWizardStep\(props\.draft, activeStep\)[\s\S]*focusCreateField\(invalid\.id\)/, 'next must validate only the active step and focus the first problem');
+assert.match(structuredFormBlock, /function previousStep\(\)[\s\S]*moveToStep\(previous\.id\)/, 'back navigation must not validate or clear data');
+assert.match(structuredFormBlock, /const invalid = firstInvalidCreateWizardField\(props\.draft\)[\s\S]*moveToStepAndFocusField\(invalid\.stepId, invalid\.id\)/, 'final submit must find hidden invalid fields and focus them');
+assert.match(structuredFormBlock, /window\.setTimeout\(\(\) => \{[\s\S]*scrollToElement\(formRef\.current\)[\s\S]*stepHeadingRef\.current\?\.focus\(\)/, 'step changes must scroll and focus the card heading');
+assert.match(structuredFormBlock, /activeStepConfig\.nextLabel[\s\S]*type="button"[\s\S]*type="submit"/, 'final submit CTA must render only when there is no next step');
+assert.match(structuredFormBlock, /onDraft:\s*\(value: CreateDraft\) => void/, 'wizard must keep using the existing CreateDraft model');
+assert.equal(structuredFormBlock.includes('useState<CreateDraft>'), false, 'wizard must not duplicate CreateDraft in local state');
+
+const roleWizardPanel = structuredFormBlock.match(/activeStep === 'ROLE_RESULT'[\s\S]*?\{activeStep === 'PERSON_WORK'/)?.[0] ?? '';
+assert.match(roleWizardPanel, /create-role/, 'step 1 must contain role');
+assert.match(roleWizardPanel, /create-company/, 'step 1 must contain company/context');
+assert.match(roleWizardPanel, /create-result/, 'step 1 must contain primary result');
+assert.equal(roleWizardPanel.includes('create-activities'), false, 'step 1 must not include work reality fields');
+
+const personWizardPanel = structuredFormBlock.match(/activeStep === 'PERSON_WORK'[\s\S]*?\{activeStep === 'CONDITIONS_APPLICATION'/)?.[0] ?? '';
+for (const field of ['create-activities', 'create-context', 'create-autonomy', 'create-incidents', 'create-required', 'create-preferred', 'create-trainable', 'create-disqualifying']) {
+  assert.match(personWizardPanel, new RegExp(escapeRegExp(field)), `step 2 field missing: ${field}`);
+}
+assert.equal(personWizardPanel.includes('create-application'), false, 'step 2 must not include application CTA field');
+
+const conditionsWizardPanel = structuredFormBlock.match(/activeStep === 'CONDITIONS_APPLICATION'[\s\S]*?<div className=\{styles\.actions\}>/)?.[0] ?? '';
+for (const field of ['create-benefits', 'create-growth', 'create-location', 'create-workmode', 'create-contract', 'create-schedule', 'create-shifts', 'create-availability', 'create-compensation', 'create-channel', 'create-application']) {
+  assert.match(conditionsWizardPanel, new RegExp(escapeRegExp(field)), `step 3 field missing: ${field}`);
+}
+assert.match(client, /function inferCreateWizardStep[\s\S]*currentStep === 'SUMMARY' \|\| state\.currentStep === 'COMMERCIAL'[\s\S]*completedSteps/, 'resume must infer a sensible create wizard step');
+assert.match(client, /function firstInvalidCreateWizardField[\s\S]*for \(const step of createWizardSteps\)/, 'final validation must cover all wizard steps');
+assert.match(client, /function focusCreateField[\s\S]*control\?\.focus\(\)[\s\S]*control\?\.reportValidity\?\.\(\)/, 'wizard validation must focus and report the first invalid field');
+assert.match(css, /\.createStepIndicator[\s\S]*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/, 'desktop wizard step indicator must use three readable columns');
+assert.match(css, /\.createStepIndicator li\[data-state="active"\][\s\S]*background:\s*var\(--lime\)/, 'active wizard step must use Horyzon lime');
+assert.match(css, /@media \(max-width: 760px\)[\s\S]*\.createStepIndicator[\s\S]*grid-template-columns:\s*1fr/, 'mobile wizard step indicator must stack without horizontal overflow');
+
 assert.match(createFlow, /checkoutEnabled:\s*boolean/, 'PublicCreateState checkoutEnabled must be boolean');
 assert.match(createFlow, /pricingStatus:\s*'FIXED'/, 'PublicCreateState pricingStatus must be FIXED');
 assert.match(createFlow, /entitlementSummary:\s*\{[\s\S]*guide:\s*boolean[\s\S]*rewriteCredits:\s*number[\s\S]*createCredits:\s*number[\s\S]*agentRecruiterAccess:\s*boolean[\s\S]*source:\s*string/s, 'PublicCreateState V3 entitlement summary missing');

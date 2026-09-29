@@ -21,6 +21,7 @@ import styles from './annunci-10x.module.css';
 
 type Mode = 'ANALYZE' | 'CREATE';
 type CreateStepId = 'ROLE_CONTEXT' | 'PRIMARY_CONTRIBUTION' | 'WORK_REALITY' | 'REQUIREMENTS' | 'ATTRACTION' | 'OFFER' | 'CHANNEL_APPLICATION';
+type CreateWizardStepId = 'ROLE_RESULT' | 'PERSON_WORK' | 'CONDITIONS_APPLICATION';
 type AnalyzeChannel = '' | 'LINKEDIN' | 'INDEED' | 'ATS' | 'EMAIL' | 'CUSTOM';
 type UnknownKey = 'workMode' | 'contract' | 'schedule' | 'compensation' | 'benefits' | 'growth' | 'channel';
 
@@ -154,6 +155,42 @@ const createStepLoaderLabels: Record<CreateStepId, string> = {
   OFFER: 'Salviamo condizioni e offerta',
   CHANNEL_APPLICATION: 'Salviamo canale e candidatura',
 };
+const createWizardSteps: readonly {
+  id: CreateWizardStepId;
+  number: '1' | '2' | '3';
+  title: string;
+  microcopy: string;
+  nextLabel?: string;
+  domainStepIds: readonly CreateStepId[];
+  requiredFields: readonly { key: keyof CreateDraft; id: string }[];
+}[] = [
+  {
+    id: 'ROLE_RESULT',
+    number: '1',
+    title: 'Ruolo e risultato',
+    microcopy: 'Partiamo da ciò che questa persona dovrà fare davvero e dal risultato che dovrà produrre.',
+    nextLabel: 'Avanti — Persona e lavoro',
+    domainStepIds: ['ROLE_CONTEXT', 'PRIMARY_CONTRIBUTION'],
+    requiredFields: [{ key: 'role', id: 'create-role' }, { key: 'primaryResult', id: 'create-result' }],
+  },
+  {
+    id: 'PERSON_WORK',
+    number: '2',
+    title: 'Persona e lavoro',
+    microcopy: 'Descrivi il lavoro reale e la persona che serve davvero per svolgerlo.',
+    nextLabel: 'Avanti — Condizioni e candidatura',
+    domainStepIds: ['WORK_REALITY', 'REQUIREMENTS'],
+    requiredFields: [{ key: 'activities', id: 'create-activities' }, { key: 'requiredRequirements', id: 'create-required' }, { key: 'operatingContext', id: 'create-context' }],
+  },
+  {
+    id: 'CONDITIONS_APPLICATION',
+    number: '3',
+    title: 'Condizioni e candidatura',
+    microcopy: "Completa l'offerta e spiega con chiarezza come candidarsi.",
+    domainStepIds: ['ATTRACTION', 'OFFER', 'CHANNEL_APPLICATION'],
+    requiredFields: [{ key: 'application', id: 'create-application' }],
+  },
+];
 const scoreDisclaimer = 'Il punteggio valuta la chiarezza e la completezza delle informazioni disponibili nell’annuncio. Non prevede il numero di candidature né sostituisce la valutazione delle persone.';
 const guaranteeCopy = '7 € per un annuncio, una versione e un canale. Dopo la conferma del pagamento generiamo il testo completo e te lo rendiamo disponibile. Se non ti è utile, puoi chiedere il rimborso integrale entro 14 giorni dalla consegna, senza motivazione, scrivendo a info@horyzon.it dall’email usata per l’acquisto.';
 const proofItems = ['Horyzon Consulting Recruiting', 'Score di chiarezza', '20 controlli editoriali'];
@@ -604,7 +641,7 @@ function CreateFlow(props: {
   return <section className={styles.createShell} aria-label="Crea da zero">
     {props.state && <div className={styles.createNotice}><div><p>Hai un lavoro in corso.</p><strong>{props.state.currentStep === 'COMMERCIAL' ? 'La posizione è confermata.' : props.state.currentStep === 'SUMMARY' ? 'La scheda è pronta da verificare.' : 'Stiamo raccogliendo i fatti.'}</strong></div><div><span>{props.state.completion.coverage}%</span><small>dati raccolti</small></div></div>}
     {props.loading && <Annunci10xLoader variant="panel" label={props.loading.label} progress={props.loading.progress} indeterminate={props.loading.indeterminate} complete={props.loading.complete} />}
-    {!props.state?.paymentRequired && props.state?.currentStep !== 'SUMMARY' && <StructuredCreateForm draft={props.draft} unknowns={props.unknowns} running={props.running} error={props.error} onDraft={props.onDraft} onUnknowns={props.onUnknowns} onSubmit={props.onSubmitStructured} />}
+    {!props.state?.paymentRequired && props.state?.currentStep !== 'SUMMARY' && <StructuredCreateForm key={createWizardResumeKey(props.state)} state={props.state} draft={props.draft} unknowns={props.unknowns} running={props.running} error={props.error} onDraft={props.onDraft} onUnknowns={props.onUnknowns} onSubmit={props.onSubmitStructured} />}
     {props.state?.clarification && <div className={styles.clarification}><p>Chiarimento necessario</p><h3>{props.state.clarification.question}</h3><small>{props.state.clarification.reason}</small><Field label="Risposta" htmlFor="annunci10x-create-clarification"><textarea id="annunci10x-create-clarification" rows={3} value={props.clarificationAnswer} onChange={(event) => props.onClarificationAnswer(event.target.value)} disabled={props.running} /></Field><div className={styles.actions}><button type="button" onClick={() => props.onSubmitClarification(false)} disabled={props.running}>Salva chiarimento</button><button type="button" onClick={() => props.onSubmitClarification(true)} disabled={props.running}>Non lo so</button></div></div>}
     {props.state && (props.state.currentStep === 'SUMMARY' || props.state.currentStep === 'COMMERCIAL') && <CreateSummary state={props.state} running={props.running} editTarget={props.editTarget} editValue={props.editValue} commerceRefreshToken={props.commerceRefreshToken} onEditTarget={props.onEditTarget} onEditValue={props.onEditValue} onSubmitEdit={props.onSubmitEdit} onConfirm={props.onConfirm} />}
     {!props.state && <div className={styles.startCreate}><p>Puoi compilare i campi e preparare direttamente la scheda. Salviamo il percorso quando inizi.</p><button type="button" onClick={props.onStart} disabled={props.running}>Inizia da zero</button></div>}
@@ -612,6 +649,7 @@ function CreateFlow(props: {
 }
 
 function StructuredCreateForm(props: {
+  state: CreateState | null;
   draft: CreateDraft;
   unknowns: Record<UnknownKey, boolean>;
   running: boolean;
@@ -620,49 +658,117 @@ function StructuredCreateForm(props: {
   onUnknowns: (value: Record<UnknownKey, boolean>) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
+  const [activeStep, setActiveStep] = useState<CreateWizardStepId>(() => inferCreateWizardStep(props.state));
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const stepHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const update = (key: keyof CreateDraft, value: string) => props.onDraft({ ...props.draft, [key]: value });
   const toggleUnknown = (key: UnknownKey) => props.onUnknowns({ ...props.unknowns, [key]: !props.unknowns[key] });
-  return <form className={styles.form} onSubmit={props.onSubmit} aria-labelledby="create-title">
+  const activeStepIndex = createWizardSteps.findIndex((step) => step.id === activeStep);
+  const activeStepConfig = createWizardSteps[activeStepIndex] ?? createWizardSteps[0];
+  const stepHeadingId = `create-wizard-step-${activeStepConfig.number}`;
+
+  function moveToStep(stepId: CreateWizardStepId, focus: 'heading' | 'none' = 'heading') {
+    setActiveStep(stepId);
+    window.setTimeout(() => {
+      if (formRef.current) scrollToElement(formRef.current);
+      if (focus === 'heading') stepHeadingRef.current?.focus();
+    }, 0);
+  }
+
+  function moveToStepAndFocusField(stepId: CreateWizardStepId, fieldId: string) {
+    setActiveStep(stepId);
+    window.setTimeout(() => {
+      if (formRef.current) scrollToElement(formRef.current);
+      focusCreateField(fieldId);
+    }, 0);
+  }
+
+  function nextStep() {
+    const invalid = validateCreateWizardStep(props.draft, activeStep);
+    if (invalid) {
+      focusCreateField(invalid.id);
+      return;
+    }
+    const next = createWizardSteps[activeStepIndex + 1];
+    if (next) moveToStep(next.id);
+  }
+
+  function previousStep() {
+    const previous = createWizardSteps[activeStepIndex - 1];
+    if (previous) moveToStep(previous.id);
+  }
+
+  function submitWizard(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const invalid = firstInvalidCreateWizardField(props.draft);
+    if (invalid) {
+      moveToStepAndFocusField(invalid.stepId, invalid.id);
+      return;
+    }
+    props.onSubmit(event);
+  }
+
+  return <form ref={formRef} className={styles.form} onSubmit={submitWizard} aria-labelledby="create-title" noValidate>
     <div className={styles.formHead}><p>Crea il tuo annuncio da zero</p><h2 id="create-title">Racconta il lavoro reale. L’annuncio arriva dopo.</h2></div>
-    <FormSection number="01" title="Ruolo e risultato">
-      <div className={styles.fieldGrid}>
-        <Field label="Ruolo" htmlFor="create-role" required><input id="create-role" required value={props.draft.role} onChange={(event) => update('role', event.target.value)} disabled={props.running} placeholder="Es. Addetto customer care" /></Field>
-        <Field label="Azienda / contesto" htmlFor="create-company" optional><input id="create-company" value={props.draft.companyContext} onChange={(event) => update('companyContext', event.target.value)} disabled={props.running} placeholder="Es. sede di Bari, team assistenza clienti" /></Field>
-      </div>
-      <Field label="Risultato principale" htmlFor="create-result" required><textarea id="create-result" required rows={4} value={props.draft.primaryResult} onChange={(event) => update('primaryResult', event.target.value)} disabled={props.running} placeholder="Che cosa deve produrre o far funzionare meglio questa persona?" /></Field>
-      <Field label="Attività reali" htmlFor="create-activities" required><textarea id="create-activities" required rows={4} value={props.draft.activities} onChange={(event) => update('activities', event.target.value)} disabled={props.running} placeholder="Che cosa farà concretamente nel lavoro quotidiano?" /></Field>
-    </FormSection>
-    <FormSection number="02" title="Persona e lavoro">
-      <div className={styles.requirementGrid}>
-        <Field label="Indispensabili" htmlFor="create-required" required><textarea id="create-required" required rows={3} value={props.draft.requiredRequirements} onChange={(event) => update('requiredRequirements', event.target.value)} disabled={props.running} placeholder="Es. italiano scritto chiaro, precisione" /></Field>
-        <Field label="Preferenziali" htmlFor="create-preferred" optional><textarea id="create-preferred" rows={3} value={props.draft.preferredRequirements} onChange={(event) => update('preferredRequirements', event.target.value)} disabled={props.running} placeholder="Es. esperienza CRM" /></Field>
-        <Field label="Apprendibili" htmlFor="create-trainable" optional><textarea id="create-trainable" rows={3} value={props.draft.trainableRequirements} onChange={(event) => update('trainableRequirements', event.target.value)} disabled={props.running} placeholder="Es. software ticketing interno" /></Field>
-      </div>
-      <Field label="Vincoli escludenti" htmlFor="create-disqualifying" optional><input id="create-disqualifying" value={props.draft.disqualifyingRequirements} onChange={(event) => update('disqualifyingRequirements', event.target.value)} disabled={props.running} placeholder="Es. indisponibilità ai turni" /></Field>
-      <Field label="Contesto operativo / interlocutori" htmlFor="create-context" required><textarea id="create-context" required rows={4} value={props.draft.operatingContext} onChange={(event) => update('operatingContext', event.target.value)} disabled={props.running} placeholder="Con chi lavora? Quali strumenti, team, clienti o funzioni coinvolge?" /></Field>
-      <div className={styles.fieldGrid}>
-        <Field label="Autonomia" htmlFor="create-autonomy" optional><input id="create-autonomy" value={props.draft.autonomy} onChange={(event) => update('autonomy', event.target.value)} disabled={props.running} placeholder="Es. segue casi standard in autonomia" /></Field>
-        <Field label="Imprevisti / problemi" htmlFor="create-incidents" optional><input id="create-incidents" value={props.draft.incidents} onChange={(event) => update('incidents', event.target.value)} disabled={props.running} placeholder="Es. picchi di ticket, clienti complessi" /></Field>
-      </div>
-    </FormSection>
-    <FormSection number="03" title="Condizioni e candidatura">
-      <div className={styles.fieldGrid}>
-        <Field label="Sede" htmlFor="create-location"><input id="create-location" value={props.draft.location} onChange={(event) => update('location', event.target.value)} disabled={props.running} placeholder="Es. Bari" /></Field>
-        <Field label="Modalità" htmlFor="create-workmode"><input id="create-workmode" value={props.unknowns.workMode ? '' : props.draft.workMode} onChange={(event) => update('workMode', event.target.value)} disabled={props.running || props.unknowns.workMode} placeholder="Presenza, ibrido, remoto" /><UnknownToggle checked={props.unknowns.workMode} onChange={() => toggleUnknown('workMode')} /></Field>
-        <Field label="Contratto" htmlFor="create-contract"><input id="create-contract" value={props.unknowns.contract ? '' : props.draft.contract} onChange={(event) => update('contract', event.target.value)} disabled={props.running || props.unknowns.contract} placeholder="Tempo determinato, indeterminato..." /><UnknownToggle checked={props.unknowns.contract} onChange={() => toggleUnknown('contract')} /></Field>
-        <Field label="Orario" htmlFor="create-schedule"><input id="create-schedule" value={props.unknowns.schedule ? '' : props.draft.schedule} onChange={(event) => update('schedule', event.target.value)} disabled={props.running || props.unknowns.schedule} placeholder="Part-time, full-time, fasce..." /><UnknownToggle checked={props.unknowns.schedule} onChange={() => toggleUnknown('schedule')} /></Field>
-        <Field label="Turni" htmlFor="create-shifts" optional><input id="create-shifts" value={props.draft.shifts} onChange={(event) => update('shifts', event.target.value)} disabled={props.running} placeholder="Es. turni mattina/pomeriggio" /></Field>
-        <Field label="Reperibilità" htmlFor="create-availability" optional><input id="create-availability" value={props.draft.availability} onChange={(event) => update('availability', event.target.value)} disabled={props.running} placeholder="Es. non prevista" /></Field>
-        <Field label="Compenso" htmlFor="create-compensation" optional><input id="create-compensation" value={props.unknowns.compensation ? '' : props.draft.compensation} onChange={(event) => update('compensation', event.target.value)} disabled={props.running || props.unknowns.compensation} placeholder="Es. RAL 24-28k" /><UnknownToggle checked={props.unknowns.compensation} onChange={() => toggleUnknown('compensation')} /></Field>
-        <Field label="Canale" htmlFor="create-channel" optional><select id="create-channel" value={props.unknowns.channel ? '' : props.draft.channel} onChange={(event) => update('channel', event.target.value)} disabled={props.running || props.unknowns.channel}><option value="">Da definire</option><option value="LINKEDIN">LinkedIn</option><option value="INDEED">Indeed</option><option value="ATS">ATS aziendale</option><option value="EMAIL">Email</option><option value="CUSTOM">Altro</option></select><UnknownToggle checked={props.unknowns.channel} onChange={() => toggleUnknown('channel')} /></Field>
-      </div>
-      <div className={styles.fieldGrid}>
-        <Field label="Benefit" htmlFor="create-benefits" optional><input id="create-benefits" value={props.unknowns.benefits ? '' : props.draft.benefits} onChange={(event) => update('benefits', event.target.value)} disabled={props.running || props.unknowns.benefits} placeholder="Solo fatti già veri" /><UnknownToggle checked={props.unknowns.benefits} onChange={() => toggleUnknown('benefits')} /></Field>
-        <Field label="Formazione / crescita concreta" htmlFor="create-growth" optional><input id="create-growth" value={props.unknowns.growth ? '' : props.draft.growth} onChange={(event) => update('growth', event.target.value)} disabled={props.running || props.unknowns.growth} placeholder="Es. affiancamento iniziale" /><UnknownToggle checked={props.unknowns.growth} onChange={() => toggleUnknown('growth')} /></Field>
-      </div>
-      <Field label="Come ci si candida / destinazione" htmlFor="create-application" required><textarea id="create-application" required rows={3} value={props.draft.application} onChange={(event) => update('application', event.target.value)} disabled={props.running} placeholder="Es. candidatura via email con CV aggiornato" /></Field>
-    </FormSection>
-    <div className={styles.actions}><button type="submit" disabled={props.running}>{props.running ? 'Preparazione in corso' : 'Prepara la scheda'}</button></div>
+    <ol className={styles.createStepIndicator} aria-label="Avanzamento creazione annuncio">
+      {createWizardSteps.map((step, index) => {
+        const isActive = step.id === activeStep;
+        const isComplete = index < activeStepIndex || isCreateWizardStepComplete(props.draft, step.id) || isCreateWizardStepCompleteFromState(props.state, step.id);
+        return <li key={step.id} data-state={isActive ? 'active' : isComplete ? 'complete' : 'idle'}>
+          <span aria-hidden="true">{step.number}</span>
+          <strong aria-current={isActive ? 'step' : undefined}>{step.title}</strong>
+          {isComplete && !isActive && <small>Completato</small>}
+        </li>;
+      })}
+    </ol>
+    <p className={styles.createStepCount}>Step {activeStepIndex + 1}/3</p>
+    <section className={styles.formSection} aria-labelledby={stepHeadingId}>
+      <header><span>{activeStepConfig.number.padStart(2, '0')}</span><div><h3 id={stepHeadingId} ref={stepHeadingRef} tabIndex={-1}>{activeStepConfig.title}</h3><p>{activeStepConfig.microcopy}</p></div></header>
+      {activeStep === 'ROLE_RESULT' && <>
+        <div className={styles.fieldGrid}>
+          <Field label="Ruolo" htmlFor="create-role" required><input id="create-role" required value={props.draft.role} onChange={(event) => update('role', event.target.value)} disabled={props.running} placeholder="Es. Addetto customer care" /></Field>
+          <Field label="Azienda / contesto" htmlFor="create-company" optional><input id="create-company" value={props.draft.companyContext} onChange={(event) => update('companyContext', event.target.value)} disabled={props.running} placeholder="Es. sede di Bari, team assistenza clienti" /></Field>
+        </div>
+        <Field label="Risultato principale" htmlFor="create-result" required><textarea id="create-result" required rows={4} value={props.draft.primaryResult} onChange={(event) => update('primaryResult', event.target.value)} disabled={props.running} placeholder="Che cosa deve produrre o far funzionare meglio questa persona?" /></Field>
+      </>}
+      {activeStep === 'PERSON_WORK' && <>
+        <Field label="Attività reali" htmlFor="create-activities" required><textarea id="create-activities" required rows={4} value={props.draft.activities} onChange={(event) => update('activities', event.target.value)} disabled={props.running} placeholder="Che cosa farà concretamente nel lavoro quotidiano?" /></Field>
+        <Field label="Contesto operativo / interlocutori" htmlFor="create-context" required><textarea id="create-context" required rows={4} value={props.draft.operatingContext} onChange={(event) => update('operatingContext', event.target.value)} disabled={props.running} placeholder="Con chi lavora? Quali strumenti, team, clienti o funzioni coinvolge?" /></Field>
+        <div className={styles.fieldGrid}>
+          <Field label="Autonomia" htmlFor="create-autonomy" optional><input id="create-autonomy" value={props.draft.autonomy} onChange={(event) => update('autonomy', event.target.value)} disabled={props.running} placeholder="Es. segue casi standard in autonomia" /></Field>
+          <Field label="Imprevisti / problemi" htmlFor="create-incidents" optional><input id="create-incidents" value={props.draft.incidents} onChange={(event) => update('incidents', event.target.value)} disabled={props.running} placeholder="Es. picchi di ticket, clienti complessi" /></Field>
+        </div>
+        <div className={styles.requirementGrid}>
+          <Field label="Indispensabili" htmlFor="create-required" required><textarea id="create-required" required rows={3} value={props.draft.requiredRequirements} onChange={(event) => update('requiredRequirements', event.target.value)} disabled={props.running} placeholder="Es. italiano scritto chiaro, precisione" /></Field>
+          <Field label="Preferenziali" htmlFor="create-preferred" optional><textarea id="create-preferred" rows={3} value={props.draft.preferredRequirements} onChange={(event) => update('preferredRequirements', event.target.value)} disabled={props.running} placeholder="Es. esperienza CRM" /></Field>
+          <Field label="Apprendibili" htmlFor="create-trainable" optional><textarea id="create-trainable" rows={3} value={props.draft.trainableRequirements} onChange={(event) => update('trainableRequirements', event.target.value)} disabled={props.running} placeholder="Es. software ticketing interno" /></Field>
+        </div>
+        <Field label="Vincoli escludenti" htmlFor="create-disqualifying" optional><input id="create-disqualifying" value={props.draft.disqualifyingRequirements} onChange={(event) => update('disqualifyingRequirements', event.target.value)} disabled={props.running} placeholder="Es. indisponibilità ai turni" /></Field>
+      </>}
+      {activeStep === 'CONDITIONS_APPLICATION' && <>
+        <div className={styles.fieldGrid}>
+          <Field label="Benefit" htmlFor="create-benefits" optional><input id="create-benefits" value={props.unknowns.benefits ? '' : props.draft.benefits} onChange={(event) => update('benefits', event.target.value)} disabled={props.running || props.unknowns.benefits} placeholder="Solo fatti già veri" /><UnknownToggle checked={props.unknowns.benefits} onChange={() => toggleUnknown('benefits')} /></Field>
+          <Field label="Formazione / crescita concreta" htmlFor="create-growth" optional><input id="create-growth" value={props.unknowns.growth ? '' : props.draft.growth} onChange={(event) => update('growth', event.target.value)} disabled={props.running || props.unknowns.growth} placeholder="Es. affiancamento iniziale" /><UnknownToggle checked={props.unknowns.growth} onChange={() => toggleUnknown('growth')} /></Field>
+        </div>
+        <div className={styles.fieldGrid}>
+          <Field label="Sede" htmlFor="create-location"><input id="create-location" value={props.draft.location} onChange={(event) => update('location', event.target.value)} disabled={props.running} placeholder="Es. Bari" /></Field>
+          <Field label="Modalità" htmlFor="create-workmode"><input id="create-workmode" value={props.unknowns.workMode ? '' : props.draft.workMode} onChange={(event) => update('workMode', event.target.value)} disabled={props.running || props.unknowns.workMode} placeholder="Presenza, ibrido, remoto" /><UnknownToggle checked={props.unknowns.workMode} onChange={() => toggleUnknown('workMode')} /></Field>
+          <Field label="Contratto" htmlFor="create-contract"><input id="create-contract" value={props.unknowns.contract ? '' : props.draft.contract} onChange={(event) => update('contract', event.target.value)} disabled={props.running || props.unknowns.contract} placeholder="Tempo determinato, indeterminato..." /><UnknownToggle checked={props.unknowns.contract} onChange={() => toggleUnknown('contract')} /></Field>
+          <Field label="Orario" htmlFor="create-schedule"><input id="create-schedule" value={props.unknowns.schedule ? '' : props.draft.schedule} onChange={(event) => update('schedule', event.target.value)} disabled={props.running || props.unknowns.schedule} placeholder="Part-time, full-time, fasce..." /><UnknownToggle checked={props.unknowns.schedule} onChange={() => toggleUnknown('schedule')} /></Field>
+          <Field label="Turni" htmlFor="create-shifts" optional><input id="create-shifts" value={props.draft.shifts} onChange={(event) => update('shifts', event.target.value)} disabled={props.running} placeholder="Es. turni mattina/pomeriggio" /></Field>
+          <Field label="Reperibilità" htmlFor="create-availability" optional><input id="create-availability" value={props.draft.availability} onChange={(event) => update('availability', event.target.value)} disabled={props.running} placeholder="Es. non prevista" /></Field>
+          <Field label="Compenso" htmlFor="create-compensation" optional><input id="create-compensation" value={props.unknowns.compensation ? '' : props.draft.compensation} onChange={(event) => update('compensation', event.target.value)} disabled={props.running || props.unknowns.compensation} placeholder="Es. RAL 24-28k" /><UnknownToggle checked={props.unknowns.compensation} onChange={() => toggleUnknown('compensation')} /></Field>
+          <Field label="Canale" htmlFor="create-channel" optional><select id="create-channel" value={props.unknowns.channel ? '' : props.draft.channel} onChange={(event) => update('channel', event.target.value)} disabled={props.running || props.unknowns.channel}><option value="">Da definire</option><option value="LINKEDIN">LinkedIn</option><option value="INDEED">Indeed</option><option value="ATS">ATS aziendale</option><option value="EMAIL">Email</option><option value="CUSTOM">Altro</option></select><UnknownToggle checked={props.unknowns.channel} onChange={() => toggleUnknown('channel')} /></Field>
+        </div>
+        <Field label="Come ci si candida / destinazione" htmlFor="create-application" required><textarea id="create-application" required rows={3} value={props.draft.application} onChange={(event) => update('application', event.target.value)} disabled={props.running} placeholder="Es. candidatura via email con CV aggiornato" /></Field>
+      </>}
+    </section>
+    <div className={styles.actions}>
+      {activeStepIndex > 0 && <button type="button" onClick={previousStep} disabled={props.running}>Indietro</button>}
+      {activeStepConfig.nextLabel
+        ? <button type="button" onClick={nextStep} disabled={props.running}>{activeStepConfig.nextLabel}</button>
+        : <button type="submit" disabled={props.running}>{props.running ? 'Preparazione in corso' : 'Prepara la scheda'}</button>}
+    </div>
     {props.error && <p className={styles.error} role="alert">{props.error}</p>}
   </form>;
 }
@@ -795,10 +901,6 @@ function Field(props: { label: string; htmlFor: string; required?: boolean; opti
   return <label className={styles.field} htmlFor={props.htmlFor}><span>{props.label}{props.required && <b> *</b>}{props.optional && <em>opzionale</em>}</span>{props.children}</label>;
 }
 
-function FormSection(props: { number: string; title: string; children: ReactNode }) {
-  return <section className={styles.formSection}><header><span>{props.number}</span><h3>{props.title}</h3></header>{props.children}</section>;
-}
-
 function UnknownToggle(props: { checked: boolean; onChange: () => void }) {
   return <label className={styles.unknownToggle}><input type="checkbox" checked={props.checked} onChange={props.onChange} /><span>Non lo so / da definire</span></label>;
 }
@@ -833,6 +935,52 @@ function groupRequirements(requirements: CreateState['roleCard']['requirements']
 
 function displayValue(value: string) {
   return value && value !== 'OPEN_DECISION' ? value : 'Da definire';
+}
+
+function inferCreateWizardStep(state: CreateState | null): CreateWizardStepId {
+  if (!state) return 'ROLE_RESULT';
+  if (state.currentStep === 'SUMMARY' || state.currentStep === 'COMMERCIAL') return 'CONDITIONS_APPLICATION';
+  const currentDomainStep = state.currentStep as CreateStepId;
+  const currentStep = createWizardSteps.find((step) => step.domainStepIds.includes(currentDomainStep));
+  if (currentStep) return currentStep.id;
+  const completed = new Set(state.completedSteps);
+  return createWizardSteps.find((step) => !step.domainStepIds.every((domainStepId) => completed.has(domainStepId)))?.id ?? 'CONDITIONS_APPLICATION';
+}
+
+function createWizardResumeKey(state: CreateState | null): string {
+  return ['create-wizard', state?.sessionId ?? 'new', state?.currentStep ?? 'draft', state?.completedSteps.join('|') ?? 'none'].join(':');
+}
+
+function isCreateWizardStepComplete(draft: CreateDraft, stepId: CreateWizardStepId): boolean {
+  const step = createWizardSteps.find((item) => item.id === stepId);
+  return Boolean(step && step.requiredFields.every((field) => cleanDraft(draft[field.key])));
+}
+
+function isCreateWizardStepCompleteFromState(state: CreateState | null, stepId: CreateWizardStepId): boolean {
+  const step = createWizardSteps.find((item) => item.id === stepId);
+  if (!state || !step) return false;
+  const completed = new Set(state.completedSteps);
+  return step.domainStepIds.every((domainStepId) => completed.has(domainStepId));
+}
+
+function validateCreateWizardStep(draft: CreateDraft, stepId: CreateWizardStepId): { stepId: CreateWizardStepId; id: string } | null {
+  const step = createWizardSteps.find((item) => item.id === stepId);
+  const invalid = step?.requiredFields.find((field) => !cleanDraft(draft[field.key]));
+  return invalid && step ? { stepId: step.id, id: invalid.id } : null;
+}
+
+function firstInvalidCreateWizardField(draft: CreateDraft): { stepId: CreateWizardStepId; id: string } | null {
+  for (const step of createWizardSteps) {
+    const invalid = validateCreateWizardStep(draft, step.id);
+    if (invalid) return invalid;
+  }
+  return null;
+}
+
+function focusCreateField(id: string) {
+  const control = document.getElementById(id) as (HTMLElement & { reportValidity?: () => boolean }) | null;
+  control?.focus();
+  control?.reportValidity?.();
 }
 
 function cleanDraft(value: string) {

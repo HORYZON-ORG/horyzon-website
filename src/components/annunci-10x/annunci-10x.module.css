@@ -985,6 +985,83 @@
   line-height: 1.05;
 }
 
+.createStepIndicator {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.createStepIndicator li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: .28rem .55rem;
+  align-items: center;
+  min-width: 0;
+  border: 1px solid #d2cbb6;
+  border-radius: 8px;
+  background: #f3efdf;
+  padding: .72rem;
+  color: #596462;
+}
+
+.createStepIndicator li > span {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: #e2dcc8;
+  color: var(--deep);
+  font-size: .84rem;
+  font-weight: 900;
+}
+
+.createStepIndicator strong {
+  min-width: 0;
+  color: inherit;
+  font-size: .92rem;
+  line-height: 1.18;
+}
+
+.createStepIndicator small {
+  grid-column: 2;
+  color: #50625d;
+  font-size: .72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.createStepIndicator li[data-state="active"] {
+  border-color: rgba(16, 34, 41, .45);
+  background: var(--lime);
+  color: var(--deep);
+}
+
+.createStepIndicator li[data-state="active"] > span {
+  background: var(--deep);
+  color: #fffdf5;
+}
+
+.createStepIndicator li[data-state="complete"] {
+  border-color: #aab889;
+  background: #ecf4d3;
+  color: var(--deep);
+}
+
+.createStepIndicator li[data-state="complete"] > span {
+  background: #bfd550;
+}
+
+.createStepCount {
+  margin: -.2rem 0 0;
+  color: var(--muted);
+  font-size: .86rem;
+  font-weight: 800;
+}
+
 .formMicrocopy {
   color: var(--muted);
   font-size: .92rem;
@@ -1100,6 +1177,18 @@
 .formSection h3 {
   margin: 0;
   font-size: clamp(1.25rem, 2vw, 1.8rem);
+}
+
+.formSection h3:focus {
+  outline: 3px solid rgba(216, 255, 66, .95);
+  outline-offset: 5px;
+}
+
+.formSection header p {
+  max-width: 62ch;
+  margin: .35rem 0 0;
+  color: var(--muted);
+  line-height: 1.55;
 }
 
 .unknownToggle {
@@ -1639,6 +1728,7 @@
   .fieldGrid,
   .columns,
   .requirementGrid,
+  .createStepIndicator,
   .confirmationGrid,
   .costGrid,
   .explainerGrid,
@@ -1677,6 +1767,15 @@
   .methodFlow span {
     border-right: 0;
     border-bottom: 1px solid #a9b3ac;
+  }
+
+  .createStepIndicator {
+    gap: .45rem;
+  }
+
+  .createStepIndicator li {
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: .62rem;
   }
 
   .methodFlow span:last-child {
