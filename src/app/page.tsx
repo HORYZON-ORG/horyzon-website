@@ -3,5 +3,6 @@ import { HOME_DESCRIPTION, HOME_TITLE, pageMetadata } from '@/content/seo';
 import type { Metadata } from "next";
 import { Experience } from "@/components/experience";
 import { publicFaqs } from '@/content/public-faq';
+import { HycSplash } from "@/components/hyc-splash";
 export const metadata: Metadata = { ...pageMetadata({ path: "/", title: HOME_TITLE, description: HOME_DESCRIPTION }), alternates: { canonical: "https://horyzon.it", types: { "text/markdown": "https://horyzon.it/home.md" } } };
-export default function Home() { return <><PageStructuredData path="/" name={HOME_TITLE} description={HOME_DESCRIPTION} faqs={publicFaqs['/']} /><Experience /></>; }
+export default function Home() { return <><HycSplash /><PageStructuredData path="/" name={HOME_TITLE} description={HOME_DESCRIPTION} faqs={publicFaqs['/']} /><Experience /></>; }
