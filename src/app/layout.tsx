@@ -12,6 +12,7 @@ import "./brand-logo.css";
 import "./faq.css";
 import "./atlas.css";
 import "./hyc-splash.css";
+import "./home-motion.css";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-sans" });
 const cormorant = Cormorant_Garamond({ subsets: ["latin"], variable: "--font-serif", weight: ["400", "500", "600"] });
@@ -29,4 +30,4 @@ export const metadata: Metadata = {
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
 };
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) { return <html lang="it" data-scroll-behavior="smooth" className={`${manrope.variable} ${cormorant.variable}`}><body><SiteStructuredData />{children}</body></html>; }
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) { return <html lang="it" data-scroll-behavior="smooth" suppressHydrationWarning className={`${manrope.variable} ${cormorant.variable}`}><body><SiteStructuredData />{children}</body></html>; }
