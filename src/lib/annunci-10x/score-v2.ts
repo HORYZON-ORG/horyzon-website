@@ -146,8 +146,17 @@ function applyCommunicationReadinessCeiling(
 ): number | null {
   if (rawValue === null) return null;
 
-  if (rawValue >= 70 && !allChecksAtLeast(checksById, GOOD_BASE_COMMUNICATION_CHECKS, 6)) return 69;
-  if (rawValue >= 85 && !allChecksAtLeast(checksById, STRONG_COMMUNICATION_CHECKS, 8)) return 84;
+  const compensationSupportsGoodBase = checkAtLeastIfEvaluable(checksById.get('14'), 6);
+  if (
+    rawValue >= 70
+    && (!allChecksAtLeast(checksById, GOOD_BASE_COMMUNICATION_CHECKS, 6) || !compensationSupportsGoodBase)
+  ) return 69;
+
+  const compensationSupportsStrong = checkAtLeastIfEvaluable(checksById.get('14'), 8);
+  if (
+    rawValue >= 85
+    && (!allChecksAtLeast(checksById, STRONG_COMMUNICATION_CHECKS, 8) || !compensationSupportsStrong)
+  ) return 84;
 
   const compensationSupportsExcellent = checkAtLeastIfEvaluable(checksById.get('14'), 8);
   if (

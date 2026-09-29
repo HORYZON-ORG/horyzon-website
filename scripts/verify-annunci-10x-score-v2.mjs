@@ -84,6 +84,17 @@ const strongCeiling = calculateAnnunci10xScoreV2(makeChecks(9).map((check) => (
 assert.equal(strongCeiling.value, 84, 'unclear requirement classification prevents STRONG band');
 assert.equal(strongCeiling.band?.code, 'GOOD_BASE');
 
+const compensationCeiling = calculateAnnunci10xScoreV2(makeChecks(8).map((check) => (
+  check.id === '14' ? { ...check, score: 4, status: 'CONFLICT' } : check
+)));
+assert.equal(compensationCeiling.value, 69, 'unclear or conflicting evaluable compensation prevents GOOD_BASE');
+assert.equal(compensationCeiling.band?.code, 'WEAK');
+
+const compensationNotEvaluable = calculateAnnunci10xScoreV2(makeChecks(8).map((check) => (
+  check.id === '14' ? { ...check, score: null, status: 'NOT_EVALUABLE', evidence: [], reason: 'Compensation genuinely unavailable.' } : check
+)));
+assert.equal(compensationNotEvaluable.value > 70, true, 'genuine N/D compensation does not impose a communication ceiling');
+
 const excellentCeiling = calculateAnnunci10xScoreV2(makeChecks(10).map((check) => (
   check.id === '07' ? { ...check, score: 8 } : check
 )));

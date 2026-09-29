@@ -55,11 +55,11 @@ It then applies deterministic communication-readiness ceilings. These ceilings m
 
 ### Communication-readiness ceilings
 
-To reach `GOOD_BASE` (70+), Checks `01, 03, 04, 05, 10, 12, 13, 18, 19` must each score at least `6`.
+To reach `GOOD_BASE` (70+), Checks `01, 03, 04, 05, 10, 12, 13, 18, 19` must each score at least `6`. If Check 14 (compensation) is evaluable, it must also score at least `6`.
 
 If the raw score is 70+ but one of those controls is below 6 or not evaluable, the final score is capped at `69`.
 
-To reach `STRONG` (85+), Checks `01, 02, 03, 04, 05, 06, 10, 11, 12, 13, 18, 19, 20` must each score at least `8`.
+To reach `STRONG` (85+), Checks `01, 02, 03, 04, 05, 06, 10, 11, 12, 13, 18, 19, 20` must each score at least `8`. If Check 14 is evaluable, it must also score at least `8`.
 
 If the raw score is 85+ but that condition is not met, the final score is capped at `84`.
 

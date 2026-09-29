@@ -24,8 +24,8 @@ Calibration rules:
 - Longer descriptive copy is not penalized merely for length. Check 18/19 penalize density, filler, vagueness, repetition, and poor hierarchy, not useful detail.
 - Form is substantive: a fact that exists but is buried, disconnected, or difficult to interpret must not receive the same score as the same fact presented in a candidate-usable way.
 - A task-list + requirements-list + conditions format cannot earn a high overall band merely through completeness if the candidate still has to reconstruct the role.
-- 70+ requires at least basic communicative adequacy on title, activities, result, context, requirement classification, location/work mode, time/contract, readability, and concrete language.
-- 85+ requires strong communicative adequacy on the broader role model, including responsibility, priority, requirement relevance, and application clarity.
+- 70+ requires at least basic communicative adequacy on title, activities, result, context, requirement classification, location/work mode, time/contract, readability, concrete language, and compensation when compensation is evaluable.
+- 85+ requires strong communicative adequacy on the broader role model, including responsibility, priority, requirement relevance, application clarity, and compensation when compensation is evaluable.
 - 95+ is intentionally rare and requires exceptional communication across nearly all candidate-relevant dimensions.
 
 Manual calibration benchmark recorded on 2026-09-29:
