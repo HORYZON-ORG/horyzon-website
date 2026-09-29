@@ -4,7 +4,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { RadarStory } from '@/components/radar-story';
-import { RADAR_URL } from '@/content/product-truth';
+import { RadarClient } from '@/components/radar/radar-client';
 import './radar-commercial.css';
 
 export const metadata: Metadata = pageMetadata({ path: '/radar', title: 'Inizia il Radar d’Impresa', description: 'Una prima fotografia guidata di cinque reparti, processi, autonomia dal titolare e uso dell’intelligenza artificiale.', noindex: true });
@@ -37,21 +37,21 @@ const outputs = [
 const steps = [
   ['Racconti il contesto', 'Indichi azienda, settore, dimensione e i riferimenti necessari a leggere il risultato.'],
   ['Completi il Radar', 'Rispondi a una domanda alla volta sulle cinque aree, sulla stagionalità e sull’uso dell’AI.'],
-  ['Vedi il profilo', 'Leggi gli indici, l’area più solida, quella prioritaria e l’interpretazione settoriale.'],
+  ['Sblocchi il profilo', 'Dopo il pagamento leggi gli indici, l’area più solida e quella prioritaria.'],
   ['Scegli se approfondire', 'Il risultato prepara un confronto con Horyzon, senza generare automaticamente un piano.'],
 ] as const;
 
 const faqs = [
   ['Quanto tempo richiede?', 'L’interfaccia attuale indica circa 8 minuti. Il tempo può variare in base al ritmo di risposta.'],
   ['Devo avere dati finanziari a portata di mano?', 'No. È un’autovalutazione guidata: rispondi in base a ciò che accade oggi nella tua impresa.'],
-  ['Ricevo subito il risultato?', 'Sì. Al termine vedi il profilo sulle cinque aree, gli indici di processo e autonomia, l’area più solida, quella prioritaria e la lettura sull’AI.'],
+  ['Ricevo subito il risultato?', 'Il profilo viene calcolato al termine e si sblocca dopo la conferma del pagamento. Il prezzo sarà mostrato prima dell’acquisto.'],
   ['Le domande cambiano in base al settore?', 'Le domande organizzative principali sono comuni. Il risultato usa una lettura settoriale per rendere più concreto il contesto.'],
   ['È una diagnosi completa?', 'No. È una prima fotografia. Una diagnosi completa richiede confronto, evidenze, numeri e osservazione dei processi reali.'],
   ['Il Radar promette che l’azienda funzionerà senza di me?', 'No. Misura segnali di maturità e autonomia. Ridurre la dipendenza dal titolare richiede scelte, responsabilità e lavoro nel tempo.'],
 ] as const;
 
 function RadarCta({ position, label = 'Inizia il Radar d’Impresa' }: { position: string; label?: string }) {
-  return <a className="radar-commercial-cta" href={RADAR_URL} data-analytics-event="radar_lp_cta_click" data-cta-position={position}>{label}<span aria-hidden="true">↗</span></a>;
+  return <a className="radar-commercial-cta" href="#radar-prodotto" data-analytics-event="radar_lp_cta_click" data-cta-position={position}>{label}<span aria-hidden="true">↓</span></a>;
 }
 
 export default function CommercialRadarPage() {
@@ -78,6 +78,8 @@ export default function CommercialRadarPage() {
         </div>
       </section>
 
+      <section id="radar-prodotto" className="radar-product-shell" aria-label="Compila il Radar d’Impresa"><RadarClient/></section>
+
       <section className="radar-commercial-signals" aria-labelledby="signals-title">
         <div><p className="radar-commercial-context">Il problema che si vede ogni giorno</p><h2 id="signals-title">Se ti assenti, che cosa rallenta per primo?</h2><p>La dipendenza dal titolare non si misura soltanto nelle ore lavorate. Si vede nei punti in cui l’organizzazione aspetta ancora te.</p></div>
         <ol>{signals.map((signal,index)=><li key={signal}><span>{String(index+1).padStart(2,'0')}</span>{signal}</li>)}</ol>
@@ -92,12 +94,12 @@ export default function CommercialRadarPage() {
       <section className="radar-commercial-output" aria-labelledby="output-title">
         <header><p className="radar-commercial-context">Il risultato</p><h2 id="output-title">Alla fine non ricevi un’etichetta. Ricevi una mappa.</h2><p>Il risultato separa ciò che spesso viene confuso: quanto sono strutturati i processi e quanto l’operatività dipende ancora dal titolare.</p></header>
         <div className="radar-commercial-output-list">{outputs.map(([title,description],index)=><article key={title} className={index===0?'featured':undefined}><span>{String(index+1).padStart(2,'0')}</span><div><h3>{title}</h3><p>{description}</p></div></article>)}</div>
-        <p className="radar-commercial-note">Il risultato è visibile subito. Non sostituisce l’analisi di documenti, numeri e processi reali.</p>
+        <p className="radar-commercial-note">Il risultato dettagliato è disponibile dopo l’acquisto. Non sostituisce l’analisi di documenti, numeri e processi reali.</p>
       </section>
 
       <section className="radar-commercial-video" aria-labelledby="video-title">
         <figure><Image src="/people/frank.webp" alt="Frank Cannoletta" fill sizes="(max-width: 850px) 92vw, 52vw"/><figcaption>Il video di Frank sarà inserito qui dopo la registrazione e la revisione finale.</figcaption></figure>
-        <div><p className="radar-commercial-context">Il volto del debriefing</p><h2 id="video-title">Perché abbiamo costruito il Radar</h2><p>Frank spiega perché il punto di partenza viene prima delle soluzioni e come leggere il risultato senza trasformarlo in un giudizio sull’imprenditore.</p><blockquote>“Il Radar serve a rendere visibile la situazione di oggi. Il lavoro utile comincia quando la colleghiamo agli obiettivi dell’impresa.”</blockquote><RadarCta position="video" label="Inizia la tua fotografia d’impresa"/><p className="radar-commercial-fine">Il questionario si apre nell’ambiente Horyzon Hub.</p></div>
+        <div><p className="radar-commercial-context">Il volto del debriefing</p><h2 id="video-title">Perché abbiamo costruito il Radar</h2><p>Frank spiega perché il punto di partenza viene prima delle soluzioni e come leggere il risultato senza trasformarlo in un giudizio sull’imprenditore.</p><blockquote>“Il Radar serve a rendere visibile la situazione di oggi. Il lavoro utile comincia quando la colleghiamo agli obiettivi dell’impresa.”</blockquote><RadarCta position="video" label="Inizia la tua fotografia d’impresa"/><p className="radar-commercial-fine">Il questionario si completa direttamente sul sito Horyzon.</p></div>
       </section>
 
       <section className="radar-commercial-steps" aria-labelledby="steps-title">
@@ -128,7 +130,7 @@ export default function CommercialRadarPage() {
 
       <section className="radar-commercial-final" aria-labelledby="final-title">
         <div className="radar-commercial-final-radar" aria-hidden="true"/>
-        <p className="radar-commercial-context">Il prossimo passo</p><h2 id="final-title">Prima di aggiungere un altro strumento, scegli dove intervenire.</h2><p>Completa il Radar e guarda la tua impresa attraverso cinque aree che devono funzionare insieme.</p><RadarCta position="final"/><p className="radar-commercial-proof">Circa 8 minuti <span/> Risultato immediato <span/> Apertura su Horyzon Hub</p><Link href="/radar-impresa">Preferisci capire prima il metodo? Leggi la pagina Radar d’Impresa.</Link>
+        <p className="radar-commercial-context">Il prossimo passo</p><h2 id="final-title">Prima di aggiungere un altro strumento, scegli dove intervenire.</h2><p>Completa il Radar e guarda la tua impresa attraverso cinque aree che devono funzionare insieme.</p><RadarCta position="final"/><p className="radar-commercial-proof">Circa 8 minuti <span/> Salvataggio progressivo <span/> Risultato a pagamento</p><Link href="/radar-impresa">Preferisci capire prima il metodo? Leggi la pagina Radar d’Impresa.</Link>
       </section>
     </main>
 
