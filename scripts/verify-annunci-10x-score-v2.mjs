@@ -72,10 +72,29 @@ assert.equal(getScoreBandV2(null), null);
 assert.deepEqual(getScoreBandV2(50), { code: 'WEAK', label: 'Debole', minInclusive: 50, maxExclusive: 70 });
 assert.equal(getScoreBandV2(100)?.maxExclusive, null);
 
-const someNotEvaluable = calculateAnnunci10xScoreV2([
-  ...ids.slice(0, 18).map((id) => makeCheck(id, 8)),
-  ...ids.slice(18).map((id) => makeCheck(id, null, 'NOT_EVALUABLE', { evidence: [], reason: 'Not applicable for this target.' })),
-]);
+const listLikeCeiling = calculateAnnunci10xScoreV2(makeChecks(8).map((check) => (
+  check.id === '04' ? { ...check, score: 4 } : check
+)));
+assert.equal(listLikeCeiling.value, 69, 'missing explicit role result keeps an information-rich list-like ad below GOOD_BASE');
+assert.equal(listLikeCeiling.band?.code, 'WEAK');
+
+const strongCeiling = calculateAnnunci10xScoreV2(makeChecks(9).map((check) => (
+  check.id === '10' ? { ...check, score: 6 } : check
+)));
+assert.equal(strongCeiling.value, 84, 'unclear requirement classification prevents STRONG band');
+assert.equal(strongCeiling.band?.code, 'GOOD_BASE');
+
+const excellentCeiling = calculateAnnunci10xScoreV2(makeChecks(10).map((check) => (
+  check.id === '07' ? { ...check, score: 8 } : check
+)));
+assert.equal(excellentCeiling.value, 94, 'EXCELLENT requires exceptionally strong communication across the full role reality');
+assert.equal(excellentCeiling.band?.code, 'STRONG');
+
+const someNotEvaluable = calculateAnnunci10xScoreV2(ids.map((id) => (
+  ['16', '17'].includes(id)
+    ? makeCheck(id, null, 'NOT_EVALUABLE', { evidence: [], reason: 'Not applicable for this target.' })
+    : makeCheck(id, 8)
+)));
 assert.equal(someNotEvaluable.value, 80);
 assert.equal(someNotEvaluable.coverage, 90);
 assert.equal(someNotEvaluable.evaluableCheckCount, 18);

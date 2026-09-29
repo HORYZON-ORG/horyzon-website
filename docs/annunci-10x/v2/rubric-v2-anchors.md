@@ -8,7 +8,7 @@ This document defines provider-agnostic 0-10 anchors for the 20 Annunci 10x V2 c
 
 ## Strict calibration overlay - 2026-09-29
 
-This overlay tightens how the existing 0-10 anchors are interpreted. It does not change the 20 controls, score formula, coverage formula, or public bands.
+This overlay tightens how the existing 0-10 anchors are interpreted. It does not change the 20 controls, coverage formula, or public band thresholds. The deterministic final score now also applies communication-readiness ceilings.
 
 Calibration rules:
 
@@ -22,6 +22,11 @@ Calibration rules:
 - A single undifferentiated requirement list is normally 2/10 on Check 10; partial semantic separation can reach 4; high scores require clear classification of the materially present classes.
 - Generic employer praise, prestige, growth, culture, or atmosphere does not create a strong Check 15 result without support.
 - Longer descriptive copy is not penalized merely for length. Check 18/19 penalize density, filler, vagueness, repetition, and poor hierarchy, not useful detail.
+- Form is substantive: a fact that exists but is buried, disconnected, or difficult to interpret must not receive the same score as the same fact presented in a candidate-usable way.
+- A task-list + requirements-list + conditions format cannot earn a high overall band merely through completeness if the candidate still has to reconstruct the role.
+- 70+ requires at least basic communicative adequacy on title, activities, result, context, requirement classification, location/work mode, time/contract, readability, and concrete language.
+- 85+ requires strong communicative adequacy on the broader role model, including responsibility, priority, requirement relevance, and application clarity.
+- 95+ is intentionally rare and requires exceptional communication across nearly all candidate-relevant dimensions.
 
 Manual calibration benchmark recorded on 2026-09-29:
 
@@ -73,7 +78,9 @@ The provider does not own final score `/100`, final coverage, final band, or fin
 
 Formula:
 
-`finalScore = 100 * sum(perCheckScore) / (10 * evaluableCheckCount)`
+`rawScore = 100 * sum(perCheckScore) / (10 * evaluableCheckCount)`
+
+`finalScore = applyCommunicationReadinessCeiling(rawScore, checks)`
 
 `coverage = evaluableCheckCount / 20 * 100`
 

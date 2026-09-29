@@ -22,6 +22,10 @@ export const ANNUNCI10X_SCORE_BANDS_V2: readonly ScoreBandDefinitionV2[] = [
 
 const CHECK_COUNT_V2 = 20;
 
+const GOOD_BASE_COMMUNICATION_CHECKS: readonly CheckIdV2[] = ['01', '03', '04', '05', '10', '12', '13', '18', '19'] as const;
+const STRONG_COMMUNICATION_CHECKS: readonly CheckIdV2[] = ['01', '02', '03', '04', '05', '06', '10', '11', '12', '13', '18', '19', '20'] as const;
+const EXCELLENT_COMMUNICATION_CHECKS: readonly CheckIdV2[] = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '15', '18', '19', '20'] as const;
+
 export function getScoreBandV2(score: number | null): ScoreBandDefinitionV2 | null {
   if (score === null) return null;
   if (!Number.isFinite(score) || score < 0 || score > 100) throw new Error(`V2 final score out of range: ${score}`);
@@ -83,9 +87,10 @@ export function calculateAnnunci10xScoreV2(checks: readonly EvaluationCheckV2[])
   const evaluable = orderedChecks.filter((check) => check.score !== null);
   const evaluableCheckCount = evaluable.length;
   const coverage = (evaluableCheckCount / CHECK_COUNT_V2) * 100;
-  const value = evaluableCheckCount === 0
+  const rawValue = evaluableCheckCount === 0
     ? null
     : (100 * evaluable.reduce((sum, check) => sum + (check.score ?? 0), 0)) / (10 * evaluableCheckCount);
+  const value = applyCommunicationReadinessCeiling(rawValue, checksById);
 
   return {
     value,
@@ -133,6 +138,40 @@ export function isScoreResultV2(value: unknown): value is ScoreResultV2 {
     && value !== null
     && (value as Record<string, unknown>).rubricVersion === ANNUNCI10X_RUBRIC_VERSION_V2
     && (value as Record<string, unknown>).scoreSemanticsVersion === ANNUNCI10X_SCORE_SEMANTICS_VERSION_V2;
+}
+
+function applyCommunicationReadinessCeiling(
+  rawValue: number | null,
+  checksById: ReadonlyMap<CheckIdV2, EvaluationCheckV2>,
+): number | null {
+  if (rawValue === null) return null;
+
+  if (rawValue >= 70 && !allChecksAtLeast(checksById, GOOD_BASE_COMMUNICATION_CHECKS, 6)) return 69;
+  if (rawValue >= 85 && !allChecksAtLeast(checksById, STRONG_COMMUNICATION_CHECKS, 8)) return 84;
+
+  const compensationSupportsExcellent = checkAtLeastIfEvaluable(checksById.get('14'), 8);
+  if (
+    rawValue >= 95
+    && (!allChecksAtLeast(checksById, EXCELLENT_COMMUNICATION_CHECKS, 9) || !compensationSupportsExcellent)
+  ) return 94;
+
+  return rawValue;
+}
+
+function allChecksAtLeast(
+  checksById: ReadonlyMap<CheckIdV2, EvaluationCheckV2>,
+  ids: readonly CheckIdV2[],
+  minimum: number,
+): boolean {
+  return ids.every((id) => {
+    const score = checksById.get(id)?.score;
+    return typeof score === 'number' && score >= minimum;
+  });
+}
+
+function checkAtLeastIfEvaluable(check: EvaluationCheckV2 | undefined, minimum: number): boolean {
+  if (!check || check.score === null) return true;
+  return check.score >= minimum;
 }
 
 function cloneCheck(check: EvaluationCheckV2): EvaluationCheckV2 {

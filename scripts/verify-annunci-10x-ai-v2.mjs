@@ -89,13 +89,15 @@ for (const definition of ANNUNCI10X_RUBRIC_CHECKS_V2) {
   for (const anchor of [0, 2, 4, 6, 8, 10]) assert.match(prompt, new RegExp(`\\b${anchor}=`), `prompt includes anchor ${anchor}`);
 }
 assert.equal(getEvaluatePromptV2CharacterCount(), prompt.length);
-assert.equal(ANNUNCI10X_EVALUATE_PROMPT_VERSION_V2, 'annunci10x.evaluate.v2.4');
+assert.equal(ANNUNCI10X_EVALUATE_PROMPT_VERSION_V2, 'annunci10x.evaluate.v2.5');
 assert.match(prompt, /Decision order STEP 1/);
 assert.match(prompt, /GENUINELY_UNKNOWN/);
 assert.match(prompt, /fast scoring pass/);
 assert.match(prompt, /Score conservatively/);
 assert.match(prompt, /choose the lower score/);
 assert.match(prompt, /cannot by itself exceed 4/);
+assert.match(prompt, /Communication usability is substantive quality/);
+assert.match(prompt, /reconstruct the role from separate task, requirement, and condition lists/);
 assert.equal(ANNUNCI10X_PROMPT_REGISTRY.GENERATE.version, 'annunci10x.generate.v3');
 assert.match(ANNUNCI10X_PROMPT_REGISTRY.GENERATE.instructions, /mentally picture the real work/);
 assert.match(ANNUNCI10X_PROMPT_REGISTRY.GENERATE.instructions, /350-450 words/);

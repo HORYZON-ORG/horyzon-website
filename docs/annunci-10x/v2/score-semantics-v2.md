@@ -47,20 +47,29 @@ This is a future migration from the current V1 implementation, where each check 
 
 ## Final score formula
 
-For evaluable controls:
+For evaluable controls, TypeScript first computes the raw aggregate:
 
-`finalScore = 100 * sum(perCheckScore) / (10 * evaluableCheckCount)`
+`rawScore = 100 * sum(perCheckScore) / (10 * evaluableCheckCount)`
 
-Customer-facing rounding is still an implementation decision, with integer rounding preferred.
+It then applies deterministic communication-readiness ceilings. These ceilings make presentation and comprehension part of the total score instead of allowing an information-rich but poorly communicated ad to average into a higher band.
 
-The V2 core preserves the raw deterministic decimal value internally. Future UI may decide display rounding, but banding uses the raw value. For example, `49.9` remains `CRITICAL`, while `50.0` is `WEAK`.
+### Communication-readiness ceilings
 
-Example:
+To reach `GOOD_BASE` (70+), Checks `01, 03, 04, 05, 10, 12, 13, 18, 19` must each score at least `6`.
 
-- evaluable controls: `18`;
-- sum of per-control scores: `139`;
-- maximum applicable score: `180`;
-- final score: `77.2/100`.
+If the raw score is 70+ but one of those controls is below 6 or not evaluable, the final score is capped at `69`.
+
+To reach `STRONG` (85+), Checks `01, 02, 03, 04, 05, 06, 10, 11, 12, 13, 18, 19, 20` must each score at least `8`.
+
+If the raw score is 85+ but that condition is not met, the final score is capped at `84`.
+
+To reach `EXCELLENT` (95+), Checks `01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 15, 18, 19, 20` must each score at least `9`. If Check 14 is evaluable, it must score at least `8`.
+
+If the raw score is 95+ but that condition is not met, the final score is capped at `94`.
+
+This means a classic ATS-style structure — task list + requirement list + conditions — can contain many correct facts and still remain `WEAK` if the candidate must reconstruct the role, outcome, context, requirement hierarchy, or meaning of the work.
+
+Customer-facing rounding is still an implementation decision, with integer rounding preferred. Banding uses the deterministic final score after ceilings.
 
 Coverage remains separate:
 
@@ -175,7 +184,7 @@ Confidence is preserved as provider-reported diagnostic metadata only. It is val
 
 Fase 1C adds a provider contract and isolated shadow runner for V2 evaluation:
 
-- prompt version `annunci10x.evaluate.v2.3`;
+- prompt version `annunci10x.evaluate.v2.5`;
 - output schema `annunci10x_evaluate_v2`;
 - explicit TARGET vs CONTEXT input boundary;
 - one schema-repair retry after invalid provider output;
@@ -185,7 +194,7 @@ Fase 1D.1 keeps the provider as a fast scoring pass: it returns compact per-cont
 
 Fase 1C.1 keeps the output schema and scoring semantics unchanged, but refines input minimization: TARGET preserves legitimate application/contact evidence that belongs to the evaluated ad or bundle; CONTEXT strips lead PII, secrets, payment, entitlement, pricing, discount, and commercial metadata. The prompt also excludes per-check gate and accelerator metadata because the provider evaluates controls while TypeScript owns gate and architecture decisions.
 
-The isolated V2 runner does not persist operations, does not calculate a publication gate, and does not replace V1 `EVALUATE`. The V2.3 live pilot is calibration evidence only, not production validation.
+The isolated V2 runner does not persist operations, does not calculate a publication gate, and does not replace V1 `EVALUATE`. The earlier V2.3 live pilot is historical calibration evidence only, not production validation.
 
 The provider may return:
 

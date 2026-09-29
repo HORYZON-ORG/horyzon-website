@@ -53,6 +53,30 @@ Average: 61 -> 82.
 
 The first two intentionally remain below Strong because better prose cannot repair contradictory material facts.
 
+## Communication-first recalibration - 2026-09-29
+
+A later four-role review showed that original ads were still scoring too generously when they contained many facts but presented them as disconnected inventories.
+
+Working recalibrated original-ad targets:
+
+| Case | Earlier estimate | Communication-first target |
+| --- | ---: | ---: |
+| Digital Marketing Specialist | 65 | 57 |
+| Chef Pasticcere | 67 | 60 |
+| Infermiere/a di reparto | 72 | 63 |
+| Buyer Tecnico / Responsabile Acquisti | 75 | 68 |
+
+Decision:
+
+- information presence is necessary but not sufficient;
+- the candidate's effort to reconstruct the role is part of quality;
+- list-like ads with weak role/result/context connections should normally remain in the 50-69 band;
+- 70+ requires a genuinely understandable job model, not merely complete fields;
+- 85+ requires the candidate to understand what work happens, why it matters, how requirements connect, and whether the opportunity fits;
+- 95+ must remain exceptional.
+
+The runtime now enforces these principles through deterministic communication-readiness ceilings after the raw per-check aggregate.
+
 ## Generation target
 
 The Master should help the candidate understand:
@@ -137,4 +161,4 @@ After target: make the commercial cycle intelligible - market/prospecting -> con
 - `docs/annunci-10x/v2/rubric-v2-anchors.md`
 - `scripts/verify-annunci-10x-ai-v2.mjs`
 
-No score thresholds, score formula, checkout, public route, or payment behavior is changed by this calibration.
+Public band thresholds, checkout, public route, and payment behavior are unchanged. The score calculation now adds deterministic communication-readiness ceilings after the raw aggregate.
