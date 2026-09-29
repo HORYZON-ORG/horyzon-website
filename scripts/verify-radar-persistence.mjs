@@ -7,8 +7,9 @@ assert.equal(secret.secretHash, hashOwnerSecret(secret.secret));
 
 const store = createMemoryRadarPersistence();
 const session = await store.createAssessment({ aziendaNome: 'Acme', referenteNome: 'Ada', referenteEmail: 'ada@example.com', referenteTelefono: '3000000000', settore: 'Servizi', volumeAffari: '1 – 5 milioni €', numeroDipendenti: '6-20', seasonal: false });
+assert.equal((await store.resumeAssessment({ assessmentId: session.id, ownerSecretHash: session.ownerSecretHash })).answeredCount, 1);
 const saved = await store.saveAnswer({ assessmentId: session.id, ownerSecretHash: session.ownerSecretHash, answerKey: 'amministrazione#0', value: 3, expectedRevision: 0, currentStep: 1 });
-assert.deepEqual(saved, { revision: 1, currentStep: 1, answeredCount: 1, progressPercent: 3 });
+assert.deepEqual(saved, { revision: 1, currentStep: 1, answeredCount: 2, progressPercent: 7 });
 
 await assert.rejects(
   () => store.saveAnswer({ assessmentId: session.id, ownerSecretHash: session.ownerSecretHash, answerKey: 'produzione#0', value: 2, expectedRevision: 0, currentStep: 2 }),

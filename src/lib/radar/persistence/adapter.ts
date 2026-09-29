@@ -17,7 +17,7 @@ class MemoryRadarPersistence implements RadarPersistence {
   async createAssessment(input: RadarQualificationInput): Promise<RadarOwnedSession> {
     const id = randomUUID();
     const owner = createOwnerSecret();
-    this.rows.set(id, { ...input, id, ownerSecretHash: owner.secretHash, status: 'STARTED', answers: { 'qualificazione#stagionale': input.seasonal ? 1 : 0 }, revision: 0, currentStep: 0, answeredCount: 0, progressPercent: 0 });
+    this.rows.set(id, { ...input, id, ownerSecretHash: owner.secretHash, status: 'STARTED', answers: { 'qualificazione#stagionale': input.seasonal ? 1 : 0 }, revision: 0, currentStep: 0, answeredCount: 1, progressPercent: 3 });
     return { id, ownerSecret: owner.secret, ownerSecretHash: owner.secretHash, revision: 0 };
   }
 
@@ -33,7 +33,7 @@ class MemoryRadarPersistence implements RadarPersistence {
     row.answers = { ...row.answers, [input.answerKey]: input.value };
     row.revision += 1;
     row.currentStep = Math.max(row.currentStep, Math.min(30, input.currentStep));
-    row.answeredCount = Object.keys(row.answers).filter((key) => key !== 'qualificazione#stagionale').length;
+    row.answeredCount = Object.keys(row.answers).length;
     row.progressPercent = Math.min(100, Math.round((row.answeredCount / 30) * 100));
     row.status = 'IN_PROGRESS';
     return progress(row);
@@ -74,6 +74,8 @@ export class SupabaseRadarPersistence implements RadarPersistence {
         owner_secret_hash: owner.secretHash,
         questionnaire_version: RADAR_QUESTIONNAIRE_VERSION,
         risposte: { 'qualificazione#stagionale': input.seasonal ? 1 : 0 },
+        answered_count: 1,
+        progress_percent: 3,
       }),
     });
     const row = rows[0];

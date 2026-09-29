@@ -4,3 +4,5 @@ export * from './public-projection.ts';
 export * from './persistence/types.ts';
 export * from './persistence/security.ts';
 export * from './persistence/adapter.ts';
+export * from './preview.ts';
+export * from './service.ts';
