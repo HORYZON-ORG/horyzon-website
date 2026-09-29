@@ -24,6 +24,8 @@ const home = await text('src/components/experience.tsx');
 const contract = await text('docs/annunci-10x/commercial-contract-v3.md');
 const heroBuffer = await readFile('public/annunci-10x/hero.jpeg');
 const heroStat = await stat('public/annunci-10x/hero.jpeg');
+const brandBuffer = await readFile('public/annunci-10x/horyzon-consulting-recruiting.png');
+const brandStat = await stat('public/annunci-10x/horyzon-consulting-recruiting.png');
 
 const publicSource = `${page}\n${client}\n${flow}\n${identityGate}`;
 const guaranteeCopy = '7 € per un annuncio, una versione e un canale. Dopo la conferma del pagamento generiamo il testo completo e te lo rendiamo disponibile. Se non ti è utile, puoi chiedere il rimborso integrale entro 14 giorni dalla consegna, senza motivazione, scrivendo a info@horyzon.it dall’email usata per l’acquisto.';
@@ -45,8 +47,9 @@ assert.equal(headerBlock.includes('Metodo'), false, 'funnel header must not link
 assert.equal(headerBlock.includes('Prodotti'), false, 'funnel header must not link Prodotti');
 assert.equal(headerBlock.includes('FAQ'), false, 'funnel header must not link FAQ');
 assert.equal(headerBlock.includes('Valuta gratis'), true, 'funnel header must keep the single CTA');
-assert.equal(headerBlock.includes('Horyzon Consulting'), true, 'header brand fallback missing');
-assert.equal(headerBlock.includes('Recruiting'), true, 'header recruiting brand missing');
+assert.match(headerBlock, /\/annunci-10x\/horyzon-consulting-recruiting\.png/, 'canonical Recruiting logo asset must be used in the header');
+assert.match(headerBlock, /aria-label="Horyzon Consulting Recruiting"/, 'header logo link must keep an accessible brand label');
+assert.equal(headerBlock.includes('<span>Horyzon Consulting</span>'), false, 'typographic brand fallback must be removed');
 
 assert.match(client, /Il tuo annuncio fa capire il lavoro alle persone giuste\?/, 'V3 hero headline missing');
 assert.match(client, /Incolla il link o il testo dell’annuncio\. Ricevi uno Score di chiarezza su 100 e i punti da migliorare dopo la verifica dell’email\./, 'V3 hero subtitle missing');
@@ -71,6 +74,8 @@ assert.equal(count(client, '<Annunci10xAnalyzeFlow'), 1, 'Annunci10xAnalyzeFlow 
 assert.equal(client.includes('/annunci-10x/hero.jpeg'), true, 'hero image must remain wired');
 assert.equal(heroStat.size, 221692, 'hero.jpeg size changed');
 assert.equal(createHash('sha256').update(heroBuffer).digest('hex'), '8cadafee04583b2e0905c08ae779f2d2f56ff9a599cc3b2468605a8882f326dc', 'hero.jpeg hash changed');
+assert.equal(brandStat.size, 122299, 'Recruiting logo asset size changed');
+assert.equal(createHash('sha256').update(brandBuffer).digest('hex'), '77c626a820d55551e62f7b0c4a2d8e7bd321098c9abb37befa5df04d147b156f', 'Recruiting logo asset hash changed');
 
 assert.match(publicSource, /Score di chiarezza/, 'public score name missing');
 assert.equal(publicSource.includes('Annunci 10x Score'), false, 'old public score name must not remain');
@@ -197,7 +202,8 @@ assert.match(contract, /Annuncio 10x is the only public paid product/, 'single p
 assert.match(contract, /Price: 7 EUR/, 'V3 price contract missing');
 assert.match(contract, /1 job ad, 1 version, 1 publication channel/, 'V3 unit contract missing');
 assert.match(contract, /legal review of the guarantee wording/, 'legal go-live blocker missing');
-assert.match(contract, /BRAND_ASSET_PENDING/, 'brand asset pending marker missing');
+assert.equal(contract.includes('BRAND_ASSET_PENDING'), false, 'resolved brand asset must not remain pending');
+assert.match(contract, /horyzon-consulting-recruiting\.png/, 'canonical Recruiting logo path missing from commercial contract');
 
 console.log('Annunci 10x funnel v2 verifier passed');
 

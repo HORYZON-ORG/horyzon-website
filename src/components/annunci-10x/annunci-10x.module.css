@@ -59,19 +59,16 @@
 }
 
 .brand {
-  font-weight: 900;
-  letter-spacing: .02em;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 1 auto;
 }
 
-.brand small {
+.brandLogo {
   display: block;
-  margin-top: .08rem;
-  color: rgba(247, 244, 232, .72);
-  font-size: .68rem;
-  font-weight: 800;
-  letter-spacing: .08em;
-  line-height: 1;
-  text-transform: uppercase;
+  width: clamp(160px, 18vw, 220px);
+  height: auto;
+  border-radius: 18px;
 }
 
 .funnelHeader nav,

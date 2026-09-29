@@ -182,7 +182,7 @@ const faqItems = [
   ['Ho già un’agenzia o un consulente. Mi serve comunque?', 'Può esserti utile come controllo sul testo e sul modo in cui il ruolo viene spiegato. Non sostituisce il processo di selezione o il lavoro consulenziale.'],
   ['Mi garantite più candidature?', 'No. Le candidature dipendono da mercato, canale, condizioni e attrattività dell’offerta. Annunci 10x lavora su chiarezza e coerenza dell’annuncio.'],
   ['Come funziona "soddisfatti o rimborsati"?', 'Puoi chiedere il rimborso integrale entro 14 giorni dalla consegna, senza motivazione, scrivendo a info@horyzon.it dall’email usata per l’acquisto.'],
-  ['Chi c’è dietro Annunci 10x?', 'Annunci 10x è un prodotto di Horyzon Consulting Recruiting. Il logo canonico è in attesa di caricamento: per ora usiamo un fallback tipografico sobrio.'],
+  ['Chi c’è dietro Annunci 10x?', 'Annunci 10x è un prodotto di Horyzon Consulting Recruiting.'],
   ['E se il problema non è l’annuncio?', 'A volte l’annuncio è solo il primo segnale. Il blocco può riguardare fabbisogno, canale, processo di selezione o attrattività dell’offerta. In quel caso puoi parlarne con Horyzon.'],
 ];
 
@@ -431,7 +431,7 @@ export function Annunci10xClient() {
 
 function FunnelHeader({ onAnalyze }: { onAnalyze: () => void }) {
   return <header className={styles.funnelHeader} aria-label="Annunci 10x">
-    <Link href="/" className={styles.brand} aria-label="Horyzon Consulting Recruiting"><span>Horyzon Consulting</span><small>Recruiting</small></Link>
+    <Link href="/" className={styles.brand} aria-label="Horyzon Consulting Recruiting"><Image src="/annunci-10x/horyzon-consulting-recruiting.png" alt="" width={640} height={240} sizes="(max-width: 640px) 160px, 220px" className={styles.brandLogo} aria-hidden="true" /></Link>
     <button type="button" onClick={onAnalyze}>Valuta gratis</button>
   </header>;
 }
