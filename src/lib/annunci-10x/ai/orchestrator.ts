@@ -241,7 +241,7 @@ export async function runGenerateValidateReviseCycle(orchestrator: Annunci10xAiO
     sessionId: input.sessionId,
     sessionSecret: input.sessionSecret,
     operationType: 'VALIDATE',
-    input: { generatedAd: generated.generatedAd, roleCard: input.roleCard },
+    input: { generatedAd: generated.generatedAd, roleCard: input.roleCard, roleProfile: input.roleProfile, communicationStrategy: input.communicationStrategy },
     inputSnapshotId: input.inputSnapshotId ?? null,
   });
   const firstValidation = firstValidationResult.output as Annunci10xValidateOutput;
@@ -268,7 +268,7 @@ export async function runGenerateValidateReviseCycle(orchestrator: Annunci10xAiO
     sessionId: input.sessionId,
     sessionSecret: input.sessionSecret,
     operationType: 'VALIDATE',
-    input: { generatedAd: revisedMaster, roleCard: input.roleCard },
+    input: { generatedAd: revisedMaster, roleCard: input.roleCard, roleProfile: input.roleProfile, communicationStrategy: input.communicationStrategy },
     inputSnapshotId: input.inputSnapshotId ?? null,
     promptVersionOverride: `${getAnnunci10xPrompt('VALIDATE').version}.post-revise`,
   });

@@ -58,6 +58,8 @@ Fase 1D.1 clarifies that the V2 provider is a compact fast scoring pass, not the
 
 The 2026-09-29 calibration pass adds a stricter scoring interpretation and a more descriptive GENERATE prompt. It does not change the V2 score formula or band thresholds. The working before/after benchmark is documented in `calibration-benchmark-2026-09-29.md`.
 
+A second same-day benchmark on four unseen ads found the remaining gap in public copy: source/audit voice, template-like transitions, and unresolved facts being explained inside the candidate-facing draft. The second calibration therefore upgrades STRATEGY, GENERATE, VALIDATE, and REVISE together so unresolved facts stay out of the Master and editorial defects can trigger revision. See `calibration-benchmark-round2-2026-09-29.md`.
+
 The V2 projection is boundary-aware: TARGET preserves legitimate ad/bundle evidence such as application email, phone, URL, named contact, role name, and company text, while technical secret keys are removed. CONTEXT is limited to `roleCard`, `roleProfile`, and `communicationStrategy` and strips lead PII, secrets, and commercial/payment metadata.
 
 These additions are not wired to `/annunci-10x`, V1 `EVALUATE`, persistence, UI, API routes, or public product behavior. The V2.3 live pilot is documented separately as calibration evidence only, not production validation.
@@ -104,6 +106,7 @@ The V2 docs identify future changes. They do not claim those changes are already
 - `rubric-v2-anchors.md`: provider-agnostic 0-10 anchors for the 20 V2 controls.
 - `calibration-fixtures-v2.md`: methodological calibration fixtures and monotonicity/stability expectations.
 - `calibration-benchmark-2026-09-29.md`: manual before/after benchmark used to tighten scoring and descriptive generation.
+- `calibration-benchmark-round2-2026-09-29.md`: unseen-ad benchmark used to remove audit voice, template repetition, and public conflict commentary.
 - `ux-contract-v2.md`: future UX constraints and public/private output rules.
 - `data-contracts-v2.md`: conceptual data model and migration needs.
 - `commercial-v2.md`: decided commercial architecture without checkout implementation.

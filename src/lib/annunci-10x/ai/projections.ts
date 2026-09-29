@@ -23,7 +23,7 @@ export function projectAnnunci10xAiInput(operationType: AiOperationType, input: 
   if (operationType === 'PROFILE') return pick(projected, ['roleCard']);
   if (operationType === 'STRATEGY') return pick(projected, ['roleCard', 'roleProfile', 'strategyRules', 'channel']);
   if (operationType === 'GENERATE') return pick(projected, ['roleCard', 'roleProfile', 'communicationStrategy']);
-  if (operationType === 'VALIDATE') return pick(projected, ['generatedAd', 'roleCard']);
+  if (operationType === 'VALIDATE') return pick(projected, ['generatedAd', 'roleCard', 'roleProfile', 'communicationStrategy']);
   if (operationType === 'EVALUATE') {
     return pick(projected, [
       'target',
