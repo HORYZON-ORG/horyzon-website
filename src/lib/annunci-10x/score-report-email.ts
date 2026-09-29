@@ -1,8 +1,13 @@
-import { createAnnunci10xEmailProvider, type Annunci10xEmailProvider, type ScoreReportEmailPriorityInput } from './lead-verification.ts';
+import {
+  createAnnunci10xEmailProvider,
+  type Annunci10xEmailProvider,
+  type ScoreReportEmailAreaInput,
+  type ScoreReportEmailPriorityInput,
+} from './lead-verification.ts';
 import type { Annunci10xRuntimeContext, Annunci10xSessionCookie } from './product-flow.ts';
 import { getRubricCheckDefinitionV2 } from './rubric-v2.ts';
 import { isScoreResultV2 } from './score-v2.ts';
-import type { EvaluationCheckV2, ScoreResultV2 } from './types-v2.ts';
+import type { CheckIdV2, EvaluationCheckV2, ScoreBandCodeV2, ScoreResultV2 } from './types-v2.ts';
 import type { PersistedAnalysisRun, PersistedEvaluation, PersistedLead, PersistedSnapshot } from './persistence/types.ts';
 
 export const ANNUNCI10X_SCORE_REPORT_EMAIL_LEASE_SECONDS = 120;
@@ -21,8 +26,23 @@ export interface Annunci10xScoreReport {
   band: string | null;
   coverage: number;
   evaluableCheckCount: number;
+  areaScores: ScoreReportEmailAreaInput[];
+  interpretation: string;
   priorities: ScoreReportEmailPriorityInput[];
 }
+
+export const ANNUNCI10X_SCORE_REPORT_AREA_DEFINITIONS: readonly {
+  id: string;
+  label: string;
+  checkIds: readonly CheckIdV2[];
+}[] = [
+  { id: 'ROLE_IDENTITY', label: 'Identita del ruolo', checkIds: ['01', '02'] },
+  { id: 'REAL_WORK', label: 'Lavoro reale e risultati', checkIds: ['03', '04', '05'] },
+  { id: 'ROLE_COHERENCE', label: 'Coerenza con il ruolo', checkIds: ['06', '07', '08', '09'] },
+  { id: 'REQUIREMENTS', label: 'Requisiti', checkIds: ['10', '11'] },
+  { id: 'OFFER_CONDITIONS', label: 'Offerta e condizioni', checkIds: ['12', '13', '14', '15'] },
+  { id: 'COMMUNICATION_APPLICATION', label: 'Comunicazione e candidatura', checkIds: ['16', '17', '18', '19', '20'] },
+];
 
 export interface MaybeSendAnnunci10xScoreReportResult {
   status: Annunci10xScoreReportEmailStatus;
@@ -132,6 +152,8 @@ export function buildAnnunci10xScoreReport(input: {
     band: score.band?.label ?? null,
     coverage: score.coverage,
     evaluableCheckCount: score.evaluableCheckCount,
+    areaScores: calculateAnnunci10xScoreReportAreas(score.checks),
+    interpretation: interpretAnnunci10xScoreBand(score.band?.code ?? null),
     priorities: selectPriorityChecks(score.checks).map((check) => ({
       checkId: check.id,
       label: getRubricCheckDefinitionV2(check.id).label,
@@ -139,6 +161,40 @@ export function buildAnnunci10xScoreReport(input: {
       missing: check.missing.map((item) => cleanReportText(item, 300)).filter(Boolean).slice(0, 3),
     })),
   };
+}
+
+export function calculateAnnunci10xScoreReportAreas(checks: readonly EvaluationCheckV2[]): ScoreReportEmailAreaInput[] {
+  const checksById = new Map(checks.map((check) => [check.id, check]));
+  return ANNUNCI10X_SCORE_REPORT_AREA_DEFINITIONS.map((area) => {
+    const evaluableChecks = area.checkIds
+      .map((checkId) => checksById.get(checkId))
+      .filter((check): check is EvaluationCheckV2 => check !== undefined && check.score !== null);
+    const totalScore = evaluableChecks.reduce((sum, check) => sum + (check.score ?? 0), 0);
+    return {
+      id: area.id,
+      label: area.label,
+      score: evaluableChecks.length ? (100 * totalScore) / (10 * evaluableChecks.length) : null,
+      evaluatedCheckCount: evaluableChecks.length,
+      totalCheckCount: area.checkIds.length,
+    };
+  });
+}
+
+export function interpretAnnunci10xScoreBand(code: ScoreBandCodeV2 | null): string {
+  switch (code) {
+    case 'CRITICAL':
+      return 'L’annuncio lascia scoperte informazioni essenziali: prima di sponsorizzarlo conviene chiarire ruolo, lavoro reale e proposta.';
+    case 'WEAK':
+      return 'La struttura di base c’è, ma alcune informazioni decisive sono ancora troppo generiche o implicite: migliorare questi punti può rendere l’annuncio più comprensibile.';
+    case 'GOOD_BASE':
+      return 'L’annuncio ha una base leggibile: intervenire sulle aree più deboli può renderlo più concreto e facile da valutare per chi legge.';
+    case 'STRONG':
+      return 'L’annuncio è già solido: le priorità servono a togliere ambiguità residue e a rendere più netta la proposta.';
+    case 'EXCELLENT':
+      return 'L’annuncio è molto completo: gli interventi utili sono soprattutto di rifinitura, coerenza e precisione.';
+    default:
+      return 'Il report usa solo i controlli valutabili del metodo V2; quando mancano informazioni, alcune aree restano senza punteggio.';
+  }
 }
 
 function isEligibleRun(run: PersistedAnalysisRun | null): run is PersistedAnalysisRun & { evaluationId: string } {

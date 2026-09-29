@@ -13,6 +13,7 @@ const {
   ResendAnnunci10xEmailProvider,
   buildAnnunci10xScoreReport,
   buildResendScoreReportPayload,
+  calculateAnnunci10xScoreReportAreas,
   calculateAnnunci10xScoreV2,
   createAnonymousAnalyzeSession,
   hashEmailVerificationCode,
@@ -50,6 +51,21 @@ async function assertReportContent() {
   assert.equal(report.band, evaluation.score.band.label);
   assert.equal(report.coverage, 90);
   assert.equal(report.evaluableCheckCount, 18);
+  assert.deepEqual(report.areaScores.map((area) => area.label), [
+    'Identita del ruolo',
+    'Lavoro reale e risultati',
+    'Coerenza con il ruolo',
+    'Requisiti',
+    'Offerta e condizioni',
+    'Comunicazione e candidatura',
+  ]);
+  assertAreaScore(report.areaScores[0], 20, 1, 2);
+  assertAreaScore(report.areaScores[1], 100 * 2 / 30, 3, 3);
+  assertAreaScore(report.areaScores[2], 65, 4, 4);
+  assertAreaScore(report.areaScores[3], 80, 2, 2);
+  assertAreaScore(report.areaScores[4], 80, 4, 4);
+  assertAreaScore(report.areaScores[5], 80, 4, 5);
+  assert.match(report.interpretation, /annuncio/i);
   assert.deepEqual(report.priorities.map((item) => item.checkId), ['03', '04', '05']);
   assert.deepEqual(report.priorities.map((item) => item.label), [
     'Concretezza delle attivita',
@@ -78,6 +94,17 @@ async function assertReportContent() {
   const email = context.emailProvider.sentScoreReports[0];
   assert.equal(email.evaluableCheckCount, 18);
   assert.equal(email.coverage, 90);
+  assert.equal(email.areaScores.length, 6);
+  assert.ok(email.interpretation.length > 20);
+
+  const checksWithNdCommunication = checksFixtureV2().map((check) => (
+    ['16', '17', '18', '19', '20'].includes(check.id)
+      ? { ...check, score: null, status: 'NOT_EVALUABLE', evidence: [], reason: `Non valutabile sintetico ${check.id}.` }
+      : check
+  ));
+  const ndAreas = calculateAnnunci10xScoreReportAreas(checksWithNdCommunication);
+  assert.equal(ndAreas[5].score, null);
+  assert.equal(ndAreas[5].evaluatedCheckCount, 0);
 }
 
 async function assertResendPayload() {
@@ -97,20 +124,32 @@ async function assertResendPayload() {
   assert.equal(payload.from, 'Horyzon <noreply@example.com>');
   assert.deepEqual(payload.to, ['ada@example.com']);
   assert.equal(payload.reply_to, 'info@example.com');
-  assert.equal(payload.subject, 'Il tuo Score di chiarezza Annunci 10x: 67/100 — ecco cosa lo frena');
+  assert.equal(payload.subject, 'Il tuo Score Annunci 10X: 67/100 — ecco cosa migliorare');
   assert.match(payload.text, /18 controlli su 20/);
   assert.doesNotMatch(payload.text, /Copertura 90%/i);
   assert.doesNotMatch(payload.html, /<Ada>/);
   assert.match(payload.html, /Ciao Ada,/);
+  assert.match(payload.text, /Punteggi per area/);
+  assert.match(payload.text, /Identita del ruolo: 20\/100 \(1\/2 controlli valutabili\)/);
+  assert.match(payload.text, /Lavoro reale e risultati: 6\.7\/100 \(3\/3 controlli valutabili\)/);
+  assert.match(payload.text, /Le 3 priorità su cui intervenire/);
   assert.match(payload.text, /Il punteggio valuta la chiarezza e la completezza/);
-  assert.match(payload.text, /Vuoi trasformarlo in un Annuncio 10x\? 7 € per un annuncio, una versione e un canale\./);
+  assert.match(payload.text, /Annuncio 10x — 7 €/);
+  assert.match(payload.text, /1 annuncio · 1 versione · 1 canale/);
+  assert.match(payload.text, /Migliora il mio annuncio — 7 €/);
+  assert.match(payload.text, /Guida Annunci 10x/);
+  assert.match(payload.text, /Scopri la Guida Annunci 10X/);
+  assert.match(payload.text, /La guida non ha ancora un prezzo pubblicato o acquisto diretto attivo\./);
   assert.match(payload.text, /https:\/\/horyzon\.test\/annunci-10x/);
-  assert.match(payload.html, /Score di chiarezza/);
-  assert.match(payload.html, /Vuoi trasformarlo in un Annuncio 10x\?/);
+  assert.match(payload.html, /Score Annunci 10X/);
+  assert.match(payload.html, /Punteggi per area/);
+  assert.match(payload.html, /Migliora il mio annuncio/);
+  assert.match(payload.html, /Scopri la Guida Annunci 10X/);
   for (const forbidden of ['9 €', '49 €', 'checkout', 'Stripe', 'newsletter', 'marketing']) {
     assert.doesNotMatch(payload.text, new RegExp(escapeRegExp(forbidden), 'i'));
     assert.doesNotMatch(payload.html, new RegExp(escapeRegExp(forbidden), 'i'));
   }
+  assertResendPayloadEdgeCases();
 
   const captured = [];
   const provider = new ResendAnnunci10xEmailProvider({
@@ -129,7 +168,40 @@ async function assertResendPayload() {
   assert.equal(captured[0].init.method, 'POST');
   assert.equal(captured[0].init.headers['Idempotency-Key'], `annunci10x-score-report/${deliveryId}`);
   const body = JSON.parse(captured[0].init.body);
-  assert.equal(body.subject, 'Il tuo Score di chiarezza Annunci 10x: 67/100 — ecco cosa lo frena');
+  assert.equal(body.subject, 'Il tuo Score Annunci 10X: 67/100 — ecco cosa migliorare');
+}
+
+function assertResendPayloadEdgeCases() {
+  const previousPublicBaseUrl = process.env.ANNUNCI10X_PUBLIC_BASE_URL;
+  delete process.env.ANNUNCI10X_PUBLIC_BASE_URL;
+  const payload = buildResendScoreReportPayload({
+    ...payloadInputFromPayload('33333333-3333-4333-8333-333333333333'),
+    firstName: '<script>alert(1)</script>',
+    roleTitle: 'Ruolo <critico>',
+    score: null,
+    band: null,
+    coverage: 100,
+    evaluableCheckCount: 20,
+    priorities: [],
+    areaScores: [
+      { id: 'ROLE_IDENTITY', label: 'Identita <ruolo>', score: null, evaluatedCheckCount: 0, totalCheckCount: 2 },
+    ],
+    interpretation: 'Interpretazione <sicura> senza promesse.',
+  });
+  if (previousPublicBaseUrl === undefined) {
+    delete process.env.ANNUNCI10X_PUBLIC_BASE_URL;
+  } else {
+    process.env.ANNUNCI10X_PUBLIC_BASE_URL = previousPublicBaseUrl;
+  }
+
+  assert.equal(payload.subject, 'Il tuo report Annunci 10X è pronto');
+  assert.match(payload.text, /N\/D/);
+  assert.match(payload.text, /Non emergono priorità specifiche/);
+  assert.match(payload.text, /Riapri Annunci 10X dal sito Horyzon/);
+  assert.doesNotMatch(payload.text, /https?:\/\//);
+  assert.doesNotMatch(payload.html, /<script>/i);
+  assert.doesNotMatch(payload.html, /Ruolo <critico>/);
+  assert.match(payload.html, /Identita &lt;ruolo&gt;/);
 }
 
 async function assertMarketingConsentDoesNotGate() {
@@ -372,6 +444,15 @@ function payloadInputFromPayload(deliveryId) {
     band: 'Debole',
     coverage: 90,
     evaluableCheckCount: 18,
+    areaScores: [
+      { id: 'ROLE_IDENTITY', label: 'Identita del ruolo', score: 20, evaluatedCheckCount: 1, totalCheckCount: 2 },
+      { id: 'REAL_WORK', label: 'Lavoro reale e risultati', score: 100 * 2 / 30, evaluatedCheckCount: 3, totalCheckCount: 3 },
+      { id: 'ROLE_COHERENCE', label: 'Coerenza con il ruolo', score: 65, evaluatedCheckCount: 4, totalCheckCount: 4 },
+      { id: 'REQUIREMENTS', label: 'Requisiti', score: 80, evaluatedCheckCount: 2, totalCheckCount: 2 },
+      { id: 'OFFER_CONDITIONS', label: 'Offerta e condizioni', score: 80, evaluatedCheckCount: 4, totalCheckCount: 4 },
+      { id: 'COMMUNICATION_APPLICATION', label: 'Comunicazione e candidatura', score: 80, evaluatedCheckCount: 4, totalCheckCount: 5 },
+    ],
+    interpretation: 'La struttura di base c’è, ma alcune informazioni decisive sono ancora troppo generiche o implicite.',
     priorities: [
       { checkId: '03', label: 'Concretezza delle attivita', reason: 'Le attivita sono ancora troppo generiche.', missing: ['Esempi di attivita settimanali'] },
       { checkId: '04', label: 'Risultato osservabile del ruolo', reason: 'Il risultato atteso non e esplicito.', missing: [] },
@@ -412,6 +493,12 @@ class FailsOnceProvider {
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function assertAreaScore(area, expectedScore, expectedEvaluated, expectedTotal) {
+  assert.ok(Math.abs(area.score - expectedScore) < 0.000_001, `${area.label} score mismatch`);
+  assert.equal(area.evaluatedCheckCount, expectedEvaluated);
+  assert.equal(area.totalCheckCount, expectedTotal);
 }
 
 async function main() {

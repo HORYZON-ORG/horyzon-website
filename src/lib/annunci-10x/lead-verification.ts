@@ -1,4 +1,5 @@
 import { createHash, createHmac, randomInt, randomUUID, timingSafeEqual } from 'node:crypto';
+import { getAnnunci10xCatalogItem, getAnnunci10xOffer } from './commercial.ts';
 import { Annunci10xPublicError, type Annunci10xRuntimeContext, type Annunci10xSessionCookie } from './product-flow.ts';
 import type {
   Annunci10xBusinessRole,
@@ -71,6 +72,14 @@ export interface ScoreReportEmailPriorityInput {
   missing: string[];
 }
 
+export interface ScoreReportEmailAreaInput {
+  id: string;
+  label: string;
+  score: number | null;
+  evaluatedCheckCount: number;
+  totalCheckCount: number;
+}
+
 export interface ScoreReportEmailInput {
   deliveryId: string;
   recipient: string;
@@ -80,6 +89,8 @@ export interface ScoreReportEmailInput {
   band: string | null;
   coverage: number;
   evaluableCheckCount: number;
+  areaScores: ScoreReportEmailAreaInput[];
+  interpretation: string;
   priorities: ScoreReportEmailPriorityInput[];
 }
 
@@ -489,62 +500,122 @@ export function buildResendScoreReportPayload(input: ScoreReportEmailInput & {
 }): Record<string, unknown> {
   const firstName = cleanOptionalEmailName(input.firstName);
   const greeting = firstName ? `Ciao ${firstName},` : 'Ciao,';
-  const scoreLabel = input.score === null ? 'non disponibile' : `${formatScoreValue(input.score)}/100`;
+  const scoreLabel = input.score === null ? 'N/D' : `${formatScoreValue(input.score)}/100`;
   const subject = input.score === null
-    ? 'Il tuo report Score di chiarezza Annunci 10x'
-    : `Il tuo Score di chiarezza Annunci 10x: ${formatScoreValue(input.score)}/100 — ecco cosa lo frena`;
+    ? 'Il tuo report Annunci 10X è pronto'
+    : `Il tuo Score Annunci 10X: ${formatScoreValue(input.score)}/100 — ecco cosa migliorare`;
   const coverageLine = input.coverage < 100
     ? `Abbiamo potuto valutare ${input.evaluableCheckCount} controlli su 20, perché nel testo mancano alcune informazioni.`
     : null;
   const disclaimer = 'Il punteggio valuta la chiarezza e la completezza delle informazioni disponibili nell’annuncio. Non prevede il numero di candidature né sostituisce la valutazione delle persone.';
-  const commercialBridge = 'Vuoi trasformarlo in un Annuncio 10x? 7 € per un annuncio, una versione e un canale.';
   const publicBaseUrl = cleanPublicBaseUrl(process.env.ANNUNCI10X_PUBLIC_BASE_URL);
+  const annunci10xUrl = publicBaseUrl ? `${publicBaseUrl}/annunci-10x` : null;
+  const rewriteOffer = getAnnunci10xOffer('ANNUNCI10X_REWRITE');
+  const rewritePrice = formatCommercialPrice(rewriteOffer.price);
+  const guide = getAnnunci10xCatalogItem('GUIDE');
+  const areaTextLines = input.areaScores.flatMap((area) => [
+    `- ${area.label}: ${formatAreaScore(area)} (${area.evaluatedCheckCount}/${area.totalCheckCount} controlli valutabili)`,
+  ]);
+  const priorityTextLines = input.priorities.length
+    ? input.priorities.flatMap((priority, index) => [
+      `${index + 1}. ${priority.label}`,
+      `   Perché conta: ${priority.reason}`,
+      ...(priority.missing.length ? [`   Da chiarire: ${priority.missing.join('; ')}`] : []),
+      '',
+    ])
+    : ['Non emergono priorità specifiche dai controlli valutabili.', ''];
   const text = [
     greeting,
     '',
-    `il tuo annuncio "${input.roleTitle}" ha ottenuto questo Score di chiarezza:`,
+    `il tuo annuncio "${input.roleTitle}" ha ottenuto questo Score Annunci 10X:`,
     '',
     scoreLabel,
     input.band ?? 'Fascia non assegnata',
     '',
-    'Questi sono i punti che oggi lo frenano di più:',
+    input.interpretation,
     '',
-    ...input.priorities.flatMap((priority, index) => [
-      `${index + 1}. ${priority.label}`,
-      `   ${priority.reason}`,
-      ...(priority.missing.length ? [`   Da chiarire: ${priority.missing.join('; ')}`] : []),
-      '',
-    ]),
+    'Punteggi per area',
+    ...areaTextLines,
+    '',
+    'Le 3 priorità su cui intervenire',
+    '',
+    ...priorityTextLines,
     ...(coverageLine ? [coverageLine, ''] : []),
     disclaimer,
     '',
-    commercialBridge,
-    ...(publicBaseUrl ? [`${publicBaseUrl}/annunci-10x`, ''] : ['']),
+    `${rewriteOffer.displayName} — ${rewritePrice}`,
+    '1 annuncio · 1 versione · 1 canale',
+    `Migliora il mio annuncio — ${rewritePrice}`,
+    ...(annunci10xUrl ? [annunci10xUrl, ''] : ['Riapri Annunci 10X dal sito Horyzon.', '']),
+    guide.displayName,
+    guide.description,
+    'La guida non ha ancora un prezzo pubblicato o acquisto diretto attivo.',
+    'Scopri la Guida Annunci 10X',
+    ...(annunci10xUrl ? [annunci10xUrl, ''] : ['']),
     'Horyzon',
-    'Annunci 10x',
+    'Annunci 10X',
   ].join('\n');
+  const areaHtml = input.areaScores.map((area) => [
+    '<tr>',
+    `<td style="padding:12px 0;border-bottom:1px solid #dce4d3"><strong>${escapeHtml(area.label)}</strong><div style="font-size:13px;color:#5c6a60">${area.evaluatedCheckCount}/${area.totalCheckCount} controlli valutabili</div></td>`,
+    `<td align="right" style="padding:12px 0;border-bottom:1px solid #dce4d3;font-weight:700">${escapeHtml(formatAreaScore(area))}</td>`,
+    '</tr>',
+  ].join('')).join('');
   const priorityHtml = input.priorities.map((priority, index) => [
     '<li style="margin-bottom:14px">',
     `<strong>${index + 1}. ${escapeHtml(priority.label)}</strong>`,
-    `<div>${escapeHtml(priority.reason)}</div>`,
+    `<div><strong>Perché conta:</strong> ${escapeHtml(priority.reason)}</div>`,
     priority.missing.length
       ? `<div><strong>Da chiarire:</strong> ${escapeHtml(priority.missing.join('; '))}</div>`
       : '',
     '</li>',
   ].join('')).join('');
+  const prioritySectionHtml = priorityHtml
+    ? `<ol style="padding-left:22px;margin:0">${priorityHtml}</ol>`
+    : '<p style="margin:0">Non emergono priorità specifiche dai controlli valutabili.</p>';
+  const rewriteButton = annunci10xUrl
+    ? `<a href="${escapeHtml(annunci10xUrl)}" style="display:inline-block;background:#c8f531;color:#102229;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:6px">Migliora il mio annuncio — ${escapeHtml(rewritePrice)}</a>`
+    : `<strong>Migliora il mio annuncio — ${escapeHtml(rewritePrice)}</strong>`;
+  const guideButton = annunci10xUrl
+    ? `<a href="${escapeHtml(annunci10xUrl)}" style="color:#102229;font-weight:700">Scopri la Guida Annunci 10X</a>`
+    : '<strong>Scopri la Guida Annunci 10X</strong>';
   const html = [
-    '<div style="font-family:Arial,sans-serif;color:#102229;line-height:1.55;max-width:640px">',
-    `<p>${escapeHtml(greeting)}</p>`,
-    `<p>il tuo annuncio <strong>&quot;${escapeHtml(input.roleTitle)}&quot;</strong> ha ottenuto questo Score di chiarezza:</p>`,
-    `<p style="font-size:30px;font-weight:700;margin:0 0 4px">${escapeHtml(scoreLabel)}</p>`,
-    `<p style="margin-top:0">${escapeHtml(input.band ?? 'Fascia non assegnata')}</p>`,
-    '<p>Questi sono i punti che oggi lo frenano di più:</p>',
-    `<ol style="padding-left:22px">${priorityHtml}</ol>`,
-    coverageLine ? `<p>${escapeHtml(coverageLine)}</p>` : '',
-    `<p>${escapeHtml(disclaimer)}</p>`,
-    `<p>${escapeHtml(commercialBridge)}${publicBaseUrl ? ` <a href="${escapeHtml(`${publicBaseUrl}/annunci-10x`)}">Apri Annunci 10x</a>` : ''}</p>`,
-    '<p>Horyzon<br>Annunci 10x</p>',
-    '</div>',
+    '<!doctype html>',
+    '<html lang="it" dir="ltr">',
+    '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Il tuo report Annunci 10X</title></head>',
+    '<body style="margin:0;background:#f4f7ef;padding:24px 12px;font-family:Arial,sans-serif;color:#102229">',
+    '<div style="display:none;max-height:0;overflow:hidden;opacity:0">Il tuo mini-report Annunci 10X con score, aree e priorità.</div>',
+    '<main style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #dce4d3;border-radius:8px;overflow:hidden">',
+    '<section style="background:#102229;color:#ffffff;padding:28px 28px 24px">',
+    '<div style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#c8f531;font-weight:700">Annunci 10X</div>',
+    '<h1 style="font-size:26px;line-height:1.2;margin:10px 0 10px">Il tuo Score Annunci 10X</h1>',
+    `<p style="margin:0 0 8px;color:#ffffff"><strong>Annuncio:</strong> ${escapeHtml(input.roleTitle)}</p>`,
+    `<p style="margin:0;color:#dce4d3">${escapeHtml(greeting)} ecco la lettura sintetica dell’analisi V2.</p>`,
+    '</section>',
+    '<section style="padding:28px">',
+    `<div style="font-size:42px;line-height:1;font-weight:800;margin:0 0 6px">${escapeHtml(scoreLabel)}</div>`,
+    `<div style="font-size:18px;font-weight:700;margin-bottom:14px">${escapeHtml(input.band ?? 'Fascia non assegnata')}</div>`,
+    `<p style="margin:0 0 22px;line-height:1.55">${escapeHtml(input.interpretation)}</p>`,
+    '<h2 style="font-size:18px;margin:0 0 12px">Punteggi per area</h2>',
+    `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-bottom:24px">${areaHtml}</table>`,
+    '<h2 style="font-size:18px;margin:0 0 12px">Le 3 priorità su cui intervenire</h2>',
+    prioritySectionHtml,
+    coverageLine ? `<p style="margin:18px 0 0;color:#5c6a60">${escapeHtml(coverageLine)}</p>` : '',
+    `<p style="margin:22px 0 0;color:#5c6a60;font-size:13px;line-height:1.5">${escapeHtml(disclaimer)}</p>`,
+    '</section>',
+    '<section style="padding:24px 28px;background:#f4f7ef;border-top:1px solid #dce4d3">',
+    `<h2 style="font-size:18px;margin:0 0 8px">${escapeHtml(rewriteOffer.displayName)} — ${escapeHtml(rewritePrice)}</h2>`,
+    '<p style="margin:0 0 16px;line-height:1.5">1 annuncio · 1 versione · 1 canale. Puoi riaprire Annunci 10X e procedere dal flusso esistente.</p>',
+    `<p style="margin:0 0 22px">${rewriteButton}</p>`,
+    `<h2 style="font-size:16px;margin:0 0 8px">${escapeHtml(guide.displayName)}</h2>`,
+    `<p style="margin:0 0 8px;line-height:1.5">${escapeHtml(guide.description)}</p>`,
+    '<p style="margin:0 0 10px;color:#5c6a60;font-size:13px">La guida non ha ancora un prezzo pubblicato o acquisto diretto attivo.</p>',
+    `<p style="margin:0">${guideButton}</p>`,
+    '</section>',
+    '<footer style="padding:20px 28px;color:#5c6a60;font-size:13px">Horyzon<br>Annunci 10X</footer>',
+    '</main>',
+    '</body>',
+    '</html>',
   ].join('');
   const payload: Record<string, unknown> = {
     from: input.from,
@@ -555,6 +626,19 @@ export function buildResendScoreReportPayload(input: ScoreReportEmailInput & {
   };
   if (input.replyTo) payload.reply_to = input.replyTo;
   return payload;
+}
+
+function formatAreaScore(area: ScoreReportEmailAreaInput): string {
+  return area.score === null ? 'N/D' : `${formatScoreValue(area.score)}/100`;
+}
+
+function formatCommercialPrice(price: { amountCents: number; currency: string }): string {
+  if (price.currency !== 'EUR') return `${(price.amountCents / 100).toFixed(2)} ${price.currency}`;
+  const euros = price.amountCents / 100;
+  const amount = Number.isInteger(euros)
+    ? String(euros)
+    : euros.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return `${amount} €`;
 }
 
 function cleanRequiredConfig(value: string | undefined): string {
