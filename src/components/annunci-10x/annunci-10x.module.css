@@ -1086,13 +1086,6 @@
   color: var(--rust);
 }
 
-.field em {
-  margin-left: auto;
-  color: var(--muted);
-  font-style: normal;
-  font-weight: 700;
-}
-
 .optionalFields {
   display: grid;
   gap: 1rem;
@@ -1189,6 +1182,36 @@
   margin: .35rem 0 0;
   color: var(--muted);
   line-height: 1.55;
+}
+
+.createGuidanceNote {
+  display: grid;
+  gap: .18rem;
+  border-left: 3px solid var(--lime);
+  padding: .18rem 0 .18rem .75rem;
+}
+
+.createGuidanceNote p {
+  margin: 0;
+  color: var(--ink);
+  font-size: .94rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.createGuidanceNote span,
+.createGuidanceNote small {
+  color: var(--muted);
+  font-size: .86rem;
+  line-height: 1.45;
+}
+
+.fieldExample {
+  display: block;
+  margin-top: -.2rem;
+  color: #68706d;
+  font-size: .86rem;
+  line-height: 1.45;
 }
 
 .unknownToggle {

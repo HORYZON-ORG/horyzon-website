@@ -185,6 +185,11 @@ assert.match(structuredFormBlock, /useState<CreateWizardStepId>\(\(\) => inferCr
 assert.match(client, /key=\{createWizardResumeKey\(props\.state\)\}/, 'wizard must remount from resumed create state');
 assert.match(structuredFormBlock, /aria-current=\{isActive \? 'step' : undefined\}/, 'active wizard step must expose aria-current="step"');
 assert.match(structuredFormBlock, /Step \{activeStepIndex \+ 1\}\/3/, 'wizard must show current step count');
+assert.match(structuredFormBlock, /<CreateGuidanceNote \/>/, 'each create wizard card must show the guidance note');
+assert.match(client, /Più informazioni ci dai, più completo e preciso sarà il tuo annuncio\./, 'create guidance main note missing');
+assert.match(client, /Compila almeno i campi contrassegnati con \*; aggiungi gli altri dettagli quando li conosci\./, 'create guidance secondary note missing');
+assert.match(client, /\* Campo necessario per continuare/, 'required marker convention note missing');
+assert.equal(client.includes('<em>opzionale</em>'), false, 'create form must not show an Opzionale marker');
 assert.match(structuredFormBlock, /const invalid = validateCreateWizardStep\(props\.draft, activeStep\)[\s\S]*focusCreateField\(invalid\.id\)/, 'next must validate only the active step and focus the first problem');
 assert.match(structuredFormBlock, /function previousStep\(\)[\s\S]*moveToStep\(previous\.id\)/, 'back navigation must not validate or clear data');
 assert.match(structuredFormBlock, /const invalid = firstInvalidCreateWizardField\(props\.draft\)[\s\S]*moveToStepAndFocusField\(invalid\.stepId, invalid\.id\)/, 'final submit must find hidden invalid fields and focus them');
@@ -192,23 +197,40 @@ assert.match(structuredFormBlock, /window\.setTimeout\(\(\) => \{[\s\S]*scrollTo
 assert.match(structuredFormBlock, /activeStepConfig\.nextLabel[\s\S]*type="button"[\s\S]*type="submit"/, 'final submit CTA must render only when there is no next step');
 assert.match(structuredFormBlock, /onDraft:\s*\(value: CreateDraft\) => void/, 'wizard must keep using the existing CreateDraft model');
 assert.equal(structuredFormBlock.includes('useState<CreateDraft>'), false, 'wizard must not duplicate CreateDraft in local state');
+assert.match(client, /function FieldExample\(props: \{ children: ReactNode \}\)/, 'persistent field example helper missing');
+assert.match(css, /\.fieldExample[\s\S]*font-size:\s*\.86rem/, 'field examples must stay visually secondary');
+assert.match(css, /\.createGuidanceNote[\s\S]*border-left:\s*3px solid var\(--lime\)/, 'guidance note must be lightweight and coherent with the funnel');
 
 const roleWizardPanel = structuredFormBlock.match(/activeStep === 'ROLE_RESULT'[\s\S]*?\{activeStep === 'PERSON_WORK'/)?.[0] ?? '';
 assert.match(roleWizardPanel, /create-role/, 'step 1 must contain role');
 assert.match(roleWizardPanel, /create-company/, 'step 1 must contain company/context');
 assert.match(roleWizardPanel, /create-result/, 'step 1 must contain primary result');
 assert.equal(roleWizardPanel.includes('create-activities'), false, 'step 1 must not include work reality fields');
+assert.match(roleWizardPanel, /id="create-role" required aria-required="true"[\s\S]*placeholder="Es\. Addetto customer care"/, 'role must be required and keep the requested placeholder example');
+assert.match(roleWizardPanel, /placeholder="Quale risultato deve riuscire a produrre o garantire questa persona\?"/, 'primary result question placeholder missing');
+assert.match(roleWizardPanel, /Esempio: Gestire le richieste clienti entro 24 ore mantenendo aggiornato il CRM\./, 'primary result persistent example missing');
 
 const personWizardPanel = structuredFormBlock.match(/activeStep === 'PERSON_WORK'[\s\S]*?\{activeStep === 'CONDITIONS_APPLICATION'/)?.[0] ?? '';
 for (const field of ['create-activities', 'create-context', 'create-autonomy', 'create-incidents', 'create-required', 'create-preferred', 'create-trainable', 'create-disqualifying']) {
   assert.match(personWizardPanel, new RegExp(escapeRegExp(field)), `step 2 field missing: ${field}`);
 }
 assert.equal(personWizardPanel.includes('create-application'), false, 'step 2 must not include application CTA field');
+assert.match(personWizardPanel, /id="create-activities" required aria-required="true"/, 'activities must remain required');
+assert.match(personWizardPanel, /Esempio: Rispondere ai ticket, aggiornare il CRM e richiamare i clienti con richieste aperte\./, 'activities example missing');
+assert.match(personWizardPanel, /id="create-required" required aria-required="true"/, 'required requirements must remain required');
+assert.match(personWizardPanel, /Esempio: Uso CRM, italiano scritto chiaro e gestione di richieste clienti\./, 'required requirements example missing');
+assert.equal(/id="create-preferred"[\s\S]{0,120}required/.test(personWizardPanel), false, 'preferred requirements must not become required');
+assert.equal(/id="create-trainable"[\s\S]{0,120}required/.test(personWizardPanel), false, 'trainable requirements must not become required');
 
 const conditionsWizardPanel = structuredFormBlock.match(/activeStep === 'CONDITIONS_APPLICATION'[\s\S]*?<div className=\{styles\.actions\}>/)?.[0] ?? '';
 for (const field of ['create-benefits', 'create-growth', 'create-location', 'create-workmode', 'create-contract', 'create-schedule', 'create-shifts', 'create-availability', 'create-compensation', 'create-channel', 'create-application']) {
   assert.match(conditionsWizardPanel, new RegExp(escapeRegExp(field)), `step 3 field missing: ${field}`);
 }
+assert.match(conditionsWizardPanel, /placeholder="Es\. RAL 24-28k"/, 'compensation example missing');
+assert.match(conditionsWizardPanel, /id="create-application" required aria-required="true"/, 'application must remain required');
+assert.match(conditionsWizardPanel, /Esempio: Invia CV a recruiting@azienda\.it indicando “Addetto customer care” nell’oggetto\./, 'application example missing');
+assert.equal(/id="create-compensation"[\s\S]{0,160}required/.test(conditionsWizardPanel), false, 'compensation must not become required');
+assert.equal(/id="create-channel"[\s\S]{0,160}FieldExample/.test(conditionsWizardPanel), false, 'channel select must not add unnecessary example microcopy');
 assert.match(client, /function inferCreateWizardStep[\s\S]*currentStep === 'SUMMARY' \|\| state\.currentStep === 'COMMERCIAL'[\s\S]*completedSteps/, 'resume must infer a sensible create wizard step');
 assert.match(client, /function firstInvalidCreateWizardField[\s\S]*for \(const step of createWizardSteps\)/, 'final validation must cover all wizard steps');
 assert.match(client, /function focusCreateField[\s\S]*control\?\.focus\(\)[\s\S]*control\?\.reportValidity\?\.\(\)/, 'wizard validation must focus and report the first invalid field');
