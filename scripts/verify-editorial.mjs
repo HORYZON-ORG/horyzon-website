@@ -21,7 +21,7 @@ for (const route of routes) {
  }
 }
 const radar = await readFile('.next/server/app/radar-impresa.html', 'utf8');
-assert(radar.includes('https://hub.horyzon.it/radar'), 'radar-impresa: canonical Radar URL missing');
+assert(radar.includes('href="/radar"'), 'radar-impresa: Radar link missing');
 for (const label of ['Amministrazione', 'Produzione', 'Commerciale', 'Marketing', 'Persone', 'Come lavora l’impresa', 'Dove si concentra il peso', 'Da dove cominciare']) {
  assert(radar.includes(label), `radar-impresa: missing ${label}`);
 }

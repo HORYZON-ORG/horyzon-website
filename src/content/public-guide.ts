@@ -1,5 +1,5 @@
 import { operatingJourney } from './site-narrative';
-import { capabilityLabels, productCapabilities, RADAR_URL } from './product-truth';
+import { capabilityLabels, productCapabilities, RADAR_PUBLIC_URL } from './product-truth';
 import { publicFaqs } from './public-faq';
 
 // Also rendered visibly on /radar-impresa: one source for HTML and Markdown.
@@ -29,7 +29,7 @@ export function publicGuideMarkdown() {
   ...productCapabilities.map(item => `- **${item.title}** (${capabilityLabels[item.state]}) — ${item.description}`),
   '## Pagine di riferimento',
   ...publicGuideLinks.map(([name, path, description]) => `- [${name}](https://horyzon.it${path}): ${description}.`),
-  `- [Apri il Radar in Horyzon Hub](${RADAR_URL}).`,
+  `- [Compila il Radar d’Impresa](${RADAR_PUBLIC_URL}).`,
   '## Contatti',
   'Horyzon Consulting · FELICITÀ srl · P. IVA 05120660757. Contatto pubblico: info@horyzon.it. Dati societari: https://horyzon.it/contatti.',
   '## Uso della sintesi',

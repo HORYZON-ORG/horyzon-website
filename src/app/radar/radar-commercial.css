@@ -5,3 +5,6 @@
 .radar-commercial{max-width:100vw;overflow-x:hidden}.radar-commercial-hero{position:relative}
 .radar-product-shell{padding:110px 7vw;background:#102733;color:#f2eee3}
 @media(max-width:600px){.radar-product-shell{padding:75px 5vw}}
+/* The Radar journey sits on the home's night scene: a horizon glow behind the glass panel. */
+.radar-product-shell{position:relative;isolation:isolate;background:radial-gradient(ellipse 70% 45% at 50% 100%,rgba(217,191,143,.16),transparent 70%),linear-gradient(180deg,#081521,#0b1c26 60%,#081521)}
+.radar-product-shell::before{content:"";position:absolute;left:0;right:0;bottom:22%;height:1px;z-index:-1;background:linear-gradient(90deg,transparent,rgba(227,207,172,.35) 50%,transparent)}

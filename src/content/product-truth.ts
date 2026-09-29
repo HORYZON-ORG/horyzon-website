@@ -1,4 +1,7 @@
-export const RADAR_URL = 'https://hub.horyzon.it/radar' as const;
+// The Radar journey lives in the Website (/radar). Links inside the site use the path; text meant to be
+// read outside the site (llms.txt, public guide) uses the absolute URL.
+export const RADAR_URL = '/radar' as const;
+export const RADAR_PUBLIC_URL = 'https://horyzon.it/radar' as const;
 
 export type CapabilityState = 'available' | 'configured' | 'direction';
 

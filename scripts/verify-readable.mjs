@@ -31,7 +31,7 @@ if (base) {
   assert.match(md.response.headers.get('vary'), /\baccept\b/i);
   assert.match(md.response.headers.get('content-type'), /^text\/markdown; charset=utf-8$/i);
   assert(/^# Far stare bene un’impresa, _?davvero\._?$/m.test(md.body));
-  assert(md.body.includes('https://hub.horyzon.it/radar'));
+  assert(md.body.includes('https://horyzon.it/radar'));
   assert(!md.body.includes('<script') && !md.body.includes('self.__next_f'));
   for (const accept of ['text/html', '*/*', 'text/markdown;q=0, text/html']) {
    const html = await get({ accept });

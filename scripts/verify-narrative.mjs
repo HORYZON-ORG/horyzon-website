@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-const radarUrl = 'https://hub.horyzon.it/radar';
+// The Radar journey lives in the Website: every CTA points to /radar, never to the Hub.
+const radarUrl = '/radar';
 for (const route of ['', 'radar-impresa', 'piattaforma', 'frank', 'contatti']) {
   const file = route ? `.next/server/app/${route}.html` : '.next/server/app/index.html';
   const html = await readFile(file, 'utf8');
-  assert(html.includes(radarUrl), `${route || 'home'}: canonical Radar link missing`);
+  assert(html.includes(`href="${radarUrl}"`), `${route || 'home'}: Radar link missing`);
+  assert(!html.includes('hub.horyzon.it/radar'), `${route || 'home'}: stale Hub Radar link`);
   assert(!/hub\.horyzon\.it\/radar\?/.test(html), `${route || 'home'}: Radar URL must not contain query data`);
 }
 const radar = await readFile('.next/server/app/radar-impresa.html', 'utf8');
@@ -17,14 +19,14 @@ assert(commercialRadar.includes('La tua azienda funziona'), 'radar landing: comm
 // Since the Radar journey moved into the Website, the landing CTAs scroll to the embedded product.
 assert(commercialRadar.includes('href="#radar-prodotto"'), 'radar landing: CTA to the embedded Radar missing');
 assert(commercialRadar.includes('id="radar-prodotto"'), 'radar landing: embedded Radar section missing');
-assert(!commercialRadar.includes(`${radarUrl}?`), 'radar landing: Hub links must not contain query data');
+assert(!commercialRadar.includes(`${radarUrl}?`), 'radar landing: Radar links must not contain query data');
 assert(commercialRadar.includes('noindex'), 'radar landing: paid landing must be noindex');
 for (const phrase of ['Maturità dei processi', 'Autonomia dal titolare', 'Indice globale', 'Intelligenza artificiale']) {
   assert(commercialRadar.includes(phrase), `radar landing: missing ${phrase}`);
 }
 assert(!commercialRadar.includes('29 domande'), 'radar landing: must not publish the unresolved question count');
 const home = await readFile('.next/server/app/index.html', 'utf8');
-assert.equal((home.match(new RegExp(`href="${radarUrl}"`, 'g')) || []).length, 3, 'home: expected three canonical Radar links');
+assert.equal((home.match(new RegExp(`href="${radarUrl}"`, 'g')) || []).length, 3, 'home: expected three Radar links');
 for (const phrase of ['benessere organizzativo', 'benessere patrimoniale', 'benessere digitale', 'prima di cambiare']) {
  assert(home.toLowerCase().includes(phrase), `home: missing ${phrase}`);
 }
