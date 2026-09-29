@@ -69,6 +69,7 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const resultFetchRef = useRef<string | null>(null);
   const resultRef = useRef<HTMLDivElement | null>(null);
+  const workspaceRef = useRef<HTMLDivElement | null>(null);
 
   const loadCommercialOffers = useCallback(async () => {
     setCommercialStatus('Caricamento offerte in corso.');
@@ -153,7 +154,7 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
   useEffect(() => {
     if (!result || !resultRef.current) return;
     resultRef.current.focus({ preventScroll: true });
-    resultRef.current.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    workspaceRef.current?.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
   }, [result]);
 
   async function submitSource(event: FormEvent<HTMLFormElement>) {
@@ -192,8 +193,9 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
         status: analysisRun.status,
       })
     : null;
+  const hasWorkspace = Boolean(busy === 'source' || analysisRun || sourceFailed || statusMessage || error || result);
 
-  return <section className={styles.createShell} aria-label="Analizza gratis il tuo annuncio">
+  return <section className={styles.createShell} data-flow="analyze" data-has-workspace={hasWorkspace} aria-label="Analizza gratis il tuo annuncio">
     <form className={styles.form} onSubmit={submitSource} aria-labelledby="analyze-source-title">
       <div className={styles.formHead}>
         <p>Score gratuito</p>
@@ -214,56 +216,62 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
         <button type="submit" disabled={busy === 'source'}>{busy === 'source' ? 'Avvio in corso' : 'Analizza il mio annuncio — gratis'}</button>
         {sourceMode === 'PASTED_TEXT' && <button type="button" disabled={busy === 'source'} onClick={() => setText(sampleAd)}>Usa esempio</button>}
       </div>
-      {busy === 'source' && <Annunci10xLoader variant="compact" indeterminate label="Avviamo l'analisi" />}
       <p className={styles.formMicrocopy}>Gratis · 2 minuti · nessuna carta di credito</p>
     </form>
 
-    {analysisRun && analysisProgress && <div className={styles.progressCard} aria-live="polite">
-      <p>Analisi in corso</p>
-      {analysisRun.status === 'FAILED'
-        ? <strong>Analisi non completata</strong>
-        : <Annunci10xLoader
-            variant="panel"
-            label={analysisProgress.label}
-            progress={analysisProgress.progress}
-            complete={analysisProgress.complete}
-          />}
+    {hasWorkspace && <div ref={workspaceRef} className={styles.analysisWorkspace} aria-label="Workspace analisi Annunci 10x">
+      {busy === 'source' && <div className={styles.progressCard} aria-live="polite">
+        <p>Analisi in corso</p>
+        <Annunci10xLoader variant="panel" indeterminate label="Avviamo l'analisi" />
+      </div>}
+
+      {analysisRun && analysisProgress && <div className={styles.progressCard} aria-live="polite">
+        <p>Analisi in corso</p>
+        {analysisRun.status === 'FAILED'
+          ? <strong>Analisi non completata</strong>
+          : <Annunci10xLoader
+              variant="panel"
+              label={analysisProgress.label}
+              progress={analysisProgress.progress}
+              complete={analysisProgress.complete}
+            />}
+      </div>}
+
+      {sourceFailed && <div className={styles.warningPanel} role="status">
+        <p>Non siamo riusciti a leggere automaticamente questo annuncio.</p>
+        <button type="button" onClick={() => setSourceMode('PASTED_TEXT')}>Incolla il testo</button>
+      </div>}
+
+      {canShowContact && <Annunci10xIdentityGate
+        eyebrow="Report via email"
+        title="Dove ti mandiamo il report?"
+        description="Ti chiediamo questi dati per collegare il risultato alla tua richiesta e inviarti il report."
+        otpTitle="Ti mandiamo un codice di 6 cifre: è l'ultimo passo prima dello Score."
+        analysisRunId={analysisRun?.id}
+        idPrefix="analyze-lead"
+        initialContactSaved={contactSaved}
+        initialEmailVerified={emailVerified}
+        onContactSaved={({ emailVerified: verified }) => {
+          setContactSaved(true);
+          setEmailVerified(verified);
+          setAnalysisRun((current) => current ? { ...current, contactSaved: true, emailVerified: verified, resultEligible: current.ready && verified } : current);
+        }}
+        onVerified={({ resultEligible }) => {
+          setEmailVerified(true);
+          setAnalysisRun((current) => current ? { ...current, emailVerified: true, resultEligible } : current);
+          setStatusMessage(resultEligible ? 'Email verificata. Il risultato è pronto.' : 'Email verificata. Stiamo completando l’analisi.');
+        }}
+      />}
+
+      {showResultLocked && <div className={styles.lockedNotice} role="status"><strong>Il tuo risultato è pronto.</strong><span>Verifica la tua email per visualizzarlo.</span></div>}
+      {showVerifiedWaiting && <div className={styles.lockedNotice} role="status"><strong>Email verificata.</strong><Annunci10xLoader variant="compact" indeterminate label="Stiamo completando l'analisi" /></div>}
+      {busy === 'result' && <Annunci10xLoader variant="panel" indeterminate label="Carichiamo il risultato" />}
+      {analysisRun?.status === 'FAILED' && !sourceFailed && <div className={styles.error} role="alert">Non siamo riusciti a completare l&apos;analisi. Riprova.</div>}
+      {statusMessage && <p className={styles.coverageNote} aria-live="polite">{statusMessage}</p>}
+      {error && <p className={styles.error} role="alert">{error}</p>}
+
+      {result && <div ref={resultRef} tabIndex={-1}><FreeResultCard result={result} offers={commercial?.availableOffers ?? []} commercialStatus={commercialStatus} /></div>}
     </div>}
-
-    {sourceFailed && <div className={styles.warningPanel} role="status">
-      <p>Non siamo riusciti a leggere automaticamente questo annuncio.</p>
-      <button type="button" onClick={() => setSourceMode('PASTED_TEXT')}>Incolla il testo</button>
-    </div>}
-
-    {canShowContact && <Annunci10xIdentityGate
-      eyebrow="Report via email"
-      title="Dove ti mandiamo il report?"
-      description="Ti chiediamo questi dati per collegare il risultato alla tua richiesta e inviarti il report."
-      otpTitle="Ti mandiamo un codice di 6 cifre: è l'ultimo passo prima dello Score."
-      analysisRunId={analysisRun?.id}
-      idPrefix="analyze-lead"
-      initialContactSaved={contactSaved}
-      initialEmailVerified={emailVerified}
-      onContactSaved={({ emailVerified: verified }) => {
-        setContactSaved(true);
-        setEmailVerified(verified);
-        setAnalysisRun((current) => current ? { ...current, contactSaved: true, emailVerified: verified, resultEligible: current.ready && verified } : current);
-      }}
-      onVerified={({ resultEligible }) => {
-        setEmailVerified(true);
-        setAnalysisRun((current) => current ? { ...current, emailVerified: true, resultEligible } : current);
-        setStatusMessage(resultEligible ? 'Email verificata. Il risultato è pronto.' : 'Email verificata. Stiamo completando l’analisi.');
-      }}
-    />}
-
-    {showResultLocked && <div className={styles.lockedNotice} role="status"><strong>Il tuo risultato è pronto.</strong><span>Verifica la tua email per visualizzarlo.</span></div>}
-    {showVerifiedWaiting && <div className={styles.lockedNotice} role="status"><strong>Email verificata.</strong><Annunci10xLoader variant="compact" indeterminate label="Stiamo completando l'analisi" /></div>}
-    {busy === 'result' && <Annunci10xLoader variant="panel" indeterminate label="Carichiamo il risultato" />}
-    {analysisRun?.status === 'FAILED' && !sourceFailed && <div className={styles.error} role="alert">Non siamo riusciti a completare l&apos;analisi. Riprova.</div>}
-    {statusMessage && <p className={styles.coverageNote} aria-live="polite">{statusMessage}</p>}
-    {error && <p className={styles.error} role="alert">{error}</p>}
-
-    {result && <div ref={resultRef} tabIndex={-1}><FreeResultCard result={result} offers={commercial?.availableOffers ?? []} commercialStatus={commercialStatus} /></div>}
   </section>;
 }
 

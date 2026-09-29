@@ -900,6 +900,11 @@
   border-color: #a8b66e;
 }
 
+.productPaths article[data-variant="guide"] {
+  background: #fffaf0;
+  border-color: #cfb978;
+}
+
 .productPaths strong {
   font-size: clamp(2.2rem, 4vw, 3.6rem);
   font-weight: 900;
@@ -908,6 +913,22 @@
 
 .productPaths .guideOffer {
   grid-column: 1 / -1;
+  background: var(--deep);
+  color: #fffdf5;
+  outline: none;
+}
+
+.productPaths .guideOffer span,
+.productPaths .guideOffer li {
+  color: rgba(255, 253, 245, .78);
+}
+
+.productPaths .guideOffer ul {
+  display: grid;
+  gap: .45rem;
+  margin: .2rem 0 0;
+  padding-left: 1.1rem;
+  line-height: 1.55;
 }
 
 .textCta {
@@ -952,6 +973,34 @@
 
 .createShell {
   margin-top: 2rem;
+}
+
+.createShell[data-flow="analyze"] {
+  position: relative;
+}
+
+.createShell[data-flow="analyze"][data-has-workspace="true"] {
+  min-height: clamp(430px, 68svh, 760px);
+}
+
+.analysisWorkspace {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  align-content: start;
+  gap: .9rem;
+  max-height: min(74svh, 760px);
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid rgba(247, 244, 232, .45);
+  border-radius: 10px;
+  background: rgba(255, 253, 245, .97);
+  padding: clamp(.9rem, 1.8vw, 1.25rem);
+  box-shadow: 0 24px 90px rgba(0, 0, 0, .28);
+  backdrop-filter: blur(16px);
 }
 
 .sourceToggle {
@@ -1799,6 +1848,17 @@
   .createStepIndicator li {
     grid-template-columns: auto minmax(0, 1fr);
     padding: .62rem;
+  }
+
+  .createShell[data-flow="analyze"][data-has-workspace="true"] {
+    min-height: 0;
+  }
+
+  .analysisWorkspace {
+    position: static;
+    max-height: 72svh;
+    margin-top: 1rem;
+    padding: .85rem;
   }
 
   .methodFlow span:last-child {

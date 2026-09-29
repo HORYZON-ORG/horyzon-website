@@ -80,6 +80,13 @@ assert.match(css, /\.sourceTextarea\[data-empty="true"\][\s\S]*min-height:\s*84p
 assert.match(css, /\.sourceTextarea[\s\S]*min-height:\s*220px/, 'filled source textarea min-height missing');
 assert.equal(flow.includes('Ti mandiamo un codice di 6 cifre'), true, 'OTP copy missing');
 assert.equal(flow.includes('Stiamo applicando i 20 controlli'), true, 'progress copy missing');
+assert.match(flow, /const hasWorkspace = Boolean\(busy === 'source' \|\| analysisRun \|\| sourceFailed \|\| statusMessage \|\| error \|\| result\)/, 'post-analysis workspace visibility guard missing');
+assert.match(flow, /data-flow="analyze" data-has-workspace=\{hasWorkspace\}/, 'analyze shell must expose workspace state to CSS');
+assert.match(flow, /ref=\{workspaceRef\} className=\{styles\.analysisWorkspace\}/, 'post-analysis states must render in a dedicated workspace surface');
+assert.equal(flow.includes('resultRef.current.scrollIntoView'), false, 'post-analysis result must not force page scroll or stretch the hero');
+assert.match(css, /\.createShell\[data-flow="analyze"\]\[data-has-workspace="true"\][\s\S]*min-height:\s*clamp\(430px,\s*68svh,\s*760px\)/, 'desktop analyze workspace must reserve bounded height');
+assert.match(css, /\.analysisWorkspace[\s\S]*position:\s*absolute[\s\S]*max-height:\s*min\(74svh,\s*760px\)[\s\S]*overflow-y:\s*auto/, 'post-analysis workspace must float and scroll internally on desktop');
+assert.match(css, /@media \(max-width: 760px\)[\s\S]*\.analysisWorkspace[\s\S]*position:\s*static[\s\S]*max-height:\s*72svh/, 'mobile analyze workspace must become a controlled block');
 
 assert.equal(count(client, '<Annunci10xAnalyzeFlow'), 1, 'Annunci10xAnalyzeFlow must render exactly once');
 assert.equal(client.includes('/annunci-10x/hero.jpeg'), true, 'hero image must remain wired');
@@ -133,6 +140,15 @@ assert.match(client, /1 versione/, 'single-version unit missing');
 assert.match(client, /1 canale/, 'single-channel unit missing');
 assert.equal(commerceClient.includes('Disponibile a breve'), true, 'checkout-disabled customer-safe CTA missing');
 assert.match(client, /href="\/contatti"/, 'consulting CTA must link to /contatti');
+const productChoiceBlock = client.match(/function ProductChoiceSection[\s\S]*?\nfunction GuaranteeSection/)?.[0] ?? '';
+assert.match(productChoiceBlock, /La valutazione dell’annuncio resta gratuita nel percorso sopra/, 'product section must separate free evaluation from paid create path');
+assert.equal(productChoiceBlock.includes('onAnalyze'), false, 'product section must not include the free evaluation CTA');
+assert.equal(productChoiceBlock.includes('Valuta gratis il mio annuncio'), false, 'product card must not make the free evaluation look paid');
+assert.match(productChoiceBlock, /CREA DA ZERO[\s\S]*Annuncio 10x da brief guidato[\s\S]*<strong>7 €<\/strong>[\s\S]*Non ho ancora un annuncio: creo a 7 €/, 'create-from-zero product card must be explicit and priced at 7 EUR');
+assert.match(productChoiceBlock, /Acquista la guida per creare annunci perfetti illimitati/, 'guide CTA missing from product section');
+assert.match(productChoiceBlock, /aria-expanded=\{guideOpen\} aria-controls="annunci10x-guide-panel"/, 'guide CTA must open a dedicated surface');
+assert.match(productChoiceBlock, /id="annunci10x-guide-panel"[\s\S]*Guida Annunci 10x[\s\S]*Nessun prezzo mostrato/, 'guide panel must be separate and avoid invented pricing');
+assert.equal(/Guida[\s\S]{0,220}<strong>/.test(productChoiceBlock), false, 'guide card must not show a price');
 
 assert.equal(flow.includes('Copertura'), false, 'free result must not expose Copertura as a visible KPI label');
 assert.equal(client.includes('Copertura'), false, 'funnel must not expose Copertura as a visible KPI label');

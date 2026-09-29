@@ -478,7 +478,7 @@ export function Annunci10xClient() {
       <RoleStrip />
       <BeforeAfterSection />
       <MethodSection />
-      <ProductChoiceSection onAnalyze={() => selectMode('ANALYZE')} onCreate={() => selectMode('CREATE')} />
+      <ProductChoiceSection onCreate={() => selectMode('CREATE')} />
 
       {mode === 'CREATE' && <section ref={createRef} id="crea-annuncio" className={styles.createSection} aria-labelledby="create-route-title">
         <div className={styles.sectionHeading}>
@@ -583,11 +583,29 @@ function MethodSection() {
   </section>;
 }
 
-function ProductChoiceSection({ onAnalyze, onCreate }: { onAnalyze: () => void; onCreate: () => void }) {
+function ProductChoiceSection({ onCreate }: { onCreate: () => void }) {
+  const [guideOpen, setGuideOpen] = useState(false);
+  const guideRef = useRef<HTMLElement | null>(null);
+  function openGuide() {
+    setGuideOpen(true);
+    window.setTimeout(() => guideRef.current?.focus(), 0);
+  }
+
   return <section id="prodotti" className={styles.productChoice}>
-    <div className={styles.sectionHeading}><p>Prodotto</p><h2>Un solo prodotto: Annuncio 10x.</h2></div>
+    <div className={styles.sectionHeading}><p>Prodotto</p><h2>Un solo prodotto: Annuncio 10x.</h2><span>La valutazione dell’annuncio resta gratuita nel percorso sopra. Qui trovi solo le opzioni per partire da zero o approfondire il metodo.</span></div>
     <div className={styles.productPaths}>
-      <article data-featured="true"><p>ANNUNCIO 10X</p><h3>Annuncio 10x</h3><strong>7 €</strong><span>Potenzia un testo esistente o creane uno nuovo partendo dai fatti del ruolo. Una versione per il canale scelto.</span><div className={styles.heroActions}><button type="button" onClick={onAnalyze}>Valuta gratis il mio annuncio</button><button type="button" onClick={onCreate}>Non ho ancora un annuncio: crealo a 7 €</button></div><small>Output completo solo dopo pagamento confermato.</small></article>
+      <article data-featured="true"><p>CREA DA ZERO</p><h3>Annuncio 10x da brief guidato</h3><strong>7 €</strong><span>Parti dai dati del ruolo, raccogli le condizioni reali e ottieni una versione dell’annuncio per il canale scelto.</span><div className={styles.heroActions}><button type="button" onClick={onCreate}>Non ho ancora un annuncio: creo a 7 €</button></div><small>Output completo solo dopo pagamento confermato.</small></article>
+      <article data-variant="guide"><p>GUIDA</p><h3>Guida Annunci 10x</h3><span>Metodo pratico per progettare annunci più chiari ogni volta che devi aprire una ricerca.</span><div className={styles.heroActions}><button type="button" onClick={openGuide} aria-expanded={guideOpen} aria-controls="annunci10x-guide-panel">Acquista la guida per creare annunci perfetti illimitati</button></div><small>Prezzo e checkout guida non sono pubblicati in questa scheda.</small></article>
+      {guideOpen && <article id="annunci10x-guide-panel" ref={guideRef} tabIndex={-1} className={styles.guideOffer} aria-labelledby="annunci10x-guide-title">
+        <p>SCHEDA GUIDA</p>
+        <h3 id="annunci10x-guide-title">Guida Annunci 10x</h3>
+        <span>Una superficie dedicata alla guida, separata dal prodotto a 7 €. La scheda è pronta per accogliere l’acquisto quando il checkout guida sarà disponibile.</span>
+        <ul>
+          <li>Metodo per leggere chiarezza, completezza e coerenza di un annuncio.</li>
+          <li>Checklist e criteri riutilizzabili su più ricerche.</li>
+          <li>Nessun prezzo mostrato finché non esiste un checkout guida attivo.</li>
+        </ul>
+      </article>}
     </div>
   </section>;
 }
