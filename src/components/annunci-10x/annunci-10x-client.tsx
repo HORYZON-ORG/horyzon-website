@@ -431,7 +431,7 @@ export function Annunci10xClient() {
 
 function FunnelHeader({ onAnalyze }: { onAnalyze: () => void }) {
   return <header className={styles.funnelHeader} aria-label="Annunci 10x">
-    <Link href="/" className={styles.brand} aria-label="Horyzon Consulting Recruiting"><Image src="/annunci-10x/horyzon-consulting-recruiting.png" alt="" width={640} height={240} sizes="(max-width: 760px) 176px, 230px" className={styles.brandLogo} aria-hidden="true" unoptimized /></Link>
+    <Link href="/" className={styles.brand} aria-label="Horyzon Consulting Recruiting"><Image src="/annunci-10x/horyzon-consulting-recruiting.png" alt="" width={512} height={192} sizes="(max-width: 760px) 176px, 230px" className={styles.brandLogo} aria-hidden="true" unoptimized /></Link>
     <button type="button" onClick={onAnalyze}>Valuta gratis</button>
   </header>;
 }

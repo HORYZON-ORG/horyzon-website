@@ -77,8 +77,8 @@ assert.equal(count(client, '<Annunci10xAnalyzeFlow'), 1, 'Annunci10xAnalyzeFlow 
 assert.equal(client.includes('/annunci-10x/hero.jpeg'), true, 'hero image must remain wired');
 assert.equal(heroStat.size, 221692, 'hero.jpeg size changed');
 assert.equal(createHash('sha256').update(heroBuffer).digest('hex'), '8cadafee04583b2e0905c08ae779f2d2f56ff9a599cc3b2468605a8882f326dc', 'hero.jpeg hash changed');
-assert.equal(brandStat.size, 122299, 'Recruiting logo asset size changed');
-assert.equal(createHash('sha256').update(brandBuffer).digest('hex'), '77c626a820d55551e62f7b0c4a2d8e7bd321098c9abb37befa5df04d147b156f', 'Recruiting logo asset hash changed');
+assert.equal(brandStat.size, 7683, 'Recruiting logo asset size changed');
+assert.equal(createHash('sha256').update(brandBuffer).digest('hex'), '5ce0ff57697d5c02582019fab08030475685afa1e11e9d8cd189f8022a12b98a', 'Recruiting logo asset hash changed');
 
 assert.match(publicSource, /Score di chiarezza/, 'public score name missing');
 assert.equal(publicSource.includes('Annunci 10x Score'), false, 'old public score name must not remain');
