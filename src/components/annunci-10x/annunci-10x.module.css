@@ -532,24 +532,38 @@
 
 .scoreBandBar {
   display: grid;
+  width: 100%;
+  min-width: 0;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: .25rem;
+  gap: .35rem;
+  align-items: stretch;
 }
 
 .scoreBandBar span {
+  display: flex;
   min-width: 0;
-  border-radius: 4px;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid rgba(16, 34, 41, .1);
+  border-radius: 6px;
   background: #dde1d4;
-  padding: .45rem .25rem;
-  color: #52605e;
+  padding: .5rem .3rem;
+  color: #66706d;
   font-size: .72rem;
   font-weight: 800;
+  line-height: 1.12;
+  overflow-wrap: anywhere;
   text-align: center;
 }
 
 .scoreBandBar span[data-active="true"] {
+  border-color: #7f9600;
   background: var(--lime);
+  box-shadow: inset 0 0 0 1px rgba(16, 34, 41, .14);
   color: var(--deep);
+  font-weight: 900;
 }
 
 .problemSection,
@@ -1509,9 +1523,15 @@
     grid-template-columns: 1fr;
   }
 
+  .scoreBandBar {
+    gap: .25rem;
+  }
+
   .scoreBandBar span {
-    padding: .4rem .12rem;
-    font-size: .62rem;
+    min-height: 42px;
+    padding: .4rem .16rem;
+    font-size: .66rem;
+    line-height: 1.08;
   }
 
   .storyRows p {

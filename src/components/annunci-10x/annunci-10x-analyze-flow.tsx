@@ -258,7 +258,9 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
 }
 
 function FreeResultCard({ result, offers, commercialStatus }: { result: FreeResult; offers: Annunci10xCommercialOffer[]; commercialStatus: string | null }) {
+  const displayScore = getDisplayScore(result.score);
   const scoreText = formatFreeScore(result.score);
+  const activeBandLabel = result.band?.label ?? scoreBandLabelForValue(displayScore);
   const isPartialV2 = result.resultVersion === 'V2' && result.score.coverage < 100;
   const evaluableChecks = Math.round(result.score.coverage / 5);
   const rewriteOffer = offers.find((offer) => offer.offerCode === 'ANNUNCI10X_REWRITE');
@@ -268,8 +270,7 @@ function FreeResultCard({ result, offers, commercialStatus }: { result: FreeResu
         <p>Score di chiarezza</p>
         <h2 id="free-result-title">Risultato gratuito</h2>
         <strong>{scoreText}</strong>
-        {result.band && <span>{result.band.label}</span>}
-        <ScoreBandBar activeLabel={result.band?.label} />
+        <ScoreBandBar activeLabel={activeBandLabel} />
         <small>Le fasce descrivono chiarezza e completamento delle informazioni disponibili, non la probabilità di assunzione.</small>
       </div>
       <div className={styles.freeResultCopy}>
@@ -315,7 +316,12 @@ function CommerceOfferCard({ offer, tone, detail }: { offer: Annunci10xCommercia
 
 function ScoreBandBar({ activeLabel }: { activeLabel?: string }) {
   const labels = ['Critico', 'Debole', 'Buona base', 'Forte', 'Eccellente'];
-  return <div className={styles.scoreBandBar} aria-label="Fasce Score">{labels.map((label) => <span key={label} data-active={activeLabel === label}>{label}</span>)}</div>;
+  return <div className={styles.scoreBandBar} aria-label="Fasce Score">
+    {labels.map((label) => {
+      const active = activeLabel === label;
+      return <span key={label} data-active={active} aria-current={active ? 'true' : undefined}>{label}</span>;
+    })}
+  </div>;
 }
 
 function Field(props: { label: string; htmlFor: string; required?: boolean; children: ReactNode }) {
@@ -340,10 +346,24 @@ function fallbackProgressLabel(stage?: AnalysisStage): string {
   return 'Il risultato è pronto';
 }
 
+function getDisplayScore(score: FreeResult['score']): number | null {
+  if (typeof score.value === 'number') return score.value;
+  if (score.range) return score.range.min;
+  return null;
+}
+
 function formatFreeScore(score: FreeResult['score']): string {
-  if (typeof score.value === 'number') return `${formatDecimal(score.value)} / ${score.max}`;
-  if (score.range) return `${formatDecimal(score.range.min)}-${formatDecimal(score.range.max)} / ${score.max}`;
-  return 'N/D';
+  const value = getDisplayScore(score);
+  return value === null ? 'N/D' : `${formatDecimal(value)} / ${score.max}`;
+}
+
+function scoreBandLabelForValue(value: number | null): string | undefined {
+  if (value === null) return undefined;
+  if (value < 50) return 'Critico';
+  if (value < 70) return 'Debole';
+  if (value < 85) return 'Buona base';
+  if (value < 95) return 'Forte';
+  return 'Eccellente';
 }
 
 function formatDecimal(value: number): string {
