@@ -1,7 +1,7 @@
 # Paid Radar d'Impresa Migration Design
 
-**Date:** 2026-09-29  
-**Status:** Proposed for implementation review  
+**Date:** 2026-09-29
+**Status:** Proposed for implementation review
 **Owners:** Horyzon Website (public product), Horyzon Hub (internal operations)
 
 ## 1. Purpose
