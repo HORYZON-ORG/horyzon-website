@@ -14,6 +14,7 @@ for (const fragment of [
   'progress_percent',
   'radar_save_answer',
   'radar_grant_paid_access',
+  'radar_complete_assessment',
   'revoke all',
 ]) assert(sql.includes(fragment), `missing migration contract: ${fragment}`);
 

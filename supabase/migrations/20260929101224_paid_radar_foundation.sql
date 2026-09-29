@@ -138,10 +138,32 @@ begin
 end;
 $$;
 
+create or replace function hub.radar_complete_assessment(p_assessment_id uuid, p_owner_secret_hash text)
+returns jsonb language plpgsql security definer set search_path = pg_catalog, hub
+as $$
+declare v hub.radar_assessments%rowtype;
+begin
+  select * into v from hub.radar_assessments where id = p_assessment_id for update;
+  if v.id is null or v.owner_secret_hash is distinct from p_owner_secret_hash then raise exception 'assessment ownership failed'; end if;
+  if v.expires_at is not null and v.expires_at <= now() then raise exception 'assessment expired'; end if;
+  if v.answered_count < 30 then raise exception 'assessment is not complete'; end if;
+  update hub.radar_assessments set
+    journey_status = 'PAYMENT_REQUIRED',
+    current_step = 30,
+    progress_percent = 100,
+    payment_gate_at = coalesce(payment_gate_at, now()),
+    last_activity_at = now()
+  where id = p_assessment_id returning * into v;
+  return jsonb_build_object('id', v.id, 'status', v.journey_status, 'answers', v.risposte, 'revision', v.revision, 'currentStep', v.current_step, 'answeredCount', v.answered_count, 'progressPercent', v.progress_percent);
+end;
+$$;
+
 revoke all on function hub.radar_save_answer(uuid,text,text,jsonb,integer,integer) from public, anon, authenticated;
 grant execute on function hub.radar_save_answer(uuid,text,text,jsonb,integer,integer) to service_role;
 revoke all on function hub.radar_grant_paid_access(uuid,text,text) from public, anon, authenticated;
 grant execute on function hub.radar_grant_paid_access(uuid,text,text) to service_role;
+revoke all on function hub.radar_complete_assessment(uuid,text) from public, anon, authenticated;
+grant execute on function hub.radar_complete_assessment(uuid,text) to service_role;
 
 revoke all on hub.radar_purchases, hub.radar_entitlement_grants, hub.radar_stripe_events, hub.radar_access_events from anon, authenticated;
 grant select, insert, update on hub.radar_purchases, hub.radar_entitlement_grants, hub.radar_stripe_events, hub.radar_access_events to service_role;

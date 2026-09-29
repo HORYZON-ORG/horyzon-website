@@ -21,8 +21,6 @@ export function RadarClient() {
   const [scores, setScores] = useState<RadarScores | null>(null);
   const steps = useMemo(() => radarSteps(), []);
 
-  useEffect(() => { void resume(); }, []);
-
   async function resume() {
     const response = await fetch('/api/radar/session/resume', { cache: 'no-store' });
     if (!response.ok) return;
@@ -38,6 +36,11 @@ export function RadarClient() {
     setPhase(session.answeredCount >= 30 ? 'PAYMENT' : 'QUESTIONS');
   }
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void resume(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   async function start(form: FormData) {
     const entries = Object.fromEntries(form.entries());
     const body = { ...entries, seasonal: entries.seasonal === 'true' };
@@ -47,7 +50,7 @@ export function RadarClient() {
     setAssessmentId(payload.session.id); setRevision(payload.session.revision); setAnswers({ 'qualificazione#stagionale': body.seasonal ? 1 : 0 }); setPhase('QUESTIONS');
   }
 
-  async function answer(value: number | number[]) {
+  async function answer(value: number | number[], advance = true) {
     const step = steps[stepIndex]!;
     const nextAnswers = { ...answers, [step.id]: value };
     setAnswers(nextAnswers); setSaving(true); setSyncError('');
@@ -56,6 +59,7 @@ export function RadarClient() {
       const response = await fetch('/api/radar/answer', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ answerKey: step.id, value, expectedRevision: revision, currentStep: stepIndex + 1 }) });
       if (!response.ok) throw new Error('sync');
       const payload = await response.json(); setRevision(payload.progress.revision);
+      if (!advance) return;
       if (stepIndex === steps.length - 1) { const completed = await fetch('/api/radar/complete', { method: 'POST' }); if (!completed.ok) throw new Error('complete'); setPhase('PAYMENT'); }
       else setStepIndex((current) => current + 1);
     } catch { setSyncError('Risposta non ancora sincronizzata. Riprova prima di continuare.'); }

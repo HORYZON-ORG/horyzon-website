@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { RADAR_QUESTIONNAIRE_VERSION, type RadarAnswers, type RadarJourneyStatus } from '../types.ts';
 import { createOwnerSecret } from './security.ts';
-import type { RadarOwnedSession, RadarOwnership, RadarPersistence, RadarProgressProjection, RadarQualificationInput, RadarResumeProjection, SaveRadarAnswerInput } from './types.ts';
+import type { RadarAccessEventInput, RadarOwnedSession, RadarOwnership, RadarPersistence, RadarProgressProjection, RadarQualificationInput, RadarResumeProjection, SaveRadarAnswerInput } from './types.ts';
 
 const ANSWER_KEY = /^(amministrazione|produzione|commerciale|marketing|risorse-umane)#[0-4]$|^qualificazione#stagionale$|^ai#(uso|leva|pronti|casoUso)$/;
 
@@ -13,6 +13,7 @@ export class RadarRevisionConflictError extends Error {
 
 class MemoryRadarPersistence implements RadarPersistence {
   private readonly rows = new Map<string, MemoryRow>();
+  private readonly accessEvents: Array<RadarAccessEventInput & { createdAt: number }> = [];
 
   async createAssessment(input: RadarQualificationInput): Promise<RadarOwnedSession> {
     const id = randomUUID();
@@ -37,6 +38,21 @@ class MemoryRadarPersistence implements RadarPersistence {
     row.progressPercent = Math.min(100, Math.round((row.answeredCount / 30) * 100));
     row.status = 'IN_PROGRESS';
     return progress(row);
+  }
+
+  async completeAssessment(input: RadarOwnership): Promise<RadarResumeProjection> {
+    const row = this.owned(input);
+    if (row.answeredCount < 30) throw new Error('Radar is not complete.');
+    row.status = 'PAYMENT_REQUIRED';
+    row.currentStep = 30;
+    row.progressPercent = 100;
+    return project(row);
+  }
+
+  async appendAccessEvent(input: RadarAccessEventInput): Promise<void> { this.accessEvents.push({ ...input, createdAt: Date.now() }); }
+  async countRecentPreviewDenials(assessmentId: string): Promise<number> {
+    const threshold = Date.now() - 10 * 60_000;
+    return this.accessEvents.filter((event) => event.assessmentId === assessmentId && event.eventType === 'PREVIEW_DENIED' && event.createdAt >= threshold).length;
   }
 
   private owned(input: RadarOwnership): MemoryRow {
@@ -105,8 +121,22 @@ export class SupabaseRadarPersistence implements RadarPersistence {
     }
   }
 
+  async completeAssessment(input: RadarOwnership): Promise<RadarResumeProjection> {
+    return this.request<RadarResumeProjection>('/rest/v1/rpc/radar_complete_assessment', { method: 'POST', body: JSON.stringify({ p_assessment_id: input.assessmentId, p_owner_secret_hash: input.ownerSecretHash }) });
+  }
+
+  async appendAccessEvent(input: RadarAccessEventInput): Promise<void> {
+    await this.request('/rest/v1/radar_access_events', { method: 'POST', body: JSON.stringify({ assessment_id: input.assessmentId, access_source: input.accessSource, event_type: input.eventType }) });
+  }
+
+  async countRecentPreviewDenials(assessmentId: string): Promise<number> {
+    const since = new Date(Date.now() - 10 * 60_000).toISOString();
+    const rows = await this.request<Array<{ id: string }>>(`/rest/v1/radar_access_events?assessment_id=eq.${encodeURIComponent(assessmentId)}&access_source=eq.PREVIEW&event_type=eq.PREVIEW_DENIED&created_at=gte.${encodeURIComponent(since)}&select=id`, { method: 'GET' });
+    return rows.length;
+  }
+
   private async request<T>(path: string, init: RequestInit): Promise<T> {
-    const response = await (this.config.fetchImpl ?? fetch)(`${this.config.url.replace(/\/$/, '')}${path}`, { ...init, headers: { apikey: this.config.serviceRoleKey, Authorization: `Bearer ${this.config.serviceRoleKey}`, 'Content-Type': 'application/json', ...(init.headers ?? {}) } });
+    const response = await (this.config.fetchImpl ?? fetch)(`${this.config.url.replace(/\/$/, '')}${path}`, { ...init, headers: { apikey: this.config.serviceRoleKey, Authorization: `Bearer ${this.config.serviceRoleKey}`, 'Content-Type': 'application/json', 'Accept-Profile': 'hub', 'Content-Profile': 'hub', ...(init.headers ?? {}) } });
     if (!response.ok) throw new Error(`Radar database error: ${await response.text()}`);
     return response.json() as Promise<T>;
   }

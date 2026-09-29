@@ -15,6 +15,12 @@ await assert.rejects(
   () => store.saveAnswer({ assessmentId: session.id, ownerSecretHash: session.ownerSecretHash, answerKey: 'produzione#0', value: 2, expectedRevision: 0, currentStep: 2 }),
   RadarRevisionConflictError,
 );
+await assert.rejects(
+  () => store.completeAssessment({ assessmentId: session.id, ownerSecretHash: session.ownerSecretHash }),
+  /complete/i,
+);
+await store.appendAccessEvent({ assessmentId: session.id, accessSource: 'PREVIEW', eventType: 'PREVIEW_DENIED' });
+assert.equal(await store.countRecentPreviewDenials(session.id), 1);
 await assert.rejects(() => store.resumeAssessment({ assessmentId: session.id, ownerSecretHash: 'wrong' }), /ownership/i);
 await assert.rejects(
   () => store.saveAnswer({ assessmentId: session.id, ownerSecretHash: session.ownerSecretHash, answerKey: '_storico', value: 1, expectedRevision: 1, currentStep: 2 }),

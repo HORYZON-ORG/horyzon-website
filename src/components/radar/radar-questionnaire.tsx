@@ -3,7 +3,7 @@
 import { radarSteps, type RadarAnswer } from '@/lib/radar';
 import styles from './radar.module.css';
 
-export function RadarQuestionnaire({ stepIndex, value, saving, onAnswer, onBack }: { stepIndex: number; value?: RadarAnswer; saving: boolean; onAnswer: (value: RadarAnswer) => void; onBack: () => void }) {
+export function RadarQuestionnaire({ stepIndex, value, saving, onAnswer, onBack }: { stepIndex: number; value?: RadarAnswer; saving: boolean; onAnswer: (value: RadarAnswer, advance?: boolean) => void; onBack: () => void }) {
   const step = radarSteps()[stepIndex];
   if (!step) return null;
   const choices = step.kind === 'LIKERT' ? ['Per nulla', 'Poco', 'Abbastanza', 'Molto', 'Completamente'] : step.kind === 'SEASONAL' ? ['No, continuativa', 'Sì, stagionale'] : step.options ?? [];
@@ -14,9 +14,9 @@ export function RadarQuestionnaire({ stepIndex, value, saving, onAnswer, onBack 
     <div className={styles.choices}>{choices.map((label, index) => {
       const answerValue = step.kind === 'LIKERT' ? index + 1 : index;
       const selected = Array.isArray(value) ? value.includes(answerValue) : value === answerValue;
-      return <button key={label} type="button" className={selected ? styles.selected : undefined} disabled={saving} onClick={() => onAnswer(step.kind === 'AI_MULTI' ? toggle(value, answerValue) : answerValue)}>{label}</button>;
+      return <button key={label} type="button" className={selected ? styles.selected : undefined} disabled={saving} onClick={() => onAnswer(step.kind === 'AI_MULTI' ? toggle(value, answerValue) : answerValue, step.kind !== 'AI_MULTI')}>{label}</button>;
     })}</div>
-    <div className={styles.actions}><button type="button" onClick={onBack} disabled={stepIndex === 0 || saving}>Indietro</button><span>{saving ? 'Salvataggio…' : 'Salvato'}</span></div>
+    <div className={styles.actions}><button type="button" onClick={onBack} disabled={stepIndex === 0 || saving}>Indietro</button><span>{saving ? 'Salvataggio…' : 'Salvato'}</span>{step.kind === 'AI_MULTI' ? <button type="button" disabled={saving || !Array.isArray(value) || value.length === 0} onClick={() => onAnswer(value!, true)}>Continua</button> : null}</div>
   </section>;
 }
 function toggle(value: RadarAnswer | undefined, item: number): number[] {
