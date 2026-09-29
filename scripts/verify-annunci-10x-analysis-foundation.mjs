@@ -118,6 +118,7 @@ const started = await startAnnunci10xAnalysisRun({
   session,
   source: { kind: 'PASTED_TEXT', text: VALID_AD, declaredChannel: 'LINKEDIN' },
   context,
+  evaluationMode: 'V1',
 });
 assert.equal(started.run.status, 'QUEUED');
 assert.equal(started.run.stage, 'SOURCE_VALIDATION');
@@ -126,6 +127,7 @@ const duplicate = await startAnnunci10xAnalysisRun({
   session,
   source: { kind: 'PASTED_TEXT', text: VALID_AD, declaredChannel: 'LINKEDIN' },
   context,
+  evaluationMode: 'V1',
 });
 assert.equal(duplicate.run.id, started.run.id);
 
@@ -191,10 +193,10 @@ assert.equal(failed.status, 'FAILED');
 const failedStatus = await getAnnunci10xAnalysisRunStatus({ analysisRunId: failed.id, session, context });
 assert.equal(failedStatus?.failureCode, 'URL_FETCH_FAILED');
 
-assert.equal(resolveAnnunci10xPublicScoreEvaluationMode({}), 'V1');
-assert.equal(resolveAnnunci10xPublicScoreEvaluationMode({ ANNUNCI10X_PUBLIC_SCORE_VERSION: 'V1' }), 'V1');
+assert.equal(resolveAnnunci10xPublicScoreEvaluationMode({}), 'V2_PUBLIC');
+assert.throws(() => resolveAnnunci10xPublicScoreEvaluationMode({ ANNUNCI10X_PUBLIC_SCORE_VERSION: 'V1' }), /non puo usare V1/);
 assert.equal(resolveAnnunci10xPublicScoreEvaluationMode({ ANNUNCI10X_PUBLIC_SCORE_VERSION: 'v2' }), 'V2_PUBLIC');
-assert.throws(() => resolveAnnunci10xPublicScoreEvaluationMode({ ANNUNCI10X_PUBLIC_SCORE_VERSION: 'V2_SHADOW' }), /V1 o V2/);
+assert.throws(() => resolveAnnunci10xPublicScoreEvaluationMode({ ANNUNCI10X_PUBLIC_SCORE_VERSION: 'V2_SHADOW' }), /V2 o non impostato/);
 
 const identityV1 = createAnalysisInputIdentity({
   sourceHash: pasted.sourceHash,

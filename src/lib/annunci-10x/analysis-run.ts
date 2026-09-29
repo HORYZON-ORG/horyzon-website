@@ -554,9 +554,11 @@ function buildRunIdentity(source: Annunci10xPreparedSource, model: string, evalu
 
 export function resolveAnnunci10xPublicScoreEvaluationMode(env: Record<string, string | undefined> = process.env): Annunci10xAnalysisEvaluationMode {
   const configured = env.ANNUNCI10X_PUBLIC_SCORE_VERSION?.trim().toUpperCase();
-  if (!configured || configured === 'V1') return 'V1';
-  if (configured === 'V2') return 'V2_PUBLIC';
-  throw new Annunci10xPublicError('INVALID_INPUT', 'ANNUNCI10X_PUBLIC_SCORE_VERSION deve essere V1 o V2.', 500);
+  if (!configured || configured === 'V2') return 'V2_PUBLIC';
+  if (configured === 'V1') {
+    throw new Annunci10xPublicError('INVALID_INPUT', 'ANNUNCI10X_PUBLIC_SCORE_VERSION non puo usare V1 nel runtime pubblico Annunci 10x.', 500);
+  }
+  throw new Annunci10xPublicError('INVALID_INPUT', 'ANNUNCI10X_PUBLIC_SCORE_VERSION deve essere V2 o non impostato.', 500);
 }
 
 function versionsForEvaluationMode(evaluationMode: Annunci10xAnalysisEvaluationMode): {

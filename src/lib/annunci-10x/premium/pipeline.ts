@@ -1,24 +1,26 @@
 import { createHash, randomUUID } from 'node:crypto';
 import {
   ANNUNCI10X_DATA_CONTRACT_VERSION,
-  ANNUNCI10X_METHOD_VERSION,
-  ANNUNCI10X_PROMPT_PACK_VERSION,
   ANNUNCI10X_RUBRIC_VERSION,
+  ANNUNCI10X_METHOD_VERSION_V2,
+  ANNUNCI10X_PROMPT_PACK_VERSION_V2,
+  ANNUNCI10X_RUBRIC_VERSION_V2,
+  ANNUNCI10X_SCORE_SEMANTICS_VERSION_V2,
   ANNUNCI10X_STRATEGY_VERSION,
 } from '../constants.ts';
 import { evaluatePublicationGate, materialConflict, unconfirmedClaim } from '../gates.ts';
-import { Annunci10xAiOrchestrator, calculateScoreAndGateFromEvaluateOutput } from '../ai/orchestrator.ts';
-import { ANNUNCI10X_RUBRIC } from '../rubric.ts';
+import { runPersistedAnnunci10xEvaluateV2 } from '../ai/evaluate-v2.ts';
+import { Annunci10xAiOrchestrator } from '../ai/orchestrator.ts';
 import { createFact, validateGeneratedAd } from '../validation.ts';
 import type {
   Annunci10xChannelAdapterOutput,
   Annunci10xEditClassifierOutput,
-  Annunci10xEvaluateOutput,
   Annunci10xGenerateOutput,
   Annunci10xReviseOutput,
   Annunci10xValidateOutput,
 } from '../ai/schemas.ts';
-import type { Annunci10xReservableCapability, PersistedAnnunci10xSession, PersistedCreditReservation, PersistedEvaluation, PersistedOutput, PersistedSnapshot } from '../persistence/types.ts';
+import type { Annunci10xPersistedScoreResult, Annunci10xReservableCapability, PersistedAnnunci10xSession, PersistedCreditReservation, PersistedEvaluation, PersistedOutput, PersistedSnapshot } from '../persistence/types.ts';
+import type { ScoreResultV2 } from '../types-v2.ts';
 import type {
   ChannelVariant,
   ClaimCheck,
@@ -32,6 +34,7 @@ import type {
 } from '../types.ts';
 import {
   Annunci10xPublicError,
+  buildEvaluateInputV2,
   createAnnunci10xRuntimeContext,
   type Annunci10xConfiguredProvider,
   type Annunci10xRuntimeContext,
@@ -70,7 +73,7 @@ export interface PublicAnnunci10xPremiumOutput {
   master: GeneratedAd;
   masterText: string;
   channelVariant: ChannelVariant | null;
-  score: ScoreResult;
+  score: Annunci10xPersistedScoreResult;
   gate: PublicationGate;
   validationState: PublicationGate['status'];
   claimCheck: ClaimCheck[];
@@ -82,6 +85,7 @@ export interface PublicAnnunci10xPremiumOutput {
     dataContractVersion: string;
     methodVersion: string;
     rubricVersion: string;
+    scoreSemanticsVersion: string;
     strategyVersion: string;
     promptVersion: string;
   };
@@ -214,31 +218,24 @@ export async function runAnnunci10xPremiumGeneration(input: Annunci10xPremiumGen
       });
     }
 
-    const evaluateResult = await orchestrator.runTask({
+    const evaluateResult = await evaluateGeneratedMasterV2({
+      context,
       sessionId: input.sessionId,
       sessionSecret: input.sessionSecret,
-      operationType: 'EVALUATE',
-      input: {
-        target: { kind: 'GENERATED_MASTER', generatedAdId: finalMaster.id },
-        generatedAd: finalMaster,
-        roleCard: snapshot.roleCard,
-        roleProfile: snapshot.roleProfile,
-        communicationStrategy: snapshot.communicationStrategy,
-        channel: input.channel ?? preferredChannel(snapshot),
-        rubric: ANNUNCI10X_RUBRIC,
-      },
-      inputSnapshotId: snapshot.id,
-      idempotencyInputIdentityOverride: stableHash({ snapshotId: snapshot.id, authIdentity, operation: 'EVALUATE', master: finalMaster.sections }),
+      snapshot,
+      master: finalMaster,
+      channel: input.channel ?? preferredChannel(snapshot),
+      identity: stableHash({ snapshotId: snapshot.id, authIdentity, operation: 'EVALUATE_V2', master: finalMaster.sections }),
     });
     operations.push(toPublicOperation(evaluateResult, 'EVALUATE', context.configuredProvider));
 
-    const deterministic = calculateScoreAndGateFromEvaluateOutput(evaluateResult.output as Annunci10xEvaluateOutput);
-    const gate = gateFromValidation(finalValidation, deterministic.gate);
+    const gate = gateFromValidation(finalValidation, evaluatePublicationGate());
     const claimCheck = claimCheckFromValidation(finalValidation);
-    const comparison = buildComparison(session, finalMaster, deterministic.score, previousV1Evaluation(await context.persistence.getLatestEvaluation(input.sessionId, input.sessionSecret)));
+    const comparison = buildComparison(session, finalMaster, evaluateResult.score, previousEvaluationForComparison(await context.persistence.getLatestEvaluation(input.sessionId, input.sessionSecret)));
     const masterToPersist = attachPremiumPayload(finalMaster, {
       comparison,
       claimCheck,
+      gate,
       rationale: rationaleFromSnapshot(snapshot),
       automaticRevisionCount,
       validationResult: finalValidation.result,
@@ -258,8 +255,8 @@ export async function runAnnunci10xPremiumGeneration(input: Annunci10xPremiumGen
       target: { kind: 'GENERATED_MASTER', generatedAdId: finalMaster.id },
       targetRef: finalMaster.id,
       targetOutputId: masterOutput.id,
-      score: deterministic.score,
-      gate,
+      score: evaluateResult.score,
+      gate: null,
     });
 
     let variantOutput: PersistedOutput | null = null;
@@ -309,7 +306,7 @@ export async function runAnnunci10xPremiumGeneration(input: Annunci10xPremiumGen
       output: masterOutput,
       master: masterToPersist,
       channelVariant,
-      score: deterministic.score,
+      score: evaluateResult.score,
       gate,
       claimCheck,
       comparison,
@@ -437,7 +434,10 @@ export async function resumeAnnunci10xPremiumOutput(input: { sessionId: string; 
   const snapshot = await context.persistence.getLatestSnapshot(input.sessionId, input.sessionSecret);
   const evaluation = await context.persistence.getLatestEvaluation(input.sessionId, input.sessionSecret);
   if (!snapshot || !evaluation) return null;
-  const v1Evaluation = requireV1Evaluation(evaluation);
+  const persistedEvaluation = requirePremiumEvaluation(evaluation);
+  const payload = readPremiumPayload(validation.value);
+  const gate = persistedEvaluation.gate ?? payload.gate;
+  if (!gate) throw new Annunci10xPublicError('INTERNAL', 'Gate premium Annunci 10x non valida.', 500);
   const variant = await context.persistence.getLatestOutput(input.sessionId, input.sessionSecret, 'CHANNEL_VARIANT', output.id);
   await context.persistence.appendEvent({ sessionId: input.sessionId, eventName: 'output_viewed', metadata: { outputId: output.id } });
   return publicPremiumOutput({
@@ -446,10 +446,10 @@ export async function resumeAnnunci10xPremiumOutput(input: { sessionId: string; 
     output,
     master: validation.value,
     channelVariant: variant?.generatedContent as ChannelVariant | null ?? null,
-    score: v1Evaluation.score,
-    gate: v1Evaluation.gate,
-    claimCheck: readPremiumPayload(validation.value).claimCheck,
-    comparison: readPremiumPayload(validation.value).comparison,
+    score: persistedEvaluation.score,
+    gate,
+    claimCheck: payload.claimCheck,
+    comparison: payload.comparison,
     operations: [],
     provider: context.configuredProvider,
   });
@@ -588,22 +588,23 @@ export async function requestAnnunci10xPremiumEdit(input: PremiumEditInput): Pro
     operations,
     phase: 'edit',
   });
-  const evaluate = await orchestrator.runTask({
+  const evaluate = await evaluateGeneratedMasterV2({
+    context,
     sessionId: input.sessionId,
     sessionSecret: input.sessionSecret,
-    operationType: 'EVALUATE',
-    input: { target: { kind: 'GENERATED_MASTER', generatedAdId: master.id }, generatedAd: master, roleCard: snapshot.roleCard, roleProfile: snapshot.roleProfile, communicationStrategy: snapshot.communicationStrategy, channel: preferredChannel(snapshot), rubric: ANNUNCI10X_RUBRIC },
-    inputSnapshotId: snapshot.id,
-    idempotencyInputIdentityOverride: stableHash({ snapshotId: snapshot.id, outputId: output.id, editRequest: input.editRequest, operation: 'EVALUATE' }),
+    snapshot,
+    master,
+    channel: preferredChannel(snapshot),
+    identity: stableHash({ snapshotId: snapshot.id, outputId: output.id, editRequest: input.editRequest, operation: 'EVALUATE_V2' }),
   });
   operations.push(toPublicOperation(evaluate, 'EVALUATE', context.configuredProvider));
-  const deterministic = calculateScoreAndGateFromEvaluateOutput(evaluate.output as Annunci10xEvaluateOutput);
-  const gate = gateFromValidation(validate, deterministic.gate);
+  const gate = gateFromValidation(validate, evaluatePublicationGate());
   const claimCheck = claimCheckFromValidation(validate);
-  const comparison = buildComparison(session, master, deterministic.score, previousV1Evaluation(await context.persistence.getLatestEvaluation(input.sessionId, input.sessionSecret)));
+  const comparison = buildComparison(session, master, evaluate.score, previousEvaluationForComparison(await context.persistence.getLatestEvaluation(input.sessionId, input.sessionSecret)));
   const masterToPersist = attachPremiumPayload(master, {
     comparison,
     claimCheck,
+    gate,
     rationale: rationaleFromSnapshot(snapshot),
     automaticRevisionCount: 1,
     validationResult: validate.result,
@@ -622,8 +623,8 @@ export async function requestAnnunci10xPremiumEdit(input: PremiumEditInput): Pro
     target: { kind: 'GENERATED_MASTER', generatedAdId: master.id },
     targetRef: master.id,
     targetOutputId: saved.id,
-    score: deterministic.score,
-    gate,
+    score: evaluate.score,
+    gate: null,
   });
   await context.persistence.appendEvent({ sessionId: input.sessionId, eventName: 'output_revised', metadata: { outputId: saved.id, intent: classified.intent } });
   return {
@@ -638,7 +639,7 @@ export async function requestAnnunci10xPremiumEdit(input: PremiumEditInput): Pro
       output: saved,
       master: masterToPersist,
       channelVariant: null,
-      score: deterministic.score,
+      score: evaluate.score,
       gate,
       claimCheck,
       comparison,
@@ -661,7 +662,7 @@ async function executePremiumPipeline(input: {
   variantOutput: PersistedOutput | null;
   masterToPersist: GeneratedAd;
   channelVariant: ChannelVariant | null;
-  score: ScoreResult;
+  score: Annunci10xPersistedScoreResult;
   gate: PublicationGate;
   claimCheck: ClaimCheck[];
   comparison: ComparisonResult | null;
@@ -734,31 +735,24 @@ async function executePremiumPipeline(input: {
     });
   }
 
-  const evaluateResult = await orchestrator.runTask({
+  const evaluateResult = await evaluateGeneratedMasterV2({
+    context: input.context,
     sessionId: input.session.id,
     sessionSecret: input.sessionSecret,
-    operationType: 'EVALUATE',
-    input: {
-      target: { kind: 'GENERATED_MASTER', generatedAdId: finalMaster.id },
-      generatedAd: finalMaster,
-      roleCard: input.snapshot.roleCard,
-      roleProfile: input.snapshot.roleProfile,
-      communicationStrategy: input.snapshot.communicationStrategy,
-      channel: input.channel,
-      rubric: ANNUNCI10X_RUBRIC,
-    },
-    inputSnapshotId: input.snapshot.id,
-    idempotencyInputIdentityOverride: stableHash({ snapshotId: input.snapshot.id, authIdentity: input.authIdentity, operation: 'EVALUATE', master: finalMaster.sections }),
+    snapshot: input.snapshot,
+    master: finalMaster,
+    channel: input.channel,
+    identity: stableHash({ snapshotId: input.snapshot.id, authIdentity: input.authIdentity, operation: 'EVALUATE_V2', master: finalMaster.sections }),
   });
   operations.push(toPublicOperation(evaluateResult, 'EVALUATE', input.context.configuredProvider));
 
-  const deterministic = calculateScoreAndGateFromEvaluateOutput(evaluateResult.output as Annunci10xEvaluateOutput);
-  const gate = gateFromValidation(finalValidation, deterministic.gate);
+  const gate = gateFromValidation(finalValidation, evaluatePublicationGate());
   const claimCheck = claimCheckFromValidation(finalValidation);
-  const comparison = buildComparison(input.session, finalMaster, deterministic.score, await baselineEvaluationForComparison(input.context, input.session, input.sessionSecret));
+  const comparison = buildComparison(input.session, finalMaster, evaluateResult.score, await baselineEvaluationForComparison(input.context, input.session, input.sessionSecret));
   const masterToPersist = attachPremiumPayload(finalMaster, {
     comparison,
     claimCheck,
+    gate,
     rationale: rationaleFromSnapshot(input.snapshot),
     automaticRevisionCount,
     validationResult: finalValidation.result,
@@ -778,8 +772,8 @@ async function executePremiumPipeline(input: {
     target: { kind: 'GENERATED_MASTER', generatedAdId: finalMaster.id },
     targetRef: finalMaster.id,
     targetOutputId: masterOutput.id,
-    score: deterministic.score,
-    gate,
+    score: evaluateResult.score,
+    gate: null,
   });
 
   let variantOutput: PersistedOutput | null = null;
@@ -814,7 +808,7 @@ async function executePremiumPipeline(input: {
     variantOutput,
     masterToPersist,
     channelVariant,
-    score: deterministic.score,
+    score: evaluateResult.score,
     gate,
     claimCheck,
     comparison,
@@ -840,20 +834,52 @@ async function validateMaster(input: {
     input: { generatedAd: input.master, roleCard: input.snapshot.roleCard },
     inputSnapshotId: input.snapshot.id,
     idempotencyInputIdentityOverride: stableHash({ snapshotId: input.snapshot.id, authIdentity: input.authIdentity, operation: 'VALIDATE', phase: input.phase, master: input.master.sections }),
-    promptVersionOverride: input.phase === 'post-revise' ? `${ANNUNCI10X_PROMPT_PACK_VERSION}.post-revise` : undefined,
+    promptVersionOverride: input.phase === 'post-revise' ? `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.post-revise` : undefined,
   });
   input.operations.push(toPublicOperation(result, 'VALIDATE', input.provider));
   return result.output as Annunci10xValidateOutput;
 }
 
-function gateFromValidation(validation: Annunci10xValidateOutput, deterministic: PublicationGate): PublicationGate {
+async function evaluateGeneratedMasterV2(input: {
+  context: Annunci10xRuntimeContext;
+  sessionId: string;
+  sessionSecret: string;
+  snapshot: PersistedSnapshot;
+  master: GeneratedAd;
+  channel: PublicationChannel;
+  identity: string;
+}) {
+  const roleProfile = input.snapshot.roleProfile;
+  const communicationStrategy = input.snapshot.communicationStrategy;
+  if (!roleProfile || !communicationStrategy) {
+    throw new Annunci10xPublicError('GENERATION_BLOCKED', 'Scheda ruolo, profilo e strategia devono essere completati prima della valutazione.', 409);
+  }
+  return runPersistedAnnunci10xEvaluateV2({
+    sessionId: input.sessionId,
+    sessionSecret: input.sessionSecret,
+    provider: input.context.provider,
+    persistence: input.context.persistence,
+    inputSnapshotId: input.snapshot.id,
+    idempotencyInputIdentity: input.identity,
+    input: buildEvaluateInputV2({
+      rawAdText: masterText(input.master),
+      targetKind: 'GENERATED_MASTER',
+      channelHint: input.channel,
+      roleCard: input.snapshot.roleCard,
+      roleProfile,
+      communicationStrategy,
+    }),
+  });
+}
+
+function gateFromValidation(validation: Annunci10xValidateOutput, baseGate: PublicationGate): PublicationGate {
   const findings = [];
   for (const claim of validation.unsupportedClaims) findings.push(unconfirmedClaim(`Claim non supportato: ${claim}`, validation.result === 'BLOCK' ? 'BLOCKING' : 'WARNING'));
   for (const contradiction of validation.contradictions) findings.push(materialConflict(`Contraddizione: ${contradiction}`, 'BLOCKING'));
   for (const requirement of validation.alteredRequirements) findings.push(materialConflict(`Requisito alterato: ${requirement}`, 'BLOCKING'));
   for (const fact of validation.omittedCriticalFacts) findings.push(unconfirmedClaim(`Fatto critico omesso: ${fact}`, 'WARNING'));
-  if (!findings.length) return deterministic;
-  return evaluatePublicationGate({ findings, evaluatedAt: deterministic.evaluatedAt });
+  if (!findings.length) return baseGate;
+  return evaluatePublicationGate({ findings, evaluatedAt: baseGate.evaluatedAt });
 }
 
 function claimCheckFromValidation(validation: Annunci10xValidateOutput): ClaimCheck[] {
@@ -869,7 +895,7 @@ function claimCheckFromValidation(validation: Annunci10xValidateOutput): ClaimCh
   }));
 }
 
-function buildComparison(session: PersistedAnnunci10xSession, master: GeneratedAd, score: ScoreResult, previous: { score: ScoreResult; target: string } | null): ComparisonResult | null {
+function buildComparison(session: PersistedAnnunci10xSession, master: GeneratedAd, score: Annunci10xPersistedScoreResult, previous: { score: Annunci10xPersistedScoreResult; target: string } | null): ComparisonResult | null {
   if (session.flow !== 'ANALYZE') return null;
   return {
     originalAdId: previous?.target === 'ORIGINAL_AD' ? 'original-ad-from-session' : 'original-ad-from-analysis',
@@ -889,7 +915,7 @@ async function publicPremiumOutput(input: {
   output: PersistedOutput;
   master: GeneratedAd;
   channelVariant: ChannelVariant | null;
-  score: ScoreResult;
+  score: Annunci10xPersistedScoreResult;
   gate: PublicationGate;
   claimCheck: ClaimCheck[];
   comparison: ComparisonResult | null;
@@ -903,7 +929,7 @@ async function publicPremiumOutput(input: {
     snapshotId: input.snapshot.id,
     provider: input.provider,
     master: input.master,
-    masterText: input.master.sections.map((section) => `${section.title}\n${section.body}`).join('\n\n'),
+    masterText: masterText(input.master),
     channelVariant: input.channelVariant,
     score: input.score,
     gate: input.gate,
@@ -921,6 +947,7 @@ async function publicPremiumOutput(input: {
 function attachPremiumPayload(master: GeneratedAd, payload: {
   comparison: ComparisonResult | null;
   claimCheck: ClaimCheck[];
+  gate: PublicationGate;
   rationale: string[];
   automaticRevisionCount: 0 | 1;
   validationResult: Annunci10xValidateOutput['result'];
@@ -930,6 +957,7 @@ function attachPremiumPayload(master: GeneratedAd, payload: {
     annunci10xPremium: {
       comparison: payload.comparison,
       claimCheck: payload.claimCheck,
+      gate: payload.gate,
       rationale: payload.rationale,
       automaticRevisionCount: payload.automaticRevisionCount,
       validationResult: payload.validationResult,
@@ -937,13 +965,14 @@ function attachPremiumPayload(master: GeneratedAd, payload: {
   } as GeneratedAd;
 }
 
-function readPremiumPayload(master: GeneratedAd): { comparison: ComparisonResult | null; claimCheck: ClaimCheck[]; rationale: string[] } {
+function readPremiumPayload(master: GeneratedAd): { comparison: ComparisonResult | null; claimCheck: ClaimCheck[]; gate: PublicationGate | null; rationale: string[] } {
   const payload = (master as GeneratedAd & { annunci10xPremium?: unknown }).annunci10xPremium;
-  if (typeof payload !== 'object' || payload === null) return { comparison: null, claimCheck: [], rationale: [] };
-  const record = payload as { comparison?: ComparisonResult | null; claimCheck?: ClaimCheck[]; rationale?: string[] };
+  if (typeof payload !== 'object' || payload === null) return { comparison: null, claimCheck: [], gate: null, rationale: [] };
+  const record = payload as { comparison?: ComparisonResult | null; claimCheck?: ClaimCheck[]; gate?: PublicationGate | null; rationale?: string[] };
   return {
     comparison: record.comparison ?? null,
     claimCheck: Array.isArray(record.claimCheck) ? record.claimCheck : [],
+    gate: record.gate ?? null,
     rationale: Array.isArray(record.rationale) ? record.rationale : [],
   };
 }
@@ -976,7 +1005,10 @@ async function resumeConsumedReservationOutput(input: {
   const snapshot = await input.context.persistence.getSnapshotById(output.snapshotId, input.session.id, input.sessionSecret);
   const evaluation = await input.context.persistence.getEvaluationByOutputId(output.id, input.session.id, input.sessionSecret);
   if (!snapshot || !evaluation) return null;
-  const v1Evaluation = requireV1Evaluation(evaluation);
+  const persistedEvaluation = requirePremiumEvaluation(evaluation);
+  const payload = readPremiumPayload(validation.value);
+  const gate = persistedEvaluation.gate ?? payload.gate;
+  if (!gate) throw new Annunci10xPublicError('INTERNAL', 'Gate premium Annunci 10x non valida.', 500);
   const variant = await input.context.persistence.getLatestOutput(input.session.id, input.sessionSecret, 'CHANNEL_VARIANT', output.id);
   if (input.recordViewEvent !== false) await appendEventBestEffort(input.context, input.session.id, 'output_viewed', { outputId: output.id });
   return publicPremiumOutput({
@@ -985,20 +1017,20 @@ async function resumeConsumedReservationOutput(input: {
     output,
     master: validation.value,
     channelVariant: variant?.generatedContent as ChannelVariant | null ?? null,
-    score: v1Evaluation.score,
-    gate: v1Evaluation.gate,
-    claimCheck: readPremiumPayload(validation.value).claimCheck,
-    comparison: readPremiumPayload(validation.value).comparison,
+    score: persistedEvaluation.score,
+    gate,
+    claimCheck: payload.claimCheck,
+    comparison: payload.comparison,
     operations: [],
     provider: input.context.configuredProvider,
   });
 }
 
-async function baselineEvaluationForComparison(context: Annunci10xRuntimeContext, session: PersistedAnnunci10xSession, sessionSecret: string): Promise<{ score: ScoreResult; target: string } | null> {
+async function baselineEvaluationForComparison(context: Annunci10xRuntimeContext, session: PersistedAnnunci10xSession, sessionSecret: string): Promise<{ score: Annunci10xPersistedScoreResult; target: string } | null> {
   if (session.flow !== 'ANALYZE') return null;
   const run = await context.persistence.getLatestAnalysisRun(session.id, sessionSecret);
   if (!run || run.status !== 'READY' || !run.evaluationId) return null;
-  return previousV1Evaluation(await context.persistence.getEvaluationById(run.evaluationId, session.id, sessionSecret));
+  return previousEvaluationForComparison(await context.persistence.getEvaluationById(run.evaluationId, session.id, sessionSecret));
 }
 
 async function appendEventBestEffort(context: Annunci10xRuntimeContext, sessionId: string, eventName: string, metadata: Record<string, unknown>): Promise<void> {
@@ -1077,6 +1109,10 @@ function preferredChannel(snapshot: PersistedSnapshot): PublicationChannel {
   return snapshot.communicationStrategy?.channelPriorities[0] ?? 'LINKEDIN';
 }
 
+function masterText(master: GeneratedAd): string {
+  return master.sections.map((section) => `${section.title}\n${section.body}`).join('\n\n');
+}
+
 function rationaleFromSnapshot(snapshot: PersistedSnapshot): string[] {
   const strategy = snapshot.communicationStrategy;
   return [
@@ -1117,13 +1153,13 @@ function fact(value: string, source: 'USER_DECLARED' | 'SYSTEM_INFERRED', source
   return createFact(value.trim() || 'N/D', source, { sourceId, publishable: source !== 'SYSTEM_INFERRED', confidence: source === 'SYSTEM_INFERRED' ? 35 : 82 });
 }
 
-function previousV1Evaluation(evaluation: PersistedEvaluation | null): { score: ScoreResult; target: string } | null {
-  if (!evaluation || !isV1Evaluation(evaluation)) return null;
+function previousEvaluationForComparison(evaluation: PersistedEvaluation | null): { score: Annunci10xPersistedScoreResult; target: string } | null {
+  if (!evaluation || !(isV2Evaluation(evaluation) || isV1Evaluation(evaluation))) return null;
   return { score: evaluation.score, target: evaluation.target };
 }
 
-function requireV1Evaluation(evaluation: PersistedEvaluation): PersistedEvaluation & { score: ScoreResult; gate: PublicationGate } {
-  if (!isV1Evaluation(evaluation)) {
+function requirePremiumEvaluation(evaluation: PersistedEvaluation): PersistedEvaluation & { score: Annunci10xPersistedScoreResult } {
+  if (!(isV2Evaluation(evaluation) || isV1Evaluation(evaluation))) {
     throw new Annunci10xPublicError('INTERNAL', 'Evaluation premium Annunci 10x non valida.', 500);
   }
   return evaluation;
@@ -1133,20 +1169,25 @@ function isV1Evaluation(evaluation: PersistedEvaluation): evaluation is Persiste
   return evaluation.score.rubricVersion === ANNUNCI10X_RUBRIC_VERSION && evaluation.gate !== null;
 }
 
-function scoreLabel(score?: ScoreResult): string {
+function isV2Evaluation(evaluation: PersistedEvaluation): evaluation is PersistedEvaluation & { score: ScoreResultV2; gate: null } {
+  return evaluation.score.rubricVersion === ANNUNCI10X_RUBRIC_VERSION_V2 && evaluation.gate === null;
+}
+
+function scoreLabel(score?: Annunci10xPersistedScoreResult): string {
   if (!score) return 'N/D';
   if (typeof score.value === 'number') return `${score.value}/100`;
-  if (score.interval) return `${score.interval.min}-${score.interval.max}/100`;
+  if ('interval' in score && score.interval) return `${score.interval.min}-${score.interval.max}/100`;
   return 'N/D';
 }
 
 function versions(): PublicAnnunci10xPremiumOutput['versions'] {
   return {
     dataContractVersion: ANNUNCI10X_DATA_CONTRACT_VERSION,
-    methodVersion: ANNUNCI10X_METHOD_VERSION,
-    rubricVersion: ANNUNCI10X_RUBRIC_VERSION,
+    methodVersion: ANNUNCI10X_METHOD_VERSION_V2,
+    rubricVersion: ANNUNCI10X_RUBRIC_VERSION_V2,
+    scoreSemanticsVersion: ANNUNCI10X_SCORE_SEMANTICS_VERSION_V2,
     strategyVersion: ANNUNCI10X_STRATEGY_VERSION,
-    promptVersion: ANNUNCI10X_PROMPT_PACK_VERSION,
+    promptVersion: ANNUNCI10X_PROMPT_PACK_VERSION_V2,
   };
 }
 

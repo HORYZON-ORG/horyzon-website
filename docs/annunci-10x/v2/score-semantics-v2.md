@@ -194,7 +194,11 @@ Fase 1D.1 keeps the provider as a fast scoring pass: it returns compact per-cont
 
 Fase 1C.1 keeps the output schema and scoring semantics unchanged, but refines input minimization: TARGET preserves legitimate application/contact evidence that belongs to the evaluated ad or bundle; CONTEXT strips lead PII, secrets, payment, entitlement, pricing, discount, and commercial metadata. The prompt also excludes per-check gate and accelerator metadata because the provider evaluates controls while TypeScript owns gate and architecture decisions.
 
-The isolated V2 runner does not persist operations, does not calculate a publication gate, and does not replace V1 `EVALUATE`. The earlier V2.3 live pilot is historical calibration evidence only, not production validation.
+The V2 runner is now used by the persisted public analysis path and by premium
+Master evaluation. It persists AI operations and score-only evaluations. It
+does not calculate a publication gate: TypeScript validation/gate logic remains
+separate from score. The earlier V2.3 live pilot is historical calibration
+evidence only, not the current prompt version.
 
 The provider may return:
 
@@ -213,13 +217,13 @@ Conceptual ownership:
 
 `LLM = numeric evaluation of individual controls. TypeScript = deterministic aggregation of final result.`
 
-## Migration note
+## Runtime note
 
-Do not switch runtime from V1 to V2 score semantics until:
+The V1-to-V2 runtime switch for public `/annunci-10x` scoring has been made for
+new analyses. New premium comparisons evaluate:
 
-- V2 anchors are written;
-- prompt output schema supports required evidence;
-- deterministic calculator supports `0..10/null`;
-- calibration fixtures exist;
-- UI can display score, band, coverage, and gate distinctly;
-- regression tests cover original ad, generated master, channel variants, missing facts, N/D, unsupported claims, and conflicts.
+- `ORIGINAL_AD` with V2 in public analysis;
+- `GENERATED_MASTER` with V2 after premium generation or premium editorial edits.
+
+Historical V1 records can still be read as legacy compatibility data, but V1 is
+not a silent public fallback for new `/annunci-10x` sessions.

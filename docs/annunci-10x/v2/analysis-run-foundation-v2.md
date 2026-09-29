@@ -123,9 +123,12 @@ start early + persist + poll/status + reveal when ready.
 
 ## Evaluation Mode
 
-Current public runtime remains V1. `evaluationMode` supports `V1` and reserves `V2_SHADOW`, but `V2_SHADOW` is not activated by public routes in this phase.
+This foundation originally allowed V1 and reserved V2 modes. The current public
+runtime now resolves new `/annunci-10x` analyses to `V2_PUBLIC`; historical V1
+mode remains compatibility data only and is not a silent public fallback.
 
-V2.3 status: `CURRENT CANDIDATE`, not production validated.
+Current V2 prompt status is tracked in `public-score-v2-integration.md` and the
+runtime prompt files.
 
 ## Persistence
 

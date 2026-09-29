@@ -160,11 +160,28 @@ assert.deepEqual(
   assert.equal(result.channelVariant?.channel, 'LINKEDIN');
   assert.equal(result.operations.map((operation) => operation.type).join('>'), 'GENERATE>VALIDATE>EVALUATE>CHANNEL_ADAPTER');
   assert.equal(result.score.checks.length, 20);
+  assert.equal(result.score.rubricVersion, 'annunci10x-rubric-v2');
+  assert.equal(result.score.scoreSemanticsVersion, 'annunci10x-score-semantics-v2');
+  assert.equal(result.versions.methodVersion, 'annunci10x-method-v2');
+  assert.equal(result.versions.rubricVersion, 'annunci10x-rubric-v2');
+  assert.equal(result.versions.scoreSemanticsVersion, 'annunci10x-score-semantics-v2');
+  assert.equal(result.versions.promptVersion, 'annunci10x-prompts-v2');
   assert.equal(result.comparison?.generatedAdId, result.master.id, 'Analyze path includes comparison');
   assert.equal(JSON.stringify(context.provider.calls).includes('commercialContext'), false, 'generation prompts do not receive commercial context');
   assert.equal(JSON.stringify(context.provider.calls).includes('"payment"'), false, 'generation prompts do not receive payment state');
+  const evaluateCall = context.provider.calls.find((call) => call.operationType === 'EVALUATE');
+  assert.equal(evaluateCall?.outputSchemaName, 'annunci10x_evaluate_v2', 'premium evaluates generated master through V2 schema');
+  assert.equal(evaluateCall?.input?.target?.kind, 'GENERATED_MASTER', 'premium V2 evaluate target is GENERATED_MASTER');
+  assert.equal(JSON.stringify(evaluateCall?.input?.target ?? {}).includes('Addetto pulizie'), true, 'premium V2 evaluate target includes generated master text');
+  assert.equal(JSON.stringify(evaluateCall?.input?.target ?? {}).includes('roleCard'), false, 'premium V2 evaluate target does not embed role card as fallback evidence');
+  const evaluation = await context.persistence.getLatestEvaluation(created.session.id, created.sessionSecret);
+  assert.equal(evaluation?.target, 'GENERATED_MASTER');
+  assert.equal(evaluation?.score.rubricVersion, 'annunci10x-rubric-v2');
+  assert.equal(evaluation?.gate, null, 'V2 evaluation is score-only; publication gate remains separate');
   const resumed = await resumeAnnunci10xPremiumOutput({ sessionId: created.session.id, sessionSecret: created.sessionSecret, context });
   assert.equal(resumed?.outputId, result.outputId, 'premium output resumes from persisted records');
+  assert.equal(resumed?.score.rubricVersion, 'annunci10x-rubric-v2', 'resumed premium output preserves V2 score');
+  assert.equal(resumed?.gate.status, result.gate.status, 'resumed premium output reads gate from premium payload');
 }
 
 {
@@ -200,6 +217,7 @@ assert.deepEqual(
     authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
   });
   assert.equal(editorial.status, 'EDITORIAL_REVISED');
+  assert.equal(editorial.output?.score.rubricVersion, 'annunci10x-rubric-v2', 'premium editorial edits are re-evaluated with V2');
   const factual = await requestAnnunci10xPremiumEdit({
     sessionId: created.session.id,
     sessionSecret: created.sessionSecret,

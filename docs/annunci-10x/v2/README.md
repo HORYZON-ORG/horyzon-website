@@ -1,6 +1,6 @@
 # Annunci 10x V2 canonical specification
 
-Status: V2 specification plus isolated shadow-runtime building blocks. Not public runtime.
+Status: V2 specification plus public scoring runtime for `/annunci-10x`.
 
 Canonical route: `/annunci-10x`
 
@@ -41,7 +41,10 @@ The product must not sell volume guarantees. "10x" means quality and decision va
 
 ## Current implementation relationship
 
-Current public runtime is still V1-oriented and remains valid until a future migration is explicitly implemented.
+Current public `/annunci-10x` scoring resolves to `V2_PUBLIC` by default. The
+server flag `ANNUNCI10X_PUBLIC_SCORE_VERSION=V2` may be retained, but missing
+configuration also resolves to V2; `V1` fails closed and is no longer a silent
+public fallback.
 
 Fase 1B added an isolated TypeScript V2 scoring core for rubric definitions, per-check validation, deterministic aggregation, coverage, and band mapping.
 
@@ -62,7 +65,14 @@ A second same-day benchmark on four unseen ads found the remaining gap in public
 
 The V2 projection is boundary-aware: TARGET preserves legitimate ad/bundle evidence such as application email, phone, URL, named contact, role name, and company text, while technical secret keys are removed. CONTEXT is limited to `roleCard`, `roleProfile`, and `communicationStrategy` and strips lead PII, secrets, and commercial/payment metadata.
 
-These additions are not wired to `/annunci-10x`, V1 `EVALUATE`, persistence, UI, API routes, or public product behavior. The V2.3 live pilot is documented separately as calibration evidence only, not production validation.
+Public analysis uses the persisted V2 runner and stores `V2_PUBLIC` score-only
+evaluations for `ORIGINAL_AD`. Premium generation and premium editorial edits
+use the same persisted V2 runner for `GENERATED_MASTER`, so new Analyze-session
+comparisons are `ORIGINAL_AD` V2 -> `GENERATED_MASTER` V2. Publication gate
+logic remains separate from score and is derived from the validation step.
+Historical V1 records and docs remain available only for compatibility and
+audit. The V2.3 live pilot is documented separately as calibration evidence,
+not as the current prompt version.
 
 Important current files:
 

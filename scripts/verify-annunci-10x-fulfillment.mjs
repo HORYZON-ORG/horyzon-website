@@ -547,6 +547,7 @@ function assertPostPaymentUxStaticContract() {
   const panel = readFileSync(new URL('../src/components/annunci-10x/annunci-10x-fulfillment-panel.tsx', import.meta.url), 'utf8');
   const route = readFileSync(new URL('../src/app/api/annunci-10x/premium/status/route.ts', import.meta.url), 'utf8');
   const pageClient = readFileSync(new URL('../src/components/annunci-10x/annunci-10x-client.tsx', import.meta.url), 'utf8');
+  const premiumPipeline = readFileSync(new URL('../src/lib/annunci-10x/premium/pipeline.ts', import.meta.url), 'utf8');
 
   assert.match(route, /export const runtime = 'nodejs'/);
   assert.match(route, /export const dynamic = 'force-dynamic'/);
@@ -571,6 +572,12 @@ function assertPostPaymentUxStaticContract() {
   assert.doesNotMatch(panel, /Pronto da pubblicare/);
   assert.match(pageClient, /Annunci10xFulfillmentPanel/);
   assert.match(pageClient, /onCreateReturn/);
+  assert.match(premiumPipeline, /runPersistedAnnunci10xEvaluateV2/);
+  assert.match(premiumPipeline, /targetKind: 'GENERATED_MASTER'/);
+  assert.match(premiumPipeline, /gate: null/);
+  assert.doesNotMatch(premiumPipeline, /calculateScoreAndGateFromEvaluateOutput/);
+  assert.doesNotMatch(premiumPipeline, /previousV1Evaluation/);
+  assert.doesNotMatch(premiumPipeline, /input:\s*\{\s*target:\s*\{\s*kind: 'GENERATED_MASTER'/);
 }
 
 function assertPaymentVerificationPollingContract() {

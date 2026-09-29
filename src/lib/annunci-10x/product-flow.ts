@@ -10,7 +10,7 @@ import { ANNUNCI10X_RUBRIC } from './rubric.ts';
 import { ANNUNCI10X_RUBRIC_CHECKS_V2 } from './rubric-v2.ts';
 import { criticalMissingData, evaluatePublicationGate, materialConflict } from './gates.ts';
 import { calculateScoreAndGateFromEvaluateOutput } from './ai/orchestrator.ts';
-import { runPersistedAnnunci10xEvaluateV2, type Annunci10xEvaluateInputV2 } from './ai/evaluate-v2.ts';
+import { runPersistedAnnunci10xEvaluateV2, type Annunci10xEvaluateInputV2, type Annunci10xEvaluateTargetKindV2 } from './ai/evaluate-v2.ts';
 import { Annunci10xAiError } from './ai/errors.ts';
 import { MockAnnunci10xProvider } from './ai/mock-provider.ts';
 import { OpenAiAnnunci10xProvider } from './ai/openai-provider.ts';
@@ -600,6 +600,7 @@ async function publicResult(input: {
 
 export function buildEvaluateInputV2(input: {
   rawAdText: string;
+  targetKind?: Annunci10xEvaluateTargetKindV2;
   channelHint?: PublicationChannel;
   roleCard: RoleCard;
   roleProfile: RoleProfile;
@@ -607,7 +608,7 @@ export function buildEvaluateInputV2(input: {
 }): Annunci10xEvaluateInputV2 {
   return {
     target: {
-      kind: 'ORIGINAL_AD',
+      kind: input.targetKind ?? 'ORIGINAL_AD',
       text: input.rawAdText,
       channel: input.channelHint ?? null,
       structuredFields: {

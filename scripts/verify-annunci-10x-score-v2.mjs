@@ -95,6 +95,43 @@ const compensationNotEvaluable = calculateAnnunci10xScoreV2(makeChecks(8).map((c
 )));
 assert.equal(compensationNotEvaluable.value > 70, true, 'genuine N/D compensation does not impose a communication ceiling');
 
+const regressionListLikeOriginal = calculateAnnunci10xScoreV2(makeChecks(8).map((check) => (
+  ['04', '05', '06', '18', '19'].includes(check.id)
+    ? { ...check, score: check.id === '04' ? 4 : 5, reason: 'List-like text without a clear result, message, or candidate flow.' }
+    : check
+)));
+assert.equal(regressionListLikeOriginal.value < 70, true, 'case 1: a list-like original ad must not pass as GOOD_BASE');
+
+const regressionStrongAd = calculateAnnunci10xScoreV2(makeChecks(9).map((check) => (
+  check.id === '14'
+    ? { ...check, score: null, status: 'NOT_EVALUABLE', evidence: [], reason: 'Compensation is not present in the target bundle.' }
+    : check
+)));
+assert.equal(regressionStrongAd.value >= 85, true, 'case 2: a strong ad with genuine N/D compensation is not flattened into 50-60');
+
+const regressionRalConflict = calculateAnnunci10xScoreV2(makeChecks(8).map((check) => (
+  check.id === '14'
+    ? { ...check, score: 2, status: 'CONFLICT', reason: 'RAL in target contradicts the available compensation facts.' }
+    : check
+)));
+assert.equal(regressionRalConflict.value < 70, true, 'case 3: a material RAL conflict must materially cap the score');
+
+const regressionGeneratedMaster = calculateAnnunci10xScoreV2(makeChecks(9).map((check) => (
+  check.id === '14'
+    ? { ...check, score: null, status: 'NOT_EVALUABLE', evidence: [], reason: 'Compensation is not in the generated master.' }
+    : check
+)));
+assert.equal(regressionGeneratedMaster.value > regressionListLikeOriginal.value + 15, true, 'case 4: generated master V2 can improve over ORIGINAL_AD V2 with the same facts');
+
+const regressionNoInvention = calculateAnnunci10xScoreV2(makeChecks(8).map((check) => (
+  ['11', '15', '17'].includes(check.id)
+    ? { ...check, score: 4, status: 'UNSUPPORTED', missing: ['Target claim is not supported by the target bundle.'], reason: 'Unsupported invented detail cannot be rewarded.' }
+    : check
+)));
+assert.equal(regressionNoInvention.value < 85, true, 'case 5: unsupported invented details are not rewarded as a strong generated ad');
+
+assert.equal(regressionGeneratedMaster.value >= 85, true, 'case 6: N/D on compensation alone does not create an artificial ceiling');
+
 const excellentCeiling = calculateAnnunci10xScoreV2(makeChecks(10).map((check) => (
   check.id === '07' ? { ...check, score: 8 } : check
 )));
