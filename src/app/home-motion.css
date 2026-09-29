@@ -8,12 +8,14 @@
  .chapter-copy h2{font-size:clamp(56px,6.4vw,112px)}
  .chapter-hero .chapter-copy,.chapter-arrival .chapter-copy{width:min(1180px,88vw);max-width:1180px}
  .chapter-hero h1{max-width:1100px}
- .chapter-current .chapter-copy{width:min(760px,56vw)}
+ .chapter-current .chapter-copy{width:min(640px,46vw)}
  .chapter-caption{bottom:104px}
+ .chapter-arrival h2{font-size:clamp(64px,8vw,150px)}
 }
 
 /* Words rise out of their own masks; italic words land last, with a small overshoot. */
-.kinetic .chapter-copy:not([data-kin]){opacity:0}
+/* Copy waits for its split; the hero only while the splash covers it (html.kin-hero). */
+.kinetic .journey-chapter:not(.chapter-hero) .chapter-copy:not([data-kin]),.kinetic.kin-hero .chapter-hero .chapter-copy:not([data-kin]){opacity:0}
 .kin-m{display:inline-block;overflow:hidden;vertical-align:top;padding:.1em .05em .18em;margin:-.1em -.05em -.18em}
 .kin-w{display:inline-block;transform:translateY(115%) rotate(5deg);transform-origin:0 100%;transition:transform 1.05s cubic-bezier(.16,1,.3,1) calc(var(--d,0ms) + var(--i,0) * 55ms)}
 em .kin-w{transition:transform .9s cubic-bezier(.34,1.45,.64,1) calc(var(--d,0ms) + var(--i,0) * 55ms + 180ms)}
@@ -77,3 +79,50 @@ em .kin-w{transition:transform .9s cubic-bezier(.34,1.45,.64,1) calc(var(--d,0ms
  .horizon-nav .chapter-dot-label{display:none}
 }
 @media(prefers-reduced-motion:reduce){.horizon-nav .chapter-dot,.horizon-nav .chapter-dot-label{transition:none}}
+
+/* Radar chapter: the six areas, a sweep and an abstract profile (radar-scene.tsx). */
+.chapter-current{position:relative}
+.radar-scene{position:absolute;left:8vw;top:50%;width:min(480px,30vw);aspect-ratio:1;transform:translateY(-50%);pointer-events:none}
+.radar-scene svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.radar-ring{fill:none;stroke:rgba(242,238,227,.16)}
+.radar-axis{stroke:rgba(242,238,227,.14)}
+.radar-label{fill:rgba(242,238,227,.72);font:600 12px var(--font-sans),sans-serif;letter-spacing:.16em;text-transform:uppercase}
+.radar-profile{fill:rgba(217,191,143,.1);stroke:#d9bf8f;stroke-width:1.5;stroke-dasharray:1;stroke-dashoffset:0}
+.radar-node{fill:#081521;stroke:#d9bf8f;stroke-width:1.5;transform-box:fill-box;transform-origin:center}
+.radar-sweep{position:absolute;inset:10.7%;border-radius:50%;background:conic-gradient(from 0deg,transparent 0deg 270deg,rgba(217,191,143,.05) 300deg,rgba(217,191,143,.32) 359deg,rgba(217,230,95,.7) 360deg);opacity:0}
+.kinetic .radar-scene{opacity:0;transition:opacity 1s ease}
+.kinetic .radar-scene .radar-profile{stroke-dashoffset:1;fill-opacity:0;transition:stroke-dashoffset 1.8s cubic-bezier(.65,0,.35,1) .4s,fill-opacity 1s ease 1.8s}
+.kinetic .radar-scene .radar-node{opacity:0;transition:opacity .5s ease 1.6s}
+.kinetic .radar-scene.is-in,.kinetic .radar-scene.is-in .radar-node{opacity:1}
+.kinetic .radar-scene.is-in .radar-profile{stroke-dashoffset:0;fill-opacity:1}
+.kinetic .radar-scene.is-in .radar-sweep{opacity:1;animation:radar-spin 5s linear infinite}
+.kinetic .radar-scene.is-in .radar-node{animation:radar-ping 5s ease-out infinite;animation-delay:calc(var(--a) / 360 * 5s)}
+@keyframes radar-spin{to{transform:rotate(360deg)}}
+@keyframes radar-ping{0%{fill:#d9e65f;stroke:#d9e65f;transform:scale(1.9)}22%,100%{fill:#081521;stroke:#d9bf8f;transform:scale(1)}}
+@media(max-width:850px){
+ .radar-scene{left:auto;right:-22vw;top:70px;width:82vw;transform:none;opacity:.32}
+ .kinetic .radar-scene.is-in{opacity:.32}
+ .radar-label{display:none}
+}
+
+/* Three paths: a rule draws across, then the paths arrive one by one; a light follows the pointer. */
+.kinetic .kin-paths{position:relative}
+.kinetic .kin-paths::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg,#d9bf8f,rgba(242,238,227,.25) 60%,transparent);transform:scaleX(0);transform-origin:left;transition:transform 1.2s cubic-bezier(.16,1,.3,1) var(--d,0ms)}
+.kinetic .is-in .kin-paths::before{transform:none}
+@media(hover:hover) and (pointer:fine){
+ .kinetic .dimension-paths a{position:relative;isolation:isolate}
+ .kinetic .dimension-paths a::after{content:"";position:absolute;inset:0 -14px;z-index:-1;opacity:0;pointer-events:none;background:radial-gradient(260px circle at var(--gx,50%) var(--gy,50%),rgba(217,191,143,.16),transparent 70%);transition:opacity .35s}
+ .kinetic .dimension-paths a:hover::after{opacity:1}
+ .kinetic .journey-button{translate:var(--mx,0) var(--my,0);transition:background .2s,transform .2s,translate .35s cubic-bezier(.2,.8,.2,1)}
+}
+
+/* Arrival: a horizon opens behind the last heading and a sun rises from it. */
+.arrival-horizon{position:relative;left:50%;width:100vw;height:1px;margin:0 0 42px -50vw;pointer-events:none}
+.arrival-horizon::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(242,238,227,.45) 25%,#e3cfac 50%,rgba(242,238,227,.45) 75%,transparent);box-shadow:0 0 14px rgba(227,207,172,.35)}
+.arrival-sky{position:absolute;left:50%;bottom:0;width:520px;height:260px;margin-left:-260px;overflow:hidden}
+.arrival-sky i{position:absolute;left:50%;bottom:0;width:30px;height:30px;margin-left:-15px;border-radius:50%;background:#d9e65f;box-shadow:0 0 30px 6px rgba(217,230,95,.4),0 0 120px 44px rgba(233,196,128,.22);transform:translateY(42%)}
+.kinetic .arrival-horizon::before{transform:scaleX(0);transition:transform 1.6s cubic-bezier(.16,1,.3,1)}
+.kinetic .arrival-sky i{transform:translateY(100%);transition:transform 2.4s cubic-bezier(.16,1,.3,1) .5s}
+.kinetic .arrival-horizon.is-in::before{transform:none}
+.kinetic .arrival-horizon.is-in .arrival-sky i{transform:translateY(42%)}
+@media(max-width:850px){.arrival-horizon{margin-bottom:30px}.arrival-sky{width:320px;height:180px;margin-left:-160px}.arrival-sky i{width:22px;height:22px;margin-left:-11px}}

@@ -6,10 +6,15 @@ import { useLayoutEffect } from 'react';
 // server HTML, the readable Markdown export and the no-JS page stay exactly the static journey.
 //
 // - Chapter headings are split into words after hydration; each word rises out of its own mask and the
-//   italic words land last. The rest of the chapter copy follows in order.
-// - The hero waits for the splash logo to land in the header before it enters.
+//   italic words land last. The rest of the chapter copy follows in order; path lists enter item by item.
+// - The hero waits for the splash logo to land in the header. On a full load without the splash it was
+//   already painted, so it is left as is (window.__kinStatic).
+// - Decorative scenes ([data-kin-watch]: radar, arrival horizon) start when they enter the viewport.
 // - --dawn (0..1 over the journey) warms the scene; --m, --dot and data-step drive the pinned
 //   "Come lavoriamo" track.
+// - Buttons lean towards the pointer and path cards carry a light that follows it (--mx/--my, --gx/--gy).
+
+type MotionWindow = Window & { __hycSplash?: string; __homeMotion?: boolean; __kinStatic?: boolean };
 
 const WORD_STAGGER = 55;
 
@@ -41,7 +46,7 @@ function splitWords(heading: HTMLElement, first: number) {
 }
 
 function prepareChapter(copy: HTMLElement) {
- if (copy.dataset.kin) return;
+ if (copy.dataset.kin !== undefined) return;
  copy.dataset.kin = '';
  let delay = 0;
  for (const child of [...copy.children] as HTMLElement[]) {
@@ -49,6 +54,16 @@ function prepareChapter(copy: HTMLElement) {
    const words = splitWords(child, 0);
    child.style.setProperty('--d', `${delay + 80}ms`);
    delay += 80 + words * WORD_STAGGER + 260;
+  } else if (child.classList.contains('dimension-paths')) {
+   // the rule above the paths draws first, then the paths arrive one by one
+   child.classList.add('kin-paths');
+   child.style.setProperty('--d', `${delay}ms`);
+   delay += 250;
+   for (const item of [...child.children] as HTMLElement[]) {
+    item.classList.add('kin-fade');
+    item.style.setProperty('--d', `${delay}ms`);
+    delay += 160;
+   }
   } else {
    child.classList.add('kin-fade');
    child.style.setProperty('--d', `${delay}ms`);
@@ -74,13 +89,19 @@ function methodTrack(m: number) {
 export function HomeMotion() {
  useLayoutEffect(() => {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const w = window as Window & { __hycSplash?: string; __homeMotion?: boolean };
+  const w = window as MotionWindow;
+  const html = document.documentElement;
+  const heroPainted = w.__kinStatic === true;
+  w.__kinStatic = false;
   w.__homeMotion = true;
-  document.documentElement.classList.add('kinetic');
+  html.classList.add('kinetic');
 
-  const chapters = [...document.querySelectorAll<HTMLElement>('.journey-chapter .chapter-copy')];
-  chapters.forEach(prepareChapter);
   const hero = document.querySelector<HTMLElement>('.chapter-hero .chapter-copy');
+  const chapters = [...document.querySelectorAll<HTMLElement>('.journey-chapter .chapter-copy')];
+  for (const copy of chapters) {
+   if (copy === hero && heroPainted) copy.dataset.kin = '';
+   else prepareChapter(copy);
+  }
   const reveal = (el: Element) => el.classList.add('is-in');
 
   const observer = new IntersectionObserver(entries => {
@@ -91,9 +112,14 @@ export function HomeMotion() {
    }
   }, { rootMargin: '0px 0px -18% 0px' });
   for (const copy of chapters) if (copy !== hero) observer.observe(copy);
+  document.querySelectorAll('[data-kin-watch]').forEach(el => observer.observe(el));
 
-  const enterHero = () => { if (hero) requestAnimationFrame(() => reveal(hero)); };
-  if (w.__hycSplash === 'playing') window.addEventListener('hyc:splash-landing', enterHero, { once: true });
+  const enterHero = () => {
+   html.classList.remove('kin-hero');
+   if (hero) requestAnimationFrame(() => reveal(hero));
+  };
+  if (heroPainted) hero?.classList.add('is-in');
+  else if (w.__hycSplash === 'playing') window.addEventListener('hyc:splash-landing', enterHero, { once: true });
   else enterHero();
 
   const story = document.querySelector<HTMLElement>('.journey-story');
@@ -120,12 +146,45 @@ export function HomeMotion() {
   window.addEventListener('scroll', schedule, { passive: true });
   window.addEventListener('resize', schedule);
   update();
+
+  // Pointer details, only for precise pointers.
+  const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const content = document.querySelector<HTMLElement>('.journey-content');
+  const onMove = (event: PointerEvent) => {
+   const target = event.target as Element | null;
+   const button = target?.closest<HTMLElement>('.journey-button');
+   if (button) {
+    const r = button.getBoundingClientRect();
+    button.style.setProperty('--mx', `${((event.clientX - r.left) / r.width - .5) * 10}px`);
+    button.style.setProperty('--my', `${((event.clientY - r.top) / r.height - .5) * 8}px`);
+   }
+   const card = target?.closest<HTMLElement>('.dimension-paths a');
+   if (card) {
+    const r = card.getBoundingClientRect();
+    card.style.setProperty('--gx', `${event.clientX - r.left}px`);
+    card.style.setProperty('--gy', `${event.clientY - r.top}px`);
+   }
+  };
+  const onLeave = (event: PointerEvent) => {
+   const button = (event.target as Element | null)?.closest<HTMLElement>('.journey-button');
+   if (button && !button.contains(event.relatedTarget as Node | null)) {
+    button.style.removeProperty('--mx');
+    button.style.removeProperty('--my');
+   }
+  };
+  if (fine && content) {
+   content.addEventListener('pointermove', onMove);
+   content.addEventListener('pointerout', onLeave);
+  }
+
   return () => {
    cancelAnimationFrame(frame);
    observer.disconnect();
    window.removeEventListener('hyc:splash-landing', enterHero);
    window.removeEventListener('scroll', schedule);
    window.removeEventListener('resize', schedule);
+   content?.removeEventListener('pointermove', onMove);
+   content?.removeEventListener('pointerout', onLeave);
   };
  }, []);
  return null;

@@ -12,7 +12,9 @@ import { HYC_PATHS } from './hyc-splash-paths';
 //
 // The same script opts the home into its kinetic reveals (html.kinetic, see home-motion.tsx) before
 // first paint, and tells the page when the logo is landing (window.__hycSplash + 'hyc:splash-landing')
-// so the hero copy can enter as the overlay clears.
+// so the hero copy can enter as the overlay clears. Without the splash the hero is painted as is and
+// must not animate again after hydration (window.__kinStatic); html.kin-hero keeps it hidden only while
+// the splash covers it.
 
 const LAYERS = [
  { id: 'hy', box: [60, 55, 615, 240] },
@@ -22,13 +24,14 @@ const LAYERS = [
 ] as const;
 
 function playSplash() {
- const w = window as Window & { __hycSplash?: string; __homeMotion?: boolean };
+ const w = window as Window & { __hycSplash?: string; __homeMotion?: boolean; __kinStatic?: boolean };
  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
  if (!reduced) {
   const html = document.documentElement;
   html.classList.add('kinetic');
   // If the page script never takes over, never leave the copy hidden.
-  setTimeout(() => { if (!w.__homeMotion) html.classList.remove('kinetic'); }, 5000);
+  setTimeout(() => { if (!w.__homeMotion) html.classList.remove('kinetic', 'kin-hero'); }, 5000);
+  w.__kinStatic = true;
  }
  const root = document.getElementById('hyc-splash');
  if (!root || reduced) return;
@@ -37,6 +40,8 @@ function playSplash() {
   sessionStorage.setItem('hyc-splash', '1');
  } catch {}
  w.__hycSplash = 'playing';
+ w.__kinStatic = false;
+ document.documentElement.classList.add('kin-hero');
 
  const q = (id: string) => root.querySelector<HTMLElement | SVGElement>(`[data-splash="${id}"]`)!;
  const cam = q('cam'), dot = q('dot');

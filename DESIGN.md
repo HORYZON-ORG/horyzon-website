@@ -31,3 +31,6 @@ Desktop: testo editoriale a sinistra, profondità e luce a destra. Mobile: campo
 
 ## Preservazione e confini
 Conservare URL, team, libri, autovalutazione, biglietti digitali, vCard, redirect, sitemap, robots e contatti. Le informative legali esistenti sono provvisorie: nessuna attestazione di conformità aggiunta. Il committente ha autorizzato il push su main a lavoro completato; non modificare domini.
+
+## Livello cinetico della home
+Splash HYC (`hyc-splash.tsx`): primo piano del monogramma, zoom indietro, il logo atterra nel wordmark dell'header; una volta per sessione, solo a caricamento completo. Sopra il viaggio video, `home-motion.tsx` aggiunge: titoli divisi in parole che salgono dalle maschere (corsivi per ultimi), linea d'orizzonte in basso con il punto lime del logo come navigazione, Radar con le sei aree (profilo illustrativo, nessun valore), tre benesseri che entrano uno alla volta, "Come lavoriamo" fermo sullo schermo con tre tappe su una linea, alba progressiva della scena, sole lime che sorge sotto l'ultimo titolo. Tutto è condizionato a `html.kinetic`: con reduced motion o senza JS la home resta il layout statico completo, e l'HTML server e l'export Markdown non cambiano.

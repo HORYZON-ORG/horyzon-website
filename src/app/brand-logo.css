@@ -16,3 +16,19 @@
   .wordmark-logo-wrap { padding: 0; }
   .wordmark-logo { width: 138px; }
 }
+
+/* The wordmark is rendered white on dark; restore the lime point of the logo on top of it.
+   Position and size of the dot in /horyzon-logo-canonical.png (1670x390): centre 349.5, 185.5, d 60. */
+.wordmark-logo-wrap { position: relative; }
+.wordmark-logo-wrap::after {
+  content: "";
+  position: absolute;
+  left: 20.93%;
+  top: 47.56%;
+  width: 3.8%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #d9e65f;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
