@@ -52,6 +52,12 @@ export function unseal(value: string): RadarSessionCookie {
 
 export function errorResponse(error: unknown): NextResponse {
   const status = error instanceof RadarAccessError ? error.status : error instanceof RadarRevisionConflictError ? 409 : 500;
+  if (status === 500) {
+    console.error('Radar API failure', {
+      name: error instanceof Error ? error.name : 'UnknownError',
+      message: error instanceof Error ? error.message : 'Unknown Radar failure',
+    });
+  }
   const message = status === 500 ? 'Radar temporaneamente non disponibile.' : (error as Error).message;
   return NextResponse.json({ ok: false, error: { message } }, { status, headers: { 'Cache-Control': 'no-store' } });
 }
