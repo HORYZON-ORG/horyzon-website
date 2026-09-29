@@ -60,9 +60,9 @@ Marketing consent must remain separate from transactional/service email.
 
 Public branding: Horyzon Consulting Recruiting.
 
-Canonical web logo asset: `/annunci-10x/horyzon-consulting-recruiting.png`.
+Canonical web logo asset: `/annunci-10x/horyzon-consulting-recruiting-white.png`.
 
-The approved asset uses the white Horyzon Consulting Recruiting lockup with rounded corners. The previous typographic fallback is no longer used in the funnel header.
+The approved asset uses the transparent white/lime Horyzon Consulting Recruiting lockup. It must stay transparent in the funnel header, without a white panel, CSS shadow or glow. The previous typographic fallback is no longer used in the funnel header.
 
 Performia must not appear in the public Annunci 10x funnel while this contract is active.
 

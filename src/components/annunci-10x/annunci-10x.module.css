@@ -62,9 +62,7 @@
   display: inline-flex;
   align-items: center;
   flex: 0 0 auto;
-  width: clamp(176px, 19vw, 230px);
-  height: clamp(66px, 7.125vw, 86.25px);
-  min-height: clamp(66px, 7.125vw, 86.25px);
+  width: clamp(220px, 18vw, 240px);
   overflow: visible;
   line-height: 0;
 }
@@ -72,11 +70,10 @@
 .brandLogo {
   display: block;
   width: 100%;
-  height: 100% !important;
-  max-width: none;
+  height: auto !important;
+  max-width: 100%;
   object-fit: contain;
   object-position: center;
-  border-radius: 18px;
 }
 
 .funnelHeader nav,
@@ -1425,8 +1422,6 @@
 
   .brand {
     width: 176px;
-    height: 66px;
-    min-height: 66px;
   }
 
   .funnelHeader button {
