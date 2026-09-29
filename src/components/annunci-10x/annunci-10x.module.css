@@ -100,10 +100,10 @@
 .hero {
   position: relative;
   isolation: isolate;
-  min-height: 92svh;
+  min-height: clamp(560px, 74svh, 720px);
   display: grid;
   align-items: center;
-  padding: clamp(3.8rem, 6vw, 6rem) 5vw;
+  padding: clamp(1.8rem, 3.2vw, 3.2rem) 5vw;
   color: #fffdf5;
 }
 
@@ -124,8 +124,8 @@
 
 .heroGrid {
   display: grid;
-  grid-template-columns: minmax(0, .94fr) minmax(380px, .62fr);
-  gap: clamp(2rem, 5vw, 5.5rem);
+  grid-template-columns: minmax(0, .78fr) minmax(520px, .92fr);
+  gap: clamp(2rem, 4.2vw, 4.6rem);
   align-items: center;
 }
 
@@ -178,8 +178,9 @@
 }
 
 .hero h1 {
-  max-width: 780px;
-  font-size: clamp(3rem, 6.6vw, 6.8rem);
+  max-width: 620px;
+  font-size: clamp(2.7rem, 4.9vw, 5rem);
+  line-height: 1;
 }
 
 .heroSubhead {
@@ -192,11 +193,11 @@
 }
 
 .heroLead {
-  max-width: 680px;
+  max-width: 560px;
   margin: 0;
   color: rgba(255, 253, 245, .86);
-  font-size: clamp(1rem, 1.28vw, 1.16rem);
-  line-height: 1.6;
+  font-size: clamp(.98rem, 1.08vw, 1.08rem);
+  line-height: 1.48;
 }
 
 .heroMicroLead,
@@ -272,8 +273,8 @@
 .proofStrip {
   display: flex;
   flex-wrap: wrap;
-  gap: .55rem;
-  margin-top: .4rem;
+  gap: .42rem;
+  margin-top: .15rem;
 }
 
 .proofStrip span,
@@ -281,15 +282,17 @@
   border: 1px solid rgba(255, 255, 255, .26);
   border-radius: 6px;
   background: rgba(255, 255, 255, .1);
-  padding: .58rem .75rem;
+  padding: .45rem .62rem;
   color: #fffdf5;
-  font-size: .86rem;
+  font-size: .8rem;
   font-weight: 800;
 }
 
 .heroPanel {
   display: grid;
   gap: 1rem;
+  justify-self: end;
+  width: min(100%, 660px);
   min-width: 0;
   scroll-margin-top: 88px;
 }
@@ -975,32 +978,103 @@
   margin-top: 2rem;
 }
 
+.heroPanel .createShell {
+  margin-top: 0;
+  border: 1px solid rgba(247, 244, 232, .48);
+  border-radius: 12px;
+  background: rgba(255, 253, 245, .97);
+  padding: clamp(1rem, 1.6vw, 1.35rem);
+  box-shadow: 0 28px 95px rgba(0, 0, 0, .28);
+  backdrop-filter: blur(14px);
+}
+
 .createShell[data-flow="analyze"] {
   position: relative;
 }
 
 .createShell[data-flow="analyze"][data-has-workspace="true"] {
-  min-height: clamp(430px, 68svh, 760px);
+  min-height: 0;
+}
+
+.heroPanel .createShell > .form {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+}
+
+.heroPanel .createShell[data-has-workspace="true"] > .form {
+  display: none;
 }
 
 .analysisWorkspace {
-  position: absolute;
-  inset: 0;
-  z-index: 4;
+  position: static;
   display: grid;
   align-content: start;
-  gap: .9rem;
-  max-height: min(74svh, 760px);
+  gap: .7rem;
   min-width: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  border: 1px solid rgba(247, 244, 232, .45);
-  border-radius: 10px;
-  background: rgba(255, 253, 245, .97);
-  padding: clamp(.9rem, 1.8vw, 1.25rem);
-  box-shadow: 0 24px 90px rgba(0, 0, 0, .28);
-  backdrop-filter: blur(16px);
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.analysisWorkspace > .form,
+.analysisWorkspace > .progressCard,
+.analysisWorkspace > .result,
+.analysisWorkspace > .lockedNotice,
+.analysisWorkspace > .warningPanel,
+.analysisWorkspace > .error,
+.analysisWorkspace > .coverageNote {
+  box-shadow: none;
+}
+
+.analysisWorkspace > .form,
+.analysisWorkspace > .progressCard,
+.analysisWorkspace > .result {
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.analysisWorkspace > .form {
+  gap: .72rem;
+}
+
+.analysisWorkspace .optionalFields {
+  display: none;
+}
+
+.analysisWorkspace .fieldGrid {
+  gap: .7rem;
+}
+
+.analysisWorkspace .field input,
+.analysisWorkspace .field textarea,
+.analysisWorkspace .field select {
+  padding: .68rem .76rem;
+  font-size: .94rem;
+}
+
+.analysisWorkspace .formHead {
+  gap: .42rem;
+}
+
+.analysisWorkspace .formHead h2 {
+  font-size: clamp(1.45rem, 2vw, 2rem);
+}
+
+.analysisWorkspace .formHead span,
+.analysisWorkspace .formMicrocopy,
+.analysisWorkspace .unknownToggle,
+.analysisWorkspace .coverageNote,
+.analysisWorkspace .disclaimer,
+.analysisWorkspace .freeScoreHero small,
+.analysisWorkspace .offerPanel small {
+  font-size: .84rem;
+  line-height: 1.42;
 }
 
 .sourceToggle {
@@ -1449,6 +1523,12 @@
   min-width: 0;
 }
 
+.analysisWorkspace .freeResultLayout {
+  grid-template-columns: minmax(170px, .72fr) minmax(0, 1fr);
+  gap: .75rem;
+  align-items: start;
+}
+
 .freeScoreHero {
   display: grid;
   gap: .8rem;
@@ -1458,15 +1538,43 @@
   padding: clamp(1rem, 2.6vw, 2rem);
 }
 
+.analysisWorkspace .freeScoreHero,
+.analysisWorkspace .freeResultCopy,
+.analysisWorkspace .improveCta,
+.analysisWorkspace .offerPanel,
+.analysisWorkspace .lockedNotice,
+.analysisWorkspace .warningPanel,
+.analysisWorkspace .coverageNote,
+.analysisWorkspace .error {
+  border-radius: 8px;
+  padding: .85rem;
+}
+
+.analysisWorkspace .freeScoreHero,
+.analysisWorkspace .freeResultCopy,
+.analysisWorkspace .improveCta,
+.analysisWorkspace .offerPanel {
+  gap: .55rem;
+  box-shadow: none;
+}
+
 .freeScoreHero h2 {
   margin: 0;
   font-size: clamp(1.8rem, 3vw, 3rem);
+}
+
+.analysisWorkspace .freeScoreHero h2 {
+  font-size: clamp(1.35rem, 1.8vw, 1.7rem);
 }
 
 .freeScoreHero > span {
   color: var(--rust);
   font-size: 1.1rem;
   font-weight: 900;
+}
+
+.analysisWorkspace .freeScoreHero strong {
+  font-size: clamp(2.2rem, 3.4vw, 3.15rem);
 }
 
 .freeResultCopy {
@@ -1485,9 +1593,53 @@
   line-height: 1.08;
 }
 
+.analysisWorkspace .freeResultCopy > h3 {
+  font-size: clamp(1.12rem, 1.5vw, 1.35rem);
+}
+
 .freeResultCopy > p {
   margin: 0;
   max-width: 68ch;
+}
+
+.analysisWorkspace .freeResultCopy > p {
+  font-size: .92rem;
+  line-height: 1.46;
+}
+
+.analysisWorkspace .scoreBandBar {
+  gap: .24rem;
+}
+
+.analysisWorkspace .scoreBandBar span {
+  min-height: 34px;
+  padding: .32rem .16rem;
+  font-size: .61rem;
+  line-height: 1.05;
+}
+
+.analysisWorkspace .improveCta h3,
+.analysisWorkspace .offerPanel h3 {
+  margin: 0;
+  padding: 0;
+  font-size: clamp(1.08rem, 1.6vw, 1.35rem);
+}
+
+.analysisWorkspace .offerMeta strong {
+  font-size: clamp(1.65rem, 2.4vw, 2.2rem);
+}
+
+.analysisWorkspace .offerPanel p {
+  margin: 0;
+  font-size: .9rem;
+  line-height: 1.42;
+}
+
+.analysisWorkspace .offerPanel button,
+.analysisWorkspace .actions button {
+  min-height: 42px;
+  padding: 0 .82rem;
+  font-size: .86rem;
 }
 
 .coverageNote {
@@ -1713,6 +1865,8 @@
   }
 
   .heroPanel {
+    justify-self: stretch;
+    width: 100%;
     max-width: 760px;
   }
 }
@@ -1735,7 +1889,7 @@
 
   .hero {
     min-height: auto;
-    padding: 3.2rem 5vw;
+    padding: 2.4rem 5vw 2.8rem;
   }
 
   .heroShade {
@@ -1743,11 +1897,19 @@
   }
 
   .hero h1 {
-    font-size: clamp(2.35rem, 12vw, 3.7rem);
+    font-size: clamp(2.05rem, 10vw, 3rem);
   }
 
   .heroSubhead {
     font-size: clamp(1.2rem, 6vw, 1.7rem);
+  }
+
+  .heroLead {
+    font-size: .98rem;
+  }
+
+  .heroPanel .createShell {
+    padding: .9rem;
   }
 
   .heroActions,
@@ -1856,9 +2018,18 @@
 
   .analysisWorkspace {
     position: static;
-    max-height: 72svh;
-    margin-top: 1rem;
-    padding: .85rem;
+    max-height: none;
+    margin-top: 0;
+    overflow: visible;
+    padding: 0;
+  }
+
+  .analysisWorkspace .freeResultLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .analysisWorkspace .optionalFields {
+    display: grid;
   }
 
   .methodFlow span:last-child {

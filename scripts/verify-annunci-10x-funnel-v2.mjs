@@ -10,6 +10,11 @@ function count(source, needle) {
   return source.split(needle).length - 1;
 }
 
+function cssBlock(selector) {
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return css.match(new RegExp(`${escaped} \\{[\\s\\S]*?\\n\\}`))?.[0] ?? '';
+}
+
 const page = await text('src/app/annunci-10x/page.tsx');
 const client = await text('src/components/annunci-10x/annunci-10x-client.tsx');
 const flow = await text('src/components/annunci-10x/annunci-10x-analyze-flow.tsx');
@@ -84,9 +89,18 @@ assert.match(flow, /const hasWorkspace = Boolean\(busy === 'source' \|\| analysi
 assert.match(flow, /data-flow="analyze" data-has-workspace=\{hasWorkspace\}/, 'analyze shell must expose workspace state to CSS');
 assert.match(flow, /ref=\{workspaceRef\} className=\{styles\.analysisWorkspace\}/, 'post-analysis states must render in a dedicated workspace surface');
 assert.equal(flow.includes('resultRef.current.scrollIntoView'), false, 'post-analysis result must not force page scroll or stretch the hero');
-assert.match(css, /\.createShell\[data-flow="analyze"\]\[data-has-workspace="true"\][\s\S]*min-height:\s*clamp\(430px,\s*68svh,\s*760px\)/, 'desktop analyze workspace must reserve bounded height');
-assert.match(css, /\.analysisWorkspace[\s\S]*position:\s*absolute[\s\S]*max-height:\s*min\(74svh,\s*760px\)[\s\S]*overflow-y:\s*auto/, 'post-analysis workspace must float and scroll internally on desktop');
-assert.match(css, /@media \(max-width: 760px\)[\s\S]*\.analysisWorkspace[\s\S]*position:\s*static[\s\S]*max-height:\s*72svh/, 'mobile analyze workspace must become a controlled block');
+assert.equal(flow.includes('workspaceRef.current?.scrollTo'), false, 'post-analysis card must not rely on internal scroll reset');
+assert.match(css, /\.hero \{[\s\S]*min-height:\s*clamp\(560px,\s*74svh,\s*720px\)/, 'hero must use the compact desktop height');
+assert.match(css, /\.heroGrid \{[\s\S]*grid-template-columns:\s*minmax\(0,\s*\.78fr\) minmax\(520px,\s*\.92fr\)/, 'hero grid must give the result card a wider desktop column');
+assert.match(css, /\.hero h1 \{[\s\S]*max-width:\s*620px[\s\S]*font-size:\s*clamp\(2\.7rem,\s*4\.9vw,\s*5rem\)/, 'hero headline must be scaled down');
+assert.match(css, /\.heroPanel \.createShell \{[\s\S]*border-radius:\s*12px[\s\S]*box-shadow:\s*0 28px 95px/, 'right column must render as a lifted main card');
+assert.match(css, /\.heroPanel \.createShell\[data-has-workspace="true"\] > \.form \{[\s\S]*display:\s*none/, 'post-analysis state must replace the initial form in the same surface');
+const analysisWorkspaceBlock = cssBlock('.analysisWorkspace');
+assert.match(analysisWorkspaceBlock, /position:\s*static/, 'post-analysis workspace must be a natural state inside the main card');
+assert.match(analysisWorkspaceBlock, /overflow:\s*visible/, 'post-analysis workspace must not clip the card');
+assert.equal(/overflow-y:\s*auto/.test(analysisWorkspaceBlock), false, 'post-analysis card must not have internal vertical scroll');
+assert.equal(/max-height:\s*min\(/.test(analysisWorkspaceBlock), false, 'post-analysis card must not rely on a capped desktop height');
+assert.match(css, /@media \(max-width: 760px\)[\s\S]*\.analysisWorkspace[\s\S]*max-height:\s*none[\s\S]*overflow:\s*visible/, 'mobile analyze workspace must stay natural without internal scroll');
 
 assert.equal(count(client, '<Annunci10xAnalyzeFlow'), 1, 'Annunci10xAnalyzeFlow must render exactly once');
 assert.equal(client.includes('/annunci-10x/hero.jpeg'), true, 'hero image must remain wired');

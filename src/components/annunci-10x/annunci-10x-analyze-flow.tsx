@@ -154,7 +154,6 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
   useEffect(() => {
     if (!result || !resultRef.current) return;
     resultRef.current.focus({ preventScroll: true });
-    workspaceRef.current?.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
   }, [result]);
 
   async function submitSource(event: FormEvent<HTMLFormElement>) {
