@@ -12,16 +12,17 @@ import {
   type Annunci10xCommercialState,
 } from './annunci-10x-commerce-client';
 import { Annunci10xIdentityGate } from './annunci-10x-identity-gate';
+import { Annunci10xLoader } from './annunci-10x-loader';
+import { annunci10xProgressForAnalysisStage, type Annunci10xAnalysisStage } from '@/lib/annunci-10x/loading';
 import styles from './annunci-10x.module.css';
 
 type SourceMode = 'PASTED_TEXT' | 'PUBLIC_URL';
 type AnalysisStatus = 'QUEUED' | 'RUNNING' | 'READY' | 'FAILED';
-type AnalysisStage = 'SOURCE_VALIDATION' | 'PRECHECK' | 'EXTRACT' | 'PROFILE' | 'STRATEGY' | 'EVALUATE' | 'CLARIFY' | 'COMPLETE';
 
 interface AnalysisRunState {
   id: string;
   status: AnalysisStatus;
-  stage?: AnalysisStage;
+  stage?: Annunci10xAnalysisStage;
   sourceStatus: 'READY' | 'URL_FETCH_FAILED' | 'INVALID_SOURCE';
   ready: boolean;
   progressLabel: string;
@@ -160,6 +161,7 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
     setError(null);
     setStatusMessage(null);
     setResult(null);
+    setAnalysisRun(null);
     resultFetchRef.current = null;
     setBusy('source');
     try {
@@ -184,6 +186,12 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
   const sourceFailed = analysisRun?.sourceStatus === 'URL_FETCH_FAILED' || analysisRun?.failureCode === 'URL_FETCH_FAILED';
   const showResultLocked = analysisReady && !emailVerified;
   const showVerifiedWaiting = emailVerified && !analysisReady && analysisRun?.status !== 'FAILED';
+  const analysisProgress = analysisRun
+    ? annunci10xProgressForAnalysisStage({
+        stage: analysisRun.stage,
+        status: analysisRun.status,
+      })
+    : null;
 
   return <section className={styles.createShell} aria-label="Analizza gratis il tuo annuncio">
     <form className={styles.form} onSubmit={submitSource} aria-labelledby="analyze-source-title">
@@ -206,19 +214,20 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
         <button type="submit" disabled={busy === 'source'}>{busy === 'source' ? 'Avvio in corso' : 'Analizza il mio annuncio — gratis'}</button>
         {sourceMode === 'PASTED_TEXT' && <button type="button" disabled={busy === 'source'} onClick={() => setText(sampleAd)}>Usa esempio</button>}
       </div>
+      {busy === 'source' && <Annunci10xLoader variant="compact" indeterminate label="Avviamo l'analisi" />}
       <p className={styles.formMicrocopy}>Gratis · 2 minuti · nessuna carta di credito</p>
     </form>
 
-    {analysisRun && <div className={styles.progressCard} aria-live="polite">
-      <div>
-        <p>Analisi in corso</p>
-        <strong>{analysisRun.status === 'FAILED' ? 'Analisi non completata' : analysisRun.progressLabel}</strong>
-      </div>
-      <div className={styles.progressRail} aria-hidden="true">
-        <span data-active="true" />
-        <span data-active={analysisRun.ready || emailVerified ? 'true' : 'false'} />
-        <span data-active={analysisRun.ready ? 'true' : 'false'} />
-      </div>
+    {analysisRun && analysisProgress && <div className={styles.progressCard} aria-live="polite">
+      <p>Analisi in corso</p>
+      {analysisRun.status === 'FAILED'
+        ? <strong>Analisi non completata</strong>
+        : <Annunci10xLoader
+            variant="panel"
+            label={analysisProgress.label}
+            progress={analysisProgress.progress}
+            complete={analysisProgress.complete}
+          />}
     </div>}
 
     {sourceFailed && <div className={styles.warningPanel} role="status">
@@ -248,7 +257,8 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
     />}
 
     {showResultLocked && <div className={styles.lockedNotice} role="status"><strong>Il tuo risultato è pronto.</strong><span>Verifica la tua email per visualizzarlo.</span></div>}
-    {showVerifiedWaiting && <div className={styles.lockedNotice} role="status"><strong>Email verificata.</strong><span>Stiamo completando l&apos;analisi.</span></div>}
+    {showVerifiedWaiting && <div className={styles.lockedNotice} role="status"><strong>Email verificata.</strong><Annunci10xLoader variant="compact" indeterminate label="Stiamo completando l'analisi" /></div>}
+    {busy === 'result' && <Annunci10xLoader variant="panel" indeterminate label="Carichiamo il risultato" />}
     {analysisRun?.status === 'FAILED' && !sourceFailed && <div className={styles.error} role="alert">Non siamo riusciti a completare l&apos;analisi. Riprova.</div>}
     {statusMessage && <p className={styles.coverageNote} aria-live="polite">{statusMessage}</p>}
     {error && <p className={styles.error} role="alert">{error}</p>}
@@ -283,7 +293,9 @@ function FreeResultCard({ result, offers, commercialStatus }: { result: FreeResu
           <h3 id="rewrite-offer-title">Annuncio 10x — 7 €</h3>
           {rewriteOffer
             ? <CommerceOfferCard offer={rewriteOffer} tone="primary" detail="1 annuncio · 1 versione · 1 canale" />
-            : <span>{commercialStatus ?? 'Caricamento offerta in corso.'}</span>}
+            : commercialStatus && /caricamento/i.test(commercialStatus)
+              ? <Annunci10xLoader variant="compact" indeterminate label="Carichiamo l'offerta Annuncio 10x" />
+              : <span>{commercialStatus ?? 'Caricamento offerta in corso.'}</span>}
         </section>
       </div>
     </div>
@@ -310,6 +322,7 @@ function CommerceOfferCard({ offer, tone, detail }: { offer: Annunci10xCommercia
     <p>{offer.description}</p>
     <small>Output completo dopo pagamento confermato. Rimborso integrale entro 14 giorni dalla consegna, senza motivazione, scrivendo a info@horyzon.it dall’email usata per l’acquisto.</small>
     <button type="button" onClick={checkout} disabled={!offer.purchaseEnabled || loading}>{loading ? 'Preparazione pagamento…' : checkoutCtaLabel(offer)}</button>
+    {loading && <Annunci10xLoader variant="compact" indeterminate label="Prepariamo il pagamento sicuro" />}
     {status && <span className={styles.offerStatus} aria-live="polite">{status}</span>}
   </article>;
 }
@@ -338,7 +351,7 @@ function normalizeRun(run: AnalysisRunState): AnalysisRunState {
   };
 }
 
-function fallbackProgressLabel(stage?: AnalysisStage): string {
+function fallbackProgressLabel(stage?: Annunci10xAnalysisStage): string {
   if (!stage) return 'Stiamo leggendo il tuo annuncio';
   if (stage === 'SOURCE_VALIDATION' || stage === 'PRECHECK' || stage === 'EXTRACT') return 'Stiamo leggendo il tuo annuncio';
   if (stage === 'PROFILE' || stage === 'STRATEGY') return 'Stiamo ricostruendo il ruolo';

@@ -16,6 +16,7 @@ import {
 } from './annunci-10x-commerce-client';
 import { Annunci10xIdentityGate } from './annunci-10x-identity-gate';
 import { Annunci10xFulfillmentPanel } from './annunci-10x-fulfillment-panel';
+import { Annunci10xLoader } from './annunci-10x-loader';
 import styles from './annunci-10x.module.css';
 
 type Mode = 'ANALYZE' | 'CREATE';
@@ -101,6 +102,13 @@ interface CreateDraft {
   application: string;
 }
 
+interface CreateLoaderState {
+  label: string;
+  progress?: number | null;
+  indeterminate?: boolean;
+  complete?: boolean;
+}
+
 const emptyDraft: CreateDraft = {
   role: '',
   companyContext: '',
@@ -137,6 +145,15 @@ const defaultUnknowns: Record<UnknownKey, boolean> = {
 };
 
 const createStepOrder: CreateStepId[] = ['ROLE_CONTEXT', 'PRIMARY_CONTRIBUTION', 'WORK_REALITY', 'REQUIREMENTS', 'ATTRACTION', 'OFFER', 'CHANNEL_APPLICATION'];
+const createStepLoaderLabels: Record<CreateStepId, string> = {
+  ROLE_CONTEXT: 'Salviamo ruolo e contesto',
+  PRIMARY_CONTRIBUTION: 'Salviamo il risultato atteso',
+  WORK_REALITY: 'Salviamo il lavoro reale',
+  REQUIREMENTS: 'Salviamo i requisiti',
+  ATTRACTION: 'Salviamo i dati di attrattività',
+  OFFER: 'Salviamo condizioni e offerta',
+  CHANNEL_APPLICATION: 'Salviamo canale e candidatura',
+};
 const scoreDisclaimer = 'Il punteggio valuta la chiarezza e la completezza delle informazioni disponibili nell’annuncio. Non prevede il numero di candidature né sostituisce la valutazione delle persone.';
 const guaranteeCopy = '7 € per un annuncio, una versione e un canale. Dopo la conferma del pagamento generiamo il testo completo e te lo rendiamo disponibile. Se non ti è utile, puoi chiedere il rimborso integrale entro 14 giorni dalla consegna, senza motivazione, scrivendo a info@horyzon.it dall’email usata per l’acquisto.';
 const proofItems = ['Horyzon Consulting Recruiting', 'Score di chiarezza', '20 controlli editoriali'];
@@ -196,6 +213,7 @@ export function Annunci10xClient() {
   const [editValue, setEditValue] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
+  const [createLoader, setCreateLoader] = useState<CreateLoaderState | null>(null);
   const [checkoutNotice] = useState<'success' | 'cancelled' | null>(() => initialCheckoutNotice());
   const [commerceRefreshToken, setCommerceRefreshToken] = useState(0);
   const analyzeRef = useRef<HTMLDivElement | null>(null);
@@ -268,6 +286,7 @@ export function Annunci10xClient() {
     setMode('CREATE');
     setError(null);
     setRunning(true);
+    setCreateLoader({ label: 'Avviamo il percorso guidato', indeterminate: true });
     try {
       const response = await fetch('/api/annunci-10x/create/start', { method: 'POST' });
       const payload = await response.json();
@@ -279,6 +298,7 @@ export function Annunci10xClient() {
       return null;
     } finally {
       setRunning(false);
+      setCreateLoader(null);
     }
   }
 
@@ -286,9 +306,11 @@ export function Annunci10xClient() {
     event.preventDefault();
     setError(null);
     setRunning(true);
+    setCreateLoader({ label: 'Prepariamo la scheda', progress: 5 });
     try {
       let state = createState;
       if (!state) {
+        setCreateLoader({ label: 'Avviamo il percorso guidato', indeterminate: true });
         const response = await fetch('/api/annunci-10x/create/start', { method: 'POST' });
         const payload = await response.json();
         if (!response.ok || !payload.ok) throw new Error(payload.error?.message ?? 'Avvio non riuscito.');
@@ -297,7 +319,8 @@ export function Annunci10xClient() {
       if (!state || state.paymentRequired) return;
       let nextState = state;
       const answers = composeCreateAnswers(createDraft, unknowns);
-      for (const stepId of createStepOrder) {
+      for (const [index, stepId] of createStepOrder.entries()) {
+        setCreateLoader({ label: createStepLoaderLabels[stepId], progress: Math.round((index / createStepOrder.length) * 92) });
         const response = await fetch('/api/annunci-10x/create/answer', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
@@ -306,12 +329,15 @@ export function Annunci10xClient() {
         const payload = await response.json();
         if (!response.ok || !payload.ok) throw new Error(payload.error?.message ?? 'Scheda non salvata.');
         nextState = payload.result;
+        setCreateLoader({ label: createStepLoaderLabels[stepId], progress: Math.round(((index + 1) / createStepOrder.length) * 100) });
       }
+      setCreateLoader({ label: 'Scheda pronta', progress: 100, complete: true });
       setCreateState(nextState);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Scheda non salvata.');
     } finally {
       setRunning(false);
+      setCreateLoader(null);
     }
   }
 
@@ -319,6 +345,7 @@ export function Annunci10xClient() {
     if (!createState?.clarification) return;
     setError(null);
     setRunning(true);
+    setCreateLoader({ label: skip ? 'Segniamo il chiarimento come da definire' : 'Salviamo il chiarimento', indeterminate: true });
     try {
       const response = await fetch('/api/annunci-10x/create/clarify', {
         method: 'POST',
@@ -333,6 +360,7 @@ export function Annunci10xClient() {
       setError(cause instanceof Error ? cause.message : 'Chiarimento non salvato.');
     } finally {
       setRunning(false);
+      setCreateLoader(null);
     }
   }
 
@@ -340,6 +368,7 @@ export function Annunci10xClient() {
     event.preventDefault();
     setError(null);
     setRunning(true);
+    setCreateLoader({ label: 'Aggiorniamo la scheda', indeterminate: true });
     try {
       const response = await fetch('/api/annunci-10x/create/edit', {
         method: 'POST',
@@ -354,12 +383,14 @@ export function Annunci10xClient() {
       setError(cause instanceof Error ? cause.message : 'Modifica non salvata.');
     } finally {
       setRunning(false);
+      setCreateLoader(null);
     }
   }
 
   async function confirmCreate() {
     setError(null);
     setRunning(true);
+    setCreateLoader({ label: 'Confermiamo la posizione', indeterminate: true });
     try {
       const response = await fetch('/api/annunci-10x/create/confirm', { method: 'POST' });
       const payload = await response.json();
@@ -369,6 +400,7 @@ export function Annunci10xClient() {
       setError(cause instanceof Error ? cause.message : 'Conferma non riuscita.');
     } finally {
       setRunning(false);
+      setCreateLoader(null);
     }
   }
 
@@ -397,7 +429,7 @@ export function Annunci10xClient() {
         </div>
       </section>
 
-      {checkoutNotice === 'success' && <div className={styles.checkoutBanner} role="status" aria-live="polite"><strong>Pagamento ricevuto.</strong><span>Stiamo preparando il tuo accesso.</span></div>}
+      {checkoutNotice === 'success' && <div className={styles.checkoutBanner} role="status" aria-live="polite"><strong>Pagamento ricevuto.</strong><span>Stiamo preparando il tuo accesso.</span><Annunci10xLoader variant="inline" indeterminate label="Verifichiamo il pagamento" /></div>}
       {checkoutNotice === 'cancelled' && <div className={styles.checkoutBanner} role="status" aria-live="polite"><strong>Pagamento annullato.</strong><span>Non è stato completato alcun acquisto.</span></div>}
       <Annunci10xFulfillmentPanel checkoutNotice={checkoutNotice} onCreateReturn={showCreateAfterCheckout} />
 
@@ -417,7 +449,7 @@ export function Annunci10xClient() {
           <h2 id="create-route-title">Crea il tuo annuncio da zero</h2>
           <span>Se il testo non esiste ancora, parti dai fatti del ruolo. Raccogliamo i dati in tre blocchi progressivi, poi generiamo il testo completo solo dopo pagamento confermato.</span>
         </div>
-        <CreateFlow state={createState} draft={createDraft} unknowns={unknowns} running={running} clarificationAnswer={clarificationAnswer} editTarget={editTarget} editValue={editValue} error={error} commerceRefreshToken={commerceRefreshToken} onStart={startCreate} onDraft={setCreateDraft} onUnknowns={setUnknowns} onSubmitStructured={submitStructuredCreate} onClarificationAnswer={setClarificationAnswer} onSubmitClarification={submitCreateClarification} onEditTarget={setEditTarget} onEditValue={setEditValue} onSubmitEdit={submitEdit} onConfirm={confirmCreate} />
+        <CreateFlow state={createState} draft={createDraft} unknowns={unknowns} running={running} loading={createLoader} clarificationAnswer={clarificationAnswer} editTarget={editTarget} editValue={editValue} error={error} commerceRefreshToken={commerceRefreshToken} onStart={startCreate} onDraft={setCreateDraft} onUnknowns={setUnknowns} onSubmitStructured={submitStructuredCreate} onClarificationAnswer={setClarificationAnswer} onSubmitClarification={submitCreateClarification} onEditTarget={setEditTarget} onEditValue={setEditValue} onSubmitEdit={submitEdit} onConfirm={confirmCreate} />
       </section>}
 
       <GuaranteeSection />
@@ -552,6 +584,7 @@ function CreateFlow(props: {
   draft: CreateDraft;
   unknowns: Record<UnknownKey, boolean>;
   running: boolean;
+  loading: CreateLoaderState | null;
   clarificationAnswer: string;
   editTarget: string;
   editValue: string;
@@ -570,6 +603,7 @@ function CreateFlow(props: {
 }) {
   return <section className={styles.createShell} aria-label="Crea da zero">
     {props.state && <div className={styles.createNotice}><div><p>Hai un lavoro in corso.</p><strong>{props.state.currentStep === 'COMMERCIAL' ? 'La posizione è confermata.' : props.state.currentStep === 'SUMMARY' ? 'La scheda è pronta da verificare.' : 'Stiamo raccogliendo i fatti.'}</strong></div><div><span>{props.state.completion.coverage}%</span><small>dati raccolti</small></div></div>}
+    {props.loading && <Annunci10xLoader variant="panel" label={props.loading.label} progress={props.loading.progress} indeterminate={props.loading.indeterminate} complete={props.loading.complete} />}
     {!props.state?.paymentRequired && props.state?.currentStep !== 'SUMMARY' && <StructuredCreateForm draft={props.draft} unknowns={props.unknowns} running={props.running} error={props.error} onDraft={props.onDraft} onUnknowns={props.onUnknowns} onSubmit={props.onSubmitStructured} />}
     {props.state?.clarification && <div className={styles.clarification}><p>Chiarimento necessario</p><h3>{props.state.clarification.question}</h3><small>{props.state.clarification.reason}</small><Field label="Risposta" htmlFor="annunci10x-create-clarification"><textarea id="annunci10x-create-clarification" rows={3} value={props.clarificationAnswer} onChange={(event) => props.onClarificationAnswer(event.target.value)} disabled={props.running} /></Field><div className={styles.actions}><button type="button" onClick={() => props.onSubmitClarification(false)} disabled={props.running}>Salva chiarimento</button><button type="button" onClick={() => props.onSubmitClarification(true)} disabled={props.running}>Non lo so</button></div></div>}
     {props.state && (props.state.currentStep === 'SUMMARY' || props.state.currentStep === 'COMMERCIAL') && <CreateSummary state={props.state} running={props.running} editTarget={props.editTarget} editValue={props.editValue} commerceRefreshToken={props.commerceRefreshToken} onEditTarget={props.onEditTarget} onEditValue={props.onEditValue} onSubmitEdit={props.onSubmitEdit} onConfirm={props.onConfirm} />}
@@ -721,6 +755,7 @@ function CreateSummary(props: {
 
 function OfferCards({ offers, status, empty }: { offers: Annunci10xCommercialOffer[]; status: string | null; empty: string }) {
   const createOffer = offers.find((offer) => offer.offerCode === 'ANNUNCI10X_CREATE');
+  if (!createOffer && status && /caricamento/i.test(status)) return <div className={styles.offerPanel}><Annunci10xLoader variant="compact" indeterminate label="Carichiamo l'offerta Annuncio 10x" /></div>;
   if (!createOffer) return <div className={styles.offerPanel}><h3>{empty}</h3><p>{status ?? 'Riprova tra qualche minuto.'}</p><button type="button" disabled>Pagamento temporaneamente non disponibile</button></div>;
   return <div className={styles.offerList} aria-label="Opzioni di acquisto Annunci 10x">
     <CheckoutOfferCard offer={createOffer} detail="1 annuncio · 1 versione · 1 canale" primary />
@@ -751,6 +786,7 @@ function CheckoutOfferCard({ offer, detail, primary = false }: { offer: Annunci1
     <p>{offer.description}</p>
     <small>Output completo dopo pagamento confermato. Rimborso integrale entro 14 giorni dalla consegna.</small>
     <button type="button" onClick={checkout} disabled={!offer.purchaseEnabled || loading}>{loading ? 'Preparazione pagamento…' : checkoutCtaLabel(offer)}</button>
+    {loading && <Annunci10xLoader variant="compact" indeterminate label="Prepariamo il pagamento sicuro" />}
     {status && <span className={styles.offerStatus} aria-live="polite">{status}</span>}
   </article>;
 }

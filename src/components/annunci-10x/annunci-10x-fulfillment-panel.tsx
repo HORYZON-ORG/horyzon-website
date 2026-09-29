@@ -17,6 +17,7 @@ import {
   type PremiumOutput,
   type PremiumSection,
 } from './annunci-10x-premium-client';
+import { Annunci10xLoader } from './annunci-10x-loader';
 import styles from './annunci-10x.module.css';
 
 const POLL_MS = 3000;
@@ -190,7 +191,7 @@ export function Annunci10xFulfillmentPanel({
 
   return <section ref={panelRef} tabIndex={-1} className={styles.fulfillmentPanel} aria-labelledby="annunci10x-fulfillment-title" aria-live="polite">
     {state === 'PAYMENT_CONFIRMED' && <StatusBlock title="Pagamento registrato" body="Il tuo Annuncio 10x è al sicuro. La generazione è temporaneamente non disponibile. Non perderai il tuo acquisto." />}
-    {checkoutNotice === 'success' && state === 'NONE' && <StatusBlock title="Stiamo ancora verificando il pagamento" body="Non sblocchiamo nulla dal browser: aggiorniamo lo stato appena il server conferma." />}
+    {checkoutNotice === 'success' && state === 'NONE' && <StatusBlock title="Stiamo ancora verificando il pagamento" body="Non sblocchiamo nulla dal browser: aggiorniamo lo stato appena il server conferma." loaderLabel="Verifichiamo il pagamento" />}
     {checkoutCancelledBeforeGeneration && <StatusBlock title="Pagamento annullato" body="Non è stata avviata alcuna generazione." />}
     {state === 'READY_TO_GENERATE' && !checkoutCancelledBeforeGeneration && <PreparingBlock loading={loading} />}
     {state === 'PREPARING' && <PreparingBlock loading />}
@@ -204,8 +205,8 @@ export function Annunci10xFulfillmentPanel({
   </section>;
 }
 
-function StatusBlock({ title, body }: { title: string; body: string }) {
-  return <div><p className={styles.fulfillmentEyebrow}>Annuncio 10x</p><h2 id="annunci10x-fulfillment-title">{title}</h2><span>{body}</span></div>;
+function StatusBlock({ title, body, loaderLabel }: { title: string; body: string; loaderLabel?: string }) {
+  return <div><p className={styles.fulfillmentEyebrow}>Annuncio 10x</p><h2 id="annunci10x-fulfillment-title">{title}</h2><span>{body}</span>{loaderLabel && <Annunci10xLoader variant="compact" indeterminate label={loaderLabel} />}</div>;
 }
 
 function PreparingBlock({ loading }: { loading: boolean }) {
@@ -213,6 +214,7 @@ function PreparingBlock({ loading }: { loading: boolean }) {
     <p className={styles.fulfillmentEyebrow}>Annuncio 10x</p>
     <h2 id="annunci10x-fulfillment-title">Stiamo preparando il tuo Annuncio 10x</h2>
     <span>{loading ? 'La generazione è in corso. Non chiudere questa pagina se puoi.' : 'Avvio generazione in corso.'}</span>
+    <Annunci10xLoader variant="panel" indeterminate label={loading ? 'Riscriviamo il testo' : 'Prepariamo la generazione'} />
     <ol className={styles.fulfillmentSteps}><li>Costruiamo il testo</li><li>Verifichiamo i fatti</li><li>Adattiamo il canale</li></ol>
   </div>;
 }

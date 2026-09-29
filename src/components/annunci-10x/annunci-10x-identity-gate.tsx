@@ -2,6 +2,7 @@
 
 import type { FormEvent, ReactNode } from 'react';
 import { useEffect, useState } from 'react';
+import { Annunci10xLoader } from './annunci-10x-loader';
 import styles from './annunci-10x.module.css';
 
 type BusinessRole = 'OWNER_ENTREPRENEUR' | 'HR' | 'INTERNAL_RECRUITER' | 'CONSULTANT' | 'OTHER';
@@ -140,6 +141,7 @@ export function Annunci10xIdentityGate(props: IdentityGateProps) {
       <label className={styles.unknownToggle}><input type="checkbox" checked={contact.marketingConsent} onChange={(event) => setContact({ ...contact, marketingConsent: event.target.checked })} disabled={busy === 'contact'} /><span>Voglio ricevere anche consigli e novità da Horyzon.</span></label>
       <p className={styles.formMicrocopy}>Niente spam. Ti cancelli con un clic.</p>
       <div className={styles.actions}><button type="submit" disabled={busy === 'contact'}>{busy === 'contact' ? 'Salvataggio in corso' : props.submitLabel ?? 'Salva contatto'}</button></div>
+      {busy === 'contact' && <Annunci10xLoader variant="compact" indeterminate label="Salviamo i dati di contatto" />}
     </form>}
 
     {contactSaved && <section className={styles.form} aria-labelledby={`${idPrefix}-email-verification-title`}>
@@ -148,10 +150,12 @@ export function Annunci10xIdentityGate(props: IdentityGateProps) {
         <button type="button" onClick={requestCode} disabled={busy === 'request-code' || resendAfterSeconds > 0}>{resendAfterSeconds > 0 ? `Nuovo codice tra ${resendAfterSeconds}s` : 'Invia codice'}</button>
         {expiresInSeconds > 0 && <span>Codice valido per circa {expiresInSeconds}s.</span>}
       </div>
+      {busy === 'request-code' && <Annunci10xLoader variant="compact" indeterminate label="Prepariamo il codice email" />}
       <form onSubmit={verifyCode} className={styles.inlineVerify}>
         <Field label="Codice OTP" htmlFor={`${idPrefix}-otp`} required><input id={`${idPrefix}-otp`} required inputMode="numeric" autoComplete="one-time-code" maxLength={6} pattern="[0-9]{6}" value={otpCode} onChange={(event) => setOtpCode(event.target.value)} disabled={busy === 'verify-code'} /></Field>
         <button type="submit" disabled={busy === 'verify-code' || otpCode.length !== 6}>Verifica email</button>
       </form>
+      {busy === 'verify-code' && <Annunci10xLoader variant="compact" indeterminate label="Verifichiamo il codice" />}
     </section>}
 
     {statusMessage && <p className={styles.coverageNote} aria-live="polite">{statusMessage}</p>}
