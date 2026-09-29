@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
-import { createMemoryRadarCommerce, handleRadarStripeEvent, resolveRadarCatalog, RadarCheckoutError } from '../src/lib/radar/payments/commerce.ts';
+import { createMemoryRadarCommerce, createRadarCommerce, handleRadarStripeEvent, resolveRadarCatalog, RadarCheckoutError } from '../src/lib/radar/payments/commerce.ts';
 import { radarCheckoutIdempotencyKey } from '../src/lib/radar/payments/stripe.ts';
 
 assert.throws(() => resolveRadarCatalog({ RADAR_CHECKOUT_ENABLED: '0' }), RadarCheckoutError);
+assert.doesNotThrow(() => createRadarCommerce({ SUPABASE_URL: 'https://example.supabase.co', SUPABASE_SERVICE_ROLE_KEY: 'server-secret' }));
 assert.throws(() => resolveRadarCatalog({ RADAR_CHECKOUT_ENABLED: '1', RADAR_STRIPE_PRICE_REPORT: 'price_test', RADAR_PRICE_AMOUNT_CENTS: '0', RADAR_PUBLIC_BASE_URL: 'https://horyzon.it' }), RadarCheckoutError);
 assert.deepEqual(resolveRadarCatalog({ RADAR_CHECKOUT_ENABLED: '1', RADAR_STRIPE_PRICE_REPORT: 'price_test', RADAR_PRICE_AMOUNT_CENTS: '7900', RADAR_PUBLIC_BASE_URL: 'https://horyzon.it' }), { offerCode: 'RADAR_IMPRESA_REPORT', capability: 'RADAR_RESULT_ACCESS', priceId: 'price_test', amountCents: 7900, currency: 'EUR', baseUrl: 'https://horyzon.it' });
 assert.equal(radarCheckoutIdempotencyKey('purchase-1'), 'radar-checkout/purchase-1');

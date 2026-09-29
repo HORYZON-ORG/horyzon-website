@@ -143,7 +143,7 @@ export class SupabaseRadarPersistence implements RadarPersistence {
 }
 
 export function createRadarPersistence(env: Record<string, string | undefined> = process.env): RadarPersistence {
-  const url = env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const url = (env.SUPABASE_URL ?? env.NEXT_PUBLIC_SUPABASE_URL)?.trim();
   const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   if (!url || !serviceRoleKey) throw new Error('Radar persistence is not configured.');
   return new SupabaseRadarPersistence({ url, serviceRoleKey });

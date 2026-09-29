@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
-import { createMemoryRadarPersistence, RadarRevisionConflictError } from '../src/lib/radar/persistence/adapter.ts';
+import { createMemoryRadarPersistence, createRadarPersistence, RadarRevisionConflictError } from '../src/lib/radar/persistence/adapter.ts';
 import { createOwnerSecret, hashOwnerSecret } from '../src/lib/radar/persistence/security.ts';
 
 const secret = createOwnerSecret();
 assert.equal(secret.secretHash, hashOwnerSecret(secret.secret));
+assert.doesNotThrow(() => createRadarPersistence({ SUPABASE_URL: 'https://example.supabase.co', SUPABASE_SERVICE_ROLE_KEY: 'server-secret' }));
 
 const store = createMemoryRadarPersistence();
 const session = await store.createAssessment({ aziendaNome: 'Acme', referenteNome: 'Ada', referenteEmail: 'ada@example.com', referenteTelefono: '3000000000', settore: 'Servizi', volumeAffari: '1 – 5 milioni €', numeroDipendenti: '6-20', seasonal: false });
