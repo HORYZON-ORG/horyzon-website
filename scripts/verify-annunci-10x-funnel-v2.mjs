@@ -48,6 +48,9 @@ assert.equal(headerBlock.includes('Prodotti'), false, 'funnel header must not li
 assert.equal(headerBlock.includes('FAQ'), false, 'funnel header must not link FAQ');
 assert.equal(headerBlock.includes('Valuta gratis'), true, 'funnel header must keep the single CTA');
 assert.match(headerBlock, /\/annunci-10x\/horyzon-consulting-recruiting\.png/, 'canonical Recruiting logo asset must be used in the header');
+assert.match(headerBlock, /unoptimized/, 'header logo must bypass image optimization to preserve the approved PNG asset');
+assert.match(css, /\.brand[\s\S]*width:\s*clamp\(176px,\s*19vw,\s*230px\)[\s\S]*height:\s*clamp\(66px,\s*7\.125vw,\s*86\.25px\)/, 'header brand must have an explicit 8:3 responsive box');
+assert.match(css, /\.brandLogo[\s\S]*height:\s*100%\s*!important[\s\S]*object-fit:\s*contain/, 'header logo must fill its explicit box without cropping');
 assert.match(headerBlock, /aria-label="Horyzon Consulting Recruiting"/, 'header logo link must keep an accessible brand label');
 assert.equal(headerBlock.includes('<span>Horyzon Consulting</span>'), false, 'typographic brand fallback must be removed');
 
