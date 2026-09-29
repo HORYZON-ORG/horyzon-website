@@ -1192,8 +1192,10 @@
 
 .freeResultLayout {
   display: grid;
-  grid-template-columns: minmax(240px, .45fr) minmax(0, 1fr);
-  gap: clamp(1rem, 3vw, 2rem);
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  width: 100%;
+  min-width: 0;
 }
 
 .freeScoreHero {
@@ -1219,6 +1221,22 @@
 .freeResultCopy {
   display: grid;
   gap: 1rem;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: clamp(1rem, 2.6vw, 2rem);
+}
+
+.freeResultCopy > h3 {
+  margin: 0;
+  font-size: clamp(1.45rem, 2.4vw, 2.2rem);
+  line-height: 1.08;
+}
+
+.freeResultCopy > p {
+  margin: 0;
+  max-width: 68ch;
 }
 
 .coverageNote {
@@ -1411,7 +1429,6 @@
   .targetStatement,
   .guideSection,
   .guaranteeSection,
-  .freeResultLayout,
   .resultHead {
     grid-template-columns: 1fr;
   }
