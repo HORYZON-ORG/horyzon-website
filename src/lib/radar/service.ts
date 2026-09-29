@@ -43,5 +43,9 @@ export function createRadarService(config: { persistence: RadarPersistence; prev
       const session = await config.persistence.resumeAssessment({ assessmentId, ownerSecretHash: hashOwnerSecret(ownerSecret) });
       return unlockedRadarProjection({ status: 'COMPLETED', answeredCount: session.answeredCount, scores: calculateRadarScores(session.answers) });
     },
+    async readOwnedResult(assessmentId: string, ownerSecret: string) {
+      const session = await config.persistence.resumeAssessment({ assessmentId, ownerSecretHash: hashOwnerSecret(ownerSecret) });
+      return unlockedRadarProjection({ status: 'COMPLETED', answeredCount: session.answeredCount, scores: calculateRadarScores(session.answers) });
+    },
   };
 }

@@ -6,3 +6,5 @@ export * from './persistence/security.ts';
 export * from './persistence/adapter.ts';
 export * from './preview.ts';
 export * from './service.ts';
+export * from './payments/commerce.ts';
+export * from './payments/stripe.ts';
