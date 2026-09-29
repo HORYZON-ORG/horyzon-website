@@ -147,8 +147,11 @@ assert.equal(productChoiceBlock.includes('Valuta gratis il mio annuncio'), false
 assert.match(productChoiceBlock, /CREA DA ZERO[\s\S]*Annuncio 10x da brief guidato[\s\S]*<strong>7 €<\/strong>[\s\S]*Non ho ancora un annuncio: creo a 7 €/, 'create-from-zero product card must be explicit and priced at 7 EUR');
 assert.match(productChoiceBlock, /Acquista la guida per creare annunci perfetti illimitati/, 'guide CTA missing from product section');
 assert.match(productChoiceBlock, /aria-expanded=\{guideOpen\} aria-controls="annunci10x-guide-panel"/, 'guide CTA must open a dedicated surface');
-assert.match(productChoiceBlock, /id="annunci10x-guide-panel"[\s\S]*Guida Annunci 10x[\s\S]*Nessun prezzo mostrato/, 'guide panel must be separate and avoid invented pricing');
+const guidePanelBlock = productChoiceBlock.match(/id="annunci10x-guide-panel"[\s\S]*?<\/article>/)?.[0] ?? '';
+assert.match(guidePanelBlock, /Guida Annunci 10x[\s\S]*Nessuna tariffa mostrata/, 'guide panel must be separate and avoid invented pricing');
 assert.equal(/Guida[\s\S]{0,220}<strong>/.test(productChoiceBlock), false, 'guide card must not show a price');
+assert.equal(/\d+\s*€/.test(guidePanelBlock), false, 'guide panel must not show a price');
+assert.equal(/checkout/i.test(guidePanelBlock), false, 'guide panel must not mention checkout');
 
 assert.equal(flow.includes('Copertura'), false, 'free result must not expose Copertura as a visible KPI label');
 assert.equal(client.includes('Copertura'), false, 'funnel must not expose Copertura as a visible KPI label');
