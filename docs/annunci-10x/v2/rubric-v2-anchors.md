@@ -6,6 +6,32 @@ This document defines provider-agnostic 0-10 anchors for the 20 Annunci 10x V2 c
 
 ## Scope
 
+## Strict calibration overlay - 2026-09-29
+
+This overlay tightens how the existing 0-10 anchors are interpreted. It does not change the 20 controls, score formula, coverage formula, or public bands.
+
+Calibration rules:
+
+- Presence is not quality. A dense ad does not earn a halo bonus.
+- When evidence sits between adjacent anchors, choose the lower score unless the target explicitly supports the higher one.
+- Scores 8-10 require explicit, concrete, internally coherent target evidence.
+- Evidence that is only inferable from context, industry habit, or common sense cannot by itself justify more than 4/10 for the affected control.
+- 10/10 is exceptional: no material gap and no candidate-critical inference is required for that control.
+- A concrete task list can score for activities, but it does not automatically prove workflow, result, context, or requirement rationale.
+- Material contradictions normally force the affected control into 0-2 with CONFLICT. Other strong controls do not compensate for the conflict.
+- A single undifferentiated requirement list is normally 2/10 on Check 10; partial semantic separation can reach 4; high scores require clear classification of the materially present classes.
+- Generic employer praise, prestige, growth, culture, or atmosphere does not create a strong Check 15 result without support.
+- Longer descriptive copy is not penalized merely for length. Check 18/19 penalize density, filler, vagueness, repetition, and poor hierarchy, not useful detail.
+
+Manual calibration benchmark recorded on 2026-09-29:
+
+- Receptionist Hotel: 52/100 original -> 72/100 rewritten, with compensation conflict still blocking.
+- Customer Care German C1/C2: 52/100 original -> 75/100 rewritten, with work-mode conflict still blocking.
+- Production Machine Operator: 68/100 original -> 90/100 rewritten, no material conflict.
+- Italy/Export Sales - Food: 72/100 original -> 91/100 rewritten, no material conflict.
+
+These are working calibration targets, not statistical ground truth or production validation. See `calibration-benchmark-2026-09-29.md`.
+
 This file does not modify:
 
 - runtime scoring;

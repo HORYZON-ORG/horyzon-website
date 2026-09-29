@@ -47,7 +47,7 @@ Fase 1B added an isolated TypeScript V2 scoring core for rubric definitions, per
 
 Fase 1C added an isolated V2 provider contract and shadow runner:
 
-- prompt version `annunci10x.evaluate.v2.3`;
+- current prompt version `annunci10x.evaluate.v2.4` (the earlier V2.3 pilot remains historical calibration evidence);
 - schema name `annunci10x_evaluate_v2`;
 - structured TARGET vs CONTEXT input projection;
 - one schema-repair retry;
@@ -55,6 +55,8 @@ Fase 1C added an isolated V2 provider contract and shadow runner:
 - deterministic tests only, including `OpenAiAnnunci10xProvider` with fake fetch.
 
 Fase 1D.1 clarifies that the V2 provider is a compact fast scoring pass, not the final customer-facing report writer. Evidence and missing arrays are bounded to two short items per check.
+
+The 2026-09-29 calibration pass adds a stricter scoring interpretation and a more descriptive GENERATE prompt. It does not change the V2 score formula or band thresholds. The working before/after benchmark is documented in `calibration-benchmark-2026-09-29.md`.
 
 The V2 projection is boundary-aware: TARGET preserves legitimate ad/bundle evidence such as application email, phone, URL, named contact, role name, and company text, while technical secret keys are removed. CONTEXT is limited to `roleCard`, `roleProfile`, and `communicationStrategy` and strips lead PII, secrets, and commercial/payment metadata.
 
@@ -101,6 +103,7 @@ The V2 docs identify future changes. They do not claim those changes are already
 - `score-semantics-v2.md`: future score semantics and publication gate separation.
 - `rubric-v2-anchors.md`: provider-agnostic 0-10 anchors for the 20 V2 controls.
 - `calibration-fixtures-v2.md`: methodological calibration fixtures and monotonicity/stability expectations.
+- `calibration-benchmark-2026-09-29.md`: manual before/after benchmark used to tighten scoring and descriptive generation.
 - `ux-contract-v2.md`: future UX constraints and public/private output rules.
 - `data-contracts-v2.md`: conceptual data model and migration needs.
 - `commercial-v2.md`: decided commercial architecture without checkout implementation.
