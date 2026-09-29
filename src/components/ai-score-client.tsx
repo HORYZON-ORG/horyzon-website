@@ -95,11 +95,11 @@ export function AiScoreClient() {
       <label htmlFor="ai-score-url">Dominio o URL da analizzare</label>
       <div className="ai-score-input-row">
         <input id="ai-score-url" value={url} onChange={event => setUrl(event.target.value)} placeholder="https://azienda.it" inputMode="url" autoComplete="url" disabled={running} aria-describedby="ai-score-help" />
-        <button className="button primary" type="submit" disabled={running}>{running ? 'Analisi in corso' : 'Analizza il sito'} <span aria-hidden="true">↗</span></button>
+        <button className="button primary" type="submit" disabled={running}>{running ? 'Analisi in corso' : 'Analizza il sito'} <span aria-hidden="true">↗︎</span></button>
       </div>
       <div className="ai-score-form-meta" id="ai-score-help">
         <span>Analisi gratuita · Nessuna carta richiesta</span>
-        <Link href="/ai-score/methodology">Come calcoliamo il punteggio ↗</Link>
+        <Link href="/ai-score/methodology">Come calcoliamo il punteggio ↗︎</Link>
       </div>
       <p className="ai-score-disclaimer">Horyzon AI Score utilizza una metodologia proprietaria basata su segnali verificabili.</p>
     </form>

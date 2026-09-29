@@ -16,8 +16,8 @@
 /* Words rise out of their own masks; italic words land last, with a small overshoot. */
 /* Copy waits for its split; the hero only while the splash covers it (html.kin-hero). */
 .kinetic .journey-chapter:not(.chapter-hero) .chapter-copy:not([data-kin]),.kinetic.kin-hero .chapter-hero .chapter-copy:not([data-kin]){opacity:0}
-.kin-m{display:inline-block;overflow:hidden;vertical-align:top;padding:.1em .05em .18em;margin:-.1em -.05em -.18em}
-.kin-w{display:inline-block;transform:translateY(115%) rotate(5deg);transform-origin:0 100%;transition:transform 1.05s cubic-bezier(.16,1,.3,1) calc(var(--d,0ms) + var(--i,0) * 55ms)}
+.kin-m{display:inline-block;overflow:hidden;vertical-align:top;padding:.1em .05em .24em;margin:-.1em -.05em -.24em}
+.kin-w{display:inline-block;transform:translateY(140%) rotate(5deg);transform-origin:0 100%;transition:transform 1.05s cubic-bezier(.16,1,.3,1) calc(var(--d,0ms) + var(--i,0) * 55ms)}
 em .kin-w{transition:transform .9s cubic-bezier(.34,1.45,.64,1) calc(var(--d,0ms) + var(--i,0) * 55ms + 180ms)}
 .is-in .kin-w{transform:none}
 .kinetic .kin-fade{opacity:0;transform:translateY(26px);transition:opacity .9s ease var(--d,0ms),transform 1.1s cubic-bezier(.16,1,.3,1) var(--d,0ms)}
@@ -26,7 +26,6 @@ em .kin-w{transition:transform .9s cubic-bezier(.34,1.45,.64,1) calc(var(--d,0ms
 /* Dawn: the scene warms and opens up as the journey goes on. */
 .kinetic .journey-visual::after{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;opacity:var(--dawn,0);
  background:radial-gradient(ellipse 70% 42% at 50% 66%,rgba(236,196,128,.36),transparent 70%),linear-gradient(0deg,rgba(236,180,110,.14),transparent 55%)}
-.kinetic .journey-visual .journey-shade{opacity:calc(1 - var(--dawn,0) * .4)}
 
 /* Method: three stops on a horizon line. Static by default, pinned and scroll-driven under .kinetic. */
 .journey-method small{display:block;width:100%;font-size:13px;color:#c9d3d4}
@@ -126,3 +125,99 @@ em .kin-w{transition:transform .9s cubic-bezier(.34,1.45,.64,1) calc(var(--d,0ms
 .kinetic .arrival-horizon.is-in::before{transform:none}
 .kinetic .arrival-horizon.is-in .arrival-sky i{transform:translateY(42%)}
 @media(max-width:850px){.arrival-horizon{margin-bottom:30px}.arrival-sky{width:320px;height:180px;margin-left:-160px}.arrival-sky i{width:22px;height:22px;margin-left:-11px}}
+
+/* Legibility over the brightest frames of the video. */
+.journey-content .chapter-intro,.journey-content .chapter-body,.org-note{text-shadow:0 1px 18px rgba(5,16,25,.9),0 0 3px rgba(5,16,25,.55)}
+.chapter-label,.horizon-nav .chapter-dot-label,.org-index,.org-product span,.chapter-method .journey-method span{font-family:var(--font-mono),ui-monospace,monospace}
+.chapter-label{letter-spacing:.14em}
+
+/* Glass panels: path cards and departments sit on frosted night glass with a travelling light edge. */
+@property --edge{syntax:"<angle>";inherits:false;initial-value:0deg}
+.wellbeing-paths{gap:16px}
+.wellbeing-paths a,.org-depts>li{position:relative;border:1px solid rgba(242,238,227,.13);border-radius:14px;background:rgba(8,21,33,.6);-webkit-backdrop-filter:blur(14px) saturate(1.2);backdrop-filter:blur(14px) saturate(1.2);box-shadow:0 20px 50px -30px rgba(0,0,0,.6)}
+.wellbeing-paths a{padding:26px 24px}
+.wellbeing-paths a p{color:#e3e9e9}
+.kinetic .wellbeing-paths a::before,.kinetic .org-depts>li::after{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;pointer-events:none;background:conic-gradient(from var(--edge),transparent 0 72%,rgba(217,191,143,.85) 86%,rgba(217,230,95,.9) 90%,transparent 96%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);animation:glass-edge 7s linear infinite;animation-delay:calc(var(--k,0) * -1.3s)}
+@keyframes glass-edge{to{--edge:360deg}}
+@media(max-width:850px){.wellbeing-paths{gap:12px}.wellbeing-paths a{padding:22px 20px}}
+
+/* Signals over the video (signal-field.tsx). */
+.signal-field{grid-area:1/1;align-self:start;position:sticky;top:0;height:100svh;z-index:2;pointer-events:none}
+.signal-field canvas{display:block;width:100%;height:100%}
+
+/* Organisation chart (org-chart.tsx): direction, a connector, five departments and their product. */
+.chapter-org{flex-direction:column;justify-content:center}
+.org-pin{width:100%}
+.chapter-org .chapter-copy{width:min(1180px,86vw);max-width:none;margin-inline:auto;text-align:center}
+.chapter-org .chapter-label{justify-content:center}
+.chapter-org .chapter-intro{margin-inline:auto;max-width:640px}
+.org-chart{width:min(1180px,86vw);margin:40px auto 0}
+.org-head{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding-bottom:34px;text-align:center}
+.org-head strong{font:400 clamp(26px,2.3vw,36px)/1.1 var(--font-serif);color:#f2eee3}
+.org-head small{font-size:13px;color:#c9d3d4}
+.org-node{width:14px;height:14px;border-radius:50%;background:#d9e65f;box-shadow:0 0 0 6px rgba(217,230,95,.12),0 0 24px rgba(217,230,95,.55);margin-bottom:6px}
+.org-head::after{content:"";position:absolute;left:50%;bottom:0;width:1px;height:34px;background:rgba(242,238,227,.35)}
+.org-depts{position:relative;list-style:none;margin:0;padding:34px 0 0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
+.org-depts::before{content:"";position:absolute;top:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,rgba(242,238,227,.35),#d9bf8f 50%,rgba(242,238,227,.35));transform-origin:center}
+.org-depts>li{padding:20px 18px 18px;text-align:left}
+.org-depts>li::before{content:"";position:absolute;left:50%;top:-35px;width:1px;height:34px;background:rgba(242,238,227,.35);transform-origin:top}
+.org-index{font-size:11px;letter-spacing:.16em;color:#d9bf8f}
+.org-depts h3{font:400 clamp(22px,1.8vw,30px)/1.1 var(--font-serif);margin:8px 0 12px;color:#f2eee3}
+.org-functions{list-style:none;margin:0 0 16px;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.org-functions li{font-size:11.5px;line-height:1.3;padding:5px 9px;border:1px solid rgba(242,238,227,.18);border-radius:99px;color:#d7e0e0}
+.org-product{margin:0;padding-top:14px;border-top:1px solid rgba(242,238,227,.14);font:400 20px/1.25 var(--font-serif);color:#f2eee3}
+.org-product span{display:block;margin-bottom:6px;font-size:10px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:#d9e65f}
+.org-note{margin:30px auto 0;max-width:760px;text-align:center;font-size:16px;line-height:1.7;color:#dfe6e6;pointer-events:auto}
+.org-note .journey-link{margin-left:10px}
+@media(max-width:850px){
+ .chapter-org .chapter-copy,.chapter-org .chapter-label{text-align:left;justify-content:flex-start}
+ .chapter-org .chapter-intro{margin-inline:0}
+ .org-chart{width:100%;margin-top:28px}
+ .org-head{align-items:flex-start;text-align:left;padding:0 0 22px 34px}
+ .org-head .org-node{position:absolute;left:11px;top:8px}
+ .org-head::after{left:18px;top:22px;bottom:0;height:auto}
+ .org-depts{grid-template-columns:1fr;gap:12px;padding:0 0 0 34px}
+ .org-depts::before{left:18px;right:auto;top:0;bottom:36px;width:1px;height:auto}
+ .org-depts>li::before{left:-16px;top:28px;width:16px;height:1px}
+ .org-note{text-align:left;margin-top:24px}
+ .org-note .journey-link{margin:12px 0 0;display:inline-flex}
+}
+
+/* Pinned build on large screens: direction, connector, then the departments light up in order. */
+@media(min-width:851px) and (min-height:720px){
+ .kinetic .chapter-org{display:block;min-height:0;height:340svh;padding:0}
+ .kinetic .org-pin{position:sticky;top:0;height:100svh;display:flex;flex-direction:column;justify-content:center;padding:92px 7vw 78px}
+ .kinetic .org-stage{transform:scale(var(--fit,1));transform-origin:center}
+ .kinetic .chapter-org .chapter-label{margin-bottom:14px}
+ .kinetic .chapter-org h2{font-size:clamp(38px,3.6vw,60px);margin-bottom:14px}
+ .kinetic .chapter-org .chapter-intro{max-width:880px;margin-bottom:0;font-size:17px}
+ .kinetic .org-chart{margin-top:22px}
+ .kinetic .org-head{gap:3px;padding-bottom:24px}
+ .kinetic .org-head::after{height:24px}
+ .kinetic .org-head strong{font-size:28px}
+ .kinetic .org-depts{padding-top:24px}
+ .kinetic .org-depts>li{padding:16px 16px 14px}
+ .kinetic .org-depts>li::before{top:-25px;height:24px}
+ .kinetic .org-depts h3{margin:6px 0 10px;font-size:clamp(20px,1.6vw,26px)}
+ .kinetic .org-functions{margin-bottom:12px}
+ .kinetic .org-product{padding-top:10px;font-size:18px}
+ .kinetic .chapter-org .org-note{margin-top:18px;font-size:15px}
+ .kinetic .org-head{opacity:.15;transition:opacity .6s}
+ .kinetic .org-head .org-node{transform:scale(.4);transition:transform .6s cubic-bezier(.34,1.56,.64,1)}
+ .kinetic .chapter-org[data-head] .org-head{opacity:1}
+ .kinetic .chapter-org[data-head] .org-head .org-node{transform:none}
+ .kinetic .org-depts::before{transform:scaleX(var(--bus,0))}
+ .kinetic .org-depts>li{opacity:.14;transform:translateY(22px);transition:opacity .6s,transform .8s cubic-bezier(.16,1,.3,1)}
+ .kinetic .org-depts>li::before{transform:scaleY(0);transition:transform .45s ease-out}
+ .kinetic .org-depts>li::after{opacity:0;transition:opacity .6s}
+ .kinetic .chapter-org[data-lit="1"] .org-depts>li:nth-child(-n+1),.kinetic .chapter-org[data-lit="2"] .org-depts>li:nth-child(-n+2),.kinetic .chapter-org[data-lit="3"] .org-depts>li:nth-child(-n+3),.kinetic .chapter-org[data-lit="4"] .org-depts>li:nth-child(-n+4),.kinetic .chapter-org[data-lit="5"] .org-depts>li{opacity:1;transform:none}
+ .kinetic .chapter-org[data-lit="1"] .org-depts>li:nth-child(-n+1)::before,.kinetic .chapter-org[data-lit="2"] .org-depts>li:nth-child(-n+2)::before,.kinetic .chapter-org[data-lit="3"] .org-depts>li:nth-child(-n+3)::before,.kinetic .chapter-org[data-lit="4"] .org-depts>li:nth-child(-n+4)::before,.kinetic .chapter-org[data-lit="5"] .org-depts>li::before{transform:none}
+ .kinetic .chapter-org[data-lit="1"] .org-depts>li:nth-child(-n+1)::after,.kinetic .chapter-org[data-lit="2"] .org-depts>li:nth-child(-n+2)::after,.kinetic .chapter-org[data-lit="3"] .org-depts>li:nth-child(-n+3)::after,.kinetic .chapter-org[data-lit="4"] .org-depts>li:nth-child(-n+4)::after,.kinetic .chapter-org[data-lit="5"] .org-depts>li::after{opacity:1}
+ .kinetic .org-note{opacity:0;transform:translateY(16px);transition:opacity .7s,transform .9s cubic-bezier(.16,1,.3,1)}
+ .kinetic .chapter-org[data-note] .org-note{opacity:1;transform:none}
+}
+/* Small or short screens: no pin, each department enters as it scrolls into view. */
+@media(max-width:850px),(max-height:719px){
+ .kinetic .org-depts>li,.kinetic .org-note{opacity:0;transform:translateY(22px);transition:opacity .7s,transform .9s cubic-bezier(.16,1,.3,1)}
+ .kinetic .org-depts>li.is-in,.kinetic .org-note.is-in{opacity:1;transform:none}
+}

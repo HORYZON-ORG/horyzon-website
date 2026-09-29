@@ -12,6 +12,9 @@ import { useLayoutEffect } from 'react';
 // - Decorative scenes ([data-kin-watch]: radar, arrival horizon) start when they enter the viewport.
 // - --dawn (0..1 over the journey) warms the scene; --m, --dot and data-step drive the pinned
 //   "Come lavoriamo" track.
+// - The organisation chart (#organigramma) is pinned on large screens: --bus and data-lit build it by
+//   scroll; on small screens each department enters on its own.
+// - Chapter labels decode from random characters when their chapter enters.
 // - Buttons lean towards the pointer and path cards carry a light that follows it (--mx/--my, --gx/--gy).
 
 type MotionWindow = Window & { __hycSplash?: string; __homeMotion?: boolean; __kinStatic?: boolean };
@@ -86,6 +89,38 @@ function methodTrack(m: number) {
  return { dot, step };
 }
 
+// Organisation chart: direction first, then the connector, then the five departments one by one.
+function orgTrack(m: number) {
+ const clamp = (x: number) => Math.min(1, Math.max(0, x));
+ const bus = clamp((m - .06) / .14);
+ let lit = 0;
+ for (let k = 0; k < 5; k++) if (m >= .22 + k * .12) lit = k + 1;
+ return { head: m > .02, bus, lit, note: m >= .8 };
+}
+
+const GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+// Resolve a label from random glyphs, left to right. Only text nodes change; spaces and marks stay.
+function decode(label: HTMLElement) {
+ const walker = document.createTreeWalker(label, NodeFilter.SHOW_TEXT);
+ const nodes: [Text, string][] = [];
+ while (walker.nextNode()) nodes.push([walker.currentNode as Text, walker.currentNode.textContent ?? '']);
+ const total = nodes.reduce((n, [, text]) => n + text.length, 0);
+ const start = performance.now(), duration = 520 + total * 14;
+ const step = (now: number) => {
+  const p = Math.min(1, (now - start) / duration);
+  let offset = 0;
+  for (const [node, text] of nodes) {
+   node.textContent = [...text].map((ch, i) => {
+    const at = (offset + i) / Math.max(1, total);
+    return p >= at * .8 + .2 || !/[\p{L}\p{N}]/u.test(ch) ? ch : GLYPHS[(Math.random() * GLYPHS.length) | 0];
+   }).join('');
+   offset += text.length;
+  }
+  if (p < 1) requestAnimationFrame(step);
+ };
+ requestAnimationFrame(step);
+}
+
 export function HomeMotion() {
  useLayoutEffect(() => {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -102,7 +137,12 @@ export function HomeMotion() {
    if (copy === hero && heroPainted) copy.dataset.kin = '';
    else prepareChapter(copy);
   }
-  const reveal = (el: Element) => el.classList.add('is-in');
+  const reveal = (el: Element) => {
+   if (el.classList.contains('is-in')) return;
+   el.classList.add('is-in');
+   const label = el.classList.contains('chapter-copy') ? el.querySelector<HTMLElement>('.chapter-label') : null;
+   if (label) setTimeout(() => decode(label), parseInt(label.style.getPropertyValue('--d')) || 0);
+  };
 
   const observer = new IntersectionObserver(entries => {
    for (const entry of entries) {
@@ -112,7 +152,7 @@ export function HomeMotion() {
    }
   }, { rootMargin: '0px 0px -18% 0px' });
   for (const copy of chapters) if (copy !== hero) observer.observe(copy);
-  document.querySelectorAll('[data-kin-watch]').forEach(el => observer.observe(el));
+  document.querySelectorAll('[data-kin-watch], .org-depts > li, .org-note').forEach(el => observer.observe(el));
 
   const enterHero = () => {
    html.classList.remove('kin-hero');
@@ -124,6 +164,7 @@ export function HomeMotion() {
 
   const story = document.querySelector<HTMLElement>('.journey-story');
   const method = document.getElementById('come-lavoriamo');
+  const org = document.getElementById('organigramma');
   let frame = 0;
   const update = () => {
    frame = 0;
@@ -141,10 +182,31 @@ export function HomeMotion() {
     method.style.setProperty('--dot', dot.toFixed(4));
     method.dataset.step = String(step);
    }
+   if (org) {
+    const rect = org.getBoundingClientRect();
+    const { head, bus, lit, note } = orgTrack(Math.min(1, Math.max(0, -rect.top / Math.max(1, rect.height - vh))));
+    org.style.setProperty('--bus', bus.toFixed(4));
+    org.dataset.lit = String(lit);
+    org.toggleAttribute('data-head', head);
+    org.toggleAttribute('data-note', note);
+   }
   };
   const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
+  // The pinned chart must fit between the header and the horizon line: scale it down when needed.
+  const orgPin = org?.querySelector<HTMLElement>('.org-pin');
+  const orgStage = org?.querySelector<HTMLElement>('.org-stage');
+  const fit = () => {
+   if (!orgPin || !orgStage) return;
+   const style = getComputedStyle(orgPin);
+   if (style.position !== 'sticky') { orgStage.style.removeProperty('--fit'); return; }
+   const room = orgPin.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+   orgStage.style.setProperty('--fit', Math.min(1, room / Math.max(1, orgStage.offsetHeight)).toFixed(3));
+  };
+  const onResize = () => { fit(); schedule(); };
   window.addEventListener('scroll', schedule, { passive: true });
-  window.addEventListener('resize', schedule);
+  window.addEventListener('resize', onResize);
+  fit();
+  void document.fonts?.ready.then(fit);
   update();
 
   // Pointer details, only for precise pointers.
@@ -182,7 +244,7 @@ export function HomeMotion() {
    observer.disconnect();
    window.removeEventListener('hyc:splash-landing', enterHero);
    window.removeEventListener('scroll', schedule);
-   window.removeEventListener('resize', schedule);
+   window.removeEventListener('resize', onResize);
    content?.removeEventListener('pointermove', onMove);
    content?.removeEventListener('pointerout', onLeave);
   };

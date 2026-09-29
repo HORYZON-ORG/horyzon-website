@@ -21,7 +21,7 @@ export function JourneyContactForm() {
   </div>
   <label>Come possiamo aiutarti?<textarea name="message" rows={4} required maxLength={1500} placeholder="Un’esigenza, un’idea, una domanda…"/></label>
   <p className="contact-note">Si aprirà la tua app email con una bozza da inviare a <a href="mailto:info@horyzon.it">info@horyzon.it</a>. <Link href="/privacy-policy">Informazioni privacy</Link>.</p>
-  <button type="submit" className="journey-button">Prepara la richiesta <span aria-hidden="true">↗</span></button>
+  <button type="submit" className="journey-button">Prepara la richiesta <span aria-hidden="true">↗︎</span></button>
   {prepared && <p role="status" className="contact-note">La richiesta non è ancora inviata: conferma l’invio nella tua app email. Se non si apre, puoi scrivere direttamente a info@horyzon.it.</p>}
  </form>;
 }

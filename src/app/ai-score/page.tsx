@@ -128,7 +128,7 @@ export default function AiScorePage() {
           <h2>Un punteggio trasparente, non una black box.</h2>
           <p className="narrative-lede">Horyzon separa predisposizione tecnica e visibilità reale e assegna punti solo a segnali effettivamente misurati.</p>
         </header>
-        <Link className="text-link" href="/ai-score/methodology">Scopri la metodologia ↗</Link>
+        <Link className="text-link" href="/ai-score/methodology">Scopri la metodologia ↗︎</Link>
       </section>
       <FaqSection items={publicFaqs['/ai-score']} />
     </main>

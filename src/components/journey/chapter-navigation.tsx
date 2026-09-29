@@ -5,6 +5,7 @@ const chapters = [
  ['orizzonte', 'Il tuo orizzonte'],
  ['radar', 'Inizia dal Radar'],
  ['tre-benesseri', 'I tre benesseri'],
+ ['organigramma', 'L’organigramma'],
  ['come-lavoriamo', 'Come lavoriamo'],
  ['parliamone', 'Parliamone'],
 ] as const;

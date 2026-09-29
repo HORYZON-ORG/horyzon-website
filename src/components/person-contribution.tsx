@@ -7,6 +7,6 @@ export function PersonContribution({ person }: { person: Person }) {
   <p className="section-kicker">Dove intervengo</p>
   <h2 id="person-contribution-title">Le decisioni che posso aiutarti a rendere più chiare.</h2>
   <ul>{person.skills.map(skill => <li key={skill}>{skill}</li>)}</ul>
-  <Link className="text-link" href={nextAction.href}>{nextAction.label} ↗</Link>
+  <Link className="text-link" href={nextAction.href}>{nextAction.label} ↗︎</Link>
  </section>;
 }

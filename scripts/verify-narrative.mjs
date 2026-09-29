@@ -14,8 +14,10 @@ for (const label of ['Amministrazione', 'Produzione', 'Commerciale', 'Marketing'
 }
 const commercialRadar = await readFile('.next/server/app/radar.html', 'utf8');
 assert(commercialRadar.includes('La tua azienda funziona'), 'radar landing: commercial problem-led headline missing');
-assert(commercialRadar.includes(`href="${radarUrl}"`), 'radar landing: canonical Hub CTA missing');
-assert(!commercialRadar.includes(`${radarUrl}?`), 'radar landing: Hub CTA must not contain query data');
+// Since the Radar journey moved into the Website, the landing CTAs scroll to the embedded product.
+assert(commercialRadar.includes('href="#radar-prodotto"'), 'radar landing: CTA to the embedded Radar missing');
+assert(commercialRadar.includes('id="radar-prodotto"'), 'radar landing: embedded Radar section missing');
+assert(!commercialRadar.includes(`${radarUrl}?`), 'radar landing: Hub links must not contain query data');
 assert(commercialRadar.includes('noindex'), 'radar landing: paid landing must be noindex');
 for (const phrase of ['Maturità dei processi', 'Autonomia dal titolare', 'Indice globale', 'Intelligenza artificiale']) {
   assert(commercialRadar.includes(phrase), `radar landing: missing ${phrase}`);

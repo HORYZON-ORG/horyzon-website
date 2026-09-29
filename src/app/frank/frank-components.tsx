@@ -33,7 +33,7 @@ export function FrankSubnav() {
           rel="noopener noreferrer"
           aria-label="Contatta Frank Cannoletta su WhatsApp"
         >
-          Scrivi a Frank ↗
+          Scrivi a Frank ↗︎
         </a>
       </div>
     </nav>
@@ -74,7 +74,7 @@ export function FrankHero() {
               rel="noopener noreferrer"
               aria-label="Prenota un confronto strategico con Frank Cannoletta su WhatsApp"
             >
-              Prenota un confronto <span aria-hidden="true">↗</span>
+              Prenota un confronto <span aria-hidden="true">↗︎</span>
             </a>
             <a className="frank-btn frank-btn-ghost" href="#metodo">
               Scopri il metodo <span aria-hidden="true">↓</span>
@@ -236,14 +236,14 @@ export function FrankRadar() {
             rel="noopener noreferrer"
             aria-label="Inizia il Radar d’Impresa su Horyzon Hub"
           >
-            {radar.ctaPrimary} <span aria-hidden="true">↗</span>
+            {radar.ctaPrimary} <span aria-hidden="true">↗︎</span>
           </a>
           <a
             className="frank-btn frank-btn-ghost"
             href={frankData.person.emailDebriefUrl}
             aria-label="Richiedi il debrief del Radar con Frank Cannoletta via email"
           >
-            {radar.ctaSecondary} <span aria-hidden="true">↗</span>
+            {radar.ctaSecondary} <span aria-hidden="true">↗︎</span>
           </a>
         </div>
 
@@ -332,7 +332,7 @@ export function FrankContact() {
               <span className="frank-channel-label">WHATSAPP</span>
               <span className="frank-channel-val">{person.phone}</span>
             </div>
-            <span className="frank-channel-arrow" aria-hidden="true">↗</span>
+            <span className="frank-channel-arrow" aria-hidden="true">↗︎</span>
           </a>
 
           <a
@@ -350,7 +350,7 @@ export function FrankContact() {
               <span className="frank-channel-label">EMAIL</span>
               <span className="frank-channel-val">{person.email}</span>
             </div>
-            <span className="frank-channel-arrow" aria-hidden="true">↗</span>
+            <span className="frank-channel-arrow" aria-hidden="true">↗︎</span>
           </a>
 
           <a
@@ -371,7 +371,7 @@ export function FrankContact() {
               <span className="frank-channel-label">INSTAGRAM</span>
               <span className="frank-channel-val">{person.instagram}</span>
             </div>
-            <span className="frank-channel-arrow" aria-hidden="true">↗</span>
+            <span className="frank-channel-arrow" aria-hidden="true">↗︎</span>
           </a>
 
           <Link
@@ -390,7 +390,7 @@ export function FrankContact() {
               <span className="frank-channel-label">BIGLIETTO DIGITALE</span>
               <span className="frank-channel-val">Salva contatto in rubrica</span>
             </div>
-            <span className="frank-channel-arrow" aria-hidden="true">↗</span>
+            <span className="frank-channel-arrow" aria-hidden="true">↗︎</span>
           </Link>
         </div>
       </div>

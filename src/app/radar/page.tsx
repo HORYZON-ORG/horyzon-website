@@ -110,7 +110,7 @@ export default function CommercialRadarPage() {
       <section className="radar-commercial-system" aria-labelledby="system-title">
         <p className="radar-commercial-context">Dopo la fotografia</p><h2 id="system-title">Il Radar indica dove guardare. Il lavoro comincia da lì.</h2>
         <div><p>Il profilo viene letto insieme agli obiettivi dell’imprenditore. Il primo risultato utile non è una lista infinita di interventi, ma una priorità: il reparto o il processo che merita attenzione per primo.</p><p>Quando esistono le condizioni per proseguire, Horyzon collega diagnosi, organizzazione, persone, procedure, strumenti digitali e intelligenza artificiale in un percorso verificabile.</p><p>Blueprint e attivazione distinguono ciò che è previsto da ciò che è realmente configurato e testato. La Platform rende visibili gli elementi appropriati all’azienda senza sostituire responsabilità e decisioni umane.</p></div>
-        <Link href="/metodo">Come lavora Horyzon <span aria-hidden="true">↗</span></Link>
+        <Link href="/metodo">Come lavora Horyzon <span aria-hidden="true">↗︎</span></Link>
       </section>
 
       <section className="radar-commercial-fit" aria-labelledby="fit-title">
@@ -120,7 +120,7 @@ export default function CommercialRadarPage() {
 
       <section className="radar-commercial-trust" aria-labelledby="trust-title">
         <div><p className="radar-commercial-context">Dati e fiducia</p><h2 id="trust-title">Il contesto serve a leggere il risultato, non a giudicare l’impresa.</h2></div>
-        <div><p>Prima del Radar ti vengono chiesti nome, azienda, settore, dimensione, stagionalità, telefono ed email. Servono a creare il profilo e contestualizzare la lettura.</p><p>Non inserire dati di clienti, dipendenti o altre informazioni sensibili nelle risposte.</p><Link href="/privacy-policy">Leggi l’informativa privacy <span aria-hidden="true">↗</span></Link></div>
+        <div><p>Prima del Radar ti vengono chiesti nome, azienda, settore, dimensione, stagionalità, telefono ed email. Servono a creare il profilo e contestualizzare la lettura.</p><p>Non inserire dati di clienti, dipendenti o altre informazioni sensibili nelle risposte.</p><Link href="/privacy-policy">Leggi l’informativa privacy <span aria-hidden="true">↗︎</span></Link></div>
       </section>
 
       <section className="radar-commercial-faq" aria-labelledby="faq-title">

@@ -138,7 +138,7 @@ export function JobAdBuilder() {
           </div>
         </div>
 
-        <button className={styles.generateButton} type="submit">Genera l’anteprima <span aria-hidden="true">↗</span></button>
+        <button className={styles.generateButton} type="submit">Genera l’anteprima <span aria-hidden="true">↗︎</span></button>
         <p className={styles.prototypeNote}>Questa anteprima non salva né invia i dati inseriti.</p>
       </form>
     </div>
