@@ -10,11 +10,13 @@ import { useLayoutEffect } from 'react';
 // - The hero waits for the splash logo to land in the header. On a full load without the splash it was
 //   already painted, so it is left as is (window.__kinStatic).
 // - Decorative scenes ([data-kin-watch]: radar, arrival horizon) start when they enter the viewport.
-// - --dawn (0..1 over the journey) warms the scene; --m, --dot and data-step drive the pinned
-//   "Come lavoriamo" track.
-// - The organisation chart (#organigramma) is pinned on large screens: --bus and data-lit build it by
-//   scroll; on small screens each department enters on its own.
+// - --dawn (0..1 over the journey) warms the scene.
+// - "Come lavoriamo" and the organisation chart play their sequence once they are on screen (data-step
+//   and --dot; data-head, --bus, data-lit, data-note): one scroll per chapter, no scroll-scrubbing.
+//   On small screens each department also enters on its own.
 // - Chapter labels decode from random characters when their chapter enters.
+// - Wheel paging on desktop: one wheel or trackpad gesture moves to the next or previous chapter; the
+//   FAQ and the footer below the journey scroll natively. Keyboard, scrollbar and touch stay native.
 // - Buttons lean towards the pointer and path cards carry a light that follows it (--mx/--my, --gx/--gy).
 
 type MotionWindow = Window & { __hycSplash?: string; __homeMotion?: boolean; __kinStatic?: boolean };
@@ -75,27 +77,23 @@ function prepareChapter(copy: HTMLElement) {
  }
 }
 
-// Pinned method track: the lime dot travels to each of the three stops (1/6, 1/2, 5/6 of the line)
-// and rests there while that step is read.
-const METHOD_STOPS = [[0, .12, 0, 1 / 6], [.3, .45, 1 / 6, .5], [.63, .78, .5, 5 / 6]] as const;
-function methodTrack(m: number) {
- let dot = 0, step = 0;
- for (const [from, to, a, b] of METHOD_STOPS) {
-  if (m < from) break;
-  const p = Math.min(1, (m - from) / (to - from));
-  dot = a + (b - a) * p * p * (3 - 2 * p);
-  if (p > .6) step++;
- }
- return { dot, step };
-}
-
-// Organisation chart: direction first, then the connector, then the five departments one by one.
-function orgTrack(m: number) {
- const clamp = (x: number) => Math.min(1, Math.max(0, x));
- const bus = clamp((m - .06) / .14);
- let lit = 0;
- for (let k = 0; k < 5; k++) if (m >= .22 + k * .12) lit = k + 1;
- return { head: m > .02, bus, lit, note: m >= .8 };
+// Sequences that play by themselves once their chapter is on screen: one scroll lands on the chapter
+// and the whole build runs in about 1.5 s. Each step is [delay ms, apply].
+type Step = [number, (el: HTMLElement) => void];
+const METHOD_SEQUENCE: Step[] = [1, 2, 3].map((step, i) => [250 + i * 620, el => {
+ el.dataset.step = String(step);
+ el.style.setProperty('--dot', String((2 * step - 1) / 6));
+}]);
+const ORG_SEQUENCE: Step[] = [
+ [0, el => el.toggleAttribute('data-head', true)],
+ [220, el => el.style.setProperty('--bus', '1')],
+ ...[1, 2, 3, 4, 5].map((lit, i): Step => [520 + i * 170, el => { el.dataset.lit = String(lit); }]),
+ [1500, el => el.toggleAttribute('data-note', true)],
+];
+function play(el: HTMLElement, steps: Step[], timers: number[]) {
+ if (el.dataset.played !== undefined) return;
+ el.dataset.played = '';
+ for (const [delay, apply] of steps) timers.push(window.setTimeout(() => apply(el), delay));
 }
 
 const GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -165,40 +163,34 @@ export function HomeMotion() {
   const story = document.querySelector<HTMLElement>('.journey-story');
   const method = document.getElementById('come-lavoriamo');
   const org = document.getElementById('organigramma');
+  const timers: number[] = [];
+  const sequences = new IntersectionObserver(entries => {
+   for (const entry of entries) {
+    if (!entry.isIntersecting) continue;
+    const el = entry.target as HTMLElement;
+    play(el, el === org ? ORG_SEQUENCE : METHOD_SEQUENCE, timers);
+    sequences.unobserve(el);
+   }
+  }, { threshold: .45 });
+  for (const el of [method, org]) if (el) sequences.observe(el);
+
   let frame = 0;
   const update = () => {
    frame = 0;
-   const vh = window.innerHeight;
-   if (story) {
-    const rect = story.getBoundingClientRect();
-    const dawn = Math.min(1, Math.max(0, -rect.top / Math.max(1, rect.height - vh)));
-    story.style.setProperty('--dawn', dawn.toFixed(4));
-   }
-   if (method) {
-    const rect = method.getBoundingClientRect();
-    const m = Math.min(1, Math.max(0, -rect.top / Math.max(1, rect.height - vh)));
-    const { dot, step } = methodTrack(m);
-    method.style.setProperty('--m', m.toFixed(4));
-    method.style.setProperty('--dot', dot.toFixed(4));
-    method.dataset.step = String(step);
-   }
-   if (org) {
-    const rect = org.getBoundingClientRect();
-    const { head, bus, lit, note } = orgTrack(Math.min(1, Math.max(0, -rect.top / Math.max(1, rect.height - vh))));
-    org.style.setProperty('--bus', bus.toFixed(4));
-    org.dataset.lit = String(lit);
-    org.toggleAttribute('data-head', head);
-    org.toggleAttribute('data-note', note);
-   }
+   if (!story) return;
+   const rect = story.getBoundingClientRect();
+   const dawn = Math.min(1, Math.max(0, -rect.top / Math.max(1, rect.height - window.innerHeight)));
+   story.style.setProperty('--dawn', dawn.toFixed(4));
   };
   const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
-  // The pinned chart must fit between the header and the horizon line: scale it down when needed.
+  // On large screens the chart holds one screen: scale it down when the viewport is short.
   const orgPin = org?.querySelector<HTMLElement>('.org-pin');
   const orgStage = org?.querySelector<HTMLElement>('.org-stage');
+  const large = window.matchMedia('(min-width: 851px) and (min-height: 720px)');
   const fit = () => {
    if (!orgPin || !orgStage) return;
+   if (!large.matches) { orgStage.style.removeProperty('--fit'); return; }
    const style = getComputedStyle(orgPin);
-   if (style.position !== 'sticky') { orgStage.style.removeProperty('--fit'); return; }
    const room = orgPin.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
    orgStage.style.setProperty('--fit', Math.min(1, room / Math.max(1, orgStage.offsetHeight)).toFixed(3));
   };
@@ -208,6 +200,46 @@ export function HomeMotion() {
   fit();
   void document.fonts?.ready.then(fit);
   update();
+
+  // Wheel paging (desktop, precise pointers): chapter tops are the pages, the FAQ top is the last one.
+  const desktop = window.matchMedia('(min-width: 851px) and (hover: hover) and (pointer: fine)');
+  const pages = () => {
+   const tops = [...document.querySelectorAll<HTMLElement>('.journey-chapter')].map((s, i) => i === 0 ? 0 : Math.round(s.getBoundingClientRect().top + window.scrollY));
+   const faq = document.querySelector<HTMLElement>('.horyzon-home .faq-section');
+   if (faq) tops.push(Math.round(faq.getBoundingClientRect().top + window.scrollY));
+   return tops;
+  };
+  let paging = 0, pageTimer = 0, lastWheel = 0, travel = 0;
+  const ease = (t: number) => t < .5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+  const glide = (to: number) => {
+   const from = window.scrollY, start = performance.now(), duration = 900;
+   const step = (now: number) => {
+    const t = Math.min(1, (now - start) / duration);
+    window.scrollTo({ top: from + (to - from) * ease(t), behavior: 'instant' });
+    if (t < 1) paging = requestAnimationFrame(step);
+    else paging = 0;
+   };
+   paging = requestAnimationFrame(step);
+  };
+  const onWheel = (event: WheelEvent) => {
+   if (!desktop.matches || event.ctrlKey || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
+   const now = performance.now(), gap = now - lastWheel;
+   lastWheel = now;
+   const tops = pages(), y = window.scrollY, last = tops[tops.length - 1], down = event.deltaY > 0;
+   // below the journey the page scrolls natively; coming back up from the FAQ top re-enters paging
+   if (y > last + 2 || (down && y >= last - 2)) return;
+   event.preventDefault();
+   // a gesture keeps the page locked until it stops (trackpad momentum included)
+   if (paging || (pageTimer && gap < 160)) { window.clearTimeout(pageTimer); pageTimer = window.setTimeout(() => { pageTimer = 0; }, 160); return; }
+   travel += event.deltaY;
+   if (Math.abs(travel) < 24) return;
+   const target = down ? tops.find(t => t > y + 4) : [...tops].reverse().find(t => t < y - 4);
+   travel = 0;
+   if (target === undefined) return;
+   glide(target);
+   pageTimer = window.setTimeout(() => { pageTimer = 0; }, 160);
+  };
+  window.addEventListener('wheel', onWheel, { passive: false });
 
   // Pointer details, only for precise pointers.
   const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
@@ -242,6 +274,11 @@ export function HomeMotion() {
   return () => {
    cancelAnimationFrame(frame);
    observer.disconnect();
+   sequences.disconnect();
+   timers.forEach(clearTimeout);
+   window.removeEventListener('wheel', onWheel);
+   cancelAnimationFrame(paging);
+   window.clearTimeout(pageTimer);
    window.removeEventListener('hyc:splash-landing', enterHero);
    window.removeEventListener('scroll', schedule);
    window.removeEventListener('resize', onResize);
