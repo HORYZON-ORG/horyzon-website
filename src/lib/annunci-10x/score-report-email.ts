@@ -7,7 +7,7 @@ import {
 import type { Annunci10xRuntimeContext, Annunci10xSessionCookie } from './product-flow.ts';
 import { getRubricCheckDefinitionV2 } from './rubric-v2.ts';
 import { isScoreResultV2 } from './score-v2.ts';
-import type { CheckIdV2, EvaluationCheckV2, ScoreBandCodeV2, ScoreResultV2 } from './types-v2.ts';
+import type { AnchorScoreV2, CheckIdV2, EvaluationCheckV2, RubricCheckDefinitionV2, ScoreBandCodeV2, ScoreResultV2 } from './types-v2.ts';
 import type { PersistedAnalysisRun, PersistedEvaluation, PersistedLead, PersistedSnapshot } from './persistence/types.ts';
 
 export const ANNUNCI10X_SCORE_REPORT_EMAIL_LEASE_SECONDS = 120;
@@ -36,7 +36,7 @@ export const ANNUNCI10X_SCORE_REPORT_AREA_DEFINITIONS: readonly {
   label: string;
   checkIds: readonly CheckIdV2[];
 }[] = [
-  { id: 'ROLE_IDENTITY', label: 'Identita del ruolo', checkIds: ['01', '02'] },
+  { id: 'ROLE_IDENTITY', label: 'Identità del ruolo', checkIds: ['01', '02'] },
   { id: 'REAL_WORK', label: 'Lavoro reale e risultati', checkIds: ['03', '04', '05'] },
   { id: 'ROLE_COHERENCE', label: 'Coerenza con il ruolo', checkIds: ['06', '07', '08', '09'] },
   { id: 'REQUIREMENTS', label: 'Requisiti', checkIds: ['10', '11'] },
@@ -56,6 +56,87 @@ const STATUS_SEVERITY: Record<EvaluationCheckV2['status'], number> = {
   UNSUPPORTED: 2,
   EVALUATED: 3,
   NOT_EVALUABLE: 4,
+};
+
+const CUSTOMER_FACING_CHECK_LABELS_V2: Record<CheckIdV2, string> = {
+  '01': 'Riconoscibilità del titolo',
+  '02': 'Livello, perimetro e responsabilità',
+  '03': 'Concretezza delle attività',
+  '04': 'Risultato osservabile del ruolo',
+  '05': 'Contesto operativo',
+  '06': 'Priorità delle informazioni',
+  '07': 'Fedeltà routine e sfide',
+  '08': 'Visibilità delle condizioni impegnative',
+  '09': 'Adeguatezza tecnica del linguaggio',
+  '10': 'Classificazione dei requisiti',
+  '11': 'Rilevanza dei requisiti',
+  '12': 'Sede e modalità di lavoro',
+  '13': 'Contratto, orari e tempi',
+  '14': 'Chiarezza del compenso',
+  '15': "Ragioni concrete dell'offerta",
+  '16': 'Fit struttura-canale',
+  '17': 'Coerenza testo-campi-destinazione',
+  '18': 'Leggibilità e scansione',
+  '19': 'Concretezza del linguaggio',
+  '20': 'Chiarezza candidatura',
+};
+
+const CUSTOMER_FACING_MISSING_SUGGESTIONS_V2: Record<CheckIdV2, readonly string[]> = {
+  '01': ['Rendi il titolo del ruolo chiaro, specifico e riconoscibile per chi cerca quel lavoro.'],
+  '02': ['Chiarisci livello, responsabilità principali, autonomia e perimetro operativo.'],
+  '03': ['Descrivi le attività concrete che la persona svolgerà nella pratica quotidiana.'],
+  '04': ['Esplicita quale risultato concreto deve produrre la persona nel ruolo.'],
+  '05': ['Indica contesto operativo, interlocutori principali e ambiente di lavoro.'],
+  '06': ['Porta in evidenza le informazioni più importanti per decidere se candidarsi.'],
+  '07': ['Racconta ritmo di lavoro, routine, imprevisti e sfide rilevanti senza abbellirli.'],
+  '08': ['Rendi visibili condizioni impegnative, responsabilità materiali o richieste particolari quando contano.'],
+  '09': ['Adatta il linguaggio tecnico al livello reale del ruolo e alla persona che deve leggerlo.'],
+  '10': ['Separa chiaramente ciò che è indispensabile da ciò che è preferenziale o apprendibile.'],
+  '11': ['Collega ogni requisito importante alle attività, ai risultati o alle condizioni del lavoro.'],
+  '12': ['Indica con chiarezza sede e modalità di lavoro.'],
+  '13': ['Specifica contratto, orari, turni, durata o tempi rilevanti per la decisione.'],
+  '14': ['Se disponibile, rendi chiaro il compenso o la relativa fascia.'],
+  '15': ["Aggiungi ragioni concrete e verificabili per cui una persona dovrebbe considerare l'offerta."],
+  '16': ["Adatta struttura, lunghezza e ordine dell'annuncio al canale di pubblicazione."],
+  '17': ['Allinea testo, campi del portale e destinazione di candidatura sugli stessi fatti.'],
+  '18': ['Rendi il testo più facile da leggere con sezioni, ordine e gerarchia chiari.'],
+  '19': ['Sostituisci formule vaghe o ripetitive con parole concrete e specifiche del ruolo.'],
+  '20': ['Spiega esattamente come e dove candidarsi.'],
+};
+
+const CUSTOMER_FACING_MISSING_REASONS_V2: Record<CheckIdV2, string> = {
+  '01': 'Nel testo manca un titolo abbastanza chiaro e riconoscibile per identificare subito il ruolo.',
+  '02': 'Nel testo mancano informazioni sufficienti su livello, responsabilità e perimetro del ruolo.',
+  '03': 'Le attività quotidiane non sono ancora descritte in modo abbastanza concreto.',
+  '04': 'Il risultato atteso del ruolo non è ancora espresso in modo chiaro.',
+  '05': 'Il contesto operativo non è ancora abbastanza comprensibile per chi legge.',
+  '06': 'Le informazioni decisive non emergono con sufficiente priorità.',
+  '07': 'Ritmo di lavoro, routine o sfide rilevanti non sono ancora rappresentati in modo chiaro.',
+  '08': 'Le condizioni impegnative rilevanti non sono ancora abbastanza visibili.',
+  '09': 'Il dettaglio tecnico necessario non emerge con sufficiente chiarezza.',
+  '10': 'La distinzione tra requisiti indispensabili, preferenziali e apprendibili non è ancora chiara.',
+  '11': 'I requisiti non sono ancora collegati in modo sufficiente al lavoro reale.',
+  '12': 'Sede e modalità di lavoro non sono ancora indicate con sufficiente chiarezza.',
+  '13': 'Contratto, orari o tempi rilevanti non sono ancora abbastanza chiari.',
+  '14': 'Il compenso, o il modo in cui viene gestito, non è ancora abbastanza chiaro.',
+  '15': "L'offerta non contiene ancora ragioni concrete e verificabili per essere valutata.",
+  '16': 'La struttura non risulta ancora abbastanza adatta al canale di pubblicazione.',
+  '17': 'Testo, campi o destinazione non risultano ancora abbastanza allineati.',
+  '18': 'Il testo non è ancora abbastanza facile da leggere e scandire.',
+  '19': 'Il linguaggio resta troppo generico, ripetitivo o poco concreto.',
+  '20': 'Il percorso di candidatura non è ancora sufficientemente chiaro.',
+};
+
+const CUSTOMER_FACING_ANCHOR_OVERRIDES_V2: Partial<Record<CheckIdV2, Partial<Record<AnchorScoreV2, string>>>> = {
+  '02': {
+    4: 'Alcune responsabilità sono comprensibili, ma livello, autonomia o confini del ruolo richiedono ancora interpretazione.',
+  },
+  '04': {
+    4: 'Il risultato del ruolo non è ancora espresso in modo sufficientemente chiaro: il candidato deve ricostruirlo dalle attività descritte.',
+  },
+  '10': {
+    2: 'I requisiti non sono ancora separati con sufficiente chiarezza tra indispensabili, preferenziali e apprendibili.',
+  },
 };
 
 export function isAnnunci10xScoreReportEmailEnabled(env: Record<string, string | undefined> = process.env): boolean {
@@ -154,12 +235,20 @@ export function buildAnnunci10xScoreReport(input: {
     evaluableCheckCount: score.evaluableCheckCount,
     areaScores: calculateAnnunci10xScoreReportAreas(score.checks),
     interpretation: interpretAnnunci10xScoreBand(score.band?.code ?? null),
-    priorities: selectPriorityChecks(score.checks).map((check) => ({
-      checkId: check.id,
-      label: getRubricCheckDefinitionV2(check.id).label,
-      reason: cleanReportText(check.reason, 600) || 'Informazione insufficiente per descrivere il punto critico.',
-      missing: check.missing.map((item) => cleanReportText(item, 300)).filter(Boolean).slice(0, 3),
-    })),
+    priorities: selectPriorityChecks(score.checks).map(buildCustomerFacingPriorityV2),
+  };
+}
+
+export function buildCustomerFacingPriorityV2(check: EvaluationCheckV2): ScoreReportEmailPriorityInput {
+  const definition = getRubricCheckDefinitionV2(check.id);
+  return {
+    checkId: check.id,
+    label: cleanReportText(CUSTOMER_FACING_CHECK_LABELS_V2[check.id] ?? definition.label, 160),
+    reason: customerFacingPriorityReasonV2(check, definition),
+    missing: CUSTOMER_FACING_MISSING_SUGGESTIONS_V2[check.id]
+      .map((item) => cleanReportText(item, 300))
+      .filter(Boolean)
+      .slice(0, 3),
   };
 }
 
@@ -221,6 +310,99 @@ function comparePriorityChecks(left: EvaluationCheckV2, right: EvaluationCheckV2
   const severity = STATUS_SEVERITY[left.status] - STATUS_SEVERITY[right.status];
   if (severity !== 0) return severity;
   return left.id.localeCompare(right.id);
+}
+
+function customerFacingPriorityReasonV2(check: EvaluationCheckV2, definition: RubricCheckDefinitionV2): string {
+  let reason: string;
+  switch (check.status) {
+    case 'EVALUATED':
+      reason = customerFacingEvaluatedReasonV2(check, definition);
+      break;
+    case 'MISSING':
+      reason = CUSTOMER_FACING_MISSING_REASONS_V2[check.id] ?? definition.missingSemantics;
+      break;
+    case 'CONFLICT':
+      reason = 'Nel testo emergono informazioni non completamente coerenti su questo punto.';
+      break;
+    case 'UNSUPPORTED':
+      reason = "Questa informazione non risulta sufficientemente supportata dai fatti presenti nell'annuncio.";
+      break;
+    case 'NOT_EVALUABLE':
+      reason = definition.notEvaluableSemantics;
+      break;
+    default:
+      reason = 'Informazione insufficiente per descrivere il punto critico.';
+  }
+  return cleanCustomerFacingText(reason, 600);
+}
+
+function customerFacingEvaluatedReasonV2(check: EvaluationCheckV2, definition: RubricCheckDefinitionV2): string {
+  if (check.score === null) return CUSTOMER_FACING_MISSING_REASONS_V2[check.id] ?? definition.missingSemantics;
+  const score = check.score;
+  const sortedAnchors = [...definition.anchors].sort((left, right) => left.score - right.score);
+  const anchor = sortedAnchors
+    .filter((item) => item.score <= score)
+    .at(-1) ?? sortedAnchors[0];
+  return CUSTOMER_FACING_ANCHOR_OVERRIDES_V2[check.id]?.[anchor.score] ?? anchor.description;
+}
+
+function cleanCustomerFacingText(value: string, maxLength: number): string {
+  const localized = localizeItalianPresentationText(value);
+  if (hasTechnicalProviderLanguage(localized)) return 'Informazione insufficiente per descrivere il punto critico.';
+  return cleanReportText(localized, maxLength) || 'Informazione insufficiente per descrivere il punto critico.';
+}
+
+function localizeItalianPresentationText(value: string): string {
+  const replacements: readonly (readonly [string | RegExp, string])[] = [
+    [/\bIdentita\b/g, 'Identità'],
+    [/\bRiconoscibilita\b/g, 'Riconoscibilità'],
+    [/\battivita\b/g, 'attività'],
+    [/\bAttivita\b/g, 'Attività'],
+    [/\bresponsabilita\b/g, 'responsabilità'],
+    [/\bResponsabilita\b/g, 'Responsabilità'],
+    [/\bmodalita\b/g, 'modalità'],
+    [/\bModalita\b/g, 'Modalità'],
+    [/\bpriorita\b/g, 'priorità'],
+    [/\bPriorita\b/g, 'Priorità'],
+    [/\bfedelta\b/g, 'fedeltà'],
+    [/\bFedelta\b/g, 'Fedeltà'],
+    [/\bvisibilita\b/g, 'visibilità'],
+    [/\bVisibilita\b/g, 'Visibilità'],
+    [/\bleggibilita\b/g, 'leggibilità'],
+    [/\bLeggibilita\b/g, 'Leggibilità'],
+    [/\bspecificita\b/g, 'specificità'],
+    [/\bambiguita\b/g, 'ambiguità'],
+    [/\brealta\b/g, 'realtà'],
+    [/\bpiu\b/g, 'più'],
+    [/\bcio\b/g, 'ciò'],
+    [/\bperlopiu\b/g, 'perlopiù'],
+    [/\bcliche\b/g, 'cliché'],
+    [/\bdifficolta\b/g, 'difficoltà'],
+    [/\bTecnicalita\b/g, 'Tecnicità'],
+    [/\btecnicalita\b/g, 'tecnicità'],
+    [/\bcandidati target\b/g, 'candidati ideali'],
+    [/\bcandidato-facing\b/g, 'pensato per chi legge'],
+    [/\brole-specific\b/g, 'specifico del ruolo'],
+    [/\bsearch-friendly\b/g, 'facile da cercare'],
+    [/\bkeyword stuffing\b/g, 'accumulo artificiale di parole chiave'],
+    [/\bcorporate filler\b/g, 'frasi aziendali generiche'],
+    [/\bclaim\b/g, 'affermazioni'],
+    [/\baudit\/meta voice\b/g, 'tono di revisione interna'],
+    [/\bfiller\b/g, 'riempitivi'],
+    [/\bsource commentary\b/g, 'commenti sul testo di partenza'],
+    [/\bL offerta\b/g, "L'offerta"],
+    [/\bl offerta\b/g, "l'offerta"],
+    [/\bl opportunita\b/g, "l'opportunità"],
+    [/\ball ingresso\b/g, "all'ingresso"],
+    [/\bl ordine\b/g, "l'ordine"],
+    [/\bL enfasi\b/g, "L'enfasi"],
+    [/\bdell offerta\b/g, "dell'offerta"],
+  ];
+  return replacements.reduce((text, [pattern, replacement]) => text.replace(pattern, replacement), value);
+}
+
+function hasTechnicalProviderLanguage(value: string): boolean {
+  return /\b(target evidence|unsupported claim|check\s+\d{1,2}|provider|target|rubric|score semantics)\b/i.test(value);
 }
 
 function cleanReportText(value: unknown, maxLength: number): string {

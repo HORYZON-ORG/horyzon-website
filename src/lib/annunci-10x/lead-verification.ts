@@ -561,9 +561,9 @@ export function buildResendScoreReportPayload(input: ScoreReportEmailInput & {
     `<td align="right" style="padding:12px 0;border-bottom:1px solid #dce4d3;font-weight:700">${escapeHtml(formatAreaScore(area))}</td>`,
     '</tr>',
   ].join('')).join('');
-  const priorityHtml = input.priorities.map((priority, index) => [
+  const priorityHtml = input.priorities.map((priority) => [
     '<li style="margin-bottom:14px">',
-    `<strong>${index + 1}. ${escapeHtml(priority.label)}</strong>`,
+    `<strong>${escapeHtml(priority.label)}</strong>`,
     `<div><strong>Perché conta:</strong> ${escapeHtml(priority.reason)}</div>`,
     priority.missing.length
       ? `<div><strong>Da chiarire:</strong> ${escapeHtml(priority.missing.join('; '))}</div>`

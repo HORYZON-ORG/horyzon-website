@@ -12,6 +12,7 @@ const {
   MockAnnunci10xEmailProvider,
   ResendAnnunci10xEmailProvider,
   buildAnnunci10xScoreReport,
+  buildCustomerFacingPriorityV2,
   buildResendScoreReportPayload,
   calculateAnnunci10xScoreReportAreas,
   calculateAnnunci10xScoreV2,
@@ -52,7 +53,7 @@ async function assertReportContent() {
   assert.equal(report.coverage, 90);
   assert.equal(report.evaluableCheckCount, 18);
   assert.deepEqual(report.areaScores.map((area) => area.label), [
-    'Identita del ruolo',
+    'Identità del ruolo',
     'Lavoro reale e risultati',
     'Coerenza con il ruolo',
     'Requisiti',
@@ -68,7 +69,7 @@ async function assertReportContent() {
   assert.match(report.interpretation, /annuncio/i);
   assert.deepEqual(report.priorities.map((item) => item.checkId), ['03', '04', '05']);
   assert.deepEqual(report.priorities.map((item) => item.label), [
-    'Concretezza delle attivita',
+    'Concretezza delle attività',
     'Risultato osservabile del ruolo',
     'Contesto operativo',
   ]);
@@ -107,6 +108,79 @@ async function assertReportContent() {
   assert.equal(ndAreas[5].evaluatedCheckCount, 0);
 }
 
+function assertCustomerFacingPriorityPresentation() {
+  const score = calculateAnnunci10xScoreV2(providerLeakChecksFixtureV2());
+  const report = buildAnnunci10xScoreReport({
+    lead: {},
+    analysisRun: {},
+    evaluation: { score },
+    snapshot: { roleCard: roleCardFixture() },
+  });
+
+  assert.deepEqual(report.priorities.map((item) => item.checkId), ['10', '04', '02']);
+  assert.deepEqual(report.priorities.map((item) => item.label), [
+    'Classificazione dei requisiti',
+    'Risultato osservabile del ruolo',
+    'Livello, perimetro e responsabilità',
+  ]);
+  assert.equal(
+    report.priorities.find((item) => item.checkId === '04').reason,
+    'Il risultato del ruolo non è ancora espresso in modo sufficientemente chiaro: il candidato deve ricostruirlo dalle attività descritte.',
+  );
+  assert.deepEqual(report.priorities.find((item) => item.checkId === '04').missing, [
+    'Esplicita quale risultato concreto deve produrre la persona nel ruolo.',
+  ]);
+  assert.equal(
+    report.priorities.find((item) => item.checkId === '10').reason,
+    'I requisiti non sono ancora separati con sufficiente chiarezza tra indispensabili, preferenziali e apprendibili.',
+  );
+  assert.deepEqual(report.priorities.find((item) => item.checkId === '10').missing, [
+    'Separa chiaramente ciò che è indispensabile da ciò che è preferenziale o apprendibile.',
+  ]);
+  assert.equal(
+    report.priorities.find((item) => item.checkId === '02').reason,
+    'Alcune responsabilità sono comprensibili, ma livello, autonomia o confini del ruolo richiedono ancora interpretazione.',
+  );
+  assert.deepEqual(report.priorities.find((item) => item.checkId === '02').missing, [
+    'Chiarisci livello, responsabilità principali, autonomia e perimetro operativo.',
+  ]);
+
+  const rendered = buildResendScoreReportPayload({
+    ...payloadInputFromPayload('44444444-4444-4444-8444-444444444444'),
+    areaScores: report.areaScores,
+    priorities: report.priorities,
+    interpretation: report.interpretation,
+  });
+  for (const forbidden of providerFacingFixtureStrings()) {
+    assert.doesNotMatch(JSON.stringify(report.priorities), new RegExp(escapeRegExp(forbidden), 'i'));
+    assert.doesNotMatch(rendered.text, new RegExp(escapeRegExp(forbidden), 'i'));
+    assert.doesNotMatch(rendered.html, new RegExp(escapeRegExp(forbidden), 'i'));
+  }
+  for (const forbidden of ['target evidence', 'unsupported claim', 'provider', 'target', 'rubric', 'score semantics']) {
+    assert.doesNotMatch(JSON.stringify(report.priorities), new RegExp(escapeRegExp(forbidden), 'i'));
+  }
+  assert.doesNotMatch(rendered.html, /<strong>\s*1\./i);
+  assert.doesNotMatch(rendered.html, /1\.\s*1\./);
+  assert.match(rendered.html, /<li style="margin-bottom:14px"><strong>Classificazione dei requisiti<\/strong>/);
+  assert.match(rendered.text, /1\. Classificazione dei requisiti/);
+
+  const missingPriority = buildCustomerFacingPriorityV2(priorityCheckFixture('05', null, 'MISSING'));
+  assert.equal(missingPriority.reason, 'Il contesto operativo non è ancora abbastanza comprensibile per chi legge.');
+  assert.deepEqual(missingPriority.missing, ['Indica contesto operativo, interlocutori principali e ambiente di lavoro.']);
+
+  const conflictPriority = buildCustomerFacingPriorityV2(priorityCheckFixture('06', 1, 'CONFLICT'));
+  assert.equal(conflictPriority.reason, 'Nel testo emergono informazioni non completamente coerenti su questo punto.');
+
+  const unsupportedPriority = buildCustomerFacingPriorityV2(priorityCheckFixture('07', 1, 'UNSUPPORTED'));
+  assert.equal(unsupportedPriority.reason, "Questa informazione non risulta sufficientemente supportata dai fatti presenti nell'annuncio.");
+
+  for (const definition of ANNUNCI10X_RUBRIC_CHECKS_V2) {
+    const priority = buildCustomerFacingPriorityV2(priorityCheckFixture(definition.id, null, 'MISSING'));
+    assert.ok(priority.missing.length >= 1, `check ${definition.id} must have a customer-facing suggestion`);
+    assert.doesNotMatch(JSON.stringify(priority), /missing target evidence|target evidence|provider|rubric|score semantics/i);
+  }
+}
+
 async function assertResendPayload() {
   const deliveryId = '11111111-1111-4111-8111-111111111111';
   assert.equal(resendScoreReportIdempotencyKey(deliveryId), `annunci10x-score-report/${deliveryId}`);
@@ -130,7 +204,7 @@ async function assertResendPayload() {
   assert.doesNotMatch(payload.html, /<Ada>/);
   assert.match(payload.html, /Ciao Ada,/);
   assert.match(payload.text, /Punteggi per area/);
-  assert.match(payload.text, /Identita del ruolo: 20\/100 \(1\/2 controlli valutabili\)/);
+  assert.match(payload.text, /Identità del ruolo: 20\/100 \(1\/2 controlli valutabili\)/);
   assert.match(payload.text, /Lavoro reale e risultati: 6\.7\/100 \(3\/3 controlli valutabili\)/);
   assert.match(payload.text, /Le 3 priorità su cui intervenire/);
   assert.match(payload.text, /Il punteggio valuta la chiarezza e la completezza/);
@@ -414,6 +488,67 @@ function checksFixtureV2() {
   });
 }
 
+function providerLeakChecksFixtureV2() {
+  return ANNUNCI10X_RUBRIC_CHECKS_V2.map((definition) => {
+    const base = {
+      id: definition.id,
+      score: 8,
+      status: 'EVALUATED',
+      evidence: [`Evidenza sintetica ${definition.id}`],
+      reason: `Motivo sintetico per il controllo ${definition.id}.`,
+      missing: [],
+      confidence: 80,
+    };
+    if (definition.id === '02') {
+      return {
+        ...base,
+        score: 5,
+        reason: 'Role perimeter is partly visible.',
+        missing: ['provider should not leak this target evidence'],
+      };
+    }
+    if (definition.id === '04') {
+      return {
+        ...base,
+        score: 4,
+        reason: 'Observable expected result is checked from target evidence.',
+        missing: ['missing target evidence for check 04'],
+      };
+    }
+    if (definition.id === '10') {
+      return {
+        ...base,
+        score: 2,
+        reason: 'Requirement classes are checked from target text.',
+        missing: ['missing target evidence for check 10'],
+      };
+    }
+    return base;
+  });
+}
+
+function providerFacingFixtureStrings() {
+  return [
+    'Observable expected result is checked from target evidence.',
+    'missing target evidence for check 04',
+    'Requirement classes are checked from target text.',
+    'missing target evidence for check 10',
+    'Role perimeter is partly visible.',
+  ];
+}
+
+function priorityCheckFixture(id, score, status) {
+  return {
+    id,
+    score,
+    status,
+    evidence: [],
+    reason: 'Raw provider target evidence reason.',
+    missing: ['missing target evidence from provider'],
+    confidence: 80,
+  };
+}
+
 async function verifyWithSyntheticOtp(context, session, email) {
   const lead = await context.persistence.getLead(session.sessionId, session.sessionSecret);
   const id = randomUUID();
@@ -445,7 +580,7 @@ function payloadInputFromPayload(deliveryId) {
     coverage: 90,
     evaluableCheckCount: 18,
     areaScores: [
-      { id: 'ROLE_IDENTITY', label: 'Identita del ruolo', score: 20, evaluatedCheckCount: 1, totalCheckCount: 2 },
+      { id: 'ROLE_IDENTITY', label: 'Identità del ruolo', score: 20, evaluatedCheckCount: 1, totalCheckCount: 2 },
       { id: 'REAL_WORK', label: 'Lavoro reale e risultati', score: 100 * 2 / 30, evaluatedCheckCount: 3, totalCheckCount: 3 },
       { id: 'ROLE_COHERENCE', label: 'Coerenza con il ruolo', score: 65, evaluatedCheckCount: 4, totalCheckCount: 4 },
       { id: 'REQUIREMENTS', label: 'Requisiti', score: 80, evaluatedCheckCount: 2, totalCheckCount: 2 },
@@ -504,6 +639,7 @@ function assertAreaScore(area, expectedScore, expectedEvaluated, expectedTotal) 
 async function main() {
   await assertFeatureFlagFirst();
   await assertReportContent();
+  await assertCustomerFacingPriorityPresentation();
   await assertResendPayload();
   await assertMarketingConsentDoesNotGate();
   await assertConcurrency();
