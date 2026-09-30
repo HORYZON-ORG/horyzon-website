@@ -94,13 +94,26 @@ assert.match(css, /\.hero \{[\s\S]*min-height:\s*clamp\(560px,\s*74svh,\s*720px\
 assert.match(css, /\.heroGrid \{[\s\S]*grid-template-columns:\s*minmax\(0,\s*\.78fr\) minmax\(520px,\s*\.92fr\)/, 'hero grid must give the result card a wider desktop column');
 assert.match(css, /\.hero h1 \{[\s\S]*max-width:\s*620px[\s\S]*font-size:\s*clamp\(2\.7rem,\s*4\.9vw,\s*5rem\)/, 'hero headline must be scaled down');
 assert.match(css, /\.heroPanel \.createShell \{[\s\S]*border-radius:\s*12px[\s\S]*box-shadow:\s*0 28px 95px/, 'right column must render as a lifted main card');
-assert.match(css, /\.heroPanel \.createShell\[data-has-workspace="true"\] > \.form \{[\s\S]*display:\s*none/, 'post-analysis state must replace the initial form in the same surface');
+assert.equal(/\.heroPanel \.createShell\[data-has-workspace="true"\] > \.form \{[\s\S]*display:\s*none/.test(css), false, 'source form must remain visible when the result workspace exists');
+assert.match(flow, /<form className=\{styles\.form\}[\s\S]*<\/form>\s*\n\s*\{hasWorkspace && <div ref=\{workspaceRef\}/, 'analysis form must remain rendered before the separate workspace');
 const analysisWorkspaceBlock = cssBlock('.analysisWorkspace');
-assert.match(analysisWorkspaceBlock, /position:\s*static/, 'post-analysis workspace must be a natural state inside the main card');
+assert.match(analysisWorkspaceBlock, /position:\s*absolute/, 'post-analysis workspace must be out of normal flow on desktop');
+assert.match(analysisWorkspaceBlock, /top:\s*calc\(100% \+ 1rem\)/, 'desktop workspace must sit below the form card instead of covering it');
+assert.match(analysisWorkspaceBlock, /right:\s*0[\s\S]*left:\s*0/, 'desktop workspace must align to the form card width');
 assert.match(analysisWorkspaceBlock, /overflow:\s*visible/, 'post-analysis workspace must not clip the card');
 assert.equal(/overflow-y:\s*auto/.test(analysisWorkspaceBlock), false, 'post-analysis card must not have internal vertical scroll');
-assert.equal(/max-height:\s*min\(/.test(analysisWorkspaceBlock), false, 'post-analysis card must not rely on a capped desktop height');
-assert.match(css, /@media \(max-width: 760px\)[\s\S]*\.analysisWorkspace[\s\S]*max-height:\s*none[\s\S]*overflow:\s*visible/, 'mobile analyze workspace must stay natural without internal scroll');
+assert.equal(/max-height:/.test(analysisWorkspaceBlock), false, 'post-analysis card must not rely on a capped desktop height');
+assert.equal(/\.analysisWorkspace[\s\S]*?overflow-y:\s*auto/.test(css), false, 'workspace must never introduce an internal scrollbar');
+assert.equal(/\.analysisWorkspace[\s\S]*?max-height:/.test(css), false, 'workspace must never use max-height caps');
+assert.match(css, /@media \(max-width: 760px\)[\s\S]*\.analysisWorkspace[\s\S]*position:\s*absolute[\s\S]*overflow:\s*visible/, 'mobile analyze workspace must stay out of normal flow without internal scroll');
+
+const workspaceLayoutBlocks = [...css.matchAll(/\.analysisWorkspace \.freeResultLayout \{[\s\S]*?\n\}/g)].map((match) => match[0]);
+assert.equal(workspaceLayoutBlocks.length >= 1, true, 'workspace result layout rule missing');
+for (const block of workspaceLayoutBlocks) {
+  const gridColumns = block.match(/grid-template-columns:\s*([^;\n]+)/)?.[1]?.trim();
+  assert.equal(/^(minmax\(0,\s*1fr\)|1fr)$/.test(gridColumns ?? ''), true, 'workspace result layout must keep score and interpretation vertical');
+}
+assert.equal(/@media[\s\S]*\.analysisWorkspace \.freeResultLayout \{[\s\S]*grid-template-columns:\s*(repeat\(2|[^;\n]*minmax\(170px|[^;\n]*\.72fr)/.test(css), false, 'media rules must not restore a two-column workspace result layout');
 
 assert.equal(count(client, '<Annunci10xAnalyzeFlow'), 1, 'Annunci10xAnalyzeFlow must render exactly once');
 assert.equal(client.includes('/annunci-10x/hero.jpeg'), true, 'hero image must remain wired');

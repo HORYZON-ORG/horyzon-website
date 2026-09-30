@@ -1003,22 +1003,24 @@
   box-shadow: none;
 }
 
-.heroPanel .createShell[data-has-workspace="true"] > .form {
-  display: none;
-}
-
 .analysisWorkspace {
-  position: static;
+  position: absolute;
+  top: calc(100% + 1rem);
+  right: 0;
+  left: 0;
+  z-index: 6;
   display: grid;
   align-content: start;
   gap: .7rem;
+  width: 100%;
   min-width: 0;
   overflow: visible;
-  border: 0;
-  background: transparent;
-  padding: 0;
-  box-shadow: none;
-  backdrop-filter: none;
+  border: 1px solid rgba(247, 244, 232, .48);
+  border-radius: 12px;
+  background: rgba(255, 253, 245, .98);
+  padding: clamp(.9rem, 1.45vw, 1.2rem);
+  box-shadow: 0 28px 95px rgba(0, 0, 0, .24);
+  backdrop-filter: blur(14px);
 }
 
 .analysisWorkspace > .form,
@@ -1524,9 +1526,8 @@
 }
 
 .analysisWorkspace .freeResultLayout {
-  grid-template-columns: minmax(170px, .72fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: .75rem;
-  align-items: start;
 }
 
 .freeScoreHero {
@@ -2017,11 +2018,14 @@
   }
 
   .analysisWorkspace {
-    position: static;
-    max-height: none;
+    position: absolute;
+    top: calc(100% + .85rem);
+    right: 0;
+    left: 0;
+    width: 100%;
     margin-top: 0;
     overflow: visible;
-    padding: 0;
+    padding: .85rem;
   }
 
   .analysisWorkspace .freeResultLayout {
