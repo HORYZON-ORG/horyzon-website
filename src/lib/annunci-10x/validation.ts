@@ -439,7 +439,11 @@ function validateGeneratedSection(value: unknown, path = 'generatedSection'): Va
   if (!isOneOf(value.type, GENERATED_SECTION_TYPES)) errors.push(`${path}.type is invalid`);
   requireString(value.key, `${path}.key`, errors);
   requireString(value.title, `${path}.title`, errors);
-  requireString(value.body, `${path}.body`, errors);
+  if (value.type === 'TITLE') {
+    if (typeof value.body !== 'string') errors.push(`${path}.body must be a string`);
+  } else {
+    requireString(value.body, `${path}.body`, errors);
+  }
   validateStringArray(value.sourceFactIds, `${path}.sourceFactIds`, errors);
   return result(value, errors);
 }

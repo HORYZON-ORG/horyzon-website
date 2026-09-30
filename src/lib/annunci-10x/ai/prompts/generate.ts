@@ -2,7 +2,7 @@ import { ANNUNCI10X_AI_OUTPUT_SCHEMAS } from '../schemas.ts';
 import { renderPrompt } from './helpers.ts';
 import type { Annunci10xPromptDefinition } from './types.ts';
 
-export const ANNUNCI10X_GENERATE_PROMPT_VERSION = 'annunci10x.generate.v4';
+export const ANNUNCI10X_GENERATE_PROMPT_VERSION = 'annunci10x.generate.v5';
 
 const invariants = [
   'Generate the Master ad only from confirmed/publishable RoleCard facts, RoleProfile, and CommunicationStrategy.',
@@ -20,6 +20,8 @@ const invariants = [
   'Preserve confirmed compensation ranges, variable components, hybrid-work details, and application instructions exactly in meaning; do not shorten "30.000-36.000" to "30".',
   'Every paragraph must add a distinct supported fact or a distinct supported relationship between facts. Remove repetition before removing useful detail.',
   'Omit optional sections when there is no real source content. Prefer a shorter truthful ad over padded copy.',
+  'TITLE is structural: put the job title in title and use an empty string for body. Never duplicate the title in body.',
+  'Do not include both OPENING and MISSION when they communicate the same candidate-facing idea. Keep only the section that adds the clearest distinct supported value.',
 ] as const;
 
 export const GENERATE_PROMPT: Annunci10xPromptDefinition = {
@@ -40,9 +42,9 @@ export function renderGeneratePrompt(): string {
     ),
     '',
     'Editorial construction:',
-    '- TITLE: use a recognizable, search-friendly role title. Add specialization/location only when supported and useful.',
+    '- TITLE: use a recognizable, search-friendly role title. Add specialization/location only when supported and useful. The TITLE section body must be an empty string; the title field is the visible title.',
     '- OPENING: use 2-3 natural, role-specific sentences. Establish the responsibility or work reality that matters most; do not manufacture a cinematic hook.',
-    '- MISSION: explain what should work better because this role exists, but only when a supported mission/outcome exists. Never manufacture an outcome from a task list.',
+    '- MISSION: explain what should work better because this role exists, but only when a supported mission/outcome exists. Never manufacture an outcome from a task list. If OPENING already communicates the same mission/outcome, omit MISSION instead of paraphrasing it.',
     '- RESPONSIBILITIES: build an operating picture from confirmed activities. Show relationships, handoffs, or phases only when supported. Prefer short narrative paragraphs; use bullets for compact comparable facts, not as the default storytelling device.',
     '- CONTEXT: when supported, explain who the person interacts with, what environment/tools matter, where handoffs happen, and the level of autonomy.',
     '- REQUIREMENTS: separate indispensable, preferred, and trainable items according to source semantics. Explain why a requirement matters only when the source supports that connection.',

@@ -167,20 +167,21 @@ export async function runAnnunci10xPremiumGeneration(input: Annunci10xPremiumGen
     });
     operations.push(toPublicOperation(generatedResult, 'GENERATE', context.configuredProvider));
     const generated = generatedResult.output as Annunci10xGenerateOutput;
+    const generatedMaster = normalizeGeneratedMaster(generated.generatedAd);
 
     const firstValidation = await validateMaster({
       orchestrator,
       sessionId: input.sessionId,
       sessionSecret: input.sessionSecret,
       snapshot,
-      master: generated.generatedAd,
+      master: generatedMaster,
       authIdentity,
       provider: context.configuredProvider,
       operations,
       phase: 'initial',
     });
 
-    let finalMaster = generated.generatedAd;
+    let finalMaster = generatedMaster;
     let finalValidation = firstValidation;
     let automaticRevisionCount: 0 | 1 = 0;
     if (firstValidation.result === 'NEEDS_REVISION') {
@@ -189,19 +190,20 @@ export async function runAnnunci10xPremiumGeneration(input: Annunci10xPremiumGen
         sessionSecret: input.sessionSecret,
         operationType: 'REVISE',
         input: {
-          currentMaster: generated.generatedAd,
+          currentMaster: generatedMaster,
           roleCard: snapshot.roleCard,
           communicationStrategy: snapshot.communicationStrategy,
           validationIssues: firstValidation,
         },
         inputSnapshotId: snapshot.id,
-        idempotencyInputIdentityOverride: stableHash({ snapshotId: snapshot.id, authIdentity, operation: 'REVISE', masterId: generated.generatedAd.id }),
+        idempotencyInputIdentityOverride: stableHash({ snapshotId: snapshot.id, authIdentity, operation: 'REVISE', masterId: generatedMaster.id }),
       });
       operations.push(toPublicOperation(revisionResult, 'REVISE', context.configuredProvider));
       const revision = revisionResult.output as Annunci10xReviseOutput;
+      const revisionPlan = enforceEditorialDeletionGuard(generatedMaster.sections, revision, firstValidation);
       finalMaster = {
-        ...generated.generatedAd,
-        sections: mergeRevisedSections(generated.generatedAd.sections, revision.revisedSections, revision.changedSectionIds),
+        ...generatedMaster,
+        sections: mergeRevisedSections(generatedMaster.sections, revisionPlan.revisedSections, revisionPlan.changedSectionIds),
         generatedAt: new Date().toISOString(),
       };
       automaticRevisionCount = 1;
@@ -271,7 +273,7 @@ export async function runAnnunci10xPremiumGeneration(input: Annunci10xPremiumGen
         idempotencyInputIdentityOverride: stableHash({ snapshotId: snapshot.id, authIdentity, operation: 'CHANNEL_ADAPTER', master: finalMaster.sections, channel: input.channel ?? preferredChannel(snapshot) }),
       });
       operations.push(toPublicOperation(channelResult, 'CHANNEL_ADAPTER', context.configuredProvider));
-      channelVariant = (channelResult.output as Annunci10xChannelAdapterOutput).channelVariant;
+      channelVariant = normalizeChannelVariant((channelResult.output as Annunci10xChannelAdapterOutput).channelVariant);
       variantOutput = await context.persistence.saveOutput({
         sessionId: input.sessionId,
         sessionSecret: input.sessionSecret,
@@ -576,11 +578,11 @@ export async function requestAnnunci10xPremiumEdit(input: PremiumEditInput): Pro
   });
   operations.push(toPublicOperation(revision, 'REVISE', context.configuredProvider));
   const revised = revision.output as Annunci10xReviseOutput;
-  const master: GeneratedAd = {
+  const master = normalizeGeneratedMaster({
     ...validation.value,
     sections: mergeRevisedSections(validation.value.sections, revised.revisedSections, revised.changedSectionIds),
     generatedAt: new Date().toISOString(),
-  };
+  });
   const validate = await validateMaster({
     orchestrator,
     sessionId: input.sessionId,
@@ -688,20 +690,21 @@ async function executePremiumPipeline(input: {
   });
   operations.push(toPublicOperation(generatedResult, 'GENERATE', input.context.configuredProvider));
   const generated = generatedResult.output as Annunci10xGenerateOutput;
+  const generatedMaster = normalizeGeneratedMaster(generated.generatedAd);
 
   const firstValidation = await validateMaster({
     orchestrator,
     sessionId: input.session.id,
     sessionSecret: input.sessionSecret,
     snapshot: input.snapshot,
-    master: generated.generatedAd,
+    master: generatedMaster,
     authIdentity: input.authIdentity,
     provider: input.context.configuredProvider,
     operations,
     phase: 'initial',
   });
 
-  let finalMaster = generated.generatedAd;
+  let finalMaster = generatedMaster;
   let finalValidation = firstValidation;
   let automaticRevisionCount: 0 | 1 = 0;
   if (firstValidation.result === 'NEEDS_REVISION') {
@@ -710,19 +713,20 @@ async function executePremiumPipeline(input: {
       sessionSecret: input.sessionSecret,
       operationType: 'REVISE',
       input: {
-        currentMaster: generated.generatedAd,
+        currentMaster: generatedMaster,
         roleCard: input.snapshot.roleCard,
         communicationStrategy: input.snapshot.communicationStrategy,
         validationIssues: firstValidation,
       },
       inputSnapshotId: input.snapshot.id,
-      idempotencyInputIdentityOverride: stableHash({ snapshotId: input.snapshot.id, authIdentity: input.authIdentity, operation: 'REVISE', masterId: generated.generatedAd.id }),
+      idempotencyInputIdentityOverride: stableHash({ snapshotId: input.snapshot.id, authIdentity: input.authIdentity, operation: 'REVISE', masterId: generatedMaster.id }),
     });
     operations.push(toPublicOperation(revisionResult, 'REVISE', input.context.configuredProvider));
     const revision = revisionResult.output as Annunci10xReviseOutput;
+    const revisionPlan = enforceEditorialDeletionGuard(generatedMaster.sections, revision, firstValidation);
     finalMaster = {
-      ...generated.generatedAd,
-      sections: mergeRevisedSections(generated.generatedAd.sections, revision.revisedSections, revision.changedSectionIds),
+      ...generatedMaster,
+      sections: mergeRevisedSections(generatedMaster.sections, revisionPlan.revisedSections, revisionPlan.changedSectionIds),
       generatedAt: new Date().toISOString(),
     };
     automaticRevisionCount = 1;
@@ -792,7 +796,7 @@ async function executePremiumPipeline(input: {
       idempotencyInputIdentityOverride: stableHash({ snapshotId: input.snapshot.id, authIdentity: input.authIdentity, operation: 'CHANNEL_ADAPTER', master: finalMaster.sections, channel: input.channel }),
     });
     operations.push(toPublicOperation(channelResult, 'CHANNEL_ADAPTER', input.context.configuredProvider));
-    channelVariant = (channelResult.output as Annunci10xChannelAdapterOutput).channelVariant;
+    channelVariant = normalizeChannelVariant((channelResult.output as Annunci10xChannelAdapterOutput).channelVariant);
     variantOutput = await input.context.persistence.saveOutput({
       sessionId: input.session.id,
       sessionSecret: input.sessionSecret,
@@ -1125,7 +1129,64 @@ function preferredChannel(snapshot: PersistedSnapshot): PublicationChannel {
 }
 
 function masterText(master: GeneratedAd): string {
-  return master.sections.map((section) => `${section.title}\n${section.body}`).join('\n\n');
+  return master.sections.map((section) => [section.title, section.body].filter((part) => part.trim().length > 0).join('\n')).join('\n\n');
+}
+
+function normalizeGeneratedMaster(master: GeneratedAd): GeneratedAd {
+  return {
+    ...master,
+    sections: master.sections.map((section) => section.type === 'TITLE' && normalizeEditorialText(section.body) === normalizeEditorialText(section.title)
+      ? { ...section, body: '' }
+      : section),
+  };
+}
+
+function normalizeChannelVariant(variant: ChannelVariant): ChannelVariant {
+  return {
+    ...variant,
+    sections: variant.sections.map((section) => section.type === 'TITLE' && normalizeEditorialText(section.body) === normalizeEditorialText(section.title)
+      ? { ...section, body: '' }
+      : section),
+  };
+}
+
+function enforceEditorialDeletionGuard(
+  currentSections: GeneratedAd['sections'],
+  revision: Annunci10xReviseOutput,
+  validation: Annunci10xValidateOutput,
+): Pick<Annunci10xReviseOutput, 'revisedSections' | 'changedSectionIds'> {
+  const revisedSections = [...revision.revisedSections];
+  const changedSectionIds = [...revision.changedSectionIds];
+  const revisedIds = new Set(revisedSections.map((section) => section.id));
+  const changedIds = new Set(changedSectionIds);
+
+  for (const claim of validation.claims) {
+    if (claim.kind !== 'EDITORIAL' || claim.action !== 'REMOVE') continue;
+    const cited = currentSections.filter((section) => claim.sourcePaths.includes(section.id));
+    const opening = cited.find((section) => section.type === 'OPENING');
+    const mission = cited.find((section) => section.type === 'MISSION');
+    if (!opening || !mission) continue;
+
+    const alreadyDeletesOne = [opening, mission].some((section) => changedIds.has(section.id) && !revisedIds.has(section.id));
+    if (alreadyDeletesOne) continue;
+
+    const touchedOpening = changedIds.has(opening.id);
+    const touchedMission = changedIds.has(mission.id);
+    const removeId = touchedMission && !touchedOpening ? opening.id : mission.id;
+    if (!changedIds.has(removeId)) {
+      changedSectionIds.push(removeId);
+      changedIds.add(removeId);
+    }
+    const replacementIndex = revisedSections.findIndex((section) => section.id === removeId);
+    if (replacementIndex >= 0) revisedSections.splice(replacementIndex, 1);
+    revisedIds.delete(removeId);
+  }
+
+  return { revisedSections, changedSectionIds };
+}
+
+function normalizeEditorialText(value: string): string {
+  return value.toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
 function rationaleFromSnapshot(snapshot: PersistedSnapshot): string[] {

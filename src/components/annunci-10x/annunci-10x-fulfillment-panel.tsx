@@ -184,7 +184,7 @@ export function Annunci10xFulfillmentPanel({
   const checkoutCancelledBeforeGeneration = checkoutNotice === 'cancelled' && state === 'READY_TO_GENERATE';
 
   async function copyAd() {
-    const text = primarySections.map((section) => `${section.title}\n${section.body}`).join('\n\n');
+    const text = primarySections.map((section) => [section.title, section.body].filter((part) => part.trim().length > 0).join('\n')).join('\n\n');
     await navigator.clipboard.writeText(text);
     setCopyMessage('Annuncio copiato.');
   }
@@ -242,7 +242,7 @@ function OutputBlock({
     </div>
     {output.channelVariant && <p className={styles.channelBadge}>Canale: {output.channelVariant.channel}</p>}
     {needsReview && <p className={styles.fulfillmentMessage}>Il testo richiede una verifica prima di essere pubblicato.</p>}
-    <div className={styles.outputSections}>{sections.map((section) => <article key={section.id}><h3>{section.title}</h3><p>{section.body}</p></article>)}</div>
+    <div className={styles.outputSections}>{sections.map((section) => <article key={section.id}><h3>{section.title}</h3>{section.body.trim() && <p>{section.body}</p>}</article>)}</div>
     {needsReview && output.checklist.length > 0 && <div className={styles.reviewChecklist}><h3>Prima della pubblicazione</h3><ul>{output.checklist.slice(0, 5).map((item) => <li key={item}>{item}</li>)}</ul></div>}
     {output.rationale.length > 0 && <div className={styles.reviewChecklist}><h3>Perché è costruito così</h3><ul>{output.rationale.slice(0, 3).map((item) => <li key={item}>{item}</li>)}</ul></div>}
     <div className={styles.fulfillmentActions}><button type="button" onClick={onCopy}>Copia annuncio</button><span aria-live="polite">{copyMessage}</span></div>

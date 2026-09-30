@@ -94,6 +94,73 @@ class DeletingRevisionProvider extends MockAnnunci10xProvider {
   }
 }
 
+class OpeningMissionDuplicateProvider extends MockAnnunci10xProvider {
+  validationCount = 0;
+
+  async executeStructuredTask(request) {
+    const result = await super.executeStructuredTask(request);
+    if (request.operationType === 'GENERATE') {
+      const sections = [
+        { id: 'dup-title', type: 'TITLE', key: 'title', title: 'Commerciale B2B', body: 'Commerciale B2B', sourceFactIds: ['create-role-title'] },
+        { id: 'dup-opening', type: 'OPENING', key: 'opening', title: 'Cosa fa il ruolo', body: 'Sviluppa nuove opportunita commerciali qualificate.', sourceFactIds: ['create-mission'] },
+        { id: 'dup-mission', type: 'MISSION', key: 'mission', title: 'Obiettivo del ruolo', body: 'Sviluppare nuove opportunita commerciali qualificate.', sourceFactIds: ['create-mission'] },
+        { id: 'dup-application', type: 'APPLICATION', key: 'application', title: 'Come candidarsi', body: 'Inviare CV a sales-recruiting@azienda-test.it.', sourceFactIds: ['create-application-instructions'] },
+      ];
+      return {
+        ...result,
+        output: {
+          generatedAd: {
+            id: 'duplicate-master',
+            sessionId: 'session-1',
+            kind: 'MASTER',
+            sections,
+            sourceOfTruth: true,
+            generatedAt: '2026-09-30T00:00:00.000Z',
+            promptVersion: 'annunci10x.generate.v5',
+          },
+          title: 'Commerciale B2B',
+          metadata: {},
+          sections,
+          fullText: sections.map((section) => section.body).join('\n'),
+          sourcePaths: ['title', 'mission', 'applicationInstructions'],
+        },
+      };
+    }
+    if (request.operationType === 'VALIDATE') {
+      this.validationCount += 1;
+      if (this.validationCount === 1) {
+        return {
+          ...result,
+          output: {
+            claims: [{ id: 'dup-editorial', kind: 'EDITORIAL', claim: 'OPENING and MISSION duplicate the same outcome.', supported: true, sourcePaths: ['dup-opening', 'dup-mission'], action: 'REMOVE' }],
+            unsupportedClaims: [],
+            contradictions: [],
+            omittedCriticalFacts: [],
+            alteredRequirements: [],
+            result: 'NEEDS_REVISION',
+          },
+        };
+      }
+      return {
+        ...result,
+        output: { claims: [], unsupportedClaims: [], contradictions: [], omittedCriticalFacts: [], alteredRequirements: [], result: 'PASS' },
+      };
+    }
+    if (request.operationType === 'REVISE') {
+      return {
+        ...result,
+        output: {
+          revisedSections: [{ id: 'dup-opening', type: 'OPENING', key: 'opening', title: 'Cosa fa il ruolo', body: 'Ruolo commerciale focalizzato su nuove opportunita qualificate.', sourceFactIds: ['create-mission'] }],
+          changedSectionIds: ['dup-opening'],
+          changeSummary: 'Rephrased opening.',
+          requiresValidation: true,
+        },
+      };
+    }
+    return result;
+  }
+}
+
 const fullAd = `Cerchiamo un addetto pulizie per uffici e spazi comuni nella sede di Bari.
 Attivita: pulizia uffici, corridoi e sale riunioni, riordino materiali e segnalazione anomalie.
 Contratto part-time in presenza, orari definiti dal lunedi al venerdi.
@@ -598,6 +665,35 @@ assert.equal(deletingRevisionPremium.master.sections.some((section) => section.i
 assert.equal(deletingRevisionPremium.master.sections.some((section) => section.id === 'section-1'), true, 'unaffected sections must survive a targeted deletion');
 assert.equal(deletingRevisionContext.provider.calls.filter((call) => call.operationType === 'VALIDATE').length, 2, 'targeted deletion must still be revalidated');
 assert.equal(deletingRevisionPremium.gate.status, 'READY', 'a successful post-delete validation may return READY');
+
+const duplicateEditorialContext = makeContext(new OpeningMissionDuplicateProvider('success'));
+const startedDuplicateEditorial = await startAnnunci10xCreate({ context: duplicateEditorialContext });
+let duplicateEditorialState = startedDuplicateEditorial.result;
+for (const [stepId, answer] of preservationAnswers) {
+  duplicateEditorialState = await answerAnnunci10xCreateStep({
+    sessionId: startedDuplicateEditorial.cookie.sessionId,
+    sessionSecret: startedDuplicateEditorial.cookie.sessionSecret,
+    stepId,
+    answer,
+    context: duplicateEditorialContext,
+  });
+}
+await confirmAnnunci10xCreate({
+  sessionId: startedDuplicateEditorial.cookie.sessionId,
+  sessionSecret: startedDuplicateEditorial.cookie.sessionSecret,
+  context: duplicateEditorialContext,
+});
+const duplicateEditorialPremium = await runAnnunci10xPremiumGeneration({
+  sessionId: startedDuplicateEditorial.cookie.sessionId,
+  sessionSecret: startedDuplicateEditorial.cookie.sessionSecret,
+  channel: 'LINKEDIN',
+  context: duplicateEditorialContext,
+  authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
+});
+assert.equal(duplicateEditorialPremium.master.sections.find((section) => section.id === 'dup-title')?.body, '', 'duplicate TITLE body must be normalized away before validation/output');
+assert.equal(duplicateEditorialPremium.master.sections.some((section) => section.id === 'dup-opening'), true, 'revised OPENING must survive');
+assert.equal(duplicateEditorialPremium.master.sections.some((section) => section.id === 'dup-mission'), false, 'stubborn OPENING/MISSION duplication must deterministically remove one duplicate section');
+assert.equal(duplicateEditorialPremium.gate.status, 'READY', 'post-revision PASS should produce READY after duplicate cleanup');
 
 await assert.rejects(
   () => runFreeAnnunci10xAnalysis({

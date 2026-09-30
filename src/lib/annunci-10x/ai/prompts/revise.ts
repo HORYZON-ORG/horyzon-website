@@ -13,11 +13,13 @@ const invariants = [
   'A section may be rewritten substantially when needed to restore natural candidate-facing prose; "smallest revision" does not mean preserving bad sentence structure.',
   'Preserve the semantic classification of required/preferred/trainable requirements and keep sourceFactIds traceable.',
   'requiresValidation must be true because VALIDATE always follows REVISE.',
+  'When an EDITORIAL validation claim uses action REMOVE for duplicated OPENING/MISSION content, actually delete one duplicated section: include its id in changedSectionIds and omit that id from revisedSections. Do not merely paraphrase both sections.',
+  'TITLE is structural: its body should be an empty string. If validation flags a duplicated TITLE body, return the TITLE section with body empty.',
 ] as const;
 
 export const REVISE_PROMPT: Annunci10xPromptDefinition = {
   id: 'annunci10x.revise',
-  version: 'annunci10x.revise.v2',
+  version: 'annunci10x.revise.v3',
   operationType: 'REVISE',
   outputSchema: ANNUNCI10X_AI_OUTPUT_SCHEMAS.REVISE,
   instructions: [
@@ -25,7 +27,7 @@ export const REVISE_PROMPT: Annunci10xPromptDefinition = {
     '',
     'Revision priorities:',
     '- If validation flags source/audit/meta language, remove it completely and rewrite the affected passage directly for the candidate.',
-    '- If validation flags repetition, keep the strongest occurrence and remove or merge the others.',
+    '- If validation flags repetition, keep the strongest occurrence and remove or merge the others. For OPENING/MISSION duplication, deletion is preferred over two paraphrases.',
     '- If validation flags template filler, replace it with a role-specific supported relationship or delete it.',
     '- If validation flags a material unresolved fact, remove the public claim rather than selecting one value. Do not surface "dato da chiarire" inside the Master.',
     '- If validation flags list-like responsibilities and source facts support relationships, rewrite the affected responsibility section as concise connected prose without inventing order or frequency.',

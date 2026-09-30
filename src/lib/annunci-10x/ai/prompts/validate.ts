@@ -18,7 +18,7 @@ const invariants = [
 
 export const VALIDATE_PROMPT: Annunci10xPromptDefinition = {
   id: 'annunci10x.validate',
-  version: 'annunci10x.validate.v2',
+  version: 'annunci10x.validate.v3',
   operationType: 'VALIDATE',
   outputSchema: ANNUNCI10X_AI_OUTPUT_SCHEMAS.VALIDATE,
   instructions: [
@@ -29,6 +29,7 @@ export const VALIDATE_PROMPT: Annunci10xPromptDefinition = {
     '- No audit voice: do not expose scoring, verification, conflict resolution, missing-data analysis, or Annunci 10X process to candidates.',
     '- No template echo: repeated phrases such as "questo significa che", "una parte del lavoro", or "non si tratta solo" should be flagged when they make the ad feel formulaic rather than role-specific.',
     '- No redundant explanation: the same salary, schedule, activity, requirement, or result should not be restated in multiple sections without a distinct purpose.',
+    '- TITLE is structural. An empty TITLE body is intentional and valid because the visible role title lives in the title field; do not flag the empty body as missing content.',
     '- No list-only fallback when confirmed facts support a clearer relationship between activities; conversely, do not invent a workflow merely to sound immersive.',
     '- Requirements must preserve their source classification. Generic soft skills should be linked to a supported work reason when the generator claims that relationship.',
     '- Conditions and concrete offer facts present in RoleCard must not be hidden by narrative prose.',
