@@ -1,5 +1,5 @@
 // Radar screen for the /radar landing: five department axes, an illustrative profile and a sweep beam.
-// Pure SVG + CSS (radar-commercial.css): the sweep and the blips run without JavaScript and stop with
+// Pure SVG + CSS (src/styles/horyzon-landing.css): the sweep and the blips run without JavaScript and stop with
 // reduced motion. The shape is illustrative, never a real company or score.
 export const RADAR_AXES = ['Amministrazione', 'Produzione', 'Commerciale', 'Marketing', 'Persone'] as const;
 

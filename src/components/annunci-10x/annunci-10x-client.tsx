@@ -1,7 +1,5 @@
 "use client";
 
-import Image from 'next/image';
-import Link from 'next/link';
 import type { FormEvent, ReactNode } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Annunci10xAnalyzeFlow } from './annunci-10x-analyze-flow';
@@ -17,6 +15,7 @@ import {
 import { Annunci10xIdentityGate } from './annunci-10x-identity-gate';
 import { Annunci10xFulfillmentPanel } from './annunci-10x-fulfillment-panel';
 import { Annunci10xLoader } from './annunci-10x-loader';
+import { ANNUNCI10X_CREATE_EVENT } from './landing/create-cta';
 import styles from './annunci-10x.module.css';
 
 type Mode = 'ANALYZE' | 'CREATE';
@@ -191,54 +190,7 @@ const createWizardSteps: readonly {
     requiredFields: [{ key: 'application', id: 'create-application' }],
   },
 ];
-const scoreDisclaimer = 'Il punteggio valuta la chiarezza e la completezza delle informazioni disponibili nell’annuncio. Non prevede il numero di candidature né sostituisce la valutazione delle persone.';
 const guaranteeCopy = '7 € per un annuncio, una versione e un canale. Dopo la conferma del pagamento generiamo il testo completo e te lo rendiamo disponibile. Se non ti è utile, puoi chiedere il rimborso integrale entro 14 giorni dalla consegna, senza motivazione, scrivendo a info@horyzon.it dall’email usata per l’acquisto.';
-const proofItems = ['Horyzon Consulting Recruiting', 'Score di chiarezza', '20 controlli editoriali'];
-const storyBeats = [
-  'Pubblichi un annuncio e arrivano CV fuori target: persone motivate, magari, ma lontane dal lavoro reale.',
-  'Aumenti il budget o cambi portale, però il problema resta: poche candidature utili e candidati che avevano capito un altro ruolo.',
-  'Fai colloqui per chiarire ciò che l’annuncio non aveva spiegato: attività, condizioni, ritmo, responsabilità, aspettative.',
-  'La sostituzione slitta, il team compensa, i manager si caricano urgenze che non dovrebbero più gestire.',
-  'Alla fine assumi di fretta e il rischio è scoprire dopo pochi mesi che la persona non era davvero allineata.',
-];
-const targetLines = [
-  'Se sei un imprenditore e una posizione scoperta sta rallentando l’azienda.',
-  'Se gestisci HR o recruiting e passi ore tra candidature e colloqui poco utili.',
-  'Se devi sostituire qualcuno ma continui a rimandare perché trovare un’alternativa sembra impossibile.',
-  'Se l’azienda potrebbe crescere, ma non riesci a inserire le persone necessarie.',
-];
-const funnelExamples = [
-  {
-    title: 'ANNUNCIO VAGO',
-    rows: ['Filtro largo', 'Messaggio ambiguo', 'Poca coerenza tra CV e lavoro reale'],
-  },
-  {
-    title: 'ANNUNCIO CHIARO',
-    rows: ['Filtro più selettivo', 'Lavoro comprensibile', 'Maggiore coerenza tra aspettative e ruolo'],
-  },
-];
-const roleGroups: Array<[string, string[]]> = [
-  ['Produzione', ['Operaio di produzione', 'Saldatore', 'Manutentore meccanico', 'Elettricista', 'Tecnico installatore']],
-  ['Logistica', ['Magazziniere carrellista', 'Autista patente C']],
-  ['Commerciale e ufficio', ['Commerciale B2B', 'Impiegato amministrativo', 'Addetto alla contabilità']],
-  ['Ristorazione', ['Cuoco', 'Cameriere di sala']],
-];
-const methodSteps = ['Lavoro reale', 'Persona necessaria', 'Strategia', 'Annuncio', 'Verifica'];
-const faqItems = [
-  ['Quanto costa?', 'Lo Score è gratuito. Annuncio 10x costa 7 €: un annuncio, una versione e un canale. Puoi arrivarci partendo da un testo esistente o da un brief guidato.'],
-  ['Cosa ricevo con lo Score gratuito?', 'Ricevi uno Score di chiarezza su 100, la fascia, le aree prioritarie, la motivazione e le informazioni da chiarire. Il risultato si vede dopo la verifica email.'],
-  ['Che cosa misura lo Score?', 'Misura chiarezza, completezza delle informazioni disponibili, distinzione tra dati presenti e mancanti e valutazione editoriale. Non prevede candidature, qualità futura dei candidati o successo dell’assunzione.'],
-  ['Perché mi chiedete l’email?', 'Serve per collegare il report alla tua richiesta e inviartelo. Comunicazioni marketing solo con consenso separato.'],
-  ['Che differenza c’è tra i due percorsi?', 'Se hai già un annuncio, parti dallo Score gratuito e poi puoi trasformarlo in Annuncio 10x. Se non hai ancora un testo, parti dal brief guidato e arrivi allo stesso prodotto.'],
-  ['Che cosa include Annuncio 10x?', 'Un testo completo generato dopo pagamento confermato: un annuncio, una versione e un canale, senza inventare fatti professionali non confermati.'],
-  ['Usate l’intelligenza artificiale?', 'Sì. L’intelligenza artificiale applica i controlli del metodo. Il sistema è progettato per non riempire informazioni mancanti con fatti professionali inventati.'],
-  ['Funziona anche per ruoli operativi?', 'Sì. Annunci 10x è pensato anche per ruoli operativi, tecnici, logistici, amministrativi, commerciali e di ristorazione.'],
-  ['Ho già un’agenzia o un consulente. Mi serve comunque?', 'Può esserti utile come controllo sul testo e sul modo in cui il ruolo viene spiegato. Non sostituisce il processo di selezione o il lavoro consulenziale.'],
-  ['Mi garantite più candidature?', 'No. Le candidature dipendono da mercato, canale, condizioni e attrattività dell’offerta. Annunci 10x lavora su chiarezza e coerenza dell’annuncio.'],
-  ['Come funziona "soddisfatti o rimborsati"?', 'Puoi chiedere il rimborso integrale entro 14 giorni dalla consegna, senza motivazione, scrivendo a info@horyzon.it dall’email usata per l’acquisto.'],
-  ['Chi c’è dietro Annunci 10x?', 'Annunci 10x è un prodotto di Horyzon Consulting Recruiting.'],
-  ['E se il problema non è l’annuncio?', 'A volte l’annuncio è solo il primo segnale. Il blocco può riguardare fabbisogno, canale, processo di selezione o attrattività dell’offerta. In quel caso puoi parlarne con Horyzon.'],
-];
 
 export function Annunci10xClient() {
   const [mode, setMode] = useState<Mode>('ANALYZE');
@@ -253,6 +205,7 @@ export function Annunci10xClient() {
   const [createLoader, setCreateLoader] = useState<CreateLoaderState | null>(null);
   const [checkoutNotice] = useState<'success' | 'cancelled' | null>(() => initialCheckoutNotice());
   const [commerceRefreshToken, setCommerceRefreshToken] = useState(0);
+  const rootRef = useRef<HTMLDivElement | null>(null);
   const analyzeRef = useRef<HTMLDivElement | null>(null);
   const createRef = useRef<HTMLElement | null>(null);
   const showCreateAfterCheckout = useCallback(() => {
@@ -307,7 +260,7 @@ export function Annunci10xClient() {
     return stopPolling;
   }, [checkoutNotice]);
 
-  function selectMode(nextMode: Mode) {
+  const selectMode = useCallback((nextMode: Mode) => {
     setMode(nextMode);
     setError(null);
     window.setTimeout(() => {
@@ -317,7 +270,26 @@ export function Annunci10xClient() {
       }
       if (analyzeRef.current) scrollToElement(analyzeRef.current);
     }, 0);
-  }
+  }, []);
+
+  // The landing around this component is server-rendered: its "crea a 7 €" links open the create flow
+  // through a window event, and #crea-annuncio works as a deep link.
+  useEffect(() => {
+    const openCreate = () => selectMode('CREATE');
+    window.addEventListener(ANNUNCI10X_CREATE_EVENT, openCreate);
+    const deepLink = window.location.hash === '#crea-annuncio' ? window.setTimeout(openCreate, 0) : null;
+    return () => {
+      window.removeEventListener(ANNUNCI10X_CREATE_EVENT, openCreate);
+      if (deepLink !== null) window.clearTimeout(deepLink);
+    };
+  }, [selectMode]);
+
+  // Back from the payment page the visitor lands at the top of a long page: bring the payment status into view.
+  useEffect(() => {
+    if (!checkoutNotice) return;
+    const timer = window.setTimeout(() => { if (rootRef.current) scrollToElement(rootRef.current); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [checkoutNotice]);
 
   async function startCreate(): Promise<CreateState | null> {
     setMode('CREATE');
@@ -441,197 +413,25 @@ export function Annunci10xClient() {
     }
   }
 
-  return <div className={styles.page}>
-    <a className={styles.skipLink} href="#content">Salta al contenuto</a>
-    <FunnelHeader onAnalyze={() => selectMode('ANALYZE')} />
-    <main id="content" data-page="annunci-10x">
-      <section className={styles.hero} aria-labelledby="annunci10x-hero-title">
-        <Image src="/annunci-10x/hero.jpeg" alt="Professionisti che camminano verso una città al tramonto" fill sizes="100vw" preload className={styles.heroImage} />
-        <div className={styles.heroShade} aria-hidden="true" />
-        <div className={styles.heroGrid}>
-          <div className={styles.heroContent}>
-            <p className={styles.eyebrow}>Annunci 10x · Horyzon Consulting Recruiting</p>
-            <h1 id="annunci10x-hero-title">Il tuo annuncio fa capire il lavoro alle persone giuste?</h1>
-            <p className={styles.heroLead}>Incolla il link o il testo dell’annuncio. Ricevi uno Score di chiarezza su 100 e i punti da migliorare dopo la verifica dell’email.</p>
-            <p className={styles.heroMicroLead}>Gratis · 2 minuti · nessuna carta di credito</p>
-            <div className={styles.heroActions} aria-label="Percorsi iniziali">
-              <button type="button" onClick={() => selectMode('ANALYZE')}>Valuta gratis il mio annuncio</button>
-              <button type="button" className={styles.heroSecondaryAction} onClick={() => selectMode('CREATE')}>Non ho ancora un annuncio: crealo a 7 €</button>
-            </div>
-            <HeroProofStrip />
-          </div>
-          <div ref={analyzeRef} className={styles.heroPanel} aria-label="Analisi gratuita Annunci 10x">
-            <Annunci10xAnalyzeFlow commerceRefreshToken={commerceRefreshToken} />
-          </div>
-        </div>
-      </section>
+  return <div ref={rootRef} className={styles.flowRoot}>
+    {checkoutNotice === 'success' && <div className={styles.checkoutBanner} role="status" aria-live="polite"><strong>Pagamento ricevuto.</strong><span>Stiamo preparando il tuo accesso.</span><Annunci10xLoader variant="inline" indeterminate label="Verifichiamo il pagamento" /></div>}
+    {checkoutNotice === 'cancelled' && <div className={styles.checkoutBanner} role="status" aria-live="polite"><strong>Pagamento annullato.</strong><span>Non è stato completato alcun acquisto.</span></div>}
+    <Annunci10xFulfillmentPanel checkoutNotice={checkoutNotice} onCreateReturn={showCreateAfterCheckout} />
 
-      {checkoutNotice === 'success' && <div className={styles.checkoutBanner} role="status" aria-live="polite"><strong>Pagamento ricevuto.</strong><span>Stiamo preparando il tuo accesso.</span><Annunci10xLoader variant="inline" indeterminate label="Verifichiamo il pagamento" /></div>}
-      {checkoutNotice === 'cancelled' && <div className={styles.checkoutBanner} role="status" aria-live="polite"><strong>Pagamento annullato.</strong><span>Non è stato completato alcun acquisto.</span></div>}
-      <Annunci10xFulfillmentPanel checkoutNotice={checkoutNotice} onCreateReturn={showCreateAfterCheckout} />
+    <div ref={analyzeRef} className={styles.heroPanel} aria-label="Analisi gratuita Annunci 10x">
+      <Annunci10xAnalyzeFlow commerceRefreshToken={commerceRefreshToken} />
+    </div>
+    {mode !== 'CREATE' && <p className={styles.createSwitch}>Non hai ancora un annuncio? <button type="button" onClick={() => selectMode('CREATE')}>Crealo a 7 € con un brief guidato</button></p>}
 
-      <ProblemNarrative />
-      <CentralIdeaSection />
-      <InverseFunnelSection />
-      <ProductExplainerSection />
-      <ControlsSection />
-      <RoleStrip />
-      <BeforeAfterSection />
-      <MethodSection />
-      <ProductChoiceSection onCreate={() => selectMode('CREATE')} />
-
-      {mode === 'CREATE' && <section ref={createRef} id="crea-annuncio" className={styles.createSection} aria-labelledby="create-route-title">
-        <div className={styles.sectionHeading}>
-          <p>Percorso guidato</p>
-          <h2 id="create-route-title">Crea il tuo annuncio da zero</h2>
-          <span>Se il testo non esiste ancora, parti dai fatti del ruolo. Raccogliamo i dati in tre blocchi progressivi, poi generiamo il testo completo solo dopo pagamento confermato.</span>
-        </div>
-        <CreateFlow state={createState} draft={createDraft} unknowns={unknowns} running={running} loading={createLoader} clarificationAnswer={clarificationAnswer} editTarget={editTarget} editValue={editValue} error={error} commerceRefreshToken={commerceRefreshToken} onStart={startCreate} onDraft={setCreateDraft} onUnknowns={setUnknowns} onSubmitStructured={submitStructuredCreate} onClarificationAnswer={setClarificationAnswer} onSubmitClarification={submitCreateClarification} onEditTarget={setEditTarget} onEditValue={setEditValue} onSubmitEdit={submitEdit} onConfirm={confirmCreate} />
-      </section>}
-
-      <GuaranteeSection />
-      <ConsultingSection />
-      <FaqSection />
-      <FinalCta onAnalyze={() => selectMode('ANALYZE')} />
-    </main>
-    <FunnelFooter />
+    {mode === 'CREATE' && <section ref={createRef} id="crea-annuncio" className={styles.createSection} aria-labelledby="create-route-title">
+      <div className={styles.sectionHeading}>
+        <p>Percorso guidato</p>
+        <h2 id="create-route-title">Crea il tuo annuncio da zero</h2>
+        <span>Se il testo non esiste ancora, parti dai fatti del ruolo. Raccogliamo i dati in tre blocchi progressivi, poi generiamo il testo completo solo dopo pagamento confermato.</span>
+      </div>
+      <CreateFlow state={createState} draft={createDraft} unknowns={unknowns} running={running} loading={createLoader} clarificationAnswer={clarificationAnswer} editTarget={editTarget} editValue={editValue} error={error} commerceRefreshToken={commerceRefreshToken} onStart={startCreate} onDraft={setCreateDraft} onUnknowns={setUnknowns} onSubmitStructured={submitStructuredCreate} onClarificationAnswer={setClarificationAnswer} onSubmitClarification={submitCreateClarification} onEditTarget={setEditTarget} onEditValue={setEditValue} onSubmitEdit={submitEdit} onConfirm={confirmCreate} />
+    </section>}
   </div>;
-}
-
-function FunnelHeader({ onAnalyze }: { onAnalyze: () => void }) {
-  return <header className={styles.funnelHeader} aria-label="Annunci 10x">
-    <Link href="/" className={styles.brand} aria-label="Horyzon Consulting Recruiting"><Image src="/annunci-10x/horyzon-consulting-recruiting-white.png" alt="" width={2048} height={768} sizes="(max-width: 760px) 176px, 240px" className={styles.brandLogo} aria-hidden="true" unoptimized /></Link>
-    <button type="button" onClick={onAnalyze}>Valuta gratis</button>
-  </header>;
-}
-
-function FunnelFooter() {
-  return <footer className={styles.funnelFooter}>
-    <div><strong>Horyzon Consulting Recruiting</strong><p>FELICITÀ srl · Viale Papiniano 28, 20123 Milano · P.IVA 05120660757 · SDI SU9YNJA</p></div>
-    <nav aria-label="Link legali Annunci 10x"><Link href="/privacy-policy">Privacy</Link><Link href="/cookie-policy">Cookie</Link><a href="mailto:info@horyzon.it">info@horyzon.it</a></nav>
-  </footer>;
-}
-
-function HeroProofStrip() {
-  return <div className={styles.proofStrip} aria-label="Prove del metodo">{proofItems.map((item) => <span key={item}>{item}</span>)}</div>;
-}
-
-function ProblemNarrative() {
-  return <section className={styles.problemSection}>
-    <div className={styles.sectionHeading}><p>Il problema</p><h2>Il problema non è avere più CV. È arrivare alle persone giuste.</h2></div>
-    <div className={styles.storyRows}>{storyBeats.map((beat, index) => <p key={beat}><span>{String(index + 1).padStart(2, '0')}</span>{beat}</p>)}</div>
-    <div className={styles.targetStatement}><p>Annunci 10x nasce per chi sente l’impatto delle assunzioni sul lavoro quotidiano.</p><div>{targetLines.map((line) => <span key={line}>{line}</span>)}</div></div>
-  </section>;
-}
-
-function CentralIdeaSection() {
-  return <section className={styles.ideaSection}>
-    <p className={styles.editorialQuote}>“L’annuncio inizia a selezionare prima ancora che arrivi il primo CV.”</p>
-    <div><h2>Se il ruolo è vago, attirerà persone diverse da quelle che servono.</h2><p>Responsabilità, condizioni e risultato atteso non sono dettagli: sono il filtro iniziale. Annunci 10x controlla se quel filtro sta aiutando o confondendo.</p></div>
-  </section>;
-}
-
-function InverseFunnelSection() {
-  return <section className={styles.inverseFunnel}>
-    <div className={styles.sectionHeading}><p>Funnel inverso</p><h2>Non devi piacere a tutti. Devi farti capire da chi può fare bene quel lavoro.</h2></div>
-    <div className={styles.funnelVisual}>{funnelExamples.map((example) => <article key={example.title}><h3>{example.title}</h3>{example.rows.map((row) => <span key={row}>{row}</span>)}</article>)}</div>
-  </section>;
-}
-
-function ProductExplainerSection() {
-  return <section className={styles.explainerSection}>
-    <div className={styles.sectionHeading}><p>Score di chiarezza</p><h2>Annunci 10x guarda il testo come lo leggerà una persona reale.</h2><span>Non abbellisce l’offerta e non inventa benefit. Evidenzia cosa è chiaro, cosa manca e dove l’annuncio rischia di lasciare dubbi materiali.</span></div>
-    <div className={styles.explainerGrid}><article><h3>Valuta chiarezza</h3><p>Controlla se ruolo, attività e condizioni sono comprensibili.</p></article><article><h3>Valuta completezza</h3><p>Distingue informazioni presenti, mancanti e non valutabili.</p></article><article><h3>Applica valutazione editoriale</h3><p>Mostra punti forti, priorità e significato del risultato. Le indicazioni operative arrivano nel report via email.</p></article></div>
-    <p className={styles.disclaimer}>{scoreDisclaimer}</p>
-  </section>;
-}
-
-function ControlsSection() {
-  return <section className={styles.controlsSection}>
-    <div className={styles.sectionHeading}><p>20 controlli</p><h2>Ogni controllo serve a una domanda semplice.</h2><span>La persona giusta capisce che lavoro è, quali condizioni troverà e perché dovrebbe candidarsi?</span></div>
-  </section>;
-}
-
-function RoleStrip() {
-  return <section className={styles.rolesSection}>
-    <div className={styles.sectionHeading}><p>Esempi ruoli</p><h2>Funziona sui ruoli che assumono davvero le PMI.</h2></div>
-    <div className={styles.roleGroups}>{roleGroups.map(([group, items]) => <article key={group}><h3>{group}</h3><p>{items.join(' · ')}</p></article>)}</div>
-  </section>;
-}
-
-function BeforeAfterSection() {
-  return <section className={styles.beforeAfterSection}>
-    <div className={styles.sectionHeading}><p>Anteprima del report</p><h2>La struttura reale del risultato gratuito.</h2></div>
-    <div className={styles.casePending}>
-      <span>Esempio illustrativo dal sample ad</span>
-      <ul>
-        <li><strong>Score di chiarezza</strong><p>Valore su 100 calcolato sui controlli valutabili.</p></li>
-        <li><strong>Fascia</strong><p>Critico, Debole, Buona base, Forte o Eccellente descrivono chiarezza e completamento, non probabilità di assunzione.</p></li>
-        <li><strong>Aree prioritarie</strong><p>I controlli che frenano di più la comprensione del ruolo.</p></li>
-        <li><strong>Motivazione</strong><p>Perché quel punto è debole rispetto alle informazioni disponibili.</p></li>
-        <li><strong>Informazioni da chiarire</strong><p>Dati mancanti da confermare prima di generare un testo completo.</p></li>
-      </ul>
-      <p>{scoreDisclaimer}</p>
-    </div>
-  </section>;
-}
-
-function MethodSection() {
-  return <section id="metodo" className={styles.methodSection}>
-    <div className={styles.sectionHeading}><p>Metodo</p><h2>Prima la realtà del ruolo. Poi le parole.</h2><span>Il testo viene valutato partendo da lavoro reale, persona necessaria, informazioni disponibili e chiarezza operativa.</span></div>
-    <div className={styles.methodFlow}>{methodSteps.map((step) => <span key={step}>{step}</span>)}</div>
-  </section>;
-}
-
-function ProductChoiceSection({ onCreate }: { onCreate: () => void }) {
-  const [guideOpen, setGuideOpen] = useState(false);
-  const guideRef = useRef<HTMLElement | null>(null);
-  function openGuide() {
-    setGuideOpen(true);
-    window.setTimeout(() => guideRef.current?.focus(), 0);
-  }
-
-  return <section id="prodotti" className={styles.productChoice}>
-    <div className={styles.sectionHeading}><p>Prodotto</p><h2>Un solo prodotto: Annuncio 10x.</h2><span>La valutazione dell’annuncio resta gratuita nel percorso sopra. Qui trovi solo le opzioni per partire da zero o approfondire il metodo.</span></div>
-    <div className={styles.productPaths}>
-      <article data-featured="true"><p>CREA DA ZERO</p><h3>Annuncio 10x da brief guidato</h3><strong>7 €</strong><span>Parti dai dati del ruolo, raccogli le condizioni reali e ottieni una versione dell’annuncio per il canale scelto.</span><div className={styles.heroActions}><button type="button" onClick={onCreate}>Non ho ancora un annuncio: creo a 7 €</button></div><small>Output completo solo dopo pagamento confermato.</small></article>
-      <article data-variant="guide"><p>GUIDA</p><h3>Guida Annunci 10x</h3><span>Metodo pratico per progettare annunci più chiari ogni volta che devi aprire una ricerca.</span><div className={styles.heroActions}><button type="button" onClick={openGuide} aria-expanded={guideOpen} aria-controls="annunci10x-guide-panel">Acquista la guida per creare annunci perfetti illimitati</button></div><small>La scheda guida resta informativa finché il percorso dedicato non sarà pubblicato.</small></article>
-      {guideOpen && <article id="annunci10x-guide-panel" ref={guideRef} tabIndex={-1} className={styles.guideOffer} aria-labelledby="annunci10x-guide-title">
-        <p>SCHEDA GUIDA</p>
-        <h3 id="annunci10x-guide-title">Guida Annunci 10x</h3>
-        <span>Una superficie dedicata alla guida, distinta dall’Annuncio 10x operativo. La scheda raccoglie contenuti e criteri senza attivare un percorso di acquisto non pubblicato.</span>
-        <ul>
-          <li>Metodo per leggere chiarezza, completezza e coerenza di un annuncio.</li>
-          <li>Checklist e criteri riutilizzabili su più ricerche.</li>
-          <li>Nessuna tariffa mostrata finché non esiste un percorso guida pubblicato.</li>
-        </ul>
-      </article>}
-    </div>
-  </section>;
-}
-
-function GuaranteeSection() {
-  return <section className={styles.guaranteeSection}><p>Garanzia commerciale</p><h2>Rimborso integrale entro 14 giorni dalla consegna.</h2><span>{guaranteeCopy}</span></section>;
-}
-
-function ConsultingSection() {
-  return <section className={styles.consultingSection}><div className={styles.sectionHeading}><p>Quando serve aiuto</p><h2>E se il problema non è l&apos;annuncio?</h2><span>A volte l’annuncio è buono e le persone giuste non arrivano comunque. Il blocco può essere nel fabbisogno, nel canale, nel processo di selezione o nell’attrattività dell’offerta.</span><Link href="/contatti" className={styles.textCta}>Parla con Horyzon</Link></div></section>;
-}
-
-function FaqSection() {
-  const [openIndex, setOpenIndex] = useState(0);
-  return <section id="faq" className={styles.faqSection}>
-    <div className={styles.sectionHeading}><p>FAQ</p><h2>Domande frequenti</h2></div>
-    <div className={styles.faqList}>{faqItems.map(([question, answer], index) => {
-      const isOpen = openIndex === index;
-      const panelId = `annunci10x-faq-${index}`;
-      return <article key={question} className={styles.faqItem}><button type="button" aria-expanded={isOpen} aria-controls={panelId} onClick={() => setOpenIndex(isOpen ? -1 : index)}><span>{question}</span><b aria-hidden="true">{isOpen ? '−' : '+'}</b></button><div id={panelId} hidden={!isOpen}><p>{answer}</p></div></article>;
-    })}</div>
-  </section>;
-}
-
-function FinalCta({ onAnalyze }: { onAnalyze: () => void }) {
-  return <section className={styles.finalCta}><p>Primo passo</p><h2>Vuoi capire se il tuo annuncio è abbastanza chiaro?</h2><span>Parti dallo Score gratuito, poi decidi se trasformarlo in Annuncio 10x.</span><div className={styles.heroActions}><button type="button" onClick={onAnalyze}>Valuta gratis il mio annuncio</button></div><small>Gratis · 2 minuti · nessuna carta di credito</small></section>;
 }
 
 function CreateFlow(props: {

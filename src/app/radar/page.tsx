@@ -8,7 +8,7 @@ import { OwnerStory } from '@/components/radar/owner-story';
 import { RadarClient } from '@/components/radar/radar-client';
 import { RadarDock } from '@/components/radar/radar-dock';
 import { RadarScope } from '@/components/radar/radar-scope';
-import './radar-commercial.css';
+import '@/styles/horyzon-landing.css';
 
 export const metadata: Metadata = pageMetadata({ path: '/radar', title: 'Inizia il Radar d’Impresa', description: 'Una prima fotografia guidata di cinque reparti, processi, autonomia dal titolare e uso dell’intelligenza artificiale.', noindex: true });
 

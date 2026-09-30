@@ -1,0 +1,71 @@
+/* /annunci-10x on top of the shared landing kit (src/styles/horyzon-landing.css).
+   One gesture: the job ad as a sheet of paper under the lens. Vague sentences carry the rust squiggle of a
+   spell-checker; in the story one at a time comes into focus. Palette and type come from the kit only. */
+
+.ax-skip{position:fixed;z-index:60;top:12px;left:12px;padding:10px 14px;border-radius:6px;background:var(--lime);color:var(--ink);font-weight:800;transform:translateY(-160%)}
+.ax-skip:focus{transform:none}
+
+/* Brand: the approved Recruiting PNG, never cropped */
+.ax-brand{display:inline-flex;align-items:center;min-height:44px}
+.ax-brand img{display:block;width:clamp(168px,16vw,220px);height:auto;object-fit:contain}
+
+/* The sheet */
+.ax-sheet{position:relative;margin:0;padding:clamp(22px,2.4vw,32px) clamp(22px,2.4vw,32px) clamp(26px,2.8vw,36px);border-radius:14px;background:var(--cream);color:var(--ink);box-shadow:0 50px 90px -45px rgba(0,0,0,.85),0 0 0 1px rgba(247,244,232,.2);overflow:hidden}
+.ax-sheet-head{display:grid;gap:8px;margin:0 0 20px;padding-bottom:18px;border-bottom:1px solid rgba(7,23,29,.14)}
+.ax-sheet-head span{font:500 11px/1.3 var(--font-mono),monospace;letter-spacing:.16em;text-transform:uppercase;color:rgba(7,23,29,.55)}
+.ax-sheet-head b{font-size:clamp(22px,2.2vw,30px);font-weight:800;line-height:1.05;letter-spacing:-.035em}
+.ax-sheet ul{list-style:none;display:grid;gap:12px;margin:0;padding:0}
+.ax-sheet li{min-height:9px}
+.ax-bar{display:block;width:var(--w);height:9px;border-radius:5px;background:rgba(7,23,29,.11);transition:opacity .45s}
+.ax-vague{display:inline;margin:0 -5px;padding:2px 5px;border-radius:5px;font-size:clamp(15px,1.25vw,17px);font-weight:600;line-height:1.5;
+  text-decoration:underline wavy var(--rust);text-decoration-thickness:1.5px;text-underline-offset:5px;text-decoration-skip-ink:none;
+  box-decoration-break:clone;-webkit-box-decoration-break:clone;transition:opacity .45s,background-color .45s,color .45s}
+.ax-sheet.is-focused .ax-bar,.ax-sheet.is-focused .ax-vague{opacity:.3}
+.ax-sheet.is-focused .ax-vague.is-active{opacity:1;background:rgba(157,77,52,.16);color:#6b2d1b}
+/* The lens: a lime reading line that runs down the page (motion only) */
+.ax-scan{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.ax-scan::before{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,transparent 84%,rgba(216,255,66,.45) 98%,var(--lime) 100%);mix-blend-mode:multiply;transform:translateY(-100%);opacity:0}
+
+/* Hero */
+.ax-hero-sheet{position:relative;z-index:1;justify-self:end;width:min(100%,500px);transform:rotate(1.6deg)}
+
+/* Story: the sheet takes the place of the radar */
+.ax-story-sheet{justify-self:center;width:min(100%,500px)}
+
+/* Price */
+.ax-price{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:6vw;align-items:center;padding:120px 6vw;border-top:1px solid var(--line)}
+.ax-price-figure strong{display:block;font-size:clamp(96px,14vw,220px);font-weight:800;line-height:.85;letter-spacing:-.06em;color:var(--lime)}
+.ax-price-figure ul{list-style:none;display:flex;flex-wrap:wrap;gap:8px;margin:28px 0 0;padding:0}
+.ax-price-figure li{padding:6px 12px;border:1px solid var(--line);border-radius:99px;font:500 12px var(--font-mono),monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--cream)}
+.ax-price-copy h2{font-size:clamp(38px,4.6vw,72px);line-height:.98}
+.ax-price-copy>p:first-of-type{max-width:52ch;margin:26px 0 32px;font-size:clamp(17px,1.4vw,20px);line-height:1.55;font-weight:500;color:#cfd7d5}
+.ax-guarantee{max-width:62ch;margin:26px 0 0;padding-top:20px;border-top:1px solid var(--line);font:500 12px/1.7 var(--font-mono),monospace;letter-spacing:.03em;color:var(--muted)}
+
+/* Frank */
+.ax-frank-note{max-width:48ch;margin:0 0 14px;font-size:17px;line-height:1.6;color:#cdd6d4}
+
+/* Final and footer */
+.ax .rd-final h2{max-width:18ch}
+.ax-footer>div{display:grid;gap:10px}
+.ax-footer p{margin:0;font-size:12px;line-height:1.6;color:var(--muted)}
+
+@media (prefers-reduced-motion:no-preference){
+  .ax-hero-sheet{animation:ax-sheet-in 1.3s var(--ease) .35s both}
+  .ax-scan::before{animation:ax-scan 6.5s cubic-bezier(.45,0,.2,1) 1.6s infinite}
+}
+@keyframes ax-sheet-in{from{opacity:0;transform:translateY(40px) rotate(5deg)}}
+@keyframes ax-scan{0%{transform:translateY(-100%);opacity:1}62%{transform:translateY(0);opacity:1}78%,100%{transform:translateY(0);opacity:0}}
+
+@media (max-width:900px){
+  .ax-hero-sheet{justify-self:center;width:min(100%,440px);margin-top:26px;transform:rotate(1deg)}
+  .ax-price{grid-template-columns:1fr;gap:34px}
+  .ax .rd-story.is-live .ax-bar{display:none}
+  .ax .rd-story.is-live .ax-sheet ul{gap:8px}
+  .ax .rd-story.is-live .ax-sheet-head{margin-bottom:12px;padding-bottom:12px}
+  .ax .rd-story.is-live .ax-story-sheet{width:min(100%,400px);padding:18px 20px 20px}
+}
+@media (max-width:600px){
+  .ax-price{padding:90px 5vw}
+  .ax .rd-story.is-live .ax-vague{font-size:14px}
+  .ax-footer p{max-width:36ch}
+}

@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 import { readFile, stat } from 'node:fs/promises';
 
 async function text(path) {
@@ -22,20 +21,24 @@ const commerceClient = await text('src/components/annunci-10x/annunci-10x-commer
 const createFlow = await text('src/lib/annunci-10x/create-flow.ts');
 const identityGate = await text('src/components/annunci-10x/annunci-10x-identity-gate.tsx');
 const css = await text('src/components/annunci-10x/annunci-10x.module.css');
+const landingCss = await text('src/app/annunci-10x/annunci-landing.css');
+const kitCss = await text('src/styles/horyzon-landing.css');
+const adSheet = await text('src/components/annunci-10x/landing/ad-sheet.tsx');
+const story = await text('src/components/annunci-10x/landing/candidate-story.tsx');
+const createCta = await text('src/components/annunci-10x/landing/create-cta.tsx');
+const radarPage = await text('src/app/radar/page.tsx');
 const commercial = await text('src/lib/annunci-10x/commercial.ts');
 const sitemap = await text('src/app/sitemap.ts');
 const shell = await text('src/components/site-shell.tsx');
 const home = await text('src/components/experience.tsx');
 const contract = await text('docs/annunci-10x/commercial-contract-v3.md');
-const heroBuffer = await readFile('public/annunci-10x/hero.jpeg');
-const heroStat = await stat('public/annunci-10x/hero.jpeg');
 const brandPath = 'public/annunci-10x/horyzon-consulting-recruiting-white.png';
 const oldBrandPath = '/annunci-10x/horyzon-consulting-recruiting.png';
 const brandPublicPath = '/annunci-10x/horyzon-consulting-recruiting-white.png';
 const brandBuffer = await readFile(brandPath);
 const brandStat = await stat(brandPath);
 
-const publicSource = `${page}\n${client}\n${flow}\n${identityGate}`;
+const publicSource = `${page}\n${client}\n${flow}\n${identityGate}\n${adSheet}\n${story}`;
 const guaranteeCopy = '7 € per un annuncio, una versione e un canale. Dopo la conferma del pagamento generiamo il testo completo e te lo rendiamo disponibile. Se non ti è utile, puoi chiedere il rimborso integrale entro 14 giorni dalla consegna, senza motivazione, scrivendo a info@horyzon.it dall’email usata per l’acquisto.';
 const scoreDisclaimer = 'Il punteggio valuta la chiarezza e la completezza delle informazioni disponibili nell’annuncio. Non prevede il numero di candidature né sostituisce la valutazione delle persone.';
 
@@ -50,7 +53,7 @@ assert.equal(sitemap.includes('annunci-10x'), false, 'Annunci 10x must stay out 
 assert.equal(shell.includes('annunci-10x'), false, 'Annunci 10x must stay out of global header/footer shell');
 assert.equal(home.includes('annunci-10x'), false, 'Annunci 10x must stay out of home experience');
 
-const headerBlock = client.match(/function FunnelHeader[\s\S]*?\n}/)?.[0] ?? '';
+const headerBlock = `${page.match(/function Brand[\s\S]*?\n}/)?.[0] ?? ''}\n${page.match(/<header className="rd-header">[\s\S]*?<\/header>/)?.[0] ?? ''}`;
 assert.equal(headerBlock.includes('Metodo'), false, 'funnel header must not link Metodo');
 assert.equal(headerBlock.includes('Prodotti'), false, 'funnel header must not link Prodotti');
 assert.equal(headerBlock.includes('FAQ'), false, 'funnel header must not link FAQ');
@@ -60,17 +63,19 @@ assert.equal(headerBlock.includes(oldBrandPath), false, 'old Recruiting logo ass
 assert.equal(headerBlock.includes(brandPublicPath), true, 'new Recruiting logo public path missing from header');
 assert.match(headerBlock, /unoptimized/, 'header logo must bypass image optimization to preserve the approved PNG asset');
 assert.match(headerBlock, /width=\{2048\}\s+height=\{768\}/, 'header logo must use the attached 8:3 PNG dimensions');
-assert.match(css, /\.brand[\s\S]*width:\s*clamp\(220px,\s*18vw,\s*240px\)[\s\S]*overflow:\s*visible/, 'header brand must use responsive desktop width without clipping');
-assert.match(css, /\.brandLogo[\s\S]*height:\s*auto\s*!important[\s\S]*object-fit:\s*contain/, 'header logo must preserve ratio without cropping');
+assert.match(landingCss, /\.ax-brand img\{[^}]*width:clamp\(168px,16vw,220px\)[^}]*height:auto[^}]*object-fit:contain/, 'header logo must use a responsive width and preserve ratio without cropping');
 assert.equal(css.includes('border-radius: 18px'), false, 'old white-panel logo border radius must be removed');
 assert.match(headerBlock, /aria-label="Horyzon Consulting Recruiting"/, 'header logo link must keep an accessible brand label');
 assert.equal(headerBlock.includes('<span>Horyzon Consulting</span>'), false, 'typographic brand fallback must be removed');
 assert.equal(headerBlock.includes('Horyzon Consulting</span>'), false, 'header must not include a textual brand fallback');
 
-assert.match(client, /Il tuo annuncio fa capire il lavoro alle persone giuste\?/, 'V3 hero headline missing');
-assert.match(client, /Incolla il link o il testo dell’annuncio\. Ricevi uno Score di chiarezza su 100 e i punti da migliorare dopo la verifica dell’email\./, 'V3 hero subtitle missing');
-assert.match(client, /Valuta gratis il mio annuncio/, 'primary CTA missing');
-assert.match(client, /Non ho ancora un annuncio: crealo a 7 €/, 'secondary CTA missing');
+assert.match(page, /Il tuo annuncio riceve CV\.[\s\S]*Ma sono quelli giusti\?/, 'hero headline missing');
+assert.match(page, /Lo Score di chiarezza ti mostra che cosa capisce davvero un candidato quando legge il tuo annuncio\./, 'hero lead missing');
+assert.match(page, /Annunci 10x <i>·<\/i> Score gratuito <i>·<\/i> 2 minuti/, 'hero label missing');
+assert.match(page, /Valuta il mio annuncio/, 'primary CTA missing');
+assert.match(page, /href="#ax-story-title">Prima fammi vedere/, 'soft secondary CTA must lead to the story');
+assert.match(page, /Non ho ancora un annuncio: crealo a 7 €/, 'create CTA missing');
+assert.equal(page.includes('Il tuo annuncio fa capire il lavoro alle persone giuste?'), false, 'V3 hero headline must not remain');
 assert.equal(client.includes('Il tuo annuncio sceglie i candidati prima di te.'), false, 'old hero headline must not remain');
 assert.equal(client.includes('Vedi subito lo Score'), false, 'old instant-score promise must not remain');
 assert.equal(client.includes('<strong>37<small>/100</small></strong>'), false, 'artificial 37/100 hero demo must not remain');
@@ -90,22 +95,25 @@ assert.match(flow, /data-flow="analyze" data-has-workspace=\{hasWorkspace\}/, 'a
 assert.match(flow, /ref=\{workspaceRef\} className=\{styles\.analysisWorkspace\}/, 'post-analysis states must render in a dedicated workspace surface');
 assert.equal(flow.includes('resultRef.current.scrollIntoView'), false, 'post-analysis result must not force page scroll or stretch the hero');
 assert.equal(flow.includes('workspaceRef.current?.scrollTo'), false, 'post-analysis card must not rely on internal scroll reset');
-assert.match(css, /\.hero \{[\s\S]*min-height:\s*clamp\(560px,\s*74svh,\s*720px\)/, 'hero must use the compact desktop height');
-assert.match(css, /\.heroGrid \{[\s\S]*grid-template-columns:\s*minmax\(0,\s*\.78fr\) minmax\(520px,\s*\.92fr\)/, 'hero grid must give the result card a wider desktop column');
-assert.match(css, /\.hero h1 \{[\s\S]*max-width:\s*620px[\s\S]*font-size:\s*clamp\(2\.7rem,\s*4\.9vw,\s*5rem\)/, 'hero headline must be scaled down');
-assert.match(css, /\.heroPanel \.createShell \{[\s\S]*border-radius:\s*12px[\s\S]*box-shadow:\s*0 28px 95px/, 'right column must render as a lifted main card');
+assert.match(page, /import '@\/styles\/horyzon-landing\.css';/, 'landing must use the shared landing kit');
+assert.match(radarPage, /import '@\/styles\/horyzon-landing\.css';/, 'Radar must use the same shared landing kit');
+assert.match(page, /<div className="rd ax">/, 'landing must use the kit root and the Annunci modifier');
+assert.match(page, /<AdSheet className="ax-hero-sheet" scan \/>/, 'hero must show the ad under the lens');
+assert.equal(/Image[^>]*hero\.jpeg/.test(`${page}\n${client}`), false, 'stock hero photo must not return');
+assert.match(kitCss, /--lime:#d8ff42/, 'landing kit palette missing');
+assert.equal(/amber|#e7c06e/.test(`${css}\n${landingCss}`), false, 'no gold: DESIGN.md palette only');
+assert.match(css, /\.heroPanel \.createShell > \.form \{[\s\S]*border-radius:\s*12px[\s\S]*box-shadow:\s*0 28px 95px/, 'the analyze form must render as a lifted card');
 assert.equal(/\.heroPanel \.createShell\[data-has-workspace="true"\] > \.form \{[\s\S]*display:\s*none/.test(css), false, 'source form must remain visible when the result workspace exists');
 assert.match(flow, /<form className=\{styles\.form\}[\s\S]*<\/form>\s*\n\s*\{hasWorkspace && <div ref=\{workspaceRef\}/, 'analysis form must remain rendered before the separate workspace');
 const analysisWorkspaceBlock = cssBlock('.analysisWorkspace');
-assert.match(analysisWorkspaceBlock, /position:\s*absolute/, 'post-analysis workspace must be out of normal flow on desktop');
-assert.match(analysisWorkspaceBlock, /top:\s*calc\(100% \+ 1rem\)/, 'desktop workspace must sit below the form card instead of covering it');
-assert.match(analysisWorkspaceBlock, /right:\s*0[\s\S]*left:\s*0/, 'desktop workspace must align to the form card width');
+assert.equal(/position:\s*absolute/.test(analysisWorkspaceBlock), false, 'post-analysis workspace must stay in normal flow so it never covers the next section');
+assert.match(analysisWorkspaceBlock, /width:\s*100%/, 'workspace must align to the form card width');
 assert.match(analysisWorkspaceBlock, /overflow:\s*visible/, 'post-analysis workspace must not clip the card');
 assert.equal(/overflow-y:\s*auto/.test(analysisWorkspaceBlock), false, 'post-analysis card must not have internal vertical scroll');
 assert.equal(/max-height:/.test(analysisWorkspaceBlock), false, 'post-analysis card must not rely on a capped desktop height');
 assert.equal(/\.analysisWorkspace[\s\S]*?overflow-y:\s*auto/.test(css), false, 'workspace must never introduce an internal scrollbar');
 assert.equal(/\.analysisWorkspace[\s\S]*?max-height:/.test(css), false, 'workspace must never use max-height caps');
-assert.match(css, /@media \(max-width: 760px\)[\s\S]*\.analysisWorkspace[\s\S]*position:\s*absolute[\s\S]*overflow:\s*visible/, 'mobile analyze workspace must stay out of normal flow without internal scroll');
+assert.equal(/\.analysisWorkspace \{[^}]*position:\s*absolute/.test(css), false, 'mobile analyze workspace must stay in normal flow without internal scroll');
 
 const workspaceLayoutBlocks = [...css.matchAll(/\.analysisWorkspace \.freeResultLayout \{[\s\S]*?\n\}/g)].map((match) => match[0]);
 assert.equal(workspaceLayoutBlocks.length >= 1, true, 'workspace result layout rule missing');
@@ -116,9 +124,8 @@ for (const block of workspaceLayoutBlocks) {
 assert.equal(/@media[\s\S]*\.analysisWorkspace \.freeResultLayout \{[\s\S]*grid-template-columns:\s*(repeat\(2|[^;\n]*minmax\(170px|[^;\n]*\.72fr)/.test(css), false, 'media rules must not restore a two-column workspace result layout');
 
 assert.equal(count(client, '<Annunci10xAnalyzeFlow'), 1, 'Annunci10xAnalyzeFlow must render exactly once');
-assert.equal(client.includes('/annunci-10x/hero.jpeg'), true, 'hero image must remain wired');
-assert.equal(heroStat.size, 221692, 'hero.jpeg size changed');
-assert.equal(createHash('sha256').update(heroBuffer).digest('hex'), '8cadafee04583b2e0905c08ae779f2d2f56ff9a599cc3b2468605a8882f326dc', 'hero.jpeg hash changed');
+assert.equal(count(page, '<Annunci10xClient'), 1, 'the interactive client must render exactly once, inside #valuta');
+assert.match(page, /<section id="valuta"[\s\S]*<Annunci10xClient \/>[\s\S]*<\/section>/, 'free Score must live in the "Tocca a te" section');
 assert.equal(brandStat.isFile(), true, 'Recruiting logo asset file missing');
 assert.equal(brandStat.size > 0, true, 'Recruiting logo asset must not be empty');
 assert.deepEqual([...brandBuffer.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10], 'Recruiting logo asset must be a PNG');
@@ -147,17 +154,19 @@ assert.equal(flow.includes("'Buono'"), false, 'old flow score label Buono must n
 assert.match(css, /\.scoreBandBar[\s\S]*grid-template-columns:\s*repeat\(5, minmax\(0, 1fr\)\)/, 'score band must visually render five segments');
 
 for (const role of ['Operaio di produzione', 'Saldatore', 'Manutentore meccanico', 'Elettricista', 'Tecnico installatore', 'Magazziniere carrellista', 'Autista patente C', 'Commerciale B2B', 'Impiegato amministrativo', 'Addetto alla contabilità', 'Cuoco', 'Cameriere di sala']) {
-  assert.equal(client.includes(role), true, `updated role example missing: ${role}`);
+  assert.equal(page.toLowerCase().includes(role.toLowerCase()), true, `updated role example missing: ${role}`);
 }
 assert.equal(client.includes("const roles = ['Magazziniere'"), false, 'old flat role list must not remain');
 assert.equal(client.includes('Automation Engineer'), false, 'old role list item must not remain');
 
-assert.match(client, /ANNUNCIO VAGO/, 'vague ad funnel visual missing');
-assert.match(client, /ANNUNCIO CHIARO/, 'clear ad funnel visual missing');
+assert.equal((adSheet.match(/\{ phrase: /g) ?? []).length, 5, 'the ad under the lens must carry five candidate doubts');
+assert.match(story, /Leggi il tuo annuncio <em>come un candidato\.<\/em>/, 'candidate story heading missing');
+assert.match(story, /prefers-reduced-motion: no-preference/, 'candidate story must fall back to a static list');
+assert.equal(/\d{1,3}\s*\/\s*100/.test(adSheet), false, 'the ad sheet must never show an invented score');
 assert.equal(client.includes('Tanti visualizzano'), false, 'old funnel visual copy must not remain');
 assert.equal(client.includes('prime correzioni pratiche'), false, 'landing must not promise specific practical corrections');
-assert.match(client, /Le indicazioni operative arrivano nel report via email/, 'product explainer must defer operational advice to email report');
-assert.match(client, /Anteprima del report/, 'report preview heading missing');
+assert.match(page, /Le indicazioni operative arrivano nel report via email/, 'result must defer operational advice to email report');
+assert.match(page, /Non un voto\. <span>Una lista di priorità\.<\/span>/, 'result heading missing');
 assert.equal(client.includes('Caso reale in preparazione'), false, 'case-real-in-preparation block must be replaced');
 assert.equal(/[0-9]{1,3}\s*(?:→|->)\s*[0-9]{1,3}/.test(client), false, 'before/after must not invent numeric score improvement');
 
@@ -166,19 +175,16 @@ assert.match(client, /1 annuncio/, 'single-ad unit missing');
 assert.match(client, /1 versione/, 'single-version unit missing');
 assert.match(client, /1 canale/, 'single-channel unit missing');
 assert.equal(commerceClient.includes('Disponibile a breve'), true, 'checkout-disabled customer-safe CTA missing');
-assert.match(client, /href="\/contatti"/, 'consulting CTA must link to /contatti');
-const productChoiceBlock = client.match(/function ProductChoiceSection[\s\S]*?\nfunction GuaranteeSection/)?.[0] ?? '';
-assert.match(productChoiceBlock, /La valutazione dell’annuncio resta gratuita nel percorso sopra/, 'product section must separate free evaluation from paid create path');
-assert.equal(productChoiceBlock.includes('onAnalyze'), false, 'product section must not include the free evaluation CTA');
-assert.equal(productChoiceBlock.includes('Valuta gratis il mio annuncio'), false, 'product card must not make the free evaluation look paid');
-assert.match(productChoiceBlock, /CREA DA ZERO[\s\S]*Annuncio 10x da brief guidato[\s\S]*<strong>7 €<\/strong>[\s\S]*Non ho ancora un annuncio: creo a 7 €/, 'create-from-zero product card must be explicit and priced at 7 EUR');
-assert.match(productChoiceBlock, /Acquista la guida per creare annunci perfetti illimitati/, 'guide CTA missing from product section');
-assert.match(productChoiceBlock, /aria-expanded=\{guideOpen\} aria-controls="annunci10x-guide-panel"/, 'guide CTA must open a dedicated surface');
-const guidePanelBlock = productChoiceBlock.match(/id="annunci10x-guide-panel"[\s\S]*?<\/article>/)?.[0] ?? '';
-assert.match(guidePanelBlock, /Guida Annunci 10x[\s\S]*Nessuna tariffa mostrata/, 'guide panel must be separate and avoid invented pricing');
-assert.equal(/Guida[\s\S]{0,220}<strong>/.test(productChoiceBlock), false, 'guide card must not show a price');
-assert.equal(/\d+\s*€/.test(guidePanelBlock), false, 'guide panel must not show a price');
-assert.equal(/checkout/i.test(guidePanelBlock), false, 'guide panel must not mention checkout');
+assert.match(page, /href="\/contatti"/, 'consulting CTA must link to /contatti');
+const priceBlock = page.match(/<section id="annuncio-10x"[\s\S]*?<\/section>/)?.[0] ?? '';
+assert.match(priceBlock, /<strong>7 €<\/strong>[\s\S]*1 annuncio[\s\S]*1 versione[\s\S]*1 canale/, 'price section must state 7 EUR and its units');
+assert.match(priceBlock, /<CreateCta[^>]*>Non ho ancora un annuncio: crealo a 7 €/, 'price section must open the create-from-zero flow');
+assert.match(priceBlock, /\{guaranteeCopy\}/, 'guarantee must sit under the price');
+assert.equal(priceBlock.includes('Valuta'), false, 'price section must not make the free evaluation look paid');
+assert.equal(/Guida Annunci 10x|annunci10x-guide-panel/.test(`${page}\n${client}`), false, 'unpublished guide must not appear on the landing');
+assert.match(createCta, /ANNUNCI10X_CREATE_EVENT = 'annunci10x:create'/, 'create CTA event missing');
+assert.match(client, /addEventListener\(ANNUNCI10X_CREATE_EVENT/, 'client must open the create flow from landing CTAs');
+assert.match(client, /window\.location\.hash === '#crea-annuncio'/, 'create flow deep link missing');
 
 assert.equal(flow.includes('Copertura'), false, 'free result must not expose Copertura as a visible KPI label');
 assert.equal(client.includes('Copertura'), false, 'funnel must not expose Copertura as a visible KPI label');
@@ -296,34 +302,28 @@ assert.match(commercial, /isAnnunci10xAgentRecruiterEnabled/, 'Agent Recruiter e
 assert.match(commercial, /\.filter\(\(item\) => item\.offerCode !== 'AGENT_RECRUITER' \|\| Boolean\(input\.agentRecruiterEnabled\)\)/, 'Agent Recruiter must be hidden by default');
 
 for (const fakeProof of ['STERIMED', 'Ahumados', 'De Ridder', '181%', 'testimonial']) {
-  assert.equal(client.includes(fakeProof), false, `fake proof/testimonial marker found: ${fakeProof}`);
+  assert.equal(`${page}\n${client}`.includes(fakeProof), false, `fake proof/testimonial marker found: ${fakeProof}`);
 }
 
-const faqBlock = client.match(/const faqItems = \[[\s\S]*?\n\];/)?.[0] ?? '';
-assert.equal(count(faqBlock, "\n  ['"), 13, 'FAQ must contain exactly 13 questions');
+// Radar-style FAQ: five questions, answers in native <details>. The other V3 answers moved into sections:
+// what the Score measures -> "Il risultato", guarantee -> price, "e se il problema non è l’annuncio?" -> Frank.
+const faqBlock = page.match(/const faqs = \[[\s\S]*?\n\] as const;/)?.[0] ?? '';
+assert.equal(count(faqBlock, "\n  ['"), 5, 'FAQ must contain exactly 5 questions');
 for (const question of [
   'Quanto costa?',
-  'Cosa ricevo con lo Score gratuito?',
-  'Che cosa misura lo Score?',
   'Perché mi chiedete l’email?',
-  'Che differenza c’è tra i due percorsi?',
-  'Che cosa include Annuncio 10x?',
+  'Mi garantite più candidature?',
   'Usate l’intelligenza artificiale?',
   'Funziona anche per ruoli operativi?',
-  'Ho già un’agenzia o un consulente. Mi serve comunque?',
-  'Mi garantite più candidature?',
-  'Come funziona "soddisfatti o rimborsati"?',
-  'Chi c’è dietro Annunci 10x?',
-  'E se il problema non è l’annuncio?',
 ]) {
   assert.equal(faqBlock.includes(question), true, `FAQ question missing: ${question}`);
 }
 assert.equal(/privacy/i.test(faqBlock), false, 'FAQ must not invent a privacy answer');
+assert.match(page, /<details key=\{question\}><summary>/, 'FAQ must use native details like /radar');
 
-const finalCtaBlock = client.match(/function FinalCta[\s\S]*?\n}/)?.[0] ?? '';
-assert.match(finalCtaBlock, /Valuta gratis il mio annuncio/, 'final CTA must use V3 primary label');
-assert.equal(finalCtaBlock.includes('Il prossimo annuncio che pubblichi sceglierà i tuoi candidati.'), false, 'old final CTA headline must not remain');
-assert.equal(count(finalCtaBlock, '<button'), 1, 'final CTA must contain exactly one primary CTA');
+const finalBlock = page.match(/<section id="ax-final"[\s\S]*?<\/section>/)?.[0] ?? '';
+assert.match(finalBlock, /Prima di pagare un altro annuncio, <em>scopri che cosa non si capisce\.<\/em>/, 'final headline missing');
+assert.equal(count(finalBlock, '<Cta '), 1, 'final section must contain exactly one primary CTA');
 
 assert.match(contract, /Commercial contract V3/, 'commercial contract V3 doc missing');
 assert.match(contract, /Annuncio 10x is the only public paid product/, 'single public product contract missing');
