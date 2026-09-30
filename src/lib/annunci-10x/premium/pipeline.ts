@@ -8,7 +8,7 @@ import {
   ANNUNCI10X_SCORE_SEMANTICS_VERSION_V2,
   ANNUNCI10X_STRATEGY_VERSION,
 } from '../constants.ts';
-import { evaluatePublicationGate, materialConflict, unconfirmedClaim } from '../gates.ts';
+import { editorialRevisionRequired, evaluatePublicationGate, materialConflict, unconfirmedClaim } from '../gates.ts';
 import { runPersistedAnnunci10xEvaluateV2 } from '../ai/evaluate-v2.ts';
 import { Annunci10xAiOrchestrator } from '../ai/orchestrator.ts';
 import { createFact, validateGeneratedAd } from '../validation.ts';
@@ -874,6 +874,9 @@ async function evaluateGeneratedMasterV2(input: {
 
 function gateFromValidation(validation: Annunci10xValidateOutput, baseGate: PublicationGate): PublicationGate {
   const findings = [];
+  if (validation.result === 'NEEDS_REVISION') {
+    findings.push(editorialRevisionRequired('La validazione finale richiede ancora una revisione editoriale prima della pubblicazione.', 'WARNING'));
+  }
   for (const claim of validation.unsupportedClaims) findings.push(unconfirmedClaim(`Claim non supportato: ${claim}`, validation.result === 'BLOCK' ? 'BLOCKING' : 'WARNING'));
   for (const contradiction of validation.contradictions) findings.push(materialConflict(`Contraddizione: ${contradiction}`, 'BLOCKING'));
   for (const requirement of validation.alteredRequirements) findings.push(materialConflict(`Requisito alterato: ${requirement}`, 'BLOCKING'));

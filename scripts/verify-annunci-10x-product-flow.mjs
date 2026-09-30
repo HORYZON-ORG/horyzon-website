@@ -36,6 +36,24 @@ function makeContext(provider = new MockAnnunci10xProvider('success')) {
   };
 }
 
+class PersistentEditorialRevisionProvider extends MockAnnunci10xProvider {
+  async executeStructuredTask(request) {
+    const result = await super.executeStructuredTask(request);
+    if (request.operationType !== 'VALIDATE') return result;
+    return {
+      ...result,
+      output: {
+        claims: [],
+        unsupportedClaims: [],
+        contradictions: [],
+        omittedCriticalFacts: [],
+        alteredRequirements: [],
+        result: 'NEEDS_REVISION',
+      },
+    };
+  }
+}
+
 const fullAd = `Cerchiamo un addetto pulizie per uffici e spazi comuni nella sede di Bari.
 Attivita: pulizia uffici, corridoi e sale riunioni, riordino materiali e segnalazione anomalie.
 Contratto part-time in presenza, orari definiti dal lunedi al venerdi.
@@ -391,6 +409,39 @@ const evaluateCall = preservationContext.provider.calls.find((call) => call.oper
 assert.equal(JSON.stringify(generateCall?.input ?? {}).includes('sales-recruiting@azienda-test.it'), true, 'generator receives application instructions');
 assert.equal(JSON.stringify(channelCall?.input ?? {}).includes('sales-recruiting@azienda-test.it'), true, 'channel adapter receives application instructions');
 assert.equal(evaluateCall?.input?.target?.applicationDestination, 'Inviare CV o profilo LinkedIn a sales-recruiting@azienda-test.it', 'evaluator receives application destination');
+
+const persistentRevisionContext = makeContext(new PersistentEditorialRevisionProvider('success'));
+const startedPersistentRevision = await startAnnunci10xCreate({ context: persistentRevisionContext });
+let persistentRevisionState = startedPersistentRevision.result;
+for (const [stepId, answer] of preservationAnswers) {
+  persistentRevisionState = await answerAnnunci10xCreateStep({
+    sessionId: startedPersistentRevision.cookie.sessionId,
+    sessionSecret: startedPersistentRevision.cookie.sessionSecret,
+    stepId,
+    answer,
+    context: persistentRevisionContext,
+  });
+}
+assert.equal(persistentRevisionState.canConfirm, true);
+await confirmAnnunci10xCreate({
+  sessionId: startedPersistentRevision.cookie.sessionId,
+  sessionSecret: startedPersistentRevision.cookie.sessionSecret,
+  context: persistentRevisionContext,
+});
+const persistentRevisionPremium = await runAnnunci10xPremiumGeneration({
+  sessionId: startedPersistentRevision.cookie.sessionId,
+  sessionSecret: startedPersistentRevision.cookie.sessionSecret,
+  channel: 'LINKEDIN',
+  context: persistentRevisionContext,
+  authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
+});
+assert.equal(persistentRevisionContext.provider.calls.filter((call) => call.operationType === 'VALIDATE').length, 2, 'one automatic revision must be followed by a second validation');
+assert.equal(persistentRevisionPremium.gate.status, 'NEEDS_VERIFICATION', 'a final NEEDS_REVISION validator result must not silently become READY');
+assert.equal(persistentRevisionPremium.validationState, 'NEEDS_VERIFICATION');
+assert.equal(persistentRevisionPremium.gate.codes.includes('EDITORIAL_REVISION_REQUIRED'), true, 'gate must explain the unresolved editorial revision');
+assert.match(persistentRevisionPremium.gate.warnings.join(' '), /revisione editoriale/i);
+assert.equal(persistentRevisionPremium.master.annunci10xPremium?.automaticRevisionCount, 1);
+assert.equal(persistentRevisionPremium.master.annunci10xPremium?.validationResult, 'NEEDS_REVISION');
 
 const latestPreservationSnapshot = await preservationContext.persistence.getLatestSnapshot(startedPreservationCreate.cookie.sessionId, startedPreservationCreate.cookie.sessionSecret);
 assert.match(latestPreservationSnapshot.roleCard.compensation.amountText.value, /30\.000-36\.000/i);

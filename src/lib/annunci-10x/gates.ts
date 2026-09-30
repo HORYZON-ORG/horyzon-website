@@ -34,6 +34,10 @@ export const ANNUNCI10X_GATE_RULES = {
     code: 'CHANNEL_INCONSISTENCY',
     label: 'Divergenza tra testo, campi, destinazione o variante.',
   },
+  G6: {
+    code: 'EDITORIAL_REVISION_REQUIRED',
+    label: 'La validazione finale richiede ancora una revisione editoriale.',
+  },
 } as const;
 
 export function evaluatePublicationGate(input: PublicationGateInput = {}): PublicationGate {
@@ -69,6 +73,10 @@ export function invalidCta(message: string, severity: GateSeverity = 'BLOCKING')
 
 export function channelInconsistency(message: string, severity: GateSeverity = 'BLOCKING'): GateFinding {
   return { code: 'CHANNEL_INCONSISTENCY', severity, message };
+}
+
+export function editorialRevisionRequired(message: string, severity: GateSeverity = 'WARNING'): GateFinding {
+  return { code: 'EDITORIAL_REVISION_REQUIRED', severity, message };
 }
 
 function unique<T>(items: readonly T[]): T[] {
