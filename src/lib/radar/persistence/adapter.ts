@@ -143,7 +143,9 @@ export class SupabaseRadarPersistence implements RadarPersistence {
   private async request<T>(path: string, init: RequestInit): Promise<T> {
     const response = await (this.config.fetchImpl ?? fetch)(`${this.config.url.replace(/\/$/, '')}${path}`, { ...init, headers: { apikey: this.config.serviceRoleKey, Authorization: `Bearer ${this.config.serviceRoleKey}`, 'Content-Type': 'application/json', 'Accept-Profile': 'hub', 'Content-Profile': 'hub', ...(init.headers ?? {}) } });
     if (!response.ok) throw new Error(`Radar database error: ${await response.text()}`);
-    return response.json() as Promise<T>;
+    // Inserts come back as 201 with an empty body.
+    const text = await response.text();
+    return (text ? JSON.parse(text) : undefined) as T;
   }
 }
 

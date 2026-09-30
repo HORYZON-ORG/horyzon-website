@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { createMemoryRadarPersistence, createRadarPersistence, RadarRevisionConflictError } from '../src/lib/radar/persistence/adapter.ts';
+import { createMemoryRadarPersistence, createRadarPersistence, RadarRevisionConflictError, SupabaseRadarPersistence } from '../src/lib/radar/persistence/adapter.ts';
 import { createOwnerSecret, hashOwnerSecret } from '../src/lib/radar/persistence/security.ts';
 
 const secret = createOwnerSecret();
@@ -28,4 +28,13 @@ await assert.rejects(
   /answer key/i,
 );
 
+
+
+// PostgREST answers an insert without `Prefer: return=representation` with 201 and an empty body:
+// recording a preview attempt must not fail on it (it made every PIN attempt a 500).
+const requests = [];
+const supabase = new SupabaseRadarPersistence({ url: 'https://example.supabase.co', serviceRoleKey: 'server-secret', fetchImpl: async (url, init) => { requests.push({ url: String(url), init }); return new Response(null, { status: 201 }); } });
+await supabase.appendAccessEvent({ assessmentId: 'a1', accessSource: 'PREVIEW', eventType: 'PREVIEW_GRANTED' });
+assert.equal(requests.length, 1);
+assert.match(requests[0].url, /\/rest\/v1\/radar_access_events$/);
 console.log('Paid Radar persistence verifier passed');
