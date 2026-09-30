@@ -694,6 +694,7 @@
   font-family: var(--font-serif);
   font-size: clamp(2rem, 4vw, 4rem);
   line-height: 1.02;
+  font-weight: 800;
 }
 
 .ideaSection p:not(.editorialQuote) {

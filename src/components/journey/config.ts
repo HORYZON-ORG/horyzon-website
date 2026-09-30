@@ -1,4 +1,4 @@
-export const palette = { night: '#081521', mineral: '#3e5968', teal: '#628780', ivory: '#f2eee3', gold: '#d9bf8f' };
+export const palette = { night: '#07171d', mineral: '#3e5968', teal: '#628780', ivory: '#f7f4e8', gold: '#d8ff42' };
 export const quality = { mobileWidth: 768, desktopDpr: 1.5, mobileDpr: 1.25, desktopPillars: 74, mobilePillars: 38 };
 export const cameraStops = [
   { at: 0, position: [11, 8, 31], target: [0, 2, -42] },

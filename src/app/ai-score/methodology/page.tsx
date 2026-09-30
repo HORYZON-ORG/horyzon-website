@@ -51,7 +51,7 @@ const methodologyPageCss = `
 }
 
 .ai-method-hero-panel {
-  border: 1px solid #d7ff3f45;
+  border: 1px solid #d8ff4245;
   background: #ffffff08;
   padding: 28px;
   color: #edf1e6;
@@ -67,7 +67,7 @@ const methodologyPageCss = `
 .ai-method-hero-panel strong {
   display: block;
   margin-bottom: 10px;
-  font: 400 34px/1 var(--font-serif);
+  font:800 34px/1 var(--font-serif);
   color: #f5f4eb;
 }
 
@@ -95,7 +95,7 @@ const methodologyPageCss = `
 .ai-method-principle h2,
 .ai-method-closing h2 {
   margin: 12px 0 0;
-  font: 400 clamp(38px, 5vw, 76px)/1.02 var(--font-serif);
+  font:800 clamp(38px, 5vw, 76px)/1.02 var(--font-serif);
   letter-spacing: -.025em;
 }
 
@@ -137,7 +137,7 @@ const methodologyPageCss = `
 .ai-method-measures h3,
 .ai-method-products h3 {
   margin: 0 0 16px;
-  font: 400 clamp(29px, 3vw, 42px)/1.05 var(--font-serif);
+  font:800 clamp(29px, 3vw, 42px)/1.05 var(--font-serif);
   letter-spacing: -.015em;
 }
 
@@ -172,7 +172,7 @@ const methodologyPageCss = `
   margin: 0 0 12px;
   font-size: 19px;
   line-height: 1.25;
-  color: #122226;
+  color: #102229;
 }
 
 .ai-method-principle {
@@ -184,16 +184,16 @@ const methodologyPageCss = `
 }
 
 .ai-method-principle-card {
-  border: 1px solid #d7ff3f55;
-  background: #081521;
+  border: 1px solid #d8ff4255;
+  background: #07171d;
   color: #f5f4eb;
   padding: 34px;
 }
 
 .ai-method-principle-card strong {
   display: block;
-  font: 400 clamp(46px, 7vw, 86px)/.86 var(--font-serif);
-  color: #d7ff3f;
+  font:800 clamp(46px, 7vw, 86px)/.86 var(--font-serif);
+  color: #d8ff42;
 }
 
 .ai-method-principle-card span {
@@ -224,14 +224,14 @@ const methodologyPageCss = `
 .ai-method-product-number {
   display: block;
   margin-bottom: 34px;
-  font: 400 clamp(56px, 7vw, 92px)/.8 var(--font-serif);
+  font:800 clamp(56px, 7vw, 92px)/.8 var(--font-serif);
   color: #667333;
 }
 
 .ai-method-product-meaning {
   display: block;
   margin: 22px 0 24px;
-  color: #122226;
+  color: #102229;
   font-weight: 800;
   line-height: 1.45;
 }

@@ -77,7 +77,7 @@ export function SignalField() {
     for (let i = 0; i < count; i++) {
      const d = Math.hypot(px[i] - pointerX, py[i] - pointerY);
      if (d > 150) continue;
-     ctx.strokeStyle = `rgba(217,191,143,${(1 - d / 150) * .45})`;
+     ctx.strokeStyle = `rgba(216,255,66,${(1 - d / 150) * .45})`;
      ctx.lineWidth = .7;
      ctx.beginPath(); ctx.moveTo(pointerX, pointerY); ctx.lineTo(px[i], py[i]); ctx.stroke();
     }
@@ -87,7 +87,7 @@ export function SignalField() {
    const hx = pulse * W;
    const glow = ctx.createLinearGradient(hx - 180, 0, hx + 180, 0);
    glow.addColorStop(0, 'rgba(217,230,95,0)'); glow.addColorStop(.5, 'rgba(217,230,95,.55)'); glow.addColorStop(1, 'rgba(217,230,95,0)');
-   ctx.fillStyle = 'rgba(242,238,227,.07)'; ctx.fillRect(0, vy, W, 1);
+   ctx.fillStyle = 'rgba(247,244,232,.07)'; ctx.fillRect(0, vy, W, 1);
    ctx.fillStyle = glow; ctx.fillRect(hx - 180, vy - .5, 360, 2);
    schedule();
   };

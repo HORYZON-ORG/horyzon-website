@@ -1,7 +1,7 @@
 import { SiteStructuredData } from '@/components/structured-data';
 import { HOME_DESCRIPTION, HOME_TITLE, SITE_URL, pageMetadata } from '@/content/seo';
 import type { Metadata, Viewport } from "next";
-import { Manrope, Cormorant_Garamond, JetBrains_Mono } from "next/font/google";
+import { Manrope, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import "./inside.css";
 import "./journey.css";
@@ -15,9 +15,8 @@ import "./hyc-splash.css";
 import "./home-motion.css";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-sans" });
-const cormorant = Cormorant_Garamond({ subsets: ["latin"], variable: "--font-serif", weight: ["400", "500", "600"] });
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", weight: ["400", "500"] });
-export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#08141c" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#07171d" };
 export const metadata: Metadata = {
   ...pageMetadata({ path: "/", title: HOME_TITLE, description: HOME_DESCRIPTION }),
   metadataBase: new URL(SITE_URL),
@@ -31,4 +30,4 @@ export const metadata: Metadata = {
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
 };
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) { return <html lang="it" data-scroll-behavior="smooth" suppressHydrationWarning className={`${manrope.variable} ${cormorant.variable} ${mono.variable}`}><body><SiteStructuredData />{children}</body></html>; }
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) { return <html lang="it" data-scroll-behavior="smooth" suppressHydrationWarning className={`${manrope.variable} ${mono.variable}`}><body><SiteStructuredData />{children}</body></html>; }

@@ -1,11 +1,11 @@
 
         /* ==========================================================================
            HORYZON CONSULTING - DESIGN SYSTEM & SLIDE DECK ENGINE
-           Aesthetic: Abyssal Deep Navy (#07151D) + Horizon Sun Lime (#D6E855)
+           Aesthetic: Abyssal Deep Navy (#07171d) + Horizon Sun Lime (#D6E855)
            ========================================================================== */
         
         :root {
-            --bg-deep: #07151D;
+            --bg-deep: #07171d;
             --bg-darker: #040E14;
             --bg-surface: #0A1F29;
             --surface-glass: rgba(16, 37, 49, 0.75);
@@ -520,7 +520,7 @@
 
         .quote-callout {
             font-family: var(--font-serif);
-            font-style: italic;
+            font-style: normal;
             font-size: 1.05rem;
             line-height: 1.45;
             color: var(--text-heading);
@@ -528,7 +528,7 @@
             border-left: 3px solid var(--accent-lime);
             background: rgba(255, 255, 255, 0.03);
             border-radius: 0 8px 8px 0;
-        }
+        ;font-weight:600}
 
         .quote-callout.negative {
             border-left-color: var(--alert-coral);
@@ -1021,7 +1021,7 @@
             font-size: 1.05rem;
             color: var(--text-heading);
             line-height: 1.35;
-        }
+        ;font-weight:800}
 
         .flip-phrase-rev {
             font-size: 0.88rem;
@@ -1262,7 +1262,7 @@
             font-size: 1.8rem;
             color: var(--text-heading);
             margin-bottom: 20px;
-        }
+        ;font-weight:800}
 
         .closing-steps-trio {
             display: grid;
@@ -1525,7 +1525,7 @@
             left: 0;
             width: 440px;
             max-width: 90vw;
-            background: #07151D;
+            background: #07171d;
             border-right: 1px solid var(--border-glass);
             z-index: 210;
             padding: 24px;
@@ -1643,7 +1643,7 @@
             font-size: 0.75rem;
             opacity: 0.85;
             flex-shrink: 0;
-        }
+        ;font-weight:800}
 
         /* Keyboard Shortcuts Modal */
         .help-shortcut-row {
@@ -1660,7 +1660,7 @@
             .deck-root-container {
                 overflow: visible !important;
                 height: auto !important;
-                background: #07151D !important;
+                background: #07171d !important;
             }
             #deck-viewport {
                 position: static !important;
