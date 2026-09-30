@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { RADAR_PREVIEW_COOKIE, RADAR_SESSION_COOKIE, createService, errorResponse, readJson, setSessionCookie } from '../_shared';
+import { RADAR_PREVIEW_COOKIE, RADAR_PREVIEW_COOKIE_PATH, RADAR_SESSION_COOKIE, createService, errorResponse, readJson, setSessionCookie } from '../_shared';
 
 export async function POST(request: Request) {
   try {
@@ -19,6 +19,6 @@ export async function POST(request: Request) {
 export async function DELETE() {
   const store = await cookies();
   store.delete(RADAR_SESSION_COOKIE);
-  store.delete({ name: RADAR_PREVIEW_COOKIE, path: '/radar' });
+  store.delete({ name: RADAR_PREVIEW_COOKIE, path: RADAR_PREVIEW_COOKIE_PATH });
   return NextResponse.json({ ok: true }, { headers: { 'Cache-Control': 'no-store' } });
 }

@@ -5,6 +5,8 @@ import { createRadarPersistence, createRadarService, RadarAccessError, RadarRevi
 
 export const RADAR_SESSION_COOKIE = 'horyzon_radar_session';
 export const RADAR_PREVIEW_COOKIE = 'horyzon_radar_preview';
+// Scoped to the API that reads it (/api/radar/result); a '/radar' path never reached it.
+export const RADAR_PREVIEW_COOKIE_PATH = '/api/radar';
 
 export interface RadarSessionCookie { assessmentId: string; ownerSecret: string }
 

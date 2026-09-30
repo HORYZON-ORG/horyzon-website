@@ -32,4 +32,11 @@ await assert.rejects(() => service.grantPreview({ assessmentId: second.id, owner
 const result = await service.readPreviewResult(first.id, first.ownerSecret, grant.token);
 assert.equal(result.scores.ownerEconomics.monthlyHours, 260);
 assert.equal(result.scores.ownerEconomics.monthlyProfit, 2500);
+// The preview grant cookie must reach the result API: browsers only send a cookie to paths under its Path.
+const { readFileSync } = await import('node:fs');
+const shared = readFileSync(new URL('../src/app/api/radar/_shared.ts', import.meta.url), 'utf8');
+const cookiePath = shared.match(/RADAR_PREVIEW_COOKIE_PATH = '([^']+)'/)?.[1];
+assert.ok(cookiePath, 'preview cookie path constant missing');
+assert.ok('/api/radar/result'.startsWith(cookiePath), `preview cookie path ${cookiePath} does not cover /api/radar/result`);
+for (const route of ['preview', 'session']) assert.match(readFileSync(new URL(`../src/app/api/radar/${route}/route.ts`, import.meta.url), 'utf8'), /path: RADAR_PREVIEW_COOKIE_PATH/, `${route} route must use the shared preview cookie path`);
 console.log('Paid Radar API verifier passed');
