@@ -516,7 +516,7 @@ const startedPreservationCreate = await startAnnunci10xCreate({ context: preserv
 const preservationAnswers = [
   ['ROLE_CONTEXT', 'Ruolo: Commerciale B2B. Contesto aziendale: Societa di servizi digitali per PMI con team commerciale e marketing interni.'],
   ['PRIMARY_CONTRIBUTION', 'Risultato principale: Sviluppare nuove opportunita commerciali qualificate e accompagnarle fino alla chiusura o a un next step concordato.'],
-  ['WORK_REALITY', 'Attivita: Fare prospecting, qualificare lead, svolgere call, preparare proposte, gestire follow-up, aggiornare il CRM e coordinarsi con marketing e delivery.'],
+  ['WORK_REALITY', 'Attivita: Fare prospecting, qualificare lead, svolgere call, preparare proposte, gestire follow-up, aggiornare il CRM e coordinarsi con marketing e delivery. Contesto operativo: Team commerciale interno con confronto con marketing e delivery, uso quotidiano del CRM e gestione di lead e opportunita. Autonomia: Organizza in autonomia prospecting, follow-up e priorita operative, coinvolgendo il responsabile commerciale sui passaggi decisivi. Imprevisti: Lead urgenti, trattative che cambiano priorita e richieste improvvise di coordinamento con marketing o delivery.'],
   ['REQUIREMENTS', "Indispensabili: Almeno 2 anni di esperienza nella vendita B2B, capacita di gestire una trattativa, utilizzo ordinato di un CRM e autonomia nell'organizzazione dell'attivita commerciale. Preferenziali: Esperienza nella vendita di servizi digitali o consulenziali alle PMI. Apprendibili: Offerta specifica dell'azienda, metodologia commerciale interna, strumenti proprietari e processi di delivery. Vincoli: Nessun vincolo ulteriore indicato."],
   ['ATTRACTION', "Benefit: Laptop e telefono aziendale. Formazione/crescita: Onboarding sull'offerta e affiancamento iniziale alle call del responsabile commerciale."],
   ['OFFER', 'Sede: Milano. Modalita: Ibrido: 3 giorni in sede e 2 da remoto. Contratto: Tempo indeterminato. Orario: Full-time, indicativamente 9:00-18:00. Turni: Non previsti. Reperibilita: Non prevista. Compenso: RAL 30.000-36.000 EUR piu variabile fino a 8.000 EUR annui al raggiungimento degli obiettivi concordati.'],
@@ -538,6 +538,9 @@ assert.equal(preservationState.roleCard.workMode, 'Ibrido');
 assert.match(preservationState.roleCard.workModeDetail, /3 giorni in sede e 2 da remoto/i);
 assert.equal(preservationState.roleCard.shifts, 'Non previsti');
 assert.equal(preservationState.roleCard.onCall, 'Non prevista');
+assert.match(preservationState.roleCard.operatingContext, /Team commerciale interno/i);
+assert.match(preservationState.roleCard.autonomy, /Organizza in autonomia prospecting/i);
+assert.match(preservationState.roleCard.unexpectedEvents, /Lead urgenti/i);
 assert.match(preservationState.roleCard.compensation, /30\.000-36\.000/i);
 assert.match(preservationState.roleCard.compensation, /8\.000/i);
 assert.match(preservationState.roleCard.compensation, /variabile/i);
@@ -561,8 +564,15 @@ assert.match(preservationPremium.masterText, /sales-recruiting@azienda-test\.it/
 assert.equal(JSON.stringify(preservationPremium.channelVariant).includes('sales-recruiting@azienda-test.it'), true, 'channel adapter output contains application destination');
 assert.match(preservationPremium.masterText, /Turni:\s*Non previsti/i, 'confirmed no-shifts condition must be explicit in the final master');
 assert.match(preservationPremium.masterText, /Reperibilit[aà]:\s*Non prevista/i, 'confirmed no-on-call condition must be explicit in the final master');
+assert.match(preservationPremium.masterText, /Sviluppare nuove opportunita commerciali qualificate/i, 'confirmed mission must remain explicit in the final master');
+assert.match(preservationPremium.masterText, /Autonomia:/i, 'confirmed autonomy must remain explicit in the final master');
+assert.match(preservationPremium.masterText, /Imprevisti e variabilit[aà]:/i, 'confirmed unexpected events must remain explicit in the final master');
+assert.match(preservationPremium.masterText, /Team commerciale interno/i, 'confirmed operating context must remain explicit in the final master');
 assert.equal(/turni?[^\n]{0,40}non previsti/i.test(JSON.stringify(preservationPremium.channelVariant)), true, 'channel variant must preserve the confirmed no-shifts condition');
 assert.equal(/reperibilit[aà][^\n]{0,40}non prevista/i.test(JSON.stringify(preservationPremium.channelVariant)), true, 'channel variant must preserve the confirmed no-on-call condition');
+assert.equal(/Sviluppare nuove opportunita commerciali qualificate/i.test(JSON.stringify(preservationPremium.channelVariant)), true, 'channel variant must preserve the explicit mission');
+assert.equal(/Autonomia:/i.test(JSON.stringify(preservationPremium.channelVariant)), true, 'channel variant must preserve autonomy');
+assert.equal(/Imprevisti e variabilit[aà]:/i.test(JSON.stringify(preservationPremium.channelVariant)), true, 'channel variant must preserve unexpected events');
 const generateCall = preservationContext.provider.calls.find((call) => call.operationType === 'GENERATE');
 const channelCall = preservationContext.provider.calls.find((call) => call.operationType === 'CHANNEL_ADAPTER');
 const evaluateCall = preservationContext.provider.calls.find((call) => call.operationType === 'EVALUATE' && call.outputSchemaName === 'annunci10x_evaluate_v2');
@@ -610,6 +620,9 @@ assert.equal(latestPreservationSnapshot.roleCard.attractionContext.workMode.valu
 assert.match(latestPreservationSnapshot.roleCard.attractionContext.workModeDetail.value, /3 giorni in sede e 2 da remoto/i);
 assert.equal(latestPreservationSnapshot.roleCard.attractionContext.shifts.value, 'Non previsti');
 assert.equal(latestPreservationSnapshot.roleCard.attractionContext.onCall.value, 'Non prevista');
+assert.match(latestPreservationSnapshot.roleCard.attractionContext.operatingContext.value, /Team commerciale interno/i);
+assert.match(latestPreservationSnapshot.roleCard.attractionContext.autonomy.value, /Organizza in autonomia prospecting/i);
+assert.match(latestPreservationSnapshot.roleCard.attractionContext.unexpectedEvents.value, /Lead urgenti/i);
 assert.match(latestPreservationSnapshot.roleCard.applicationInstructions.value, /sales-recruiting@azienda-test\.it/i);
 assert.equal(JSON.stringify(latestPreservationSnapshot.roleProfile).includes('sales-recruiting@azienda-test.it'), true, 'RoleProfile keeps RoleCard application instructions available');
 const strategyCall = preservationContext.provider.calls.find((call) => call.operationType === 'STRATEGY');
@@ -674,7 +687,7 @@ const startedLongWorkCreate = await startAnnunci10xCreate({ context: longWorkCon
 let longWorkState = startedLongWorkCreate.result;
 const longWorkAnswers = preservationAnswers.map(([stepId, answer]) => {
   if (stepId !== 'WORK_REALITY') return [stepId, answer];
-  return [stepId, 'Attivita: Scaricare la merce in arrivo, controllare quantità e DDT, movimentare pallet con il muletto, ubicare i prodotti, fare picking, preparare e imballare gli ordini, controllare etichette e documenti di spedizione, aggiornare le movimentazioni sul gestionale aziendale e partecipare agli inventari periodici.'];
+  return [stepId, 'Attivita: Scaricare la merce in arrivo, controllare quantità e DDT, movimentare pallet con il muletto, ubicare i prodotti, fare picking, preparare e imballare gli ordini, controllare etichette e documenti di spedizione, aggiornare le movimentazioni sul gestionale aziendale e partecipare agli inventari periodici. Contesto operativo: Team di 5 persone coordinato dal responsabile logistico, con corrieri, acquisti e amministrazione e uso di palmare barcode, gestionale e carrelli. Autonomia: Gestisce in autonomia le attività standard assegnate e segnala al responsabile differenze di quantità, merce danneggiata o anomalie nelle spedizioni. Imprevisti: Ordini urgenti da preparare in giornata, differenze tra DDT e merce ricevuta, prodotti danneggiati e picchi di lavoro prima delle partenze dei corrieri.'];
 });
 for (const [stepId, answer] of longWorkAnswers) {
   longWorkState = await answerAnnunci10xCreateStep({
@@ -687,6 +700,9 @@ for (const [stepId, answer] of longWorkAnswers) {
 }
 assert.match(longWorkState.roleCard.responsibilities[0], /aggiornare le movimentazioni sul gestionale aziendale/i, 'long responsibilities must not be truncated before the final declared activities');
 assert.match(longWorkState.roleCard.responsibilities[0], /inventari periodici/i, 'long responsibilities must preserve the end of the declared activity list');
+assert.match(longWorkState.roleCard.operatingContext, /palmare barcode/i, 'operating context must survive WORK_REALITY parsing');
+assert.match(longWorkState.roleCard.autonomy, /Gestisce in autonomia le attività standard assegnate/i, 'autonomy must survive WORK_REALITY parsing');
+assert.match(longWorkState.roleCard.unexpectedEvents, /Ordini urgenti da preparare in giornata/i, 'unexpected events must survive WORK_REALITY parsing');
 
 const deletingRevisionContext = makeContext(new DeletingRevisionProvider('success'));
 const startedDeletingRevision = await startAnnunci10xCreate({ context: deletingRevisionContext });

@@ -1144,7 +1144,13 @@ function normalizeGeneratedMaster(master: GeneratedAd): GeneratedAd {
 }
 
 function prepareMasterForValidation(master: GeneratedAd, roleCard: RoleCard): GeneratedAd {
-  return ensureConfirmedWorkConditions(normalizeGeneratedMaster(master), roleCard);
+  return ensureConfirmedWorkConditions(
+    ensureConfirmedRoleReality(
+      ensureConfirmedMission(normalizeGeneratedMaster(master), roleCard),
+      roleCard,
+    ),
+    roleCard,
+  );
 }
 
 function normalizeChannelVariant(variant: ChannelVariant, roleCard: RoleCard): ChannelVariant {
@@ -1164,6 +1170,81 @@ function normalizeChannelVariant(variant: ChannelVariant, roleCard: RoleCard): C
     promptVersion: 'channel-variant-normalization',
   }, roleCard);
   return { ...normalized, sections: ensured.sections };
+}
+
+function ensureConfirmedMission(master: GeneratedAd, roleCard: RoleCard): GeneratedAd {
+  const mission = roleCard.mission;
+  if (!mission?.publishable || !String(mission.value).trim()) return master;
+
+  const sourceIds = new Set([
+    mission.sourceId,
+    ...roleCard.outcomes.map((outcome) => outcome.sourceId),
+  ].filter((value): value is string => Boolean(value)));
+  const represented = master.sections.some((section) => section.sourceFactIds.some((sourceId) => sourceIds.has(sourceId)));
+  if (represented) return master;
+
+  const section = {
+    id: 'confirmed-role-mission',
+    type: 'MISSION' as const,
+    key: 'confirmed-role-mission',
+    title: 'Obiettivo del ruolo',
+    body: String(mission.value).trim(),
+    sourceFactIds: [...sourceIds],
+  };
+  const titleIndex = master.sections.findIndex((candidate) => candidate.type === 'TITLE');
+  const insertAt = titleIndex >= 0 ? titleIndex + 1 : 0;
+  return {
+    ...master,
+    sections: [...master.sections.slice(0, insertAt), section, ...master.sections.slice(insertAt)],
+  };
+}
+
+function ensureConfirmedRoleReality(master: GeneratedAd, roleCard: RoleCard): GeneratedAd {
+  const facts = [
+    roleCard.attractionContext.operatingContext?.publishable && String(roleCard.attractionContext.operatingContext.value).trim()
+      ? { label: 'Contesto operativo', value: String(roleCard.attractionContext.operatingContext.value).trim(), sourceId: roleCard.attractionContext.operatingContext.sourceId }
+      : null,
+    roleCard.attractionContext.autonomy?.publishable && String(roleCard.attractionContext.autonomy.value).trim()
+      ? { label: 'Autonomia', value: String(roleCard.attractionContext.autonomy.value).trim(), sourceId: roleCard.attractionContext.autonomy.sourceId }
+      : null,
+    roleCard.attractionContext.unexpectedEvents?.publishable && String(roleCard.attractionContext.unexpectedEvents.value).trim()
+      ? { label: 'Imprevisti e variabilità', value: String(roleCard.attractionContext.unexpectedEvents.value).trim(), sourceId: roleCard.attractionContext.unexpectedEvents.sourceId }
+      : null,
+  ].filter((item): item is { label: string; value: string; sourceId: string | undefined } => Boolean(item));
+  if (!facts.length) return master;
+
+  const representedIds = new Set(master.sections.flatMap((section) => section.sourceFactIds));
+  const missing = facts.filter((fact) => !fact.sourceId || !representedIds.has(fact.sourceId));
+  if (!missing.length) return master;
+
+  const additions = missing.map((fact) => `${fact.label}: ${fact.value}.`).join(' ');
+  const sourceIds = missing.map((fact) => fact.sourceId).filter((value): value is string => Boolean(value));
+  const contextIndex = master.sections.findIndex((section) => section.type === 'CONTEXT');
+  if (contextIndex >= 0) {
+    const sections = [...master.sections];
+    const current = sections[contextIndex];
+    sections[contextIndex] = {
+      ...current,
+      body: [current.body.trim().replace(/[.\s]+$/, ''), additions].filter(Boolean).join('. '),
+      sourceFactIds: [...new Set([...current.sourceFactIds, ...sourceIds])],
+    };
+    return { ...master, sections };
+  }
+
+  const section = {
+    id: 'confirmed-role-reality',
+    type: 'CONTEXT' as const,
+    key: 'confirmed-role-reality',
+    title: 'Come si lavora davvero',
+    body: additions,
+    sourceFactIds: sourceIds,
+  };
+  const responsibilityIndex = master.sections.findIndex((candidate) => candidate.type === 'RESPONSIBILITIES');
+  const insertAt = responsibilityIndex >= 0 ? responsibilityIndex + 1 : master.sections.length;
+  return {
+    ...master,
+    sections: [...master.sections.slice(0, insertAt), section, ...master.sections.slice(insertAt)],
+  };
 }
 
 function ensureConfirmedWorkConditions(master: GeneratedAd, roleCard: RoleCard): GeneratedAd {

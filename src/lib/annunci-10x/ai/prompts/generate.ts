@@ -2,7 +2,7 @@ import { ANNUNCI10X_AI_OUTPUT_SCHEMAS } from '../schemas.ts';
 import { renderPrompt } from './helpers.ts';
 import type { Annunci10xPromptDefinition } from './types.ts';
 
-export const ANNUNCI10X_GENERATE_PROMPT_VERSION = 'annunci10x.generate.v6';
+export const ANNUNCI10X_GENERATE_PROMPT_VERSION = 'annunci10x.generate.v7';
 
 const invariants = [
   'Generate the Master ad only from confirmed/publishable RoleCard facts, RoleProfile, and CommunicationStrategy.',
@@ -24,6 +24,8 @@ const invariants = [
   'Do not include both OPENING and MISSION when they communicate the same candidate-facing idea. Keep only the section that adds the clearest distinct supported value.',
   'A bounded onboarding/training fact stays bounded. For example, two weeks of shadowing must never become regular, ongoing, recurring, or permanent interaction.',
   'If confirmed shifts or on-call availability are present, including negative values such as no shifts/no on-call, state them explicitly in CONDITIONS because they are candidate compatibility facts.',
+  'A confirmed mission/outcome must remain explicitly visible in candidate-facing copy. Do not delete it merely to reduce repetition; instead remove the redundant wording around it.',
+  'When confirmed, operating context, autonomy, and unexpected events/variability are real-work facts. Surface them concretely without inventing cadence or chronology.',
 ] as const;
 
 export const GENERATE_PROMPT: Annunci10xPromptDefinition = {
@@ -48,7 +50,7 @@ export function renderGeneratePrompt(): string {
     '- OPENING: use 2-3 natural, role-specific sentences. Establish the responsibility or work reality that matters most; do not manufacture a cinematic hook.',
     '- MISSION: explain what should work better because this role exists, but only when a supported mission/outcome exists. Never manufacture an outcome from a task list. If OPENING already communicates the same mission/outcome, omit MISSION instead of paraphrasing it.',
     '- RESPONSIBILITIES: build an operating picture from confirmed activities. Show relationships, handoffs, or phases only when supported. Prefer short narrative paragraphs; use bullets for compact comparable facts, not as the default storytelling device.',
-    '- CONTEXT: when supported, explain who the person interacts with, what environment/tools matter, where handoffs happen, and the level of autonomy.',
+    '- CONTEXT: when supported, explain who the person interacts with, what environment/tools matter, where handoffs happen, the level of autonomy, and the known unexpected events or operational variability.',
     '- REQUIREMENTS: separate indispensable, preferred, and trainable items according to source semantics. Explain why a requirement matters only when the source supports that connection.',
     '- CONDITIONS: make location, work mode, contract, schedule, shifts, travel, availability, and compensation easy to find. Do not bury compatibility filters.',
     '- OFFER/GROWTH: include only concrete and verifiable support, onboarding, benefits, stability, flexibility, equipment, training, compensation, or growth facts. Preserve stated training/onboarding duration exactly in meaning; do not turn a limited period into an ongoing relationship.',

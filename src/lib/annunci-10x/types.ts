@@ -111,6 +111,9 @@ export interface AttractionContext {
   schedule?: Fact<string>;
   shifts?: Fact<string>;
   onCall?: Fact<string>;
+  operatingContext?: Fact<string>;
+  autonomy?: Fact<string>;
+  unexpectedEvents?: Fact<string>;
   growth?: Fact<string>;
   teamContext?: Fact<string>;
   attractivenessEvidence: Fact<string>[];

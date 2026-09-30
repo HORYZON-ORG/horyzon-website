@@ -85,6 +85,9 @@ export interface PublicCreateRoleCard {
   schedule: string;
   shifts: string;
   onCall: string;
+  operatingContext: string;
+  autonomy: string;
+  unexpectedEvents: string;
   compensation: string;
   applicationInstructions: string;
   attractionEvidence: string[];
@@ -491,7 +494,13 @@ function buildCreateRoleCard(answers: PersistedAnswer[]): RoleCard {
   const workModeSource = clarificationWorkMode || offer || work;
   const title = clean(extractAfter(role, ['ruolo', 'figura', 'cerco', 'cerchiamo'])) || clean(role.split(/[.\n]/)[0]) || 'Ruolo da chiarire';
   const mission = clean(extractAfter(contribution, ['risultato principale', 'missione', 'obiettivo', 'contributo'])) || clean(contribution.split(/[.\n]/)[0]) || 'N/D - contributo da chiarire';
-  const responsibility = clean(extractAfter(work, ['attivita reali', 'attività reali', 'attivita', 'attività'], 2_000)) || clean(work.split(/[.\n]/)[0]) || 'N/D - lavoro quotidiano da chiarire';
+  const responsibility = clean(extractWorkRealityField(work, workRealityFieldLabels.activities))
+    || clean(extractAfter(work, ['attivita reali', 'attività reali', 'attivita', 'attività'], 2_000))
+    || clean(work.split(/[.\n]/)[0])
+    || 'N/D - lavoro quotidiano da chiarire';
+  const operatingContext = extractWorkRealityField(work, workRealityFieldLabels.operatingContext);
+  const autonomy = extractWorkRealityField(work, workRealityFieldLabels.autonomy);
+  const unexpectedEvents = extractWorkRealityField(work, workRealityFieldLabels.unexpectedEvents);
   const channel = channelFromAnswers(answers);
   const roleCard: RoleCard = {
     title: fact(title, sourceFor(role), 'create-role-title', Boolean(role)),
@@ -513,6 +522,9 @@ function buildCreateRoleCard(answers: PersistedAnswer[]): RoleCard {
       schedule: scheduleFromText(offer || work),
       shifts: offerConditionFromText(offer, offerFieldLabels.shifts, 'create-shifts'),
       onCall: offerConditionFromText(offer, offerFieldLabels.availability, 'create-on-call'),
+      operatingContext: operatingContext && !isUnknownAnswer(operatingContext) ? fact(operatingContext, 'USER_DECLARED', 'create-operating-context') : undefined,
+      autonomy: autonomy && !isUnknownAnswer(autonomy) ? fact(autonomy, 'USER_DECLARED', 'create-autonomy') : undefined,
+      unexpectedEvents: unexpectedEvents && !isUnknownAnswer(unexpectedEvents) ? fact(unexpectedEvents, 'USER_DECLARED', 'create-unexpected-events') : undefined,
       attractivenessEvidence: [fact(clean(attraction) || 'N/D - elemento attrattivo da chiarire', sourceFor(attraction), 'create-attraction', Boolean(attraction))],
       teamContext: clean(extractAfter(work, ['team', 'squadra'])) ? fact(clean(extractAfter(work, ['team', 'squadra'])), 'USER_DECLARED', 'create-team') : undefined,
     },
@@ -571,6 +583,9 @@ function confirmRoleCard(roleCard: RoleCard): RoleCard {
       schedule: confirm(roleCard.attractionContext.schedule),
       shifts: confirm(roleCard.attractionContext.shifts),
       onCall: confirm(roleCard.attractionContext.onCall),
+      operatingContext: confirm(roleCard.attractionContext.operatingContext),
+      autonomy: confirm(roleCard.attractionContext.autonomy),
+      unexpectedEvents: confirm(roleCard.attractionContext.unexpectedEvents),
       teamContext: confirm(roleCard.attractionContext.teamContext),
       attractivenessEvidence: roleCard.attractionContext.attractivenessEvidence.map((item) => confirm(item) as Fact<string>),
     },
@@ -587,6 +602,9 @@ function applyEditToRoleCard(roleCard: RoleCard, targetPath: string, value: stri
   if (targetPath === 'attractionContext.location') return { ...roleCard, attractionContext: { ...roleCard.attractionContext, location: next } };
   if (targetPath === 'attractionContext.workMode') return { ...roleCard, attractionContext: { ...roleCard.attractionContext, workMode: next } };
   if (targetPath === 'attractionContext.contractType') return { ...roleCard, attractionContext: { ...roleCard.attractionContext, contractType: next } };
+  if (targetPath === 'attractionContext.operatingContext') return { ...roleCard, attractionContext: { ...roleCard.attractionContext, operatingContext: next } };
+  if (targetPath === 'attractionContext.autonomy') return { ...roleCard, attractionContext: { ...roleCard.attractionContext, autonomy: next } };
+  if (targetPath === 'attractionContext.unexpectedEvents') return { ...roleCard, attractionContext: { ...roleCard.attractionContext, unexpectedEvents: next } };
   if (targetPath === 'compensation.amountText') return { ...roleCard, compensation: { ...roleCard.compensation, visibility: fact('PUBLIC', 'USER_DECLARED', 'create-edit-compensation-visibility') as never, amountText: next } };
   return { ...roleCard, attractionContext: { ...roleCard.attractionContext, attractivenessEvidence: [next] } };
 }
@@ -600,6 +618,9 @@ function isDeterministicEditTarget(targetPath: string): boolean {
     'attractionContext.location',
     'attractionContext.workMode',
     'attractionContext.contractType',
+    'attractionContext.operatingContext',
+    'attractionContext.autonomy',
+    'attractionContext.unexpectedEvents',
     'compensation.amountText',
   ].includes(targetPath);
 }
@@ -653,6 +674,9 @@ function publicRoleCard(roleCard: RoleCard, channel: PublicationChannel | null):
     schedule: textValue(roleCard.attractionContext.schedule),
     shifts: textValue(roleCard.attractionContext.shifts),
     onCall: textValue(roleCard.attractionContext.onCall),
+    operatingContext: textValue(roleCard.attractionContext.operatingContext),
+    autonomy: textValue(roleCard.attractionContext.autonomy),
+    unexpectedEvents: textValue(roleCard.attractionContext.unexpectedEvents),
     compensation: roleCard.compensation?.amountText ? textValue(roleCard.compensation.amountText) : textValue(roleCard.compensation?.visibility),
     applicationInstructions: textValue(roleCard.applicationInstructions),
     attractionEvidence: roleCard.attractionContext.attractivenessEvidence.map(textValue),
@@ -708,7 +732,7 @@ function stepFromPath(path: string): AppendAnswerInput['interviewStep'] {
   if (path.includes('compensation') || path.includes('contract') || path.includes('schedule') || path.includes('shifts') || path.includes('onCall')) return 'CONDITIONS';
   if (path.includes('requirements')) return 'REQUIREMENTS';
   if (path.includes('attraction')) return 'ATTRACTION';
-  if (path.includes('responsibilities') || path.includes('mission')) return 'OUTCOMES';
+  if (path.includes('responsibilities') || path.includes('mission') || path.includes('operatingContext') || path.includes('autonomy') || path.includes('unexpectedEvents')) return 'OUTCOMES';
   return 'ROLE';
 }
 
@@ -718,6 +742,13 @@ const requirementLabelMap: { classification: RequirementClassification; labels: 
   { classification: 'TRAINABLE', labels: ['apprendibili', 'apprendibile', 'formabili', 'formabile', 'trainable'] },
   { classification: 'DISQUALIFYING', labels: ['disqualifying', 'vincoli escludenti', 'vincolo escludente', 'vincoli', 'vincolo'] },
 ];
+
+const workRealityFieldLabels = {
+  activities: ['attivita reali', 'attività reali', 'attivita', 'attività'],
+  operatingContext: ['contesto operativo'],
+  autonomy: ['autonomia'],
+  unexpectedEvents: ['imprevisti', 'variabilita operativa', 'variabilità operativa'],
+} as const;
 
 const offerFieldLabels = {
   location: ['sede', 'zona'],
@@ -778,6 +809,17 @@ function extractCreateField(text: string, labels: readonly string[]): string {
   return '';
 }
 
+function extractWorkRealityField(text: string, labels: readonly string[]): string {
+  const normalized = text.replace(/\r/g, '\n');
+  const allLabels = Object.values(workRealityFieldLabels).flat().map(escapeRegExp).join('|');
+  for (const label of labels) {
+    const expression = new RegExp(`(?:^|[\\n.;])\\s*${escapeRegExp(label)}\\s*[:\\-]\\s*([\\s\\S]*?)(?=(?:[\\n.;]\\s*(?:${allLabels})\\s*[:\\-])|$)`, 'i');
+    const match = normalized.match(expression);
+    if (match?.[1]) return clean(match[1]);
+  }
+  return '';
+}
+
 function applicationInstructionsFromText(text: string): Fact<string> | undefined {
   const value = extractCreateField(text, channelFieldLabels.application);
   if (!value || isUnknownAnswer(value)) return undefined;
@@ -800,6 +842,7 @@ function hasHybridDistribution(text: string): boolean {
 function detectCreateFactualPreservationIssues(answers: PersistedAnswer[], roleCard: RoleCard): string[] {
   const issues: string[] = [];
   const offer = answerFor(answers, 'OFFER');
+  const work = answerFor(answers, 'WORK_REALITY');
   const channelApplication = answerFor(answers, 'CHANNEL_APPLICATION');
   const requirements = answerFor(answers, 'REQUIREMENTS');
 
@@ -843,6 +886,15 @@ function detectCreateFactualPreservationIssues(answers: PersistedAnswer[], roleC
   if (onCall && !isUnknownAnswer(onCall) && !containsNormalized(textValue(roleCard.attractionContext.onCall), onCall)) {
     issues.push('on-call availability lost declared value');
   }
+
+  const operatingContext = extractWorkRealityField(work, workRealityFieldLabels.operatingContext);
+  if (operatingContext && !isUnknownAnswer(operatingContext) && !containsMeaningfulWords(textValue(roleCard.attractionContext.operatingContext), operatingContext)) issues.push('operating context lost declared value');
+
+  const autonomy = extractWorkRealityField(work, workRealityFieldLabels.autonomy);
+  if (autonomy && !isUnknownAnswer(autonomy) && !containsMeaningfulWords(textValue(roleCard.attractionContext.autonomy), autonomy)) issues.push('autonomy lost declared value');
+
+  const unexpectedEvents = extractWorkRealityField(work, workRealityFieldLabels.unexpectedEvents);
+  if (unexpectedEvents && !isUnknownAnswer(unexpectedEvents) && !containsMeaningfulWords(textValue(roleCard.attractionContext.unexpectedEvents), unexpectedEvents)) issues.push('unexpected events lost declared value');
 
   const application = extractCreateField(channelApplication, channelFieldLabels.application);
   if (application && !isUnknownAnswer(application)) {

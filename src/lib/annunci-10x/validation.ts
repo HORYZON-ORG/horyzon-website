@@ -128,7 +128,7 @@ export function validateCompensation(value: unknown): ValidationResult<Compensat
 export function validateAttractionContext(value: unknown): ValidationResult<AttractionContext> {
   const errors: string[] = [];
   if (!isRecord(value)) return invalid('attractionContext must be an object');
-  for (const key of ['companyName', 'companyDescription', 'workMode', 'workModeDetail', 'location', 'contractType', 'schedule', 'shifts', 'onCall', 'growth', 'teamContext'] as const) {
+  for (const key of ['companyName', 'companyDescription', 'workMode', 'workModeDetail', 'location', 'contractType', 'schedule', 'shifts', 'onCall', 'operatingContext', 'autonomy', 'unexpectedEvents', 'growth', 'teamContext'] as const) {
     if (value[key] !== undefined) append(errors, validateFact(value[key], `attractionContext.${key}`));
   }
   validateArray(value.attractivenessEvidence, 'attractionContext.attractivenessEvidence', errors, validateFact);
