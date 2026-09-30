@@ -85,6 +85,7 @@ export interface PublicCreateRoleCard {
   schedule: string;
   shifts: string;
   onCall: string;
+  companyDescription: string;
   operatingContext: string;
   autonomy: string;
   unexpectedEvents: string;
@@ -501,6 +502,7 @@ function buildCreateRoleCard(answers: PersistedAnswer[]): RoleCard {
   const operatingContext = extractWorkRealityField(work, workRealityFieldLabels.operatingContext);
   const autonomy = extractWorkRealityField(work, workRealityFieldLabels.autonomy);
   const unexpectedEvents = extractWorkRealityField(work, workRealityFieldLabels.unexpectedEvents);
+  const companyDescription = companyDescriptionFromRoleContext(role);
   const channel = channelFromAnswers(answers);
   const roleCard: RoleCard = {
     title: fact(title, sourceFor(role), 'create-role-title', Boolean(role)),
@@ -514,7 +516,7 @@ function buildCreateRoleCard(answers: PersistedAnswer[]): RoleCard {
     },
     attractionContext: {
       companyName: extractCompany(role) ? fact(extractCompany(role), 'USER_DECLARED', 'create-company') : undefined,
-      companyDescription: clean(role) ? fact(clean(role), 'USER_DECLARED', 'create-company-description') : undefined,
+      companyDescription: companyDescription ? fact(companyDescription, 'USER_DECLARED', 'create-company-description') : undefined,
       workMode: workModeFromText(workModeSource),
       workModeDetail: workModeDetailFromText(workModeSource),
       location: locationFromText([role, offer, work].filter(Boolean).join('\n')),
@@ -674,6 +676,7 @@ function publicRoleCard(roleCard: RoleCard, channel: PublicationChannel | null):
     schedule: textValue(roleCard.attractionContext.schedule),
     shifts: textValue(roleCard.attractionContext.shifts),
     onCall: textValue(roleCard.attractionContext.onCall),
+    companyDescription: textValue(roleCard.attractionContext.companyDescription),
     operatingContext: textValue(roleCard.attractionContext.operatingContext),
     autonomy: textValue(roleCard.attractionContext.autonomy),
     unexpectedEvents: textValue(roleCard.attractionContext.unexpectedEvents),
@@ -845,6 +848,11 @@ function detectCreateFactualPreservationIssues(answers: PersistedAnswer[], roleC
   const work = answerFor(answers, 'WORK_REALITY');
   const channelApplication = answerFor(answers, 'CHANNEL_APPLICATION');
   const requirements = answerFor(answers, 'REQUIREMENTS');
+
+  const companyDescription = companyDescriptionFromRoleContext(answerFor(answers, 'ROLE_CONTEXT'));
+  if (companyDescription && !containsMeaningfulWords(textValue(roleCard.attractionContext.companyDescription), companyDescription)) {
+    issues.push('company description lost declared value');
+  }
 
   const compensation = extractCreateField(offer, offerFieldLabels.compensation);
   if (compensation && !isUnknownAnswer(compensation)) {
@@ -1020,6 +1028,12 @@ function offerConditionFromText(text: string, labels: readonly string[], sourceI
   const value = extractCreateField(text, labels);
   if (!value || isUnknownAnswer(value)) return undefined;
   return fact(value, 'USER_DECLARED', sourceId);
+}
+
+function companyDescriptionFromRoleContext(text: string): string {
+  const explicit = extractAfter(text, ['contesto aziendale', 'azienda o contesto', 'contesto'], 1_000);
+  if (explicit && !isUnknownAnswer(explicit)) return explicit;
+  return clean(text);
 }
 
 function extractCompany(text: string): string {

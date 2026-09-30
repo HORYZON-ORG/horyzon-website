@@ -1160,7 +1160,7 @@ function normalizeChannelVariant(variant: ChannelVariant, roleCard: RoleCard): C
       ? { ...section, body: '' }
       : section),
   };
-  const ensured = ensureConfirmedWorkConditions({
+  const ensured = prepareMasterForValidation({
     id: normalized.masterAdId,
     sessionId: 'channel-variant',
     kind: 'MASTER',
@@ -1180,7 +1180,7 @@ function ensureConfirmedMission(master: GeneratedAd, roleCard: RoleCard): Genera
     mission.sourceId,
     ...roleCard.outcomes.map((outcome) => outcome.sourceId),
   ].filter((value): value is string => Boolean(value)));
-  const represented = master.sections.some((section) => section.sourceFactIds.some((sourceId) => sourceIds.has(sourceId)));
+  const represented = isCandidateFactSemanticallyRepresented(master, String(mission.value), [...sourceIds]);
   if (represented) return master;
 
   const section = {
@@ -1201,6 +1201,9 @@ function ensureConfirmedMission(master: GeneratedAd, roleCard: RoleCard): Genera
 
 function ensureConfirmedRoleReality(master: GeneratedAd, roleCard: RoleCard): GeneratedAd {
   const facts = [
+    roleCard.attractionContext.companyDescription?.publishable && String(roleCard.attractionContext.companyDescription.value).trim()
+      ? { label: 'Azienda', value: String(roleCard.attractionContext.companyDescription.value).trim(), sourceId: roleCard.attractionContext.companyDescription.sourceId }
+      : null,
     roleCard.attractionContext.operatingContext?.publishable && String(roleCard.attractionContext.operatingContext.value).trim()
       ? { label: 'Contesto operativo', value: String(roleCard.attractionContext.operatingContext.value).trim(), sourceId: roleCard.attractionContext.operatingContext.sourceId }
       : null,
@@ -1213,8 +1216,7 @@ function ensureConfirmedRoleReality(master: GeneratedAd, roleCard: RoleCard): Ge
   ].filter((item): item is { label: string; value: string; sourceId: string | undefined } => Boolean(item));
   if (!facts.length) return master;
 
-  const representedIds = new Set(master.sections.flatMap((section) => section.sourceFactIds));
-  const missing = facts.filter((fact) => !fact.sourceId || !representedIds.has(fact.sourceId));
+  const missing = facts.filter((fact) => !isCandidateFactSemanticallyRepresented(master, fact.value, fact.sourceId ? [fact.sourceId] : []));
   if (!missing.length) return master;
 
   const additions = missing.map((fact) => `${fact.label}: ${fact.value}.`).join(' ');
@@ -1335,6 +1337,53 @@ function enforceEditorialDeletionGuard(
 
 function normalizeEditorialText(value: string): string {
   return value.toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+const CANDIDATE_FACT_STOP_WORDS = new Set([
+  'alla', 'alle', 'allo', 'anche', 'come', 'con', 'dalla', 'dalle', 'dello', 'della', 'delle', 'degli',
+  'dentro', 'dopo', 'durante', 'essere', 'fino', 'gli', 'nella', 'nelle', 'nello', 'oltre', 'per', 'piu',
+  'sono', 'sulla', 'sulle', 'sullo', 'tra', 'una', 'uno', 'questa', 'questo', 'azienda', 'ruolo',
+]);
+
+function isCandidateFactSemanticallyRepresented(master: GeneratedAd, expected: string, sourceIds: readonly string[]): boolean {
+  const expectedTokens = semanticCandidateTokens(expected);
+  if (!expectedTokens.length) return true;
+
+  const allText = masterText(master);
+  const linkedText = sourceIds.length
+    ? master.sections
+      .filter((section) => section.sourceFactIds.some((sourceId) => sourceIds.includes(sourceId)))
+      .map((section) => `${section.title} ${section.body}`)
+      .join(' ')
+    : '';
+
+  return candidateTextCoversFact(linkedText, expectedTokens, expected, 0.35)
+    || candidateTextCoversFact(allText, expectedTokens, expected, 0.5);
+}
+
+function candidateTextCoversFact(candidateText: string, expectedTokens: readonly string[], expectedRaw: string, ratio: number): boolean {
+  if (!candidateText.trim()) return false;
+  const candidateTokens = new Set(semanticCandidateTokens(candidateText));
+  const expectedNumbers = [...new Set((expectedRaw.match(/\b\d+(?:[.,]\d+)?\b/g) ?? []).map((value) => value.toLowerCase()))];
+  const candidateNumbers = new Set((candidateText.match(/\b\d+(?:[.,]\d+)?\b/g) ?? []).map((value) => value.toLowerCase()));
+  if (expectedNumbers.some((value) => !candidateNumbers.has(value))) return false;
+
+  const overlap = expectedTokens.filter((token) => candidateTokens.has(token)).length;
+  const required = expectedTokens.length <= 3
+    ? Math.min(2, expectedTokens.length)
+    : Math.max(2, Math.ceil(expectedTokens.length * ratio));
+  return overlap >= required;
+}
+
+function semanticCandidateTokens(value: string): string[] {
+  const normalized = value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  const tokens = normalized.match(/[a-z0-9]+/g) ?? [];
+  return [...new Set(tokens
+    .filter((token) => (/^\d+$/.test(token) || token.length >= 3) && !CANDIDATE_FACT_STOP_WORDS.has(token))
+    .map((token) => /^\d+$/.test(token) || token.length <= 7 ? token : token.slice(0, 7)))];
 }
 
 function rationaleFromSnapshot(snapshot: PersistedSnapshot): string[] {

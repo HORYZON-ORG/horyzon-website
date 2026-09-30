@@ -18,12 +18,13 @@ const invariants = [
   'If validation flags an invented frequency or broadened duration, remove the invented cadence and restore only the bounded confirmed fact. Example: two-week onboarding stays two-week onboarding; never rewrite it as regular or ongoing interaction.',
   'Do not omit confirmed shifts or on-call availability while revising CONDITIONS, including explicit negative values such as no shifts and no on-call.',
   'Never solve repetition by deleting the only explicit confirmed mission/outcome. Keep one clear outcome statement and remove the redundant surrounding section/text instead.',
-  'Preserve confirmed operating context, autonomy, and unexpected events/variability when revising candidate-facing work-reality sections.',
+  'Preserve confirmed company context, operating context, autonomy, and unexpected events/variability when revising candidate-facing work-reality sections.',
+  'Do not assume that retaining a sourceFactId preserves a fact: its meaning must remain visible in title/body copy after the revision.'
 ] as const;
 
 export const REVISE_PROMPT: Annunci10xPromptDefinition = {
   id: 'annunci10x.revise',
-  version: 'annunci10x.revise.v5',
+  version: 'annunci10x.revise.v6',
   operationType: 'REVISE',
   outputSchema: ANNUNCI10X_AI_OUTPUT_SCHEMAS.REVISE,
   instructions: [

@@ -18,7 +18,7 @@ const invariants = [
 
 export const VALIDATE_PROMPT: Annunci10xPromptDefinition = {
   id: 'annunci10x.validate',
-  version: 'annunci10x.validate.v5',
+  version: 'annunci10x.validate.v6',
   operationType: 'VALIDATE',
   outputSchema: ANNUNCI10X_AI_OUTPUT_SCHEMAS.VALIDATE,
   instructions: [
@@ -34,7 +34,8 @@ export const VALIDATE_PROMPT: Annunci10xPromptDefinition = {
     '- Requirements must preserve their source classification. Generic soft skills should be linked to a supported work reason when the generator claims that relationship.',
     '- Conditions and concrete offer facts present in RoleCard must not be hidden by narrative prose. Confirmed shifts and on-call availability, including explicit negative values, are material candidate conditions and should be present.',
     '- Treat words such as regularly, ongoing, recurring, always, usually, every day, or similar frequency/duration expansions as unsupported when the RoleCard only confirms a bounded onboarding/training period.',
-    '- A confirmed mission/outcome must be explicit in the target, not merely inferable from activities. Confirmed operating context, autonomy, and unexpected events should also be preserved when they materially describe the real work.',
+    '- A confirmed mission/outcome must be explicit in the target, not merely inferable from activities. Confirmed company context, operating context, autonomy, and unexpected events should also be preserved when they materially describe the real work.',
+    '- Never treat sourceFactIds alone as proof that a fact appears in the candidate-facing ad. Validate the actual visible title/body text.'
     '- Concision is not the goal by itself. Useful supported detail is positive; filler and source commentary are negative.',
     '',
     'When creating an EDITORIAL claim entry, keep claim concise, identify the affected section in sourcePaths when possible, and use REMOVE for text that should disappear or REQUEST_CONFIRMATION only when factual confirmation is genuinely required.',

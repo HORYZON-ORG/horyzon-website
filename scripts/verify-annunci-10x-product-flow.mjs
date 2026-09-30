@@ -94,6 +94,44 @@ class DeletingRevisionProvider extends MockAnnunci10xProvider {
   }
 }
 
+class SourceTaggedButSemanticallyMissingProvider extends MockAnnunci10xProvider {
+  async executeStructuredTask(request) {
+    const result = await super.executeStructuredTask(request);
+    if (request.operationType !== 'GENERATE') return result;
+    const sections = [
+      { id: 'semantic-title', type: 'TITLE', key: 'title', title: 'Commerciale B2B', body: '', sourceFactIds: ['create-role-title'] },
+      {
+        id: 'semantic-context',
+        type: 'CONTEXT',
+        key: 'context',
+        title: 'Contesto',
+        body: 'Lavorerai con il team commerciale su lead e opportunita.',
+        sourceFactIds: ['create-company-description', 'create-operating-context', 'create-autonomy', 'create-unexpected-events', 'create-mission'],
+      },
+      { id: 'semantic-application', type: 'APPLICATION', key: 'application', title: 'Come candidarsi', body: 'Invia il CV a sales-recruiting@azienda-test.it.', sourceFactIds: ['create-application-instructions'] },
+    ];
+    return {
+      ...result,
+      output: {
+        generatedAd: {
+          id: 'semantic-missing-master',
+          sessionId: 'semantic-session',
+          kind: 'MASTER',
+          sections,
+          sourceOfTruth: true,
+          generatedAt: '2026-09-30T00:00:00.000Z',
+          promptVersion: 'annunci10x.generate.v8',
+        },
+        title: 'Commerciale B2B',
+        metadata: {},
+        sections,
+        fullText: sections.map((section) => section.body).join('\n'),
+        sourcePaths: ['title', 'applicationInstructions'],
+      },
+    };
+  }
+}
+
 class RepairableBlockedClaimProvider extends MockAnnunci10xProvider {
   validationCount = 0;
 
@@ -579,6 +617,36 @@ const evaluateCall = preservationContext.provider.calls.find((call) => call.oper
 assert.equal(JSON.stringify(generateCall?.input ?? {}).includes('sales-recruiting@azienda-test.it'), true, 'generator receives application instructions');
 assert.equal(JSON.stringify(channelCall?.input ?? {}).includes('sales-recruiting@azienda-test.it'), true, 'channel adapter receives application instructions');
 assert.equal(evaluateCall?.input?.target?.applicationDestination, 'Inviare CV o profilo LinkedIn a sales-recruiting@azienda-test.it', 'evaluator receives application destination');
+
+const semanticCoverageContext = makeContext(new SourceTaggedButSemanticallyMissingProvider('success'));
+const startedSemanticCoverage = await startAnnunci10xCreate({ context: semanticCoverageContext });
+let semanticCoverageState = startedSemanticCoverage.result;
+for (const [stepId, answer] of preservationAnswers) {
+  semanticCoverageState = await answerAnnunci10xCreateStep({
+    sessionId: startedSemanticCoverage.cookie.sessionId,
+    sessionSecret: startedSemanticCoverage.cookie.sessionSecret,
+    stepId,
+    answer,
+    context: semanticCoverageContext,
+  });
+}
+await confirmAnnunci10xCreate({
+  sessionId: startedSemanticCoverage.cookie.sessionId,
+  sessionSecret: startedSemanticCoverage.cookie.sessionSecret,
+  context: semanticCoverageContext,
+});
+const semanticCoveragePremium = await runAnnunci10xPremiumGeneration({
+  sessionId: startedSemanticCoverage.cookie.sessionId,
+  sessionSecret: startedSemanticCoverage.cookie.sessionSecret,
+  channel: 'LINKEDIN',
+  context: semanticCoverageContext,
+  authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
+});
+assert.match(semanticCoveragePremium.masterText, /Sviluppare nuove opportunita commerciali qualificate/i, 'source tags alone must not hide a missing mission');
+assert.match(semanticCoveragePremium.masterText, /Societa di servizi digitali per PMI/i, 'source tags alone must not hide missing company context');
+assert.match(semanticCoveragePremium.masterText, /Autonomia:/i, 'source tags alone must not hide missing autonomy');
+assert.match(semanticCoveragePremium.masterText, /Imprevisti e variabilit[aà]:/i, 'source tags alone must not hide missing unexpected events');
+assert.equal(/Autonomia:/i.test(JSON.stringify(semanticCoveragePremium.channelVariant)), true, 'channel variant must receive the same semantic coverage guard');
 
 const persistentRevisionContext = makeContext(new PersistentEditorialRevisionProvider('success'));
 const startedPersistentRevision = await startAnnunci10xCreate({ context: persistentRevisionContext });
