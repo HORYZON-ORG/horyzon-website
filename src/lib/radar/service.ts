@@ -1,4 +1,6 @@
 import { calculateRadarScores, isRadarComplete } from './domain.ts';
+import { mergeAdvice, type RadarAdvice } from './advice.ts';
+import { buildRadarReport } from './report.ts';
 import { lockedRadarProjection, unlockedRadarProjection } from './public-projection.ts';
 import { createPreviewToken, timingSafePinMatch, verifyPreviewToken } from './preview.ts';
 import { hashOwnerSecret } from './persistence/security.ts';
@@ -39,6 +41,18 @@ export function createRadarService(config: { persistence: RadarPersistence; prev
       await config.persistence.appendAccessEvent({ assessmentId, accessSource: 'PREVIEW', eventType: 'RESULT_OPENED' });
       return unlockedRadarProjection({ status: 'COMPLETED', answeredCount: session.answeredCount, scores: calculateRadarScores(session.answers) });
     },
+    /** The full report. Call only after readPreviewResult or readOwnedResult authorised the request. */
+    async readReport(assessmentId: string, ownerSecret: string) {
+      const ownership = { assessmentId, ownerSecretHash: hashOwnerSecret(ownerSecret) };
+      const [session, owner, rows] = await Promise.all([
+        config.persistence.resumeAssessment(ownership),
+        config.persistence.readReportContext(ownership),
+        config.persistence.listAdvice().catch(() => []),
+      ]);
+      const report = buildRadarReport({ scores: calculateRadarScores(session.answers), answers: session.answers, advice: mergeAdvice(rows as Partial<RadarAdvice>[]), context: { aziendaNome: owner.aziendaNome, referenteNome: owner.referenteNome, settore: owner.settore, numeroDipendenti: owner.numeroDipendenti, volumeAffari: owner.volumeAffari, completedAt: owner.completedAt } });
+      return { report, recipient: { email: owner.referenteEmail, name: owner.referenteNome } };
+    },
+    claimReportEmail: (assessmentId: string) => config.persistence.claimReportEmail(assessmentId),
     async readOwnedResult(assessmentId: string, ownerSecret: string) {
       const session = await config.persistence.resumeAssessment({ assessmentId, ownerSecretHash: hashOwnerSecret(ownerSecret) });
       await config.persistence.appendAccessEvent({ assessmentId, accessSource: 'PURCHASE', eventType: 'RESULT_OPENED' });

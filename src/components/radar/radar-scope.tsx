@@ -18,18 +18,18 @@ export function radarPath(values: readonly number[]): string {
 const ring = (scale: number) => radarPath([scale, scale, scale, scale, scale]);
 const LABEL_ANCHOR = ['middle', 'start', 'start', 'end', 'end'] as const;
 
-export function RadarGrid({ collapsed = [] }: { collapsed?: readonly number[] }) {
+export function RadarGrid({ collapsed = [], labels = true }: { collapsed?: readonly number[]; labels?: boolean }) {
   return <>
     <g className="rd-grid">
       {[1, 0.75, 0.5, 0.25].map((scale) => <path key={scale} d={ring(scale)} />)}
       {RADAR_AXES.map((axis, i) => { const [x, y] = radarPoint(i, 1); return <line key={axis} x1={C} y1={C} x2={x} y2={y} />; })}
     </g>
-    <g className="rd-axis-labels">
+    {labels ? <g className="rd-axis-labels">
       {RADAR_AXES.map((axis, i) => {
         const [x, y] = radarPoint(i, 1.13);
         return <text key={axis} x={x} y={i === 0 ? y - 4 : i > 1 && i < 4 ? y + 14 : y + 4} textAnchor={LABEL_ANCHOR[i]} className={collapsed.includes(i) ? 'is-down' : undefined}>{axis.toUpperCase()}</text>;
       })}
-    </g>
+    </g> : null}
   </>;
 }
 

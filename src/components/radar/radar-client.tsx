@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { RADAR_QUESTIONNAIRE_VERSION, type RadarAnswers, type RadarScores } from '@/lib/radar/types';
+import { RADAR_QUESTIONNAIRE_VERSION, type RadarAnswers } from '@/lib/radar/types';
+import type { RadarReport } from '@/lib/radar/report';
 import { radarSteps } from '@/lib/radar/domain';
 import { clearRecovery, createRecoveryEnvelope, loadActiveRecovery, saveRecovery } from './radar-recovery';
 import { RadarPaymentGate } from './radar-payment-gate';
@@ -20,7 +21,7 @@ export function RadarClient() {
   const [answers, setAnswers] = useState<RadarAnswers>({});
   const [saving, setSaving] = useState(false);
   const [syncError, setSyncError] = useState('');
-  const [scores, setScores] = useState<RadarScores | null>(null);
+  const [report, setReport] = useState<RadarReport | null>(null);
   const steps = useMemo(() => radarSteps(questionnaireVersion), [questionnaireVersion]);
 
   async function resume() {
@@ -88,21 +89,21 @@ export function RadarClient() {
     await fetch('/api/radar/session', { method: 'DELETE' }).catch(() => undefined);
     if (assessmentId) clearRecovery(localStorage, assessmentId);
     localStorage.removeItem('horyzon:radar:recovery:active');
-    setQuestionnaireVersion(RADAR_QUESTIONNAIRE_VERSION); setAssessmentId(''); setRevision(0); setStepIndex(0); setAnswers({}); setScores(null); setSyncError(''); setPhase('QUALIFICATION');
+    setQuestionnaireVersion(RADAR_QUESTIONNAIRE_VERSION); setAssessmentId(''); setRevision(0); setStepIndex(0); setAnswers({}); setReport(null); setSyncError(''); setPhase('QUALIFICATION');
     document.getElementById('radar-prodotto')?.scrollIntoView({ block: 'start' });
   }
 
   async function loadResult() {
     const response = await fetch('/api/radar/result', { cache: 'no-store' });
     if (!response.ok) return;
-    const payload = await response.json(); setScores(payload.result.scores); setPhase('RESULT');
+    const payload = await response.json(); setReport(payload.report); setPhase('RESULT');
     if (assessmentId) clearRecovery(localStorage, assessmentId);
   }
 
   if (phase === 'QUALIFICATION') return <Qualification onStart={start} error={syncError}/>;
   if (phase === 'QUESTIONS') return <><RadarQuestionnaire questionnaireVersion={questionnaireVersion} stepIndex={stepIndex} value={answers[steps[stepIndex]?.id ?? '']} saving={saving} onAnswer={answer} onBack={() => setStepIndex((current) => Math.max(0, current - 1))}/>{syncError ? <p className={styles.syncError} role="alert">{syncError}</p> : null}<p className={styles.restartRow}><button type="button" className={styles.restart} onClick={restart}>Rifai il test da zero</button></p></>;
   if (phase === 'PAYMENT') return <RadarPaymentGate onPreviewUnlocked={loadResult} onRestart={restart}/>;
-  return scores ? <RadarResult scores={scores} onRestart={restart}/> : null;
+  return report ? <RadarResult report={report} onRestart={restart}/> : null;
 }
 
 function Qualification({ onStart, error }: { onStart: (form: FormData) => Promise<void>; error: string }) {

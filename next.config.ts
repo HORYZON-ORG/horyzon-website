@@ -15,6 +15,8 @@ const csp = [
 const nextConfig: NextConfig = {
  allowedDevOrigins: ['terminal.local'],
  poweredByHeader: false,
+ // The Radar report PDF reads its fonts and logos from disk.
+ outputFileTracingIncludes: { '/api/radar/**': ['./src/lib/radar/fonts/**', './src/lib/radar/assets/**'] },
  async headers() {
   return [{ source: '/:path*', headers: [
    { key: 'Content-Security-Policy', value: csp },

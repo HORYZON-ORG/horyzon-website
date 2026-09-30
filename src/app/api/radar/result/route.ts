@@ -1,16 +1,19 @@
-import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
-import { createRadarCommerce } from '@/lib/radar';
-import { RADAR_PREVIEW_COOKIE, createService, errorResponse, getSessionCookie } from '../_shared';
+import { NextResponse, after } from 'next/server';
+import { radarReportEmailConfigured, sendRadarReportEmail } from '@/lib/radar/report-email';
+import { renderRadarReportPdf } from '@/lib/radar/report-pdf';
+import { errorResponse } from '../_shared';
+import { authorizedRadarReport } from '../_report';
 
 export async function GET() {
   try {
-    const session = await getSessionCookie();
-    const store = await cookies();
-    const previewToken = store.get(RADAR_PREVIEW_COOKIE)?.value ?? '';
-    const service = createService();
-    const paid = await createRadarCommerce().hasAccess(session.assessmentId);
-    const result = paid ? await service.readOwnedResult(session.assessmentId, session.ownerSecret) : await service.readPreviewResult(session.assessmentId, session.ownerSecret, previewToken);
-    return NextResponse.json({ ok: true, result }, { headers: { 'Cache-Control': 'no-store' } });
+    const { service, assessmentId, result, report, recipient } = await authorizedRadarReport();
+    // The first time the report opens, its PDF goes to the person who filled in the Radar.
+    if (radarReportEmailConfigured()) after(async () => {
+      try {
+        if (!(await service.claimReportEmail(assessmentId))) return;
+        await sendRadarReportEmail({ to: recipient.email, name: recipient.name, report, pdf: await renderRadarReportPdf(report) });
+      } catch (error) { console.error('Radar report email failed', { message: error instanceof Error ? error.message : 'unknown' }); }
+    });
+    return NextResponse.json({ ok: true, result, report }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) { return errorResponse(error); }
 }

@@ -3,7 +3,7 @@ import { isRadarComplete, radarSteps } from '../domain.ts';
 import { validOwnerEconomicsAnswer } from '../owner-economics.ts';
 import { RADAR_QUESTIONNAIRE_VERSION, type RadarAnswers, type RadarJourneyStatus } from '../types.ts';
 import { createOwnerSecret } from './security.ts';
-import type { RadarAccessEventInput, RadarOwnedSession, RadarOwnership, RadarPersistence, RadarProgressProjection, RadarQualificationInput, RadarResumeProjection, SaveRadarAnswerInput } from './types.ts';
+import type { RadarAccessEventInput, RadarAdviceRow, RadarReportOwnerContext, RadarOwnedSession, RadarOwnership, RadarPersistence, RadarProgressProjection, RadarQualificationInput, RadarResumeProjection, SaveRadarAnswerInput } from './types.ts';
 
 function validateAnswer(input: SaveRadarAnswerInput): void {
   if (!radarSteps().some((step) => step.id === input.answerKey)) throw new Error('Invalid Radar answer key.');
@@ -58,6 +58,21 @@ class MemoryRadarPersistence implements RadarPersistence {
   async countRecentPreviewDenials(assessmentId: string): Promise<number> {
     const threshold = Date.now() - 10 * 60_000;
     return this.accessEvents.filter((event) => event.assessmentId === assessmentId && event.eventType === 'PREVIEW_DENIED' && event.createdAt >= threshold).length;
+  }
+
+  async readReportContext(input: RadarOwnership): Promise<RadarReportOwnerContext> {
+    const row = this.owned(input);
+    return { aziendaNome: row.aziendaNome, referenteNome: row.referenteNome, referenteEmail: row.referenteEmail, settore: row.settore, numeroDipendenti: row.numeroDipendenti, volumeAffari: row.volumeAffari, completedAt: null };
+  }
+
+  readonly advice: RadarAdviceRow[] = [];
+  async listAdvice(): Promise<RadarAdviceRow[]> { return this.advice; }
+
+  private readonly emailed = new Set<string>();
+  async claimReportEmail(assessmentId: string): Promise<boolean> {
+    if (this.emailed.has(assessmentId)) return false;
+    this.emailed.add(assessmentId);
+    return true;
   }
 
   private owned(input: RadarOwnership): MemoryRow {
@@ -138,6 +153,23 @@ export class SupabaseRadarPersistence implements RadarPersistence {
     const since = new Date(Date.now() - 10 * 60_000).toISOString();
     const rows = await this.request<Array<{ id: string }>>(`/rest/v1/radar_access_events?assessment_id=eq.${encodeURIComponent(assessmentId)}&access_source=eq.PREVIEW&event_type=eq.PREVIEW_DENIED&created_at=gte.${encodeURIComponent(since)}&select=id`, { method: 'GET' });
     return rows.length;
+  }
+
+  async readReportContext(input: RadarOwnership): Promise<RadarReportOwnerContext> {
+    const rows = await this.request<Record<string, unknown>[]>(`/rest/v1/radar_assessments?id=eq.${encodeURIComponent(input.assessmentId)}&owner_secret_hash=eq.${encodeURIComponent(input.ownerSecretHash)}&select=azienda_nome,referente_nome,referente_email,settore,numero_dipendenti,volume_affari,completato_il,payment_gate_at`, { method: 'GET' });
+    const row = rows[0];
+    if (!row) throw new Error('Radar ownership verification failed.');
+    const text = (value: unknown) => typeof value === 'string' ? value : '';
+    return { aziendaNome: text(row.azienda_nome), referenteNome: text(row.referente_nome), referenteEmail: text(row.referente_email), settore: text(row.settore), numeroDipendenti: text(row.numero_dipendenti), volumeAffari: text(row.volume_affari), completedAt: text(row.completato_il) || text(row.payment_gate_at) || null };
+  }
+
+  async listAdvice(): Promise<RadarAdviceRow[]> {
+    return this.request<RadarAdviceRow[]>('/rest/v1/radar_advice?select=kind,subject,band,title,body,action', { method: 'GET' });
+  }
+
+  async claimReportEmail(assessmentId: string): Promise<boolean> {
+    const rows = await this.request<unknown[]>(`/rest/v1/radar_assessments?id=eq.${encodeURIComponent(assessmentId)}&report_emailed_at=is.null&select=id`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ report_emailed_at: new Date().toISOString() }) });
+    return Array.isArray(rows) && rows.length > 0;
   }
 
   private async request<T>(path: string, init: RequestInit): Promise<T> {
