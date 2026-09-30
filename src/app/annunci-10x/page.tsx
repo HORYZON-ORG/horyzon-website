@@ -121,18 +121,6 @@ export default function Annunci10xPage() {
         </div>
       </section>
 
-      <section className="rd-frank" aria-labelledby="ax-frank-title">
-        <figure className="rd-frank-photo"><Image src="/people/frank-no-badge.png" alt="Frank Cannoletta" fill sizes="(max-width: 850px) 70vw, 34vw" /></figure>
-        <div className="rd-reveal">
-          <p className="rd-label">Frank Cannoletta · Horyzon Consulting Recruiting</p>
-          <h2 id="ax-frank-title" className="sr-only">Perché abbiamo costruito Annunci 10x</h2>
-          {/* TODO: citazione da confermare con Frank Cannoletta prima della pubblicazione */}
-          <blockquote>“L’annuncio inizia a selezionare <em>prima ancora che arrivi il primo CV.</em>”</blockquote>
-          <p className="ax-frank-note">E se l’annuncio è chiaro e le persone giuste non arrivano comunque, il blocco può essere nel fabbisogno, nel canale o nel processo di selezione.</p>
-          <Link className="rd-link" href="/contatti">Parla con Horyzon ↗︎</Link>
-        </div>
-      </section>
-
       <section className="rd-faq" aria-labelledby="ax-faq-title">
         <h2 id="ax-faq-title">Prima di iniziare.</h2>
         <div>{faqs.map(([question, answer]) => <details key={question}><summary>{question}<span aria-hidden="true" /></summary><p>{answer}</p></details>)}</div>

@@ -41,8 +41,6 @@
 .ax-price-copy>p:first-of-type{max-width:52ch;margin:26px 0 32px;font-size:clamp(17px,1.4vw,20px);line-height:1.55;font-weight:500;color:#cfd7d5}
 .ax-guarantee{max-width:62ch;margin:26px 0 0;padding-top:20px;border-top:1px solid var(--line);font:500 12px/1.7 var(--font-mono),monospace;letter-spacing:.03em;color:var(--muted)}
 
-/* Frank */
-.ax-frank-note{max-width:48ch;margin:0 0 14px;font-size:17px;line-height:1.6;color:#cdd6d4}
 
 /* Final and footer */
 .ax .rd-final h2{max-width:18ch}

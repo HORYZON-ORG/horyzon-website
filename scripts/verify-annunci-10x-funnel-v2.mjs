@@ -306,7 +306,7 @@ for (const fakeProof of ['STERIMED', 'Ahumados', 'De Ridder', '181%', 'testimoni
 }
 
 // Radar-style FAQ: five questions, answers in native <details>. The other V3 answers moved into sections:
-// what the Score measures -> "Il risultato", guarantee -> price, "e se il problema non è l’annuncio?" -> Frank.
+// what the Score measures -> "Il risultato", guarantee -> price. The standalone Frank section is intentionally absent from this landing.
 const faqBlock = page.match(/const faqs = \[[\s\S]*?\n\] as const;/)?.[0] ?? '';
 assert.equal(count(faqBlock, "\n  ['"), 5, 'FAQ must contain exactly 5 questions');
 for (const question of [
