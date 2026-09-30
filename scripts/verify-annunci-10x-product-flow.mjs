@@ -94,6 +94,53 @@ class DeletingRevisionProvider extends MockAnnunci10xProvider {
   }
 }
 
+class RepairableBlockedClaimProvider extends MockAnnunci10xProvider {
+  validationCount = 0;
+
+  async executeStructuredTask(request) {
+    const result = await super.executeStructuredTask(request);
+    if (request.operationType === 'VALIDATE') {
+      this.validationCount += 1;
+      if (this.validationCount === 1) {
+        return {
+          ...result,
+          output: {
+            claims: [{
+              id: 'invented-frequency',
+              kind: 'CLAIM',
+              claim: 'Interagirai regolarmente con il responsabile per l\'affiancamento operativo.',
+              supported: false,
+              sourcePaths: ['section-2'],
+              action: 'REMOVE',
+            }],
+            unsupportedClaims: ['Interagirai regolarmente con il responsabile per l\'affiancamento operativo.'],
+            contradictions: ['Affiancamento iniziale limitato trasformato in interazione regolare.'],
+            omittedCriticalFacts: [],
+            alteredRequirements: [],
+            result: 'BLOCK',
+          },
+        };
+      }
+      return {
+        ...result,
+        output: { claims: [], unsupportedClaims: [], contradictions: [], omittedCriticalFacts: [], alteredRequirements: [], result: 'PASS' },
+      };
+    }
+    if (request.operationType === 'REVISE') {
+      return {
+        ...result,
+        output: {
+          revisedSections: [{ id: 'section-2', type: 'RESPONSIBILITIES', key: 'section-2', title: 'Attivita', body: 'Pulizia uffici, corridoi e spazi comuni.', sourceFactIds: ['answer-responsibility'] }],
+          changedSectionIds: ['section-2'],
+          changeSummary: 'Removed invented ongoing frequency.',
+          requiresValidation: true,
+        },
+      };
+    }
+    return result;
+  }
+}
+
 class OpeningMissionDuplicateProvider extends MockAnnunci10xProvider {
   validationCount = 0;
 
@@ -512,6 +559,10 @@ const preservationPremium = await runAnnunci10xPremiumGeneration({
 });
 assert.match(preservationPremium.masterText, /sales-recruiting@azienda-test\.it/i, 'master output contains application destination');
 assert.equal(JSON.stringify(preservationPremium.channelVariant).includes('sales-recruiting@azienda-test.it'), true, 'channel adapter output contains application destination');
+assert.match(preservationPremium.masterText, /Turni:\s*Non previsti/i, 'confirmed no-shifts condition must be explicit in the final master');
+assert.match(preservationPremium.masterText, /Reperibilit[aà]:\s*Non prevista/i, 'confirmed no-on-call condition must be explicit in the final master');
+assert.equal(/turni?[^\n]{0,40}non previsti/i.test(JSON.stringify(preservationPremium.channelVariant)), true, 'channel variant must preserve the confirmed no-shifts condition');
+assert.equal(/reperibilit[aà][^\n]{0,40}non prevista/i.test(JSON.stringify(preservationPremium.channelVariant)), true, 'channel variant must preserve the confirmed no-on-call condition');
 const generateCall = preservationContext.provider.calls.find((call) => call.operationType === 'GENERATE');
 const channelCall = preservationContext.provider.calls.find((call) => call.operationType === 'CHANNEL_ADAPTER');
 const evaluateCall = preservationContext.provider.calls.find((call) => call.operationType === 'EVALUATE' && call.outputSchemaName === 'annunci10x_evaluate_v2');
@@ -665,6 +716,34 @@ assert.equal(deletingRevisionPremium.master.sections.some((section) => section.i
 assert.equal(deletingRevisionPremium.master.sections.some((section) => section.id === 'section-1'), true, 'unaffected sections must survive a targeted deletion');
 assert.equal(deletingRevisionContext.provider.calls.filter((call) => call.operationType === 'VALIDATE').length, 2, 'targeted deletion must still be revalidated');
 assert.equal(deletingRevisionPremium.gate.status, 'READY', 'a successful post-delete validation may return READY');
+
+const repairableBlockContext = makeContext(new RepairableBlockedClaimProvider('success'));
+const startedRepairableBlock = await startAnnunci10xCreate({ context: repairableBlockContext });
+let repairableBlockState = startedRepairableBlock.result;
+for (const [stepId, answer] of preservationAnswers) {
+  repairableBlockState = await answerAnnunci10xCreateStep({
+    sessionId: startedRepairableBlock.cookie.sessionId,
+    sessionSecret: startedRepairableBlock.cookie.sessionSecret,
+    stepId,
+    answer,
+    context: repairableBlockContext,
+  });
+}
+await confirmAnnunci10xCreate({
+  sessionId: startedRepairableBlock.cookie.sessionId,
+  sessionSecret: startedRepairableBlock.cookie.sessionSecret,
+  context: repairableBlockContext,
+});
+const repairableBlockPremium = await runAnnunci10xPremiumGeneration({
+  sessionId: startedRepairableBlock.cookie.sessionId,
+  sessionSecret: startedRepairableBlock.cookie.sessionSecret,
+  channel: 'LINKEDIN',
+  context: repairableBlockContext,
+  authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
+});
+assert.equal(repairableBlockContext.provider.calls.filter((call) => call.operationType === 'REVISE').length, 1, 'repairable provider BLOCK must enter the safe revision cycle');
+assert.equal(repairableBlockContext.provider.calls.filter((call) => call.operationType === 'VALIDATE').length, 2, 'repairable provider BLOCK must be revalidated after revision');
+assert.equal(repairableBlockPremium.gate.status, 'READY', 'repairable unsupported embellishment can become READY after a clean revision');
 
 const duplicateEditorialContext = makeContext(new OpeningMissionDuplicateProvider('success'));
 const startedDuplicateEditorial = await startAnnunci10xCreate({ context: duplicateEditorialContext });

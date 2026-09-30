@@ -2,7 +2,7 @@ import { ANNUNCI10X_AI_OUTPUT_SCHEMAS } from '../schemas.ts';
 import { renderPrompt } from './helpers.ts';
 import type { Annunci10xPromptDefinition } from './types.ts';
 
-export const ANNUNCI10X_GENERATE_PROMPT_VERSION = 'annunci10x.generate.v5';
+export const ANNUNCI10X_GENERATE_PROMPT_VERSION = 'annunci10x.generate.v6';
 
 const invariants = [
   'Generate the Master ad only from confirmed/publishable RoleCard facts, RoleProfile, and CommunicationStrategy.',
@@ -22,6 +22,8 @@ const invariants = [
   'Omit optional sections when there is no real source content. Prefer a shorter truthful ad over padded copy.',
   'TITLE is structural: put the job title in title and use an empty string for body. Never duplicate the title in body.',
   'Do not include both OPENING and MISSION when they communicate the same candidate-facing idea. Keep only the section that adds the clearest distinct supported value.',
+  'A bounded onboarding/training fact stays bounded. For example, two weeks of shadowing must never become regular, ongoing, recurring, or permanent interaction.',
+  'If confirmed shifts or on-call availability are present, including negative values such as no shifts/no on-call, state them explicitly in CONDITIONS because they are candidate compatibility facts.',
 ] as const;
 
 export const GENERATE_PROMPT: Annunci10xPromptDefinition = {
@@ -49,7 +51,7 @@ export function renderGeneratePrompt(): string {
     '- CONTEXT: when supported, explain who the person interacts with, what environment/tools matter, where handoffs happen, and the level of autonomy.',
     '- REQUIREMENTS: separate indispensable, preferred, and trainable items according to source semantics. Explain why a requirement matters only when the source supports that connection.',
     '- CONDITIONS: make location, work mode, contract, schedule, shifts, travel, availability, and compensation easy to find. Do not bury compatibility filters.',
-    '- OFFER/GROWTH: include only concrete and verifiable support, onboarding, benefits, stability, flexibility, equipment, training, compensation, or growth facts.',
+    '- OFFER/GROWTH: include only concrete and verifiable support, onboarding, benefits, stability, flexibility, equipment, training, compensation, or growth facts. Preserve stated training/onboarding duration exactly in meaning; do not turn a limited period into an ongoing relationship.',
     '- APPLICATION: make the next action exact and usable only when a verified destination/instruction exists.',
     '',
     'Candidate-facing voice:',

@@ -167,9 +167,9 @@ export async function runAnnunci10xPremiumGeneration(input: Annunci10xPremiumGen
     });
     operations.push(toPublicOperation(generatedResult, 'GENERATE', context.configuredProvider));
     const generated = generatedResult.output as Annunci10xGenerateOutput;
-    const generatedMaster = normalizeGeneratedMaster(generated.generatedAd);
+    const generatedMaster = prepareMasterForValidation(generated.generatedAd, snapshot.roleCard);
 
-    const firstValidation = await validateMaster({
+    const firstValidationRaw = await validateMaster({
       orchestrator,
       sessionId: input.sessionId,
       sessionSecret: input.sessionSecret,
@@ -180,6 +180,7 @@ export async function runAnnunci10xPremiumGeneration(input: Annunci10xPremiumGen
       operations,
       phase: 'initial',
     });
+    const firstValidation = normalizeRepairableValidation(firstValidationRaw);
 
     let finalMaster = generatedMaster;
     let finalValidation = firstValidation;
@@ -201,11 +202,11 @@ export async function runAnnunci10xPremiumGeneration(input: Annunci10xPremiumGen
       operations.push(toPublicOperation(revisionResult, 'REVISE', context.configuredProvider));
       const revision = revisionResult.output as Annunci10xReviseOutput;
       const revisionPlan = enforceEditorialDeletionGuard(generatedMaster.sections, revision, firstValidation);
-      finalMaster = {
+      finalMaster = prepareMasterForValidation({
         ...generatedMaster,
         sections: mergeRevisedSections(generatedMaster.sections, revisionPlan.revisedSections, revisionPlan.changedSectionIds),
         generatedAt: new Date().toISOString(),
-      };
+      }, snapshot.roleCard);
       automaticRevisionCount = 1;
       finalValidation = await validateMaster({
         orchestrator,
@@ -273,7 +274,7 @@ export async function runAnnunci10xPremiumGeneration(input: Annunci10xPremiumGen
         idempotencyInputIdentityOverride: stableHash({ snapshotId: snapshot.id, authIdentity, operation: 'CHANNEL_ADAPTER', master: finalMaster.sections, channel: input.channel ?? preferredChannel(snapshot) }),
       });
       operations.push(toPublicOperation(channelResult, 'CHANNEL_ADAPTER', context.configuredProvider));
-      channelVariant = normalizeChannelVariant((channelResult.output as Annunci10xChannelAdapterOutput).channelVariant);
+      channelVariant = normalizeChannelVariant((channelResult.output as Annunci10xChannelAdapterOutput).channelVariant, snapshot.roleCard);
       variantOutput = await context.persistence.saveOutput({
         sessionId: input.sessionId,
         sessionSecret: input.sessionSecret,
@@ -578,11 +579,11 @@ export async function requestAnnunci10xPremiumEdit(input: PremiumEditInput): Pro
   });
   operations.push(toPublicOperation(revision, 'REVISE', context.configuredProvider));
   const revised = revision.output as Annunci10xReviseOutput;
-  const master = normalizeGeneratedMaster({
+  const master = prepareMasterForValidation({
     ...validation.value,
     sections: mergeRevisedSections(validation.value.sections, revised.revisedSections, revised.changedSectionIds),
     generatedAt: new Date().toISOString(),
-  });
+  }, snapshot.roleCard);
   const validate = await validateMaster({
     orchestrator,
     sessionId: input.sessionId,
@@ -690,9 +691,9 @@ async function executePremiumPipeline(input: {
   });
   operations.push(toPublicOperation(generatedResult, 'GENERATE', input.context.configuredProvider));
   const generated = generatedResult.output as Annunci10xGenerateOutput;
-  const generatedMaster = normalizeGeneratedMaster(generated.generatedAd);
+  const generatedMaster = prepareMasterForValidation(generated.generatedAd, input.snapshot.roleCard);
 
-  const firstValidation = await validateMaster({
+  const firstValidationRaw = await validateMaster({
     orchestrator,
     sessionId: input.session.id,
     sessionSecret: input.sessionSecret,
@@ -703,6 +704,7 @@ async function executePremiumPipeline(input: {
     operations,
     phase: 'initial',
   });
+  const firstValidation = normalizeRepairableValidation(firstValidationRaw);
 
   let finalMaster = generatedMaster;
   let finalValidation = firstValidation;
@@ -724,11 +726,11 @@ async function executePremiumPipeline(input: {
     operations.push(toPublicOperation(revisionResult, 'REVISE', input.context.configuredProvider));
     const revision = revisionResult.output as Annunci10xReviseOutput;
     const revisionPlan = enforceEditorialDeletionGuard(generatedMaster.sections, revision, firstValidation);
-    finalMaster = {
+    finalMaster = prepareMasterForValidation({
       ...generatedMaster,
       sections: mergeRevisedSections(generatedMaster.sections, revisionPlan.revisedSections, revisionPlan.changedSectionIds),
       generatedAt: new Date().toISOString(),
-    };
+    }, input.snapshot.roleCard);
     automaticRevisionCount = 1;
     finalValidation = await validateMaster({
       orchestrator,
@@ -796,7 +798,7 @@ async function executePremiumPipeline(input: {
       idempotencyInputIdentityOverride: stableHash({ snapshotId: input.snapshot.id, authIdentity: input.authIdentity, operation: 'CHANNEL_ADAPTER', master: finalMaster.sections, channel: input.channel }),
     });
     operations.push(toPublicOperation(channelResult, 'CHANNEL_ADAPTER', input.context.configuredProvider));
-    channelVariant = normalizeChannelVariant((channelResult.output as Annunci10xChannelAdapterOutput).channelVariant);
+    channelVariant = normalizeChannelVariant((channelResult.output as Annunci10xChannelAdapterOutput).channelVariant, input.snapshot.roleCard);
     variantOutput = await input.context.persistence.saveOutput({
       sessionId: input.session.id,
       sessionSecret: input.sessionSecret,
@@ -1141,13 +1143,78 @@ function normalizeGeneratedMaster(master: GeneratedAd): GeneratedAd {
   };
 }
 
-function normalizeChannelVariant(variant: ChannelVariant): ChannelVariant {
-  return {
+function prepareMasterForValidation(master: GeneratedAd, roleCard: RoleCard): GeneratedAd {
+  return ensureConfirmedWorkConditions(normalizeGeneratedMaster(master), roleCard);
+}
+
+function normalizeChannelVariant(variant: ChannelVariant, roleCard: RoleCard): ChannelVariant {
+  const normalized: ChannelVariant = {
     ...variant,
     sections: variant.sections.map((section) => section.type === 'TITLE' && normalizeEditorialText(section.body) === normalizeEditorialText(section.title)
       ? { ...section, body: '' }
       : section),
   };
+  const ensured = ensureConfirmedWorkConditions({
+    id: normalized.masterAdId,
+    sessionId: 'channel-variant',
+    kind: 'MASTER',
+    sections: normalized.sections,
+    sourceOfTruth: true,
+    generatedAt: new Date().toISOString(),
+    promptVersion: 'channel-variant-normalization',
+  }, roleCard);
+  return { ...normalized, sections: ensured.sections };
+}
+
+function ensureConfirmedWorkConditions(master: GeneratedAd, roleCard: RoleCard): GeneratedAd {
+  const shifts = roleCard.attractionContext.shifts;
+  const onCall = roleCard.attractionContext.onCall;
+  const facts = [
+    shifts?.publishable && String(shifts.value).trim() ? { label: 'Turni', value: String(shifts.value).trim(), sourceId: shifts.sourceId } : null,
+    onCall?.publishable && String(onCall.value).trim() ? { label: 'Reperibilità', value: String(onCall.value).trim(), sourceId: onCall.sourceId } : null,
+  ].filter((item): item is { label: string; value: string; sourceId: string | undefined } => Boolean(item));
+  if (!facts.length) return master;
+
+  const wholeText = masterText(master);
+  const missing = facts.filter((fact) => fact.label === 'Turni' ? !/\bturni?\b/i.test(wholeText) : !/reperibil/i.test(wholeText));
+  if (!missing.length) return master;
+
+  const additions = missing.map((fact) => `${fact.label}: ${fact.value}.`).join(' ');
+  const sourceIds = missing.map((fact) => fact.sourceId).filter((value): value is string => Boolean(value));
+  const conditionsIndex = master.sections.findIndex((section) => section.type === 'CONDITIONS');
+  if (conditionsIndex >= 0) {
+    const sections = [...master.sections];
+    const current = sections[conditionsIndex];
+    sections[conditionsIndex] = {
+      ...current,
+      body: [current.body.trim().replace(/[.\s]+$/, ''), additions].filter(Boolean).join('. '),
+      sourceFactIds: [...new Set([...current.sourceFactIds, ...sourceIds])],
+    };
+    return { ...master, sections };
+  }
+
+  return {
+    ...master,
+    sections: [
+      ...master.sections,
+      {
+        id: 'confirmed-work-conditions',
+        type: 'CONDITIONS',
+        key: 'confirmed-work-conditions',
+        title: 'Condizioni pratiche',
+        body: additions,
+        sourceFactIds: sourceIds,
+      },
+    ],
+  };
+}
+
+function normalizeRepairableValidation(validation: Annunci10xValidateOutput): Annunci10xValidateOutput {
+  if (validation.result !== 'BLOCK') return validation;
+  if (validation.alteredRequirements.length || validation.omittedCriticalFacts.length) return validation;
+  if (validation.claims.some((claim) => claim.action === 'REQUEST_CONFIRMATION')) return validation;
+  if (!validation.unsupportedClaims.length && !validation.contradictions.length) return validation;
+  return { ...validation, result: 'NEEDS_REVISION' };
 }
 
 function enforceEditorialDeletionGuard(

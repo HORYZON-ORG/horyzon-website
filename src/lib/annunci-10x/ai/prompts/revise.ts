@@ -15,11 +15,13 @@ const invariants = [
   'requiresValidation must be true because VALIDATE always follows REVISE.',
   'When an EDITORIAL validation claim uses action REMOVE for duplicated OPENING/MISSION content, actually delete one duplicated section: include its id in changedSectionIds and omit that id from revisedSections. Do not merely paraphrase both sections.',
   'TITLE is structural: its body should be an empty string. If validation flags a duplicated TITLE body, return the TITLE section with body empty.',
+  'If validation flags an invented frequency or broadened duration, remove the invented cadence and restore only the bounded confirmed fact. Example: two-week onboarding stays two-week onboarding; never rewrite it as regular or ongoing interaction.',
+  'Do not omit confirmed shifts or on-call availability while revising CONDITIONS, including explicit negative values such as no shifts and no on-call.',
 ] as const;
 
 export const REVISE_PROMPT: Annunci10xPromptDefinition = {
   id: 'annunci10x.revise',
-  version: 'annunci10x.revise.v3',
+  version: 'annunci10x.revise.v4',
   operationType: 'REVISE',
   outputSchema: ANNUNCI10X_AI_OUTPUT_SCHEMAS.REVISE,
   instructions: [
