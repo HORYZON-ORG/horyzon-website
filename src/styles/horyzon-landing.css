@@ -1,4 +1,4 @@
-/* /radar landing — brand palette of the social posts: petrol ink, cream, lime; Manrope 800 display,
+/* Shared landing kit for the paid landings (/radar, /annunci-10x) — brand palette of the social posts: petrol ink, cream, lime; Manrope 800 display,
    JetBrains Mono labels. Motion is CSS-first (hero, sweep, reveals) plus the scroll story in owner-story.tsx;
    everything stops under prefers-reduced-motion and the content is complete without JavaScript. */
 .rd{
