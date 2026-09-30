@@ -1,9 +1,14 @@
 import { randomUUID } from 'node:crypto';
+import { isRadarComplete, radarSteps } from '../domain.ts';
+import { validOwnerEconomicsAnswer } from '../owner-economics.ts';
 import { RADAR_QUESTIONNAIRE_VERSION, type RadarAnswers, type RadarJourneyStatus } from '../types.ts';
 import { createOwnerSecret } from './security.ts';
 import type { RadarAccessEventInput, RadarOwnedSession, RadarOwnership, RadarPersistence, RadarProgressProjection, RadarQualificationInput, RadarResumeProjection, SaveRadarAnswerInput } from './types.ts';
 
-const ANSWER_KEY = /^(amministrazione|produzione|commerciale|marketing|risorse-umane)#[0-4]$|^qualificazione#stagionale$|^ai#(uso|leva|pronti|casoUso)$/;
+function validateAnswer(input: SaveRadarAnswerInput): void {
+  if (!radarSteps().some((step) => step.id === input.answerKey)) throw new Error('Invalid Radar answer key.');
+  if (input.answerKey.startsWith('economia#') && !validOwnerEconomicsAnswer(input.answerKey, input.value)) throw new Error('Invalid Radar economic answer.');
+}
 
 type MemoryRow = RadarQualificationInput & RadarResumeProjection & { ownerSecretHash: string };
 
@@ -18,7 +23,7 @@ class MemoryRadarPersistence implements RadarPersistence {
   async createAssessment(input: RadarQualificationInput): Promise<RadarOwnedSession> {
     const id = randomUUID();
     const owner = createOwnerSecret();
-    this.rows.set(id, { ...input, id, ownerSecretHash: owner.secretHash, status: 'STARTED', answers: { 'qualificazione#stagionale': input.seasonal ? 1 : 0 }, revision: 0, currentStep: 0, answeredCount: 1, progressPercent: 3 });
+    this.rows.set(id, { ...input, id, questionnaireVersion: RADAR_QUESTIONNAIRE_VERSION, ownerSecretHash: owner.secretHash, status: 'STARTED', answers: { 'qualificazione#stagionale': input.seasonal ? 1 : 0 }, revision: 0, currentStep: 0, answeredCount: 1, progressPercent: 3 });
     return { id, ownerSecret: owner.secret, ownerSecretHash: owner.secretHash, revision: 0 };
   }
 
@@ -28,23 +33,23 @@ class MemoryRadarPersistence implements RadarPersistence {
   }
 
   async saveAnswer(input: SaveRadarAnswerInput): Promise<RadarProgressProjection> {
-    if (!ANSWER_KEY.test(input.answerKey)) throw new Error('Invalid Radar answer key.');
+    validateAnswer(input);
     const row = this.owned(input);
     if (row.revision !== input.expectedRevision) throw new RadarRevisionConflictError();
     row.answers = { ...row.answers, [input.answerKey]: input.value };
     row.revision += 1;
-    row.currentStep = Math.max(row.currentStep, Math.min(30, input.currentStep));
+    row.currentStep = Math.max(row.currentStep, Math.min(radarSteps(row.questionnaireVersion).length, input.currentStep));
     row.answeredCount = Object.keys(row.answers).length;
-    row.progressPercent = Math.min(100, Math.round((row.answeredCount / 30) * 100));
+    row.progressPercent = Math.min(100, Math.round((row.answeredCount / radarSteps(row.questionnaireVersion).length) * 100));
     row.status = 'IN_PROGRESS';
     return progress(row);
   }
 
   async completeAssessment(input: RadarOwnership): Promise<RadarResumeProjection> {
     const row = this.owned(input);
-    if (row.answeredCount < 30) throw new Error('Radar is not complete.');
+    if (!isRadarComplete(row.answers, row.questionnaireVersion)) throw new Error('Radar is not complete.');
     row.status = 'PAYMENT_REQUIRED';
-    row.currentStep = 30;
+    row.currentStep = radarSteps(row.questionnaireVersion).length;
     row.progressPercent = 100;
     return project(row);
   }
@@ -100,19 +105,19 @@ export class SupabaseRadarPersistence implements RadarPersistence {
   }
 
   async resumeAssessment(input: RadarOwnership): Promise<RadarResumeProjection> {
-    const query = `/rest/v1/radar_assessments?id=eq.${encodeURIComponent(input.assessmentId)}&owner_secret_hash=eq.${encodeURIComponent(input.ownerSecretHash)}&select=id,journey_status,risposte,revision,current_step,answered_count,progress_percent`;
+    const query = `/rest/v1/radar_assessments?id=eq.${encodeURIComponent(input.assessmentId)}&owner_secret_hash=eq.${encodeURIComponent(input.ownerSecretHash)}&select=id,questionnaire_version,journey_status,risposte,revision,current_step,answered_count,progress_percent`;
     const rows = await this.request<Record<string, unknown>[]>(query, { method: 'GET' });
     const row = rows[0];
     if (!row) throw new Error('Radar ownership verification failed.');
     return {
-      id: String(row.id), status: row.journey_status as RadarJourneyStatus,
+      questionnaireVersion: String(row.questionnaire_version ?? 'radar-v1'), id: String(row.id), status: row.journey_status as RadarJourneyStatus,
       answers: (row.risposte ?? {}) as RadarAnswers, revision: Number(row.revision),
       currentStep: Number(row.current_step), answeredCount: Number(row.answered_count), progressPercent: Number(row.progress_percent),
     };
   }
 
   async saveAnswer(input: SaveRadarAnswerInput): Promise<RadarProgressProjection> {
-    if (!ANSWER_KEY.test(input.answerKey)) throw new Error('Invalid Radar answer key.');
+    validateAnswer(input);
     try {
       return await this.request<RadarProgressProjection>('/rest/v1/rpc/radar_save_answer', { method: 'POST', body: JSON.stringify({ p_assessment_id: input.assessmentId, p_owner_secret_hash: input.ownerSecretHash, p_answer_key: input.answerKey, p_answer_value: input.value, p_expected_revision: input.expectedRevision, p_current_step: input.currentStep }) });
     } catch (error) {
@@ -150,7 +155,7 @@ export function createRadarPersistence(env: Record<string, string | undefined> =
 }
 
 function project(row: MemoryRow): RadarResumeProjection {
-  return { id: row.id, status: row.status, answers: structuredClone(row.answers), revision: row.revision, currentStep: row.currentStep, answeredCount: row.answeredCount, progressPercent: row.progressPercent };
+  return { questionnaireVersion: row.questionnaireVersion, id: row.id, status: row.status, answers: structuredClone(row.answers), revision: row.revision, currentStep: row.currentStep, answeredCount: row.answeredCount, progressPercent: row.progressPercent };
 }
 
 function progress(row: MemoryRow): RadarProgressProjection {

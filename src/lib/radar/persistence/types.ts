@@ -19,7 +19,7 @@ export interface RadarOwnedSession {
 }
 
 export interface RadarOwnership { assessmentId: string; ownerSecretHash: string }
-export interface RadarResumeProjection { id: string; status: RadarJourneyStatus; answers: RadarAnswers; revision: number; currentStep: number; answeredCount: number; progressPercent: number }
+export interface RadarResumeProjection { questionnaireVersion: string; id: string; status: RadarJourneyStatus; answers: RadarAnswers; revision: number; currentStep: number; answeredCount: number; progressPercent: number }
 export interface RadarProgressProjection { revision: number; currentStep: number; answeredCount: number; progressPercent: number }
 export interface SaveRadarAnswerInput extends RadarOwnership { answerKey: string; value: RadarAnswer; expectedRevision: number; currentStep: number }
 export interface RadarAccessEventInput { assessmentId: string; accessSource: 'PURCHASE' | 'PREVIEW'; eventType: 'PREVIEW_GRANTED' | 'PREVIEW_DENIED' | 'RESULT_OPENED' }

@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { RADAR_QUESTIONNAIRE_VERSION, radarSteps, type RadarAnswers, type RadarScores } from '@/lib/radar';
+import { RADAR_QUESTIONNAIRE_VERSION, type RadarAnswers, type RadarScores } from '@/lib/radar/types';
+import { radarSteps } from '@/lib/radar/domain';
 import { clearRecovery, createRecoveryEnvelope, loadActiveRecovery, saveRecovery } from './radar-recovery';
 import { RadarPaymentGate } from './radar-payment-gate';
 import { RadarQuestionnaire } from './radar-questionnaire';
@@ -13,20 +14,22 @@ type Phase = 'QUALIFICATION' | 'QUESTIONS' | 'PAYMENT' | 'RESULT';
 export function RadarClient() {
   const [phase, setPhase] = useState<Phase>('QUALIFICATION');
   const [assessmentId, setAssessmentId] = useState('');
+  const [questionnaireVersion, setQuestionnaireVersion] = useState<string>(RADAR_QUESTIONNAIRE_VERSION);
   const [revision, setRevision] = useState(0);
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState<RadarAnswers>({});
   const [saving, setSaving] = useState(false);
   const [syncError, setSyncError] = useState('');
   const [scores, setScores] = useState<RadarScores | null>(null);
-  const steps = useMemo(() => radarSteps(), []);
+  const steps = useMemo(() => radarSteps(questionnaireVersion), [questionnaireVersion]);
 
   async function resume() {
-    const local = loadActiveRecovery(localStorage, RADAR_QUESTIONNAIRE_VERSION);
+    const local = loadActiveRecovery(localStorage, RADAR_QUESTIONNAIRE_VERSION) ?? loadActiveRecovery(localStorage, 'radar-v1');
     if (local) {
+      setQuestionnaireVersion(local.questionnaireVersion);
       setAssessmentId(local.assessmentId);
       setRevision(local.revision);
-      setStepIndex(Math.min(29, local.currentStep));
+      setStepIndex(Math.min(radarSteps(local.questionnaireVersion).length - 1, local.currentStep));
       setAnswers(local.answers);
       setPhase('QUESTIONS');
     }
@@ -35,8 +38,9 @@ export function RadarClient() {
     const payload = await response.json();
     const session = payload.session;
     let restored = { answers: session.answers ?? {}, currentStep: session.currentStep, revision: session.revision };
-    if (local && local.assessmentId === session.id && local.revision >= session.revision) restored = local;
-    setAssessmentId(session.id); setRevision(restored.revision); setStepIndex(Math.min(29, restored.currentStep)); setAnswers(restored.answers);
+    if (local && local.assessmentId === session.id && local.questionnaireVersion === (session.questionnaireVersion ?? 'radar-v1') && local.revision >= session.revision) restored = local;
+    setQuestionnaireVersion(session.questionnaireVersion ?? 'radar-v1');
+    setAssessmentId(session.id); setRevision(restored.revision); setStepIndex(Math.min(radarSteps(session.questionnaireVersion ?? 'radar-v1').length - 1, restored.currentStep)); setAnswers(restored.answers);
     setPhase(['PAYMENT_REQUIRED', 'PAID', 'COMPLETED'].includes(session.status) ? 'PAYMENT' : 'QUESTIONS');
   }
 
@@ -53,21 +57,21 @@ export function RadarClient() {
     const payload = await response.json();
     const initialAnswers = { 'qualificazione#stagionale': body.seasonal ? 1 : 0 };
     setAssessmentId(payload.session.id); setRevision(payload.session.revision); setAnswers(initialAnswers); setPhase('QUESTIONS');
-    saveRecovery(localStorage, createRecoveryEnvelope({ assessmentId: payload.session.id, revision: payload.session.revision, currentStep: 0, answers: initialAnswers, questionnaireVersion: RADAR_QUESTIONNAIRE_VERSION }));
+    saveRecovery(localStorage, createRecoveryEnvelope({ assessmentId: payload.session.id, revision: payload.session.revision, currentStep: 0, answers: initialAnswers, questionnaireVersion }));
   }
 
   async function answer(value: number | number[], advance = true) {
     const step = steps[stepIndex]!;
     const nextAnswers = { ...answers, [step.id]: value };
     setAnswers(nextAnswers); setSaving(true); setSyncError('');
-    if (assessmentId) saveRecovery(localStorage, createRecoveryEnvelope({ assessmentId, revision, currentStep: stepIndex, answers: nextAnswers, questionnaireVersion: RADAR_QUESTIONNAIRE_VERSION }));
+    if (assessmentId) saveRecovery(localStorage, createRecoveryEnvelope({ assessmentId, revision, currentStep: stepIndex, answers: nextAnswers, questionnaireVersion }));
     try {
       const response = await fetch('/api/radar/answer', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ answerKey: step.id, value, expectedRevision: revision, currentStep: stepIndex + 1 }) });
       if (!response.ok) throw new Error('sync');
       const payload = await response.json();
-      const nextStep = advance ? Math.min(30, stepIndex + 1) : stepIndex;
+      const nextStep = advance ? Math.min(steps.length, stepIndex + 1) : stepIndex;
       setRevision(payload.progress.revision);
-      if (assessmentId) saveRecovery(localStorage, createRecoveryEnvelope({ assessmentId, revision: payload.progress.revision, currentStep: nextStep, answers: nextAnswers, questionnaireVersion: RADAR_QUESTIONNAIRE_VERSION }));
+      if (assessmentId) saveRecovery(localStorage, createRecoveryEnvelope({ assessmentId, revision: payload.progress.revision, currentStep: nextStep, answers: nextAnswers, questionnaireVersion }));
       if (!advance) return;
       if (stepIndex === steps.length - 1) { const completed = await fetch('/api/radar/complete', { method: 'POST' }); if (!completed.ok) throw new Error('complete'); setPhase('PAYMENT'); }
       else setStepIndex((current) => current + 1);
@@ -83,7 +87,7 @@ export function RadarClient() {
   }
 
   if (phase === 'QUALIFICATION') return <Qualification onStart={start} error={syncError}/>;
-  if (phase === 'QUESTIONS') return <><RadarQuestionnaire stepIndex={stepIndex} value={answers[steps[stepIndex]?.id ?? '']} saving={saving} onAnswer={answer} onBack={() => setStepIndex((current) => Math.max(0, current - 1))}/>{syncError ? <p className={styles.syncError} role="alert">{syncError}</p> : null}</>;
+  if (phase === 'QUESTIONS') return <><RadarQuestionnaire questionnaireVersion={questionnaireVersion} stepIndex={stepIndex} value={answers[steps[stepIndex]?.id ?? '']} saving={saving} onAnswer={answer} onBack={() => setStepIndex((current) => Math.max(0, current - 1))}/>{syncError ? <p className={styles.syncError} role="alert">{syncError}</p> : null}</>;
   if (phase === 'PAYMENT') return <RadarPaymentGate onPreviewUnlocked={loadResult}/>;
   return scores ? <RadarResult scores={scores}/> : null;
 }

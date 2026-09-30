@@ -1,4 +1,6 @@
 import type { RadarAnswers, RadarAreaId, RadarAreaScore, RadarScores, RadarStep } from './types.ts';
+import { RADAR_QUESTIONNAIRE_VERSION } from './types.ts';
+import { calculateOwnerEconomics, COMPANY_PROFIT_KEY, OWNER_HOURS_KEY, validOwnerEconomicsAnswer } from './owner-economics.ts';
 
 type AreaDefinition = { id: RadarAreaId; label: string; questions: readonly string[] };
 
@@ -47,7 +49,7 @@ const AI_STEPS: readonly RadarStep[] = [
   { id: 'ai#pronti', kind: 'LIKERT', title: "Io e il mio team ci sentiamo preparati a introdurre l'AI nei processi aziendali." },
 ] as const;
 
-export function radarSteps(): RadarStep[] {
+export function radarSteps(version: string = RADAR_QUESTIONNAIRE_VERSION): RadarStep[] {
   const areaSteps = RADAR_AREAS.flatMap((area) => area.questions.map((title, index) => ({
     id: `${area.id}#${index}`,
     kind: 'LIKERT' as const,
@@ -55,7 +57,16 @@ export function radarSteps(): RadarStep[] {
     areaId: area.id,
     autonomy: index === 4,
   })));
-  return [...areaSteps, { id: 'qualificazione#stagionale', kind: 'SEASONAL', title: 'L’attività della tua azienda ha carattere stagionale?' }, ...AI_STEPS];
+  return [...areaSteps, { id: 'qualificazione#stagionale', kind: 'SEASONAL', title: 'L’attività della tua azienda ha carattere stagionale?' }, ...AI_STEPS,
+    ...(version === 'radar-v1' ? [] : [
+      { id: OWNER_HOURS_KEY, kind: 'OWNER_HOURS' as const, title: 'Quante ore lavori davvero nella tua impresa?' },
+      { id: COMPANY_PROFIT_KEY, kind: 'COMPANY_PROFIT' as const, title: 'Quanto resta alla tua azienda prima delle tasse?' },
+    ]),
+  ];
+}
+
+export function isRadarComplete(answers: RadarAnswers, version: string = RADAR_QUESTIONNAIRE_VERSION): boolean {
+  return radarSteps(version).every((step) => Object.hasOwn(answers, step.id) && (!step.id.startsWith('economia#') || validOwnerEconomicsAnswer(step.id, answers[step.id])));
 }
 function score100(mean: number): number {
   return Math.round(((mean - 1) / 4) * 100);
@@ -76,6 +87,7 @@ export function calculateRadarScores(answers: RadarAnswers): RadarScores {
   const ai = score100((numericAnswer(answers, 'ai#uso') + numericAnswer(answers, 'ai#leva') + numericAnswer(answers, 'ai#pronti')) / 3);
   const ordered = [...areas].sort((left, right) => right.score - left.score);
   return {
+    ownerEconomics: calculateOwnerEconomics(answers),
     areas,
     ownerAutonomy,
     organizationalMaturity,

@@ -1,4 +1,4 @@
-export const RADAR_QUESTIONNAIRE_VERSION = 'radar-v1' as const;
+export const RADAR_QUESTIONNAIRE_VERSION = 'radar-v2' as const;
 
 export type RadarAreaId = 'amministrazione' | 'produzione' | 'commerciale' | 'marketing' | 'risorse-umane';
 export type RadarJourneyStatus = 'STARTED' | 'IN_PROGRESS' | 'PAYMENT_REQUIRED' | 'PAID' | 'COMPLETED' | 'ABANDONED' | 'EXPIRED';
@@ -11,6 +11,7 @@ export interface RadarAreaScore {
   score: number;
 }
 export interface RadarScores {
+  ownerEconomics: RadarOwnerEconomics | null;
   areas: RadarAreaScore[];
   ownerAutonomy: number;
   organizationalMaturity: number;
@@ -22,9 +23,15 @@ export interface RadarScores {
   weakestArea: RadarAreaScore;
 }
 
+export interface RadarOwnerEconomics {
+  monthlyProfit: number;
+  monthlyHours: number;
+  hourlyProfit: number;
+}
+
 export interface RadarStep {
   id: string;
-  kind: 'LIKERT' | 'SEASONAL' | 'AI_MULTI';
+  kind: 'LIKERT' | 'SEASONAL' | 'AI_MULTI' | 'OWNER_HOURS' | 'COMPANY_PROFIT';
   title: string;
   areaId?: RadarAreaId;
   autonomy?: boolean;

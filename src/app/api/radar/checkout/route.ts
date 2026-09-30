@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { createRadarCommerce, resolveRadarCatalog, StripeRadarGateway } from '@/lib/radar';
+import { createRadarCommerce, isRadarComplete, resolveRadarCatalog, StripeRadarGateway } from '@/lib/radar';
 import { createService, errorResponse, getSessionCookie } from '../_shared';
 
 export async function POST() {
   try {
     const session = await getSessionCookie();
     const assessment = await createService().resumeAssessment(session.assessmentId, session.ownerSecret);
-    if (assessment.answeredCount < 30 || assessment.status !== 'PAYMENT_REQUIRED') return NextResponse.json({ ok: false, error: { message: 'Completa il Radar prima del pagamento.' } }, { status: 409 });
+    if (!isRadarComplete(assessment.answers, assessment.questionnaireVersion) || assessment.status !== 'PAYMENT_REQUIRED') return NextResponse.json({ ok: false, error: { message: 'Completa il Radar prima del pagamento.' } }, { status: 409 });
     const catalog = resolveRadarCatalog();
     const commerce = createRadarCommerce();
     const purchase = await commerce.createPurchase({ assessmentId: session.assessmentId, priceId: catalog.priceId, amountCents: catalog.amountCents });

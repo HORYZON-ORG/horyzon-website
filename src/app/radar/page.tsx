@@ -18,19 +18,20 @@ const outputs = [
   ['Autonomia', 'Autonomia dal titolare', 'Quanto l’impresa va avanti senza di te.'],
   ['Sintesi', 'Indice globale', 'Struttura e autonomia in un solo valore.'],
   ['AI', 'Intelligenza artificiale', 'Quanto l’AI è presente e se il team è pronto.'],
+  ['Tempo e utile', 'Quanto rende la tua ora', 'L’utile aziendale prima delle tasse diviso le ore che lavori.'],
   ['Priorità', 'Area forte e area prioritaria', 'Su cosa puoi contare. Da dove partire.'],
 ] as const;
 
 const steps = [
   ['Contesto', 'Azienda, settore, dimensione.'],
-  ['Domande', 'Una alla volta, sui cinque reparti e sull’AI.'],
-  ['Profilo', 'Indici, area forte e area prioritaria.'],
+  ['Domande', 'Cinque reparti, AI, ore lavorate e utile.'],
+  ['Profilo', 'Indici, utile per ora e area prioritaria.'],
 ] as const;
 
 const faqs = [
   ['Quanto tempo richiede?', 'Circa 8 minuti. Le risposte vengono salvate mentre procedi, quindi puoi riprendere più tardi.'],
   ['Il risultato è gratuito?', 'No. Il profilo viene calcolato al termine e si sblocca dopo il pagamento. Il prezzo è mostrato prima dell’acquisto.'],
-  ['Devo avere dati finanziari a portata di mano?', 'No. Rispondi in base a ciò che accade oggi nella tua impresa. Non inserire dati di clienti, dipendenti o altre informazioni sensibili.'],
+  ['Devo avere dati finanziari a portata di mano?', 'Serve una stima dell’utile aziendale prima delle tasse, mensile o annuale, e delle tue ore medie di lavoro. L’utile è ciò che resta dopo tutti i costi: il solo fatturato non basta.'],
   ['È una diagnosi completa?', 'No. È una prima fotografia guidata. Una diagnosi completa richiede confronto, numeri e osservazione dei processi reali. Non è una valutazione finanziaria, fiscale o legale.'],
   ['Per chi è pensato?', 'Per chi ha già un’impresa con clienti e collaboratori e sente che troppe decisioni dipendono ancora da sé. Il Radar non promette autonomia o crescita entro una data: indica da dove partire.'],
 ] as const;

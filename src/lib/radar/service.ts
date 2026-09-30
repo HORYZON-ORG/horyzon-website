@@ -1,4 +1,4 @@
-import { calculateRadarScores } from './domain.ts';
+import { calculateRadarScores, isRadarComplete } from './domain.ts';
 import { lockedRadarProjection, unlockedRadarProjection } from './public-projection.ts';
 import { createPreviewToken, timingSafePinMatch, verifyPreviewToken } from './preview.ts';
 import { hashOwnerSecret } from './persistence/security.ts';
@@ -22,7 +22,7 @@ export function createRadarService(config: { persistence: RadarPersistence; prev
     async grantPreview(input: { assessmentId: string; ownerSecret: string; pin: string; ipKey: string }) {
       if (!config.previewEnabled || !config.previewPin || !tokenSecret) throw new RadarAccessError('Anteprima non disponibile.', 404);
       const session = await config.persistence.resumeAssessment({ assessmentId: input.assessmentId, ownerSecretHash: hashOwnerSecret(input.ownerSecret) });
-      if (session.answeredCount < 30) throw new RadarAccessError('Il Radar non è completo.', 409);
+      if (!isRadarComplete(session.answers, session.questionnaireVersion)) throw new RadarAccessError('Il Radar non è completo.', 409);
       const recentDenials = await config.persistence.countRecentPreviewDenials(input.assessmentId);
       if (recentDenials >= 5) throw new RadarAccessError('Troppi tentativi. Riprova più tardi.', 423);
       if (!timingSafePinMatch(input.pin, config.previewPin)) {
