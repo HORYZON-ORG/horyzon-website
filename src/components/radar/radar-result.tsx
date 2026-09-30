@@ -4,7 +4,7 @@ import styles from './radar.module.css';
 const euro = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const number = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 1 });
 
-export function RadarResult({ scores }: { scores: RadarScores }) {
+export function RadarResult({ scores, onRestart }: { scores: RadarScores; onRestart: () => void }) {
   const economics = scores.ownerEconomics;
   return <section className={styles.panel} aria-labelledby="radar-result-title">
     <p className={styles.kicker}>Il tuo Radar</p>
@@ -23,5 +23,6 @@ export function RadarResult({ scores }: { scores: RadarScores }) {
     <div className={styles.results}>{scores.areas.map((area) => <article key={area.id}><span>{area.label}</span><strong>{area.score}</strong></article>)}</div>
     <p>Autonomia dal titolare: <strong>{scores.ownerAutonomy}/100</strong></p>
     <p>Preparazione AI: <strong>{scores.ai}/100</strong></p>
+    <div className={styles.cardFoot}><button type="button" className={styles.restart} onClick={onRestart}>Rifai il test da zero</button></div>
   </section>;
 }

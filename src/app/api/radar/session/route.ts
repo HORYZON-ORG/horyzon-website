@@ -1,5 +1,6 @@
+import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { createService, errorResponse, readJson, setSessionCookie } from '../_shared';
+import { RADAR_PREVIEW_COOKIE, RADAR_SESSION_COOKIE, createService, errorResponse, readJson, setSessionCookie } from '../_shared';
 
 export async function POST(request: Request) {
   try {
@@ -11,4 +12,13 @@ export async function POST(request: Request) {
     await setSessionCookie({ assessmentId: created.id, ownerSecret: created.ownerSecret });
     return NextResponse.json({ ok: true, session: { id: created.id, revision: created.revision } }, { status: 201 });
   } catch (error) { return errorResponse(error); }
+}
+
+
+// "Rifai il test da zero": this browser forgets its Radar. The saved assessment stays in the database.
+export async function DELETE() {
+  const store = await cookies();
+  store.delete(RADAR_SESSION_COOKIE);
+  store.delete({ name: RADAR_PREVIEW_COOKIE, path: '/radar' });
+  return NextResponse.json({ ok: true }, { headers: { 'Cache-Control': 'no-store' } });
 }

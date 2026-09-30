@@ -25,7 +25,7 @@ export function createRadarService(config: { persistence: RadarPersistence; prev
       if (!isRadarComplete(session.answers, session.questionnaireVersion)) throw new RadarAccessError('Il Radar non è completo.', 409);
       const recentDenials = await config.persistence.countRecentPreviewDenials(input.assessmentId);
       if (recentDenials >= 5) throw new RadarAccessError('Troppi tentativi. Riprova più tardi.', 423);
-      if (!timingSafePinMatch(input.pin, config.previewPin)) {
+      if (!timingSafePinMatch(input.pin.trim(), config.previewPin.trim())) {
         await config.persistence.appendAccessEvent({ assessmentId: input.assessmentId, accessSource: 'PREVIEW', eventType: 'PREVIEW_DENIED' });
         throw new RadarAccessError('PIN non valido.');
       }

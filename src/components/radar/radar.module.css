@@ -52,7 +52,12 @@
 .form select option{color:#07171d}
 .form button{grid-column:1/-1;justify-self:start;margin-top:8px}
 
-.previewTrigger{margin-top:40px!important;min-height:0!important;padding:0!important;background:transparent!important;border:0!important;color:#b8c6c8!important;text-decoration:underline;font-size:12px!important}
+/* Card footer: restart on the left, preview unlock at the bottom right. */
+.cardFoot{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:34px;padding-top:18px;border-top:1px solid rgba(247,244,232,.12)}
+.panel .previewTrigger,.panel .restart,.restartRow .restart{min-height:44px!important;padding:0!important;background:transparent!important;border:0!important;color:#b8c6c8!important;font:500 12px var(--font-mono),monospace!important;letter-spacing:.1em;text-transform:uppercase;text-decoration:underline;text-underline-offset:4px}
+.panel .previewTrigger{margin-left:auto}
+.panel .previewTrigger:hover,.panel .restart:hover,.restartRow .restart:hover{color:#d8ff42!important;translate:none!important}
+.restartRow{max-width:860px;margin:10px auto 0;text-align:right}
 .pin{display:grid;gap:10px;max-width:330px;margin-top:15px}
 .syncError{max-width:860px;margin:14px auto 0;color:#ffd2cc}
 .results{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:10px 0 18px}

@@ -79,6 +79,16 @@ export function RadarClient() {
     finally { setSaving(false); }
   }
 
+  // Start again from the qualification form: forget the session cookie and the local recovery copy.
+  async function restart() {
+    if (phase === 'QUESTIONS' && !window.confirm('Vuoi ricominciare il Radar da zero? Le risposte date finora non verranno usate.')) return;
+    await fetch('/api/radar/session', { method: 'DELETE' }).catch(() => undefined);
+    if (assessmentId) clearRecovery(localStorage, assessmentId);
+    localStorage.removeItem('horyzon:radar:recovery:active');
+    setQuestionnaireVersion(RADAR_QUESTIONNAIRE_VERSION); setAssessmentId(''); setRevision(0); setStepIndex(0); setAnswers({}); setScores(null); setSyncError(''); setPhase('QUALIFICATION');
+    document.getElementById('radar-prodotto')?.scrollIntoView({ block: 'start' });
+  }
+
   async function loadResult() {
     const response = await fetch('/api/radar/result', { cache: 'no-store' });
     if (!response.ok) return;
@@ -87,9 +97,9 @@ export function RadarClient() {
   }
 
   if (phase === 'QUALIFICATION') return <Qualification onStart={start} error={syncError}/>;
-  if (phase === 'QUESTIONS') return <><RadarQuestionnaire questionnaireVersion={questionnaireVersion} stepIndex={stepIndex} value={answers[steps[stepIndex]?.id ?? '']} saving={saving} onAnswer={answer} onBack={() => setStepIndex((current) => Math.max(0, current - 1))}/>{syncError ? <p className={styles.syncError} role="alert">{syncError}</p> : null}</>;
-  if (phase === 'PAYMENT') return <RadarPaymentGate onPreviewUnlocked={loadResult}/>;
-  return scores ? <RadarResult scores={scores}/> : null;
+  if (phase === 'QUESTIONS') return <><RadarQuestionnaire questionnaireVersion={questionnaireVersion} stepIndex={stepIndex} value={answers[steps[stepIndex]?.id ?? '']} saving={saving} onAnswer={answer} onBack={() => setStepIndex((current) => Math.max(0, current - 1))}/>{syncError ? <p className={styles.syncError} role="alert">{syncError}</p> : null}<p className={styles.restartRow}><button type="button" className={styles.restart} onClick={restart}>Rifai il test da zero</button></p></>;
+  if (phase === 'PAYMENT') return <RadarPaymentGate onPreviewUnlocked={loadResult} onRestart={restart}/>;
+  return scores ? <RadarResult scores={scores} onRestart={restart}/> : null;
 }
 
 function Qualification({ onStart, error }: { onStart: (form: FormData) => Promise<void>; error: string }) {
