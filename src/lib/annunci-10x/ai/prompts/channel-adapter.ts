@@ -11,7 +11,7 @@ const invariants = [
   'TITLE is structural: preserve the role title in title and set the TITLE section body to an empty string. Do not duplicate the title in body.',
   'Preserve confirmed shifts and on-call availability explicitly, including negative values such as no shifts and no on-call.',
   'Preserve the explicit confirmed mission/outcome and confirmed company context, operating context, autonomy, and unexpected events when adapting the Master.',
-  'Traceability ids do not substitute visible copy: preserved facts must remain semantically present in the candidate-facing channel variant.'
+  'Traceability ids do not substitute visible copy: preserved facts must remain semantically present in the candidate-facing channel variant.',
 ] as const;
 
 export const CHANNEL_ADAPTER_PROMPT: Annunci10xPromptDefinition = {

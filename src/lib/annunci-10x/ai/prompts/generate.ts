@@ -26,7 +26,7 @@ const invariants = [
   'If confirmed shifts or on-call availability are present, including negative values such as no shifts/no on-call, state them explicitly in CONDITIONS because they are candidate compatibility facts.',
   'A confirmed mission/outcome must remain explicitly visible in candidate-facing copy. Do not delete it merely to reduce repetition; instead remove the redundant wording around it.',
   'When confirmed, company context, operating context, autonomy, and unexpected events/variability are real-work facts. Surface them concretely without inventing cadence or chronology.',
-  'sourceFactIds are traceability metadata only. A fact counts as preserved only when its meaning is actually visible in candidate-facing text.'
+  'sourceFactIds are traceability metadata only. A fact counts as preserved only when its meaning is actually visible in candidate-facing text.',
 ] as const;
 
 export const GENERATE_PROMPT: Annunci10xPromptDefinition = {

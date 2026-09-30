@@ -19,7 +19,7 @@ const invariants = [
   'Do not omit confirmed shifts or on-call availability while revising CONDITIONS, including explicit negative values such as no shifts and no on-call.',
   'Never solve repetition by deleting the only explicit confirmed mission/outcome. Keep one clear outcome statement and remove the redundant surrounding section/text instead.',
   'Preserve confirmed company context, operating context, autonomy, and unexpected events/variability when revising candidate-facing work-reality sections.',
-  'Do not assume that retaining a sourceFactId preserves a fact: its meaning must remain visible in title/body copy after the revision.'
+  'Do not assume that retaining a sourceFactId preserves a fact: its meaning must remain visible in title/body copy after the revision.',
 ] as const;
 
 export const REVISE_PROMPT: Annunci10xPromptDefinition = {
