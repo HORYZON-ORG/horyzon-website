@@ -185,8 +185,9 @@
   .rd-hero-scope{justify-self:center;width:min(100%,460px);margin-top:10px}
   .rd-story-stage{grid-template-columns:1fr;gap:10px;padding:80px 6vw}
   .rd-story.is-live .rd-story-stage{align-content:center;padding-top:70px;padding-bottom:50px}
-  .rd-story-radar{max-width:min(420px,46svh)}
-  .rd-story.is-live .rd-story-copy{min-height:34svh;align-items:start}
+  .rd-story-copy{order:-1}
+  .rd-story-radar{max-width:min(400px,42svh)}
+  .rd-story.is-live .rd-story-copy{min-height:30svh;align-items:end}
   .rd-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
   .rd-frank,.rd-faq{grid-template-columns:1fr;gap:40px}
   .rd-frank-photo{max-width:420px}
@@ -199,7 +200,7 @@
   .rd-label{font-size:11px;letter-spacing:.14em}
   .rd-actions{flex-direction:column;align-items:stretch;gap:12px}
   .rd-actions .rd-link{align-self:flex-start}
-  .rd-axis-labels text{font-size:15px}
+  .rd-axis-labels text{font-size:13px;letter-spacing:.08em}
   .rd-story-stage,.rd-map,.rd-product,.rd-frank,.rd-faq{padding-left:5vw;padding-right:5vw}
   .rd-story-signal{font-size:clamp(27px,8vw,38px)}
   .rd-map,.rd-frank,.rd-faq{padding-top:90px;padding-bottom:90px}
