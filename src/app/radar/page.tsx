@@ -98,7 +98,7 @@ export default function CommercialRadarPage() {
       </section>
 
       <section className="radar-commercial-video" aria-labelledby="video-title">
-        <figure><Image src="/people/frank.webp" alt="Frank Cannoletta" fill sizes="(max-width: 850px) 92vw, 52vw"/><figcaption>Il video di Frank sarà inserito qui dopo la registrazione e la revisione finale.</figcaption></figure>
+        <figure><Image src="/people/frank-no-badge.png" alt="Frank Cannoletta" fill sizes="(max-width: 850px) 92vw, 52vw"/><figcaption>Il video di Frank sarà inserito qui dopo la registrazione e la revisione finale.</figcaption></figure>
         <div><p className="radar-commercial-context">Il volto del debriefing</p><h2 id="video-title">Perché abbiamo costruito il Radar</h2><p>Frank spiega perché il punto di partenza viene prima delle soluzioni e come leggere il risultato senza trasformarlo in un giudizio sull’imprenditore.</p><blockquote>“Il Radar serve a rendere visibile la situazione di oggi. Il lavoro utile comincia quando la colleghiamo agli obiettivi dell’impresa.”</blockquote><RadarCta position="video" label="Inizia la tua fotografia d’impresa"/><p className="radar-commercial-fine">Il questionario si completa direttamente sul sito Horyzon.</p></div>
       </section>
 

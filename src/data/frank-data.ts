@@ -33,7 +33,7 @@ export const frankData = {
     eyebrow: 'HORYZON CONSULTING · PARTNER NETWORK',
     quote: '«Unisco la gestione della mente, la struttura dell’azienda e la protezione del patrimonio in un’unica visione strategica.»',
     domains: ['Persona', 'Impresa', 'Patrimonio'],
-    image: '/people/frank.webp',
+    image: '/people/frank-no-badge.png',
     imageAlt: 'Ritratto professionale di Frank Cannoletta, Imprenditore e Strategista',
     phone: '+39 348 169 8762',
     phoneRaw: '+393481698762',
