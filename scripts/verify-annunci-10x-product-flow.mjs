@@ -483,6 +483,25 @@ for (const compensation of compensationVariants) {
   }
 }
 
+const locationContext = makeContext();
+const startedLocationCreate = await startAnnunci10xCreate({ context: locationContext });
+let locationState = startedLocationCreate.result;
+const locationAnswers = preservationAnswers.map(([stepId, answer]) => stepId === 'OFFER'
+  ? [stepId, 'Sede: Bari, zona Industriale. Modalita: In sede. Contratto: Tempo determinato 6 mesi con possibilita di stabilizzazione. Orario: Lunedi-venerdi, 8:00-17:00 con un\'ora di pausa. Turni: Non previsti. Reperibilita: Non prevista. Compenso: RAL 24.000-27.000 €.']
+  : [stepId, answer]);
+for (const [stepId, answer] of locationAnswers) {
+  locationState = await answerAnnunci10xCreateStep({
+    sessionId: startedLocationCreate.cookie.sessionId,
+    sessionSecret: startedLocationCreate.cookie.sessionSecret,
+    stepId,
+    answer,
+    context: locationContext,
+  });
+}
+assert.equal(locationState.roleCard.location, 'Bari, zona Industriale', 'location must preserve the declared zone detail');
+const latestLocationSnapshot = await locationContext.persistence.getLatestSnapshot(startedLocationCreate.cookie.sessionId, startedLocationCreate.cookie.sessionSecret);
+assert.equal(latestLocationSnapshot.roleCard.attractionContext.location.value, 'Bari, zona Industriale', 'persisted RoleCard must preserve the full declared location');
+
 await assert.rejects(
   () => runFreeAnnunci10xAnalysis({
     sessionId: startedCreate.cookie.sessionId,

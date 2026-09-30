@@ -923,6 +923,10 @@ function workModeDetailFromText(text: string): Fact<string> | undefined {
 }
 
 function locationFromText(text: string): Fact<string> | undefined {
+  const labeled = extractCreateField(text, offerFieldLabels.location);
+  if (labeled && !isUnknownAnswer(labeled)) {
+    return fact(labeled, 'USER_DECLARED', 'create-location');
+  }
   const explicit = text.match(/\b(?:sede\s+di|sede|zona)\s*:?\s+([A-ZÀ-Ü][a-zà-ü]+(?:\s[A-ZÀ-Ü][a-zà-ü]+)?)/i);
   const match = explicit ?? text.match(/\ba\s+([A-ZÀ-Ü][a-zà-ü]+(?:\s[A-ZÀ-Ü][a-zà-ü]+)?)/i);
   return match?.[1] ? fact(match[1], 'USER_DECLARED', 'create-location') : undefined;
