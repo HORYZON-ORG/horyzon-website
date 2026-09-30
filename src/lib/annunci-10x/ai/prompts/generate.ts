@@ -2,7 +2,7 @@ import { ANNUNCI10X_AI_OUTPUT_SCHEMAS } from '../schemas.ts';
 import { renderPrompt } from './helpers.ts';
 import type { Annunci10xPromptDefinition } from './types.ts';
 
-export const ANNUNCI10X_GENERATE_PROMPT_VERSION = 'annunci10x.generate.v3';
+export const ANNUNCI10X_GENERATE_PROMPT_VERSION = 'annunci10x.generate.v4';
 
 const invariants = [
   'Generate the Master ad only from confirmed/publishable RoleCard facts, RoleProfile, and CommunicationStrategy.',
@@ -17,6 +17,7 @@ const invariants = [
   'Represent routine, pressure, shifts, travel, physical effort, responsibility, and other demanding conditions faithfully when confirmed. Do not glamourize routine and do not hide difficulty.',
   'Use only concrete, supportable reasons to consider the offer. Do not add generic prestige, culture, growth, or employer-brand slogans.',
   'Every generated section must be traceable through sourceFactIds/sourcePaths to facts actually supplied in the input.',
+  'Preserve confirmed compensation ranges, variable components, hybrid-work details, and application instructions exactly in meaning; do not shorten "30.000-36.000" to "30".',
   'Every paragraph must add a distinct supported fact or a distinct supported relationship between facts. Remove repetition before removing useful detail.',
   'Omit optional sections when there is no real source content. Prefer a shorter truthful ad over padded copy.',
 ] as const;

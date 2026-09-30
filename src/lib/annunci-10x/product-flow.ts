@@ -614,7 +614,7 @@ export function buildEvaluateInputV2(input: {
       structuredFields: {
         declaredChannel: input.channelHint ?? null,
       },
-      applicationDestination: null,
+      applicationDestination: input.roleCard.applicationInstructions?.value ?? null,
       channelPolicy: null,
     },
     context: {

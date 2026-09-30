@@ -14,6 +14,7 @@ import {
   clarifyAnnunci10xCreate,
   editAnnunci10xCreate,
   confirmAnnunci10xCreate,
+  createTestGenerationAuthorizationProvider,
   buildRoleContextPresentation,
   deriveResultPriorities,
   deriveResultStrengths,
@@ -23,6 +24,7 @@ import {
   publicationCopy,
   resumeAnnunci10xCreate,
   runFreeAnnunci10xAnalysis,
+  runAnnunci10xPremiumGeneration,
   answerAnnunci10xClarification,
 } from '../src/lib/annunci-10x/index.ts';
 
@@ -232,7 +234,7 @@ const createAnswers = [
   ['WORK_REALITY', 'Gestisce ticket, aggiorna CRM, collabora con sales. Il lavoro e remoto ma richiede presenza in sede per onboarding.'],
   ['REQUIREMENTS', 'Obbligatorio: italiano scritto chiaro. Preferenziale: esperienza CRM. Apprendibile: procedure interne. Vincoli: indisponibilita ai turni.'],
   ['ATTRACTION', 'Affiancamento iniziale, team stabile, processi chiari e obiettivi condivisi.'],
-  ['OFFER', 'Sede Bari, contratto tempo determinato 12 mesi, ibrido 2 giorni, RAL 24000 euro.'],
+  ['OFFER', 'Sede Bari, contratto tempo determinato 12 mesi, RAL 24000 euro.'],
   ['CHANNEL_APPLICATION', 'LinkedIn e ATS aziendale; candidatura tramite form con CV aggiornato.'],
 ];
 
@@ -336,6 +338,99 @@ assert.equal(unknownCreateState.roleCard.location, 'Bari');
 assert.equal(unknownCreateState.roleCard.schedule, 'Da definire');
 assert.equal(unknownCreateState.roleCard.compensation.includes('0'), false, 'unknown compensation must not become zero');
 assert.equal(unknownCreateState.roleCard.compensation.toLowerCase().includes('concordare'), false, 'unknown compensation must not become a default claim');
+
+const preservationContext = makeContext();
+const startedPreservationCreate = await startAnnunci10xCreate({ context: preservationContext });
+const preservationAnswers = [
+  ['ROLE_CONTEXT', 'Ruolo: Commerciale B2B. Contesto aziendale: Societa di servizi digitali per PMI con team commerciale e marketing interni.'],
+  ['PRIMARY_CONTRIBUTION', 'Risultato principale: Sviluppare nuove opportunita commerciali qualificate e accompagnarle fino alla chiusura o a un next step concordato.'],
+  ['WORK_REALITY', 'Attivita: Fare prospecting, qualificare lead, svolgere call, preparare proposte, gestire follow-up, aggiornare il CRM e coordinarsi con marketing e delivery.'],
+  ['REQUIREMENTS', "Indispensabili: Almeno 2 anni di esperienza nella vendita B2B, capacita di gestire una trattativa, utilizzo ordinato di un CRM e autonomia nell'organizzazione dell'attivita commerciale. Preferenziali: Esperienza nella vendita di servizi digitali o consulenziali alle PMI. Apprendibili: Offerta specifica dell'azienda, metodologia commerciale interna, strumenti proprietari e processi di delivery. Vincoli: Nessun vincolo ulteriore indicato."],
+  ['ATTRACTION', "Benefit: Laptop e telefono aziendale. Formazione/crescita: Onboarding sull'offerta e affiancamento iniziale alle call del responsabile commerciale."],
+  ['OFFER', 'Sede: Milano. Modalita: Ibrido: 3 giorni in sede e 2 da remoto. Contratto: Tempo indeterminato. Orario: Full-time, indicativamente 9:00-18:00. Turni: Non previsti. Reperibilita: Non prevista. Compenso: RAL 30.000-36.000 EUR piu variabile fino a 8.000 EUR annui al raggiungimento degli obiettivi concordati.'],
+  ['CHANNEL_APPLICATION', 'Canale: LINKEDIN. Candidatura: Inviare CV o profilo LinkedIn a sales-recruiting@azienda-test.it.'],
+];
+let preservationState = startedPreservationCreate.result;
+for (const [stepId, answer] of preservationAnswers) {
+  preservationState = await answerAnnunci10xCreateStep({
+    sessionId: startedPreservationCreate.cookie.sessionId,
+    sessionSecret: startedPreservationCreate.cookie.sessionSecret,
+    stepId,
+    answer,
+    context: preservationContext,
+  });
+}
+assert.equal(preservationState.clarification, null, 'declared hybrid distribution must not create redundant work-mode clarification');
+assert.equal(preservationState.canConfirm, true);
+assert.equal(preservationState.roleCard.workMode, 'Ibrido');
+assert.match(preservationState.roleCard.workModeDetail, /3 giorni in sede e 2 da remoto/i);
+assert.match(preservationState.roleCard.compensation, /30\.000-36\.000/i);
+assert.match(preservationState.roleCard.compensation, /8\.000/i);
+assert.match(preservationState.roleCard.compensation, /variabile/i);
+assert.match(preservationState.roleCard.applicationInstructions, /sales-recruiting@azienda-test\.it/i);
+
+const preservationConfirmed = await confirmAnnunci10xCreate({
+  sessionId: startedPreservationCreate.cookie.sessionId,
+  sessionSecret: startedPreservationCreate.cookie.sessionSecret,
+  context: preservationContext,
+});
+assert.equal(preservationConfirmed.state, 'PAYMENT_REQUIRED');
+
+const preservationPremium = await runAnnunci10xPremiumGeneration({
+  sessionId: startedPreservationCreate.cookie.sessionId,
+  sessionSecret: startedPreservationCreate.cookie.sessionSecret,
+  channel: 'LINKEDIN',
+  context: preservationContext,
+  authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
+});
+assert.match(preservationPremium.masterText, /sales-recruiting@azienda-test\.it/i, 'master output contains application destination');
+assert.equal(JSON.stringify(preservationPremium.channelVariant).includes('sales-recruiting@azienda-test.it'), true, 'channel adapter output contains application destination');
+const generateCall = preservationContext.provider.calls.find((call) => call.operationType === 'GENERATE');
+const channelCall = preservationContext.provider.calls.find((call) => call.operationType === 'CHANNEL_ADAPTER');
+const evaluateCall = preservationContext.provider.calls.find((call) => call.operationType === 'EVALUATE' && call.outputSchemaName === 'annunci10x_evaluate_v2');
+assert.equal(JSON.stringify(generateCall?.input ?? {}).includes('sales-recruiting@azienda-test.it'), true, 'generator receives application instructions');
+assert.equal(JSON.stringify(channelCall?.input ?? {}).includes('sales-recruiting@azienda-test.it'), true, 'channel adapter receives application instructions');
+assert.equal(evaluateCall?.input?.target?.applicationDestination, 'Inviare CV o profilo LinkedIn a sales-recruiting@azienda-test.it', 'evaluator receives application destination');
+
+const latestPreservationSnapshot = await preservationContext.persistence.getLatestSnapshot(startedPreservationCreate.cookie.sessionId, startedPreservationCreate.cookie.sessionSecret);
+assert.match(latestPreservationSnapshot.roleCard.compensation.amountText.value, /30\.000-36\.000/i);
+assert.match(latestPreservationSnapshot.roleCard.compensation.amountText.value, /8\.000/i);
+assert.equal(latestPreservationSnapshot.roleCard.attractionContext.workMode.value, 'Ibrido');
+assert.match(latestPreservationSnapshot.roleCard.attractionContext.workModeDetail.value, /3 giorni in sede e 2 da remoto/i);
+assert.match(latestPreservationSnapshot.roleCard.applicationInstructions.value, /sales-recruiting@azienda-test\.it/i);
+assert.equal(JSON.stringify(latestPreservationSnapshot.roleProfile).includes('sales-recruiting@azienda-test.it'), true, 'RoleProfile keeps RoleCard application instructions available');
+const strategyCall = preservationContext.provider.calls.find((call) => call.operationType === 'STRATEGY');
+assert.equal(JSON.stringify(strategyCall?.input ?? {}).includes('30.000-36.000'), true, 'Strategy receives preserved compensation range through RoleCard context');
+
+const compensationVariants = [
+  'RAL 30.000-36.000 €',
+  '30.000–36.000 EUR',
+  'RAL 30k-36k',
+  '€30.000 - €36.000',
+  'RAL 30.000-36.000 + variabile fino a 8.000',
+  '24.000-27.000 €',
+  'CCNL Turismo, 4° livello',
+];
+for (const compensation of compensationVariants) {
+  const variantContext = makeContext();
+  const variantStarted = await startAnnunci10xCreate({ context: variantContext });
+  let variantState = variantStarted.result;
+  const variantAnswers = preservationAnswers.map(([stepId, answer]) => stepId === 'OFFER'
+    ? [stepId, `Sede: Milano. Modalita: Ibrido: 3 giorni in sede e 2 da remoto. Contratto: Tempo indeterminato. Orario: Full-time. Compenso: ${compensation}.`]
+    : [stepId, answer]);
+  for (const [stepId, answer] of variantAnswers) {
+    variantState = await answerAnnunci10xCreateStep({
+      sessionId: variantStarted.cookie.sessionId,
+      sessionSecret: variantStarted.cookie.sessionSecret,
+      stepId,
+      answer,
+      context: variantContext,
+    });
+  }
+  for (const token of compensation.match(/\d{1,3}(?:[.,]\d{3})*(?:[.,]\d+)?|\d+\s?k|CCNL|Turismo|4°/gi) ?? []) {
+    assert.equal(variantState.roleCard.compensation.toLowerCase().includes(token.toLowerCase()), true, `compensation variant must preserve ${token}`);
+  }
+}
 
 await assert.rejects(
   () => runFreeAnnunci10xAnalysis({

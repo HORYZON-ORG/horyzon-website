@@ -73,7 +73,7 @@ function makeMockOutput(request: Annunci10xAiProviderRequest, mode: MockAnnunci1
     };
   }
   if (request.operationType === 'STRATEGY') return mockStrategy();
-  if (request.operationType === 'GENERATE') return mockGenerate(mode);
+  if (request.operationType === 'GENERATE') return mockGenerate(mode, request.input);
   if (request.operationType === 'VALIDATE') {
     if (mode === 'unsupported_claim' || /buoni pasto|leader di mercato|50000|50,000/i.test(stringifyInput(request.input))) {
       return {
@@ -91,7 +91,7 @@ function makeMockOutput(request: Annunci10xAiProviderRequest, mode: MockAnnunci1
     if (request.outputSchemaName === 'annunci10x_evaluate_v2') return makeMockEvaluationV2(request.input);
     return makeMockEvaluation(request.input);
   }
-  if (request.operationType === 'CHANNEL_ADAPTER') return mockChannelVariant();
+  if (request.operationType === 'CHANNEL_ADAPTER') return mockChannelVariant(request.input);
   if (request.operationType === 'EDIT_CLASSIFIER') return classifyMockEdit(readEditRequest(request.input));
   return {
     revisedSections: [mockSection('section-1', 'OPENING', 'Apertura', 'Testo rivisto senza claim non supportati.', ['answer-title'])],
@@ -125,41 +125,43 @@ function mockStrategy(): unknown {
   };
 }
 
-function mockGenerate(mode: MockAnnunci10xProviderMode): unknown {
+function mockGenerate(mode: MockAnnunci10xProviderMode, input: unknown): unknown {
+  const application = readStringPath(input, ['roleCard', 'applicationInstructions', 'value']);
   const body = mode === 'unsupported_claim'
     ? 'Addetto pulizie con buoni pasto e benefit non confermati.'
-    : 'Addetto pulizie per pulizia uffici e spazi comuni.';
+    : ['Addetto pulizie per pulizia uffici e spazi comuni.', application ? `Candidatura: ${application}` : ''].filter(Boolean).join('\n');
+  const sections = [
+    mockSection('section-1', 'TITLE', 'Titolo', body, ['answer-title']),
+    mockSection('section-2', 'RESPONSIBILITIES', 'Attivita', 'Pulizia uffici, corridoi e spazi comuni.', ['answer-responsibility']),
+    ...(application ? [mockSection('section-3', 'APPLICATION', 'Candidatura', `Candidatura: ${application}`, ['create-application-instructions'])] : []),
+  ];
   return {
     generatedAd: {
       id: 'master-1',
       sessionId: 'session-1',
       kind: 'MASTER',
-      sections: [
-        mockSection('section-1', 'TITLE', 'Titolo', body, ['answer-title']),
-        mockSection('section-2', 'RESPONSIBILITIES', 'Attivita', 'Pulizia uffici, corridoi e spazi comuni.', ['answer-responsibility']),
-      ],
+      sections,
       sourceOfTruth: true,
       generatedAt: '2026-09-22T00:00:00.000Z',
       promptVersion: ANNUNCI10X_PROMPT_PACK_VERSION,
     },
     title: 'Addetto pulizie',
     metadata: { language: 'it' },
-    sections: [
-      mockSection('section-1', 'TITLE', 'Titolo', body, ['answer-title']),
-      mockSection('section-2', 'RESPONSIBILITIES', 'Attivita', 'Pulizia uffici, corridoi e spazi comuni.', ['answer-responsibility']),
-    ],
+    sections,
     fullText: body,
-    sourcePaths: ['title', 'responsibilities'],
+    sourcePaths: ['title', 'responsibilities', ...(application ? ['applicationInstructions'] : [])],
   };
 }
 
-function mockChannelVariant(): unknown {
+function mockChannelVariant(input: unknown): unknown {
+  const application = readStringPath(input, ['roleCard', 'applicationInstructions', 'value']);
+  const body = ['Addetto pulizie - versione LinkedIn', application ? `Candidatura: ${application}` : ''].filter(Boolean).join('\n');
   return {
     channelVariant: {
       id: 'variant-1',
       masterAdId: 'master-1',
       channel: 'LINKEDIN',
-      sections: [mockSection('section-1', 'TITLE', 'Titolo', 'Addetto pulizie - versione LinkedIn', ['answer-title'])],
+      sections: [mockSection('section-1', 'TITLE', 'Titolo', body, ['answer-title', ...(application ? ['create-application-instructions'] : [])])],
       introducedFactIds: [],
       adaptedFromMaster: true,
     },

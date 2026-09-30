@@ -128,7 +128,7 @@ export function validateCompensation(value: unknown): ValidationResult<Compensat
 export function validateAttractionContext(value: unknown): ValidationResult<AttractionContext> {
   const errors: string[] = [];
   if (!isRecord(value)) return invalid('attractionContext must be an object');
-  for (const key of ['companyName', 'companyDescription', 'workMode', 'location', 'contractType', 'schedule', 'growth', 'teamContext'] as const) {
+  for (const key of ['companyName', 'companyDescription', 'workMode', 'workModeDetail', 'location', 'contractType', 'schedule', 'growth', 'teamContext'] as const) {
     if (value[key] !== undefined) append(errors, validateFact(value[key], `attractionContext.${key}`));
   }
   validateArray(value.attractivenessEvidence, 'attractionContext.attractivenessEvidence', errors, validateFact);
@@ -145,6 +145,7 @@ export function validateRoleCard(value: unknown): ValidationResult<RoleCard> {
   validateArray(value.requirements, 'roleCard.requirements', errors, validateRequirement);
   append(errors, validateAttractionContext(value.attractionContext));
   if (value.compensation !== undefined) append(errors, validateCompensation(value.compensation));
+  if (value.applicationInstructions !== undefined) append(errors, validateFact(value.applicationInstructions, 'roleCard.applicationInstructions'));
   if (Array.isArray(value.outcomes) && value.outcomes.length === 0) errors.push('roleCard.outcomes needs at least one item');
   if (Array.isArray(value.responsibilities) && value.responsibilities.length === 0) errors.push('roleCard.responsibilities needs at least one item');
   if (Array.isArray(value.requirements) && !value.requirements.some((item) => isRecord(item) && item.classification === 'REQUIRED')) {

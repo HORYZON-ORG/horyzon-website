@@ -105,6 +105,7 @@ export interface AttractionContext {
   companyName?: Fact<string>;
   companyDescription?: Fact<string>;
   workMode?: Fact<string>;
+  workModeDetail?: Fact<string>;
   location?: Fact<string>;
   contractType?: Fact<string>;
   schedule?: Fact<string>;
@@ -121,6 +122,7 @@ export interface RoleCard {
   requirements: Requirement[];
   compensation?: Compensation;
   attractionContext: AttractionContext;
+  applicationInstructions?: Fact<string>;
 }
 
 export interface RoleProfile {

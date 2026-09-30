@@ -80,9 +80,11 @@ export interface PublicCreateRoleCard {
   requirements: { label: string; classification: string }[];
   location: string;
   workMode: string;
+  workModeDetail: string;
   contractType: string;
   schedule: string;
   compensation: string;
+  applicationInstructions: string;
   attractionEvidence: string[];
   channel: PublicationChannel | null;
   missingFacts: string[];
@@ -482,12 +484,14 @@ function buildCreateRoleCard(answers: PersistedAnswer[]): RoleCard {
   const requirements = answerFor(answers, 'REQUIREMENTS');
   const attraction = answerFor(answers, 'ATTRACTION');
   const offer = answerFor(answers, 'OFFER');
+  const channelApplication = answerFor(answers, 'CHANNEL_APPLICATION');
   const clarificationWorkMode = answerForQuestion(answers, 'create.clarify.attractionContext.workMode');
+  const workModeSource = clarificationWorkMode || offer || work;
   const title = clean(extractAfter(role, ['ruolo', 'figura', 'cerco', 'cerchiamo'])) || clean(role.split(/[.\n]/)[0]) || 'Ruolo da chiarire';
   const mission = clean(extractAfter(contribution, ['risultato principale', 'missione', 'obiettivo', 'contributo'])) || clean(contribution.split(/[.\n]/)[0]) || 'N/D - contributo da chiarire';
   const responsibility = clean(extractAfter(work, ['attivita reali', 'attività reali', 'attivita', 'attività'])) || clean(work.split(/[.\n]/)[0]) || 'N/D - lavoro quotidiano da chiarire';
   const channel = channelFromAnswers(answers);
-  return {
+  const roleCard: RoleCard = {
     title: fact(title, sourceFor(role), 'create-role-title', Boolean(role)),
     mission: fact(mission, sourceFor(contribution), 'create-mission', Boolean(contribution)),
     outcomes: [fact(mission, sourceFor(contribution), 'create-outcome', Boolean(contribution))],
@@ -500,15 +504,22 @@ function buildCreateRoleCard(answers: PersistedAnswer[]): RoleCard {
     attractionContext: {
       companyName: extractCompany(role) ? fact(extractCompany(role), 'USER_DECLARED', 'create-company') : undefined,
       companyDescription: clean(role) ? fact(clean(role), 'USER_DECLARED', 'create-company-description') : undefined,
-      workMode: workModeFromText(clarificationWorkMode || offer || work),
+      workMode: workModeFromText(workModeSource),
+      workModeDetail: workModeDetailFromText(workModeSource),
       location: locationFromText([role, offer, work].filter(Boolean).join('\n')),
       contractType: contractFromText(offer),
       schedule: scheduleFromText(offer || work),
       attractivenessEvidence: [fact(clean(attraction) || 'N/D - elemento attrattivo da chiarire', sourceFor(attraction), 'create-attraction', Boolean(attraction))],
       teamContext: clean(extractAfter(work, ['team', 'squadra'])) ? fact(clean(extractAfter(work, ['team', 'squadra'])), 'USER_DECLARED', 'create-team') : undefined,
     },
+    applicationInstructions: applicationInstructionsFromText(channelApplication),
     ...(channel ? {} : {}),
   };
+  const issues = detectCreateFactualPreservationIssues(answers, roleCard);
+  if (issues.length) {
+    throw new Annunci10xPublicError('INVALID_INPUT', `Fatti critici CREATE non preservati: ${issues.join('; ')}`, 409);
+  }
+  return roleCard;
 }
 
 function isRoleCardReady(answers: PersistedAnswer[], roleCard: RoleCard): boolean {
@@ -518,6 +529,7 @@ function isRoleCardReady(answers: PersistedAnswer[], roleCard: RoleCard): boolea
 
 function deriveBlockingClarification(answers: PersistedAnswer[]): PublicCreateClarification | null {
   if (answerForQuestion(answers, 'create.clarify.attractionContext.workMode')) return null;
+  if (hasResolvedHybridWorkMode(answers)) return null;
   const text = `${answerFor(answers, 'WORK_REALITY')} ${answerFor(answers, 'OFFER')}`.toLowerCase();
   if (!/remot|smart working/.test(text) || !/presenza|in sede/.test(text)) return null;
   return {
@@ -549,12 +561,14 @@ function confirmRoleCard(roleCard: RoleCard): RoleCard {
       companyName: confirm(roleCard.attractionContext.companyName),
       companyDescription: confirm(roleCard.attractionContext.companyDescription),
       workMode: confirm(roleCard.attractionContext.workMode),
+      workModeDetail: confirm(roleCard.attractionContext.workModeDetail),
       location: confirm(roleCard.attractionContext.location),
       contractType: confirm(roleCard.attractionContext.contractType),
       schedule: confirm(roleCard.attractionContext.schedule),
       teamContext: confirm(roleCard.attractionContext.teamContext),
       attractivenessEvidence: roleCard.attractionContext.attractivenessEvidence.map((item) => confirm(item) as Fact<string>),
     },
+    applicationInstructions: confirm(roleCard.applicationInstructions),
   };
 }
 
@@ -628,9 +642,11 @@ function publicRoleCard(roleCard: RoleCard, channel: PublicationChannel | null):
     requirements: roleCard.requirements.map((item) => ({ label: textValue(item.label), classification: item.classification })),
     location: textValue(roleCard.attractionContext.location),
     workMode: textValue(roleCard.attractionContext.workMode),
+    workModeDetail: textValue(roleCard.attractionContext.workModeDetail),
     contractType: textValue(roleCard.attractionContext.contractType),
     schedule: textValue(roleCard.attractionContext.schedule),
     compensation: roleCard.compensation?.amountText ? textValue(roleCard.compensation.amountText) : textValue(roleCard.compensation?.visibility),
+    applicationInstructions: textValue(roleCard.applicationInstructions),
     attractionEvidence: roleCard.attractionContext.attractivenessEvidence.map(textValue),
     channel,
     missingFacts: missingFacts(roleCard),
@@ -695,6 +711,21 @@ const requirementLabelMap: { classification: RequirementClassification; labels: 
   { classification: 'DISQUALIFYING', labels: ['disqualifying', 'vincoli escludenti', 'vincolo escludente', 'vincoli', 'vincolo'] },
 ];
 
+const offerFieldLabels = {
+  location: ['sede', 'zona'],
+  workMode: ['modalita', 'modalità'],
+  contract: ['contratto'],
+  schedule: ['orario'],
+  shifts: ['turni'],
+  availability: ['reperibilita', 'reperibilità'],
+  compensation: ['compenso', 'ral', 'stipendio', 'retribuzione'],
+} as const;
+
+const channelFieldLabels = {
+  channel: ['canale'],
+  application: ['candidatura', 'come ci si candida', 'destinazione'],
+} as const;
+
 function requirementsFromText(text: string): Requirement[] {
   const requirements = requirementLabelMap.flatMap((definition) => {
     const value = extractLabeledSegment(text, definition.labels);
@@ -725,6 +756,120 @@ function extractLabeledSegment(text: string, labels: string[]): string {
   return '';
 }
 
+function extractCreateField(text: string, labels: readonly string[]): string {
+  const normalized = text.replace(/\r/g, '\n');
+  const allLabels = [
+    ...Object.values(offerFieldLabels).flat(),
+    ...Object.values(channelFieldLabels).flat(),
+  ].map(escapeRegExp).join('|');
+  for (const label of labels) {
+    const expression = new RegExp(`(?:^|[\\n.;])\\s*${escapeRegExp(label)}\\s*[:\\-]\\s*([\\s\\S]*?)(?=(?:[\\n.;]\\s*(?:${allLabels})\\s*[:\\-])|$)`, 'i');
+    const match = normalized.match(expression);
+    if (match?.[1]) return clean(match[1]);
+  }
+  return '';
+}
+
+function applicationInstructionsFromText(text: string): Fact<string> | undefined {
+  const value = extractCreateField(text, channelFieldLabels.application);
+  if (!value || isUnknownAnswer(value)) return undefined;
+  return fact(value, 'USER_DECLARED', 'create-application-instructions');
+}
+
+function hasResolvedHybridWorkMode(answers: PersistedAnswer[]): boolean {
+  const clarification = answerForQuestion(answers, 'create.clarify.attractionContext.workMode');
+  const offer = answerFor(answers, 'OFFER');
+  const work = answerFor(answers, 'WORK_REALITY');
+  const explicitWorkMode = extractCreateField(clarification || offer, offerFieldLabels.workMode);
+  return /ibrid[oa]/i.test(explicitWorkMode) || hasHybridDistribution(explicitWorkMode) || /ibrid[oa]/i.test(`${offer} ${work}`);
+}
+
+function hasHybridDistribution(text: string): boolean {
+  return /\d+\s*(?:giorn|gg)[^\n.;]{0,80}(?:sede|presenza)[^\n.;]{0,80}\d+\s*(?:giorn|gg)[^\n.;]{0,80}(?:remot|smart working)/i.test(text)
+    || /\d+\s*(?:giorn|gg)[^\n.;]{0,80}(?:remot|smart working)[^\n.;]{0,80}\d+\s*(?:giorn|gg)[^\n.;]{0,80}(?:sede|presenza)/i.test(text);
+}
+
+function detectCreateFactualPreservationIssues(answers: PersistedAnswer[], roleCard: RoleCard): string[] {
+  const issues: string[] = [];
+  const offer = answerFor(answers, 'OFFER');
+  const channelApplication = answerFor(answers, 'CHANNEL_APPLICATION');
+  const requirements = answerFor(answers, 'REQUIREMENTS');
+
+  const compensation = extractCreateField(offer, offerFieldLabels.compensation);
+  if (compensation && !isUnknownAnswer(compensation)) {
+    const actual = textValue(roleCard.compensation?.amountText);
+    for (const token of criticalTokens(compensation)) {
+      if (!containsNormalized(actual, token)) issues.push(`compensation lost "${token}"`);
+    }
+    if (/variabil/i.test(compensation) && !/variabil/i.test(actual)) issues.push('compensation lost variable component');
+  }
+
+  const workMode = extractCreateField(offer, offerFieldLabels.workMode);
+  if (workMode && !isUnknownAnswer(workMode)) {
+    if (/ibrid[oa]/i.test(workMode) && textValue(roleCard.attractionContext.workMode) !== 'Ibrido') issues.push('work mode category lost hybrid value');
+    const detail = textValue(roleCard.attractionContext.workModeDetail);
+    for (const token of criticalTokens(workMode)) {
+      if (!containsNormalized(detail, token) && !containsNormalized(textValue(roleCard.attractionContext.workMode), token)) issues.push(`work mode detail lost "${token}"`);
+    }
+  }
+
+  const contract = extractCreateField(offer, offerFieldLabels.contract);
+  if (contract && !isUnknownAnswer(contract) && !containsMeaningfulWords(textValue(roleCard.attractionContext.contractType), contract)) issues.push('contract lost declared value');
+
+  const location = extractCreateField(offer, offerFieldLabels.location);
+  if (location && !isUnknownAnswer(location) && !containsMeaningfulWords(textValue(roleCard.attractionContext.location), location)) issues.push('location lost declared value');
+
+  const schedule = extractCreateField(offer, offerFieldLabels.schedule);
+  if (schedule && !isUnknownAnswer(schedule)) {
+    for (const token of criticalTokens(schedule)) {
+      if (!containsNormalized(textValue(roleCard.attractionContext.schedule), token)) issues.push(`schedule lost "${token}"`);
+    }
+  }
+
+  const application = extractCreateField(channelApplication, channelFieldLabels.application);
+  if (application && !isUnknownAnswer(application)) {
+    const actual = textValue(roleCard.applicationInstructions);
+    for (const token of criticalTokens(application)) {
+      if (!containsNormalized(actual, token)) issues.push(`application instructions lost "${token}"`);
+    }
+  }
+
+  const required = extractLabeledSegment(requirements, requirementLabelMap.find((item) => item.classification === 'REQUIRED')?.labels ?? []);
+  if (required && !containsMeaningfulWords(roleCard.requirements.find((item) => item.classification === 'REQUIRED')?.label.value, required)) {
+    issues.push('required requirements lost declared value');
+  }
+
+  return [...new Set(issues)];
+}
+
+function criticalTokens(text: string): string[] {
+  const tokens = new Set<string>();
+  for (const match of text.matchAll(/\b\d{1,3}(?:[.,]\d{3})*(?:[.,]\d+)?\b|\b\d+\s?k\b|[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b|https?:\/\/\S+/gi)) {
+    tokens.add(match[0].toLowerCase());
+  }
+  if (/ccnl/i.test(text)) tokens.add('ccnl');
+  if (/variabil/i.test(text)) tokens.add('variabil');
+  return [...tokens];
+}
+
+function containsMeaningfulWords(actual: unknown, expected: string): boolean {
+  const words = expected
+    .toLowerCase()
+    .split(/[^a-z0-9à-ü]+/i)
+    .filter((word) => word.length >= 4 && !['sede', 'orario', 'contratto', 'modalita', 'modalità', 'compenso', 'candidatura'].includes(word));
+  if (!words.length) return true;
+  const normalizedActual = normalizeComparable(String(actual ?? ''));
+  return words.every((word) => normalizedActual.includes(normalizeComparable(word)));
+}
+
+function containsNormalized(actual: unknown, expected: string): boolean {
+  return normalizeComparable(String(actual ?? '')).includes(normalizeComparable(expected));
+}
+
+function normalizeComparable(value: string): string {
+  return value.toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
 function channelFromAnswers(answers: PersistedAnswer[]): PublicationChannel | null {
   const value = answerFor(answers, 'CHANNEL_APPLICATION').toLowerCase();
   if (/indeed/.test(value)) return 'INDEED';
@@ -753,15 +898,27 @@ function missingFacts(roleCard: RoleCard): string[] {
   if (!roleCard.attractionContext.contractType) missing.push('Contratto');
   if (!roleCard.compensation?.amountText) missing.push('Compenso');
   if (!roleCard.attractionContext.workMode) missing.push('Modalita di lavoro');
+  if (!roleCard.applicationInstructions) missing.push('Candidatura');
   return missing;
 }
 
 function workModeFromText(text: string): Fact<string> | undefined {
-  if (!text.trim()) return undefined;
-  if (/ibrid[oa]/i.test(text)) return fact('Ibrido', 'USER_DECLARED', 'create-work-mode');
-  if (/remot|smart working/i.test(text) && /presenza|in sede/i.test(text)) return fact('Da chiarire', 'SYSTEM_INFERRED', 'create-work-mode-conflict', false);
-  if (/remot|smart working/i.test(text)) return fact('Remoto', 'USER_DECLARED', 'create-work-mode');
-  if (/presenza|in sede/i.test(text)) return fact('In presenza', 'USER_DECLARED', 'create-work-mode');
+  const value = clean(extractCreateField(text, offerFieldLabels.workMode) || text);
+  if (!value.trim()) return undefined;
+  if (/ibrid[oa]/i.test(value)) return fact('Ibrido', 'USER_DECLARED', 'create-work-mode');
+  if (hasHybridDistribution(value)) return fact('Ibrido', 'USER_DECLARED', 'create-work-mode');
+  if (/remot|smart working/i.test(value) && /presenza|in sede/i.test(value)) return fact('Da chiarire', 'SYSTEM_INFERRED', 'create-work-mode-conflict', false);
+  if (/remot|smart working/i.test(value)) return fact('Remoto', 'USER_DECLARED', 'create-work-mode');
+  if (/presenza|in sede/i.test(value)) return fact('In presenza', 'USER_DECLARED', 'create-work-mode');
+  return undefined;
+}
+
+function workModeDetailFromText(text: string): Fact<string> | undefined {
+  const value = clean(extractCreateField(text, offerFieldLabels.workMode));
+  if (!value || isUnknownAnswer(value)) return undefined;
+  if (/ibrid[oa]|remot|smart working|presenza|in sede|\d+\s*(?:giorn|gg)/i.test(value)) {
+    return fact(value, 'USER_DECLARED', 'create-work-mode-detail');
+  }
   return undefined;
 }
 
@@ -772,13 +929,16 @@ function locationFromText(text: string): Fact<string> | undefined {
 }
 
 function contractFromText(text: string): Fact<string> | undefined {
+  const contract = extractCreateField(text, offerFieldLabels.contract);
+  if (contract && !isUnknownAnswer(contract)) return fact(contract, 'USER_DECLARED', 'create-contract');
   const match = text.match(/(tempo indeterminato|tempo determinato|part-?time|full-?time|stage|apprendistato|collaborazione|contratto [^\n.]{3,80})/i);
   return match?.[1] ? fact(match[1], 'USER_DECLARED', 'create-contract') : undefined;
 }
 
 function scheduleFromText(text: string): Fact<string> | undefined {
-  const match = text.match(/(?:orario|turni|lunedi|lunedì|venerdi|venerdì|weekend)[^\n.]{0,100}/i);
-  const schedule = clean(match?.[0]?.replace(/^orario\s*:\s*/i, ''));
+  const labeled = extractCreateField(text, offerFieldLabels.schedule);
+  const match = labeled || text.match(/(?:orario|turni|lunedi|lunedì|venerdi|venerdì|weekend)[^\n]{0,160}/i)?.[0];
+  const schedule = clean(match?.replace(/^orario\s*:\s*/i, ''));
   return schedule ? fact(schedule, 'USER_DECLARED', 'create-schedule') : undefined;
 }
 
@@ -796,12 +956,16 @@ function extractAfter(text: string, labels: string[]): string {
 }
 
 function hasCompensation(text: string): boolean {
+  const value = extractCompensation(text);
+  if (isUnknownAnswer(value)) return false;
   if (/(?:compenso|ral|stipendio|retribuzione)[^\n.]{0,60}(?:non lo so|da definire|n\/d)/i.test(text)) return false;
-  return /\b(?:ral|stipendio|compenso|retribuzione|euro|€)\b/i.test(text);
+  return /\b(?:ral|stipendio|compenso|retribuzione|euro|eur|ccnl)\b|€/i.test(text);
 }
 
 function extractCompensation(text: string): string {
-  const match = text.match(/(?:ral|stipendio|compenso|retribuzione)[^\n.]{0,120}|(?:€|euro)\s?[\d.,]+[^\n.]*/i);
+  const labeled = extractCreateField(text, offerFieldLabels.compensation);
+  if (labeled) return clean(labeled);
+  const match = text.match(/(?:ral|stipendio|compenso|retribuzione|€|eur|euro|ccnl)\s*[:\-]?\s*[^\n]{1,220}/i);
   return clean(match?.[0]) || 'Compenso indicato';
 }
 
