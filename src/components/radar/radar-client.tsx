@@ -44,6 +44,9 @@ export function RadarClient() {
     setPhase(['PAYMENT_REQUIRED', 'PAID', 'COMPLETED'].includes(session.status) ? 'PAYMENT' : 'QUESTIONS');
   }
 
+  // The landing's step track (Contesto, Domande, Profilo) reads the current phase from its section.
+  useEffect(() => { document.getElementById('radar-prodotto')?.setAttribute('data-phase', phase); }, [phase]);
+
   useEffect(() => {
     const timer = window.setTimeout(() => { void resume(); }, 0);
     return () => window.clearTimeout(timer);
