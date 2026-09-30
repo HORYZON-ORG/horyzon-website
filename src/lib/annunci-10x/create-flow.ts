@@ -83,6 +83,8 @@ export interface PublicCreateRoleCard {
   workModeDetail: string;
   contractType: string;
   schedule: string;
+  shifts: string;
+  onCall: string;
   compensation: string;
   applicationInstructions: string;
   attractionEvidence: string[];
@@ -489,7 +491,7 @@ function buildCreateRoleCard(answers: PersistedAnswer[]): RoleCard {
   const workModeSource = clarificationWorkMode || offer || work;
   const title = clean(extractAfter(role, ['ruolo', 'figura', 'cerco', 'cerchiamo'])) || clean(role.split(/[.\n]/)[0]) || 'Ruolo da chiarire';
   const mission = clean(extractAfter(contribution, ['risultato principale', 'missione', 'obiettivo', 'contributo'])) || clean(contribution.split(/[.\n]/)[0]) || 'N/D - contributo da chiarire';
-  const responsibility = clean(extractAfter(work, ['attivita reali', 'attività reali', 'attivita', 'attività'])) || clean(work.split(/[.\n]/)[0]) || 'N/D - lavoro quotidiano da chiarire';
+  const responsibility = clean(extractAfter(work, ['attivita reali', 'attività reali', 'attivita', 'attività'], 2_000)) || clean(work.split(/[.\n]/)[0]) || 'N/D - lavoro quotidiano da chiarire';
   const channel = channelFromAnswers(answers);
   const roleCard: RoleCard = {
     title: fact(title, sourceFor(role), 'create-role-title', Boolean(role)),
@@ -509,6 +511,8 @@ function buildCreateRoleCard(answers: PersistedAnswer[]): RoleCard {
       location: locationFromText([role, offer, work].filter(Boolean).join('\n')),
       contractType: contractFromText(offer),
       schedule: scheduleFromText(offer || work),
+      shifts: offerConditionFromText(offer, offerFieldLabels.shifts, 'create-shifts'),
+      onCall: offerConditionFromText(offer, offerFieldLabels.availability, 'create-on-call'),
       attractivenessEvidence: [fact(clean(attraction) || 'N/D - elemento attrattivo da chiarire', sourceFor(attraction), 'create-attraction', Boolean(attraction))],
       teamContext: clean(extractAfter(work, ['team', 'squadra'])) ? fact(clean(extractAfter(work, ['team', 'squadra'])), 'USER_DECLARED', 'create-team') : undefined,
     },
@@ -565,6 +569,8 @@ function confirmRoleCard(roleCard: RoleCard): RoleCard {
       location: confirm(roleCard.attractionContext.location),
       contractType: confirm(roleCard.attractionContext.contractType),
       schedule: confirm(roleCard.attractionContext.schedule),
+      shifts: confirm(roleCard.attractionContext.shifts),
+      onCall: confirm(roleCard.attractionContext.onCall),
       teamContext: confirm(roleCard.attractionContext.teamContext),
       attractivenessEvidence: roleCard.attractionContext.attractivenessEvidence.map((item) => confirm(item) as Fact<string>),
     },
@@ -645,6 +651,8 @@ function publicRoleCard(roleCard: RoleCard, channel: PublicationChannel | null):
     workModeDetail: textValue(roleCard.attractionContext.workModeDetail),
     contractType: textValue(roleCard.attractionContext.contractType),
     schedule: textValue(roleCard.attractionContext.schedule),
+    shifts: textValue(roleCard.attractionContext.shifts),
+    onCall: textValue(roleCard.attractionContext.onCall),
     compensation: roleCard.compensation?.amountText ? textValue(roleCard.compensation.amountText) : textValue(roleCard.compensation?.visibility),
     applicationInstructions: textValue(roleCard.applicationInstructions),
     attractionEvidence: roleCard.attractionContext.attractivenessEvidence.map(textValue),
@@ -697,7 +705,7 @@ function assertCreateStep(stepId: string): asserts stepId is Annunci10xCreateSte
 }
 
 function stepFromPath(path: string): AppendAnswerInput['interviewStep'] {
-  if (path.includes('compensation') || path.includes('contract') || path.includes('schedule')) return 'CONDITIONS';
+  if (path.includes('compensation') || path.includes('contract') || path.includes('schedule') || path.includes('shifts') || path.includes('onCall')) return 'CONDITIONS';
   if (path.includes('requirements')) return 'REQUIREMENTS';
   if (path.includes('attraction')) return 'ATTRACTION';
   if (path.includes('responsibilities') || path.includes('mission')) return 'OUTCOMES';
@@ -826,6 +834,16 @@ function detectCreateFactualPreservationIssues(answers: PersistedAnswer[], roleC
     }
   }
 
+  const shifts = extractCreateField(offer, offerFieldLabels.shifts);
+  if (shifts && !isUnknownAnswer(shifts) && !containsNormalized(textValue(roleCard.attractionContext.shifts), shifts)) {
+    issues.push('shifts lost declared value');
+  }
+
+  const onCall = extractCreateField(offer, offerFieldLabels.availability);
+  if (onCall && !isUnknownAnswer(onCall) && !containsNormalized(textValue(roleCard.attractionContext.onCall), onCall)) {
+    issues.push('on-call availability lost declared value');
+  }
+
   const application = extractCreateField(channelApplication, channelFieldLabels.application);
   if (application && !isUnknownAnswer(application)) {
     const actual = textValue(roleCard.applicationInstructions);
@@ -946,14 +964,21 @@ function scheduleFromText(text: string): Fact<string> | undefined {
   return schedule ? fact(schedule, 'USER_DECLARED', 'create-schedule') : undefined;
 }
 
+function offerConditionFromText(text: string, labels: readonly string[], sourceId: string): Fact<string> | undefined {
+  const value = extractCreateField(text, labels);
+  if (!value || isUnknownAnswer(value)) return undefined;
+  return fact(value, 'USER_DECLARED', sourceId);
+}
+
 function extractCompany(text: string): string {
   const match = text.match(/(?:azienda|societa|società|impresa)\s+([^.\n]{3,80})/i);
   return clean(match?.[1]);
 }
 
-function extractAfter(text: string, labels: string[]): string {
+function extractAfter(text: string, labels: string[], maxLength = 180): string {
+  const safeMaxLength = Math.max(3, Math.min(maxLength, 2_000));
   for (const label of labels) {
-    const match = text.match(new RegExp(`${label}[:\\s]+([^\\n.]{3,180})`, 'i'));
+    const match = text.match(new RegExp(`${escapeRegExp(label)}[:\\s]+([^\\n.]{3,${safeMaxLength}})`, 'i'));
     if (match?.[1]) return clean(match[1]);
   }
   return '';

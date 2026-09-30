@@ -54,6 +54,46 @@ class PersistentEditorialRevisionProvider extends MockAnnunci10xProvider {
   }
 }
 
+class DeletingRevisionProvider extends MockAnnunci10xProvider {
+  validationCount = 0;
+
+  async executeStructuredTask(request) {
+    const result = await super.executeStructuredTask(request);
+    if (request.operationType === 'VALIDATE') {
+      this.validationCount += 1;
+      if (this.validationCount === 1) {
+        return {
+          ...result,
+          output: {
+            claims: [{ id: 'editorial-duplicate', kind: 'EDITORIAL', claim: 'Remove duplicate responsibilities section.', supported: true, sourcePaths: ['section-2'], action: 'REMOVE' }],
+            unsupportedClaims: [],
+            contradictions: [],
+            omittedCriticalFacts: [],
+            alteredRequirements: [],
+            result: 'NEEDS_REVISION',
+          },
+        };
+      }
+      return {
+        ...result,
+        output: { claims: [], unsupportedClaims: [], contradictions: [], omittedCriticalFacts: [], alteredRequirements: [], result: 'PASS' },
+      };
+    }
+    if (request.operationType === 'REVISE') {
+      return {
+        ...result,
+        output: {
+          revisedSections: [],
+          changedSectionIds: ['section-2'],
+          changeSummary: 'Removed duplicate section.',
+          requiresValidation: true,
+        },
+      };
+    }
+    return result;
+  }
+}
+
 const fullAd = `Cerchiamo un addetto pulizie per uffici e spazi comuni nella sede di Bari.
 Attivita: pulizia uffici, corridoi e sale riunioni, riordino materiali e segnalazione anomalie.
 Contratto part-time in presenza, orari definiti dal lunedi al venerdi.
@@ -382,6 +422,8 @@ assert.equal(preservationState.clarification, null, 'declared hybrid distributio
 assert.equal(preservationState.canConfirm, true);
 assert.equal(preservationState.roleCard.workMode, 'Ibrido');
 assert.match(preservationState.roleCard.workModeDetail, /3 giorni in sede e 2 da remoto/i);
+assert.equal(preservationState.roleCard.shifts, 'Non previsti');
+assert.equal(preservationState.roleCard.onCall, 'Non prevista');
 assert.match(preservationState.roleCard.compensation, /30\.000-36\.000/i);
 assert.match(preservationState.roleCard.compensation, /8\.000/i);
 assert.match(preservationState.roleCard.compensation, /variabile/i);
@@ -448,6 +490,8 @@ assert.match(latestPreservationSnapshot.roleCard.compensation.amountText.value, 
 assert.match(latestPreservationSnapshot.roleCard.compensation.amountText.value, /8\.000/i);
 assert.equal(latestPreservationSnapshot.roleCard.attractionContext.workMode.value, 'Ibrido');
 assert.match(latestPreservationSnapshot.roleCard.attractionContext.workModeDetail.value, /3 giorni in sede e 2 da remoto/i);
+assert.equal(latestPreservationSnapshot.roleCard.attractionContext.shifts.value, 'Non previsti');
+assert.equal(latestPreservationSnapshot.roleCard.attractionContext.onCall.value, 'Non prevista');
 assert.match(latestPreservationSnapshot.roleCard.applicationInstructions.value, /sales-recruiting@azienda-test\.it/i);
 assert.equal(JSON.stringify(latestPreservationSnapshot.roleProfile).includes('sales-recruiting@azienda-test.it'), true, 'RoleProfile keeps RoleCard application instructions available');
 const strategyCall = preservationContext.provider.calls.find((call) => call.operationType === 'STRATEGY');
@@ -501,6 +545,59 @@ for (const [stepId, answer] of locationAnswers) {
 assert.equal(locationState.roleCard.location, 'Bari, zona Industriale', 'location must preserve the declared zone detail');
 const latestLocationSnapshot = await locationContext.persistence.getLatestSnapshot(startedLocationCreate.cookie.sessionId, startedLocationCreate.cookie.sessionSecret);
 assert.equal(latestLocationSnapshot.roleCard.attractionContext.location.value, 'Bari, zona Industriale', 'persisted RoleCard must preserve the full declared location');
+
+assert.equal(locationState.roleCard.shifts, 'Non previsti', 'declared no-shifts condition must survive CREATE parsing');
+assert.equal(locationState.roleCard.onCall, 'Non prevista', 'declared no-on-call condition must survive CREATE parsing');
+assert.equal(latestLocationSnapshot.roleCard.attractionContext.shifts.value, 'Non previsti');
+assert.equal(latestLocationSnapshot.roleCard.attractionContext.onCall.value, 'Non prevista');
+
+const longWorkContext = makeContext();
+const startedLongWorkCreate = await startAnnunci10xCreate({ context: longWorkContext });
+let longWorkState = startedLongWorkCreate.result;
+const longWorkAnswers = preservationAnswers.map(([stepId, answer]) => {
+  if (stepId !== 'WORK_REALITY') return [stepId, answer];
+  return [stepId, 'Attivita: Scaricare la merce in arrivo, controllare quantità e DDT, movimentare pallet con il muletto, ubicare i prodotti, fare picking, preparare e imballare gli ordini, controllare etichette e documenti di spedizione, aggiornare le movimentazioni sul gestionale aziendale e partecipare agli inventari periodici.'];
+});
+for (const [stepId, answer] of longWorkAnswers) {
+  longWorkState = await answerAnnunci10xCreateStep({
+    sessionId: startedLongWorkCreate.cookie.sessionId,
+    sessionSecret: startedLongWorkCreate.cookie.sessionSecret,
+    stepId,
+    answer,
+    context: longWorkContext,
+  });
+}
+assert.match(longWorkState.roleCard.responsibilities[0], /aggiornare le movimentazioni sul gestionale aziendale/i, 'long responsibilities must not be truncated before the final declared activities');
+assert.match(longWorkState.roleCard.responsibilities[0], /inventari periodici/i, 'long responsibilities must preserve the end of the declared activity list');
+
+const deletingRevisionContext = makeContext(new DeletingRevisionProvider('success'));
+const startedDeletingRevision = await startAnnunci10xCreate({ context: deletingRevisionContext });
+let deletingRevisionState = startedDeletingRevision.result;
+for (const [stepId, answer] of preservationAnswers) {
+  deletingRevisionState = await answerAnnunci10xCreateStep({
+    sessionId: startedDeletingRevision.cookie.sessionId,
+    sessionSecret: startedDeletingRevision.cookie.sessionSecret,
+    stepId,
+    answer,
+    context: deletingRevisionContext,
+  });
+}
+await confirmAnnunci10xCreate({
+  sessionId: startedDeletingRevision.cookie.sessionId,
+  sessionSecret: startedDeletingRevision.cookie.sessionSecret,
+  context: deletingRevisionContext,
+});
+const deletingRevisionPremium = await runAnnunci10xPremiumGeneration({
+  sessionId: startedDeletingRevision.cookie.sessionId,
+  sessionSecret: startedDeletingRevision.cookie.sessionSecret,
+  channel: 'LINKEDIN',
+  context: deletingRevisionContext,
+  authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
+});
+assert.equal(deletingRevisionPremium.master.sections.some((section) => section.id === 'section-2'), false, 'REVISE changedSectionIds must be able to delete a section by omitting it from revisedSections');
+assert.equal(deletingRevisionPremium.master.sections.some((section) => section.id === 'section-1'), true, 'unaffected sections must survive a targeted deletion');
+assert.equal(deletingRevisionContext.provider.calls.filter((call) => call.operationType === 'VALIDATE').length, 2, 'targeted deletion must still be revalidated');
+assert.equal(deletingRevisionPremium.gate.status, 'READY', 'a successful post-delete validation may return READY');
 
 await assert.rejects(
   () => runFreeAnnunci10xAnalysis({

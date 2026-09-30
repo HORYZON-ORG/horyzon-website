@@ -109,6 +109,8 @@ export interface AttractionContext {
   location?: Fact<string>;
   contractType?: Fact<string>;
   schedule?: Fact<string>;
+  shifts?: Fact<string>;
+  onCall?: Fact<string>;
   growth?: Fact<string>;
   teamContext?: Fact<string>;
   attractivenessEvidence: Fact<string>[];

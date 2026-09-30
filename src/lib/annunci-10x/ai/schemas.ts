@@ -161,6 +161,8 @@ export const ANNUNCI10X_ALLOWED_ROLE_CARD_PATHS = [
   'attractionContext.location',
   'attractionContext.contractType',
   'attractionContext.schedule',
+  'attractionContext.shifts',
+  'attractionContext.onCall',
   'attractionContext.growth',
   'attractionContext.teamContext',
   'attractionContext.attractivenessEvidence',

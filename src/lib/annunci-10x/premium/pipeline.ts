@@ -201,7 +201,7 @@ export async function runAnnunci10xPremiumGeneration(input: Annunci10xPremiumGen
       const revision = revisionResult.output as Annunci10xReviseOutput;
       finalMaster = {
         ...generated.generatedAd,
-        sections: mergeRevisedSections(generated.generatedAd.sections, revision.revisedSections),
+        sections: mergeRevisedSections(generated.generatedAd.sections, revision.revisedSections, revision.changedSectionIds),
         generatedAt: new Date().toISOString(),
       };
       automaticRevisionCount = 1;
@@ -576,7 +576,11 @@ export async function requestAnnunci10xPremiumEdit(input: PremiumEditInput): Pro
   });
   operations.push(toPublicOperation(revision, 'REVISE', context.configuredProvider));
   const revised = revision.output as Annunci10xReviseOutput;
-  const master: GeneratedAd = { ...validation.value, sections: revised.revisedSections, generatedAt: new Date().toISOString() };
+  const master: GeneratedAd = {
+    ...validation.value,
+    sections: mergeRevisedSections(validation.value.sections, revised.revisedSections, revised.changedSectionIds),
+    generatedAt: new Date().toISOString(),
+  };
   const validate = await validateMaster({
     orchestrator,
     sessionId: input.sessionId,
@@ -718,7 +722,7 @@ async function executePremiumPipeline(input: {
     const revision = revisionResult.output as Annunci10xReviseOutput;
     finalMaster = {
       ...generated.generatedAd,
-      sections: mergeRevisedSections(generated.generatedAd.sections, revision.revisedSections),
+      sections: mergeRevisedSections(generated.generatedAd.sections, revision.revisedSections, revision.changedSectionIds),
       generatedAt: new Date().toISOString(),
     };
     automaticRevisionCount = 1;
@@ -1100,10 +1104,18 @@ function generationDenied(authorization: GenerationAuthorization): Annunci10xPub
   return new Annunci10xPublicError(code, authorization.reason, status);
 }
 
-function mergeRevisedSections(currentSections: GeneratedAd['sections'], revisedSections: GeneratedAd['sections']): GeneratedAd['sections'] {
-  if (revisedSections.length >= currentSections.length) return revisedSections;
+function mergeRevisedSections(
+  currentSections: GeneratedAd['sections'],
+  revisedSections: GeneratedAd['sections'],
+  changedSectionIds: readonly string[],
+): GeneratedAd['sections'] {
   const revisedById = new Map(revisedSections.map((section) => [section.id, section]));
-  const merged = currentSections.map((section) => revisedById.get(section.id) ?? section);
+  const changedIds = new Set([...changedSectionIds, ...revisedSections.map((section) => section.id)]);
+  const merged = currentSections.flatMap((section) => {
+    if (!changedIds.has(section.id)) return [section];
+    const replacement = revisedById.get(section.id);
+    return replacement ? [replacement] : [];
+  });
   const knownIds = new Set(currentSections.map((section) => section.id));
   return [...merged, ...revisedSections.filter((section) => !knownIds.has(section.id))];
 }
