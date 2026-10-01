@@ -748,9 +748,9 @@ assert.match(preservationPremium.masterText, /Team commerciale interno/i, 'confi
 assert.match(preservationPremium.masterText, /Fare prospecting, qualificare lead, svolgere call, preparare proposte/i, 'canonical responsibilities must remain candidate-facing');
 assert.match(preservationPremium.masterText, /uso quotidiano del CRM e gestione di lead e opportunita/i, 'canonical operating context must preserve declared tools and work reality');
 assert.match(preservationPremium.masterText, /Lead urgenti, trattative che cambiano priorita/i, 'canonical unexpected events must remain candidate-facing');
-assert.match(preservationPremium.masterText, /Indispensabili: Almeno 2 anni di esperienza nella vendita B2B/i, 'canonical required requirements must remain explicit');
-assert.match(preservationPremium.masterText, /Preferenziali: Esperienza nella vendita di servizi digitali/i, 'canonical preferred requirements must remain explicit');
-assert.match(preservationPremium.masterText, /Apprendibili: Offerta specifica dell'azienda/i, 'canonical trainable requirements must remain explicit');
+assert.match(preservationPremium.masterText, /Indispensabili:\n- Almeno 2 anni di esperienza nella vendita B2B/i, 'canonical required requirements must remain explicit');
+assert.match(preservationPremium.masterText, /Preferenziali:\n- Esperienza nella vendita di servizi digitali/i, 'canonical preferred requirements must remain explicit');
+assert.match(preservationPremium.masterText, /Apprendibili:\n- Offerta specifica dell'azienda/i, 'canonical trainable requirements must remain explicit');
 assert.match(preservationPremium.masterText, /Laptop e telefono aziendale/i, 'canonical benefits must remain explicit');
 assert.match(preservationPremium.masterText, /Onboarding sull'offerta e affiancamento iniziale/i, 'canonical training must remain explicit');
 assert.equal(/turni?[^\n]{0,40}non previsti/i.test(JSON.stringify(preservationPremium.channelVariant)), true, 'channel variant must preserve the confirmed no-shifts condition');
