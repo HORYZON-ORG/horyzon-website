@@ -98,7 +98,7 @@ assert.match(prompt, /choose the lower score/);
 assert.match(prompt, /cannot by itself exceed 4/);
 assert.match(prompt, /Communication usability is substantive quality/);
 assert.match(prompt, /reconstruct the role from separate task, requirement, and condition lists/);
-assert.equal(ANNUNCI10X_PROMPT_REGISTRY.GENERATE.version, 'annunci10x.generate.v4');
+assert.equal(ANNUNCI10X_PROMPT_REGISTRY.GENERATE.version, 'annunci10x.generate.v9');
 assert.match(ANNUNCI10X_PROMPT_REGISTRY.GENERATE.instructions, /mentally picture the real work/);
 assert.match(ANNUNCI10X_PROMPT_REGISTRY.GENERATE.instructions, /350-450 words/);
 assert.match(ANNUNCI10X_PROMPT_REGISTRY.GENERATE.instructions, /write less rather than adding filler/);
@@ -106,13 +106,16 @@ assert.match(ANNUNCI10X_PROMPT_REGISTRY.GENERATE.instructions, /Candidate-facing
 assert.match(ANNUNCI10X_PROMPT_REGISTRY.GENERATE.instructions, /Every paragraph must add a distinct supported fact/);
 assert.match(ANNUNCI10X_PROMPT_REGISTRY.GENERATE.instructions, /30\.000-36\.000/);
 assert.match(ANNUNCI10X_PROMPT_REGISTRY.GENERATE.instructions, /Do not force the same headings on every role/);
+assert.match(ANNUNCI10X_PROMPT_REGISTRY.GENERATE.instructions, /Dedicated RoleCard fields are canonical/);
 assert.equal(ANNUNCI10X_PROMPT_REGISTRY.STRATEGY.version, 'annunci10x.strategy.v2');
 assert.match(ANNUNCI10X_PROMPT_REGISTRY.STRATEGY.instructions, /WORKFLOW_FIRST/);
-assert.equal(ANNUNCI10X_PROMPT_REGISTRY.VALIDATE.version, 'annunci10x.validate.v2');
+assert.equal(ANNUNCI10X_PROMPT_REGISTRY.VALIDATE.version, 'annunci10x.validate.v7');
 assert.match(ANNUNCI10X_PROMPT_REGISTRY.VALIDATE.instructions, /source-document\/meta language/);
 assert.match(ANNUNCI10X_PROMPT_REGISTRY.VALIDATE.instructions, /template echo/i);
-assert.equal(ANNUNCI10X_PROMPT_REGISTRY.REVISE.version, 'annunci10x.revise.v2');
+assert.match(ANNUNCI10X_PROMPT_REGISTRY.VALIDATE.instructions, /dedicated canonical RoleCard/i);
+assert.equal(ANNUNCI10X_PROMPT_REGISTRY.REVISE.version, 'annunci10x.revise.v7');
 assert.match(ANNUNCI10X_PROMPT_REGISTRY.REVISE.instructions, /Remove internal\/source\/audit voice/);
+assert.match(ANNUNCI10X_PROMPT_REGISTRY.REVISE.instructions, /dedicated canonical RoleCard field/i);
 assert.equal(prompt.includes('Accelerator:'), false, 'prompt must not expose accelerator architecture metadata');
 assert.equal(prompt.includes('Gate:'), false, 'prompt must not ask provider to reason about gate metadata');
 
