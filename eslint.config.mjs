@@ -12,6 +12,7 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     ".preview/**",
+    "tmp/**",
     "next-env.d.ts",
   ]),
 ]);

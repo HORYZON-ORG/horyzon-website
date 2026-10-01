@@ -113,7 +113,7 @@ export function Annunci10xIdentityGate(props: IdentityGateProps) {
   }
 
   if (emailVerified) {
-    return <div className={styles.lockedNotice} role="status"><strong>Email verificata.</strong><span>Puoi proseguire con il passo successivo.</span></div>;
+    return <p className={styles.verifiedRow} role="status"><b aria-hidden="true">✓</b>Email verificata.</p>;
   }
 
   return <>
@@ -128,37 +128,35 @@ export function Annunci10xIdentityGate(props: IdentityGateProps) {
         <Field label="Cognome" htmlFor={`${idPrefix}-last-name`} required><input id={`${idPrefix}-last-name`} required value={contact.lastName} onChange={(event) => setContact({ ...contact, lastName: event.target.value })} disabled={busy === 'contact'} /></Field>
       </div>
       <Field label="Email aziendale" htmlFor={`${idPrefix}-email`} required><input id={`${idPrefix}-email`} type="email" required value={contact.email} onChange={(event) => setContact({ ...contact, email: event.target.value })} disabled={busy === 'contact'} /></Field>
-      <section className={styles.optionalFields} aria-label="Dati facoltativi">
-        <div className={styles.formHead}>
-          <p>Dati facoltativi</p>
-          <span>Puoi aggiungerli ora o lasciarli vuoti: non bloccano verifica email e Score.</span>
-        </div>
+      <details className={styles.optionalFields}>
+        <summary>Dati facoltativi <span>azienda e ruolo</span></summary>
+        <p>Puoi aggiungerli ora o lasciarli vuoti: non bloccano verifica email e Score.</p>
         <div className={styles.fieldGrid}>
           <Field label="Azienda" htmlFor={`${idPrefix}-company`} optional><input id={`${idPrefix}-company`} value={contact.companyName} onChange={(event) => setContact({ ...contact, companyName: event.target.value })} disabled={busy === 'contact'} /></Field>
           <Field label="Ruolo aziendale" htmlFor={`${idPrefix}-role`} optional><select id={`${idPrefix}-role`} value={contact.businessRole} onChange={(event) => setContact({ ...contact, businessRole: event.target.value as BusinessRole | '' })} disabled={busy === 'contact'}><option value="">Non indicato</option><option value="OWNER_ENTREPRENEUR">Titolare</option><option value="HR">HR</option><option value="INTERNAL_RECRUITER">Recruiter interno</option><option value="CONSULTANT">Consulente</option><option value="OTHER">Altro</option></select></Field>
         </div>
-      </section>
+      </details>
       <label className={styles.unknownToggle}><input type="checkbox" checked={contact.marketingConsent} onChange={(event) => setContact({ ...contact, marketingConsent: event.target.checked })} disabled={busy === 'contact'} /><span>Voglio ricevere anche consigli e novità da Horyzon.</span></label>
       <p className={styles.formMicrocopy}>Niente spam. Ti cancelli con un clic.</p>
       <div className={styles.actions}><button type="submit" disabled={busy === 'contact'}>{busy === 'contact' ? 'Salvataggio in corso' : props.submitLabel ?? 'Salva contatto'}</button></div>
-      {busy === 'contact' && <Annunci10xLoader variant="compact" indeterminate label="Salviamo i dati di contatto" />}
+      {busy === 'contact' && <Annunci10xLoader variant="strip" indeterminate label="Salviamo i dati di contatto" />}
     </form>}
 
     {contactSaved && <section className={styles.form} aria-labelledby={`${idPrefix}-email-verification-title`}>
       <div className={styles.formHead}><p>Verifica email</p><h2 id={`${idPrefix}-email-verification-title`}>{props.otpTitle}</h2></div>
       <div className={styles.actions}>
         <button type="button" onClick={requestCode} disabled={busy === 'request-code' || resendAfterSeconds > 0}>{resendAfterSeconds > 0 ? `Nuovo codice tra ${resendAfterSeconds}s` : 'Invia codice'}</button>
-        {expiresInSeconds > 0 && <span>Codice valido per circa {expiresInSeconds}s.</span>}
+        {expiresInSeconds > 0 && <span>Codice valido per circa {expiresInSeconds >= 120 ? `${Math.round(expiresInSeconds / 60)} minuti` : `${expiresInSeconds} secondi`}.</span>}
       </div>
-      {busy === 'request-code' && <Annunci10xLoader variant="compact" indeterminate label="Prepariamo il codice email" />}
+      {busy === 'request-code' && <Annunci10xLoader variant="strip" indeterminate label="Prepariamo il codice email" />}
       <form onSubmit={verifyCode} className={styles.inlineVerify}>
-        <Field label="Codice OTP" htmlFor={`${idPrefix}-otp`} required><input id={`${idPrefix}-otp`} required inputMode="numeric" autoComplete="one-time-code" maxLength={6} pattern="[0-9]{6}" value={otpCode} onChange={(event) => setOtpCode(event.target.value)} disabled={busy === 'verify-code'} /></Field>
+        <Field label="Codice di 6 cifre" htmlFor={`${idPrefix}-otp`} required><input id={`${idPrefix}-otp`} className={styles.otpInput} placeholder="••••••" required inputMode="numeric" autoComplete="one-time-code" maxLength={6} pattern="[0-9]{6}" value={otpCode} onChange={(event) => setOtpCode(event.target.value)} disabled={busy === 'verify-code'} /></Field>
         <button type="submit" disabled={busy === 'verify-code' || otpCode.length !== 6}>Verifica email</button>
       </form>
-      {busy === 'verify-code' && <Annunci10xLoader variant="compact" indeterminate label="Verifichiamo il codice" />}
+      {busy === 'verify-code' && <Annunci10xLoader variant="strip" indeterminate label="Verifichiamo il codice" />}
     </section>}
 
-    {statusMessage && <p className={styles.coverageNote} aria-live="polite">{statusMessage}</p>}
+    {statusMessage && <p className={styles.flowStatus} aria-live="polite">{statusMessage}</p>}
     {error && <p className={styles.error} role="alert">{error}</p>}
   </>;
 }

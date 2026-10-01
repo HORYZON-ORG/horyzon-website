@@ -55,13 +55,11 @@
 
 .sectionHeading p,
 .formHead p,
-.freeScoreHero p,
 .progressCard p,
 .createNotice p,
 .clarification p,
 .strategyPanel p,
-.commercialPanel p,
-.improveCta p {
+.commercialPanel p {
   margin: 0;
   color: #68706d;
   text-transform: uppercase;
@@ -150,8 +148,7 @@
 .offerPanel,
 .strategyPanel,
 .lockedNotice,
-.warningPanel,
-.improveCta {
+.warningPanel {
   border: 1px solid rgba(16, 34, 41, .14);
   border-radius: 8px;
   background: var(--surface);
@@ -330,14 +327,12 @@
   opacity: .7;
 }
 
-.freeScoreHero strong,
 .scoreBox strong {
   font-size: clamp(2.6rem, 5vw, 4.6rem);
   font-weight: 900;
   line-height: .9;
 }
 
-.freeScoreHero small,
 .scoreBox small {
   font-size: .34em;
   font-weight: 800;
@@ -394,13 +389,11 @@
 .sectionHeading span,
 .panel p,
 .panel li,
-.coverageNote,
 .formHead span,
 .form small,
 .startCreate p,
 .commercialPanel span,
-.strategyPanel span,
-.improveCta span {
+.strategyPanel span {
   color: var(--muted);
   line-height: 1.62;
 }
@@ -424,8 +417,7 @@
 .offerPanel h3,
 .clarification h3,
 .strategyPanel h3,
-.commercialPanel h3,
-.improveCta h3 {
+.commercialPanel h3 {
   margin: 0 0 .65rem;
   font-size: clamp(1.18rem, 1.7vw, 1.55rem);
   line-height: 1.22;
@@ -475,10 +467,6 @@
   position: relative;
 }
 
-.createShell[data-flow="analyze"][data-has-workspace="true"] {
-  min-height: 0;
-}
-
 .heroPanel .createShell > .form {
   border: 1px solid rgba(247, 244, 232, .48);
   border-radius: 12px;
@@ -491,71 +479,14 @@
   position: relative;
   display: grid;
   align-content: start;
-  gap: .7rem;
+  gap: 12px;
   width: 100%;
   min-width: 0;
   overflow: visible;
-  border: 1px solid rgba(247, 244, 232, .48);
-  border-radius: 12px;
-  background: rgba(255, 253, 245, .98);
-  padding: clamp(.9rem, 1.45vw, 1.2rem);
-  box-shadow: 0 28px 95px rgba(0, 0, 0, .35);
-}
-
-.analysisWorkspace > .form,
-.analysisWorkspace > .progressCard,
-.analysisWorkspace > .result,
-.analysisWorkspace > .lockedNotice,
-.analysisWorkspace > .warningPanel,
-.analysisWorkspace > .error,
-.analysisWorkspace > .coverageNote {
-  box-shadow: none;
-}
-
-.analysisWorkspace > .form,
-.analysisWorkspace > .progressCard,
-.analysisWorkspace > .result {
   border: 0;
-  background: transparent;
+  background: none;
   padding: 0;
-}
-
-.analysisWorkspace > .form {
-  gap: .72rem;
-}
-
-.analysisWorkspace .optionalFields {
-  display: none;
-}
-
-.analysisWorkspace .fieldGrid {
-  gap: .7rem;
-}
-
-.analysisWorkspace .field input,
-.analysisWorkspace .field textarea,
-.analysisWorkspace .field select {
-  padding: .68rem .76rem;
-  font-size: .94rem;
-}
-
-.analysisWorkspace .formHead {
-  gap: .42rem;
-}
-
-.analysisWorkspace .formHead h2 {
-  font-size: clamp(1.45rem, 2vw, 2rem);
-}
-
-.analysisWorkspace .formHead span,
-.analysisWorkspace .formMicrocopy,
-.analysisWorkspace .unknownToggle,
-.analysisWorkspace .coverageNote,
-.analysisWorkspace .disclaimer,
-.analysisWorkspace .freeScoreHero small,
-.analysisWorkspace .offerPanel small {
-  font-size: .84rem;
-  line-height: 1.42;
+  box-shadow: none;
 }
 
 .sourceToggle {
@@ -1027,144 +958,10 @@
   font-weight: 900;
 }
 
-.freeResultLayout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 1rem;
-  width: 100%;
-  min-width: 0;
-}
-
-.analysisWorkspace .freeResultLayout {
-  grid-template-columns: minmax(0, 1fr);
-  gap: .75rem;
-}
-
-.freeScoreHero {
-  display: grid;
-  gap: .8rem;
-  border: 1px solid #a8b66e;
-  border-radius: 8px;
-  background: #e8f6c8;
-  padding: clamp(1rem, 2.6vw, 2rem);
-}
-
-.analysisWorkspace .freeScoreHero,
-.analysisWorkspace .freeResultCopy,
-.analysisWorkspace .improveCta,
-.analysisWorkspace .offerPanel,
-.analysisWorkspace .lockedNotice,
-.analysisWorkspace .warningPanel,
-.analysisWorkspace .coverageNote,
-.analysisWorkspace .error {
-  border-radius: 8px;
-  padding: .85rem;
-}
-
-.analysisWorkspace .freeScoreHero,
-.analysisWorkspace .freeResultCopy,
-.analysisWorkspace .improveCta,
-.analysisWorkspace .offerPanel {
-  gap: .55rem;
-  box-shadow: none;
-}
-
-.freeScoreHero h2 {
-  margin: 0;
-  font-size: clamp(1.8rem, 3vw, 3rem);
-}
-
-.analysisWorkspace .freeScoreHero h2 {
-  font-size: clamp(1.35rem, 1.8vw, 1.7rem);
-}
-
-.freeScoreHero > span {
-  color: var(--rust);
-  font-size: 1.1rem;
-  font-weight: 900;
-}
-
-.analysisWorkspace .freeScoreHero strong {
-  font-size: clamp(2.2rem, 3.4vw, 3.15rem);
-}
-
-.freeResultCopy {
-  display: grid;
-  gap: 1rem;
-  min-width: 0;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface);
-  padding: clamp(1rem, 2.6vw, 2rem);
-}
-
-.freeResultCopy > h3 {
-  margin: 0;
-  font-size: clamp(1.45rem, 2.4vw, 2.2rem);
-  line-height: 1.08;
-}
-
-.analysisWorkspace .freeResultCopy > h3 {
-  font-size: clamp(1.12rem, 1.5vw, 1.35rem);
-}
-
-.freeResultCopy > p {
-  margin: 0;
-  max-width: 68ch;
-}
-
-.analysisWorkspace .freeResultCopy > p {
-  font-size: .92rem;
-  line-height: 1.46;
-}
-
-.analysisWorkspace .scoreBandBar {
-  gap: .24rem;
-}
-
-.analysisWorkspace .scoreBandBar span {
-  min-height: 34px;
-  padding: .32rem .16rem;
-  font-size: .61rem;
-  line-height: 1.05;
-}
-
-.analysisWorkspace .improveCta h3,
-.analysisWorkspace .offerPanel h3 {
-  margin: 0;
-  padding: 0;
-  font-size: clamp(1.08rem, 1.6vw, 1.35rem);
-}
-
-.analysisWorkspace .offerMeta strong {
-  font-size: clamp(1.65rem, 2.4vw, 2.2rem);
-}
-
-.analysisWorkspace .offerPanel p {
-  margin: 0;
-  font-size: .9rem;
-  line-height: 1.42;
-}
-
-.analysisWorkspace .offerPanel button,
-.analysisWorkspace .actions button {
-  min-height: 42px;
-  padding: 0 .82rem;
-  font-size: .86rem;
-}
-
-.coverageNote {
-  border-left: 4px solid var(--rust);
-  margin: 0;
-  background: #f7ebe4;
-  padding: .85rem 1rem;
-}
-
 .lockedNotice,
 .warningPanel,
 .clarification,
-.commercialPanel,
-.improveCta {
+.commercialPanel {
   border-color: #cfb978;
   background: #f8efd4;
 }
@@ -1255,7 +1052,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .loader[data-indeterminate="true"] .loaderFill,
-  .loader[data-complete="true"] .loaderBar {
+.loader[data-complete="true"] .loaderBar {
     animation: none;
   }
 
@@ -1351,22 +1148,6 @@
     padding: .62rem;
   }
 
-  .createShell[data-flow="analyze"][data-has-workspace="true"] {
-    min-height: 0;
-  }
-
-  .analysisWorkspace {
-    padding: .85rem;
-  }
-
-  .analysisWorkspace .freeResultLayout {
-    grid-template-columns: 1fr;
-  }
-
-  .analysisWorkspace .optionalFields {
-    display: grid;
-  }
-
   .fulfillmentSteps {
     grid-template-columns: 1fr;
   }
@@ -1376,7 +1157,774 @@
   }
 
   .loader[data-variant="compact"],
-  .loader[data-variant="inline"] {
+.loader[data-variant="inline"] {
     width: min(100%, 210px);
+  }
+}
+
+/* ── Score gratuito (data-flow="analyze") ─────────────────────────────────────────────────────────────
+   One column of separate cards on the dark landing, never cards inside cards: steps, the ad form (cream),
+   a dark progress strip, the contact and code forms (cream), the score report (cream) and the rewrite
+   offer (ink, the only lime call to action). Type and colour follow the landing kit. */
+
+.flowSteps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 4px;
+  padding: 0;
+  list-style: none;
+}
+
+.flowSteps li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 12px;
+  align-items: center;
+  min-width: 0;
+  border: 1px solid rgba(247, 244, 232, .14);
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: rgba(247, 244, 232, .5);
+  transition: border-color .3s ease, background-color .3s ease, color .3s ease;
+}
+
+.flowSteps b {
+  display: grid;
+  grid-row: span 2;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font: 500 11px/1 var(--font-mono), monospace;
+}
+
+.flowSteps span {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.flowSteps small {
+  overflow: hidden;
+  font-size: 12.5px;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flowSteps li[data-state="current"] {
+  border-color: var(--lime);
+  background: rgba(216, 255, 66, .06);
+  color: #f7f4e8;
+}
+
+.flowSteps li[data-state="current"] b {
+  border-color: var(--lime);
+  background: var(--lime);
+  color: var(--deep);
+}
+
+.flowSteps li[data-state="done"] {
+  color: #cdd6d4;
+}
+
+.flowSteps li[data-state="done"] b {
+  border-color: transparent;
+  background: rgba(216, 255, 66, .16);
+  color: var(--lime);
+}
+
+.createShell[data-flow="analyze"] {
+  gap: 12px;
+}
+
+/* Cream cards: the ad form, the contact form, the code form */
+.createShell[data-flow="analyze"] > .form,
+.analysisWorkspace > .form {
+  gap: 18px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--surface);
+  padding: clamp(20px, 3vw, 34px);
+}
+
+.analysisWorkspace > .form {
+  box-shadow: none;
+}
+
+.createShell[data-flow="analyze"] .formHead {
+  gap: 8px;
+}
+
+.createShell[data-flow="analyze"] .formHead p,
+.analysisWorkspace > .progressCard > p,
+.scoreHead p,
+.offerCopy > p {
+  margin: 0;
+  color: #5a6868;
+  font: 500 11px/1.3 var(--font-mono), monospace;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.createShell[data-flow="analyze"] .formHead h2 {
+  margin: 0;
+  font-size: clamp(28px, 3vw, 40px);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -.04em;
+}
+
+/* Inside the workspace the forms are a step, not the page title */
+.analysisWorkspace > .form .formHead h2 {
+  font-size: clamp(22px, 2.2vw, 28px);
+  letter-spacing: -.03em;
+}
+
+.createShell[data-flow="analyze"] > .form[data-submitted="true"] {
+  gap: 12px;
+  padding: 18px clamp(20px, 3vw, 28px);
+}
+
+.createShell[data-flow="analyze"] > .form[data-submitted="true"] .formHead h2 {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.sourceSummary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 20px;
+}
+
+.sourceSummary p {
+  min-width: 0;
+  flex: 1 1 280px;
+  margin: 0;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.createShell[data-flow="analyze"] .sourceSummary .flowLink {
+  min-height: 36px;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  background: none;
+  padding: 0;
+  color: var(--ink);
+  font: 700 14px/1 var(--font-sans);
+  cursor: pointer;
+}
+
+.createShell[data-flow="analyze"] .formHead span {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.createShell[data-flow="analyze"] .sourceToggle {
+  display: inline-grid;
+  grid-template-columns: repeat(2, auto);
+  justify-self: start;
+  gap: 4px;
+  border: 0;
+  border-radius: 99px;
+  background: rgba(16, 34, 41, .07);
+  padding: 4px;
+}
+
+.createShell[data-flow="analyze"] .sourceToggle button {
+  min-height: 38px;
+  border: 0;
+  border-radius: 99px;
+  padding: 0 22px;
+  font-size: 14px;
+}
+
+.createShell[data-flow="analyze"] .field > span {
+  font-size: 13px;
+}
+
+.createShell[data-flow="analyze"] .field input,
+.createShell[data-flow="analyze"] .field textarea,
+.createShell[data-flow="analyze"] .field select {
+  border: 1px solid rgba(16, 34, 41, .2);
+  border-radius: 10px;
+  background: #fff;
+  padding: 13px 14px;
+  font-size: 15.5px;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+.createShell[data-flow="analyze"] .field input:focus,
+.createShell[data-flow="analyze"] .field textarea:focus,
+.createShell[data-flow="analyze"] .field select:focus {
+  border-color: var(--deep);
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(216, 255, 66, .9);
+}
+
+.createShell[data-flow="analyze"] .sourceTextarea[data-empty="true"] {
+  min-height: 84px;
+}
+
+.createShell[data-flow="analyze"] .actions {
+  gap: 18px;
+}
+
+/* Primary action on cream: ink button with a lime arrow */
+.createShell[data-flow="analyze"] .actions button,
+.createShell[data-flow="analyze"] .inlineVerify button,
+.createShell[data-flow="analyze"] .warningPanel button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 52px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--deep);
+  padding: 0 22px;
+  color: #fffdf5;
+  font: 800 15px/1 var(--font-sans);
+  cursor: pointer;
+  transition: background-color .2s ease, transform .2s ease;
+}
+
+.createShell[data-flow="analyze"] .actions button > span {
+  color: var(--lime);
+}
+
+.createShell[data-flow="analyze"] .actions button:not(:disabled):hover,
+.createShell[data-flow="analyze"] .inlineVerify button:not(:disabled):hover {
+  background: #163640;
+  transform: translateY(-1px);
+}
+
+.createShell[data-flow="analyze"] .actions .flowLink {
+  min-height: 44px;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  border-radius: 0;
+  background: none;
+  padding: 0;
+  color: var(--ink);
+  font: 700 14px/1 var(--font-sans);
+}
+
+.createShell[data-flow="analyze"] .actions .flowLink:not(:disabled):hover {
+  background: none;
+  transform: none;
+}
+
+.createShell[data-flow="analyze"] .actions > span {
+  color: var(--muted);
+  font-size: 13.5px;
+}
+
+.createShell[data-flow="analyze"] .formMicrocopy {
+  color: #5a6868;
+  font: 500 11px/1.4 var(--font-mono), monospace;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.createShell[data-flow="analyze"] .optionalFields {
+  display: block;
+  border: 0;
+  border-top: 1px solid rgba(16, 34, 41, .1);
+  border-radius: 0;
+  background: none;
+  padding: 14px 0 0;
+}
+
+.createShell[data-flow="analyze"] .optionalFields summary {
+  min-height: 32px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.createShell[data-flow="analyze"] .optionalFields summary span {
+  margin-left: 6px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.createShell[data-flow="analyze"] .optionalFields > p {
+  margin: 6px 0 14px;
+  color: var(--muted);
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.createShell[data-flow="analyze"] .unknownToggle input {
+  accent-color: var(--deep);
+}
+
+.createShell[data-flow="analyze"] .inlineVerify {
+  grid-template-columns: minmax(0, 240px) auto;
+  justify-content: start;
+}
+
+.otpInput {
+  font: 500 22px/1 var(--font-mono), monospace !important;
+  letter-spacing: .38em;
+  text-align: center;
+}
+
+/* Dark strips on the landing: progress, waiting states, status lines */
+.analysisWorkspace > .progressCard {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(247, 244, 232, .14);
+  border-radius: 14px;
+  background: #0d2128;
+  padding: 18px 22px;
+  color: #f7f4e8;
+  box-shadow: none;
+}
+
+.analysisWorkspace > .progressCard > p {
+  color: var(--lime);
+}
+
+.analysisWorkspace > .progressCard > strong {
+  font-size: 16px;
+}
+
+.analysisWorkspace > .loader {
+  color: #f7f4e8;
+}
+
+.loader[data-variant="strip"] {
+  justify-items: stretch;
+  gap: 10px;
+  width: 100%;
+  color: inherit;
+}
+
+.loader[data-variant="strip"] .loaderLogo {
+  height: 4px;
+  aspect-ratio: auto;
+}
+
+.loader[data-variant="strip"] .loaderImage {
+  display: none;
+}
+
+.loader[data-variant="strip"] .loaderBar {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 100%;
+  border-radius: 2px;
+  background: rgba(247, 244, 232, .14);
+}
+
+.loader[data-variant="strip"] .loaderFill {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 2px;
+}
+
+.loader[data-variant="strip"] .loaderStatus {
+  order: -1;
+  color: inherit;
+  font: 700 15px/1.4 var(--font-sans);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.form .loader[data-variant="strip"] .loaderBar {
+  background: rgba(16, 34, 41, .12);
+}
+
+.form .loader[data-variant="strip"] .loaderFill {
+  background: var(--deep);
+}
+
+.flowStatus {
+  margin: 0;
+  color: #cdd6d4;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.verifiedRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  border: 1px solid rgba(216, 255, 66, .35);
+  border-radius: 14px;
+  background: rgba(216, 255, 66, .08);
+  padding: 14px 18px;
+  color: #f7f4e8;
+  font-weight: 700;
+}
+
+.verifiedRow b {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--lime);
+  color: var(--deep);
+  font-size: 13px;
+}
+
+.analysisWorkspace > .lockedNotice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  border: 1px solid rgba(216, 255, 66, .35);
+  border-radius: 14px;
+  background: rgba(216, 255, 66, .08);
+  padding: 14px 18px;
+  color: #f7f4e8;
+  box-shadow: none;
+}
+
+.analysisWorkspace > .warningPanel {
+  border: 0;
+  border-left: 4px solid var(--rust);
+  border-radius: 14px;
+  background: var(--surface);
+  padding: 18px 22px;
+  box-shadow: none;
+}
+
+.analysisWorkspace > .error {
+  border-radius: 14px;
+}
+
+/* The score report */
+.resultStack {
+  display: grid;
+  gap: 12px;
+}
+
+.resultStack:focus {
+  outline: none;
+}
+
+.analysisWorkspace .result {
+  display: grid;
+  gap: 18px;
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-radius: 16px;
+  background: var(--surface);
+  padding: clamp(22px, 3.4vw, 38px);
+  box-shadow: none;
+}
+
+.scoreHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.scoreBadge {
+  border-radius: 99px;
+  background: var(--deep);
+  padding: 7px 12px;
+  color: var(--lime);
+  font: 500 11px/1 var(--font-mono), monospace;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.scoreValue {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin: 0;
+  font-weight: 800;
+  line-height: .9;
+  letter-spacing: -.05em;
+}
+
+.scoreValue strong {
+  font-size: clamp(72px, 10vw, 128px);
+}
+
+.scoreValue > span:last-child {
+  color: #5a6868;
+  font-size: clamp(22px, 2.4vw, 30px);
+  letter-spacing: -.02em;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.createShell[data-flow="analyze"] .scoreBandBar {
+  gap: 4px;
+}
+
+.createShell[data-flow="analyze"] .scoreBandBar span {
+  position: relative;
+  display: block;
+  min-height: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  padding: 18px 0 0;
+  color: #5a6868;
+  font: 500 10.5px/1.2 var(--font-mono), monospace;
+  letter-spacing: .06em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: none;
+}
+
+.createShell[data-flow="analyze"] .scoreBandBar span::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(16, 34, 41, .1);
+}
+
+.createShell[data-flow="analyze"] .scoreBandBar span[data-passed="true"]::before {
+  background: rgba(16, 34, 41, .32);
+}
+
+.createShell[data-flow="analyze"] .scoreBandBar span[data-active="true"] {
+  color: var(--deep);
+  font-weight: 500;
+}
+
+.createShell[data-flow="analyze"] .scoreBandBar span[data-active="true"]::before {
+  background: var(--lime);
+  box-shadow: inset 0 0 0 1px rgba(16, 34, 41, .3);
+}
+
+.scoreReading {
+  margin: 0;
+  font-size: clamp(17px, 1.5vw, 20px);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.scoreCoverage {
+  margin: 0;
+  border-radius: 10px;
+  background: rgba(157, 77, 52, .08);
+  padding: 12px 14px;
+  color: #6b2d1b;
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+
+.createShell[data-flow="analyze"] .disclaimer {
+  margin: 0;
+  border-top: 1px solid rgba(16, 34, 41, .1);
+  padding-top: 14px;
+  color: #5a6868;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+/* The rewrite offer: the one ink card with a lime call to action */
+.offerCard {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(220px, .7fr);
+  gap: 24px 32px;
+  align-items: center;
+  border: 1px solid rgba(216, 255, 66, .35);
+  border-radius: 16px;
+  background: #0d2128;
+  padding: clamp(22px, 3.4vw, 38px);
+  color: #f7f4e8;
+}
+
+.offerCopy > p {
+  color: var(--lime);
+}
+
+.offerCopy h3 {
+  margin: 10px 0 0;
+  font-size: clamp(26px, 2.8vw, 38px);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -.04em;
+}
+
+.offerCopy h3 em {
+  color: var(--lime);
+  font-style: normal;
+}
+
+.offerCopy ul {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.offerCopy li {
+  position: relative;
+  padding-left: 22px;
+  color: #cdd6d4;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.offerCopy li::before {
+  content: "";
+  position: absolute;
+  top: .45em;
+  left: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--lime);
+}
+
+.offerBuy {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  border-radius: 12px;
+  background: rgba(247, 244, 232, .05);
+  padding: 22px;
+}
+
+.offerBuy > span {
+  color: #9aa8a6;
+  font: 500 11px/1 var(--font-mono), monospace;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.offerBuy > strong {
+  color: var(--lime);
+  font-size: clamp(56px, 6vw, 80px);
+  font-weight: 800;
+  line-height: .9;
+  letter-spacing: -.05em;
+}
+
+.offerBuy button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--lime);
+  padding: 0 18px;
+  color: var(--deep);
+  font: 800 15px/1.2 var(--font-sans);
+  text-align: left;
+  cursor: pointer;
+  transition: transform .2s ease;
+}
+
+.offerBuy button:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+.offerBuy button:disabled {
+  cursor: progress;
+  opacity: .75;
+}
+
+.offerBuy button:focus-visible {
+  outline: 3px solid #f7f4e8;
+  outline-offset: 3px;
+}
+
+.offerUnavailable {
+  width: 100%;
+  margin: 0;
+  border: 1px dashed rgba(247, 244, 232, .3);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: #cdd6d4;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.offerBuy .offerStatus {
+  color: #cdd6d4;
+  font-size: 14px;
+}
+
+.offerFine {
+  grid-column: 1 / -1;
+  margin: 0;
+  border-top: 1px solid rgba(247, 244, 232, .12);
+  padding-top: 16px;
+  color: #9aa8a6;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+@media (max-width: 760px) {
+  .flowSteps {
+    gap: 6px;
+  }
+
+  .flowSteps li {
+    grid-template-columns: 1fr;
+    justify-items: start;
+    row-gap: 8px;
+    padding: 10px;
+  }
+
+  .flowSteps b {
+    grid-row: auto;
+  }
+
+  .flowSteps small {
+    display: none;
+  }
+
+  .createShell[data-flow="analyze"] .inlineVerify {
+    grid-template-columns: 1fr;
+  }
+
+  .createShell[data-flow="analyze"] .scoreBandBar span:not([data-active="true"]) {
+    color: transparent;
+  }
+
+  .offerCard {
+    grid-template-columns: 1fr;
   }
 }

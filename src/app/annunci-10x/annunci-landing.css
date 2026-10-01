@@ -3,8 +3,8 @@
    by the rust squiggle of a spell-checker; in the story it is rewritten line by line until it is clear.
    Palette and type come from the kit only. */
 
-.ax-skip{position:fixed;z-index:60;top:12px;left:12px;padding:10px 14px;border-radius:6px;background:var(--lime);color:var(--ink);font-weight:800;transform:translateY(-160%)}
-.ax-skip:focus{transform:none}
+.ax-skip{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}
+.ax-skip:focus{position:fixed;z-index:60;top:12px;left:12px;width:auto;height:auto;padding:10px 14px;border-radius:6px;background:var(--lime);color:var(--ink);font-weight:800}
 
 /* Brand: the approved Recruiting PNG, never cropped */
 .ax-brand{display:inline-flex;align-items:center;min-height:44px}
@@ -99,6 +99,16 @@
   .ax-hero-sheet{transform:scale(.9) rotate(1deg);transform-origin:top center}
 }
 @media (max-width:600px){
+  .ax{overflow-x:hidden}
+  .ax .rd-header{gap:14px}
+  .ax .rd-header .rd-cta{flex:0 0 auto;gap:10px;min-width:0;padding:10px 12px;white-space:nowrap}
+  .ax-brand img{width:clamp(150px,42vw,168px)}
+  .ax .rd-hero{min-height:auto;overflow:hidden}
+  .ax .rd-hero h1{max-width:100%;font-size:clamp(38px,10.4vw,42px)}
+  .ax .rd-hero .rd-mask{overflow:visible}
+  .ax .rd-hero .rd-line{white-space:normal}
+  .ax .rd-hero .rd-lead{max-width:31ch;font-size:18px}
+  .ax-hero-sheet{width:min(100%,350px)}
   .ax-price{padding:90px 5vw}
   .ax-fact{padding:8px}
   .ax-fact dd{font-size:12.5px}

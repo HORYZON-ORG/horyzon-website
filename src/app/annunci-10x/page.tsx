@@ -46,12 +46,6 @@ const outputs = [
   ['Report', 'Indicazioni via email', 'Le indicazioni operative arrivano nel report via email.'],
 ] as const;
 
-const steps = [
-  ['Incolla', 'Il testo dell’annuncio o il link pubblico.'],
-  ['Verifica', 'Un codice di 6 cifre alla tua email.'],
-  ['Score', 'Il risultato qui, il report completo via email.'],
-] as const;
-
 const roles = ['operaio di produzione', 'saldatore', 'manutentore meccanico', 'elettricista', 'tecnico installatore', 'magazziniere carrellista', 'autista patente C', 'commerciale B2B', 'impiegato amministrativo', 'addetto alla contabilità', 'cuoco', 'cameriere di sala'];
 
 const faqs = [
@@ -103,10 +97,9 @@ export default function Annunci10xPage() {
         <header className="rd-product-head">
           <p className="rd-label">Tocca a te</p>
           <h2 id="ax-product-title">Che cosa capisce <em>chi lo legge?</em></h2>
-          <ol className="rd-steps">{steps.map(([step, text]) => <li key={step}><b>{step}</b><span>{text}</span></li>)}</ol>
         </header>
         <Annunci10xClient />
-        <p className="rd-product-note">Gratis <i>·</i> nessuna carta di credito <i>·</i> <Link href="/privacy-policy">Privacy ↗︎</Link></p>
+        <p className="rd-product-note">Usiamo la tua email per inviarti il report <i>·</i> <Link href="/privacy-policy">Privacy ↗︎</Link></p>
       </section>
 
       <section id="annuncio-10x" className="ax-price" aria-labelledby="ax-price-title">
