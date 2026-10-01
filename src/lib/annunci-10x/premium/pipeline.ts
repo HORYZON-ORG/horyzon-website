@@ -182,44 +182,20 @@ export async function runAnnunci10xPremiumGeneration(input: Annunci10xPremiumGen
     });
     const firstValidation = normalizeRepairableValidation(firstValidationRaw);
 
-    let finalMaster = generatedMaster;
-    let finalValidation = firstValidation;
-    let automaticRevisionCount: 0 | 1 = 0;
-    if (firstValidation.result === 'NEEDS_REVISION') {
-      const revisionResult = await orchestrator.runTask({
-        sessionId: input.sessionId,
-        sessionSecret: input.sessionSecret,
-        operationType: 'REVISE',
-        input: {
-          currentMaster: generatedMaster,
-          roleCard: snapshot.roleCard,
-          communicationStrategy: snapshot.communicationStrategy,
-          validationIssues: firstValidation,
-        },
-        inputSnapshotId: snapshot.id,
-        idempotencyInputIdentityOverride: stableHash({ snapshotId: snapshot.id, authIdentity, operation: 'REVISE', masterId: generatedMaster.id }),
-      });
-      operations.push(toPublicOperation(revisionResult, 'REVISE', context.configuredProvider));
-      const revision = revisionResult.output as Annunci10xReviseOutput;
-      const revisionPlan = enforceEditorialDeletionGuard(generatedMaster.sections, revision, firstValidation);
-      finalMaster = prepareMasterForValidation({
-        ...generatedMaster,
-        sections: mergeRevisedSections(generatedMaster.sections, revisionPlan.revisedSections, revisionPlan.changedSectionIds),
-        generatedAt: new Date().toISOString(),
-      }, snapshot.roleCard);
-      automaticRevisionCount = 1;
-      finalValidation = await validateMaster({
-        orchestrator,
-        sessionId: input.sessionId,
-        sessionSecret: input.sessionSecret,
-        snapshot,
-        master: finalMaster,
-        authIdentity,
-        provider: context.configuredProvider,
-        operations,
-        phase: 'post-revise',
-      });
-    }
+    const revised = await applyAutomaticRevisions({
+      orchestrator,
+      sessionId: input.sessionId,
+      sessionSecret: input.sessionSecret,
+      snapshot,
+      initialMaster: generatedMaster,
+      initialValidation: firstValidation,
+      authIdentity,
+      provider: context.configuredProvider,
+      operations,
+    });
+    const finalMaster = revised.master;
+    const finalValidation = revised.validation;
+    const automaticRevisionCount = revised.automaticRevisionCount;
 
     const evaluateResult = await evaluateGeneratedMasterV2({
       context,
@@ -706,44 +682,20 @@ async function executePremiumPipeline(input: {
   });
   const firstValidation = normalizeRepairableValidation(firstValidationRaw);
 
-  let finalMaster = generatedMaster;
-  let finalValidation = firstValidation;
-  let automaticRevisionCount: 0 | 1 = 0;
-  if (firstValidation.result === 'NEEDS_REVISION') {
-    const revisionResult = await orchestrator.runTask({
-      sessionId: input.session.id,
-      sessionSecret: input.sessionSecret,
-      operationType: 'REVISE',
-      input: {
-        currentMaster: generatedMaster,
-        roleCard: input.snapshot.roleCard,
-        communicationStrategy: input.snapshot.communicationStrategy,
-        validationIssues: firstValidation,
-      },
-      inputSnapshotId: input.snapshot.id,
-      idempotencyInputIdentityOverride: stableHash({ snapshotId: input.snapshot.id, authIdentity: input.authIdentity, operation: 'REVISE', masterId: generatedMaster.id }),
-    });
-    operations.push(toPublicOperation(revisionResult, 'REVISE', input.context.configuredProvider));
-    const revision = revisionResult.output as Annunci10xReviseOutput;
-    const revisionPlan = enforceEditorialDeletionGuard(generatedMaster.sections, revision, firstValidation);
-    finalMaster = prepareMasterForValidation({
-      ...generatedMaster,
-      sections: mergeRevisedSections(generatedMaster.sections, revisionPlan.revisedSections, revisionPlan.changedSectionIds),
-      generatedAt: new Date().toISOString(),
-    }, input.snapshot.roleCard);
-    automaticRevisionCount = 1;
-    finalValidation = await validateMaster({
-      orchestrator,
-      sessionId: input.session.id,
-      sessionSecret: input.sessionSecret,
-      snapshot: input.snapshot,
-      master: finalMaster,
-      authIdentity: input.authIdentity,
-      provider: input.context.configuredProvider,
-      operations,
-      phase: 'post-revise',
-    });
-  }
+  const revised = await applyAutomaticRevisions({
+    orchestrator,
+    sessionId: input.session.id,
+    sessionSecret: input.sessionSecret,
+    snapshot: input.snapshot,
+    initialMaster: generatedMaster,
+    initialValidation: firstValidation,
+    authIdentity: input.authIdentity,
+    provider: input.context.configuredProvider,
+    operations,
+  });
+  const finalMaster = revised.master;
+  const finalValidation = revised.validation;
+  const automaticRevisionCount = revised.automaticRevisionCount;
 
   const evaluateResult = await evaluateGeneratedMasterV2({
     context: input.context,
@@ -826,6 +778,80 @@ async function executePremiumPipeline(input: {
   };
 }
 
+async function applyAutomaticRevisions(input: {
+  orchestrator: Annunci10xAiOrchestrator;
+  sessionId: string;
+  sessionSecret: string;
+  snapshot: PersistedSnapshot;
+  initialMaster: GeneratedAd;
+  initialValidation: Annunci10xValidateOutput;
+  authIdentity: string;
+  provider: Annunci10xConfiguredProvider;
+  operations: PublicAnnunci10xOperation[];
+}): Promise<{ master: GeneratedAd; validation: Annunci10xValidateOutput; automaticRevisionCount: 0 | 1 | 2 }> {
+  let master = input.initialMaster;
+  let validation = input.initialValidation;
+  let automaticRevisionCount: 0 | 1 | 2 = 0;
+
+  while (
+    validation.result === 'NEEDS_REVISION'
+    && automaticRevisionCount < 2
+    && (automaticRevisionCount === 0 || hasActionableAutoRepair(validation))
+  ) {
+    const revisionNumber = automaticRevisionCount + 1;
+    const revisionResult = await input.orchestrator.runTask({
+      sessionId: input.sessionId,
+      sessionSecret: input.sessionSecret,
+      operationType: 'REVISE',
+      input: {
+        currentMaster: master,
+        roleCard: input.snapshot.roleCard,
+        communicationStrategy: input.snapshot.communicationStrategy,
+        validationIssues: validation,
+      },
+      inputSnapshotId: input.snapshot.id,
+      idempotencyInputIdentityOverride: stableHash({
+        snapshotId: input.snapshot.id,
+        authIdentity: input.authIdentity,
+        operation: 'REVISE',
+        revisionNumber,
+        master: master.sections,
+      }),
+    });
+    input.operations.push(toPublicOperation(revisionResult, 'REVISE', input.provider));
+    const revision = revisionResult.output as Annunci10xReviseOutput;
+    const revisionPlan = enforceEditorialDeletionGuard(master.sections, revision, validation);
+    master = prepareMasterForValidation({
+      ...master,
+      sections: mergeRevisedSections(master.sections, revisionPlan.revisedSections, revisionPlan.changedSectionIds),
+      generatedAt: new Date().toISOString(),
+    }, input.snapshot.roleCard);
+    automaticRevisionCount = revisionNumber as 1 | 2;
+    validation = normalizeRepairableValidation(await validateMaster({
+      orchestrator: input.orchestrator,
+      sessionId: input.sessionId,
+      sessionSecret: input.sessionSecret,
+      snapshot: input.snapshot,
+      master,
+      authIdentity: input.authIdentity,
+      provider: input.provider,
+      operations: input.operations,
+      phase: `post-revise-${revisionNumber}`,
+    }));
+  }
+
+  return { master, validation, automaticRevisionCount };
+}
+
+function hasActionableAutoRepair(validation: Annunci10xValidateOutput): boolean {
+  if (validation.claims.some((claim) => claim.action === 'REQUEST_CONFIRMATION')) return false;
+  return validation.claims.some((claim) => claim.action === 'REMOVE')
+    || validation.unsupportedClaims.length > 0
+    || validation.contradictions.length > 0
+    || validation.omittedCriticalFacts.length > 0
+    || validation.alteredRequirements.length > 0;
+}
+
 async function validateMaster(input: {
   orchestrator: Annunci10xAiOrchestrator;
   sessionId: string;
@@ -844,7 +870,7 @@ async function validateMaster(input: {
     input: { generatedAd: input.master, roleCard: input.snapshot.roleCard },
     inputSnapshotId: input.snapshot.id,
     idempotencyInputIdentityOverride: stableHash({ snapshotId: input.snapshot.id, authIdentity: input.authIdentity, operation: 'VALIDATE', phase: input.phase, master: input.master.sections }),
-    promptVersionOverride: input.phase === 'post-revise' ? `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.post-revise` : undefined,
+    promptVersionOverride: input.phase.startsWith('post-revise') ? `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.post-revise` : undefined,
   });
   input.operations.push(toPublicOperation(result, 'VALIDATE', input.provider));
   return result.output as Annunci10xValidateOutput;
@@ -962,7 +988,7 @@ function attachPremiumPayload(master: GeneratedAd, payload: {
   claimCheck: ClaimCheck[];
   gate: PublicationGate;
   rationale: string[];
-  automaticRevisionCount: 0 | 1;
+  automaticRevisionCount: 0 | 1 | 2;
   validationResult: Annunci10xValidateOutput['result'];
 }): GeneratedAd {
   return {
@@ -1144,13 +1170,30 @@ function normalizeGeneratedMaster(master: GeneratedAd): GeneratedAd {
 }
 
 function prepareMasterForValidation(master: GeneratedAd, roleCard: RoleCard): GeneratedAd {
-  return ensureConfirmedWorkConditions(
-    ensureConfirmedRoleReality(
-      ensureConfirmedMission(normalizeGeneratedMaster(master), roleCard),
-      roleCard,
-    ),
-    roleCard,
-  );
+  const normalized = normalizeGeneratedMaster(master);
+  const title = normalized.sections.find((section) => section.type === 'TITLE');
+  const opening = normalized.sections.find((section) => section.type === 'OPENING');
+  const claimChecks = normalized.sections.filter((section) => section.type === 'CLAIM_CHECK');
+
+  const canonicalSections = [
+    canonicalMissionSection(roleCard),
+    canonicalResponsibilitiesSection(roleCard),
+    canonicalContextSection(roleCard),
+    canonicalRequirementsSection(roleCard),
+    canonicalConditionsSection(roleCard),
+    canonicalGrowthSection(roleCard),
+    canonicalApplicationSection(roleCard),
+  ].filter((section): section is GeneratedAd['sections'][number] => Boolean(section));
+
+  return {
+    ...normalized,
+    sections: [
+      ...(title ? [title] : []),
+      ...(opening ? [opening] : []),
+      ...canonicalSections,
+      ...claimChecks,
+    ],
+  };
 }
 
 function normalizeChannelVariant(variant: ChannelVariant, roleCard: RoleCard): ChannelVariant {
@@ -1172,123 +1215,142 @@ function normalizeChannelVariant(variant: ChannelVariant, roleCard: RoleCard): C
   return { ...normalized, sections: ensured.sections };
 }
 
-function ensureConfirmedMission(master: GeneratedAd, roleCard: RoleCard): GeneratedAd {
-  const mission = roleCard.mission;
-  if (!mission?.publishable || !String(mission.value).trim()) return master;
-
-  const sourceIds = new Set([
-    mission.sourceId,
-    ...roleCard.outcomes.map((outcome) => outcome.sourceId),
-  ].filter((value): value is string => Boolean(value)));
-  const represented = isCandidateFactSemanticallyRepresented(master, String(mission.value), [...sourceIds]);
-  if (represented) return master;
-
-  const section = {
-    id: 'confirmed-role-mission',
-    type: 'MISSION' as const,
-    key: 'confirmed-role-mission',
-    title: 'Obiettivo del ruolo',
-    body: String(mission.value).trim(),
-    sourceFactIds: [...sourceIds],
-  };
-  const titleIndex = master.sections.findIndex((candidate) => candidate.type === 'TITLE');
-  const insertAt = titleIndex >= 0 ? titleIndex + 1 : 0;
-  return {
-    ...master,
-    sections: [...master.sections.slice(0, insertAt), section, ...master.sections.slice(insertAt)],
-  };
+function canonicalMissionSection(roleCard: RoleCard): GeneratedAd['sections'][number] | null {
+  const mission = publishableFact(roleCard.mission) ?? roleCard.outcomes.map(publishableFact).find(Boolean) ?? null;
+  if (!mission) return null;
+  return canonicalSection('confirmed-role-mission', 'MISSION', 'Obiettivo del ruolo', mission.value, mission.sourceIds);
 }
 
-function ensureConfirmedRoleReality(master: GeneratedAd, roleCard: RoleCard): GeneratedAd {
-  const facts = [
-    roleCard.attractionContext.companyDescription?.publishable && String(roleCard.attractionContext.companyDescription.value).trim()
-      ? { label: 'Azienda', value: String(roleCard.attractionContext.companyDescription.value).trim(), sourceId: roleCard.attractionContext.companyDescription.sourceId }
-      : null,
-    roleCard.attractionContext.operatingContext?.publishable && String(roleCard.attractionContext.operatingContext.value).trim()
-      ? { label: 'Contesto operativo', value: String(roleCard.attractionContext.operatingContext.value).trim(), sourceId: roleCard.attractionContext.operatingContext.sourceId }
-      : null,
-    roleCard.attractionContext.autonomy?.publishable && String(roleCard.attractionContext.autonomy.value).trim()
-      ? { label: 'Autonomia', value: String(roleCard.attractionContext.autonomy.value).trim(), sourceId: roleCard.attractionContext.autonomy.sourceId }
-      : null,
-    roleCard.attractionContext.unexpectedEvents?.publishable && String(roleCard.attractionContext.unexpectedEvents.value).trim()
-      ? { label: 'Imprevisti e variabilità', value: String(roleCard.attractionContext.unexpectedEvents.value).trim(), sourceId: roleCard.attractionContext.unexpectedEvents.sourceId }
-      : null,
-  ].filter((item): item is { label: string; value: string; sourceId: string | undefined } => Boolean(item));
-  if (!facts.length) return master;
-
-  const missing = facts.filter((fact) => !isCandidateFactSemanticallyRepresented(master, fact.value, fact.sourceId ? [fact.sourceId] : []));
-  if (!missing.length) return master;
-
-  const additions = missing.map((fact) => `${fact.label}: ${fact.value}.`).join(' ');
-  const sourceIds = missing.map((fact) => fact.sourceId).filter((value): value is string => Boolean(value));
-  const contextIndex = master.sections.findIndex((section) => section.type === 'CONTEXT');
-  if (contextIndex >= 0) {
-    const sections = [...master.sections];
-    const current = sections[contextIndex];
-    sections[contextIndex] = {
-      ...current,
-      body: [current.body.trim().replace(/[.\s]+$/, ''), additions].filter(Boolean).join('. '),
-      sourceFactIds: [...new Set([...current.sourceFactIds, ...sourceIds])],
-    };
-    return { ...master, sections };
-  }
-
-  const section = {
-    id: 'confirmed-role-reality',
-    type: 'CONTEXT' as const,
-    key: 'confirmed-role-reality',
-    title: 'Come si lavora davvero',
-    body: additions,
-    sourceFactIds: sourceIds,
-  };
-  const responsibilityIndex = master.sections.findIndex((candidate) => candidate.type === 'RESPONSIBILITIES');
-  const insertAt = responsibilityIndex >= 0 ? responsibilityIndex + 1 : master.sections.length;
-  return {
-    ...master,
-    sections: [...master.sections.slice(0, insertAt), section, ...master.sections.slice(insertAt)],
-  };
+function canonicalResponsibilitiesSection(roleCard: RoleCard): GeneratedAd['sections'][number] | null {
+  const facts = roleCard.responsibilities.map(publishableFact).filter((item): item is CanonicalFact => Boolean(item));
+  if (!facts.length) return null;
+  return canonicalSection(
+    'confirmed-role-responsibilities',
+    'RESPONSIBILITIES',
+    'Cosa farai',
+    facts.map((fact) => fact.value).join('\n'),
+    facts.flatMap((fact) => fact.sourceIds),
+  );
 }
 
-function ensureConfirmedWorkConditions(master: GeneratedAd, roleCard: RoleCard): GeneratedAd {
-  const shifts = roleCard.attractionContext.shifts;
-  const onCall = roleCard.attractionContext.onCall;
+function canonicalContextSection(roleCard: RoleCard): GeneratedAd['sections'][number] | null {
   const facts = [
-    shifts?.publishable && String(shifts.value).trim() ? { label: 'Turni', value: String(shifts.value).trim(), sourceId: shifts.sourceId } : null,
-    onCall?.publishable && String(onCall.value).trim() ? { label: 'Reperibilità', value: String(onCall.value).trim(), sourceId: onCall.sourceId } : null,
-  ].filter((item): item is { label: string; value: string; sourceId: string | undefined } => Boolean(item));
-  if (!facts.length) return master;
+    labeledCanonicalFact('Azienda', roleCard.attractionContext.companyDescription),
+    labeledCanonicalFact('Contesto operativo', roleCard.attractionContext.operatingContext),
+    labeledCanonicalFact('Autonomia', roleCard.attractionContext.autonomy),
+    labeledCanonicalFact('Imprevisti e variabilità', roleCard.attractionContext.unexpectedEvents),
+  ].filter((item): item is CanonicalFact => Boolean(item));
+  if (!facts.length) return null;
+  return canonicalSection(
+    'confirmed-role-reality',
+    'CONTEXT',
+    'Come si lavora davvero',
+    facts.map((fact) => fact.value).join('\n'),
+    facts.flatMap((fact) => fact.sourceIds),
+  );
+}
 
-  const wholeText = masterText(master);
-  const missing = facts.filter((fact) => fact.label === 'Turni' ? !/\bturni?\b/i.test(wholeText) : !/reperibil/i.test(wholeText));
-  if (!missing.length) return master;
+function canonicalRequirementsSection(roleCard: RoleCard): GeneratedAd['sections'][number] | null {
+  const labels: Record<RoleCard['requirements'][number]['classification'], string> = {
+    REQUIRED: 'Indispensabili',
+    PREFERRED: 'Preferenziali',
+    TRAINABLE: 'Apprendibili',
+    DISQUALIFYING: 'Vincoli',
+  };
+  const facts = roleCard.requirements.flatMap((requirement) => {
+    const fact = publishableFact(requirement.label);
+    return fact ? [{ ...fact, value: `${labels[requirement.classification]}: ${fact.value}` }] : [];
+  });
+  if (!facts.length) return null;
+  return canonicalSection(
+    'confirmed-role-requirements',
+    'REQUIREMENTS',
+    'Requisiti',
+    facts.map((fact) => fact.value).join('\n'),
+    facts.flatMap((fact) => fact.sourceIds),
+  );
+}
 
-  const additions = missing.map((fact) => `${fact.label}: ${fact.value}.`).join(' ');
-  const sourceIds = missing.map((fact) => fact.sourceId).filter((value): value is string => Boolean(value));
-  const conditionsIndex = master.sections.findIndex((section) => section.type === 'CONDITIONS');
-  if (conditionsIndex >= 0) {
-    const sections = [...master.sections];
-    const current = sections[conditionsIndex];
-    sections[conditionsIndex] = {
-      ...current,
-      body: [current.body.trim().replace(/[.\s]+$/, ''), additions].filter(Boolean).join('. '),
-      sourceFactIds: [...new Set([...current.sourceFactIds, ...sourceIds])],
-    };
-    return { ...master, sections };
-  }
+function canonicalConditionsSection(roleCard: RoleCard): GeneratedAd['sections'][number] | null {
+  const workMode = publishableFact(roleCard.attractionContext.workModeDetail) ?? publishableFact(roleCard.attractionContext.workMode);
+  const facts = [
+    labeledCanonicalFact('Sede', roleCard.attractionContext.location),
+    workMode ? { ...workMode, value: `Modalità: ${workMode.value}` } : null,
+    labeledCanonicalFact('Contratto', roleCard.attractionContext.contractType),
+    labeledCanonicalFact('Orario', roleCard.attractionContext.schedule),
+    labeledCanonicalFact('Turni', roleCard.attractionContext.shifts),
+    labeledCanonicalFact('Reperibilità', roleCard.attractionContext.onCall),
+    labeledCanonicalFact('Retribuzione', roleCard.compensation?.amountText),
+  ].filter((item): item is CanonicalFact => Boolean(item));
+  if (!facts.length) return null;
+  return canonicalSection(
+    'confirmed-role-conditions',
+    'CONDITIONS',
+    'Condizioni',
+    facts.map((fact) => fact.value).join('\n'),
+    facts.flatMap((fact) => fact.sourceIds),
+  );
+}
 
+function canonicalGrowthSection(roleCard: RoleCard): GeneratedAd['sections'][number] | null {
+  const facts = roleCard.attractionContext.attractivenessEvidence.flatMap((fact) => {
+    const candidate = publishableFact(fact);
+    if (!candidate) return [];
+    const safe = candidate.value
+      .split(/[\n.]+/)
+      .map((part) => part.trim())
+      .filter((part) => part && !isUnknownCandidateValue(part))
+      .join('. ');
+    return safe ? [{ ...candidate, value: safe }] : [];
+  });
+  if (!facts.length) return null;
+  return canonicalSection(
+    'confirmed-role-growth',
+    'GROWTH',
+    'Cosa offre l’azienda',
+    facts.map((fact) => fact.value).join('\n'),
+    facts.flatMap((fact) => fact.sourceIds),
+  );
+}
+
+function canonicalApplicationSection(roleCard: RoleCard): GeneratedAd['sections'][number] | null {
+  const application = publishableFact(roleCard.applicationInstructions);
+  if (!application) return null;
+  return canonicalSection('confirmed-role-application', 'APPLICATION', 'Come candidarsi', application.value, application.sourceIds);
+}
+
+type CanonicalFact = { value: string; sourceIds: string[] };
+
+function publishableFact(fact: Fact<string> | undefined): CanonicalFact | null {
+  if (!fact?.publishable) return null;
+  const value = String(fact.value ?? '').trim();
+  if (!value || isUnknownCandidateValue(value)) return null;
+  return { value, sourceIds: fact.sourceId ? [fact.sourceId] : [] };
+}
+
+function labeledCanonicalFact(label: string, fact: Fact<string> | undefined): CanonicalFact | null {
+  const candidate = publishableFact(fact);
+  return candidate ? { ...candidate, value: `${label}: ${candidate.value}` } : null;
+}
+
+function isUnknownCandidateValue(value: string): boolean {
+  return /(?:^|\b)(?:n\/d|da definire|da chiarire|non lo so|open_decision)(?:\b|$)/i.test(value);
+}
+
+function canonicalSection(
+  id: string,
+  type: GeneratedAd['sections'][number]['type'],
+  title: string,
+  body: string,
+  sourceFactIds: string[],
+): GeneratedAd['sections'][number] {
   return {
-    ...master,
-    sections: [
-      ...master.sections,
-      {
-        id: 'confirmed-work-conditions',
-        type: 'CONDITIONS',
-        key: 'confirmed-work-conditions',
-        title: 'Condizioni pratiche',
-        body: additions,
-        sourceFactIds: sourceIds,
-      },
-    ],
+    id,
+    type,
+    key: id,
+    title,
+    body: body.trim(),
+    sourceFactIds: [...new Set(sourceFactIds)],
   };
 }
 

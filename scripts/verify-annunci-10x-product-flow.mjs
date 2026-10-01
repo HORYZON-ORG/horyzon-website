@@ -132,6 +132,44 @@ class SourceTaggedButSemanticallyMissingProvider extends MockAnnunci10xProvider 
   }
 }
 
+class TwoPassRepairProvider extends MockAnnunci10xProvider {
+  validationCount = 0;
+  revisionCount = 0;
+
+  async executeStructuredTask(request) {
+    const result = await super.executeStructuredTask(request);
+    if (request.operationType === 'VALIDATE') {
+      this.validationCount += 1;
+      if (this.validationCount <= 2) {
+        return {
+          ...result,
+          output: {
+            claims: [{
+              id: `repair-${this.validationCount}`,
+              kind: 'EDITORIAL',
+              claim: this.validationCount === 1 ? 'Remove unsupported adjective.' : 'Remove residual filler.',
+              supported: true,
+              sourcePaths: ['section-1'],
+              action: 'REMOVE',
+            }],
+            unsupportedClaims: [],
+            contradictions: [],
+            omittedCriticalFacts: [],
+            alteredRequirements: [],
+            result: 'NEEDS_REVISION',
+          },
+        };
+      }
+      return {
+        ...result,
+        output: { claims: [], unsupportedClaims: [], contradictions: [], omittedCriticalFacts: [], alteredRequirements: [], result: 'PASS' },
+      };
+    }
+    if (request.operationType === 'REVISE') this.revisionCount += 1;
+    return result;
+  }
+}
+
 class RepairableBlockedClaimProvider extends MockAnnunci10xProvider {
   validationCount = 0;
 
@@ -576,6 +614,7 @@ assert.equal(unknownCreateState.roleCard.location, 'Bari');
 assert.equal(unknownCreateState.roleCard.schedule, 'Da definire');
 assert.equal(unknownCreateState.roleCard.compensation.includes('0'), false, 'unknown compensation must not become zero');
 assert.equal(unknownCreateState.roleCard.compensation.toLowerCase().includes('concordare'), false, 'unknown compensation must not become a default claim');
+assert.equal(unknownCreateState.roleCard.requirements.some((item) => item.classification === 'DISQUALIFYING'), false, 'blank optional constraints must not become an invented disqualifying requirement');
 
 const preservationContext = makeContext();
 const startedPreservationCreate = await startAnnunci10xCreate({ context: preservationContext });
@@ -634,6 +673,14 @@ assert.match(preservationPremium.masterText, /Sviluppare nuove opportunita comme
 assert.match(preservationPremium.masterText, /Autonomia:/i, 'confirmed autonomy must remain explicit in the final master');
 assert.match(preservationPremium.masterText, /Imprevisti e variabilit[aà]:/i, 'confirmed unexpected events must remain explicit in the final master');
 assert.match(preservationPremium.masterText, /Team commerciale interno/i, 'confirmed operating context must remain explicit in the final master');
+assert.match(preservationPremium.masterText, /Fare prospecting, qualificare lead, svolgere call, preparare proposte/i, 'canonical responsibilities must remain candidate-facing');
+assert.match(preservationPremium.masterText, /uso quotidiano del CRM e gestione di lead e opportunita/i, 'canonical operating context must preserve declared tools and work reality');
+assert.match(preservationPremium.masterText, /Lead urgenti, trattative che cambiano priorita/i, 'canonical unexpected events must remain candidate-facing');
+assert.match(preservationPremium.masterText, /Indispensabili: Almeno 2 anni di esperienza nella vendita B2B/i, 'canonical required requirements must remain explicit');
+assert.match(preservationPremium.masterText, /Preferenziali: Esperienza nella vendita di servizi digitali/i, 'canonical preferred requirements must remain explicit');
+assert.match(preservationPremium.masterText, /Apprendibili: Offerta specifica dell'azienda/i, 'canonical trainable requirements must remain explicit');
+assert.match(preservationPremium.masterText, /Laptop e telefono aziendale/i, 'canonical benefits must remain explicit');
+assert.match(preservationPremium.masterText, /Onboarding sull'offerta e affiancamento iniziale/i, 'canonical training must remain explicit');
 assert.equal(/turni?[^\n]{0,40}non previsti/i.test(JSON.stringify(preservationPremium.channelVariant)), true, 'channel variant must preserve the confirmed no-shifts condition');
 assert.equal(/reperibilit[aà][^\n]{0,40}non prevista/i.test(JSON.stringify(preservationPremium.channelVariant)), true, 'channel variant must preserve the confirmed no-on-call condition');
 assert.equal(/Sviluppare nuove opportunita commerciali qualificate/i.test(JSON.stringify(preservationPremium.channelVariant)), true, 'channel variant must preserve the explicit mission');
@@ -676,6 +723,35 @@ assert.match(semanticCoveragePremium.masterText, /Autonomia:/i, 'source tags alo
 assert.match(semanticCoveragePremium.masterText, /Imprevisti e variabilit[aà]:/i, 'source tags alone must not hide missing unexpected events');
 assert.equal(/Autonomia:/i.test(JSON.stringify(semanticCoveragePremium.channelVariant)), true, 'channel variant must receive the same semantic coverage guard');
 
+const twoPassContext = makeContext(new TwoPassRepairProvider('success'));
+const startedTwoPass = await startAnnunci10xCreate({ context: twoPassContext });
+let twoPassState = startedTwoPass.result;
+for (const [stepId, answer] of preservationAnswers) {
+  twoPassState = await answerAnnunci10xCreateStep({
+    sessionId: startedTwoPass.cookie.sessionId,
+    sessionSecret: startedTwoPass.cookie.sessionSecret,
+    stepId,
+    answer,
+    context: twoPassContext,
+  });
+}
+await confirmAnnunci10xCreate({
+  sessionId: startedTwoPass.cookie.sessionId,
+  sessionSecret: startedTwoPass.cookie.sessionSecret,
+  context: twoPassContext,
+});
+const twoPassPremium = await runAnnunci10xPremiumGeneration({
+  sessionId: startedTwoPass.cookie.sessionId,
+  sessionSecret: startedTwoPass.cookie.sessionSecret,
+  channel: 'LINKEDIN',
+  context: twoPassContext,
+  authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
+});
+assert.equal(twoPassContext.provider.validationCount, 3, 'two actionable repair passes must be followed by a final validation');
+assert.equal(twoPassContext.provider.revisionCount, 2, 'automatic repair must be bounded to two revisions');
+assert.equal(twoPassPremium.master.annunci10xPremium?.automaticRevisionCount, 2);
+assert.equal(twoPassPremium.gate.status, 'READY', 'two bounded repairs may reach READY without further iterations');
+
 const persistentRevisionContext = makeContext(new PersistentEditorialRevisionProvider('success'));
 const startedPersistentRevision = await startAnnunci10xCreate({ context: persistentRevisionContext });
 let persistentRevisionState = startedPersistentRevision.result;
@@ -702,6 +778,7 @@ const persistentRevisionPremium = await runAnnunci10xPremiumGeneration({
   authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
 });
 assert.equal(persistentRevisionContext.provider.calls.filter((call) => call.operationType === 'VALIDATE').length, 2, 'one automatic revision must be followed by a second validation');
+assert.equal(persistentRevisionContext.provider.calls.filter((call) => call.operationType === 'REVISE').length, 1, 'a non-actionable residual NEEDS_REVISION must not trigger a pointless second revision');
 assert.equal(persistentRevisionPremium.gate.status, 'NEEDS_VERIFICATION', 'a final NEEDS_REVISION validator result must not silently become READY');
 assert.equal(persistentRevisionPremium.validationState, 'NEEDS_VERIFICATION');
 assert.equal(persistentRevisionPremium.gate.codes.includes('EDITORIAL_REVISION_REQUIRED'), true, 'gate must explain the unresolved editorial revision');
