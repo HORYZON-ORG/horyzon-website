@@ -522,6 +522,34 @@ const resumedCreate = await resumeAnnunci10xCreate(startedCreate.cookie, createC
 assert.equal(resumedCreate.paymentRequired, true);
 assert.deepEqual(resumedCreate.commercial.availableOffers.map((offer) => offer.offerCode), ['ANNUNCI10X_CREATE']);
 
+const canonicalConflictContext = makeContext();
+const startedCanonicalConflict = await startAnnunci10xCreate({ context: canonicalConflictContext });
+const canonicalConflictAnswers = [
+  ['ROLE_CONTEXT', 'Ruolo: Commerciale B2B. Contesto aziendale: PMI B2B con sede a Roma e RAL 90.000 euro.'],
+  ['PRIMARY_CONTRIBUTION', 'Risultato principale: Sviluppare opportunita commerciali qualificate.'],
+  ['WORK_REALITY', 'Attivita reali: prospecting, call e follow-up. Contesto operativo: team commerciale con CRM. Autonomia: gestisce le attivita standard in autonomia. Imprevisti: lead urgenti.'],
+  ['REQUIREMENTS', 'Indispensabili: esperienza vendita B2B. Preferenziali: CRM. Apprendibili: offerta aziendale. Vincoli: nessuno.'],
+  ['ATTRACTION', 'Benefit: laptop. Formazione e crescita concreta: onboarding iniziale.'],
+  ['OFFER', 'Sede: Milano. Modalita: In sede. Contratto: Tempo indeterminato. Orario: Lunedi-venerdi 9:00-18:00. Turni: Non previsti. Reperibilita: Non prevista. Compenso: RAL 30.000-36.000 EUR.'],
+  ['CHANNEL_APPLICATION', 'Canale: INDEED. Candidatura: Invia CV a recruiting@azienda-test.it.'],
+];
+let canonicalConflictState = startedCanonicalConflict.result;
+for (const [stepId, answer] of canonicalConflictAnswers) {
+  canonicalConflictState = await answerAnnunci10xCreateStep({
+    sessionId: startedCanonicalConflict.cookie.sessionId,
+    sessionSecret: startedCanonicalConflict.cookie.sessionSecret,
+    stepId,
+    answer,
+    context: canonicalConflictContext,
+  });
+}
+assert.equal(canonicalConflictState.roleCard.location, 'Milano', 'OFFER location is canonical and must not be overwritten by ROLE_CONTEXT');
+assert.match(canonicalConflictState.roleCard.compensation, /30\.000-36\.000/i, 'OFFER compensation is canonical and must not be overwritten by narrative text');
+assert.equal(canonicalConflictState.clarification, null, 'non-canonical shadow values must not trigger a blocking clarification when the canonical field is explicit');
+assert.equal(canonicalConflictState.conflicts.some((conflict) => conflict.targetPath === 'attractionContext.location' && /Roma/i.test(conflict.conflictingValue)), true, 'conflicting narrative location is surfaced as resolved');
+assert.equal(canonicalConflictState.conflicts.some((conflict) => conflict.targetPath === 'compensation.amountText' && /90\.000/i.test(conflict.conflictingValue)), true, 'conflicting narrative compensation is surfaced as resolved');
+assert.equal(canonicalConflictState.conflicts.every((conflict) => /fonte canonica|ultima modifica esplicita/i.test(conflict.resolution)), true, 'resolved conflicts explain why the canonical value won');
+
 const unknownCreateContext = makeContext();
 const startedUnknownCreate = await startAnnunci10xCreate({ context: unknownCreateContext });
 const unknownAnswers = [

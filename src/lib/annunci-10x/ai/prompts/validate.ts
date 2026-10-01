@@ -18,7 +18,7 @@ const invariants = [
 
 export const VALIDATE_PROMPT: Annunci10xPromptDefinition = {
   id: 'annunci10x.validate',
-  version: 'annunci10x.validate.v6',
+  version: 'annunci10x.validate.v7',
   operationType: 'VALIDATE',
   outputSchema: ANNUNCI10X_AI_OUTPUT_SCHEMAS.VALIDATE,
   instructions: [
@@ -36,6 +36,7 @@ export const VALIDATE_PROMPT: Annunci10xPromptDefinition = {
     '- Treat words such as regularly, ongoing, recurring, always, usually, every day, or similar frequency/duration expansions as unsupported when the RoleCard only confirms a bounded onboarding/training period.',
     '- A confirmed mission/outcome must be explicit in the target, not merely inferable from activities. Confirmed company context, operating context, autonomy, and unexpected events should also be preserved when they materially describe the real work.',
     '- Never treat sourceFactIds alone as proof that a fact appears in the candidate-facing ad. Validate the actual visible title/body text.',
+    '- If RoleCard Fact.notes explicitly records a resolved canonical conflict, validate against the canonical Fact value. The discarded alternative must not make the canonical value unsupported or contradictory.',
     '- Concision is not the goal by itself. Useful supported detail is positive; filler and source commentary are negative.',
     '',
     'When creating an EDITORIAL claim entry, keep claim concise, identify the affected section in sourcePaths when possible, and use REMOVE for text that should disappear or REQUEST_CONFIRMATION only when factual confirmation is genuinely required.',

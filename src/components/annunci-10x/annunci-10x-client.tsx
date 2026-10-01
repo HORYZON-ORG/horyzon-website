@@ -49,13 +49,22 @@ interface CreateState {
     requirements: { label: string; classification: string }[];
     location: string;
     workMode: string;
+    workModeDetail: string;
     contractType: string;
     schedule: string;
+    shifts: string;
+    onCall: string;
+    companyDescription: string;
+    operatingContext: string;
+    autonomy: string;
+    unexpectedEvents: string;
     compensation: string;
+    applicationInstructions: string;
     attractionEvidence: string[];
     channel: string | null;
     missingFacts: string[];
   };
+  conflicts: { id: string; targetPath: string; label: string; canonicalValue: string; conflictingValue: string; sourceStep: CreateStepId; sourceLabel: string; resolution: string }[];
   strategy: { summary: string; candidateAngle: string; channelPriorities: string[]; riskNotes: string[]; missingFacts: string[] } | null;
   clarification: { id: string; targetPath: string; question: string; reason: string; blocking: boolean; canAdvance: boolean } | null;
   canConfirm: boolean;
@@ -641,12 +650,15 @@ function CreateSummary(props: {
       <Panel title="Preferenziali" items={groups.PREFERRED} empty="Nessuno indicato." />
       <Panel title="Apprendibili" items={groups.TRAINABLE} empty="Nessuno indicato." />
       <Panel title="Vincoli" items={groups.DISQUALIFYING} empty="Nessuno indicato." />
-      <Panel title="Contesto" items={props.state.roleCard.attractionEvidence} empty="Da definire." />
-      <Panel title="Condizioni" items={[`Sede: ${displayValue(props.state.roleCard.location)}`, `Modalità: ${displayValue(props.state.roleCard.workMode)}`, `Contratto: ${displayValue(props.state.roleCard.contractType)}`, `Orario: ${displayValue(props.state.roleCard.schedule)}`, `Compenso: ${displayValue(props.state.roleCard.compensation)}`]} empty="Da definire." />
-      <Panel title="Candidatura" items={[props.state.roleCard.channel ? `Canale: ${props.state.roleCard.channel}` : 'Canale: Da definire']} empty="Da definire." />
+      <Panel title="Azienda" items={[displayValue(props.state.roleCard.companyDescription)]} empty="Da definire." />
+      <Panel title="Lavoro reale" items={[`Contesto operativo: ${displayValue(props.state.roleCard.operatingContext)}`, `Autonomia: ${displayValue(props.state.roleCard.autonomy)}`, `Imprevisti: ${displayValue(props.state.roleCard.unexpectedEvents)}`]} empty="Da definire." />
+      <Panel title="Benefit e formazione" items={props.state.roleCard.attractionEvidence} empty="Da definire." />
+      <Panel title="Condizioni" items={[`Sede: ${displayValue(props.state.roleCard.location)}`, `Modalità: ${displayValue(props.state.roleCard.workModeDetail || props.state.roleCard.workMode)}`, `Contratto: ${displayValue(props.state.roleCard.contractType)}`, `Orario: ${displayValue(props.state.roleCard.schedule)}`, `Turni: ${displayValue(props.state.roleCard.shifts)}`, `Reperibilità: ${displayValue(props.state.roleCard.onCall)}`, `Compenso: ${displayValue(props.state.roleCard.compensation)}`]} empty="Da definire." />
+      <Panel title="Candidatura" items={[props.state.roleCard.channel ? `Canale: ${props.state.roleCard.channel}` : 'Canale: Da definire', `Istruzioni: ${displayValue(props.state.roleCard.applicationInstructions)}`]} empty="Da definire." />
     </div>
+    {props.state.conflicts.length > 0 && <div className={styles.conflictPanel} role="status" aria-label="Conflitti risolti"><p>Conflitti risolti</p><h3>Abbiamo trovato dati diversi in più punti.</h3><span>Per ogni dato strutturato abbiamo usato una sola fonte canonica. Le alternative non sostituiscono il valore scelto.</span><ul>{props.state.conflicts.map((conflict) => <li key={conflict.id}><strong>{conflict.label}: {conflict.canonicalValue}</strong><span>In “{conflict.sourceLabel}” avevi anche indicato “{conflict.conflictingValue}”. {conflict.resolution}</span></li>)}</ul></div>}
     {props.state.strategy && <div className={styles.strategyPanel}><p>Strategia</p><h3>{props.state.strategy.summary}</h3><span>{props.state.strategy.candidateAngle}</span></div>}
-    {!props.state.paymentRequired && <form className={styles.inlineEdit} onSubmit={props.onSubmitEdit}><Field label="Modifica" htmlFor="create-edit-target"><select id="create-edit-target" value={props.editTarget} onChange={(event) => props.onEditTarget(event.target.value)} disabled={props.running}><option value="title">Ruolo</option><option value="mission">Risultato</option><option value="responsibilities">Attività</option><option value="requirements">Requisiti</option><option value="attractionContext.location">Sede</option><option value="attractionContext.workMode">Modalità</option><option value="attractionContext.contractType">Contratto</option><option value="compensation.amountText">Compenso</option></select></Field><Field label="Nuovo valore" htmlFor="create-edit-value"><input id="create-edit-value" value={props.editValue} onChange={(event) => props.onEditValue(event.target.value)} disabled={props.running} /></Field><button type="submit" disabled={props.running}>Modifica</button></form>}
+    {!props.state.paymentRequired && <form className={styles.inlineEdit} onSubmit={props.onSubmitEdit}><Field label="Modifica" htmlFor="create-edit-target"><select id="create-edit-target" value={props.editTarget} onChange={(event) => props.onEditTarget(event.target.value)} disabled={props.running}><option value="title">Ruolo</option><option value="mission">Risultato</option><option value="responsibilities">Attività</option><option value="requirements">Requisiti</option><option value="attractionContext.companyDescription">Azienda / contesto</option><option value="attractionContext.operatingContext">Contesto operativo</option><option value="attractionContext.autonomy">Autonomia</option><option value="attractionContext.unexpectedEvents">Imprevisti</option><option value="attractionContext.location">Sede</option><option value="attractionContext.workMode">Modalità</option><option value="attractionContext.contractType">Contratto</option><option value="attractionContext.schedule">Orario</option><option value="attractionContext.shifts">Turni</option><option value="attractionContext.onCall">Reperibilità</option><option value="compensation.amountText">Compenso</option><option value="applicationInstructions">Candidatura</option></select></Field><Field label="Nuovo valore" htmlFor="create-edit-value"><input id="create-edit-value" value={props.editValue} onChange={(event) => props.onEditValue(event.target.value)} disabled={props.running} /></Field><button type="submit" disabled={props.running}>Modifica</button></form>}
     {props.state.paymentRequired ? <section className={styles.commercialPanel} aria-labelledby="create-commercial-title">
       <p>Prossimo passo</p>
       <h3 id="create-commercial-title">Annuncio 10x</h3>

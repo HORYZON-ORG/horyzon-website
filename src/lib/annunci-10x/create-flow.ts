@@ -50,6 +50,7 @@ export interface PublicAnnunci10xCreateState {
   completedSteps: Annunci10xCreateStepId[];
   completion: { answered: number; total: number; coverage: number };
   roleCard: PublicCreateRoleCard;
+  conflicts: PublicCreateConflict[];
   strategy: PublicCreateStrategy | null;
   clarification: PublicCreateClarification | null;
   canConfirm: boolean;
@@ -94,6 +95,17 @@ export interface PublicCreateRoleCard {
   attractionEvidence: string[];
   channel: PublicationChannel | null;
   missingFacts: string[];
+}
+
+export interface PublicCreateConflict {
+  id: string;
+  targetPath: string;
+  label: string;
+  canonicalValue: string;
+  conflictingValue: string;
+  sourceStep: Annunci10xCreateStepId;
+  sourceLabel: string;
+  resolution: string;
 }
 
 export interface PublicCreateStrategy {
@@ -362,7 +374,8 @@ export async function confirmAnnunci10xCreate(input: ConfirmCreateInput): Promis
   const toPayment = canTransition('USER_CONFIRMED', 'PAYMENT_REQUIRED', { flow: 'CREATE', roleCard, openClarifications: [] });
   if (!toPayment.allowed) throw new Annunci10xPublicError('INVALID_INPUT', toPayment.reason ?? 'Pre-payment non disponibile.', 409);
   await context.persistence.updateSession({ sessionId: input.sessionId, sessionSecret: input.sessionSecret, state: 'PAYMENT_REQUIRED', currentSnapshotId: snapshot.id });
-  await context.persistence.appendEvent({ sessionId: input.sessionId, eventName: 'user_confirmed', metadata: { flow: 'CREATE' } });
+  const resolvedConflicts = deriveCanonicalConflicts(answers, roleCard);
+  await context.persistence.appendEvent({ sessionId: input.sessionId, eventName: 'user_confirmed', metadata: { flow: 'CREATE', resolvedConflictCount: resolvedConflicts.length } });
   await context.persistence.appendEvent({ sessionId: input.sessionId, eventName: 'payment_required', metadata: { checkoutEnabled: false, price: 'OPEN_DECISION' } });
   return publicCreateState({ context, sessionId: input.sessionId, sessionSecret: input.sessionSecret, operations: [] });
 }
@@ -415,6 +428,7 @@ async function publicCreateState(input: {
       coverage: Math.round((completedSteps.length / ANNUNCI10X_CREATE_STEPS.length) * 100),
     },
     roleCard: publicRoleCard(roleCard, session.selectedChannel ?? channelFromAnswers(answers)),
+    conflicts: deriveCanonicalConflicts(answers, roleCard),
     strategy: snapshot?.communicationStrategy ? publicStrategy(snapshot.communicationStrategy) : null,
     clarification,
     canConfirm: session.state === 'ROLE_CARD_READY' && ready,
@@ -492,7 +506,7 @@ function buildCreateRoleCard(answers: PersistedAnswer[]): RoleCard {
   const offer = answerFor(answers, 'OFFER');
   const channelApplication = answerFor(answers, 'CHANNEL_APPLICATION');
   const clarificationWorkMode = answerForQuestion(answers, 'create.clarify.attractionContext.workMode');
-  const workModeSource = clarificationWorkMode || offer || work;
+  const workModeSource = clarificationWorkMode || offer;
   const title = clean(extractAfter(role, ['ruolo', 'figura', 'cerco', 'cerchiamo'])) || clean(role.split(/[.\n]/)[0]) || 'Ruolo da chiarire';
   const mission = clean(extractAfter(contribution, ['risultato principale', 'missione', 'obiettivo', 'contributo'])) || clean(contribution.split(/[.\n]/)[0]) || 'N/D - contributo da chiarire';
   const responsibility = clean(extractWorkRealityField(work, workRealityFieldLabels.activities))
@@ -519,9 +533,9 @@ function buildCreateRoleCard(answers: PersistedAnswer[]): RoleCard {
       companyDescription: companyDescription ? fact(companyDescription, 'USER_DECLARED', 'create-company-description') : undefined,
       workMode: workModeFromText(workModeSource),
       workModeDetail: workModeDetailFromText(workModeSource),
-      location: locationFromText([role, offer, work].filter(Boolean).join('\n')),
+      location: locationFromText(offer),
       contractType: contractFromText(offer),
-      schedule: scheduleFromText(offer || work),
+      schedule: scheduleFromText(offer),
       shifts: offerConditionFromText(offer, offerFieldLabels.shifts, 'create-shifts'),
       onCall: offerConditionFromText(offer, offerFieldLabels.availability, 'create-on-call'),
       operatingContext: operatingContext && !isUnknownAnswer(operatingContext) ? fact(operatingContext, 'USER_DECLARED', 'create-operating-context') : undefined,
@@ -537,7 +551,8 @@ function buildCreateRoleCard(answers: PersistedAnswer[]): RoleCard {
   if (issues.length) {
     throw new Annunci10xPublicError('INVALID_INPUT', `Fatti critici CREATE non preservati: ${issues.join('; ')}`, 409);
   }
-  return roleCard;
+  const conflicts = deriveCanonicalConflicts(answers, roleCard);
+  return annotateCanonicalConflictNotes(roleCard, conflicts);
 }
 
 function isRoleCardReady(answers: PersistedAnswer[], roleCard: RoleCard): boolean {
@@ -548,7 +563,9 @@ function isRoleCardReady(answers: PersistedAnswer[], roleCard: RoleCard): boolea
 function deriveBlockingClarification(answers: PersistedAnswer[]): PublicCreateClarification | null {
   if (answerForQuestion(answers, 'create.clarify.attractionContext.workMode')) return null;
   if (hasResolvedHybridWorkMode(answers)) return null;
-  const text = `${answerFor(answers, 'WORK_REALITY')} ${answerFor(answers, 'OFFER')}`.toLowerCase();
+  const canonicalWorkMode = extractCreateField(answerFor(answers, 'OFFER'), offerFieldLabels.workMode);
+  if (canonicalWorkMode && !isUnknownAnswer(canonicalWorkMode)) return null;
+  const text = answerFor(answers, 'WORK_REALITY').toLowerCase();
   if (!/remot|smart working/.test(text) || !/presenza|in sede/.test(text)) return null;
   return {
     id: 'clarification-work-mode',
@@ -601,13 +618,18 @@ function applyEditToRoleCard(roleCard: RoleCard, targetPath: string, value: stri
   if (targetPath === 'mission') return { ...roleCard, mission: next, outcomes: [next] };
   if (targetPath === 'responsibilities') return { ...roleCard, responsibilities: [next] };
   if (targetPath === 'requirements') return { ...roleCard, requirements: [{ id: 'req-create-1', label: next, classification: 'REQUIRED' }] };
+  if (targetPath === 'attractionContext.companyDescription') return { ...roleCard, attractionContext: { ...roleCard.attractionContext, companyDescription: next } };
   if (targetPath === 'attractionContext.location') return { ...roleCard, attractionContext: { ...roleCard.attractionContext, location: next } };
-  if (targetPath === 'attractionContext.workMode') return { ...roleCard, attractionContext: { ...roleCard.attractionContext, workMode: next } };
+  if (targetPath === 'attractionContext.workMode') return { ...roleCard, attractionContext: { ...roleCard.attractionContext, workMode: next, workModeDetail: next } };
   if (targetPath === 'attractionContext.contractType') return { ...roleCard, attractionContext: { ...roleCard.attractionContext, contractType: next } };
+  if (targetPath === 'attractionContext.schedule') return { ...roleCard, attractionContext: { ...roleCard.attractionContext, schedule: next } };
+  if (targetPath === 'attractionContext.shifts') return { ...roleCard, attractionContext: { ...roleCard.attractionContext, shifts: next } };
+  if (targetPath === 'attractionContext.onCall') return { ...roleCard, attractionContext: { ...roleCard.attractionContext, onCall: next } };
   if (targetPath === 'attractionContext.operatingContext') return { ...roleCard, attractionContext: { ...roleCard.attractionContext, operatingContext: next } };
   if (targetPath === 'attractionContext.autonomy') return { ...roleCard, attractionContext: { ...roleCard.attractionContext, autonomy: next } };
   if (targetPath === 'attractionContext.unexpectedEvents') return { ...roleCard, attractionContext: { ...roleCard.attractionContext, unexpectedEvents: next } };
   if (targetPath === 'compensation.amountText') return { ...roleCard, compensation: { ...roleCard.compensation, visibility: fact('PUBLIC', 'USER_DECLARED', 'create-edit-compensation-visibility') as never, amountText: next } };
+  if (targetPath === 'applicationInstructions') return { ...roleCard, applicationInstructions: next };
   return { ...roleCard, attractionContext: { ...roleCard.attractionContext, attractivenessEvidence: [next] } };
 }
 
@@ -617,13 +639,18 @@ function isDeterministicEditTarget(targetPath: string): boolean {
     'mission',
     'responsibilities',
     'requirements',
+    'attractionContext.companyDescription',
     'attractionContext.location',
     'attractionContext.workMode',
     'attractionContext.contractType',
+    'attractionContext.schedule',
+    'attractionContext.shifts',
+    'attractionContext.onCall',
     'attractionContext.operatingContext',
     'attractionContext.autonomy',
     'attractionContext.unexpectedEvents',
     'compensation.amountText',
+    'applicationInstructions',
   ].includes(targetPath);
 }
 
@@ -918,6 +945,220 @@ function detectCreateFactualPreservationIssues(answers: PersistedAnswer[], roleC
   }
 
   return [...new Set(issues)];
+}
+
+
+const CREATE_STEP_LABELS: Record<Annunci10xCreateStepId, string> = {
+  ROLE_CONTEXT: 'Ruolo e azienda',
+  PRIMARY_CONTRIBUTION: 'Risultato principale',
+  WORK_REALITY: 'Lavoro reale',
+  REQUIREMENTS: 'Requisiti',
+  ATTRACTION: 'Benefit e formazione',
+  OFFER: 'Condizioni',
+  CHANNEL_APPLICATION: 'Candidatura',
+};
+
+function deriveCanonicalConflicts(answers: PersistedAnswer[], roleCard: RoleCard): PublicCreateConflict[] {
+  const canonical = [
+    canonicalField('attractionContext.location', 'Sede', textValue(roleCard.attractionContext.location), extractExplicitLocationMention),
+    canonicalField('attractionContext.workMode', 'Modalità di lavoro', textValue(roleCard.attractionContext.workModeDetail) !== 'N/D' ? textValue(roleCard.attractionContext.workModeDetail) : textValue(roleCard.attractionContext.workMode), extractExplicitWorkModeMention),
+    canonicalField('attractionContext.contractType', 'Contratto', textValue(roleCard.attractionContext.contractType), extractExplicitContractMention),
+    canonicalField('attractionContext.schedule', 'Orario', textValue(roleCard.attractionContext.schedule), extractExplicitScheduleMention),
+    canonicalField('attractionContext.shifts', 'Turni', textValue(roleCard.attractionContext.shifts), (text) => extractExplicitLabelMention(text, ['turni'])),
+    canonicalField('attractionContext.onCall', 'Reperibilità', textValue(roleCard.attractionContext.onCall), (text) => extractExplicitLabelMention(text, ['reperibilita', 'reperibilità'])),
+    canonicalField('compensation.amountText', 'Retribuzione', textValue(roleCard.compensation?.amountText), extractExplicitCompensationMention),
+    canonicalField('applicationInstructions', 'Candidatura', textValue(roleCard.applicationInstructions), extractExplicitApplicationMention),
+  ].filter((item): item is NonNullable<typeof item> => Boolean(item));
+
+  const conflicts: PublicCreateConflict[] = [];
+  for (const field of canonical) {
+    for (const sourceStep of ANNUNCI10X_CREATE_STEPS) {
+      const text = answerFor(answers, sourceStep);
+      if (!text.trim()) continue;
+      const candidateValue = field.extract(text);
+      if (!candidateValue || isUnknownAnswer(candidateValue)) continue;
+      if (!canonicalValuesConflict(field.targetPath, field.canonicalValue, candidateValue)) continue;
+      conflicts.push({
+        id: `${stableShortId(field.targetPath)}-${sourceStep.toLowerCase()}`,
+        targetPath: field.targetPath,
+        label: field.label,
+        canonicalValue: field.canonicalValue,
+        conflictingValue: candidateValue,
+        sourceStep,
+        sourceLabel: CREATE_STEP_LABELS[sourceStep],
+        resolution: canonicalResolutionReason(field.label, roleCard, field.targetPath),
+      });
+    }
+  }
+  return [...new Map(conflicts.map((item) => [`${item.targetPath}|${normalizeComparable(item.conflictingValue)}|${item.sourceStep}`, item])).values()];
+}
+
+function canonicalField(targetPath: string, label: string, canonicalValue: string, extract: (text: string) => string) {
+  if (!canonicalValue || canonicalValue === 'N/D' || canonicalValue === 'OPEN_DECISION' || isUnknownAnswer(canonicalValue)) return null;
+  return { targetPath, label, canonicalValue, extract };
+}
+
+function canonicalResolutionReason(label: string, roleCard: RoleCard, targetPath: string): string {
+  const edited = canonicalFactForPath(roleCard, targetPath)?.sourceId?.startsWith('create-edit-');
+  return edited
+    ? `Abbiamo mantenuto questo valore perché è l'ultima modifica esplicita fatta alla scheda per “${label}”.`
+    : `Abbiamo mantenuto questo valore perché il campo “${label}” è la fonte canonica per questo dato.`;
+}
+
+function canonicalFactForPath(roleCard: RoleCard, targetPath: string): Fact<unknown> | undefined {
+  if (targetPath === 'attractionContext.location') return roleCard.attractionContext.location;
+  if (targetPath === 'attractionContext.workMode') return roleCard.attractionContext.workModeDetail ?? roleCard.attractionContext.workMode;
+  if (targetPath === 'attractionContext.contractType') return roleCard.attractionContext.contractType;
+  if (targetPath === 'attractionContext.schedule') return roleCard.attractionContext.schedule;
+  if (targetPath === 'attractionContext.shifts') return roleCard.attractionContext.shifts;
+  if (targetPath === 'attractionContext.onCall') return roleCard.attractionContext.onCall;
+  if (targetPath === 'compensation.amountText') return roleCard.compensation?.amountText;
+  if (targetPath === 'applicationInstructions') return roleCard.applicationInstructions;
+  return undefined;
+}
+
+function annotateCanonicalConflictNotes(roleCard: RoleCard, conflicts: PublicCreateConflict[]): RoleCard {
+  if (!conflicts.length) return roleCard;
+  const notesByPath = new Map<string, string[]>();
+  for (const conflict of conflicts) {
+    const note = `Conflitto risolto: ignorare “${conflict.conflictingValue}” da ${conflict.sourceLabel}; usare “${conflict.canonicalValue}”.`;
+    notesByPath.set(conflict.targetPath, [...(notesByPath.get(conflict.targetPath) ?? []), note]);
+  }
+  const annotate = <T>(factValue: Fact<T> | undefined, path: string): Fact<T> | undefined => {
+    const notes = notesByPath.get(path);
+    if (!factValue || !notes?.length) return factValue;
+    return { ...factValue, notes: [factValue.notes, ...notes].filter(Boolean).join(' ') };
+  };
+  return {
+    ...roleCard,
+    compensation: roleCard.compensation ? { ...roleCard.compensation, amountText: annotate(roleCard.compensation.amountText, 'compensation.amountText') } : undefined,
+    attractionContext: {
+      ...roleCard.attractionContext,
+      location: annotate(roleCard.attractionContext.location, 'attractionContext.location'),
+      workMode: annotate(roleCard.attractionContext.workMode, 'attractionContext.workMode'),
+      workModeDetail: annotate(roleCard.attractionContext.workModeDetail, 'attractionContext.workMode'),
+      contractType: annotate(roleCard.attractionContext.contractType, 'attractionContext.contractType'),
+      schedule: annotate(roleCard.attractionContext.schedule, 'attractionContext.schedule'),
+      shifts: annotate(roleCard.attractionContext.shifts, 'attractionContext.shifts'),
+      onCall: annotate(roleCard.attractionContext.onCall, 'attractionContext.onCall'),
+    },
+    applicationInstructions: annotate(roleCard.applicationInstructions, 'applicationInstructions'),
+  };
+}
+
+function extractExplicitLabelMention(text: string, labels: readonly string[]): string {
+  const escaped = labels.map(escapeRegExp).join('|');
+  const match = text.match(new RegExp(`(?:^|[\\n.;])\\s*(?:${escaped})\\s*[:\\-]\\s*([^\\n.;]{1,180})`, 'i'));
+  return clean(match?.[1]);
+}
+function extractExplicitLocationMention(text: string): string {
+  const labeled = extractExplicitLabelMention(text, ['sede', 'zona', 'localita', 'località']);
+  if (labeled) return labeled;
+  const match = text.match(/\bsede\s+(?:di|a)\s+([^\n.;]{2,100})/i);
+  return clean(match?.[1]);
+}
+function extractExplicitWorkModeMention(text: string): string {
+  const labeled = extractExplicitLabelMention(text, ['modalita', 'modalità', 'modalita di lavoro', 'modalità di lavoro']);
+  if (labeled) return labeled;
+  const match = text.match(/\b(?:lavoro|posizione)\s+(?:e|è|sara|sarà)?\s*(in presenza|in sede|ibrid[oa]|da remoto|remoto|smart working)\b/i);
+  return clean(match?.[1]);
+}
+function extractExplicitContractMention(text: string): string {
+  const labeled = extractExplicitLabelMention(text, ['contratto']);
+  if (labeled) return labeled;
+  const match = text.match(/\b(tempo indeterminato|tempo determinato(?:\s+[^\n.;]{0,60})?|apprendistato|stage|tirocinio|collaborazione)\b/i);
+  return clean(match?.[1]);
+}
+function extractExplicitScheduleMention(text: string): string {
+  const labeled = extractExplicitLabelMention(text, ['orario']);
+  if (labeled) return labeled;
+  const match = text.match(/\b(?:lunedi|lunedì|martedi|martedì|mercoledi|mercoledì|giovedi|giovedì|venerdi|venerdì|sabato|domenica)[^\n.;]{0,100}\b\d{1,2}(?::\d{2})?\s*[-–]\s*\d{1,2}(?::\d{2})?/i);
+  return clean(match?.[0]);
+}
+function extractExplicitCompensationMention(text: string): string {
+  const labeled = extractExplicitLabelMention(text, ['compenso', 'ral', 'stipendio', 'retribuzione']);
+  if (labeled) return labeled;
+  const match = text.match(/\bRAL\s*[:\-]?\s*([^\n.;]{1,120})/i);
+  return clean(match?.[1] ? `RAL ${match[1]}` : '');
+}
+function extractExplicitApplicationMention(text: string): string {
+  const labeled = extractExplicitLabelMention(text, ['candidatura', 'come ci si candida', 'destinazione']);
+  if (labeled) return labeled;
+  return clean(text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] ?? text.match(/https?:\/\/\S+/i)?.[0]);
+}
+
+function canonicalValuesConflict(targetPath: string, canonicalValue: string, candidateValue: string): boolean {
+  if (targetPath === 'compensation.amountText') return moneyValuesConflict(canonicalValue, candidateValue);
+  if (targetPath === 'attractionContext.location') return locationValuesConflict(canonicalValue, candidateValue);
+  if (targetPath === 'attractionContext.workMode') return workModeValuesConflict(canonicalValue, candidateValue);
+  if (targetPath === 'attractionContext.contractType') return contractValuesConflict(canonicalValue, candidateValue);
+  if (targetPath === 'attractionContext.schedule') return scheduleValuesConflict(canonicalValue, candidateValue);
+  if (targetPath === 'attractionContext.shifts' || targetPath === 'attractionContext.onCall') return polarityValuesConflict(canonicalValue, candidateValue);
+  if (targetPath === 'applicationInstructions') return applicationValuesConflict(canonicalValue, candidateValue);
+  return !looselyEquivalent(canonicalValue, candidateValue);
+}
+function looselyEquivalent(left: string, right: string): boolean {
+  const a = normalizeConflictValue(left), b = normalizeConflictValue(right);
+  return a === b || a.includes(b) || b.includes(a);
+}
+function normalizeConflictValue(value: string): string {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9@.]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function numericConflictTokens(value: string): number[] {
+  return [...value.matchAll(/\b(\d{1,3}(?:[.,]\d{3})+|\d+(?:[.,]\d+)?)(\s*k)?\b/gi)].map((match) => {
+    const parsed = Number(match[1].replace(/\./g, '').replace(',', '.'));
+    return match[2] ? parsed * 1000 : parsed;
+  }).filter(Number.isFinite);
+}
+function moneyValuesConflict(canonicalValue: string, candidateValue: string): boolean {
+  const a = numericConflictTokens(canonicalValue), b = numericConflictTokens(candidateValue);
+  return a.length && b.length ? b.some((value) => !a.some((canonical) => Math.abs(canonical - value) < .01)) : !looselyEquivalent(canonicalValue, candidateValue);
+}
+function locationValuesConflict(canonicalValue: string, candidateValue: string): boolean {
+  const a = normalizeConflictValue(canonicalValue).split(' ').filter((token) => token.length >= 3 && !['zona','sede'].includes(token));
+  const b = normalizeConflictValue(candidateValue).split(' ').filter((token) => token.length >= 3 && !['zona','sede'].includes(token));
+  if (!a.length || !b.length) return !looselyEquivalent(canonicalValue, candidateValue);
+  return !b.every((token) => a.includes(token)) && !a.every((token) => b.includes(token));
+}
+function workModeClass(value: string): 'HYBRID' | 'REMOTE' | 'ONSITE' | 'UNKNOWN' {
+  if (/ibrid/i.test(value)) return 'HYBRID';
+  if (/remot|smart working/i.test(value) && !/presenza|in sede/i.test(value)) return 'REMOTE';
+  if (/presenza|in sede/i.test(value) && !/remot|smart working/i.test(value)) return 'ONSITE';
+  return 'UNKNOWN';
+}
+function workModeValuesConflict(canonicalValue: string, candidateValue: string): boolean {
+  const a = workModeClass(canonicalValue), b = workModeClass(candidateValue);
+  return a !== 'UNKNOWN' && b !== 'UNKNOWN' ? a !== b : !looselyEquivalent(canonicalValue, candidateValue);
+}
+function contractClass(value: string): string {
+  const v = normalizeConflictValue(value);
+  if (v.includes('tempo indeterminato')) return 'INDETERMINATO';
+  if (v.includes('tempo determinato')) return 'DETERMINATO';
+  if (v.includes('apprendistato')) return 'APPRENDISTATO';
+  if (v.includes('stage') || v.includes('tirocinio')) return 'STAGE';
+  if (v.includes('collaborazione')) return 'COLLABORAZIONE';
+  return 'UNKNOWN';
+}
+function contractValuesConflict(canonicalValue: string, candidateValue: string): boolean {
+  const a = contractClass(canonicalValue), b = contractClass(candidateValue);
+  if (a !== 'UNKNOWN' && b !== 'UNKNOWN' && a !== b) return true;
+  const an = numericConflictTokens(canonicalValue), bn = numericConflictTokens(candidateValue);
+  return Boolean(an.length && bn.length && bn.some((value) => !an.includes(value)));
+}
+function scheduleValuesConflict(canonicalValue: string, candidateValue: string): boolean {
+  const timePattern = /\b\d{1,2}(?::\d{2})?\b/g;
+  const a = canonicalValue.match(timePattern) ?? [], b = candidateValue.match(timePattern) ?? [];
+  return Boolean(a.length >= 2 && b.length >= 2 && b.some((value) => !a.includes(value)));
+}
+function isNegativeCondition(value: string): boolean { return /\b(?:non|nessun|nessuna|senza)\b/i.test(value); }
+function polarityValuesConflict(canonicalValue: string, candidateValue: string): boolean {
+  if (isNegativeCondition(canonicalValue) !== isNegativeCondition(candidateValue)) return true;
+  return !looselyEquivalent(canonicalValue, candidateValue) && !isNegativeCondition(canonicalValue);
+}
+function applicationValuesConflict(canonicalValue: string, candidateValue: string): boolean {
+  const a = canonicalValue.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0]?.toLowerCase();
+  const b = candidateValue.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0]?.toLowerCase();
+  return Boolean(a && b && a !== b);
 }
 
 function criticalTokens(text: string): string[] {
