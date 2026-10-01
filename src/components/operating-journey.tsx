@@ -1,20 +1,16 @@
-'use client';
-
+import { Rows } from '@/components/kit';
 import { operatingJourney } from '@/content/site-narrative';
-import { useState } from 'react';
+
 const chapters = [
  { title: 'Mettere a fuoco', text: 'La direzione e il punto di partenza.', start: 0 },
  { title: 'Dare una forma', text: 'Le persone, i vincoli e la priorità.', start: 3 },
  { title: 'Far accadere', text: 'Il lavoro, le prove e il passo successivo.', start: 6 },
 ];
-export function OperatingJourney({ compact = false }: { compact?: boolean }): React.JSX.Element {
- const [activeChapter, setActiveChapter] = useState<number | null>(compact ? null : 0);
 
- return <div className={`method-chapters ${compact ? 'is-compact' : ''}`}>
-  <aside className="method-compass" aria-hidden="true"><span>Partenza</span><div><i/><i/><i/></div><strong>Direzione</strong></aside>
-  <div className="method-chapter-list">{chapters.map((chapter,index)=>{const isActive=activeChapter===index;return <details key={chapter.title} open={isActive}>
-   <summary onClick={event=>{event.preventDefault();setActiveChapter(current=>current===index?null:index)}}><span className="method-chapter-number">0{index+1}</span><span><strong>{chapter.title}</strong><small>{chapter.text}</small></span><span className="method-chapter-toggle" aria-hidden="true">+</span></summary>
-   <ol className="operating-journey" start={chapter.start+1}>{operatingJourney.slice(chapter.start,chapter.start+3).map((stage,step)=><li key={stage.title}><span className="journey-stage-number">{String(chapter.start+step+1).padStart(2,'0')}</span><div><h3>{stage.title}</h3><p>{stage.description}</p></div></li>)}</ol>
-  </details>})}</div>
- </div>;
+// The nine stages of the method in three chapters, all visible: no accordion, complete without JavaScript.
+export function OperatingJourney(): React.JSX.Element {
+ return <div className="rd-stack">{chapters.map((chapter, index) => <div className="rd-split" key={chapter.title}>
+  <header className="rd-head rd-reveal"><span className="rd-tile-tag" aria-hidden="true">0{index + 1}</span><h3 className="rd-statement">{chapter.title}</h3><p className="rd-head-lead">{chapter.text}</p></header>
+  <Rows start={chapter.start + 1} items={operatingJourney.slice(chapter.start, chapter.start + 3).map(stage => ({ title: stage.title, text: stage.description }))} />
+ </div>)}</div>;
 }

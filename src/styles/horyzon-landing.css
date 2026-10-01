@@ -12,24 +12,6 @@
 /* Hero scope */
 .rd-hero-scope{position:relative;z-index:1;width:min(100%,640px);justify-self:end}
 
-/* Radar scope */
-.rd-scope{position:relative;aspect-ratio:540/450}
-.rd-scope svg,.rd-story-radar{display:block;width:100%;height:auto;overflow:visible}
-.rd-grid path,.rd-grid line{fill:none;stroke:rgba(247,244,232,.16);stroke-width:1}
-.rd-grid path:first-child{stroke:rgba(247,244,232,.3)}
-.rd-axis-labels text{font:500 12px var(--font-mono),monospace;letter-spacing:.12em;fill:#b9c4c2;transition:fill .4s}
-.rd-axis-labels text.is-down{fill:var(--rust-text)}
-.rd-ghost{fill:none;stroke:rgba(247,244,232,.4);stroke-width:1.5;stroke-dasharray:4 6}
-.rd-shape{fill:rgba(216,255,66,.13);stroke:var(--lime);stroke-width:2;stroke-linejoin:round}
-.rd-blip{fill:var(--lime)}
-.rd-you{fill:var(--logo-dot)}
-.rd-you-ring{fill:none;stroke:var(--logo-dot);stroke-width:1.5;opacity:.6}
-.rd-you-label{font:700 12px var(--font-mono),monospace;letter-spacing:.2em;fill:var(--logo-dot)}
-/* Sweep: a conic beam clipped to the outer pentagon (radius 150 of the 540x450 viewBox, centre 200,200). */
-.rd-sweep{position:absolute;left:22.222%;top:15.556%;width:55.556%;height:66.667%;border-radius:50%;
-  clip-path:polygon(50% 0,97.55% 34.55%,79.39% 90.45%,20.61% 90.45%,2.45% 34.55%);pointer-events:none}
-.rd-sweep::before{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,transparent 0deg 280deg,rgba(216,255,66,.05) 300deg,rgba(216,255,66,.3) 358deg,var(--lime) 359deg 360deg)}
-
 /* Owner story */
 .rd-story{position:relative;border-top:1px solid var(--line)}
 .rd-story-stage{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:5vw;padding:110px 6vw}
@@ -89,18 +71,12 @@
 /* Motion (only when the visitor allows it) */
 @media (prefers-reduced-motion:no-preference){
   .rd-hero-scope{animation:rd-scope-in 1.4s var(--ease) .35s both}
-  .rd-sweep::before{animation:rd-spin 6s linear infinite}
-  .rd-blip{transform-box:fill-box;transform-origin:center;animation:rd-blip 6s linear infinite;animation-delay:calc(var(--i) * 1.2s)}
-  .rd-you-ring{transform-box:fill-box;transform-origin:center;animation:rd-ping 2.4s ease-out infinite}
   .rd-final-scope .rd-sweep::before{animation-duration:9s}
   @supports (animation-timeline:view()){
     .rd-frank-photo{animation:rd-photo linear both;animation-timeline:view();animation-range:entry 0% cover 50%}
   }
 }
 @keyframes rd-scope-in{from{opacity:0;transform:scale(.86) rotate(-8deg)}}
-@keyframes rd-spin{to{transform:rotate(360deg)}}
-@keyframes rd-blip{0%{opacity:1;transform:scale(1.9)}18%{opacity:.35;transform:scale(1)}100%{opacity:.35;transform:scale(1)}}
-@keyframes rd-ping{0%{opacity:.7;transform:scale(1)}100%{opacity:0;transform:scale(2.6)}}
 
 /* Tablet and phone */
 @media (max-width:900px){
@@ -116,7 +92,6 @@
 @media (max-width:600px){
   .rd-header{padding-left:5vw;padding-right:5vw}
   .rd-header .rd-cta{padding:10px 14px}
-  .rd-axis-labels text{font-size:13px;letter-spacing:.08em}
   .rd-story-stage,.rd-product,.rd-frank{padding-left:5vw;padding-right:5vw}
   .rd-story-signal{font-size:clamp(27px,8vw,38px)}
   .rd-map,.rd-frank,.rd-faq{padding-top:90px;padding-bottom:90px}

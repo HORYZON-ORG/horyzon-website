@@ -24,6 +24,10 @@
 .rd em{font-style:normal;color:var(--accent)}
 .rd .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 
+/* Inner pages run full width: the legacy contained frame (.site-frame) no longer applies. */
+.rd.site-frame{width:auto;margin:0;box-shadow:none}
+body:has(.rd.site-frame),body:has(.rd-page){background:var(--ink)}
+
 /* Tones: one idea per section, alternating dark / lime field / cream */
 .rd-tone-ink{--fg:var(--cream);--bg:var(--ink);--accent:var(--lime);--soft:#cdd6d4;--rule:var(--line);--tag-bg:var(--lime);--tag-fg:var(--ink);background:var(--ink);color:var(--fg)}
 .rd-tone-panel{--fg:var(--cream);--bg:var(--ink-2);--accent:var(--lime);--soft:#cdd6d4;--rule:var(--line);--tag-bg:var(--lime);--tag-fg:var(--ink);background:var(--ink-2);color:var(--fg)}
@@ -91,6 +95,24 @@
 .rd-photo::after{content:"";position:absolute;right:18px;bottom:18px;width:14px;height:14px;border-radius:50%;background:var(--logo-dot);box-shadow:0 0 0 6px rgba(217,230,95,.18)}
 .rd-photo-initials{display:grid;place-items:center;font:800 clamp(80px,10vw,150px)/1 var(--font-sans),sans-serif;letter-spacing:-.06em;color:var(--lime);background:radial-gradient(circle at 50% 110%,rgba(216,255,66,.18),transparent 60%),var(--ink-2)}
 
+/* Radar scope (radar-scope.tsx): illustrative profile, never a real score */
+.rd-scope{position:relative;aspect-ratio:540/450}
+.rd-scope svg,.rd-story-radar{display:block;width:100%;height:auto;overflow:visible}
+.rd-grid path,.rd-grid line{fill:none;stroke:rgba(247,244,232,.16);stroke-width:1}
+.rd-grid path:first-child{stroke:rgba(247,244,232,.3)}
+.rd-axis-labels text{font:500 12px var(--font-mono),monospace;letter-spacing:.12em;fill:#b9c4c2;transition:fill .4s}
+.rd-axis-labels text.is-down{fill:var(--rust-text)}
+.rd-ghost{fill:none;stroke:rgba(247,244,232,.4);stroke-width:1.5;stroke-dasharray:4 6}
+.rd-shape{fill:rgba(216,255,66,.13);stroke:var(--lime);stroke-width:2;stroke-linejoin:round}
+.rd-blip{fill:var(--lime)}
+.rd-you{fill:var(--logo-dot)}
+.rd-you-ring{fill:none;stroke:var(--logo-dot);stroke-width:1.5;opacity:.6}
+.rd-you-label{font:700 12px var(--font-mono),monospace;letter-spacing:.2em;fill:var(--logo-dot)}
+/* Sweep: a conic beam clipped to the outer pentagon (radius 150 of the 540x450 viewBox, centre 200,200). */
+.rd-sweep{position:absolute;left:22.222%;top:15.556%;width:55.556%;height:66.667%;border-radius:50%;
+  clip-path:polygon(50% 0,97.55% 34.55%,79.39% 90.45%,20.61% 90.45%,2.45% 34.55%);pointer-events:none}
+.rd-sweep::before{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,transparent 0deg 280deg,rgba(216,255,66,.05) 300deg,rgba(216,255,66,.3) 358deg,var(--lime) 359deg 360deg)}
+
 /* Sections */
 .rd-section{position:relative;padding:120px 6vw;border-top:1px solid var(--rule);scroll-margin-top:90px}
 .rd-tone-lime.rd-section,.rd-tone-cream.rd-section,.rd-tone-sand.rd-section{border-top:0}
@@ -147,6 +169,56 @@ a.rd-row:hover .rd-row-go{background:var(--lime);border-color:var(--lime);color:
 .rd-chips a,.rd-chips li{display:inline-flex;align-items:center;min-height:44px;padding:8px 16px;border:1px solid var(--rule);border-radius:99px;font:500 12px var(--font-mono),monospace;letter-spacing:.12em;text-transform:uppercase;transition:background .2s,color .2s,border-color .2s}
 .rd-chips a:hover{background:var(--lime);border-color:var(--lime);color:var(--ink)}
 
+/* Stack of blocks inside one section */
+.rd-stack{display:grid;gap:clamp(56px,7vw,96px)}
+.rd-stack>.rd-split>.rd-head{top:110px}
+
+/* Rows led by a mono state chip instead of a number */
+.rd-rows-tagged .rd-row{grid-template-columns:minmax(150px,210px) minmax(0,1fr)}
+.rd-row-tag{justify-self:start;padding:6px 11px;border:1px solid var(--rule);border-radius:99px;font:500 11px/1.2 var(--font-mono),monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.rd-row-tag.is-lit{background:var(--tag-bg);border-color:var(--tag-bg);color:var(--tag-fg)}
+
+/* A single disclosure under a block */
+.rd-more{margin-top:34px;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.rd-more summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:56px;padding:14px 0;cursor:pointer;font:500 12px/1.4 var(--font-mono),monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.rd-more summary::-webkit-details-marker{display:none}
+.rd-more summary::after{content:"+";font:300 24px/1 var(--font-sans),sans-serif;transition:transform .3s var(--ease)}
+.rd-more[open] summary::after{transform:rotate(45deg)}
+.rd-more p{max-width:70ch;margin:0 0 24px;font-size:16px;line-height:1.7;color:var(--soft)}
+
+/* Form card (contact form): dark panel, mono labels, lime focus */
+.rd-form{display:grid;gap:18px;padding:clamp(22px,3vw,36px);border:1px solid var(--line);border-radius:16px;background:var(--ink-2);color:var(--cream);box-shadow:0 50px 90px -50px rgba(0,0,0,.9)}
+.rd-form h3{font-size:clamp(28px,2.6vw,40px);line-height:1.02;letter-spacing:-.04em}
+.rd-form>p{margin:0;font-size:16px;line-height:1.55;color:#cdd6d4}
+.rd-form .rd-label{margin:0}
+.rd-form-fields{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.rd-form label{display:grid;gap:8px;font:500 11px/1.4 var(--font-mono),monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.rd-form input,.rd-form textarea{width:100%;min-height:50px;padding:13px 14px;border:1px solid rgba(247,244,232,.18);border-radius:8px;background:var(--ink);color:var(--cream);font:500 16px/1.4 var(--font-sans),sans-serif;letter-spacing:0;text-transform:none;transition:border-color .2s}
+.rd-form textarea{resize:vertical;min-height:120px}
+.rd-form input:focus,.rd-form textarea:focus{border-color:var(--lime);outline:none}
+.rd-form ::placeholder{color:#7d8d8f}
+.rd-form .rd-form-note{font:500 12px/1.6 var(--font-mono),monospace;letter-spacing:.03em;color:var(--muted)}
+.rd-form .rd-form-note a{color:var(--cream);border-bottom:1px solid var(--line)}
+.rd-form .rd-cta{justify-self:start}
+@media (max-width:600px){.rd-form-fields{grid-template-columns:1fr}.rd-form .rd-cta{justify-self:stretch}}
+
+/* Platform window: an illustrative screen, never real data */
+.rd-window{margin:0}
+.rd-window>div{padding:26px;border:1px solid var(--line);border-radius:16px;background:var(--ink-2);box-shadow:0 50px 90px -50px rgba(0,0,0,.9)}
+.rd-window>div>span{display:block;font:500 11px/1.4 var(--font-mono),monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.rd-window strong{display:block;margin:14px 0 22px;font:800 clamp(28px,2.8vw,42px)/1.02 var(--font-sans),sans-serif;letter-spacing:-.045em}
+.rd-window p{display:flex;justify-content:space-between;gap:14px;margin:0;padding:15px 0;border-top:1px solid var(--line);font-size:15px;font-weight:700}
+.rd-window p span{font:500 11px/1.6 var(--font-mono),monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--lime);text-align:right}
+.rd-figcaption{display:grid;gap:4px;margin-top:16px;font:500 12px/1.6 var(--font-mono),monospace;letter-spacing:.04em;color:var(--muted)}
+.rd-figcaption small{font-size:11px;opacity:.8}
+.rd-hero-aside .rd-scope{max-width:520px}
+
+/* Illustrative radar on light grounds */
+.rd-tone-cream .rd-grid path,.rd-tone-cream .rd-grid line{stroke:rgba(7,23,29,.2)}
+.rd-tone-cream .rd-axis-labels text{fill:var(--ink)}
+.rd-tone-cream .rd-shape{fill:rgba(95,112,16,.16);stroke:var(--olive)}
+.rd-tone-cream .rd-blip{fill:var(--olive)}
+
 /* FAQ */
 .journey-content .rd-faq{pointer-events:auto}
 .rd-faq{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:6vw;padding:120px 6vw;border-top:1px solid var(--rule)}
@@ -193,12 +265,18 @@ a.rd-row:hover .rd-row-go{background:var(--lime);border-color:var(--lime);color:
   .rd-line{animation:rd-up 1.05s var(--ease) both;animation-delay:var(--d,0ms)}
   .rd-rise{animation:rd-fade .9s var(--ease) both;animation-delay:var(--d,0ms)}
   .rd-hero-aside{animation:rd-aside-in 1.3s var(--ease) .35s both}
+  .rd-sweep::before{animation:rd-spin 6s linear infinite}
+  .rd-blip{transform-box:fill-box;transform-origin:center;animation:rd-blip 6s linear infinite;animation-delay:calc(var(--i) * 1.2s)}
+  .rd-you-ring{transform-box:fill-box;transform-origin:center;animation:rd-ping 2.4s ease-out infinite}
   @supports (animation-timeline:view()){
     .rd-reveal{animation:rd-fade linear both;animation-timeline:view();animation-range:entry 0% entry 55%}
     .rd-tile.rd-reveal,.rd-row.rd-reveal{animation-range:entry calc(var(--i,0) * 4%) entry calc(45% + var(--i,0) * 4%)}
     .rd-photo.rd-reveal{animation:rd-photo linear both;animation-timeline:view();animation-range:entry 0% cover 50%}
   }
 }
+@keyframes rd-spin{to{transform:rotate(360deg)}}
+@keyframes rd-blip{0%{opacity:1;transform:scale(1.9)}18%{opacity:.35;transform:scale(1)}100%{opacity:.35;transform:scale(1)}}
+@keyframes rd-ping{0%{opacity:.7;transform:scale(1)}100%{opacity:0;transform:scale(2.6)}}
 @keyframes rd-up{from{transform:translateY(140%) rotate(3deg)}}
 @keyframes rd-fade{from{opacity:0;transform:translateY(28px)}}
 @keyframes rd-aside-in{from{opacity:0;transform:translateY(40px) rotate(2deg)}}
@@ -232,9 +310,11 @@ a.rd-row:hover .rd-row-go{background:var(--lime);border-color:var(--lime);color:
   .rd-tile-tag{margin-bottom:18px}
   .rd-row{grid-template-columns:34px minmax(0,1fr) auto;gap:12px;padding:24px 0}
   .rd-row-go{width:36px;height:36px;font-size:15px}
+  .rd-rows-tagged .rd-row{grid-template-columns:1fr;gap:12px}
   a.rd-row:hover{padding-left:0}
   .rd-index{padding:22px 20px 24px}
   .rd-index li{grid-template-columns:34px 1fr;padding:14px 0;font-size:28px}
+  .rd-axis-labels text{font-size:13px;letter-spacing:.08em}
   .rd-points li{font-size:17px}
   .rd-final{padding:110px 5vw 120px}
   .rd-final .rd-cta{width:100%}

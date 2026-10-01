@@ -42,7 +42,7 @@ export function PageHero({ crumbs, label, title, lead, children, aside, classNam
 
 /** Hero card for inner pages: a mono caption and three words, the last one lit. */
 export function HeroIndex({ caption, words, note }: { caption: string; words: readonly string[]; note?: string }) {
- return <figure className="rd-index"><figcaption>{caption}</figcaption><ol>{words.map((word, index) => <li key={word}><b>0{index + 1}</b><span>{word}</span></li>)}</ol>{note && <p>{note}</p>}</figure>;
+ return <figure className="rd-index"><figcaption>{caption}</figcaption><ol>{words.map((word, index) => <li key={word}><b aria-hidden="true">0{index + 1}</b><span>{word}</span></li>)}</ol>{note && <p>{note}</p>}</figure>;
 }
 
 export function Section({ id, tone, className = '', label, title, lead, split = false, children, headingId }: { id?: string; tone?: Tone; className?: string; label?: ReactNode; title?: ReactNode; lead?: ReactNode; split?: boolean; children?: ReactNode; headingId?: string }) {
@@ -55,18 +55,19 @@ export function Section({ id, tone, className = '', label, title, lead, split = 
 export type Tile = { tag?: string; title: ReactNode; text?: ReactNode; href?: string; more?: string; className?: string };
 export function Tiles({ items, columns = 3 }: { items: readonly Tile[]; columns?: 2 | 3 }) {
  return <ul className={`rd-tiles ${columns === 2 ? 'rd-tiles-2' : ''}`}>{items.map((item, index) => {
-  const body = <>{item.tag && <span className="rd-tile-tag">{item.tag}</span>}<h3>{item.title}</h3>{item.text && <p>{item.text}</p>}{item.more && <span className="rd-tile-more">{item.more} <span aria-hidden="true">↗︎</span></span>}</>;
-  return <li key={index}>{item.href ? <Link className={`rd-tile rd-reveal ${item.className ?? ''}`} style={order(index)} href={item.href}>{body}</Link> : <div className={`rd-tile rd-reveal ${item.className ?? ''}`} style={order(index)}>{body}</div>}</li>;
+  const body = <>{item.tag && <span className="rd-tile-tag" aria-hidden={/^\d+$/.test(item.tag) || undefined}>{item.tag}</span>}<h3>{item.title}</h3>{item.text && <p>{item.text}</p>}{item.more && <span className="rd-tile-more">{item.more} <span aria-hidden="true">↗︎</span></span>}</>;
+  return <li key={index}>{item.href ? (internal(item.href) ? <Link className={`rd-tile rd-reveal ${item.className ?? ''}`} style={order(index)} href={item.href}>{body}</Link> : <a className={`rd-tile rd-reveal ${item.className ?? ''}`} style={order(index)} href={item.href}>{body}</a>) : <div className={`rd-tile rd-reveal ${item.className ?? ''}`} style={order(index)}>{body}</div>}</li>;
  })}</ul>;
 }
 
-export type Row = { title?: ReactNode; text: ReactNode; href?: string; className?: string };
-export function Rows({ items, start = 1, ordered = true }: { items: readonly Row[]; start?: number; ordered?: boolean }) {
+export type Row = { title?: ReactNode; text: ReactNode; href?: string; className?: string; tag?: string; lit?: boolean };
+export function Rows({ items, start = 1, ordered = true, className = '' }: { items: readonly Row[]; start?: number; ordered?: boolean; className?: string }) {
  const List = ordered ? 'ol' : 'ul';
- return <List className="rd-rows" start={ordered && start !== 1 ? start : undefined}>{items.map((item, index) => {
-  const n = <span className="rd-row-n">{String(start + index).padStart(2, '0')}</span>;
+ const tagged = items.some(item => item.tag);
+ return <List className={`rd-rows ${tagged ? 'rd-rows-tagged' : ''} ${className}`} start={ordered && start !== 1 ? start : undefined}>{items.map((item, index) => {
+  const n = item.tag ? <span className={`rd-row-tag ${item.lit ? 'is-lit' : ''}`}>{item.tag}</span> : <span className="rd-row-n" aria-hidden="true">{String(start + index).padStart(2, '0')}</span>;
   const body = item.title ? <div><h3>{item.title}</h3><p>{item.text}</p></div> : <p className="rd-row-text">{item.text}</p>;
-  return <li key={index}>{item.href ? <Link className={`rd-row rd-reveal ${item.className ?? ''}`} style={order(index)} href={item.href}>{n}{body}<span className="rd-row-go" aria-hidden="true">↗︎</span></Link> : <div className={`rd-row rd-reveal ${item.className ?? ''}`} style={order(index)}>{n}{body}<span /></div>}</li>;
+  return <li key={index}>{item.href ? (() => { const inner = <>{n}{body}<span className="rd-row-go" aria-hidden="true">↗︎</span></>; const cls = `rd-row rd-reveal ${item.className ?? ''}`; return internal(item.href) ? <Link className={cls} style={order(index)} href={item.href}>{inner}</Link> : <a className={cls} style={order(index)} href={item.href}>{inner}</a>; })() : <div className={`rd-row rd-reveal ${item.className ?? ''}`} style={order(index)}>{n}{body}{!tagged && <span />}</div>}</li>;
  })}</List>;
 }
 
