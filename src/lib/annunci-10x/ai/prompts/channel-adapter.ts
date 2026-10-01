@@ -12,11 +12,12 @@ const invariants = [
   'Preserve confirmed shifts and on-call availability explicitly, including negative values such as no shifts and no on-call.',
   'Preserve the explicit confirmed mission/outcome and confirmed company context, operating context, autonomy, and unexpected events when adapting the Master.',
   'Traceability ids do not substitute visible copy: preserved facts must remain semantically present in the candidate-facing channel variant.',
+  'Use dedicated canonical RoleCard fields when narrative context contains an alternative location, work mode, contract, schedule, shifts, on-call value, compensation, or application destination. Never reintroduce the discarded alternative.',
 ] as const;
 
 export const CHANNEL_ADAPTER_PROMPT: Annunci10xPromptDefinition = {
   id: 'annunci10x.channel_adapter',
-  version: 'annunci10x.channel_adapter.v6',
+  version: 'annunci10x.channel_adapter.v7',
   operationType: 'CHANNEL_ADAPTER',
   outputSchema: ANNUNCI10X_AI_OUTPUT_SCHEMAS.CHANNEL_ADAPTER,
   instructions: renderPrompt('CHANNEL_ADAPTER', 'Adapt a Master ad to a target channel without introducing facts.', invariants),

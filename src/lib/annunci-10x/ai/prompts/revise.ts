@@ -20,11 +20,12 @@ const invariants = [
   'Never solve repetition by deleting the only explicit confirmed mission/outcome. Keep one clear outcome statement and remove the redundant surrounding section/text instead.',
   'Preserve confirmed company context, operating context, autonomy, and unexpected events/variability when revising candidate-facing work-reality sections.',
   'Do not assume that retaining a sourceFactId preserves a fact: its meaning must remain visible in title/body copy after the revision.',
+  'When narrative context disagrees with a dedicated canonical RoleCard field, preserve the dedicated value and remove the discarded shadow value from candidate-facing copy.',
 ] as const;
 
 export const REVISE_PROMPT: Annunci10xPromptDefinition = {
   id: 'annunci10x.revise',
-  version: 'annunci10x.revise.v6',
+  version: 'annunci10x.revise.v7',
   operationType: 'REVISE',
   outputSchema: ANNUNCI10X_AI_OUTPUT_SCHEMAS.REVISE,
   instructions: [
