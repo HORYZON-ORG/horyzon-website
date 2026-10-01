@@ -790,7 +790,7 @@ assert.equal(adminConflictState.conflicts.some((item) => item.targetPath === 'at
 assert.equal(adminConflictState.conflicts.some((item) => item.targetPath === 'attractionContext.workMode' && /Ibrido/i.test(item.conflictingValue)), true, 'shadow work-mode conflict must be surfaced');
 assert.match(adminConflictState.roleCard.mission, /informazioni necessarie arrivino complete e coerenti alle chiusure periodiche/i, 'long primary contribution must not be truncated');
 assert.match(adminConflictState.roleCard.operatingContext, /ufficio amministrativo con altre 2 persone/i, 'admin operating context must parse from serialized label');
-assert.match(adminConflictState.roleCard.autonomy, /organizza le attivita ordinarie/i, 'admin autonomy must survive shadow sanitization');
+assert.match(adminConflictState.roleCard.autonomy, /Gestisce autonomamente le attivita amministrative ricorrenti/i, 'admin autonomy must survive shadow sanitization');
 assert.match(adminConflictState.roleCard.unexpectedEvents, /Fatture con dati errati o incompleti/i, 'admin unexpected events must survive shadow sanitization');
 assert.match(adminConflictState.roleCard.unexpectedEvents, /dati da chiarire con fornitori, clienti o reparti interni/i, 'long admin unexpected events must remain complete');
 assert.equal(/Ibrido/i.test(adminConflictState.roleCard.unexpectedEvents), false, 'shadow work mode must be removed from admin unexpected events');
@@ -809,7 +809,7 @@ const adminConflictPremium = await runAnnunci10xPremiumGeneration({
 });
 assert.match(adminConflictPremium.masterText, /informazioni necessarie arrivino complete e coerenti alle chiusure periodiche/i, 'full admin mission must remain explicit in final candidate copy');
 assert.match(adminConflictPremium.masterText, /Contesto operativo:\s*ufficio amministrativo con altre 2 persone/i, 'admin operating context must remain explicit in final candidate copy');
-assert.match(adminConflictPremium.masterText, /Autonomia:\s*organizza le attivita ordinarie/i, 'admin autonomy must remain explicit in final candidate copy');
+assert.match(adminConflictPremium.masterText, /Autonomia:\s*Gestisce autonomamente le attivita amministrative ricorrenti/i, 'admin autonomy must remain explicit in final candidate copy');
 assert.match(adminConflictPremium.masterText, /Imprevisti e variabilit[aà]:\s*Fatture con dati errati o incompleti/i, 'admin unexpected events must remain explicit in final candidate copy');
 assert.equal(/Tempo determinato 6 mesi|Modalita:\s*Ibrido/i.test(adminConflictPremium.masterText), false, 'admin shadow contract and work mode must stay out of final candidate copy');
 
