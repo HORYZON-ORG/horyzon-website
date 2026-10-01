@@ -185,7 +185,16 @@ assert.deepEqual(
 }
 
 {
-  const context = makeContext(new MockAnnunci10xProvider(['unsupported_claim', 'unsupported_claim', 'success', 'unsupported_claim', 'success', 'success']));
+  const context = makeContext(new MockAnnunci10xProvider([
+    'unsupported_claim',
+    'unsupported_claim',
+    'success',
+    'unsupported_claim',
+    'success',
+    'unsupported_claim',
+    'success',
+    'success',
+  ]));
   const created = await createReadySession(context);
   const result = await runAnnunci10xPremiumGeneration({
     sessionId: created.session.id,
@@ -193,10 +202,11 @@ assert.deepEqual(
     context,
     authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
   });
-  assert.equal(result.operations.filter((operation) => operation.type === 'REVISE').length, 1, 'automatic revision runs at most once');
-  assert.equal(result.master.sections.length, 2, 'partial REVISE output is merged into the existing master instead of replacing all sections');
-  assert.equal(result.master.sections.some((section) => section.id === 'section-2'), true, 'unchanged master sections are preserved after partial revision');
-  assert.equal(result.gate.status, 'NEEDS_VERIFICATION', 'unsupported claim prevents READY even when score exists');
+  assert.equal(result.operations.filter((operation) => operation.type === 'REVISE').length, 2, 'automatic repair is bounded to at most two revisions');
+  assert.equal(result.master.annunci10xPremium?.automaticRevisionCount, 2, 'premium payload records both bounded automatic revisions');
+  assert.equal(result.master.sections.some((section) => section.id === 'confirmed-role-responsibilities' && /Pulizia uffici, corridoi e spazi comuni/i.test(section.body)), true, 'canonical responsibilities survive partial revisions');
+  assert.equal(result.master.sections.some((section) => section.id === 'confirmed-role-conditions' && /Bari/i.test(section.body) && /Part-time/i.test(section.body)), true, 'canonical conditions survive partial revisions');
+  assert.equal(result.gate.status, 'NEEDS_VERIFICATION', 'residual unsupported claim after the two-revision cap prevents READY');
   assert.ok(result.claimCheck.some((claim) => claim.status === 'UNSUPPORTED'));
 }
 
