@@ -18,7 +18,7 @@ export function AnnunciDock() {
     return () => observer.disconnect();
   }, []);
   return <div className={visible ? 'rd-dock is-visible' : 'rd-dock'} aria-hidden={!visible}>
-    <span className="rd-dock-meta">Score di chiarezza <b>· gratis · 2 min</b></span>
+    <span className="rd-dock-meta">Score gratuito <b>· 2 min</b></span>
     <a className="rd-cta" href="#valuta" tabIndex={visible ? 0 : -1} data-analytics-event="annunci10x_lp_cta_click" data-cta-position="dock">Valuta<span aria-hidden="true">↓</span></a>
   </div>;
 }
