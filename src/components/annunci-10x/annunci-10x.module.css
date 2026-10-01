@@ -942,6 +942,54 @@
   line-height: 1;
 }
 
+.conflictPanel {
+  display: grid;
+  gap: .65rem;
+  border: 1px solid #d5b168;
+  border-radius: 8px;
+  background: #fff8df;
+  padding: 1rem;
+}
+
+.conflictPanel > p {
+  margin: 0;
+  color: #765617;
+  font-size: .76rem;
+  font-weight: 900;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.conflictPanel > h3,
+.conflictPanel > span {
+  margin: 0;
+}
+
+.conflictPanel > ul {
+  display: grid;
+  gap: .7rem;
+  margin: .2rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.conflictPanel li {
+  display: grid;
+  gap: .2rem;
+  border-top: 1px solid rgba(118, 86, 23, .2);
+  padding-top: .7rem;
+}
+
+.conflictPanel li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.conflictPanel li span {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
 .result {
   display: grid;
   gap: 1.25rem;
