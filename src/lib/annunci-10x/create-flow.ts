@@ -50,7 +50,6 @@ export interface PublicAnnunci10xCreateState {
   completedSteps: Annunci10xCreateStepId[];
   completion: { answered: number; total: number; coverage: number };
   roleCard: PublicCreateRoleCard;
-  conflicts: PublicCreateConflict[];
   strategy: PublicCreateStrategy | null;
   clarification: PublicCreateClarification | null;
   canConfirm: boolean;
@@ -95,17 +94,6 @@ export interface PublicCreateRoleCard {
   attractionEvidence: string[];
   channel: PublicationChannel | null;
   missingFacts: string[];
-}
-
-export interface PublicCreateConflict {
-  id: string;
-  targetPath: string;
-  label: string;
-  canonicalValue: string;
-  conflictingValue: string;
-  sourceStep: Annunci10xCreateStepId;
-  sourceLabel: string;
-  resolution: string;
 }
 
 export interface PublicCreateStrategy {
@@ -427,7 +415,6 @@ async function publicCreateState(input: {
       coverage: Math.round((completedSteps.length / ANNUNCI10X_CREATE_STEPS.length) * 100),
     },
     roleCard: publicRoleCard(roleCard, session.selectedChannel ?? channelFromAnswers(answers)),
-    conflicts: deriveCanonicalConflicts(answers, roleCard),
     strategy: snapshot?.communicationStrategy ? publicStrategy(snapshot.communicationStrategy) : null,
     clarification,
     canConfirm: session.state === 'ROLE_CARD_READY' && ready,
@@ -933,196 +920,6 @@ function detectCreateFactualPreservationIssues(answers: PersistedAnswer[], roleC
   }
 
   return [...new Set(issues)];
-}
-
-const CREATE_CONFLICT_STEP_LABELS: Record<Annunci10xCreateStepId, string> = {
-  ROLE_CONTEXT: 'Ruolo e azienda',
-  PRIMARY_CONTRIBUTION: 'Risultato principale',
-  WORK_REALITY: 'Lavoro reale',
-  REQUIREMENTS: 'Requisiti',
-  ATTRACTION: 'Benefit e formazione',
-  OFFER: 'Condizioni',
-  CHANNEL_APPLICATION: 'Candidatura',
-};
-
-function deriveCanonicalConflicts(answers: PersistedAnswer[], roleCard: RoleCard): PublicCreateConflict[] {
-  const conflicts: PublicCreateConflict[] = [];
-  const canonicalLocation = textValue(roleCard.attractionContext.location);
-  const canonicalWorkMode = textValue(roleCard.attractionContext.workModeDetail) !== 'N/D' ? textValue(roleCard.attractionContext.workModeDetail) : textValue(roleCard.attractionContext.workMode);
-  const canonicalContract = textValue(roleCard.attractionContext.contractType);
-  const canonicalSchedule = textValue(roleCard.attractionContext.schedule);
-  const canonicalShifts = textValue(roleCard.attractionContext.shifts);
-  const canonicalOnCall = textValue(roleCard.attractionContext.onCall);
-  const canonicalCompensation = textValue(roleCard.compensation?.amountText);
-  const canonicalApplication = textValue(roleCard.applicationInstructions);
-
-  for (const step of ANNUNCI10X_CREATE_STEPS) {
-    if (step === 'OFFER' || step === 'CHANNEL_APPLICATION') continue;
-    const raw = answerFor(answers, step);
-    if (!raw.trim()) continue;
-    addCanonicalConflict(conflicts, 'attractionContext.location', 'Sede', canonicalLocation, extractShadowLocation(raw), step, valuesConflictLocation);
-    addCanonicalConflict(conflicts, 'attractionContext.workMode', 'Modalità di lavoro', canonicalWorkMode, extractShadowWorkMode(raw), step, valuesConflictWorkMode);
-    addCanonicalConflict(conflicts, 'attractionContext.contractType', 'Contratto', canonicalContract, extractShadowContract(raw), step, valuesConflictContract);
-    addCanonicalConflict(conflicts, 'attractionContext.schedule', 'Orario', canonicalSchedule, extractShadowSchedule(raw), step, valuesConflictSchedule);
-    addCanonicalConflict(conflicts, 'attractionContext.shifts', 'Turni', canonicalShifts, extractShadowLabeled(raw, ['turni']), step, valuesConflictPolarity);
-    addCanonicalConflict(conflicts, 'attractionContext.onCall', 'Reperibilità', canonicalOnCall, extractShadowLabeled(raw, ['reperibilita', 'reperibilità']), step, valuesConflictPolarity);
-    addCanonicalConflict(conflicts, 'compensation.amountText', 'Retribuzione', canonicalCompensation, extractShadowCompensation(raw), step, valuesConflictCompensation);
-    addCanonicalConflict(conflicts, 'applicationInstructions', 'Candidatura', canonicalApplication, extractShadowApplication(raw), step, valuesConflictApplication);
-  }
-  return [...new Map(conflicts.map((item) => [`${item.targetPath}|${normalizeShadowValue(item.conflictingValue)}|${item.sourceStep}`, item])).values()];
-}
-
-function addCanonicalConflict(
-  target: PublicCreateConflict[],
-  targetPath: string,
-  label: string,
-  canonicalValue: string,
-  conflictingValue: string,
-  sourceStep: Annunci10xCreateStepId,
-  conflicts: (canonical: string, alternative: string) => boolean,
-): void {
-  if (!canonicalValue || canonicalValue === 'N/D' || canonicalValue === 'OPEN_DECISION' || isUnknownAnswer(canonicalValue)) return;
-  if (!conflictingValue || isUnknownAnswer(conflictingValue) || !conflicts(canonicalValue, conflictingValue)) return;
-  target.push({
-    id: `${stableShortId(targetPath)}-${sourceStep.toLowerCase()}`,
-    targetPath,
-    label,
-    canonicalValue,
-    conflictingValue,
-    sourceStep,
-    sourceLabel: CREATE_CONFLICT_STEP_LABELS[sourceStep],
-    resolution: `Abbiamo mantenuto “${canonicalValue}” perché il campo “${label}” è la fonte canonica per questo dato.`,
-  });
-}
-
-function extractShadowLabeled(text: string, labels: readonly string[]): string {
-  for (const label of labels) {
-    const escaped = escapeRegExp(label);
-    const match = text.match(new RegExp(`(?:^|[\\n.;])\\s*${escaped}\\s*[:\\-]\\s*([^\\n.;]{1,160})`, 'i'));
-    if (match?.[1]) return clean(match[1]);
-  }
-  return '';
-}
-
-function extractShadowLocation(text: string): string {
-  const labeled = extractShadowLabeled(text, ['sede', 'localita', 'località', 'zona']);
-  if (labeled) return labeled;
-  const match = text.match(/\bsede\s+(?:a|di)\s+([^\n.;]{2,80})/i);
-  return clean(match?.[1]);
-}
-
-function extractShadowWorkMode(text: string): string {
-  const labeled = extractShadowLabeled(text, ['modalita', 'modalità', 'modalita di lavoro', 'modalità di lavoro']);
-  if (labeled) return labeled;
-  const match = text.match(/\b(in presenza|in sede|ibrid[oa]|da remoto|remoto|smart working)\b/i);
-  return clean(match?.[1]);
-}
-
-function extractShadowContract(text: string): string {
-  const labeled = extractShadowLabeled(text, ['contratto']);
-  if (labeled) return labeled;
-  const match = text.match(/\b(tempo indeterminato|tempo determinato(?:\s+[^\n.;]{0,50})?|apprendistato|stage|tirocinio|collaborazione)\b/i);
-  return clean(match?.[1]);
-}
-
-function extractShadowSchedule(text: string): string {
-  const labeled = extractShadowLabeled(text, ['orario']);
-  if (labeled) return labeled;
-  const match = text.match(/\b(?:lunedi|lunedì|martedi|martedì|mercoledi|mercoledì|giovedi|giovedì|venerdi|venerdì|sabato|domenica)[^\n.;]{0,80}\d{1,2}(?::\d{2})?\s*[-–]\s*\d{1,2}(?::\d{2})?/i);
-  return clean(match?.[0]);
-}
-
-function extractShadowCompensation(text: string): string {
-  const match = text.match(/\bRAL\s*[:\-]?\s*([^\n.;]{1,100})/i);
-  if (match?.[1]) return clean(`RAL ${match[1]}`);
-  return extractShadowLabeled(text, ['compenso', 'stipendio', 'retribuzione']);
-}
-
-function extractShadowApplication(text: string): string {
-  const email = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0];
-  const url = text.match(/https?:\/\/\S+/i)?.[0];
-  return clean(email ?? url);
-}
-
-function valuesConflictLocation(canonical: string, alternative: string): boolean {
-  const a = normalizeShadowValue(canonical).split(' ').filter((token) => token.length >= 3 && !['sede', 'zona'].includes(token));
-  const b = normalizeShadowValue(alternative).split(' ').filter((token) => token.length >= 3 && !['sede', 'zona'].includes(token));
-  if (!a.length || !b.length) return !valuesLooselyEqual(canonical, alternative);
-  return !a.some((token) => b.includes(token));
-}
-
-function valuesConflictWorkMode(canonical: string, alternative: string): boolean {
-  const a = shadowWorkModeCategory(canonical);
-  const b = shadowWorkModeCategory(alternative);
-  return a !== 'UNKNOWN' && b !== 'UNKNOWN' ? a !== b : !valuesLooselyEqual(canonical, alternative);
-}
-
-function valuesConflictContract(canonical: string, alternative: string): boolean {
-  const a = shadowContractCategory(canonical);
-  const b = shadowContractCategory(alternative);
-  if (a !== 'UNKNOWN' && b !== 'UNKNOWN' && a !== b) return true;
-  const an = shadowNumbers(canonical);
-  const bn = shadowNumbers(alternative);
-  return an.length > 0 && bn.length > 0 && bn.some((value) => !an.includes(value));
-}
-
-function valuesConflictSchedule(canonical: string, alternative: string): boolean {
-  const a = canonical.match(/\b\d{1,2}(?::\d{2})\b/g) ?? [];
-  const b = alternative.match(/\b\d{1,2}(?::\d{2})\b/g) ?? [];
-  return a.length >= 2 && b.length >= 2 && b.some((value) => !a.includes(value));
-}
-
-function valuesConflictPolarity(canonical: string, alternative: string): boolean {
-  return /\b(?:non|nessun|nessuna|senza)\b/i.test(canonical) !== /\b(?:non|nessun|nessuna|senza)\b/i.test(alternative);
-}
-
-function valuesConflictCompensation(canonical: string, alternative: string): boolean {
-  const a = shadowNumbers(canonical);
-  const b = shadowNumbers(alternative);
-  if (a.length > 0 && b.length > 0) return b.some((value) => !a.includes(value));
-  return !valuesLooselyEqual(canonical, alternative);
-}
-
-function valuesConflictApplication(canonical: string, alternative: string): boolean {
-  const a = canonical.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0]?.toLowerCase();
-  const b = alternative.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0]?.toLowerCase();
-  return Boolean(a && b && a !== b);
-}
-
-function shadowWorkModeCategory(value: string): 'HYBRID' | 'REMOTE' | 'ONSITE' | 'UNKNOWN' {
-  if (/ibrid/i.test(value)) return 'HYBRID';
-  if (/remot|smart working/i.test(value) && !/presenza|in sede/i.test(value)) return 'REMOTE';
-  if (/presenza|in sede/i.test(value) && !/remot|smart working/i.test(value)) return 'ONSITE';
-  return 'UNKNOWN';
-}
-
-function shadowContractCategory(value: string): string {
-  const normalized = normalizeShadowValue(value);
-  if (normalized.includes('tempo indeterminato')) return 'INDETERMINATO';
-  if (normalized.includes('tempo determinato')) return 'DETERMINATO';
-  if (normalized.includes('apprendistato')) return 'APPRENDISTATO';
-  if (normalized.includes('stage') || normalized.includes('tirocinio')) return 'STAGE';
-  if (normalized.includes('collaborazione')) return 'COLLABORAZIONE';
-  return 'UNKNOWN';
-}
-
-function shadowNumbers(value: string): number[] {
-  const out: number[] = [];
-  for (const match of value.matchAll(/\b(\d{1,3}(?:[.,]\d{3})+|\d+)(\s*k)?\b/gi)) {
-    const parsed = Number(match[1].replace(/[.,](?=\d{3}\b)/g, ''));
-    if (Number.isFinite(parsed)) out.push(match[2] ? parsed * 1000 : parsed);
-  }
-  return out;
-}
-
-function valuesLooselyEqual(left: string, right: string): boolean {
-  const a = normalizeShadowValue(left);
-  const b = normalizeShadowValue(right);
-  return a === b || a.includes(b) || b.includes(a);
-}
-
-function normalizeShadowValue(value: string): string {
-  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9@.]+/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 function criticalTokens(text: string): string[] {
