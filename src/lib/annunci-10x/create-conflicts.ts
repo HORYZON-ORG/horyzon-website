@@ -113,7 +113,7 @@ function valueOf(fact: { value?: unknown } | undefined): string {
 function extractLocation(text: string): string {
   const labeled = text.match(/(?:^|[\n.;])\s*(?:sede|localita|località|zona)\s*[:\-]\s*([^\n.;]{2,80})/i);
   if (labeled?.[1]) return clean(labeled[1]);
-  const mention = text.match(/\bsede\s+(?:a|di)\s+([^\n.;]{2,80})/i);
+  const mention = text.match(/\bsede\s+(?:a|di)\s+([^\n.;]{2,80}?)(?=\s+(?:e\s+)?(?:RAL|compenso|retribuzione|stipendio)\b|[\n.;]|$)/i);
   return clean(mention?.[1]);
 }
 
@@ -149,7 +149,7 @@ function extractOnCall(text: string): string {
 }
 
 function extractCompensation(text: string): string {
-  const ral = text.match(/\bRAL\s*[:\-]?\s*([^\n.;]{1,90})/i);
+  const ral = text.match(/\bRAL\s*[:\-]?\s*(\d[\d.,]*(?:\s*[-–]\s*\d[\d.,]*)?(?:\s*(?:EUR|euro|€))?)/i);
   if (ral?.[1]) return clean('RAL ' + ral[1]);
   const labeled = text.match(/(?:^|[\n.;])\s*(?:compenso|stipendio|retribuzione)\s*[:\-]\s*([^\n.;]{1,90})/i);
   return clean(labeled?.[1]);
