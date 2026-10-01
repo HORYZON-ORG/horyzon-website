@@ -492,7 +492,7 @@ function buildCreateRoleCard(answers: PersistedAnswer[]): RoleCard {
   const offer = answerFor(answers, 'OFFER');
   const channelApplication = answerFor(answers, 'CHANNEL_APPLICATION');
   const clarificationWorkMode = answerForQuestion(answers, 'create.clarify.attractionContext.workMode');
-  const workModeSource = clarificationWorkMode || offer || work;
+  const workModeSource = clarificationWorkMode || offer;
   const title = clean(extractAfter(role, ['ruolo', 'figura', 'cerco', 'cerchiamo'])) || clean(role.split(/[.\n]/)[0]) || 'Ruolo da chiarire';
   const mission = clean(extractAfter(contribution, ['risultato principale', 'missione', 'obiettivo', 'contributo'])) || clean(contribution.split(/[.\n]/)[0]) || 'N/D - contributo da chiarire';
   const responsibility = clean(extractWorkRealityField(work, workRealityFieldLabels.activities))
@@ -519,9 +519,9 @@ function buildCreateRoleCard(answers: PersistedAnswer[]): RoleCard {
       companyDescription: companyDescription ? fact(companyDescription, 'USER_DECLARED', 'create-company-description') : undefined,
       workMode: workModeFromText(workModeSource),
       workModeDetail: workModeDetailFromText(workModeSource),
-      location: locationFromText([role, offer, work].filter(Boolean).join('\n')),
+      location: locationFromText(offer),
       contractType: contractFromText(offer),
-      schedule: scheduleFromText(offer || work),
+      schedule: scheduleFromText(offer),
       shifts: offerConditionFromText(offer, offerFieldLabels.shifts, 'create-shifts'),
       onCall: offerConditionFromText(offer, offerFieldLabels.availability, 'create-on-call'),
       operatingContext: operatingContext && !isUnknownAnswer(operatingContext) ? fact(operatingContext, 'USER_DECLARED', 'create-operating-context') : undefined,
@@ -548,7 +548,9 @@ function isRoleCardReady(answers: PersistedAnswer[], roleCard: RoleCard): boolea
 function deriveBlockingClarification(answers: PersistedAnswer[]): PublicCreateClarification | null {
   if (answerForQuestion(answers, 'create.clarify.attractionContext.workMode')) return null;
   if (hasResolvedHybridWorkMode(answers)) return null;
-  const text = `${answerFor(answers, 'WORK_REALITY')} ${answerFor(answers, 'OFFER')}`.toLowerCase();
+  const canonicalWorkMode = extractCreateField(answerFor(answers, 'OFFER'), offerFieldLabels.workMode);
+  if (canonicalWorkMode && !isUnknownAnswer(canonicalWorkMode)) return null;
+  const text = answerFor(answers, 'WORK_REALITY').toLowerCase();
   if (!/remot|smart working/.test(text) || !/presenza|in sede/.test(text)) return null;
   return {
     id: 'clarification-work-mode',
