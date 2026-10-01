@@ -466,7 +466,7 @@ async function assertFulfillmentStatusContract() {
   assert.equal((await resumeAnnunci10xDeliverableOutput({ sessionId: ready.sessionId, sessionSecret: ready.sessionSecret, context: readyContext }))?.outputId, output.outputId);
   assert.equal(viewedEvents.includes('output_viewed'), true, 'explicit output resume records output_viewed telemetry');
 
-  const reviewContext = makeContext(new MockAnnunci10xProvider(['unsupported_claim', 'unsupported_claim', 'success', 'unsupported_claim', 'success', 'success']));
+  const reviewContext = makeContext(new MockAnnunci10xProvider(['unsupported_claim', 'unsupported_claim', 'success', 'unsupported_claim', 'success', 'unsupported_claim', 'success', 'success']));
   const review = await createPaidReadySession(reviewContext, 'CREATE');
   await runAnnunci10xReservationBackedPremiumGeneration({
     sessionId: review.sessionId,
