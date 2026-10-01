@@ -1121,7 +1121,12 @@ function extractCompensation(text: string): string {
 }
 
 function isUnknownAnswer(answer: string): boolean {
-  return /non lo so|da chiarire|n\/d/i.test(answer);
+  const normalized = clean(answer).toLowerCase();
+  return normalized === 'non lo so'
+    || normalized.startsWith('non lo so /')
+    || normalized === 'da chiarire'
+    || normalized === 'n/d'
+    || normalized.startsWith('n/d -');
 }
 
 function clean(value: string | undefined): string {
