@@ -118,7 +118,7 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
         if (requestedAnalysisId) {
           const requestedResponse = await fetch(`/api/annunci-10x/analysis/${encodeURIComponent(requestedAnalysisId)}`, { cache: 'no-store' });
           const requestedPayload = await requestedResponse.json();
-          if (!cancelled && cycle === flowCycleRef.current && requestedResponse.ok && requestedPayload.ok?.valueOf?.() !== false && requestedPayload.run) {
+          if (!cancelled && cycle === flowCycleRef.current && requestedResponse.ok && requestedPayload.ok && requestedPayload.run) {
             const requestedRun = normalizeRun(requestedPayload.run);
             setAnalysisRun(requestedRun);
             setContactSaved(Boolean(requestedRun.contactSaved));
