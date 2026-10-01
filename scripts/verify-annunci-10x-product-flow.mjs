@@ -65,7 +65,7 @@ class DeletingRevisionProvider extends MockAnnunci10xProvider {
         return {
           ...result,
           output: {
-            claims: [{ id: 'editorial-duplicate', kind: 'EDITORIAL', claim: 'Remove duplicate responsibilities section.', supported: true, sourcePaths: ['section-2'], action: 'REMOVE' }],
+            claims: [{ id: 'editorial-duplicate', kind: 'EDITORIAL', claim: 'Remove duplicate responsibilities section.', supported: true, sourcePaths: ['section-responsibilities'], action: 'REMOVE' }],
             unsupportedClaims: [],
             contradictions: [],
             omittedCriticalFacts: [],
@@ -84,7 +84,7 @@ class DeletingRevisionProvider extends MockAnnunci10xProvider {
         ...result,
         output: {
           revisedSections: [],
-          changedSectionIds: ['section-2'],
+          changedSectionIds: ['section-responsibilities'],
           changeSummary: 'Removed duplicate section.',
           requiresValidation: true,
         },
@@ -223,16 +223,21 @@ class OpeningMissionDuplicateProvider extends MockAnnunci10xProvider {
   async executeStructuredTask(request) {
     const result = await super.executeStructuredTask(request);
     if (request.operationType === 'GENERATE') {
+      const baseOutput = result.output;
+      const baseSections = baseOutput?.generatedAd?.sections ?? [];
+      const rest = baseSections.filter((section) => !['TITLE', 'OPENING', 'MISSION'].includes(section.type));
       const sections = [
         { id: 'dup-title', type: 'TITLE', key: 'title', title: 'Commerciale B2B', body: 'Commerciale B2B', sourceFactIds: ['create-role-title'] },
-        { id: 'dup-opening', type: 'OPENING', key: 'opening', title: 'Cosa fa il ruolo', body: 'Sviluppa nuove opportunita commerciali qualificate.', sourceFactIds: ['create-mission'] },
+        { id: 'dup-opening', type: 'OPENING', key: 'opening', title: 'Cosa fa il ruolo', body: 'Sviluppare nuove opportunita commerciali qualificate e accompagnarle fino alla chiusura o a un next step concordato.', sourceFactIds: ['create-mission'] },
         { id: 'dup-mission', type: 'MISSION', key: 'mission', title: 'Obiettivo del ruolo', body: 'Sviluppare nuove opportunita commerciali qualificate.', sourceFactIds: ['create-mission'] },
-        { id: 'dup-application', type: 'APPLICATION', key: 'application', title: 'Come candidarsi', body: 'Inviare CV a sales-recruiting@azienda-test.it.', sourceFactIds: ['create-application-instructions'] },
+        ...rest,
       ];
       return {
         ...result,
         output: {
+          ...baseOutput,
           generatedAd: {
+            ...baseOutput.generatedAd,
             id: 'duplicate-master',
             sessionId: 'session-1',
             kind: 'MASTER',
@@ -242,10 +247,10 @@ class OpeningMissionDuplicateProvider extends MockAnnunci10xProvider {
             promptVersion: 'annunci10x.generate.v5',
           },
           title: 'Commerciale B2B',
-          metadata: {},
+          metadata: baseOutput.metadata ?? {},
           sections,
           fullText: sections.map((section) => section.body).join('\n'),
-          sourcePaths: ['title', 'mission', 'applicationInstructions'],
+          sourcePaths: baseOutput.sourcePaths ?? ['title', 'mission', 'applicationInstructions'],
         },
       };
     }
@@ -278,6 +283,46 @@ class OpeningMissionDuplicateProvider extends MockAnnunci10xProvider {
           changeSummary: 'Rephrased opening.',
           requiresValidation: true,
         },
+      };
+    }
+    return result;
+  }
+}
+
+class StructuralDumpProvider extends MockAnnunci10xProvider {
+  async executeStructuredTask(request) {
+    const result = await super.executeStructuredTask(request);
+    if (request.operationType === 'GENERATE') {
+      const sections = [
+        { id: 'dump-title', type: 'TITLE', key: 'title', title: 'Commerciale B2B', body: '', sourceFactIds: ['create-role-title'] },
+        { id: 'dump-conditions', type: 'CONDITIONS', key: 'conditions', title: 'Condizioni', body: 'Turni: Non dichiarati\nReperibilità: Non dichiarata\nBenefit: Non sono stati dichiarati benefit', sourceFactIds: [] },
+        { id: 'dump-requirements', type: 'REQUIREMENTS', key: 'requirements', title: 'Requisiti', body: 'Apprendibili: CRM interno\nVincoli: Non dichiarare bonus, welfare, ticket restaurant o crescita se non confermati.', sourceFactIds: [] },
+        { id: 'dump-context', type: 'CONTEXT', key: 'context', title: 'Contesto', body: 'Autonomia: gestione ordinaria\nImprevisti e variabilità: lead urgenti\nsourceFactIds e factual preservation OK.', sourceFactIds: [] },
+      ];
+      return {
+        ...result,
+        output: {
+          generatedAd: {
+            id: 'structural-dump-master',
+            sessionId: 'session-1',
+            kind: 'MASTER',
+            sections,
+            sourceOfTruth: true,
+            generatedAt: '2026-10-01T00:00:00.000Z',
+            promptVersion: 'annunci10x.generate.v9',
+          },
+          title: 'Commerciale B2B',
+          metadata: {},
+          sections,
+          fullText: sections.map((section) => section.body).join('\n'),
+          sourcePaths: ['title'],
+        },
+      };
+    }
+    if (request.operationType === 'VALIDATE') {
+      return {
+        ...result,
+        output: { claims: [], unsupportedClaims: [], contradictions: [], omittedCriticalFacts: [], alteredRequirements: [], result: 'PASS' },
       };
     }
     return result;
@@ -649,11 +694,11 @@ const waiterRequirementPremium = await runAnnunci10xPremiumGeneration({
   context: waiterRequirementContext,
   authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
 });
-const waiterRequirementBody = waiterRequirementPremium.master.sections.find((section) => section.id === 'confirmed-role-requirements')?.body ?? '';
-assert.match(waiterRequirementBody, /Indispensabili:\n- Almeno 1 anno/i, 'canonical requirements must render as a readable list');
-assert.match(waiterRequirementBody, /\n- capacita di gestire piu tavoli/i, 'canonical required items must be separated');
-assert.match(waiterRequirementBody, /Vincoli:\n- La persona deve poter lavorare nei turni serali/i, 'disqualifying shift compatibility remains explicit');
-assert.equal(/Indispensabili:[\s\S]*disponibilita al lavoro serale e nei weekend/i.test(waiterRequirementBody), false, 'shift compatibility must not be duplicated in required requirements when already disqualifying');
+assert.match(waiterRequirementPremium.masterText, /Almeno 1 anno/i, 'required experience must remain visible in candidate-facing copy');
+assert.match(waiterRequirementPremium.masterText, /capacita di gestire piu tavoli/i, 'required table-management ability must remain visible in candidate-facing copy');
+assert.match(waiterRequirementPremium.masterText, /turni serali|weekend|Pranzo e cena secondo programmazione/i, 'shift compatibility remains explicit through candidate-facing conditions');
+assert.doesNotMatch(waiterRequirementPremium.masterText, /^(Indispensabili|Apprendibili|Vincoli):/im, 'technical requirement labels must not be printed in the final master');
+assert.equal(/disponibilita al lavoro serale e nei weekend[\s\S]*disponibilita al lavoro serale e nei weekend/i.test(waiterRequirementPremium.masterText), false, 'shift compatibility must not be duplicated in the candidate-facing output');
 
 assert.match(waiterConflictState.roleCard.operatingContext, /sala ristorante con cucina e responsabile di sala/i, 'serialized operating context label must parse into its dedicated RoleCard field');
 assert.match(waiterConflictState.roleCard.autonomy, /gestisce il rango/i, 'serialized autonomy must remain dedicated');
@@ -739,25 +784,26 @@ const preservationPremium = await runAnnunci10xPremiumGeneration({
 });
 assert.match(preservationPremium.masterText, /sales-recruiting@azienda-test\.it/i, 'master output contains application destination');
 assert.equal(JSON.stringify(preservationPremium.channelVariant).includes('sales-recruiting@azienda-test.it'), true, 'channel adapter output contains application destination');
-assert.match(preservationPremium.masterText, /Turni:\s*Non previsti/i, 'confirmed no-shifts condition must be explicit in the final master');
-assert.match(preservationPremium.masterText, /Reperibilit[aà]:\s*Non prevista/i, 'confirmed no-on-call condition must be explicit in the final master');
+assert.match(preservationPremium.masterText, /turni\s+Non previsti/i, 'confirmed no-shifts condition must be explicit in the final master');
+assert.match(preservationPremium.masterText, /reperibilit[aà]\s+Non prevista/i, 'confirmed no-on-call condition must be explicit in the final master');
 assert.match(preservationPremium.masterText, /Sviluppare nuove opportunita commerciali qualificate/i, 'confirmed mission must remain explicit in the final master');
-assert.match(preservationPremium.masterText, /Autonomia:/i, 'confirmed autonomy must remain explicit in the final master');
-assert.match(preservationPremium.masterText, /Imprevisti e variabilit[aà]:/i, 'confirmed unexpected events must remain explicit in the final master');
+assert.match(preservationPremium.masterText, /Organizza in autonomia prospecting/i, 'confirmed autonomy must remain explicit in the final master');
+assert.match(preservationPremium.masterText, /Lead urgenti/i, 'confirmed unexpected events must remain explicit in the final master');
 assert.match(preservationPremium.masterText, /Team commerciale interno/i, 'confirmed operating context must remain explicit in the final master');
-assert.match(preservationPremium.masterText, /Fare prospecting, qualificare lead, svolgere call, preparare proposte/i, 'canonical responsibilities must remain candidate-facing');
-assert.match(preservationPremium.masterText, /uso quotidiano del CRM e gestione di lead e opportunita/i, 'canonical operating context must preserve declared tools and work reality');
-assert.match(preservationPremium.masterText, /Lead urgenti, trattative che cambiano priorita/i, 'canonical unexpected events must remain candidate-facing');
-assert.match(preservationPremium.masterText, /Indispensabili:\n- Almeno 2 anni di esperienza nella vendita B2B/i, 'canonical required requirements must remain explicit');
-assert.match(preservationPremium.masterText, /Preferenziali:\n- Esperienza nella vendita di servizi digitali/i, 'canonical preferred requirements must remain explicit');
-assert.match(preservationPremium.masterText, /Apprendibili:\n- Offerta specifica dell'azienda/i, 'canonical trainable requirements must remain explicit');
-assert.match(preservationPremium.masterText, /Laptop e telefono aziendale/i, 'canonical benefits must remain explicit');
-assert.match(preservationPremium.masterText, /Onboarding sull'offerta e affiancamento iniziale/i, 'canonical training must remain explicit');
+assert.match(preservationPremium.masterText, /Fare prospecting, qualificare lead, svolgere call, preparare proposte/i, 'responsibilities must remain candidate-facing');
+assert.match(preservationPremium.masterText, /uso quotidiano del CRM e gestione di lead e opportunita/i, 'operating context must preserve declared tools and work reality');
+assert.match(preservationPremium.masterText, /Lead urgenti, trattative che cambiano priorita/i, 'unexpected events must remain candidate-facing');
+assert.match(preservationPremium.masterText, /Almeno 2 anni di esperienza nella vendita B2B/i, 'required requirements must remain explicit');
+assert.match(preservationPremium.masterText, /Esperienza nella vendita di servizi digitali/i, 'preferred requirements must remain explicit');
+assert.match(preservationPremium.masterText, /Offerta specifica dell'azienda/i, 'trainable requirements must remain explicit without technical labels');
+assert.doesNotMatch(preservationPremium.masterText, /^(Indispensabili|Preferenziali|Apprendibili|Vincoli|Autonomia|Imprevisti e variabilit[aà]|Benefit):/im, 'internal RoleCard labels must not reach candidate-facing master');
+assert.match(preservationPremium.masterText, /Laptop e telefono aziendale/i, 'benefits must remain explicit');
+assert.match(preservationPremium.masterText, /Onboarding sull'offerta e affiancamento iniziale/i, 'training must remain explicit');
 assert.equal(/turni?[^\n]{0,40}non previsti/i.test(JSON.stringify(preservationPremium.channelVariant)), true, 'channel variant must preserve the confirmed no-shifts condition');
 assert.equal(/reperibilit[aà][^\n]{0,40}non prevista/i.test(JSON.stringify(preservationPremium.channelVariant)), true, 'channel variant must preserve the confirmed no-on-call condition');
 assert.equal(/Sviluppare nuove opportunita commerciali qualificate/i.test(JSON.stringify(preservationPremium.channelVariant)), true, 'channel variant must preserve the explicit mission');
-assert.equal(/Autonomia:/i.test(JSON.stringify(preservationPremium.channelVariant)), true, 'channel variant must preserve autonomy');
-assert.equal(/Imprevisti e variabilit[aà]:/i.test(JSON.stringify(preservationPremium.channelVariant)), true, 'channel variant must preserve unexpected events');
+assert.equal(/Organizza in autonomia prospecting/i.test(JSON.stringify(preservationPremium.channelVariant)), true, 'channel variant must preserve autonomy');
+assert.equal(/Lead urgenti/i.test(JSON.stringify(preservationPremium.channelVariant)), true, 'channel variant must preserve unexpected events');
 const generateCall = preservationContext.provider.calls.find((call) => call.operationType === 'GENERATE');
 const channelCall = preservationContext.provider.calls.find((call) => call.operationType === 'CHANNEL_ADAPTER');
 const evaluateCall = preservationContext.provider.calls.find((call) => call.operationType === 'EVALUATE' && call.outputSchemaName === 'annunci10x_evaluate_v2');
@@ -808,10 +854,11 @@ const adminConflictPremium = await runAnnunci10xPremiumGeneration({
   authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
 });
 assert.match(adminConflictPremium.masterText, /informazioni necessarie arrivino complete e coerenti alle chiusure periodiche/i, 'full admin mission must remain explicit in final candidate copy');
-assert.match(adminConflictPremium.masterText, /Contesto operativo:\s*ufficio amministrativo con altre 2 persone/i, 'admin operating context must remain explicit in final candidate copy');
-assert.match(adminConflictPremium.masterText, /Autonomia:\s*Gestisce autonomamente le attivita amministrative ricorrenti/i, 'admin autonomy must remain explicit in final candidate copy');
-assert.match(adminConflictPremium.masterText, /Imprevisti e variabilit[aà]:\s*Fatture con dati errati o incompleti/i, 'admin unexpected events must remain explicit in final candidate copy');
+assert.match(adminConflictPremium.masterText, /ufficio amministrativo con altre 2 persone/i, 'admin operating context must remain explicit in final candidate copy');
+assert.match(adminConflictPremium.masterText, /Gestisce autonomamente le attivita amministrative ricorrenti/i, 'admin autonomy must remain explicit in final candidate copy');
+assert.match(adminConflictPremium.masterText, /Fatture con dati errati o incompleti/i, 'admin unexpected events must remain explicit in final candidate copy');
 assert.equal(/Tempo determinato 6 mesi|Modalita:\s*Ibrido/i.test(adminConflictPremium.masterText), false, 'admin shadow contract and work mode must stay out of final candidate copy');
+assert.doesNotMatch(adminConflictPremium.masterText, /^(Contesto operativo|Autonomia|Imprevisti e variabilit[aà]):/im, 'admin work reality must be transformed into candidate-facing copy, not dumped as labels');
 
 const semanticCoverageContext = makeContext(new SourceTaggedButSemanticallyMissingProvider('success'));
 const startedSemanticCoverage = await startAnnunci10xCreate({ context: semanticCoverageContext });
@@ -837,11 +884,39 @@ const semanticCoveragePremium = await runAnnunci10xPremiumGeneration({
   context: semanticCoverageContext,
   authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
 });
-assert.match(semanticCoveragePremium.masterText, /Sviluppare nuove opportunita commerciali qualificate/i, 'source tags alone must not hide a missing mission');
-assert.match(semanticCoveragePremium.masterText, /Societa di servizi digitali per PMI/i, 'source tags alone must not hide missing company context');
-assert.match(semanticCoveragePremium.masterText, /Autonomia:/i, 'source tags alone must not hide missing autonomy');
-assert.match(semanticCoveragePremium.masterText, /Imprevisti e variabilit[aà]:/i, 'source tags alone must not hide missing unexpected events');
-assert.equal(/Autonomia:/i.test(JSON.stringify(semanticCoveragePremium.channelVariant)), true, 'channel variant must receive the same semantic coverage guard');
+assert.equal(semanticCoveragePremium.gate.status, 'NEEDS_VERIFICATION', 'source tags alone must not make a semantically incomplete master READY');
+assert.equal(semanticCoveragePremium.gate.codes.includes('UNCONFIRMED_CLAIM'), true, 'semantic omissions must surface in the publication gate');
+assert.match(semanticCoveragePremium.gate.warnings.join(' '), /mission|companyDescription|autonomy|unexpectedEvents/i, 'semantic omissions must identify the missing candidate-facing facts');
+assert.doesNotMatch(semanticCoveragePremium.masterText, /^(Autonomia|Imprevisti e variabilit[aà]):/im, 'semantic guard must not repair by dumping RoleCard labels into the master');
+
+const structuralDumpContext = makeContext(new StructuralDumpProvider('success'));
+const startedStructuralDump = await startAnnunci10xCreate({ context: structuralDumpContext });
+let structuralDumpState = startedStructuralDump.result;
+for (const [stepId, answer] of preservationAnswers) {
+  structuralDumpState = await answerAnnunci10xCreateStep({
+    sessionId: startedStructuralDump.cookie.sessionId,
+    sessionSecret: startedStructuralDump.cookie.sessionSecret,
+    stepId,
+    answer,
+    context: structuralDumpContext,
+  });
+}
+await confirmAnnunci10xCreate({
+  sessionId: startedStructuralDump.cookie.sessionId,
+  sessionSecret: startedStructuralDump.cookie.sessionSecret,
+  context: structuralDumpContext,
+});
+const structuralDumpPremium = await runAnnunci10xPremiumGeneration({
+  sessionId: startedStructuralDump.cookie.sessionId,
+  sessionSecret: startedStructuralDump.cookie.sessionSecret,
+  channel: 'LINKEDIN',
+  context: structuralDumpContext,
+  authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
+});
+assert.notEqual(structuralDumpPremium.gate.status, 'READY', 'a structural RoleCard dump must not obtain READY even when provider validation says PASS');
+assert.equal(structuralDumpPremium.gate.codes.includes('EDITORIAL_REVISION_REQUIRED'), true, 'structural dump must require editorial revision');
+assert.match(structuralDumpPremium.gate.warnings.join(' '), /revisione editoriale/i, 'structural dump must explain the unresolved editorial failure');
+assert.match(structuralDumpPremium.claimCheck.map((claim) => claim.claim).join(' '), /etichette interne|placeholder|struttura/i, 'structural dump must produce candidate-facing editorial claims');
 
 const twoPassContext = makeContext(new TwoPassRepairProvider('success'));
 const startedTwoPass = await startAnnunci10xCreate({ context: twoPassContext });
@@ -1062,8 +1137,8 @@ const deletingRevisionPremium = await runAnnunci10xPremiumGeneration({
   context: deletingRevisionContext,
   authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
 });
-assert.equal(deletingRevisionPremium.master.sections.some((section) => section.id === 'section-2'), false, 'REVISE changedSectionIds must be able to delete a section by omitting it from revisedSections');
-assert.equal(deletingRevisionPremium.master.sections.some((section) => section.id === 'section-1'), true, 'unaffected sections must survive a targeted deletion');
+assert.equal(deletingRevisionPremium.master.sections.some((section) => section.id === 'section-responsibilities'), false, 'REVISE changedSectionIds must be able to delete a section by omitting it from revisedSections');
+assert.equal(deletingRevisionPremium.master.sections.some((section) => section.id === 'section-title'), true, 'unaffected sections must survive a targeted deletion');
 assert.equal(deletingRevisionContext.provider.calls.filter((call) => call.operationType === 'VALIDATE').length, 2, 'targeted deletion must still be revalidated');
 assert.equal(deletingRevisionPremium.gate.status, 'READY', 'a successful post-delete validation may return READY');
 

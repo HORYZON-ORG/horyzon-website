@@ -204,8 +204,11 @@ assert.deepEqual(
   });
   assert.equal(result.operations.filter((operation) => operation.type === 'REVISE').length, 2, 'automatic repair is bounded to at most two revisions');
   assert.equal(result.master.annunci10xPremium?.automaticRevisionCount, 2, 'premium payload records both bounded automatic revisions');
-  assert.equal(result.master.sections.some((section) => section.id === 'confirmed-role-responsibilities' && /Pulizia uffici, corridoi e spazi comuni/i.test(section.body)), true, 'canonical responsibilities survive partial revisions');
-  assert.equal(result.master.sections.some((section) => section.id === 'confirmed-role-conditions' && /Bari/i.test(section.body) && /Part-time/i.test(section.body)), true, 'canonical conditions survive partial revisions');
+  assert.match(result.masterText, /Pulizia uffici, corridoi e spazi comuni/i, 'responsibilities survive partial revisions');
+  assert.match(result.masterText, /Bari/i, 'location survives partial revisions');
+  assert.match(result.masterText, /Part-time/i, 'conditions survive partial revisions');
+  assert.equal(result.master.sections.some((section) => section.id.startsWith('confirmed-role-')), false, 'premium output must not rely on canonical RoleCard dump sections');
+  assert.doesNotMatch(result.masterText, /^(Autonomia|Imprevisti e variabilit[aà]|Apprendibili|Vincoli|Benefit|Turni|Reperibilit[aà]):/im, 'premium output must not expose internal RoleCard labels');
   assert.equal(result.gate.status, 'NEEDS_VERIFICATION', 'residual unsupported claim after the two-revision cap prevents READY');
   assert.ok(result.claimCheck.some((claim) => claim.status === 'UNSUPPORTED'));
 }
