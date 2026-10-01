@@ -525,17 +525,15 @@ export function buildResendScoreReportPayload(input: ScoreReportEmailInput & {
   const analysisUrl = annunci10xUrl
     ? `${annunci10xUrl}?analysis=${encodeURIComponent(input.analysisRunId)}#valuta`
     : null;
+  const guideSectionUrl = publicBaseUrl ? `${publicBaseUrl}/annunci-10x#guida-annunci-10x` : null;
+  const guidePreviewUrl = publicBaseUrl ? `${publicBaseUrl}/annunci-10x/annunci-10x-anteprima.pdf` : null;
   const rewriteOffer = getAnnunci10xOffer('ANNUNCI10X_REWRITE');
   const rewritePrice = formatCommercialPrice(rewriteOffer.price);
   const guide = getAnnunci10xCatalogItem('GUIDE');
+  const guidePrice = '49 €';
+  const guideDescription = 'La guida operativa per leggere, correggere e scrivere annunci piu chiari partendo dai fatti confermati del ruolo.';
   const areaTextLines = input.areaScores.flatMap((area) => [
     `- ${area.label}: ${formatAreaScore(area)} (${area.evaluatedCheckCount}/${area.totalCheckCount} controlli valutabili)`,
-  ]);
-  const checkTextLines = input.checks.flatMap((check) => [
-    `${check.checkId}. ${check.label} — ${formatCheckScore(check.score)} — ${check.statusLabel}`,
-    `   Lettura: ${check.reason}`,
-    `   Come migliorare: ${check.improvement}`,
-    '',
   ]);
   const priorityTextLines = input.priorities.length
     ? input.priorities.flatMap((priority, index) => [
@@ -558,9 +556,6 @@ export function buildResendScoreReportPayload(input: ScoreReportEmailInput & {
     'Punteggi per area',
     ...areaTextLines,
     '',
-    'I 20 controlli',
-    '',
-    ...checkTextLines,
     'Le 3 priorità su cui intervenire',
     '',
     ...priorityTextLines,
@@ -571,11 +566,12 @@ export function buildResendScoreReportPayload(input: ScoreReportEmailInput & {
     '1 annuncio · 1 versione · 1 canale',
     `Migliora questo annuncio — ${rewritePrice}`,
     ...(analysisUrl ? [analysisUrl, ''] : ['Riapri Annunci 10X dal sito Horyzon.', '']),
-    guide.displayName,
-    guide.description,
-    'La guida non ha ancora un prezzo pubblicato o acquisto diretto attivo.',
-    'Scopri la Guida Annunci 10X',
-    ...(annunci10xUrl ? [annunci10xUrl, ''] : ['']),
+    `${guide.displayName} — ${guidePrice}`,
+    guideDescription,
+    `Scopri la Guida Annunci 10X — ${guidePrice}`,
+    ...(guideSectionUrl ? [guideSectionUrl] : ['Riapri la sezione Guida Annunci 10X dal sito Horyzon.']),
+    'Anteprima',
+    ...(guidePreviewUrl ? [guidePreviewUrl, ''] : ['']),
     'Horyzon',
     'Annunci 10X',
   ].join('\n');
@@ -584,14 +580,6 @@ export function buildResendScoreReportPayload(input: ScoreReportEmailInput & {
     `<td style="padding:12px 0;border-bottom:1px solid #dce4d3"><strong>${escapeHtml(area.label)}</strong><div style="font-size:13px;color:#5c6a60">${area.evaluatedCheckCount}/${area.totalCheckCount} controlli valutabili</div></td>`,
     `<td align="right" style="padding:12px 0;border-bottom:1px solid #dce4d3;font-weight:700">${escapeHtml(formatAreaScore(area))}</td>`,
     '</tr>',
-  ].join('')).join('');
-  const checksHtml = input.checks.map((check) => [
-    '<article style="padding:14px 0;border-bottom:1px solid #dce4d3">',
-    `<div style="font-size:15px;line-height:1.4"><strong>${escapeHtml(check.checkId)} · ${escapeHtml(check.label)}</strong></div>`,
-    `<div style="margin-top:4px;font-size:14px"><strong>${escapeHtml(formatCheckScore(check.score))}</strong> · ${escapeHtml(check.statusLabel)}</div>`,
-    `<div style="margin-top:8px;font-size:14px;line-height:1.5"><strong>Lettura:</strong> ${escapeHtml(check.reason)}</div>`,
-    `<div style="margin-top:6px;font-size:14px;line-height:1.5"><strong>Come migliorare:</strong> ${escapeHtml(check.improvement)}</div>`,
-    '</article>',
   ].join('')).join('');
   const priorityHtml = input.priorities.map((priority) => [
     '<li style="margin-bottom:14px">',
@@ -608,14 +596,17 @@ export function buildResendScoreReportPayload(input: ScoreReportEmailInput & {
   const rewriteButton = analysisUrl
     ? `<a href="${escapeHtml(analysisUrl)}" style="display:inline-block;background:#c8f531;color:#102229;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:6px">Migliora questo annuncio — ${escapeHtml(rewritePrice)}</a>`
     : `<strong>Migliora questo annuncio — ${escapeHtml(rewritePrice)}</strong>`;
-  const guideButton = annunci10xUrl
-    ? `<a href="${escapeHtml(annunci10xUrl)}" style="color:#102229;font-weight:700">Scopri la Guida Annunci 10X</a>`
-    : '<strong>Scopri la Guida Annunci 10X</strong>';
+  const guideButton = guideSectionUrl
+    ? `<a href="${escapeHtml(guideSectionUrl)}" style="display:inline-block;background:#c8f531;color:#102229;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:6px">Scopri la Guida Annunci 10X — ${escapeHtml(guidePrice)}</a>`
+    : `<strong>Scopri la Guida Annunci 10X — ${escapeHtml(guidePrice)}</strong>`;
+  const guidePreviewButton = guidePreviewUrl
+    ? `<a href="${escapeHtml(guidePreviewUrl)}" style="display:inline-block;color:#102229;font-weight:700;margin-left:12px">Anteprima</a>`
+    : '';
   const html = [
     '<!doctype html>',
     '<html lang="it" dir="ltr">',
     '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Il tuo report Annunci 10X</title></head>',
-    '<body style="margin:0;background:#f4f7ef;padding:24px 12px;font-family:Arial,sans-serif;color:#102229">',
+    '<body style="margin:0;background:#07171d;padding:24px 12px;font-family:Arial,sans-serif;color:#102229">',
     '<div style="display:none;max-height:0;overflow:hidden;opacity:0">Il tuo mini-report Annunci 10X con score, aree e priorità.</div>',
     '<main style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #dce4d3;border-radius:8px;overflow:hidden">',
     '<section style="background:#102229;color:#ffffff;padding:28px 28px 24px">',
@@ -630,10 +621,7 @@ export function buildResendScoreReportPayload(input: ScoreReportEmailInput & {
     `<p style="margin:0 0 22px;line-height:1.55">${escapeHtml(input.interpretation)}</p>`,
     '<h2 style="font-size:18px;margin:0 0 12px">Punteggi per area</h2>',
     `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-bottom:24px">${areaHtml}</table>`,
-    '<h2 style="font-size:18px;margin:0 0 8px">I 20 controlli</h2>',
-    '<p style="margin:0 0 8px;color:#5c6a60;font-size:13px;line-height:1.5">Ogni controllo mostra il voto, la lettura del risultato e un’indicazione operativa.</p>',
-    checksHtml,
-    '<h2 style="font-size:18px;margin:24px 0 12px">Le 3 priorità su cui intervenire</h2>',
+    '<h2 style="font-size:18px;margin:0 0 12px">Le 3 priorità su cui intervenire</h2>',
     prioritySectionHtml,
     coverageLine ? `<p style="margin:18px 0 0;color:#5c6a60">${escapeHtml(coverageLine)}</p>` : '',
     `<p style="margin:22px 0 0;color:#5c6a60;font-size:13px;line-height:1.5">${escapeHtml(disclaimer)}</p>`,
@@ -642,10 +630,9 @@ export function buildResendScoreReportPayload(input: ScoreReportEmailInput & {
     `<h2 style="font-size:18px;margin:0 0 8px">${escapeHtml(rewriteOffer.displayName)} — ${escapeHtml(rewritePrice)}</h2>`,
     '<p style="margin:0 0 16px;line-height:1.5">1 annuncio · 1 versione · 1 canale. Puoi riaprire Annunci 10X e procedere dal flusso esistente.</p>',
     `<p style="margin:0 0 22px">${rewriteButton}</p>`,
-    `<h2 style="font-size:16px;margin:0 0 8px">${escapeHtml(guide.displayName)}</h2>`,
-    `<p style="margin:0 0 8px;line-height:1.5">${escapeHtml(guide.description)}</p>`,
-    '<p style="margin:0 0 10px;color:#5c6a60;font-size:13px">La guida non ha ancora un prezzo pubblicato o acquisto diretto attivo.</p>',
-    `<p style="margin:0">${guideButton}</p>`,
+    `<h2 style="font-size:18px;margin:0 0 8px">${escapeHtml(guide.displayName)} — ${escapeHtml(guidePrice)}</h2>`,
+    `<p style="margin:0 0 16px;line-height:1.5">${escapeHtml(guideDescription)}</p>`,
+    `<p style="margin:0">${guideButton}${guidePreviewButton}</p>`,
     '</section>',
     '<footer style="padding:20px 28px;color:#5c6a60;font-size:13px">Horyzon<br>Annunci 10X</footer>',
     '</main>',
@@ -665,10 +652,6 @@ export function buildResendScoreReportPayload(input: ScoreReportEmailInput & {
 
 function formatAreaScore(area: ScoreReportEmailAreaInput): string {
   return area.score === null ? 'N/D' : `${formatScoreValue(area.score)}/100`;
-}
-
-function formatCheckScore(score: number | null): string {
-  return score === null ? 'N/D' : `${formatScoreValue(score)}/10`;
 }
 
 function formatCommercialPrice(price: { amountCents: number; currency: string }): string {

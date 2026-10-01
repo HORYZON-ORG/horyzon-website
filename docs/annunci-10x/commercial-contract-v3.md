@@ -2,11 +2,11 @@
 
 Status: implemented pre-payment, checkout disabled.
 Owner: Horyzon Consulting Recruiting.
-Public product: Annuncio 10x.
+Public products: Annuncio 10x; Guida Annunci 10x.
 
 ## Public offer
 
-Annuncio 10x is the only public paid product in the funnel.
+Annuncio 10x is the public paid rewrite/create service in the funnel.
 
 Price: 7 EUR.
 Unit: 1 job ad, 1 version, 1 publication channel.
@@ -17,7 +17,12 @@ Two public paths lead to the same product:
 1. Existing ad: free Score di chiarezza first, then Annuncio 10x rewrite.
 2. No ad yet: guided brief first, then Annuncio 10x creation.
 
-The public product copy must not present a separate 49 EUR package in the funnel.
+Guida Annunci 10x is a separate public informational product in the funnel.
+
+Price: 49 EUR.
+Public CTA: Scopri la guida — 49 €.
+Checkout status: not active. No standalone guide checkout is exposed in the public funnel.
+Preview asset: `/annunci-10x/annunci-10x-anteprima.pdf`.
 
 ## Internal capabilities
 
