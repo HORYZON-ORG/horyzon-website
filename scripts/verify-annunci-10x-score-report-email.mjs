@@ -12,6 +12,7 @@ const {
   MockAnnunci10xEmailProvider,
   ResendAnnunci10xEmailProvider,
   buildAnnunci10xScoreReport,
+  buildCustomerFacingCheckV2,
   buildCustomerFacingPriorityV2,
   buildResendScoreReportPayload,
   calculateAnnunci10xScoreReportAreas,
@@ -47,6 +48,7 @@ async function assertReportContent() {
   const lead = await context.persistence.getLead(session.sessionId, session.sessionSecret);
   const report = buildAnnunci10xScoreReport({ lead, analysisRun: run, evaluation, snapshot });
 
+  assert.equal(report.analysisRunId, run.id);
   assert.equal(report.roleTitle, 'Responsabile Customer Success');
   assert.equal(report.score, evaluation.score.value);
   assert.equal(report.band, evaluation.score.band.label);
@@ -67,6 +69,11 @@ async function assertReportContent() {
   assertAreaScore(report.areaScores[4], 80, 4, 4);
   assertAreaScore(report.areaScores[5], 80, 4, 5);
   assert.match(report.interpretation, /annuncio/i);
+  assert.equal(report.checks.length, 20);
+  assert.deepEqual(report.checks.map((item) => item.checkId), ANNUNCI10X_RUBRIC_CHECKS_V2.map((item) => item.id));
+  assert.equal(report.checks.find((item) => item.checkId === '01').score, 2);
+  assert.equal(report.checks.find((item) => item.checkId === '02').statusLabel, 'N/D');
+  assert.match(report.checks.find((item) => item.checkId === '03').improvement, /attività/i);
   assert.deepEqual(report.priorities.map((item) => item.checkId), ['03', '04', '05']);
   assert.deepEqual(report.priorities.map((item) => item.label), [
     'Concretezza delle attività',
@@ -93,9 +100,11 @@ async function assertReportContent() {
   assert.equal(sent.status, 'SENT');
   assert.equal(context.emailProvider.sentScoreReports.length, 1);
   const email = context.emailProvider.sentScoreReports[0];
+  assert.equal(email.analysisRunId, run.id);
   assert.equal(email.evaluableCheckCount, 18);
   assert.equal(email.coverage, 90);
   assert.equal(email.areaScores.length, 6);
+  assert.equal(email.checks.length, 20);
   assert.ok(email.interpretation.length > 20);
 
   const checksWithNdCommunication = checksFixtureV2().map((check) => (
@@ -152,6 +161,7 @@ function assertCustomerFacingPriorityPresentation() {
     interpretation: report.interpretation,
   });
   for (const forbidden of providerFacingFixtureStrings()) {
+    assert.doesNotMatch(JSON.stringify(report.checks), new RegExp(escapeRegExp(forbidden), 'i'));
     assert.doesNotMatch(JSON.stringify(report.priorities), new RegExp(escapeRegExp(forbidden), 'i'));
     assert.doesNotMatch(rendered.text, new RegExp(escapeRegExp(forbidden), 'i'));
     assert.doesNotMatch(rendered.html, new RegExp(escapeRegExp(forbidden), 'i'));
@@ -206,18 +216,25 @@ async function assertResendPayload() {
   assert.match(payload.text, /Punteggi per area/);
   assert.match(payload.text, /Identità del ruolo: 20\/100 \(1\/2 controlli valutabili\)/);
   assert.match(payload.text, /Lavoro reale e risultati: 6\.7\/100 \(3\/3 controlli valutabili\)/);
+  assert.match(payload.text, /I 20 controlli/);
+  assert.match(payload.text, /01\. Riconoscibilità del titolo — 2\/10 — Valutato/);
+  assert.match(payload.text, /02\. Livello, perimetro e responsabilità — N\/D — N\/D/);
+  assert.match(payload.text, /Come migliorare:/);
   assert.match(payload.text, /Le 3 priorità su cui intervenire/);
   assert.match(payload.text, /Il punteggio valuta la chiarezza e la completezza/);
   assert.match(payload.text, /Annuncio 10x — 7 €/);
   assert.match(payload.text, /1 annuncio · 1 versione · 1 canale/);
-  assert.match(payload.text, /Migliora il mio annuncio — 7 €/);
+  assert.match(payload.text, /Migliora questo annuncio — 7 €/);
+  assert.match(payload.text, /annunci-10x\?analysis=analysis-run-123#valuta/);
   assert.match(payload.text, /Guida Annunci 10x/);
   assert.match(payload.text, /Scopri la Guida Annunci 10X/);
   assert.match(payload.text, /La guida non ha ancora un prezzo pubblicato o acquisto diretto attivo\./);
   assert.match(payload.text, /https:\/\/horyzon\.test\/annunci-10x/);
   assert.match(payload.html, /Score Annunci 10X/);
   assert.match(payload.html, /Punteggi per area/);
-  assert.match(payload.html, /Migliora il mio annuncio/);
+  assert.match(payload.html, /I 20 controlli/);
+  assert.match(payload.html, /Come migliorare:/);
+  assert.match(payload.html, /Migliora questo annuncio/);
   assert.match(payload.html, /Scopri la Guida Annunci 10X/);
   for (const forbidden of ['9 €', '49 €', 'checkout', 'Stripe', 'newsletter', 'marketing']) {
     assert.doesNotMatch(payload.text, new RegExp(escapeRegExp(forbidden), 'i'));
@@ -572,6 +589,7 @@ function payloadInputFromPayload(deliveryId) {
     from: 'Horyzon <noreply@example.com>',
     replyTo: 'info@example.com',
     deliveryId,
+    analysisRunId: 'analysis-run-123',
     recipient: 'ada@example.com',
     firstName: 'Ada',
     roleTitle: 'Responsabile Customer Success',
@@ -587,6 +605,7 @@ function payloadInputFromPayload(deliveryId) {
       { id: 'OFFER_CONDITIONS', label: 'Offerta e condizioni', score: 80, evaluatedCheckCount: 4, totalCheckCount: 4 },
       { id: 'COMMUNICATION_APPLICATION', label: 'Comunicazione e candidatura', score: 80, evaluatedCheckCount: 4, totalCheckCount: 5 },
     ],
+    checks: checksFixtureV2().map(buildCustomerFacingCheckV2),
     interpretation: 'La struttura di base c’è, ma alcune informazioni decisive sono ancora troppo generiche o implicite.',
     priorities: [
       { checkId: '03', label: 'Concretezza delle attivita', reason: 'Le attivita sono ancora troppo generiche.', missing: ['Esempi di attivita settimanali'] },

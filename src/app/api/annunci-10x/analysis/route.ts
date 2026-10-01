@@ -31,11 +31,12 @@ export async function POST(request: Request) {
     const payload = await readJsonBody(request);
     const sourceKind = payload.sourceKind === 'PUBLIC_URL' ? 'PUBLIC_URL' : 'PASTED_TEXT';
     const declaredChannel = isPublicationChannel(payload.declaredChannel) ? payload.declaredChannel : undefined;
+    const requestNonce = isAnalysisRequestNonce(payload.requestNonce) ? payload.requestNonce : undefined;
     const source = sourceKind === 'PUBLIC_URL'
       ? { kind: 'PUBLIC_URL' as const, url: typeof payload.url === 'string' ? payload.url : '', declaredChannel }
       : { kind: 'PASTED_TEXT' as const, text: typeof payload.text === 'string' ? payload.text : typeof payload.rawAdText === 'string' ? payload.rawAdText : '', declaredChannel };
 
-    const started = await startAnnunci10xAnalysisRun({ session, source, context });
+    const started = await startAnnunci10xAnalysisRun({ session, source, context, requestNonce });
     if (started.run.status === 'QUEUED' || started.run.status === 'RUNNING') {
       after(async () => {
         await runAnnunci10xAnalysisRun({ analysisRunId: started.run.id, session, context });
@@ -60,4 +61,9 @@ export async function POST(request: Request) {
 
 function isPublicationChannel(value: unknown): value is PublicationChannel {
   return value === 'LINKEDIN' || value === 'INDEED' || value === 'ATS' || value === 'EMAIL' || value === 'CUSTOM';
+}
+
+
+function isAnalysisRequestNonce(value: unknown): value is string {
+  return typeof value === 'string' && /^[A-Za-z0-9_-]{8,96}$/.test(value);
 }

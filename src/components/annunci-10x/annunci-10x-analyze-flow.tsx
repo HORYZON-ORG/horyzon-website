@@ -70,6 +70,7 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
   const [identityResetKey, setIdentityResetKey] = useState(0);
   const resultFetchRef = useRef<string | null>(null);
   const flowCycleRef = useRef(0);
+  const analysisRequestNonceRef = useRef(createAnalysisRequestNonce());
   const textRadioRef = useRef<HTMLButtonElement | null>(null);
   const linkRadioRef = useRef<HTMLButtonElement | null>(null);
   const sourceTextareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -188,7 +189,9 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
       const response = await fetch('/api/annunci-10x/analysis', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(sourceMode === 'PUBLIC_URL' ? { sourceKind: 'PUBLIC_URL', url } : { sourceKind: 'PASTED_TEXT', text }),
+        body: JSON.stringify(sourceMode === 'PUBLIC_URL'
+          ? { sourceKind: 'PUBLIC_URL', url, requestNonce: analysisRequestNonceRef.current }
+          : { sourceKind: 'PASTED_TEXT', text, requestNonce: analysisRequestNonceRef.current }),
       });
       const payload = await response.json();
       if (!response.ok || !payload.ok) throw new Error(payload.error?.message ?? 'Analisi non avviata.');
@@ -225,6 +228,7 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
 
   function analyzeAnother() {
     flowCycleRef.current += 1;
+    analysisRequestNonceRef.current = createAnalysisRequestNonce();
     setSourceMode('PASTED_TEXT');
     setText('');
     setUrl('');
@@ -244,6 +248,7 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
 
   function recoverUrlAsText() {
     flowCycleRef.current += 1;
+    analysisRequestNonceRef.current = createAnalysisRequestNonce();
     setSourceMode('PASTED_TEXT');
     setAnalysisRun(null);
     setContactSaved(false);
@@ -515,4 +520,10 @@ function customerSafeError(cause: unknown, fallback: string): string {
   const message = cause instanceof Error ? cause.message : fallback;
   if (/EMAIL_PROVIDER_UNAVAILABLE|EMAIL_VERIFICATION_UNAVAILABLE|provider email|verifica email/i.test(message)) return 'La verifica email è temporaneamente non disponibile.';
   return message || fallback;
+}
+
+
+function createAnalysisRequestNonce(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  return `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 14)}`;
 }
