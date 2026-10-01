@@ -11,7 +11,7 @@ const invariants = [
 
 export const EXTRACT_PROMPT: Annunci10xPromptDefinition = {
   id: 'annunci10x.extract',
-  version: 'annunci10x.extract.v1',
+  version: 'annunci10x.extract.v2',
   operationType: 'EXTRACT',
   outputSchema: ANNUNCI10X_AI_OUTPUT_SCHEMAS.EXTRACT,
   instructions: renderPrompt('EXTRACT', 'Extract explicit role facts and possible conflicts.', invariants),

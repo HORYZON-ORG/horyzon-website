@@ -215,7 +215,7 @@ export async function answerAnnunci10xCreateStep(input: AnswerCreateStepInput): 
       existingRoleCard: previousSnapshot?.roleCard ?? null,
     },
     inputSnapshotId: previousSnapshot?.id ?? null,
-    promptVersionOverride: `${ANNUNCI10X_PROMPT_PACK_VERSION}.create.${input.stepId.toLowerCase()}`,
+    promptVersionOverride: `${ANNUNCI10X_PROMPT_PACK_VERSION}.create.${input.stepId.toLowerCase()}.extract-paths-v2`,
   });
   operations.push(toPublicOperation(extract, 'EXTRACT', context.configuredProvider));
 

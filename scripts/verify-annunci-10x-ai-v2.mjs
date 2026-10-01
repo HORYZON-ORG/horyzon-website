@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import {
+  ANNUNCI10X_AI_OUTPUT_SCHEMAS,
+  ANNUNCI10X_ALLOWED_ROLE_CARD_PATHS,
   ANNUNCI10X_EVALUATE_OUTPUT_SCHEMA_V2,
   ANNUNCI10X_EVALUATE_PROMPT_VERSION_V2,
   ANNUNCI10X_PROMPT_REGISTRY,
@@ -98,6 +100,22 @@ assert.match(prompt, /choose the lower score/);
 assert.match(prompt, /cannot by itself exceed 4/);
 assert.match(prompt, /Communication usability is substantive quality/);
 assert.match(prompt, /reconstruct the role from separate task, requirement, and condition lists/);
+assert.equal(ANNUNCI10X_PROMPT_REGISTRY.EXTRACT.version, 'annunci10x.extract.v2');
+assert.deepEqual(
+  ANNUNCI10X_AI_OUTPUT_SCHEMAS.EXTRACT.properties.extractedFacts.items.properties.targetPath.enum,
+  ANNUNCI10X_ALLOWED_ROLE_CARD_PATHS,
+  'EXTRACT extractedFacts targetPath must be schema-constrained to canonical RoleCard paths',
+);
+assert.deepEqual(
+  ANNUNCI10X_AI_OUTPUT_SCHEMAS.EXTRACT.properties.possibleConflicts.items.properties.targetPath.enum,
+  ANNUNCI10X_ALLOWED_ROLE_CARD_PATHS,
+  'EXTRACT possibleConflicts targetPath must be schema-constrained to canonical RoleCard paths',
+);
+assert.deepEqual(
+  ANNUNCI10X_AI_OUTPUT_SCHEMAS.CLARIFY.properties.clarification.anyOf[0].properties.targetPath.enum,
+  ANNUNCI10X_ALLOWED_ROLE_CARD_PATHS,
+  'CLARIFY targetPath must use the same canonical path enum',
+);
 assert.equal(ANNUNCI10X_PROMPT_REGISTRY.GENERATE.version, 'annunci10x.generate.v9');
 assert.match(ANNUNCI10X_PROMPT_REGISTRY.GENERATE.instructions, /mentally picture the real work/);
 assert.match(ANNUNCI10X_PROMPT_REGISTRY.GENERATE.instructions, /350-450 words/);

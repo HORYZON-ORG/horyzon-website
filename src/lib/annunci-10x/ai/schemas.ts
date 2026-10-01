@@ -180,14 +180,14 @@ export const ANNUNCI10X_AI_OUTPUT_SCHEMAS = {
   }),
   EXTRACT: objectSchema(['extractedFacts', 'possibleConflicts'], {
     extractedFacts: arraySchema(objectSchema(['targetPath', 'value', 'source', 'confidence'], {
-      targetPath: stringSchema(),
+      targetPath: enumSchema(ANNUNCI10X_ALLOWED_ROLE_CARD_PATHS),
       value: { anyOf: [{ type: 'string' }, { type: 'number' }, { type: 'boolean' }] },
       source: enumSchema(['EXTRACTED', 'USER_DECLARED']),
       confidence: numberSchema(),
       evidence: nullableStringSchema(),
     })),
     possibleConflicts: arraySchema(objectSchema(['targetPath', 'values', 'reason'], {
-      targetPath: stringSchema(),
+      targetPath: enumSchema(ANNUNCI10X_ALLOWED_ROLE_CARD_PATHS),
       values: arraySchema(stringSchema()),
       reason: stringSchema(),
     })),
@@ -197,7 +197,7 @@ export const ANNUNCI10X_AI_OUTPUT_SCHEMAS = {
     clarification: {
       anyOf: [
         objectSchema(['targetPath', 'reason', 'question', 'blocking', 'canAdvance'], {
-          targetPath: stringSchema(),
+          targetPath: enumSchema(ANNUNCI10X_ALLOWED_ROLE_CARD_PATHS),
           reason: stringSchema(),
           question: stringSchema(),
           helpText: nullableStringSchema(),
