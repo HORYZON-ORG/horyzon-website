@@ -216,30 +216,36 @@ async function assertResendPayload() {
   assert.match(payload.text, /Punteggi per area/);
   assert.match(payload.text, /Identità del ruolo: 20\/100 \(1\/2 controlli valutabili\)/);
   assert.match(payload.text, /Lavoro reale e risultati: 6\.7\/100 \(3\/3 controlli valutabili\)/);
-  assert.match(payload.text, /I 20 controlli/);
-  assert.match(payload.text, /01\. Riconoscibilità del titolo — 2\/10 — Valutato/);
-  assert.match(payload.text, /02\. Livello, perimetro e responsabilità — N\/D — N\/D/);
-  assert.match(payload.text, /Come migliorare:/);
+  assert.doesNotMatch(payload.text, /I 20 controlli/);
+  assert.doesNotMatch(payload.text, /01\. Riconoscibilità del titolo — 2\/10 — Valutato/);
+  assert.doesNotMatch(payload.text, /02\. Livello, perimetro e responsabilità — N\/D — N\/D/);
+  assert.doesNotMatch(payload.text, /Come migliorare:/);
   assert.match(payload.text, /Le 3 priorità su cui intervenire/);
   assert.match(payload.text, /Il punteggio valuta la chiarezza e la completezza/);
   assert.match(payload.text, /Annuncio 10x — 7 €/);
   assert.match(payload.text, /1 annuncio · 1 versione · 1 canale/);
   assert.match(payload.text, /Migliora questo annuncio — 7 €/);
   assert.match(payload.text, /annunci-10x\?analysis=analysis-run-123#valuta/);
-  assert.match(payload.text, /Guida Annunci 10x/);
-  assert.match(payload.text, /Scopri la Guida Annunci 10X/);
-  assert.match(payload.text, /La guida non ha ancora un prezzo pubblicato o acquisto diretto attivo\./);
+  assert.match(payload.text, /Guida Annunci 10x — 49 €/);
+  assert.match(payload.text, /Scopri la Guida Annunci 10X — 49 €/);
+  assert.match(payload.text, /Anteprima/);
   assert.match(payload.text, /https:\/\/horyzon\.test\/annunci-10x/);
+  assert.match(payload.text, /https:\/\/horyzon\.test\/annunci-10x#guida-annunci-10x/);
+  assert.match(payload.text, /https:\/\/horyzon\.test\/annunci-10x\/annunci-10x-anteprima\.pdf/);
   assert.match(payload.html, /Score Annunci 10X/);
   assert.match(payload.html, /Punteggi per area/);
-  assert.match(payload.html, /I 20 controlli/);
-  assert.match(payload.html, /Come migliorare:/);
+  assert.doesNotMatch(payload.html, /I 20 controlli/);
+  assert.doesNotMatch(payload.html, /Come migliorare:/);
   assert.match(payload.html, /Migliora questo annuncio/);
-  assert.match(payload.html, /Scopri la Guida Annunci 10X/);
-  for (const forbidden of ['9 €', '49 €', 'checkout', 'Stripe', 'newsletter', 'marketing']) {
+  assert.match(payload.html, /Scopri la Guida Annunci 10X — 49 €/);
+  assert.match(payload.html, /annunci-10x#guida-annunci-10x/);
+  assert.match(payload.html, /annunci-10x\/annunci-10x-anteprima\.pdf/);
+  for (const forbidden of ['checkout', 'Stripe', 'newsletter', 'marketing', 'non ha ancora', 'Disponibile a breve']) {
     assert.doesNotMatch(payload.text, new RegExp(escapeRegExp(forbidden), 'i'));
     assert.doesNotMatch(payload.html, new RegExp(escapeRegExp(forbidden), 'i'));
   }
+  assert.doesNotMatch(payload.text, /(^|[^\d])9 €/i);
+  assert.doesNotMatch(payload.html, /(^|[^\d])9 €/i);
   assertResendPayloadEdgeCases();
 
   const captured = [];

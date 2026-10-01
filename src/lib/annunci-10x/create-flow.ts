@@ -1109,7 +1109,8 @@ function extractAfter(text: string, labels: string[], maxLength = 180): string {
 function hasCompensation(text: string): boolean {
   const value = extractCompensation(text);
   if (isUnknownAnswer(value)) return false;
-  if (/(?:compenso|ral|stipendio|retribuzione)[^\n.]{0,60}(?:non lo so|da definire|n\/d)/i.test(text)) return false;
+  const declaredPolicy = /ccnl|esperienz|funzione|commisurat/i.test(value);
+  if (!declaredPolicy && /(?:compenso|ral|stipendio|retribuzione)[^\n.]{0,60}(?:non lo so|da definire|n\/d)/i.test(text)) return false;
   return /\b(?:ral|stipendio|compenso|retribuzione|euro|eur|ccnl)\b|€/i.test(text);
 }
 

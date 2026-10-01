@@ -873,7 +873,7 @@ async function validateMaster(input: {
     promptVersionOverride: input.phase.startsWith('post-revise') ? `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.post-revise` : undefined,
   });
   input.operations.push(toPublicOperation(result, 'VALIDATE', input.provider));
-  return result.output as Annunci10xValidateOutput;
+  return applyDeterministicOutputValidation(result.output as Annunci10xValidateOutput, input.master, input.snapshot.roleCard);
 }
 
 async function evaluateGeneratedMasterV2(input: {
@@ -1171,28 +1171,9 @@ function normalizeGeneratedMaster(master: GeneratedAd): GeneratedAd {
 
 function prepareMasterForValidation(master: GeneratedAd, roleCard: RoleCard): GeneratedAd {
   const normalized = normalizeGeneratedMaster(master);
-  const title = normalized.sections.find((section) => section.type === 'TITLE');
-  const opening = normalized.sections.find((section) => section.type === 'OPENING');
-  const claimChecks = normalized.sections.filter((section) => section.type === 'CLAIM_CHECK');
-
-  const canonicalSections = [
-    canonicalMissionSection(roleCard),
-    canonicalResponsibilitiesSection(roleCard),
-    canonicalContextSection(roleCard),
-    canonicalRequirementsSection(roleCard),
-    canonicalConditionsSection(roleCard),
-    canonicalGrowthSection(roleCard),
-    canonicalApplicationSection(roleCard),
-  ].filter((section): section is GeneratedAd['sections'][number] => Boolean(section));
-
   return {
     ...normalized,
-    sections: [
-      ...(title ? [title] : []),
-      ...(opening ? [opening] : []),
-      ...canonicalSections,
-      ...claimChecks,
-    ],
+    sections: normalizeCandidateFacingSections(normalized.sections, roleCard),
   };
 }
 
@@ -1215,150 +1196,156 @@ function normalizeChannelVariant(variant: ChannelVariant, roleCard: RoleCard): C
   return { ...normalized, sections: ensured.sections };
 }
 
-function canonicalMissionSection(roleCard: RoleCard): GeneratedAd['sections'][number] | null {
-  const mission = publishableFact(roleCard.mission) ?? roleCard.outcomes.map(publishableFact).find(Boolean) ?? null;
-  if (!mission) return null;
-  return canonicalSection('confirmed-role-mission', 'MISSION', 'Obiettivo del ruolo', mission.value, mission.sourceIds);
+function normalizeCandidateFacingSections(sections: GeneratedAd['sections'], roleCard: RoleCard): GeneratedAd['sections'] {
+  const candidateSections = sections
+    .filter((section) => section.type !== 'CLAIM_CHECK')
+    .map((section) => ({
+      ...section,
+      body: removeNonCandidateFacingLines(section.body),
+    }))
+    .filter((section) => section.type === 'TITLE' || section.body.trim());
+
+  const title = candidateSections.find((section) => section.type === 'TITLE') ?? canonicalTitleSection(roleCard);
+  const rest = candidateSections.filter((section) => section !== title);
+  return title ? [title, ...rest] : rest;
 }
 
-function canonicalResponsibilitiesSection(roleCard: RoleCard): GeneratedAd['sections'][number] | null {
-  const facts = roleCard.responsibilities.map(publishableFact).filter((item): item is CanonicalFact => Boolean(item));
-  if (!facts.length) return null;
-  return canonicalSection(
-    'confirmed-role-responsibilities',
-    'RESPONSIBILITIES',
-    'Cosa farai',
-    facts.map((fact) => fact.value).join('\n'),
-    facts.flatMap((fact) => fact.sourceIds),
-  );
+function canonicalTitleSection(roleCard: RoleCard): GeneratedAd['sections'][number] | null {
+  const title = publishableFact(roleCard.title);
+  return title ? canonicalSection('generated-role-title', 'TITLE', title.value, '', title.sourceIds) : null;
 }
 
-function canonicalContextSection(roleCard: RoleCard): GeneratedAd['sections'][number] | null {
-  const facts = [
-    labeledCanonicalFact('Azienda', roleCard.attractionContext.companyDescription),
-    labeledCanonicalFact('Contesto operativo', roleCard.attractionContext.operatingContext),
-    labeledCanonicalFact('Autonomia', roleCard.attractionContext.autonomy),
-    labeledCanonicalFact('Imprevisti e variabilità', roleCard.attractionContext.unexpectedEvents),
-  ].filter((item): item is CanonicalFact => Boolean(item));
-  if (!facts.length) return null;
-  return canonicalSection(
-    'confirmed-role-reality',
-    'CONTEXT',
-    'Come si lavora davvero',
-    facts.map((fact) => fact.value).join('\n'),
-    facts.flatMap((fact) => fact.sourceIds),
-  );
+function removeNonCandidateFacingLines(body: string): string {
+  return body
+    .split('\n')
+    .filter((line) => !/^\s*(Vincoli|Benefit|Turni|Reperibilit[aà])\s*:\s*(?:Non dichiarat[ioa]|Non disponibile|N\/D|Da definire|Da chiarire|non sono stati dichiarati)/i.test(line))
+    .join('\n')
+    .trim();
 }
 
-function canonicalRequirementsSection(roleCard: RoleCard): GeneratedAd['sections'][number] | null {
-  const labels: Record<RoleCard['requirements'][number]['classification'], string> = {
-    REQUIRED: 'Indispensabili',
-    PREFERRED: 'Preferenziali',
-    TRAINABLE: 'Apprendibili',
-    DISQUALIFYING: 'Vincoli',
+function applyDeterministicOutputValidation(validation: Annunci10xValidateOutput, master: GeneratedAd, roleCard: RoleCard): Annunci10xValidateOutput {
+  const editorialClaims = detectCandidateFacingEditorialIssues(master);
+  const omittedCriticalFacts = detectOmittedCriticalCandidateFacts(master, roleCard);
+  const unsupportedOfferClaims = detectUnsupportedOfferClaims(master, roleCard);
+  if (!editorialClaims.length && !omittedCriticalFacts.length && !unsupportedOfferClaims.length) return validation;
+
+  const nextClaims = [
+    ...validation.claims,
+    ...editorialClaims,
+    ...unsupportedOfferClaims.map((claim, index) => ({
+      id: `deterministic-unsupported-offer-${index + 1}`,
+      kind: 'CLAIM' as const,
+      claim,
+      supported: false,
+      sourcePaths: [],
+      action: 'REMOVE' as const,
+    })),
+  ];
+  const result: Annunci10xValidateOutput['result'] = validation.result === 'BLOCK' ? 'BLOCK' : 'NEEDS_REVISION';
+  return {
+    ...validation,
+    claims: nextClaims,
+    unsupportedClaims: uniqueStrings([...validation.unsupportedClaims, ...unsupportedOfferClaims]),
+    omittedCriticalFacts: uniqueStrings([...validation.omittedCriticalFacts, ...omittedCriticalFacts]),
+    result,
   };
-  const conditionDisqualifierCategories = new Set(
-    roleCard.requirements
-      .filter((requirement) => requirement.classification === 'DISQUALIFYING')
-      .flatMap((requirement) => requirementConditionCategories(String(requirement.label.value ?? ''), roleCard)),
-  );
-  const facts = roleCard.requirements.flatMap((requirement) => {
-    const fact = publishableFact(requirement.label);
-    if (!fact) return [];
-    const items = splitRequirementItems(fact.value).filter((item) => {
-      if (requirement.classification !== 'REQUIRED') return true;
-      const categories = requirementConditionCategories(item, roleCard);
-      return !categories.some((category) => conditionDisqualifierCategories.has(category));
-    });
-    if (!items.length) return [];
-    return [{
-      ...fact,
-      value: `${labels[requirement.classification]}:\n${items.map((item) => `- ${item}`).join('\n')}`,
-    }];
-  });
-  if (!facts.length) return null;
-  return canonicalSection(
-    'confirmed-role-requirements',
-    'REQUIREMENTS',
-    'Requisiti',
-    facts.map((fact) => fact.value).join('\n'),
-    facts.flatMap((fact) => fact.sourceIds),
-  );
 }
 
-type RequirementConditionCategory = 'WORK_MODE' | 'SHIFTS' | 'ON_CALL' | 'SCHEDULE';
-
-function splitRequirementItems(value: string): string[] {
-  return value
-    .split(/[,;]\s*|\s+e\s+(?=disponibilit(?:a|à)\b)/i)
-    .map((item) => item.trim())
-    .filter(Boolean);
+function detectCandidateFacingEditorialIssues(master: GeneratedAd): Annunci10xValidateOutput['claims'] {
+  const findings: Annunci10xValidateOutput['claims'] = [];
+  for (const section of master.sections) {
+    const visible = `${section.title}\n${section.body}`;
+    const structuralLabels = (visible.match(/^\s*(Autonomia|Imprevisti e variabilit[aà]|Apprendibili|Vincoli|Benefit|Turni|Reperibilit[aà])\s*:/gim) ?? []).length;
+    if (structuralLabels > 0) {
+      findings.push(editorialFinding(section.id, 'Il Master espone etichette interne della RoleCard invece di trasformarle in copy candidate-facing.'));
+    }
+    if (/\b(?:Non dichiarat[ioa]|Non disponibile|non sono stati dichiarati|missing fields?|factual preservation|sourceFactIds|RoleCard|rubric|score|confidence|reasoning)\b/i.test(visible)) {
+      findings.push(editorialFinding(section.id, 'Il Master espone placeholder, missing data o termini interni non pubblicabili.'));
+    }
+    if (/\b(?:l['’ ]?annuncio|il testo|la pagina|il portale|dato da chiarire|prima della pubblicazione)\b/i.test(visible)) {
+      findings.push(editorialFinding(section.id, 'Il Master parla del documento sorgente o del processo invece di parlare al candidato.'));
+    }
+  }
+  return dedupeClaims(findings);
 }
 
-function requirementConditionCategories(value: string, roleCard: RoleCard): RequirementConditionCategory[] {
-  const categories: RequirementConditionCategory[] = [];
-  const expressesEligibility = /disponibilit|obblig|vincol|deve\s+poter|richiest|necessar/i.test(value);
-  if (publishableFact(roleCard.attractionContext.workModeDetail) ?? publishableFact(roleCard.attractionContext.workMode)) {
-    if (expressesEligibility && /presenza|in sede|remot|ibrid/i.test(value)) categories.push('WORK_MODE');
-  }
-  if (publishableFact(roleCard.attractionContext.shifts)) {
-    if (expressesEligibility && /turn|seral|weekend|sabato|domenica|notturn/i.test(value)) categories.push('SHIFTS');
-  }
-  if (publishableFact(roleCard.attractionContext.onCall)) {
-    if (/reperibil/i.test(value)) categories.push('ON_CALL');
-  }
-  if (publishableFact(roleCard.attractionContext.schedule)) {
-    if (expressesEligibility && /orario|fascia|ore\b/i.test(value)) categories.push('SCHEDULE');
-  }
-  return categories;
+function editorialFinding(sectionId: string, claim: string): Annunci10xValidateOutput['claims'][number] {
+  return {
+    id: `deterministic-editorial-${stableHash(`${sectionId}:${claim}`).slice(0, 10)}`,
+    kind: 'EDITORIAL',
+    claim,
+    supported: true,
+    sourcePaths: [sectionId],
+    action: 'REMOVE',
+  };
 }
 
-function canonicalConditionsSection(roleCard: RoleCard): GeneratedAd['sections'][number] | null {
-  const workMode = publishableFact(roleCard.attractionContext.workModeDetail) ?? publishableFact(roleCard.attractionContext.workMode);
-  const facts = [
-    labeledCanonicalFact('Sede', roleCard.attractionContext.location),
-    workMode ? { ...workMode, value: `Modalità: ${workMode.value}` } : null,
-    labeledCanonicalFact('Contratto', roleCard.attractionContext.contractType),
-    labeledCanonicalFact('Orario', roleCard.attractionContext.schedule),
-    labeledCanonicalFact('Turni', roleCard.attractionContext.shifts),
-    labeledCanonicalFact('Reperibilità', roleCard.attractionContext.onCall),
-    labeledCanonicalFact('Retribuzione', roleCard.compensation?.amountText),
-  ].filter((item): item is CanonicalFact => Boolean(item));
-  if (!facts.length) return null;
-  return canonicalSection(
-    'confirmed-role-conditions',
-    'CONDITIONS',
-    'Condizioni',
-    facts.map((fact) => fact.value).join('\n'),
-    facts.flatMap((fact) => fact.sourceIds),
-  );
+function detectOmittedCriticalCandidateFacts(master: GeneratedAd, roleCard: RoleCard): string[] {
+  return collectCriticalCandidateFacts(roleCard)
+    .filter((fact) => !isCandidateFactSemanticallyRepresented(master, fact.expected, fact.sourceIds))
+    .map((fact) => fact.label);
 }
 
-function canonicalGrowthSection(roleCard: RoleCard): GeneratedAd['sections'][number] | null {
-  const facts = roleCard.attractionContext.attractivenessEvidence.flatMap((fact) => {
+function collectCriticalCandidateFacts(roleCard: RoleCard): { label: string; expected: string; sourceIds: string[] }[] {
+  const facts: { label: string; expected: string; sourceIds: string[] }[] = [];
+  const add = (label: string, fact: Fact<string> | undefined, prefix = label) => {
     const candidate = publishableFact(fact);
-    if (!candidate) return [];
-    const safe = candidate.value
-      .split(/[\n.]+/)
-      .map((part) => part.trim())
-      .filter((part) => part && !isUnknownCandidateValue(part))
-      .join('. ');
-    return safe ? [{ ...candidate, value: safe }] : [];
+    if (!candidate) return;
+    facts.push({ label, expected: `${prefix}: ${candidate.value}`, sourceIds: candidate.sourceIds });
+  };
+  add('title', roleCard.title, 'Ruolo');
+  add('mission', roleCard.mission, 'Obiettivo');
+  if (!publishableFact(roleCard.mission)) {
+    for (const [index, fact] of roleCard.outcomes.entries()) add(`outcome ${index + 1}`, fact, 'Risultato');
+  }
+  for (const [index, fact] of roleCard.responsibilities.entries()) add(`responsibility ${index + 1}`, fact, 'Attivita');
+  for (const requirement of roleCard.requirements) {
+    if (requirement.classification === 'DISQUALIFYING' && /nessun|non\s+sono|non\s+previst|non\s+dichiar/i.test(String(requirement.label.value ?? ''))) continue;
+    add(`requirement ${requirement.classification.toLowerCase()} ${requirement.id}`, requirement.label, `Requisito ${requirement.classification.toLowerCase()}`);
+  }
+  add('companyDescription', roleCard.attractionContext.companyDescription, 'Azienda');
+  add('operatingContext', roleCard.attractionContext.operatingContext, 'Contesto operativo');
+  add('autonomy', roleCard.attractionContext.autonomy, 'Autonomia');
+  add('unexpectedEvents', roleCard.attractionContext.unexpectedEvents, 'Imprevisti');
+  add('location', roleCard.attractionContext.location, 'Sede');
+  add('workMode', roleCard.attractionContext.workModeDetail ?? roleCard.attractionContext.workMode, 'Modalita');
+  add('contract', roleCard.attractionContext.contractType, 'Contratto');
+  add('schedule', roleCard.attractionContext.schedule, 'Orario');
+  add('shifts', roleCard.attractionContext.shifts, 'Turni');
+  add('onCall', roleCard.attractionContext.onCall, 'Reperibilita');
+  add('compensation', roleCard.compensation?.amountText, 'Retribuzione');
+  for (const [index, fact] of roleCard.attractionContext.attractivenessEvidence.entries()) add(`offer fact ${index + 1}`, fact, 'Offerta');
+  add('applicationInstructions', roleCard.applicationInstructions, 'Candidatura');
+  const seen = new Set<string>();
+  return facts.filter((fact) => {
+    const key = semanticCandidateTokens(fact.expected).join('|');
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
   });
-  if (!facts.length) return null;
-  return canonicalSection(
-    'confirmed-role-growth',
-    'GROWTH',
-    'Cosa offre l’azienda',
-    facts.map((fact) => fact.value).join('\n'),
-    facts.flatMap((fact) => fact.sourceIds),
-  );
 }
 
-function canonicalApplicationSection(roleCard: RoleCard): GeneratedAd['sections'][number] | null {
-  const application = publishableFact(roleCard.applicationInstructions);
-  if (!application) return null;
-  return canonicalSection('confirmed-role-application', 'APPLICATION', 'Come candidarsi', application.value, application.sourceIds);
+function detectUnsupportedOfferClaims(master: GeneratedAd, roleCard: RoleCard): string[] {
+  const text = masterText(master);
+  const known = collectCriticalCandidateFacts(roleCard).map((fact) => fact.expected).join(' ');
+  const offerTerms = ['buoni pasto', 'ticket restaurant', 'welfare', 'bonus', 'assicurazione sanitaria', 'auto aziendale', 'telefono aziendale', 'laptop'];
+  return offerTerms
+    .filter((term) => new RegExp(term, 'i').test(text) && !new RegExp(term, 'i').test(known))
+    .map((term) => `Benefit o dotazione non supportata: ${term}`);
+}
+
+function dedupeClaims(claims: Annunci10xValidateOutput['claims']): Annunci10xValidateOutput['claims'] {
+  const seen = new Set<string>();
+  return claims.filter((claim) => {
+    const key = `${claim.claim}:${claim.sourcePaths.join(',')}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function uniqueStrings(items: readonly string[]): string[] {
+  return [...new Set(items.filter((item) => item.trim().length > 0))];
 }
 
 type CanonicalFact = { value: string; sourceIds: string[] };
@@ -1368,11 +1355,6 @@ function publishableFact(fact: Fact<string> | undefined): CanonicalFact | null {
   const value = String(fact.value ?? '').trim();
   if (!value || isUnknownCandidateValue(value)) return null;
   return { value, sourceIds: fact.sourceId ? [fact.sourceId] : [] };
-}
-
-function labeledCanonicalFact(label: string, fact: Fact<string> | undefined): CanonicalFact | null {
-  const candidate = publishableFact(fact);
-  return candidate ? { ...candidate, value: `${label}: ${candidate.value}` } : null;
 }
 
 function isUnknownCandidateValue(value: string): boolean {

@@ -75,7 +75,7 @@ function makeMockOutput(request: Annunci10xAiProviderRequest, mode: MockAnnunci1
   if (request.operationType === 'STRATEGY') return mockStrategy();
   if (request.operationType === 'GENERATE') return mockGenerate(mode, request.input);
   if (request.operationType === 'VALIDATE') {
-    if (mode === 'unsupported_claim' || /buoni pasto|leader di mercato|50000|50,000/i.test(stringifyInput(request.input))) {
+    if (mode === 'unsupported_claim' || /leader di mercato|50000|50,000/i.test(stringifyInput(request.input))) {
       return {
         claims: [{ id: 'claim-1', kind: 'CLAIM', claim: 'Benefit non confermato', supported: false, sourcePaths: [], action: 'REMOVE' }],
         unsupportedClaims: ['Benefit non confermato'],
@@ -126,14 +126,45 @@ function mockStrategy(): unknown {
 }
 
 function mockGenerate(mode: MockAnnunci10xProviderMode, input: unknown): unknown {
+  const roleCard = readRecordPath(input, ['roleCard']);
+  const title = readStringPath(input, ['roleCard', 'title', 'value']) || 'Addetto pulizie';
   const application = readStringPath(input, ['roleCard', 'applicationInstructions', 'value']);
+  const mission = readStringPath(input, ['roleCard', 'mission', 'value']);
+  const responsibilities = readFactArray(input, ['roleCard', 'responsibilities']);
+  const operatingContext = readStringPath(input, ['roleCard', 'attractionContext', 'operatingContext', 'value']);
+  const autonomy = readStringPath(input, ['roleCard', 'attractionContext', 'autonomy', 'value']);
+  const unexpectedEvents = readStringPath(input, ['roleCard', 'attractionContext', 'unexpectedEvents', 'value']);
+  const companyDescription = readStringPath(input, ['roleCard', 'attractionContext', 'companyDescription', 'value']);
+  const conditions = buildMockConditions(input);
+  const requirements = buildMockRequirements(roleCard);
+  const offer = readFactArray(input, ['roleCard', 'attractionContext', 'attractivenessEvidence']).map(cleanOfferFact).filter(Boolean).join(' ');
   const body = mode === 'unsupported_claim'
-    ? 'Addetto pulizie con buoni pasto e benefit non confermati.'
-    : ['Addetto pulizie per pulizia uffici e spazi comuni.', application ? `Candidatura: ${application}` : ''].filter(Boolean).join('\n');
+    ? `${title} con buoni pasto e benefit non confermati.`
+    : [
+      mission || `${title}: un ruolo operativo basato su attivita concrete e condizioni verificate.`,
+      responsibilities.length ? `Nel ruolo ti occuperai di ${joinSentenceList(responsibilities)}.` : '',
+      [companyDescription, operatingContext, autonomy, unexpectedEvents].filter(Boolean).join(' '),
+      requirements,
+      conditions,
+      offer ? `L'offerta include ${offer}.` : '',
+      application ? `Per candidarti, ${application}.` : '',
+    ].filter(Boolean).join('\n\n');
   const sections = [
-    mockSection('section-1', 'TITLE', 'Titolo', body, ['answer-title']),
-    mockSection('section-2', 'RESPONSIBILITIES', 'Attivita', 'Pulizia uffici, corridoi e spazi comuni.', ['answer-responsibility']),
-    ...(application ? [mockSection('section-3', 'APPLICATION', 'Candidatura', `Candidatura: ${application}`, ['create-application-instructions'])] : []),
+    mockSection('section-title', 'TITLE', title, '', ['create-role-title']),
+    ...(mission ? [mockSection('section-opening', 'OPENING', 'Il ruolo in breve', mission, ['create-mission'])] : []),
+    ...(responsibilities.length ? [mockSection('section-responsibilities', 'RESPONSIBILITIES', 'Cosa farai', `Ti occuperai di ${joinSentenceList(responsibilities)}.`, ['create-responsibilities'])] : []),
+    ...([companyDescription, operatingContext, autonomy, unexpectedEvents].filter(Boolean).length
+      ? [mockSection('section-context', 'CONTEXT', 'Come si lavora', [
+        companyDescription,
+        operatingContext,
+        autonomy ? `Gestirai con autonomia ${autonomy}.` : '',
+        unexpectedEvents ? `Nel lavoro potranno comparire ${unexpectedEvents}.` : '',
+      ].filter(Boolean).join(' '), ['create-company-description', 'create-operating-context', 'create-autonomy', 'create-unexpected-events'])]
+      : []),
+    ...(requirements ? [mockSection('section-requirements', 'REQUIREMENTS', 'Chi cerchiamo', requirements, ['create-requirements'])] : []),
+    ...(conditions ? [mockSection('section-conditions', 'CONDITIONS', 'Condizioni', conditions, ['create-offer'])] : []),
+    ...(offer ? [mockSection('section-offer', 'GROWTH', 'Cosa trovi', `L'offerta include ${offer}.`, ['create-attraction'])] : []),
+    ...(application ? [mockSection('section-application', 'APPLICATION', 'Come candidarsi', `Per candidarti, ${application}.`, ['create-application-instructions'])] : []),
   ];
   return {
     generatedAd: {
@@ -154,14 +185,22 @@ function mockGenerate(mode: MockAnnunci10xProviderMode, input: unknown): unknown
 }
 
 function mockChannelVariant(input: unknown): unknown {
+  const master = readRecordPath(input, ['master']);
+  const masterSections = Array.isArray(master.sections) ? master.sections : [];
   const application = readStringPath(input, ['roleCard', 'applicationInstructions', 'value']);
-  const body = ['Addetto pulizie - versione LinkedIn', application ? `Candidatura: ${application}` : ''].filter(Boolean).join('\n');
+  const title = masterSections.find((section) => typeof section === 'object' && section !== null && (section as Record<string, unknown>).type === 'TITLE') as Record<string, unknown> | undefined;
+  const sections = masterSections.length
+    ? masterSections.map((section, index) => ({ ...(section as Record<string, unknown>), id: `variant-${index + 1}` }))
+    : [mockSection('variant-1', 'TITLE', 'Addetto pulizie - versione LinkedIn', '', ['answer-title'])];
+  if (application && !JSON.stringify(sections).includes(application)) {
+    sections.push(mockSection('variant-application', 'APPLICATION', 'Come candidarsi', `Per candidarti, ${application}.`, ['create-application-instructions']));
+  }
   return {
     channelVariant: {
       id: 'variant-1',
       masterAdId: 'master-1',
       channel: 'LINKEDIN',
-      sections: [mockSection('section-1', 'TITLE', 'Titolo', body, ['answer-title', ...(application ? ['create-application-instructions'] : [])])],
+      sections: title ? sections : [mockSection('variant-title', 'TITLE', 'LinkedIn', '', []), ...sections],
       introducedFactIds: [],
       adaptedFromMaster: true,
     },
@@ -180,6 +219,80 @@ function readEditRequest(input: unknown): string {
     return String((input as Record<string, unknown>).editRequest).toLowerCase();
   }
   return stringifyInput(input);
+}
+
+function readRecordPath(input: unknown, path: string[]): Record<string, unknown> {
+  let current: unknown = input;
+  for (const key of path) {
+    if (typeof current !== 'object' || current === null) return {};
+    current = (current as Record<string, unknown>)[key];
+  }
+  return typeof current === 'object' && current !== null ? current as Record<string, unknown> : {};
+}
+
+function readFactArray(input: unknown, path: string[]): string[] {
+  let current: unknown = input;
+  for (const key of path) {
+    if (typeof current !== 'object' || current === null) return [];
+    current = (current as Record<string, unknown>)[key];
+  }
+  if (!Array.isArray(current)) return [];
+  return current
+    .map((item) => typeof item === 'object' && item !== null ? String((item as Record<string, unknown>).value ?? '').trim() : '')
+    .filter(Boolean);
+}
+
+function buildMockRequirements(roleCard: Record<string, unknown>): string {
+  const requirements = Array.isArray(roleCard.requirements) ? roleCard.requirements : [];
+  const byClassification = new Map<string, string[]>();
+  for (const requirement of requirements) {
+    if (typeof requirement !== 'object' || requirement === null) continue;
+    const record = requirement as Record<string, unknown>;
+    const label = typeof record.label === 'object' && record.label !== null ? String((record.label as Record<string, unknown>).value ?? '').trim() : '';
+    const classification = String(record.classification ?? '');
+    if (!label || /^nessun/i.test(label)) continue;
+    byClassification.set(classification, [...(byClassification.get(classification) ?? []), label]);
+  }
+  const required = byClassification.get('REQUIRED') ?? [];
+  const preferred = byClassification.get('PREFERRED') ?? [];
+  const trainable = byClassification.get('TRAINABLE') ?? [];
+  return [
+    required.length ? `Sono indispensabili ${joinSentenceList(required)}.` : '',
+    preferred.length ? `Sono elementi preferenziali ${joinSentenceList(preferred)}.` : '',
+    trainable.length ? `${joinSentenceList(trainable)} potra essere appreso con affiancamento e pratica.` : '',
+  ].filter(Boolean).join(' ');
+}
+
+function buildMockConditions(input: unknown): string {
+  const location = readStringPath(input, ['roleCard', 'attractionContext', 'location', 'value']);
+  const workMode = readStringPath(input, ['roleCard', 'attractionContext', 'workModeDetail', 'value']) || readStringPath(input, ['roleCard', 'attractionContext', 'workMode', 'value']);
+  const contract = readStringPath(input, ['roleCard', 'attractionContext', 'contractType', 'value']);
+  const schedule = readStringPath(input, ['roleCard', 'attractionContext', 'schedule', 'value']);
+  const shifts = readStringPath(input, ['roleCard', 'attractionContext', 'shifts', 'value']);
+  const onCall = readStringPath(input, ['roleCard', 'attractionContext', 'onCall', 'value']);
+  const compensation = readStringPath(input, ['roleCard', 'compensation', 'amountText', 'value']);
+  return [
+    location ? `La sede e ${location}.` : '',
+    workMode ? `La modalita di lavoro e ${workMode}.` : '',
+    contract ? `Il contratto previsto e ${contract}.` : '',
+    schedule ? `L'orario e ${schedule}.` : '',
+    shifts || onCall ? `Sono condizioni gia chiarite: ${[shifts ? `turni ${shifts}` : '', onCall ? `reperibilita ${onCall}` : ''].filter(Boolean).join(' e ')}.` : '',
+    compensation ? `La retribuzione prevista e ${compensation}.` : '',
+  ].filter(Boolean).join(' ');
+}
+
+function joinSentenceList(items: string[]): string {
+  if (items.length <= 1) return items[0] ?? '';
+  return `${items.slice(0, -1).join(', ')} e ${items.at(-1)}`;
+}
+
+function cleanOfferFact(value: string): string {
+  return value
+    .replace(/\bBenefit\s*:\s*/gi, '')
+    .replace(/\bFormazione\/crescita\s*:\s*/gi, '')
+    .replace(/\bFormazione e crescita concreta\s*:\s*/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function mockSection(id: string, type: string, title: string, body: string, sourceFactIds: string[]): unknown {

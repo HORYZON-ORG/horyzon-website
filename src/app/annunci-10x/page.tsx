@@ -36,6 +36,7 @@ export const metadata: Metadata = {
 // The copy states only what the product does; the score itself is never shown or invented here.
 const scoreDisclaimer = 'Il punteggio valuta la chiarezza e la completezza delle informazioni disponibili nell’annuncio. Non prevede il numero di candidature né sostituisce la valutazione delle persone.';
 const guaranteeCopy = '7 € per un annuncio, una versione e un canale. Dopo la conferma del pagamento generiamo il testo completo e te lo rendiamo disponibile. Se non ti è utile, puoi chiedere il rimborso integrale entro 14 giorni dalla consegna, senza motivazione, scrivendo a info@horyzon.it dall’email usata per l’acquisto.';
+const guidePreviewPath = '/annunci-10x/annunci-10x-anteprima.pdf';
 
 const outputs = [
   ['Score', 'Score di chiarezza', 'Un valore su 100, calcolato sui 20 controlli valutabili.'],
@@ -113,6 +114,28 @@ export default function Annunci10xPage() {
           <p>Parti dal risultato dello Score o, se il testo non esiste ancora, da un brief guidato sui fatti del ruolo. Generiamo il testo completo dopo il pagamento, senza aggiungere fatti che non hai confermato.</p>
           <CreateCta className="rd-cta" position="price">Non ho ancora un annuncio: crealo a 7 €<span aria-hidden="true">↑</span></CreateCta>
           <p className="ax-guarantee">{guaranteeCopy}</p>
+        </div>
+      </section>
+
+      <section id="guida-annunci-10x" className="ax-price ax-guide" aria-labelledby="ax-guide-title">
+        <div className="ax-price-figure ax-guide-figure">
+          <p className="rd-label">Guida Annunci 10x</p>
+          <strong>49 €</strong>
+          <ul><li>Metodo</li><li>Esempi</li><li>Checklist</li></ul>
+        </div>
+        <div className="ax-price-copy ax-guide-copy">
+          <h2 id="ax-guide-title">Vuoi farlo in autonomia? <em>Ti diamo il metodo.</em></h2>
+          <p>Una guida operativa per leggere, correggere e scrivere annunci più chiari senza inventare condizioni, requisiti o promesse. Parti dai fatti del ruolo e trasformali in un testo che un candidato possa capire davvero.</p>
+          <ul className="ax-guide-list" aria-label="Cosa include la Guida Annunci 10x">
+            <li>Il metodo dei 20 controlli spiegato in modo pratico.</li>
+            <li>Esempi per distinguere attività, requisiti, condizioni e candidatura.</li>
+            <li>Una traccia per riscrivere gli annunci mantenendo solo fatti confermati.</li>
+          </ul>
+          <div className="ax-guide-actions">
+            <a className="rd-cta" href="#guida-annunci-10x" data-analytics-event="annunci10x_guide_cta_click" data-cta-position="guide">Scopri la guida — 49 €<span aria-hidden="true">↑</span></a>
+            <a className="rd-link ax-guide-preview" href={guidePreviewPath} target="_blank" rel="noreferrer">Anteprima</a>
+          </div>
+          <p className="ax-guide-note">Acquisto online non ancora attivo. L’anteprima ufficiale è disponibile ora.</p>
         </div>
       </section>
 
