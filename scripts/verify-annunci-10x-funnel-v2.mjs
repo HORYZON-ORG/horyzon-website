@@ -96,11 +96,17 @@ assert.match(flow, /ref=\{workspaceRef\} className=\{styles\.analysisWorkspace\}
 assert.match(flow, /const flowCycleRef = useRef\(0\)/, 'analyze flow must guard stale async responses with a local cycle token');
 assert.match(flow, /if \(cycle !== flowCycleRef\.current\) return;[\s\S]*setResult\(payload\.result\)/, 'stale result responses must not repopulate a reset analyze flow');
 assert.match(flow, /setCommercial\(null\);[\s\S]*setCommercialStatus\(null\);[\s\S]*setIdentityResetKey/, 'new analyze cycles must clear stale commercial and identity state');
+assert.match(flow, /const nextRun = normalizeRun\(payload\.run\);[\s\S]*setAnalysisRun\(nextRun\);[\s\S]*setContactSaved\(Boolean\(nextRun\.contactSaved\)\);[\s\S]*setEmailVerified\(Boolean\(nextRun\.emailVerified\)\);/, 'new analysis runs must derive identity state from the normalized server run');
 assert.match(flow, /function analyzeAnother\(\)[\s\S]*flowCycleRef\.current \+= 1[\s\S]*setText\(''\)[\s\S]*setUrl\(''\)[\s\S]*setCommercial\(null\)/, 'Analyze another must fully reset source, result and offer state');
 assert.match(flow, /function recoverUrlAsText\(\)[\s\S]*setSourceMode\('PASTED_TEXT'\)[\s\S]*setAnalysisRun\(null\)[\s\S]*focusSourceTextarea\(\)/, 'URL fetch failure must reopen the pasted-text form and focus the textarea');
 assert.match(flow, /ref=\{sourceTextareaRef\}/, 'pasted-text textarea must be focusable after URL fetch recovery');
 assert.match(flow, /const canShowContact = Boolean\(analysisRun\?\.id && !sourceFailed\)/, 'URL fetch failures must not continue into the contact/OTP step');
 assert.match(flow, /onKeyDown=\{handleSourceToggleKeyDown\}/, 'source radiogroup must support keyboard arrow selection');
+assert.match(flow, /const textRadioRef = useRef<HTMLButtonElement \| null>\(null\);[\s\S]*const linkRadioRef = useRef<HTMLButtonElement \| null>\(null\);/, 'source radiogroup must keep refs for roving focus');
+assert.match(flow, /tabIndex=\{sourceMode === 'PASTED_TEXT' \? 0 : -1\}/, 'pasted-text radio must be the only tabbable item when checked');
+assert.match(flow, /tabIndex=\{sourceMode === 'PUBLIC_URL' \? 0 : -1\}/, 'public-url radio must be the only tabbable item when checked');
+assert.match(flow, /ArrowLeft[\s\S]*ArrowUp[\s\S]*Home[\s\S]*selectSourceMode\('PASTED_TEXT', \{ focusRadio: true, focusTextarea: false \}\)/, 'left/up/home must select and focus the pasted-text radio without focusing the textarea');
+assert.match(flow, /ArrowRight[\s\S]*ArrowDown[\s\S]*End[\s\S]*selectSourceMode\('PUBLIC_URL', \{ focusRadio: true, focusTextarea: false \}\)/, 'right/down/end must select and focus the public-url radio without focusing the textarea');
 assert.equal(flow.includes('resultRef.current.scrollIntoView'), false, 'post-analysis result must not force page scroll or stretch the hero');
 assert.equal(flow.includes('workspaceRef.current?.scrollTo'), false, 'post-analysis card must not rely on internal scroll reset');
 assert.match(page, /import '@\/styles\/horyzon-landing\.css';/, 'landing must use the shared landing kit');

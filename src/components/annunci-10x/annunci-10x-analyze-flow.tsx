@@ -70,6 +70,8 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
   const [identityResetKey, setIdentityResetKey] = useState(0);
   const resultFetchRef = useRef<string | null>(null);
   const flowCycleRef = useRef(0);
+  const textRadioRef = useRef<HTMLButtonElement | null>(null);
+  const linkRadioRef = useRef<HTMLButtonElement | null>(null);
   const sourceTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const resultRef = useRef<HTMLDivElement | null>(null);
   const workspaceRef = useRef<HTMLDivElement | null>(null);
@@ -191,7 +193,10 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
       const payload = await response.json();
       if (!response.ok || !payload.ok) throw new Error(payload.error?.message ?? 'Analisi non avviata.');
       if (cycle !== flowCycleRef.current) return;
-      setAnalysisRun(normalizeRun(payload.run));
+      const nextRun = normalizeRun(payload.run);
+      setAnalysisRun(nextRun);
+      setContactSaved(Boolean(nextRun.contactSaved));
+      setEmailVerified(Boolean(nextRun.emailVerified));
     } catch (cause) {
       if (cycle !== flowCycleRef.current) return;
       setError(customerSafeError(cause, 'Analisi non avviata.'));
@@ -258,19 +263,30 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
     window.requestAnimationFrame(() => sourceTextareaRef.current?.focus());
   }
 
-  function selectSourceMode(nextMode: SourceMode) {
+  function focusSourceRadio(nextMode: SourceMode) {
+    window.requestAnimationFrame(() => {
+      if (nextMode === 'PASTED_TEXT') textRadioRef.current?.focus();
+      if (nextMode === 'PUBLIC_URL') linkRadioRef.current?.focus();
+    });
+  }
+
+  function selectSourceMode(nextMode: SourceMode, options: { focusRadio?: boolean; focusTextarea?: boolean } = {}) {
     setSourceMode(nextMode);
-    if (nextMode === 'PASTED_TEXT') focusSourceTextarea();
+    if (options.focusRadio) {
+      focusSourceRadio(nextMode);
+      return;
+    }
+    if (nextMode === 'PASTED_TEXT' && options.focusTextarea !== false) focusSourceTextarea();
   }
 
   function handleSourceToggleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key === 'ArrowLeft' || event.key === 'ArrowUp' || event.key === 'Home') {
       event.preventDefault();
-      selectSourceMode('PASTED_TEXT');
+      selectSourceMode('PASTED_TEXT', { focusRadio: true, focusTextarea: false });
     }
     if (event.key === 'ArrowRight' || event.key === 'ArrowDown' || event.key === 'End') {
       event.preventDefault();
-      selectSourceMode('PUBLIC_URL');
+      selectSourceMode('PUBLIC_URL', { focusRadio: true, focusTextarea: false });
     }
   }
   const showProgress = Boolean(!result && (busy === 'source' || (analysisRun && analysisProgress)));
@@ -294,8 +310,8 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
         <button type="button" className={styles.flowLink} onClick={analyzeAnother}>Analizza un altro annuncio</button>
       </div> : <>
       <div className={styles.sourceToggle} role="radiogroup" aria-label="Sorgente annuncio" onKeyDown={handleSourceToggleKeyDown}>
-        <button type="button" role="radio" aria-checked={sourceMode === 'PASTED_TEXT'} data-active={sourceMode === 'PASTED_TEXT'} onClick={() => selectSourceMode('PASTED_TEXT')} disabled={busy === 'source'}>Testo</button>
-        <button type="button" role="radio" aria-checked={sourceMode === 'PUBLIC_URL'} data-active={sourceMode === 'PUBLIC_URL'} onClick={() => selectSourceMode('PUBLIC_URL')} disabled={busy === 'source'}>Link</button>
+        <button ref={textRadioRef} type="button" role="radio" aria-checked={sourceMode === 'PASTED_TEXT'} tabIndex={sourceMode === 'PASTED_TEXT' ? 0 : -1} data-active={sourceMode === 'PASTED_TEXT'} onClick={() => selectSourceMode('PASTED_TEXT')} disabled={busy === 'source'}>Testo</button>
+        <button ref={linkRadioRef} type="button" role="radio" aria-checked={sourceMode === 'PUBLIC_URL'} tabIndex={sourceMode === 'PUBLIC_URL' ? 0 : -1} data-active={sourceMode === 'PUBLIC_URL'} onClick={() => selectSourceMode('PUBLIC_URL')} disabled={busy === 'source'}>Link</button>
       </div>
       {sourceMode === 'PASTED_TEXT'
         ? <Field label="Testo annuncio" htmlFor="annunci10x-source-text" required>
