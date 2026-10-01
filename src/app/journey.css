@@ -118,4 +118,8 @@
 .wellbeing-paths a{min-height:210px;align-items:flex-start;border-bottom:1px solid #b3c0c148;padding:25px 0}
 .wellbeing-paths h3{font-size:clamp(27px,2.6vw,42px);max-width:13ch}.wellbeing-paths p{max-width:26ch;font-size:15px}
 .chapter-method .journey-method{grid-template-columns:repeat(3,minmax(0,1fr));max-width:680px}
+.chapter-method{justify-content:center;text-align:center}
+.chapter-method .chapter-copy{width:min(820px,86vw)}
+.chapter-method .chapter-label,.chapter-method .journey-actions{justify-content:center}
+.chapter-method .chapter-intro,.chapter-method .journey-method{margin-inline:auto}
 @media(max-width:850px){.chapter-current,.chapter-method,.chapter-dimensions,.chapter-arrival{min-height:100svh}.wellbeing-paths{grid-template-columns:1fr;gap:0;margin-top:32px}.wellbeing-paths a{min-height:0;padding:24px 0}.chapter-method .journey-method{grid-template-columns:1fr}}
