@@ -1297,17 +1297,18 @@ function splitRequirementItems(value: string): string[] {
 
 function requirementConditionCategories(value: string, roleCard: RoleCard): RequirementConditionCategory[] {
   const categories: RequirementConditionCategory[] = [];
+  const expressesEligibility = /disponibilit|obblig|vincol|deve\s+poter|richiest|necessar/i.test(value);
   if (publishableFact(roleCard.attractionContext.workModeDetail) ?? publishableFact(roleCard.attractionContext.workMode)) {
-    if (/disponibilit|obblig|vincol/i.test(value) && /presenza|in sede|remot|ibrid/i.test(value)) categories.push('WORK_MODE');
+    if (expressesEligibility && /presenza|in sede|remot|ibrid/i.test(value)) categories.push('WORK_MODE');
   }
   if (publishableFact(roleCard.attractionContext.shifts)) {
-    if (/disponibilit|obblig|vincol/i.test(value) && /turn|seral|weekend|sabato|domenica|notturn/i.test(value)) categories.push('SHIFTS');
+    if (expressesEligibility && /turn|seral|weekend|sabato|domenica|notturn/i.test(value)) categories.push('SHIFTS');
   }
   if (publishableFact(roleCard.attractionContext.onCall)) {
     if (/reperibil/i.test(value)) categories.push('ON_CALL');
   }
   if (publishableFact(roleCard.attractionContext.schedule)) {
-    if (/disponibilit|obblig|vincol/i.test(value) && /orario|fascia|ore\b/i.test(value)) categories.push('SCHEDULE');
+    if (expressesEligibility && /orario|fascia|ore\b/i.test(value)) categories.push('SCHEDULE');
   }
   return categories;
 }
