@@ -189,8 +189,8 @@ function contractConflict(canonical: string, alternative: string): boolean {
 }
 
 function scheduleConflict(canonical: string, alternative: string): boolean {
-  const left = canonical.match(/\b\d{1,2}(?::\d{2})\b/g) ?? [];
-  const right = alternative.match(/\b\d{1,2}(?::\d{2})\b/g) ?? [];
+  const left: string[] = canonical.match(/\b\d{1,2}(?::\d{2})\b/g) ?? [];
+  const right: string[] = alternative.match(/\b\d{1,2}(?::\d{2})\b/g) ?? [];
   return left.length >= 2 && right.length >= 2 && right.some((value) => !left.includes(value));
 }
 
