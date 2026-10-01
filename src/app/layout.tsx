@@ -10,10 +10,11 @@ import "./editorial.css";
 import "./narrative.css";
 import "./ai-score.css";
 import "./brand-logo.css";
-import "./faq.css";
 import "./atlas.css";
 import "./hyc-splash.css";
 import "./home-motion.css";
+import "@/styles/horyzon-kit.css";
+import "@/styles/site-shell.css";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-sans" });
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", weight: ["400", "500"] });
