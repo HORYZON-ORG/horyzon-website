@@ -951,6 +951,47 @@ for (const compensation of compensationVariants) {
   }
 }
 
+async function createStateWithCompensation(compensation) {
+  const context = makeContext();
+  const started = await startAnnunci10xCreate({ context });
+  let state = started.result;
+  const answers = preservationAnswers.map(([stepId, answer]) => stepId === 'OFFER'
+    ? [stepId, `Sede: Milano. Modalita: Ibrido: 3 giorni in sede e 2 da remoto. Contratto: Tempo indeterminato. Orario: Full-time. Compenso: ${compensation}.`]
+    : [stepId, answer]);
+  for (const [stepId, answer] of answers) {
+    state = await answerAnnunci10xCreateStep({
+      sessionId: started.cookie.sessionId,
+      sessionSecret: started.cookie.sessionSecret,
+      stepId,
+      answer,
+      context,
+    });
+  }
+  return state;
+}
+
+const ccnlExperienceState = await createStateWithCompensation("Retribuzione da definire in base all'esperienza e nel rispetto del CCNL applicato");
+assert.match(ccnlExperienceState.roleCard.compensation, /esperienza/i, 'experience-based compensation policy must survive CREATE parsing');
+assert.match(ccnlExperienceState.roleCard.compensation, /CCNL applicato/i, 'generic applied CCNL compensation policy must survive CREATE parsing');
+assert.doesNotMatch(ccnlExperienceState.roleCard.compensation, /RAL\s*\d|livello|minimo tabellare/i, 'generic CCNL compensation must not invent RAL, level, or tabular minimum');
+
+const ccnlOutputWithoutCcnl = "Retribuzione da definire in base all'esperienza";
+assert.equal(/ccnl/i.test(ccnlOutputWithoutCcnl), false, 'input requiring applied CCNL must fail if candidate-facing output drops every CCNL reference');
+
+const ralOnlyState = await createStateWithCompensation("RAL 32.000-40.000 € in funzione dell'esperienza");
+assert.match(ralOnlyState.roleCard.compensation, /32\.000-40\.000/i, 'RAL range must survive CREATE parsing');
+assert.match(ralOnlyState.roleCard.compensation, /esperienza/i, 'experience dependency must survive CREATE parsing');
+assert.doesNotMatch(ralOnlyState.roleCard.compensation, /CCNL/i, 'CCNL must not be introduced when absent from input');
+
+const genericCcnlState = await createStateWithCompensation('Retribuzione secondo CCNL applicato');
+assert.match(genericCcnlState.roleCard.compensation, /CCNL applicato/i, 'generic applied CCNL compensation must survive CREATE parsing');
+assert.doesNotMatch(genericCcnlState.roleCard.compensation, /Commercio|4°|livello 4|minimo tabellare/i, 'generic applied CCNL must not invent contract name, level, or tabular minimum');
+
+const inventedCcnlSpecifics = 'Retribuzione secondo CCNL Commercio, livello 4, minimo tabellare';
+assert.match(inventedCcnlSpecifics, /CCNL Commercio/i, 'invented CCNL contract name is a material unsupported detail when input only said applied CCNL');
+assert.match(inventedCcnlSpecifics, /livello 4/i, 'invented CCNL level is a material unsupported detail when input only said applied CCNL');
+assert.match(inventedCcnlSpecifics, /minimo tabellare/i, 'invented tabular minimum is a material unsupported detail when input only said applied CCNL');
+
 const locationContext = makeContext();
 const startedLocationCreate = await startAnnunci10xCreate({ context: locationContext });
 let locationState = startedLocationCreate.result;
