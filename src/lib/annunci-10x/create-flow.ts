@@ -502,7 +502,7 @@ function buildCreateRoleCard(answers: PersistedAnswer[]): RoleCard {
   const clarificationWorkMode = answerForQuestion(answers, 'create.clarify.attractionContext.workMode');
   const workModeSource = clarificationWorkMode || offer;
   const title = clean(extractAfter(role, ['ruolo', 'figura', 'cerco', 'cerchiamo'])) || clean(role.split(/[.\n]/)[0]) || 'Ruolo da chiarire';
-  const mission = clean(extractAfter(contribution, ['risultato principale', 'missione', 'obiettivo', 'contributo'])) || clean(contribution.split(/[.\n]/)[0]) || 'N/D - contributo da chiarire';
+  const mission = clean(extractAfter(contribution, ['risultato principale', 'missione', 'obiettivo', 'contributo'], 2_000)) || clean(contribution.split(/[.\n]/)[0]) || 'N/D - contributo da chiarire';
   const responsibility = clean(extractWorkRealityField(work, workRealityFieldLabels.activities))
     || clean(extractAfter(work, ['attivita reali', 'attività reali', 'attivita', 'attività'], 2_000))
     || clean(work.split(/[.\n]/)[0])
@@ -768,9 +768,9 @@ const requirementLabelMap: { classification: RequirementClassification; labels: 
 
 const workRealityFieldLabels = {
   activities: ['attivita reali', 'attività reali', 'attivita', 'attività'],
-  operatingContext: ['contesto operativo'],
+  operatingContext: ['contesto operativo e interlocutori', 'contesto operativo'],
   autonomy: ['autonomia'],
-  unexpectedEvents: ['imprevisti', 'variabilita operativa', 'variabilità operativa'],
+  unexpectedEvents: ['imprevisti o problemi da gestire', 'imprevisti', 'variabilita operativa', 'variabilità operativa'],
 } as const;
 
 const offerFieldLabels = {

@@ -596,7 +596,7 @@ const startedWaiterConflict = await startAnnunci10xCreate({ context: waiterConfl
 const waiterConflictAnswers = [
   ['ROLE_CONTEXT', 'Ruolo: Cameriere di sala. Azienda o contesto: ristorante indipendente a Bari. Vecchia indicazione non aggiornata: Turni: Non previsti.'],
   ['PRIMARY_CONTRIBUTION', 'Risultato principale: gestire il proprio rango garantendo un servizio ordinato e puntuale.'],
-  ['WORK_REALITY', 'Attivita reali: accoglienza, comande, servizio al tavolo e chiusura del tavolo. Contesto operativo: sala ristorante con cucina e responsabile di sala. Autonomia: gestisce il rango e coinvolge il responsabile sui casi non standard. Imprevisti: picchi di affluenza e variazioni nelle richieste dei clienti.'],
+  ['WORK_REALITY', 'Attivita reali: accoglienza, comande, servizio al tavolo e chiusura del tavolo. Contesto operativo e interlocutori: sala ristorante con cucina e responsabile di sala, uso palmare/POS per le comande. Autonomia: gestisce il rango e coinvolge il responsabile sui casi non standard. Imprevisti o problemi da gestire: picchi di affluenza e variazioni nelle richieste dei clienti.'],
   ['REQUIREMENTS', 'Indispensabili: esperienza di sala. Preferenziali: conoscenza inglese. Apprendibili: menu e procedure interne.'],
   ['ATTRACTION', 'Benefit: pasto durante il turno. Formazione e crescita concreta: affiancamento iniziale. Vecchia candidatura: cv-old@azienda-test.it.'],
   ['OFFER', 'Sede: Bari. Modalita: In sede. Contratto: Tempo determinato. Orario: Full-time. Turni: pranzo e cena secondo programmazione; weekend inclusi. Reperibilita: Non prevista. Compenso: RAL 24.000-27.000 EUR.'],
@@ -616,6 +616,10 @@ assert.equal(waiterConflictState.conflicts.some((item) => item.targetPath === 'a
 assert.equal(waiterConflictState.conflicts.some((item) => item.targetPath === 'applicationInstructions' && /cv-old@azienda-test\.it/i.test(item.conflictingValue)), true, 'shadow application conflict must be surfaced');
 assert.equal(/Turni:\s*Non previsti/i.test(waiterConflictState.roleCard.companyDescription), false, 'shadow shifts must not contaminate company description');
 assert.equal(/cv-old@azienda-test\.it/i.test(waiterConflictState.roleCard.attractionEvidence.join(' ')), false, 'shadow application destination must not contaminate attraction evidence');
+assert.match(waiterConflictState.roleCard.operatingContext, /sala ristorante con cucina e responsabile di sala/i, 'serialized operating context label must parse into its dedicated RoleCard field');
+assert.match(waiterConflictState.roleCard.autonomy, /gestisce il rango/i, 'serialized autonomy must remain dedicated');
+assert.match(waiterConflictState.roleCard.unexpectedEvents, /picchi di affluenza/i, 'serialized incident label must parse into unexpected events');
+assert.equal(/Contesto operativo e interlocutori:/i.test(waiterConflictState.roleCard.responsibilities.join(' ')), false, 'operating context must not leak into responsibilities');
 
 const unknownCreateContext = makeContext();
 const startedUnknownCreate = await startAnnunci10xCreate({ context: unknownCreateContext });
@@ -726,8 +730,8 @@ const adminConflictContext = makeContext();
 const startedAdminConflict = await startAnnunci10xCreate({ context: adminConflictContext });
 const adminConflictAnswers = [
   ['ROLE_CONTEXT', 'Ruolo: Impiegato amministrativo-contabile. Azienda o contesto: PMI B2B di circa 35 persone. Vecchio dato contrattuale: Contratto: Tempo determinato 6 mesi.'],
-  ['PRIMARY_CONTRIBUTION', 'Risultato principale: mantenere contabilita e scadenze amministrative ordinate e aggiornate.'],
-  ['WORK_REALITY', 'Attivita reali: registrazioni contabili, riconciliazioni, scadenze e supporto alle chiusure. Contesto operativo: ufficio amministrativo con ERP, Excel e home banking. Autonomia: organizza le attivita ordinarie e coinvolge il responsabile sui casi non standard. Imprevisti: documenti incompleti, incassi mancanti e richieste urgenti. Informazioni da una precedente versione: Modalita: Ibrido.'],
+  ['PRIMARY_CONTRIBUTION', 'Risultato principale: Mantenere aggiornati e corretti i principali flussi amministrativi e contabili, assicurando che documenti, registrazioni e scadenze siano gestiti in tempo e che le informazioni necessarie arrivino complete e coerenti alle chiusure periodiche.'],
+  ['WORK_REALITY', 'Attivita reali: registrazioni contabili, riconciliazioni, scadenze e supporto alle chiusure. Contesto operativo e interlocutori: ufficio amministrativo con altre 2 persone; coordinamento con responsabile amministrativo, commerciale, acquisti e magazzino; uso di ERP, home banking, Excel e posta elettronica. Autonomia: organizza le attivita ordinarie e coinvolge il responsabile sui casi non standard. Imprevisti o problemi da gestire: documenti incompleti, incassi mancanti e richieste urgenti. Informazioni da una precedente versione: Modalita: Ibrido.'],
   ['REQUIREMENTS', 'Indispensabili: esperienza amministrativo-contabile. Preferenziali: esperienza B2B. Apprendibili: ERP specifico e procedure interne.'],
   ['ATTRACTION', 'Benefit: buoni pasto. Formazione e crescita concreta: passaggio di consegne iniziale.'],
   ['OFFER', 'Sede: Bari, zona Industriale. Modalita: In sede. Contratto: Tempo indeterminato. Orario: Lunedi-venerdi 9:00-18:00. Turni: Non previsti. Reperibilita: Non prevista. Compenso: RAL 28.000-32.000 EUR.'],
@@ -745,8 +749,11 @@ for (const [stepId, answer] of adminConflictAnswers) {
 }
 assert.equal(adminConflictState.conflicts.some((item) => item.targetPath === 'attractionContext.contractType' && /Tempo determinato/i.test(item.conflictingValue)), true, 'shadow contract conflict must be surfaced');
 assert.equal(adminConflictState.conflicts.some((item) => item.targetPath === 'attractionContext.workMode' && /Ibrido/i.test(item.conflictingValue)), true, 'shadow work-mode conflict must be surfaced');
+assert.match(adminConflictState.roleCard.mission, /informazioni necessarie arrivino complete e coerenti alle chiusure periodiche/i, 'long primary contribution must not be truncated');
+assert.match(adminConflictState.roleCard.operatingContext, /ufficio amministrativo con altre 2 persone/i, 'admin operating context must parse from serialized label');
 assert.match(adminConflictState.roleCard.autonomy, /organizza le attivita ordinarie/i, 'admin autonomy must survive shadow sanitization');
 assert.match(adminConflictState.roleCard.unexpectedEvents, /documenti incompleti/i, 'admin unexpected events must survive shadow sanitization');
+assert.equal(/Contesto operativo e interlocutori:/i.test(adminConflictState.roleCard.responsibilities.join(' ')), false, 'admin operating context must not contaminate responsibilities');
 await confirmAnnunci10xCreate({
   sessionId: startedAdminConflict.cookie.sessionId,
   sessionSecret: startedAdminConflict.cookie.sessionSecret,
@@ -759,6 +766,8 @@ const adminConflictPremium = await runAnnunci10xPremiumGeneration({
   context: adminConflictContext,
   authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
 });
+assert.match(adminConflictPremium.masterText, /informazioni necessarie arrivino complete e coerenti alle chiusure periodiche/i, 'full admin mission must remain explicit in final candidate copy');
+assert.match(adminConflictPremium.masterText, /Contesto operativo:\s*ufficio amministrativo con altre 2 persone/i, 'admin operating context must remain explicit in final candidate copy');
 assert.match(adminConflictPremium.masterText, /Autonomia:\s*organizza le attivita ordinarie/i, 'admin autonomy must remain explicit in final candidate copy');
 assert.match(adminConflictPremium.masterText, /Imprevisti e variabilit[aà]:\s*documenti incompleti/i, 'admin unexpected events must remain explicit in final candidate copy');
 assert.equal(/Tempo determinato 6 mesi|Modalita:\s*Ibrido/i.test(adminConflictPremium.masterText), false, 'admin shadow contract and work mode must stay out of final candidate copy');
