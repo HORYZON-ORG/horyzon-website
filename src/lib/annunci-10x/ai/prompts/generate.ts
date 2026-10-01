@@ -2,7 +2,7 @@ import { ANNUNCI10X_AI_OUTPUT_SCHEMAS } from '../schemas.ts';
 import { renderPrompt } from './helpers.ts';
 import type { Annunci10xPromptDefinition } from './types.ts';
 
-export const ANNUNCI10X_GENERATE_PROMPT_VERSION = 'annunci10x.generate.v9';
+export const ANNUNCI10X_GENERATE_PROMPT_VERSION = 'annunci10x.generate.v8';
 
 const invariants = [
   'Generate the Master ad only from confirmed/publishable RoleCard facts, RoleProfile, and CommunicationStrategy.',
@@ -27,7 +27,6 @@ const invariants = [
   'A confirmed mission/outcome must remain explicitly visible in candidate-facing copy. Do not delete it merely to reduce repetition; instead remove the redundant wording around it.',
   'When confirmed, company context, operating context, autonomy, and unexpected events/variability are real-work facts. Surface them concretely without inventing cadence or chronology.',
   'sourceFactIds are traceability metadata only. A fact counts as preserved only when its meaning is actually visible in candidate-facing text.',
-  'When Fact.notes records a resolved canonical conflict, the canonical Fact value is authoritative. Never resurrect or publish the discarded alternative value from another field.',
 ] as const;
 
 export const GENERATE_PROMPT: Annunci10xPromptDefinition = {
