@@ -112,7 +112,7 @@ assert.match(ANNUNCI10X_PROMPT_REGISTRY.STRATEGY.instructions, /WORKFLOW_FIRST/)
 assert.equal(ANNUNCI10X_PROMPT_REGISTRY.VALIDATE.version, 'annunci10x.validate.v7');
 assert.match(ANNUNCI10X_PROMPT_REGISTRY.VALIDATE.instructions, /source-document\/meta language/);
 assert.match(ANNUNCI10X_PROMPT_REGISTRY.VALIDATE.instructions, /template echo/i);
-assert.match(ANNUNCI10X_PROMPT_REGISTRY.VALIDATE.instructions, /dedicated canonical RoleCard/i);
+assert.match(ANNUNCI10X_PROMPT_REGISTRY.VALIDATE.instructions, /dedicated RoleCard fields[\s\S]*as canonical/i);
 assert.equal(ANNUNCI10X_PROMPT_REGISTRY.REVISE.version, 'annunci10x.revise.v7');
 assert.match(ANNUNCI10X_PROMPT_REGISTRY.REVISE.instructions, /Remove internal\/source\/audit voice/);
 assert.match(ANNUNCI10X_PROMPT_REGISTRY.REVISE.instructions, /dedicated canonical RoleCard field/i);
