@@ -958,8 +958,15 @@ const CREATE_STEP_LABELS: Record<Annunci10xCreateStepId, string> = {
   CHANNEL_APPLICATION: 'Candidatura',
 };
 
+type CanonicalFieldDefinition = {
+  targetPath: string;
+  label: string;
+  canonicalValue: string;
+  extract: (text: string) => string;
+};
+
 function deriveCanonicalConflicts(answers: PersistedAnswer[], roleCard: RoleCard): PublicCreateConflict[] {
-  const canonical = [
+  const canonical: CanonicalFieldDefinition[] = [
     canonicalField('attractionContext.location', 'Sede', textValue(roleCard.attractionContext.location), extractExplicitLocationMention),
     canonicalField('attractionContext.workMode', 'Modalità di lavoro', textValue(roleCard.attractionContext.workModeDetail) !== 'N/D' ? textValue(roleCard.attractionContext.workModeDetail) : textValue(roleCard.attractionContext.workMode), extractExplicitWorkModeMention),
     canonicalField('attractionContext.contractType', 'Contratto', textValue(roleCard.attractionContext.contractType), extractExplicitContractMention),
@@ -968,7 +975,7 @@ function deriveCanonicalConflicts(answers: PersistedAnswer[], roleCard: RoleCard
     canonicalField('attractionContext.onCall', 'Reperibilità', textValue(roleCard.attractionContext.onCall), (text) => extractExplicitLabelMention(text, ['reperibilita', 'reperibilità'])),
     canonicalField('compensation.amountText', 'Retribuzione', textValue(roleCard.compensation?.amountText), extractExplicitCompensationMention),
     canonicalField('applicationInstructions', 'Candidatura', textValue(roleCard.applicationInstructions), extractExplicitApplicationMention),
-  ].filter((item): item is NonNullable<typeof item> => Boolean(item));
+  ].filter((item): item is CanonicalFieldDefinition => item !== null);
 
   const conflicts: PublicCreateConflict[] = [];
   for (const field of canonical) {
@@ -993,7 +1000,7 @@ function deriveCanonicalConflicts(answers: PersistedAnswer[], roleCard: RoleCard
   return [...new Map(conflicts.map((item) => [`${item.targetPath}|${normalizeComparable(item.conflictingValue)}|${item.sourceStep}`, item])).values()];
 }
 
-function canonicalField(targetPath: string, label: string, canonicalValue: string, extract: (text: string) => string) {
+function canonicalField(targetPath: string, label: string, canonicalValue: string, extract: (text: string) => string): CanonicalFieldDefinition | null {
   if (!canonicalValue || canonicalValue === 'N/D' || canonicalValue === 'OPEN_DECISION' || isUnknownAnswer(canonicalValue)) return null;
   return { targetPath, label, canonicalValue, extract };
 }
@@ -1005,7 +1012,7 @@ function canonicalResolutionReason(label: string, roleCard: RoleCard, targetPath
     : `Abbiamo mantenuto questo valore perché il campo “${label}” è la fonte canonica per questo dato.`;
 }
 
-function canonicalFactForPath(roleCard: RoleCard, targetPath: string): Fact<unknown> | undefined {
+function canonicalFactForPath(roleCard: RoleCard, targetPath: string): { sourceId?: string } | undefined {
   if (targetPath === 'attractionContext.location') return roleCard.attractionContext.location;
   if (targetPath === 'attractionContext.workMode') return roleCard.attractionContext.workModeDetail ?? roleCard.attractionContext.workMode;
   if (targetPath === 'attractionContext.contractType') return roleCard.attractionContext.contractType;
@@ -1108,11 +1115,12 @@ function numericConflictTokens(value: string): number[] {
   return [...value.matchAll(/\b(\d{1,3}(?:[.,]\d{3})+|\d+(?:[.,]\d+)?)(\s*k)?\b/gi)].map((match) => {
     const parsed = Number(match[1].replace(/\./g, '').replace(',', '.'));
     return match[2] ? parsed * 1000 : parsed;
-  }).filter(Number.isFinite);
+  }).filter((value) => Number.isFinite(value));
 }
 function moneyValuesConflict(canonicalValue: string, candidateValue: string): boolean {
   const a = numericConflictTokens(canonicalValue), b = numericConflictTokens(candidateValue);
-  return a.length && b.length ? b.some((value) => !a.some((canonical) => Math.abs(canonical - value) < .01)) : !looselyEquivalent(canonicalValue, candidateValue);
+  if (a.length > 0 && b.length > 0) return b.some((value) => !a.some((canonical) => Math.abs(canonical - value) < .01));
+  return !looselyEquivalent(canonicalValue, candidateValue);
 }
 function locationValuesConflict(canonicalValue: string, candidateValue: string): boolean {
   const a = normalizeConflictValue(canonicalValue).split(' ').filter((token) => token.length >= 3 && !['zona','sede'].includes(token));
