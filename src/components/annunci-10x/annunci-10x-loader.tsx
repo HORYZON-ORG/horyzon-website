@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ANNUNCI10X_LOADER_LOGO_PATH, clampAnnunci10xProgress } from '@/lib/annunci-10x/loading';
 import styles from './annunci-10x.module.css';
 
-type LoaderVariant = 'panel' | 'compact' | 'inline' | 'overlay';
+type LoaderVariant = 'panel' | 'compact' | 'inline' | 'overlay' | 'strip';
 
 export function Annunci10xLoader({
   label,

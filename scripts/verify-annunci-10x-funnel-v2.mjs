@@ -93,6 +93,14 @@ assert.equal(flow.includes('Stiamo applicando i 20 controlli'), true, 'progress 
 assert.match(flow, /const hasWorkspace = Boolean\(busy === 'source' \|\| analysisRun \|\| sourceFailed \|\| statusMessage \|\| error \|\| result\)/, 'post-analysis workspace visibility guard missing');
 assert.match(flow, /data-flow="analyze" data-has-workspace=\{hasWorkspace\}/, 'analyze shell must expose workspace state to CSS');
 assert.match(flow, /ref=\{workspaceRef\} className=\{styles\.analysisWorkspace\}/, 'post-analysis states must render in a dedicated workspace surface');
+assert.match(flow, /const flowCycleRef = useRef\(0\)/, 'analyze flow must guard stale async responses with a local cycle token');
+assert.match(flow, /if \(cycle !== flowCycleRef\.current\) return;[\s\S]*setResult\(payload\.result\)/, 'stale result responses must not repopulate a reset analyze flow');
+assert.match(flow, /setCommercial\(null\);[\s\S]*setCommercialStatus\(null\);[\s\S]*setIdentityResetKey/, 'new analyze cycles must clear stale commercial and identity state');
+assert.match(flow, /function analyzeAnother\(\)[\s\S]*flowCycleRef\.current \+= 1[\s\S]*setText\(''\)[\s\S]*setUrl\(''\)[\s\S]*setCommercial\(null\)/, 'Analyze another must fully reset source, result and offer state');
+assert.match(flow, /function recoverUrlAsText\(\)[\s\S]*setSourceMode\('PASTED_TEXT'\)[\s\S]*setAnalysisRun\(null\)[\s\S]*focusSourceTextarea\(\)/, 'URL fetch failure must reopen the pasted-text form and focus the textarea');
+assert.match(flow, /ref=\{sourceTextareaRef\}/, 'pasted-text textarea must be focusable after URL fetch recovery');
+assert.match(flow, /const canShowContact = Boolean\(analysisRun\?\.id && !sourceFailed\)/, 'URL fetch failures must not continue into the contact/OTP step');
+assert.match(flow, /onKeyDown=\{handleSourceToggleKeyDown\}/, 'source radiogroup must support keyboard arrow selection');
 assert.equal(flow.includes('resultRef.current.scrollIntoView'), false, 'post-analysis result must not force page scroll or stretch the hero');
 assert.equal(flow.includes('workspaceRef.current?.scrollTo'), false, 'post-analysis card must not rely on internal scroll reset');
 assert.match(page, /import '@\/styles\/horyzon-landing\.css';/, 'landing must use the shared landing kit');
@@ -115,13 +123,15 @@ assert.equal(/\.analysisWorkspace[\s\S]*?overflow-y:\s*auto/.test(css), false, '
 assert.equal(/\.analysisWorkspace[\s\S]*?max-height:/.test(css), false, 'workspace must never use max-height caps');
 assert.equal(/\.analysisWorkspace \{[^}]*position:\s*absolute/.test(css), false, 'mobile analyze workspace must stay in normal flow without internal scroll');
 
-const workspaceLayoutBlocks = [...css.matchAll(/\.analysisWorkspace \.freeResultLayout \{[\s\S]*?\n\}/g)].map((match) => match[0]);
-assert.equal(workspaceLayoutBlocks.length >= 1, true, 'workspace result layout rule missing');
-for (const block of workspaceLayoutBlocks) {
-  const gridColumns = block.match(/grid-template-columns:\s*([^;\n]+)/)?.[1]?.trim();
-  assert.equal(/^(minmax\(0,\s*1fr\)|1fr)$/.test(gridColumns ?? ''), true, 'workspace result layout must keep score and interpretation vertical');
-}
-assert.equal(/@media[\s\S]*\.analysisWorkspace \.freeResultLayout \{[\s\S]*grid-template-columns:\s*(repeat\(2|[^;\n]*minmax\(170px|[^;\n]*\.72fr)/.test(css), false, 'media rules must not restore a two-column workspace result layout');
+// The free result is a single-column report card; the paid rewrite is a separate card after it, never inside.
+const resultBlock = cssBlock('.analysisWorkspace .result');
+assert.match(resultBlock, /display:\s*grid/, 'workspace result must render as a report card');
+assert.equal(/grid-template-columns/.test(resultBlock), false, 'workspace result must keep score and interpretation vertical');
+assert.match(flow, /<FreeResultCard result=\{result\} \/>\s*\n\s*<RewriteOfferCard /, 'rewrite offer must follow the report as its own card');
+const freeResultCardBlock = flow.slice(flow.indexOf('function FreeResultCard'), flow.indexOf('function RewriteOfferCard'));
+assert.equal(freeResultCardBlock.includes('RewriteOfferCard'), false, 'the report card must not contain the offer');
+assert.match(flow, /className=\{styles\.flowSteps\}/, 'the free Score must show its three steps');
+assert.equal(page.includes('className="rd-steps"'), false, 'steps must not be duplicated above the flow');
 
 assert.equal(count(client, '<Annunci10xAnalyzeFlow'), 1, 'Annunci10xAnalyzeFlow must render exactly once');
 assert.equal(count(page, '<Annunci10xClient'), 1, 'the interactive client must render exactly once, inside #valuta');
