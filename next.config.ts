@@ -5,10 +5,11 @@ import type { NextConfig } from 'next';
 const isDev = process.env.NODE_ENV === 'development';
 const csp = [
  "default-src 'self'",
- `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
- "style-src 'self' 'unsafe-inline'", "img-src 'self' data: blob:",
- "font-src 'self'", "media-src 'self' blob:",
- `connect-src 'self'${isDev ? ' ws: wss:' : ''}`,
+ `script-src 'self' 'unsafe-inline' *.iubenda.com${isDev ? " 'unsafe-eval'" : ''}`,
+ "style-src 'self' 'unsafe-inline' *.iubenda.com", "img-src 'self' data: blob: *.iubenda.com",
+ "font-src 'self' *.iubenda.com", "media-src 'self' blob:",
+ `connect-src 'self' *.iubenda.com${isDev ? ' ws: wss:' : ''}`,
+ "frame-src *.iubenda.com",
  "object-src 'none'", "base-uri 'self'", "form-action 'self' mailto:",
  "frame-ancestors 'none'", ...(!isDev ? ['upgrade-insecure-requests'] : []),
 ].join('; ');
