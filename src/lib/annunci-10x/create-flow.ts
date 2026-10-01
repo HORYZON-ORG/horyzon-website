@@ -606,13 +606,18 @@ function applyEditToRoleCard(roleCard: RoleCard, targetPath: string, value: stri
   if (targetPath === 'mission') return { ...roleCard, mission: next, outcomes: [next] };
   if (targetPath === 'responsibilities') return { ...roleCard, responsibilities: [next] };
   if (targetPath === 'requirements') return { ...roleCard, requirements: [{ id: 'req-create-1', label: next, classification: 'REQUIRED' }] };
+  if (targetPath === 'attractionContext.companyDescription') return { ...roleCard, attractionContext: { ...roleCard.attractionContext, companyDescription: next } };
   if (targetPath === 'attractionContext.location') return { ...roleCard, attractionContext: { ...roleCard.attractionContext, location: next } };
   if (targetPath === 'attractionContext.workMode') return { ...roleCard, attractionContext: { ...roleCard.attractionContext, workMode: next } };
   if (targetPath === 'attractionContext.contractType') return { ...roleCard, attractionContext: { ...roleCard.attractionContext, contractType: next } };
+  if (targetPath === 'attractionContext.schedule') return { ...roleCard, attractionContext: { ...roleCard.attractionContext, schedule: next } };
+  if (targetPath === 'attractionContext.shifts') return { ...roleCard, attractionContext: { ...roleCard.attractionContext, shifts: next } };
+  if (targetPath === 'attractionContext.onCall') return { ...roleCard, attractionContext: { ...roleCard.attractionContext, onCall: next } };
   if (targetPath === 'attractionContext.operatingContext') return { ...roleCard, attractionContext: { ...roleCard.attractionContext, operatingContext: next } };
   if (targetPath === 'attractionContext.autonomy') return { ...roleCard, attractionContext: { ...roleCard.attractionContext, autonomy: next } };
   if (targetPath === 'attractionContext.unexpectedEvents') return { ...roleCard, attractionContext: { ...roleCard.attractionContext, unexpectedEvents: next } };
   if (targetPath === 'compensation.amountText') return { ...roleCard, compensation: { ...roleCard.compensation, visibility: fact('PUBLIC', 'USER_DECLARED', 'create-edit-compensation-visibility') as never, amountText: next } };
+  if (targetPath === 'applicationInstructions') return { ...roleCard, applicationInstructions: next };
   return { ...roleCard, attractionContext: { ...roleCard.attractionContext, attractivenessEvidence: [next] } };
 }
 
@@ -622,13 +627,18 @@ function isDeterministicEditTarget(targetPath: string): boolean {
     'mission',
     'responsibilities',
     'requirements',
+    'attractionContext.companyDescription',
     'attractionContext.location',
     'attractionContext.workMode',
     'attractionContext.contractType',
+    'attractionContext.schedule',
+    'attractionContext.shifts',
+    'attractionContext.onCall',
     'attractionContext.operatingContext',
     'attractionContext.autonomy',
     'attractionContext.unexpectedEvents',
     'compensation.amountText',
+    'applicationInstructions',
   ].includes(targetPath);
 }
 
