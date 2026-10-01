@@ -17,6 +17,7 @@ import type { Annunci10xProfileOutput, Annunci10xStrategyOutput } from './ai/sch
 import { deriveAnnunci10xStrategyRules, type StrategyRuleInput } from './strategy-rules.ts';
 import { canTransition } from './state-machine.ts';
 import { createFact } from './validation.ts';
+import { deriveCreateConflicts, type PublicCreateConflict } from './create-conflicts.ts';
 import type { AppendAnswerInput, PersistedAnnunci10xSession, PersistedAnswer, PersistedSnapshot } from './persistence/types.ts';
 import type { CommunicationStrategy, Fact, PublicationChannel, Requirement, RequirementClassification, RoleCard, RoleProfile, SessionState } from './types.ts';
 import {
@@ -50,6 +51,7 @@ export interface PublicAnnunci10xCreateState {
   completedSteps: Annunci10xCreateStepId[];
   completion: { answered: number; total: number; coverage: number };
   roleCard: PublicCreateRoleCard;
+  conflicts: PublicCreateConflict[];
   strategy: PublicCreateStrategy | null;
   clarification: PublicCreateClarification | null;
   canConfirm: boolean;
@@ -415,6 +417,7 @@ async function publicCreateState(input: {
       coverage: Math.round((completedSteps.length / ANNUNCI10X_CREATE_STEPS.length) * 100),
     },
     roleCard: publicRoleCard(roleCard, session.selectedChannel ?? channelFromAnswers(answers)),
+    conflicts: deriveCreateConflicts(answers, roleCard),
     strategy: snapshot?.communicationStrategy ? publicStrategy(snapshot.communicationStrategy) : null,
     clarification,
     canConfirm: session.state === 'ROLE_CARD_READY' && ready,
