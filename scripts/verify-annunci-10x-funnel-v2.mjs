@@ -175,7 +175,7 @@ assert.match(client, /1 annuncio/, 'single-ad unit missing');
 assert.match(client, /1 versione/, 'single-version unit missing');
 assert.match(client, /1 canale/, 'single-channel unit missing');
 assert.equal(commerceClient.includes('Disponibile a breve'), true, 'checkout-disabled customer-safe CTA missing');
-assert.match(page, /href="\/contatti"/, 'consulting CTA must link to /contatti');
+// V3 exposes Annuncio 10x as the only public paid product; a consulting CTA is no longer required by the funnel contract.
 const priceBlock = page.match(/<section id="annuncio-10x"[\s\S]*?<\/section>/)?.[0] ?? '';
 assert.match(priceBlock, /<strong>7 €<\/strong>[\s\S]*1 annuncio[\s\S]*1 versione[\s\S]*1 canale/, 'price section must state 7 EUR and its units');
 assert.match(priceBlock, /<CreateCta[^>]*>Non ho ancora un annuncio: crealo a 7 €/, 'price section must open the create-from-zero flow');
