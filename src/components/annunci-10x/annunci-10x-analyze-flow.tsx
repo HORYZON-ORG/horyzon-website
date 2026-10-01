@@ -111,15 +111,35 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
   useEffect(() => {
     let cancelled = false;
     const cycle = flowCycleRef.current;
-    fetch('/api/annunci-10x/session/resume', { cache: 'no-store' })
-      .then((response) => response.json())
-      .then((payload) => {
+    const requestedAnalysisId = new URLSearchParams(window.location.search).get('analysis')?.trim() ?? '';
+
+    async function resume() {
+      try {
+        if (requestedAnalysisId) {
+          const requestedResponse = await fetch(`/api/annunci-10x/analysis/${encodeURIComponent(requestedAnalysisId)}`, { cache: 'no-store' });
+          const requestedPayload = await requestedResponse.json();
+          if (!cancelled && cycle === flowCycleRef.current && requestedResponse.ok && requestedPayload.ok?.valueOf?.() !== false && requestedPayload.run) {
+            const requestedRun = normalizeRun(requestedPayload.run);
+            setAnalysisRun(requestedRun);
+            setContactSaved(Boolean(requestedRun.contactSaved));
+            setEmailVerified(Boolean(requestedRun.emailVerified));
+            return;
+          }
+        }
+
+        const response = await fetch('/api/annunci-10x/session/resume', { cache: 'no-store' });
+        const payload = await response.json();
         if (cancelled || cycle !== flowCycleRef.current || !payload.ok || !payload.analysisRun) return;
-        setAnalysisRun(payload.analysisRun);
-        setContactSaved(Boolean(payload.analysisRun.contactSaved));
-        setEmailVerified(Boolean(payload.analysisRun.emailVerified));
-      })
-      .catch(() => undefined);
+        const resumedRun = normalizeRun(payload.analysisRun);
+        setAnalysisRun(resumedRun);
+        setContactSaved(Boolean(resumedRun.contactSaved));
+        setEmailVerified(Boolean(resumedRun.emailVerified));
+      } catch {
+        // The landing remains usable even if a stale or cross-device report link cannot restore the session.
+      }
+    }
+
+    void resume();
     return () => {
       cancelled = true;
     };
