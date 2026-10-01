@@ -1376,7 +1376,14 @@ function labeledCanonicalFact(label: string, fact: Fact<string> | undefined): Ca
 }
 
 function isUnknownCandidateValue(value: string): boolean {
-  return /(?:^|\b)(?:n\/d|da definire|da chiarire|non lo so|open_decision)(?:\b|$)/i.test(value);
+  const normalized = value.trim().toLowerCase();
+  return normalized === 'n/d'
+    || normalized.startsWith('n/d -')
+    || normalized === 'da definire'
+    || normalized === 'da chiarire'
+    || normalized === 'non lo so'
+    || normalized.startsWith('non lo so /')
+    || normalized === 'open_decision';
 }
 
 function canonicalSection(
