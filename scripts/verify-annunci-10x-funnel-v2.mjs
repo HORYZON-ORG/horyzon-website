@@ -69,8 +69,8 @@ assert.match(headerBlock, /aria-label="Horyzon Consulting Recruiting"/, 'header 
 assert.equal(headerBlock.includes('<span>Horyzon Consulting</span>'), false, 'typographic brand fallback must be removed');
 assert.equal(headerBlock.includes('Horyzon Consulting</span>'), false, 'header must not include a textual brand fallback');
 
-assert.match(page, /Il tuo annuncio riceve CV\.[\s\S]*Ma sono quelli giusti\?/, 'hero headline missing');
-assert.match(page, /Lo Score di chiarezza ti mostra che cosa capisce davvero un candidato quando legge il tuo annuncio\./, 'hero lead missing');
+assert.match(page, /Il candidato sbagliato non ha dubbi\.[\s\S]*Quello giusto sì\./, 'hero headline missing');
+assert.match(page, /Un annuncio vago fa passare oltre chi sarebbe adatto e attira chi si candida a tutto\. Lo Score di chiarezza ti mostra che cosa capisce davvero chi lo legge\./, 'hero lead missing');
 assert.match(page, /Annunci 10x <i>·<\/i> Score gratuito <i>·<\/i> 2 minuti/, 'hero label missing');
 assert.match(page, /Valuta il mio annuncio/, 'primary CTA missing');
 assert.match(page, /href="#ax-story-title">Prima fammi vedere/, 'soft secondary CTA must lead to the story');
@@ -159,8 +159,12 @@ for (const role of ['Operaio di produzione', 'Saldatore', 'Manutentore meccanico
 assert.equal(client.includes("const roles = ['Magazziniere'"), false, 'old flat role list must not remain');
 assert.equal(client.includes('Automation Engineer'), false, 'old role list item must not remain');
 
-assert.equal((adSheet.match(/\{ phrase: /g) ?? []).length, 5, 'the ad under the lens must carry five candidate doubts');
-assert.match(story, /Leggi il tuo annuncio <em>come un candidato\.<\/em>/, 'candidate story heading missing');
+assert.equal((adSheet.match(/\n    area: '/g) ?? []).length, 5, 'the job ad must carry five rewrites');
+assert.match(adSheet, /Cameriere\/a di sala/, 'the job ad must use the common role');
+assert.match(adSheet, /AD_FINAL_STEP = AD_REWRITES\.length \+ 1/, 'the rewrite must end on the clear ad');
+assert.match(story, /Lo stesso annuncio, <em>riscritto riga per riga\.<\/em>/, 'rewrite story heading missing');
+assert.match(story, /Esempio illustrativo: i dati veri li metti tu, noi li rendiamo chiari\./, 'the clear ad must be labelled as an illustrative example');
+assert.match(story, /<AdSheet className="ax-story-sheet" step=\{AD_FINAL_STEP\} \/>/, 'static story must show the finished ad');
 assert.match(story, /prefers-reduced-motion: no-preference/, 'candidate story must fall back to a static list');
 assert.equal(/\d{1,3}\s*\/\s*100/.test(adSheet), false, 'the ad sheet must never show an invented score');
 assert.equal(client.includes('Tanti visualizzano'), false, 'old funnel visual copy must not remain');
@@ -308,8 +312,9 @@ for (const fakeProof of ['STERIMED', 'Ahumados', 'De Ridder', '181%', 'testimoni
 // Radar-style FAQ: five questions, answers in native <details>. The other V3 answers moved into sections:
 // what the Score measures -> "Il risultato", guarantee -> price. The standalone Frank section is intentionally absent from this landing.
 const faqBlock = page.match(/const faqs = \[[\s\S]*?\n\] as const;/)?.[0] ?? '';
-assert.equal(count(faqBlock, "\n  ['"), 5, 'FAQ must contain exactly 5 questions');
+assert.equal(count(faqBlock, "\n  ['"), 6, 'FAQ must contain exactly 6 questions');
 for (const question of [
+  'Devo sostituire una persona: da dove parto?',
   'Quanto costa?',
   'Perché mi chiedete l’email?',
   'Mi garantite più candidature?',
@@ -322,7 +327,7 @@ assert.equal(/privacy/i.test(faqBlock), false, 'FAQ must not invent a privacy an
 assert.match(page, /<details key=\{question\}><summary>/, 'FAQ must use native details like /radar');
 
 const finalBlock = page.match(/<section id="ax-final"[\s\S]*?<\/section>/)?.[0] ?? '';
-assert.match(finalBlock, /Prima di pagare un altro annuncio, <em>scopri che cosa non si capisce\.<\/em>/, 'final headline missing');
+assert.match(finalBlock, /Prima di ripubblicare lo stesso annuncio, <em>scopri che cosa non si capisce\.<\/em>/, 'final headline missing');
 assert.equal(count(finalBlock, '<Cta '), 1, 'final section must contain exactly one primary CTA');
 
 assert.match(contract, /Commercial contract V3/, 'commercial contract V3 doc missing');

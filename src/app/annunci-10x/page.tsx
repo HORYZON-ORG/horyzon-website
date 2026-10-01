@@ -31,7 +31,8 @@ export const metadata: Metadata = {
   twitter: { card: 'summary_large_image', title, description, images: [image] },
 };
 
-// Same structure as /radar: one idea per section, one gesture (the ad under the lens), one lime field.
+// Same structure as /radar: one idea per section, one gesture (the job ad, vague in the hero and rewritten
+// line by line in the story), one lime field.
 // The copy states only what the product does; the score itself is never shown or invented here.
 const scoreDisclaimer = 'Il punteggio valuta la chiarezza e la completezza delle informazioni disponibili nell’annuncio. Non prevede il numero di candidature né sostituisce la valutazione delle persone.';
 const guaranteeCopy = '7 € per un annuncio, una versione e un canale. Dopo la conferma del pagamento generiamo il testo completo e te lo rendiamo disponibile. Se non ti è utile, puoi chiedere il rimborso integrale entro 14 giorni dalla consegna, senza motivazione, scrivendo a info@horyzon.it dall’email usata per l’acquisto.';
@@ -54,6 +55,7 @@ const steps = [
 const roles = ['operaio di produzione', 'saldatore', 'manutentore meccanico', 'elettricista', 'tecnico installatore', 'magazziniere carrellista', 'autista patente C', 'commerciale B2B', 'impiegato amministrativo', 'addetto alla contabilità', 'cuoco', 'cameriere di sala'];
 
 const faqs = [
+  ['Devo sostituire una persona: da dove parto?', 'Dall’annuncio con cui l’hai trovata. Se lo ripubblichi uguale, rischi di attirare di nuovo lo stesso profilo. Lo Score ti mostra che cosa chiarire prima di ripubblicarlo.'],
   ['Quanto costa?', 'Lo Score è gratuito. Annuncio 10x costa 7 €: un annuncio, una versione e un canale. Puoi arrivarci partendo da un testo esistente o da un brief guidato.'],
   ['Perché mi chiedete l’email?', 'Serve per collegare il report alla tua richiesta e inviartelo. Comunicazioni marketing solo con consenso separato.'],
   ['Mi garantite più candidature?', 'No. Le candidature dipendono da mercato, canale, condizioni e attrattività dell’offerta. Annunci 10x lavora su chiarezza e coerenza dell’annuncio.'],
@@ -80,8 +82,8 @@ export default function Annunci10xPage() {
       <section id="ax-hero" className="rd-hero ax-hero" aria-labelledby="ax-hero-title">
         <div className="rd-hero-copy">
           <p className="rd-label rd-rise" style={delay(0)}>Annunci 10x <i>·</i> Score gratuito <i>·</i> 2 minuti</p>
-          <h1 id="ax-hero-title"><span className="rd-mask"><span className="rd-line" style={delay(120)}>Il tuo annuncio riceve CV.</span></span> <span className="rd-mask"><span className="rd-line rd-accent" style={delay(320)}>Ma sono quelli giusti?</span></span></h1>
-          <p className="rd-lead rd-rise" style={delay(620)}>Lo Score di chiarezza ti mostra che cosa capisce davvero un candidato quando legge il tuo annuncio.</p>
+          <h1 id="ax-hero-title"><span className="rd-mask"><span className="rd-line" style={delay(120)}>Il candidato sbagliato non ha dubbi.</span></span> <span className="rd-mask"><span className="rd-line rd-accent" style={delay(320)}>Quello giusto sì.</span></span></h1>
+          <p className="rd-lead rd-rise" style={delay(620)}>Un annuncio vago fa passare oltre chi sarebbe adatto e attira chi si candida a tutto. Lo Score di chiarezza ti mostra che cosa capisce davvero chi lo legge.</p>
           <div className="rd-actions rd-rise" style={delay(760)}><Cta position="hero" /><a className="rd-link" href="#ax-story-title">Prima fammi vedere</a></div>
         </div>
         <AdSheet className="ax-hero-sheet" scan />
@@ -128,7 +130,7 @@ export default function Annunci10xPage() {
 
       <section id="ax-final" className="rd-final" aria-labelledby="ax-final-title">
         <p className="rd-label">Il prossimo passo</p>
-        <h2 id="ax-final-title">Prima di pagare un altro annuncio, <em>scopri che cosa non si capisce.</em></h2>
+        <h2 id="ax-final-title">Prima di ripubblicare lo stesso annuncio, <em>scopri che cosa non si capisce.</em></h2>
         <Cta position="final" />
         <CreateCta className="rd-link" position="final">Non ho ancora un annuncio</CreateCta>
       </section>
