@@ -563,9 +563,9 @@ assert.deepEqual(resumedCreate.commercial.availableOffers.map((offer) => offer.o
 const canonicalConflictContext = makeContext();
 const startedCanonicalConflict = await startAnnunci10xCreate({ context: canonicalConflictContext });
 const canonicalConflictAnswers = [
-  ['ROLE_CONTEXT', 'Ruolo: Commerciale B2B. Azienda o contesto: PMI B2B con sede a Roma e RAL 90.000 euro.'],
+  ['ROLE_CONTEXT', 'Ruolo: Commerciale B2B. Azienda o contesto: PMI B2B che vende servizi alle imprese.'],
   ['PRIMARY_CONTRIBUTION', 'Risultato principale: sviluppare opportunita commerciali qualificate.'],
-  ['WORK_REALITY', 'Attivita reali: prospecting, call, follow-up e aggiornamento CRM. Contesto operativo: team commerciale B2B. Autonomia: gestisce le attivita standard in autonomia. Imprevisti: lead urgenti.'],
+  ['WORK_REALITY', 'Attivita reali: prospecting, call, follow-up e aggiornamento CRM. Contesto operativo: team commerciale B2B. Autonomia: gestisce le attivita standard in autonomia. Imprevisti: lead urgenti. Nota da una vecchia bozza: Sede: Roma. RAL 90.000 euro.'],
   ['REQUIREMENTS', 'Indispensabili: esperienza nella vendita B2B. Preferenziali: esperienza CRM. Apprendibili: offerta aziendale. Vincoli: nessuno.'],
   ['ATTRACTION', 'Benefit: laptop. Formazione e crescita concreta: onboarding iniziale.'],
   ['OFFER', 'Sede: Milano. Modalita: In sede. Contratto: Tempo indeterminato. Orario: Lunedi-venerdi 9:00-18:00. Turni: Non previsti. Reperibilita: Non prevista. Compenso: RAL 30.000-36.000 EUR.'],
@@ -586,7 +586,36 @@ assert.match(canonicalConflictState.roleCard.compensation, /30\.000-36\.000/i, '
 assert.equal(canonicalConflictState.clarification, null, 'shadow narrative conditions must not override explicit canonical fields');
 assert.equal(canonicalConflictState.conflicts.some((item) => item.targetPath === 'attractionContext.location' && /Roma/i.test(item.conflictingValue)), true, 'shadow location conflict must be surfaced');
 assert.equal(canonicalConflictState.conflicts.some((item) => item.targetPath === 'compensation.amountText' && /90\.000/i.test(item.conflictingValue)), true, 'shadow RAL conflict must be surfaced');
+assert.equal(canonicalConflictState.conflicts.some((item) => item.targetPath === 'attractionContext.location' && /Roma/i.test(item.conflictingValue)), true, 'inline shadow location conflict must be surfaced');
+assert.equal(/Roma|90\.000/i.test(canonicalConflictState.roleCard.responsibilities.join(' ')), false, 'shadow location and RAL must not contaminate canonical responsibilities');
+assert.equal(/Roma|90\.000/i.test(canonicalConflictState.roleCard.unexpectedEvents), false, 'shadow location and RAL must not contaminate canonical unexpected events');
 assert.equal(canonicalConflictState.conflicts.every((item) => /fonte canonica/i.test(item.resolution)), true, 'resolved conflicts must explain canonical precedence');
+
+const waiterConflictContext = makeContext();
+const startedWaiterConflict = await startAnnunci10xCreate({ context: waiterConflictContext });
+const waiterConflictAnswers = [
+  ['ROLE_CONTEXT', 'Ruolo: Cameriere di sala. Azienda o contesto: ristorante indipendente a Bari. Vecchia indicazione non aggiornata: Turni: Non previsti.'],
+  ['PRIMARY_CONTRIBUTION', 'Risultato principale: gestire il proprio rango garantendo un servizio ordinato e puntuale.'],
+  ['WORK_REALITY', 'Attivita reali: accoglienza, comande, servizio al tavolo e chiusura del tavolo. Contesto operativo: sala ristorante con cucina e responsabile di sala. Autonomia: gestisce il rango e coinvolge il responsabile sui casi non standard. Imprevisti: picchi di affluenza e variazioni nelle richieste dei clienti.'],
+  ['REQUIREMENTS', 'Indispensabili: esperienza di sala. Preferenziali: conoscenza inglese. Apprendibili: menu e procedure interne.'],
+  ['ATTRACTION', 'Benefit: pasto durante il turno. Formazione e crescita concreta: affiancamento iniziale. Vecchia candidatura: cv-old@azienda-test.it.'],
+  ['OFFER', 'Sede: Bari. Modalita: In sede. Contratto: Tempo determinato. Orario: Full-time. Turni: pranzo e cena secondo programmazione; weekend inclusi. Reperibilita: Non prevista. Compenso: RAL 24.000-27.000 EUR.'],
+  ['CHANNEL_APPLICATION', 'Canale: INDEED. Candidatura: Invia CV a recruiting@azienda-test.it.'],
+];
+let waiterConflictState = startedWaiterConflict.result;
+for (const [stepId, answer] of waiterConflictAnswers) {
+  waiterConflictState = await answerAnnunci10xCreateStep({
+    sessionId: startedWaiterConflict.cookie.sessionId,
+    sessionSecret: startedWaiterConflict.cookie.sessionSecret,
+    stepId,
+    answer,
+    context: waiterConflictContext,
+  });
+}
+assert.equal(waiterConflictState.conflicts.some((item) => item.targetPath === 'attractionContext.shifts' && /Non previsti/i.test(item.conflictingValue)), true, 'inline shadow shifts conflict must be surfaced');
+assert.equal(waiterConflictState.conflicts.some((item) => item.targetPath === 'applicationInstructions' && /cv-old@azienda-test\.it/i.test(item.conflictingValue)), true, 'shadow application conflict must be surfaced');
+assert.equal(/Turni:\s*Non previsti/i.test(waiterConflictState.roleCard.companyDescription), false, 'shadow shifts must not contaminate company description');
+assert.equal(/cv-old@azienda-test\.it/i.test(waiterConflictState.roleCard.attractionEvidence.join(' ')), false, 'shadow application destination must not contaminate attraction evidence');
 
 const unknownCreateContext = makeContext();
 const startedUnknownCreate = await startAnnunci10xCreate({ context: unknownCreateContext });
@@ -692,6 +721,47 @@ const evaluateCall = preservationContext.provider.calls.find((call) => call.oper
 assert.equal(JSON.stringify(generateCall?.input ?? {}).includes('sales-recruiting@azienda-test.it'), true, 'generator receives application instructions');
 assert.equal(JSON.stringify(channelCall?.input ?? {}).includes('sales-recruiting@azienda-test.it'), true, 'channel adapter receives application instructions');
 assert.equal(evaluateCall?.input?.target?.applicationDestination, 'Inviare CV o profilo LinkedIn a sales-recruiting@azienda-test.it', 'evaluator receives application destination');
+
+const adminConflictContext = makeContext();
+const startedAdminConflict = await startAnnunci10xCreate({ context: adminConflictContext });
+const adminConflictAnswers = [
+  ['ROLE_CONTEXT', 'Ruolo: Impiegato amministrativo-contabile. Azienda o contesto: PMI B2B di circa 35 persone. Vecchio dato contrattuale: Contratto: Tempo determinato 6 mesi.'],
+  ['PRIMARY_CONTRIBUTION', 'Risultato principale: mantenere contabilita e scadenze amministrative ordinate e aggiornate.'],
+  ['WORK_REALITY', 'Attivita reali: registrazioni contabili, riconciliazioni, scadenze e supporto alle chiusure. Contesto operativo: ufficio amministrativo con ERP, Excel e home banking. Autonomia: organizza le attivita ordinarie e coinvolge il responsabile sui casi non standard. Imprevisti: documenti incompleti, incassi mancanti e richieste urgenti. Informazioni da una precedente versione: Modalita: Ibrido.'],
+  ['REQUIREMENTS', 'Indispensabili: esperienza amministrativo-contabile. Preferenziali: esperienza B2B. Apprendibili: ERP specifico e procedure interne.'],
+  ['ATTRACTION', 'Benefit: buoni pasto. Formazione e crescita concreta: passaggio di consegne iniziale.'],
+  ['OFFER', 'Sede: Bari, zona Industriale. Modalita: In sede. Contratto: Tempo indeterminato. Orario: Lunedi-venerdi 9:00-18:00. Turni: Non previsti. Reperibilita: Non prevista. Compenso: RAL 28.000-32.000 EUR.'],
+  ['CHANNEL_APPLICATION', 'Canale: LINKEDIN. Candidatura: Invia CV a recruiting@azienda-test.it.'],
+];
+let adminConflictState = startedAdminConflict.result;
+for (const [stepId, answer] of adminConflictAnswers) {
+  adminConflictState = await answerAnnunci10xCreateStep({
+    sessionId: startedAdminConflict.cookie.sessionId,
+    sessionSecret: startedAdminConflict.cookie.sessionSecret,
+    stepId,
+    answer,
+    context: adminConflictContext,
+  });
+}
+assert.equal(adminConflictState.conflicts.some((item) => item.targetPath === 'attractionContext.contractType' && /Tempo determinato/i.test(item.conflictingValue)), true, 'shadow contract conflict must be surfaced');
+assert.equal(adminConflictState.conflicts.some((item) => item.targetPath === 'attractionContext.workMode' && /Ibrido/i.test(item.conflictingValue)), true, 'shadow work-mode conflict must be surfaced');
+assert.match(adminConflictState.roleCard.autonomy, /organizza le attivita ordinarie/i, 'admin autonomy must survive shadow sanitization');
+assert.match(adminConflictState.roleCard.unexpectedEvents, /documenti incompleti/i, 'admin unexpected events must survive shadow sanitization');
+await confirmAnnunci10xCreate({
+  sessionId: startedAdminConflict.cookie.sessionId,
+  sessionSecret: startedAdminConflict.cookie.sessionSecret,
+  context: adminConflictContext,
+});
+const adminConflictPremium = await runAnnunci10xPremiumGeneration({
+  sessionId: startedAdminConflict.cookie.sessionId,
+  sessionSecret: startedAdminConflict.cookie.sessionSecret,
+  channel: 'LINKEDIN',
+  context: adminConflictContext,
+  authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
+});
+assert.match(adminConflictPremium.masterText, /Autonomia:\s*organizza le attivita ordinarie/i, 'admin autonomy must remain explicit in final candidate copy');
+assert.match(adminConflictPremium.masterText, /Imprevisti e variabilit[aà]:\s*documenti incompleti/i, 'admin unexpected events must remain explicit in final candidate copy');
+assert.equal(/Tempo determinato 6 mesi|Modalita:\s*Ibrido/i.test(adminConflictPremium.masterText), false, 'admin shadow contract and work mode must stay out of final candidate copy');
 
 const semanticCoverageContext = makeContext(new SourceTaggedButSemanticallyMissingProvider('success'));
 const startedSemanticCoverage = await startAnnunci10xCreate({ context: semanticCoverageContext });

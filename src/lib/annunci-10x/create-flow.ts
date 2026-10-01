@@ -487,13 +487,18 @@ async function requireCreateSession(context: Annunci10xRuntimeContext, sessionId
 }
 
 function buildCreateRoleCard(answers: PersistedAnswer[]): RoleCard {
-  const role = answerFor(answers, 'ROLE_CONTEXT');
-  const contribution = answerFor(answers, 'PRIMARY_CONTRIBUTION');
-  const work = answerFor(answers, 'WORK_REALITY');
-  const requirements = answerFor(answers, 'REQUIREMENTS');
-  const attraction = answerFor(answers, 'ATTRACTION');
+  const rawRole = answerFor(answers, 'ROLE_CONTEXT');
+  const rawContribution = answerFor(answers, 'PRIMARY_CONTRIBUTION');
+  const rawWork = answerFor(answers, 'WORK_REALITY');
+  const rawRequirements = answerFor(answers, 'REQUIREMENTS');
+  const rawAttraction = answerFor(answers, 'ATTRACTION');
   const offer = answerFor(answers, 'OFFER');
   const channelApplication = answerFor(answers, 'CHANNEL_APPLICATION');
+  const role = stripNonCanonicalDedicatedFacts(rawRole);
+  const contribution = stripNonCanonicalDedicatedFacts(rawContribution);
+  const work = stripNonCanonicalDedicatedFacts(rawWork);
+  const requirements = stripNonCanonicalDedicatedFacts(rawRequirements);
+  const attraction = stripNonCanonicalDedicatedFacts(rawAttraction);
   const clarificationWorkMode = answerForQuestion(answers, 'create.clarify.attractionContext.workMode');
   const workModeSource = clarificationWorkMode || offer;
   const title = clean(extractAfter(role, ['ruolo', 'figura', 'cerco', 'cerchiamo'])) || clean(role.split(/[.\n]/)[0]) || 'Ruolo da chiarire';
@@ -783,6 +788,36 @@ const channelFieldLabels = {
   application: ['candidatura', 'come ci si candida', 'destinazione'],
 } as const;
 
+const NON_CANONICAL_DEDICATED_LABELS = [
+  ...Object.values(offerFieldLabels).flat(),
+  ...channelFieldLabels.application,
+] as const;
+
+function stripNonCanonicalDedicatedFacts(text: string): string {
+  if (!text.trim()) return text;
+
+  let value = text.replace(/\r/g, '\n');
+  value = value.replace(
+    /\b(?:nota\s+da\s+una\s+vecchia\s+bozza|vecchia\s+indicazione\s+non\s+aggiornata|vecchia\s+candidatura|informazioni\s+da\s+una\s+precedente\s+versione|vecchio\s+dato\s+contrattuale)\s*:\s*/gi,
+    '',
+  );
+
+  const labels = NON_CANONICAL_DEDICATED_LABELS.map(escapeRegExp).join('|');
+  value = value.replace(
+    new RegExp(`\\b(?:${labels})\\s*[:\\-]\\s*[\\s\\S]{0,220}?(?=\\.\\s+[A-ZÀ-Ü]|;|\\n|$)`, 'gi'),
+    '',
+  );
+  value = value.replace(/\bRAL\s*[:\-]?\s*\d[\d.,]*(?:\s*[-–]\s*\d[\d.,]*)?(?:\s*(?:EUR|euro|€))?/gi, '');
+  value = value.replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '');
+
+  return clean(
+    value
+      .replace(/\s+([,.;])/g, '$1')
+      .replace(/(?:^|\s)[.;]+(?=\s|$)/g, ' ')
+      .replace(/\s{2,}/g, ' '),
+  );
+}
+
 function requirementsFromText(text: string): Requirement[] {
   const requirements = requirementLabelMap.flatMap((definition) => {
     const value = extractLabeledSegment(text, definition.labels);
@@ -860,11 +895,11 @@ function hasHybridDistribution(text: string): boolean {
 function detectCreateFactualPreservationIssues(answers: PersistedAnswer[], roleCard: RoleCard): string[] {
   const issues: string[] = [];
   const offer = answerFor(answers, 'OFFER');
-  const work = answerFor(answers, 'WORK_REALITY');
+  const work = stripNonCanonicalDedicatedFacts(answerFor(answers, 'WORK_REALITY'));
   const channelApplication = answerFor(answers, 'CHANNEL_APPLICATION');
-  const requirements = answerFor(answers, 'REQUIREMENTS');
+  const requirements = stripNonCanonicalDedicatedFacts(answerFor(answers, 'REQUIREMENTS'));
 
-  const companyDescription = companyDescriptionFromRoleContext(answerFor(answers, 'ROLE_CONTEXT'));
+  const companyDescription = companyDescriptionFromRoleContext(stripNonCanonicalDedicatedFacts(answerFor(answers, 'ROLE_CONTEXT')));
   if (companyDescription && !containsMeaningfulWords(textValue(roleCard.attractionContext.companyDescription), companyDescription)) {
     issues.push('company description lost declared value');
   }

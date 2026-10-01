@@ -111,47 +111,47 @@ function valueOf(fact: { value?: unknown } | undefined): string {
 }
 
 function extractLocation(text: string): string {
-  const labeled = text.match(/(?:^|[\n.;])\s*(?:sede|localita|località|zona)\s*[:\-]\s*([^\n.;]{2,80})/i);
+  const labeled = text.match(/\b(?:sede|localita|località|zona)\s*[:\-]\s*([^\n.;]{2,80})/i);
   if (labeled?.[1]) return clean(labeled[1]);
   const mention = text.match(/\bsede\s+(?:a|di)\s+([^\n.;]{2,80}?)(?=\s+(?:e\s+)?(?:RAL|compenso|retribuzione|stipendio)\b|[\n.;]|$)/i);
   return clean(mention?.[1]);
 }
 
 function extractWorkMode(text: string): string {
-  const labeled = text.match(/(?:^|[\n.;])\s*(?:modalita|modalità)(?:\s+di\s+lavoro)?\s*[:\-]\s*([^\n.;]{2,100})/i);
+  const labeled = text.match(/\b(?:modalita|modalità)(?:\s+di\s+lavoro)?\s*[:\-]\s*([^\n.;]{2,100})/i);
   if (labeled?.[1]) return clean(labeled[1]);
   const mention = text.match(/\b(in presenza|in sede|ibrid[oa]|da remoto|remoto|smart working)\b/i);
   return clean(mention?.[1]);
 }
 
 function extractContract(text: string): string {
-  const labeled = text.match(/(?:^|[\n.;])\s*contratto\s*[:\-]\s*([^\n.;]{2,100})/i);
+  const labeled = text.match(/\bcontratto\s*[:\-]\s*([^\n.;]{2,100})/i);
   if (labeled?.[1]) return clean(labeled[1]);
   const mention = text.match(/\b(tempo indeterminato|tempo determinato|apprendistato|stage|tirocinio|collaborazione)\b/i);
   return clean(mention?.[1]);
 }
 
 function extractSchedule(text: string): string {
-  const labeled = text.match(/(?:^|[\n.;])\s*orario\s*[:\-]\s*([^\n.;]{2,120})/i);
+  const labeled = text.match(/\borario\s*[:\-]\s*([^\n.;]{2,120})/i);
   if (labeled?.[1]) return clean(labeled[1]);
   const mention = text.match(/\b(?:lunedi|lunedì|martedi|martedì|mercoledi|mercoledì|giovedi|giovedì|venerdi|venerdì|sabato|domenica)[^\n.;]{0,80}\d{1,2}:\d{2}\s*[-–]\s*\d{1,2}:\d{2}/i);
   return clean(mention?.[0]);
 }
 
 function extractShifts(text: string): string {
-  const match = text.match(/(?:^|[\n.;])\s*turni\s*[:\-]\s*([^\n.;]{2,120})/i);
+  const match = text.match(/\bturni\s*[:\-]\s*([^\n.;]{2,120})/i);
   return clean(match?.[1]);
 }
 
 function extractOnCall(text: string): string {
-  const match = text.match(/(?:^|[\n.;])\s*reperibilit(?:a|à)\s*[:\-]\s*([^\n.;]{2,120})/i);
+  const match = text.match(/\breperibilit(?:a|à)\s*[:\-]\s*([^\n.;]{2,120})/i);
   return clean(match?.[1]);
 }
 
 function extractCompensation(text: string): string {
   const ral = text.match(/\bRAL\s*[:\-]?\s*(\d[\d.,]*(?:\s*[-–]\s*\d[\d.,]*)?(?:\s*(?:EUR|euro|€))?)/i);
   if (ral?.[1]) return clean('RAL ' + ral[1]);
-  const labeled = text.match(/(?:^|[\n.;])\s*(?:compenso|stipendio|retribuzione)\s*[:\-]\s*([^\n.;]{1,90})/i);
+  const labeled = text.match(/\b(?:compenso|stipendio|retribuzione)\s*[:\-]\s*([^\n.;]{1,90})/i);
   return clean(labeled?.[1]);
 }
 
