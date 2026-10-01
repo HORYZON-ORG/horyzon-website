@@ -52,6 +52,7 @@ export interface StartAnalysisRunInput {
   source: Annunci10xSourceInput;
   context?: Annunci10xRuntimeContext;
   evaluationMode?: Annunci10xAnalysisEvaluationMode;
+  requestNonce?: string | null;
 }
 
 export interface StartAnalysisRunResult {
@@ -84,7 +85,7 @@ export async function startAnnunci10xAnalysisRun(input: StartAnalysisRunInput): 
   const source = await prepareAnnunci10xSource(input.source);
   const model = getAnnunci10xModelForOperation('EVALUATE');
   const versions = versionsForEvaluationMode(evaluationMode);
-  const identity = buildRunIdentity(source, model, evaluationMode);
+  const identity = buildRunIdentity(source, model, evaluationMode, context.configuredProvider, input.requestNonce);
   const run = await context.persistence.createOrGetAnalysisRun({
     sessionId: input.session.sessionId,
     sessionSecret: input.session.sessionSecret,
@@ -537,9 +538,15 @@ async function requireEvaluationForRun(
   throw new Annunci10xAiError('INTERNAL_ERROR', 'Durable evaluation not found for analysis run.');
 }
 
-function buildRunIdentity(source: Annunci10xPreparedSource, model: string, evaluationMode: Annunci10xAnalysisEvaluationMode): string {
+function buildRunIdentity(
+  source: Annunci10xPreparedSource,
+  model: string,
+  evaluationMode: Annunci10xAnalysisEvaluationMode,
+  provider: string,
+  requestNonce?: string | null,
+): string {
   const versions = versionsForEvaluationMode(evaluationMode);
-  return createAnalysisInputIdentity({
+  const sourceIdentity = createAnalysisInputIdentity({
     sourceHash: source.sourceHash,
     targetKind: 'ORIGINAL_AD',
     declaredChannel: source.declaredChannel ?? null,
@@ -550,6 +557,11 @@ function buildRunIdentity(source: Annunci10xPreparedSource, model: string, evalu
     model,
     evaluationMode,
   });
+  return `a10x_run_${stableHash({
+    sourceIdentity,
+    provider,
+    requestNonce: requestNonce?.trim() || null,
+  })}`;
 }
 
 export function resolveAnnunci10xPublicScoreEvaluationMode(env: Record<string, string | undefined> = process.env): Annunci10xAnalysisEvaluationMode {

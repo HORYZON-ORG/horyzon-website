@@ -2,6 +2,7 @@ import {
   createAnnunci10xEmailProvider,
   type Annunci10xEmailProvider,
   type ScoreReportEmailAreaInput,
+  type ScoreReportEmailCheckInput,
   type ScoreReportEmailPriorityInput,
 } from './lead-verification.ts';
 import type { Annunci10xRuntimeContext, Annunci10xSessionCookie } from './product-flow.ts';
@@ -21,12 +22,14 @@ export type Annunci10xScoreReportEmailStatus =
   | 'FAILED';
 
 export interface Annunci10xScoreReport {
+  analysisRunId: string;
   roleTitle: string;
   score: number | null;
   band: string | null;
   coverage: number;
   evaluableCheckCount: number;
   areaScores: ScoreReportEmailAreaInput[];
+  checks: ScoreReportEmailCheckInput[];
   interpretation: string;
   priorities: ScoreReportEmailPriorityInput[];
 }
@@ -225,30 +228,41 @@ export function buildAnnunci10xScoreReport(input: {
   snapshot?: PersistedSnapshot | null;
 }): Annunci10xScoreReport {
   void input.lead;
-  void input.analysisRun;
   const score = input.evaluation.score;
   return {
+    analysisRunId: input.analysisRun.id,
     roleTitle: cleanReportText(input.snapshot?.roleCard.title?.value, 140) || 'Il tuo annuncio',
     score: score.value,
     band: score.band?.label ?? null,
     coverage: score.coverage,
     evaluableCheckCount: score.evaluableCheckCount,
     areaScores: calculateAnnunci10xScoreReportAreas(score.checks),
+    checks: score.checks.map(buildCustomerFacingCheckV2),
     interpretation: interpretAnnunci10xScoreBand(score.band?.code ?? null),
     priorities: selectPriorityChecks(score.checks).map(buildCustomerFacingPriorityV2),
   };
 }
 
-export function buildCustomerFacingPriorityV2(check: EvaluationCheckV2): ScoreReportEmailPriorityInput {
+export function buildCustomerFacingCheckV2(check: EvaluationCheckV2): ScoreReportEmailCheckInput {
   const definition = getRubricCheckDefinitionV2(check.id);
   return {
     checkId: check.id,
     label: cleanReportText(CUSTOMER_FACING_CHECK_LABELS_V2[check.id] ?? definition.label, 160),
+    score: check.score,
+    status: check.status,
+    statusLabel: customerFacingStatusLabel(check.status),
     reason: customerFacingPriorityReasonV2(check, definition),
-    missing: CUSTOMER_FACING_MISSING_SUGGESTIONS_V2[check.id]
-      .map((item) => cleanReportText(item, 300))
-      .filter(Boolean)
-      .slice(0, 3),
+    improvement: cleanReportText(CUSTOMER_FACING_MISSING_SUGGESTIONS_V2[check.id][0], 300),
+  };
+}
+
+export function buildCustomerFacingPriorityV2(check: EvaluationCheckV2): ScoreReportEmailPriorityInput {
+  const presentation = buildCustomerFacingCheckV2(check);
+  return {
+    checkId: presentation.checkId,
+    label: presentation.label,
+    reason: presentation.reason,
+    missing: presentation.improvement ? [presentation.improvement] : [],
   };
 }
 
@@ -310,6 +324,14 @@ function comparePriorityChecks(left: EvaluationCheckV2, right: EvaluationCheckV2
   const severity = STATUS_SEVERITY[left.status] - STATUS_SEVERITY[right.status];
   if (severity !== 0) return severity;
   return left.id.localeCompare(right.id);
+}
+
+function customerFacingStatusLabel(status: EvaluationCheckV2['status']): string {
+  if (status === 'EVALUATED') return 'Valutato';
+  if (status === 'MISSING') return 'Mancante';
+  if (status === 'CONFLICT') return 'Da chiarire';
+  if (status === 'UNSUPPORTED') return 'Non supportato';
+  return 'N/D';
 }
 
 function customerFacingPriorityReasonV2(check: EvaluationCheckV2, definition: RubricCheckDefinitionV2): string {

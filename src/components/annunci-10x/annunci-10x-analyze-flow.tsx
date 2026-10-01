@@ -70,6 +70,7 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
   const [identityResetKey, setIdentityResetKey] = useState(0);
   const resultFetchRef = useRef<string | null>(null);
   const flowCycleRef = useRef(0);
+  const analysisRequestNonceRef = useRef(createAnalysisRequestNonce());
   const textRadioRef = useRef<HTMLButtonElement | null>(null);
   const linkRadioRef = useRef<HTMLButtonElement | null>(null);
   const sourceTextareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -110,15 +111,35 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
   useEffect(() => {
     let cancelled = false;
     const cycle = flowCycleRef.current;
-    fetch('/api/annunci-10x/session/resume', { cache: 'no-store' })
-      .then((response) => response.json())
-      .then((payload) => {
+    const requestedAnalysisId = new URLSearchParams(window.location.search).get('analysis')?.trim() ?? '';
+
+    async function resume() {
+      try {
+        if (requestedAnalysisId) {
+          const requestedResponse = await fetch(`/api/annunci-10x/analysis/${encodeURIComponent(requestedAnalysisId)}`, { cache: 'no-store' });
+          const requestedPayload = await requestedResponse.json();
+          if (!cancelled && cycle === flowCycleRef.current && requestedResponse.ok && requestedPayload.ok && requestedPayload.run) {
+            const requestedRun = normalizeRun(requestedPayload.run);
+            setAnalysisRun(requestedRun);
+            setContactSaved(Boolean(requestedRun.contactSaved));
+            setEmailVerified(Boolean(requestedRun.emailVerified));
+            return;
+          }
+        }
+
+        const response = await fetch('/api/annunci-10x/session/resume', { cache: 'no-store' });
+        const payload = await response.json();
         if (cancelled || cycle !== flowCycleRef.current || !payload.ok || !payload.analysisRun) return;
-        setAnalysisRun(payload.analysisRun);
-        setContactSaved(Boolean(payload.analysisRun.contactSaved));
-        setEmailVerified(Boolean(payload.analysisRun.emailVerified));
-      })
-      .catch(() => undefined);
+        const resumedRun = normalizeRun(payload.analysisRun);
+        setAnalysisRun(resumedRun);
+        setContactSaved(Boolean(resumedRun.contactSaved));
+        setEmailVerified(Boolean(resumedRun.emailVerified));
+      } catch {
+        // The landing remains usable even if a stale or cross-device report link cannot restore the session.
+      }
+    }
+
+    void resume();
     return () => {
       cancelled = true;
     };
@@ -188,7 +209,9 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
       const response = await fetch('/api/annunci-10x/analysis', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(sourceMode === 'PUBLIC_URL' ? { sourceKind: 'PUBLIC_URL', url } : { sourceKind: 'PASTED_TEXT', text }),
+        body: JSON.stringify(sourceMode === 'PUBLIC_URL'
+          ? { sourceKind: 'PUBLIC_URL', url, requestNonce: analysisRequestNonceRef.current }
+          : { sourceKind: 'PASTED_TEXT', text, requestNonce: analysisRequestNonceRef.current }),
       });
       const payload = await response.json();
       if (!response.ok || !payload.ok) throw new Error(payload.error?.message ?? 'Analisi non avviata.');
@@ -225,6 +248,7 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
 
   function analyzeAnother() {
     flowCycleRef.current += 1;
+    analysisRequestNonceRef.current = createAnalysisRequestNonce();
     setSourceMode('PASTED_TEXT');
     setText('');
     setUrl('');
@@ -244,6 +268,7 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
 
   function recoverUrlAsText() {
     flowCycleRef.current += 1;
+    analysisRequestNonceRef.current = createAnalysisRequestNonce();
     setSourceMode('PASTED_TEXT');
     setAnalysisRun(null);
     setContactSaved(false);
@@ -515,4 +540,10 @@ function customerSafeError(cause: unknown, fallback: string): string {
   const message = cause instanceof Error ? cause.message : fallback;
   if (/EMAIL_PROVIDER_UNAVAILABLE|EMAIL_VERIFICATION_UNAVAILABLE|provider email|verifica email/i.test(message)) return 'La verifica email è temporaneamente non disponibile.';
   return message || fallback;
+}
+
+
+function createAnalysisRequestNonce(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  return `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 14)}`;
 }

@@ -131,6 +131,24 @@ const duplicate = await startAnnunci10xAnalysisRun({
 });
 assert.equal(duplicate.run.id, started.run.id);
 
+const explicitRetry = await startAnnunci10xAnalysisRun({
+  session,
+  source: { kind: 'PASTED_TEXT', text: VALID_AD, declaredChannel: 'LINKEDIN' },
+  context,
+  evaluationMode: 'V1',
+  requestNonce: 'retry_cycle_0001',
+});
+assert.notEqual(explicitRetry.run.id, started.run.id, 'a new explicit analysis cycle must not reuse a previous run');
+
+const explicitRetryDuplicate = await startAnnunci10xAnalysisRun({
+  session,
+  source: { kind: 'PASTED_TEXT', text: VALID_AD, declaredChannel: 'LINKEDIN' },
+  context,
+  evaluationMode: 'V1',
+  requestNonce: 'retry_cycle_0001',
+});
+assert.equal(explicitRetryDuplicate.run.id, explicitRetry.run.id, 'the same request nonce must remain idempotent');
+
 let currentRun = await runAnnunci10xAnalysisRun({ analysisRunId: started.run.id, session, context });
 assert.equal(currentRun?.stage, 'EXTRACT');
 assert.equal(context.provider.calls.length, 1);

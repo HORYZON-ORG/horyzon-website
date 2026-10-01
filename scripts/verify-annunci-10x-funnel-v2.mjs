@@ -230,6 +230,9 @@ for (const forbidden of ['amountCents', 'stripePriceId', 'successUrl', 'cancelUr
   assert.equal(checkoutBody.includes(forbidden), false, `checkout helper must not send ${forbidden}`);
 }
 
+assert.match(flow, /requestNonce:\s*analysisRequestNonceRef\.current/, 'analysis submit must carry a stable client request nonce');
+assert.match(flow, /analysisRequestNonceRef\.current = createAnalysisRequestNonce\(\)/, 'new analysis cycle must rotate the request nonce');
+assert.match(flow, /new URLSearchParams\(window\.location\.search\)\.get\('analysis'\)/, 'email analysis links must restore the requested run when the session is still available');
 assert.match(flow, /Vuoi trasformarlo\?/, 'free result paid bridge missing');
 assert.match(flow, /ANNUNCI10X_REWRITE/, 'analyze rewrite offer must be wired');
 assert.equal(flow.includes('AGENT_RECRUITER'), false, 'analyze flow must not surface Agent Recruiter');
