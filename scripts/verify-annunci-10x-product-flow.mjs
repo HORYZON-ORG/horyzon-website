@@ -616,6 +616,45 @@ assert.equal(waiterConflictState.conflicts.some((item) => item.targetPath === 'a
 assert.equal(waiterConflictState.conflicts.some((item) => item.targetPath === 'applicationInstructions' && /cv-old@azienda-test\.it/i.test(item.conflictingValue)), true, 'shadow application conflict must be surfaced');
 assert.equal(/Turni:\s*Non previsti/i.test(waiterConflictState.roleCard.companyDescription), false, 'shadow shifts must not contaminate company description');
 assert.equal(/cv-old@azienda-test\.it/i.test(waiterConflictState.roleCard.attractionEvidence.join(' ')), false, 'shadow application destination must not contaminate attraction evidence');
+const waiterRequirementContext = makeContext();
+const waiterRequirementStarted = await startAnnunci10xCreate({ context: waiterRequirementContext });
+const waiterRequirementAnswers = [
+  ['ROLE_CONTEXT', 'Ruolo: Cameriere di sala. Azienda o contesto: Ristorante indipendente da circa 60 coperti a Monopoli.'],
+  ['PRIMARY_CONTRIBUTION', "Risultato principale: Gestire il proprio rango garantendo un servizio ordinato e puntuale, comande corrette e un'esperienza chiara per il cliente."],
+  ['WORK_REALITY', 'Attivita reali: Preparazione sala, accoglienza, comande e servizio. Contesto operativo e interlocutori: sala con clienti, responsabile, cucina e bar. Autonomia: gestisce il proprio rango. Imprevisti o problemi da gestire: picchi di arrivi e richieste particolari.'],
+  ['REQUIREMENTS', 'Indispensabili: Almeno 1 anno di esperienza nel servizio di sala, capacita di gestire piu tavoli, buona comunicazione con il cliente, disponibilita al lavoro serale e nei weekend e disponibilita al lavoro in presenza. Preferenziali: Esperienza con palmari/POS per comande, conoscenza base del vino e inglese conversazionale. Apprendibili: Menu specifico, carta vini del ristorante, gestionale/POS interno e procedure di servizio della struttura. Vincoli: La persona deve poter lavorare nei turni serali e nel weekend secondo programmazione.'],
+  ['ATTRACTION', 'Benefit: Pasto durante il turno. Formazione e crescita concreta: Affiancamento iniziale di una settimana.'],
+  ['OFFER', 'Sede: Monopoli, centro. Modalita: In sede. Contratto: Tempo determinato 8 mesi. Orario: Full-time 40 ore settimanali secondo turnazione. Turni: Pranzo e cena secondo programmazione; presenza richiesta anche nei weekend. Reperibilita: Non prevista. Compenso: RAL 22.000-25.000 EUR.'],
+  ['CHANNEL_APPLICATION', 'Canale: INDEED. Candidatura: Invia CV a recruiting@azienda-test.it.'],
+];
+let waiterRequirementState = waiterRequirementStarted.result;
+for (const [stepId, answer] of waiterRequirementAnswers) {
+  waiterRequirementState = await answerAnnunci10xCreateStep({
+    sessionId: waiterRequirementStarted.cookie.sessionId,
+    sessionSecret: waiterRequirementStarted.cookie.sessionSecret,
+    stepId,
+    answer,
+    context: waiterRequirementContext,
+  });
+}
+await confirmAnnunci10xCreate({
+  sessionId: waiterRequirementStarted.cookie.sessionId,
+  sessionSecret: waiterRequirementStarted.cookie.sessionSecret,
+  context: waiterRequirementContext,
+});
+const waiterRequirementPremium = await runAnnunci10xPremiumGeneration({
+  sessionId: waiterRequirementStarted.cookie.sessionId,
+  sessionSecret: waiterRequirementStarted.cookie.sessionSecret,
+  channel: 'INDEED',
+  context: waiterRequirementContext,
+  authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
+});
+const waiterRequirementBody = waiterRequirementPremium.master.sections.find((section) => section.id === 'confirmed-role-requirements')?.body ?? '';
+assert.match(waiterRequirementBody, /Indispensabili:\n- Almeno 1 anno/i, 'canonical requirements must render as a readable list');
+assert.match(waiterRequirementBody, /\n- capacita di gestire piu tavoli/i, 'canonical required items must be separated');
+assert.match(waiterRequirementBody, /Vincoli:\n- La persona deve poter lavorare nei turni serali/i, 'disqualifying shift compatibility remains explicit');
+assert.equal(/Indispensabili:[\s\S]*disponibilita al lavoro serale e nei weekend/i.test(waiterRequirementBody), false, 'shift compatibility must not be duplicated in required requirements when already disqualifying');
+
 assert.match(waiterConflictState.roleCard.operatingContext, /sala ristorante con cucina e responsabile di sala/i, 'serialized operating context label must parse into its dedicated RoleCard field');
 assert.match(waiterConflictState.roleCard.autonomy, /gestisce il rango/i, 'serialized autonomy must remain dedicated');
 assert.match(waiterConflictState.roleCard.unexpectedEvents, /picchi di affluenza/i, 'serialized incident label must parse into unexpected events');
@@ -731,7 +770,7 @@ const startedAdminConflict = await startAnnunci10xCreate({ context: adminConflic
 const adminConflictAnswers = [
   ['ROLE_CONTEXT', 'Ruolo: Impiegato amministrativo-contabile. Azienda o contesto: PMI B2B di circa 35 persone. Vecchio dato contrattuale: Contratto: Tempo determinato 6 mesi.'],
   ['PRIMARY_CONTRIBUTION', 'Risultato principale: Mantenere aggiornati e corretti i principali flussi amministrativi e contabili, assicurando che documenti, registrazioni e scadenze siano gestiti in tempo e che le informazioni necessarie arrivino complete e coerenti alle chiusure periodiche.'],
-  ['WORK_REALITY', 'Attivita reali: registrazioni contabili, riconciliazioni, scadenze e supporto alle chiusure. Contesto operativo e interlocutori: ufficio amministrativo con altre 2 persone; coordinamento con responsabile amministrativo, commerciale, acquisti e magazzino; uso di ERP, home banking, Excel e posta elettronica. Autonomia: organizza le attivita ordinarie e coinvolge il responsabile sui casi non standard. Imprevisti o problemi da gestire: documenti incompleti, incassi mancanti e richieste urgenti. Informazioni da una precedente versione: Modalita: Ibrido.'],
+  ['WORK_REALITY', 'Attivita reali: registrazioni contabili, riconciliazioni, scadenze e supporto alle chiusure. Contesto operativo e interlocutori: ufficio amministrativo con altre 2 persone; coordinamento con responsabile amministrativo, commerciale, acquisti e magazzino; uso di ERP, home banking, Excel e posta elettronica. Autonomia: Gestisce autonomamente le attivita amministrative ricorrenti, le registrazioni e le verifiche standard. Coinvolge il responsabile amministrativo in caso di anomalie rilevanti, documenti mancanti, differenze nelle riconciliazioni o situazioni non previste. Imprevisti o problemi da gestire: Fatture con dati errati o incompleti; documenti mancanti; differenze tra estratti conto e registrazioni; richieste urgenti di documentazione; scadenze ravvicinate a fine mese; dati da chiarire con fornitori, clienti o reparti interni. Informazioni da una precedente versione: Modalita: Ibrido.'],
   ['REQUIREMENTS', 'Indispensabili: esperienza amministrativo-contabile. Preferenziali: esperienza B2B. Apprendibili: ERP specifico e procedure interne.'],
   ['ATTRACTION', 'Benefit: buoni pasto. Formazione e crescita concreta: passaggio di consegne iniziale.'],
   ['OFFER', 'Sede: Bari, zona Industriale. Modalita: In sede. Contratto: Tempo indeterminato. Orario: Lunedi-venerdi 9:00-18:00. Turni: Non previsti. Reperibilita: Non prevista. Compenso: RAL 28.000-32.000 EUR.'],
@@ -752,7 +791,9 @@ assert.equal(adminConflictState.conflicts.some((item) => item.targetPath === 'at
 assert.match(adminConflictState.roleCard.mission, /informazioni necessarie arrivino complete e coerenti alle chiusure periodiche/i, 'long primary contribution must not be truncated');
 assert.match(adminConflictState.roleCard.operatingContext, /ufficio amministrativo con altre 2 persone/i, 'admin operating context must parse from serialized label');
 assert.match(adminConflictState.roleCard.autonomy, /organizza le attivita ordinarie/i, 'admin autonomy must survive shadow sanitization');
-assert.match(adminConflictState.roleCard.unexpectedEvents, /documenti incompleti/i, 'admin unexpected events must survive shadow sanitization');
+assert.match(adminConflictState.roleCard.unexpectedEvents, /Fatture con dati errati o incompleti/i, 'admin unexpected events must survive shadow sanitization');
+assert.match(adminConflictState.roleCard.unexpectedEvents, /dati da chiarire con fornitori, clienti o reparti interni/i, 'long admin unexpected events must remain complete');
+assert.equal(/Ibrido/i.test(adminConflictState.roleCard.unexpectedEvents), false, 'shadow work mode must be removed from admin unexpected events');
 assert.equal(/Contesto operativo e interlocutori:/i.test(adminConflictState.roleCard.responsibilities.join(' ')), false, 'admin operating context must not contaminate responsibilities');
 await confirmAnnunci10xCreate({
   sessionId: startedAdminConflict.cookie.sessionId,
@@ -769,7 +810,7 @@ const adminConflictPremium = await runAnnunci10xPremiumGeneration({
 assert.match(adminConflictPremium.masterText, /informazioni necessarie arrivino complete e coerenti alle chiusure periodiche/i, 'full admin mission must remain explicit in final candidate copy');
 assert.match(adminConflictPremium.masterText, /Contesto operativo:\s*ufficio amministrativo con altre 2 persone/i, 'admin operating context must remain explicit in final candidate copy');
 assert.match(adminConflictPremium.masterText, /Autonomia:\s*organizza le attivita ordinarie/i, 'admin autonomy must remain explicit in final candidate copy');
-assert.match(adminConflictPremium.masterText, /Imprevisti e variabilit[aà]:\s*documenti incompleti/i, 'admin unexpected events must remain explicit in final candidate copy');
+assert.match(adminConflictPremium.masterText, /Imprevisti e variabilit[aà]:\s*Fatture con dati errati o incompleti/i, 'admin unexpected events must remain explicit in final candidate copy');
 assert.equal(/Tempo determinato 6 mesi|Modalita:\s*Ibrido/i.test(adminConflictPremium.masterText), false, 'admin shadow contract and work mode must stay out of final candidate copy');
 
 const semanticCoverageContext = makeContext(new SourceTaggedButSemanticallyMissingProvider('success'));

@@ -503,13 +503,13 @@ function buildCreateRoleCard(answers: PersistedAnswer[]): RoleCard {
   const workModeSource = clarificationWorkMode || offer;
   const title = clean(extractAfter(role, ['ruolo', 'figura', 'cerco', 'cerchiamo'])) || clean(role.split(/[.\n]/)[0]) || 'Ruolo da chiarire';
   const mission = clean(extractAfter(contribution, ['risultato principale', 'missione', 'obiettivo', 'contributo'], 2_000)) || clean(contribution.split(/[.\n]/)[0]) || 'N/D - contributo da chiarire';
-  const responsibility = clean(extractWorkRealityField(work, workRealityFieldLabels.activities))
+  const responsibility = extractSanitizedWorkRealityField(rawWork, workRealityFieldLabels.activities)
     || clean(extractAfter(work, ['attivita reali', 'attività reali', 'attivita', 'attività'], 2_000))
     || clean(work.split(/[.\n]/)[0])
     || 'N/D - lavoro quotidiano da chiarire';
-  const operatingContext = extractWorkRealityField(work, workRealityFieldLabels.operatingContext);
-  const autonomy = extractWorkRealityField(work, workRealityFieldLabels.autonomy);
-  const unexpectedEvents = extractWorkRealityField(work, workRealityFieldLabels.unexpectedEvents);
+  const operatingContext = extractSanitizedWorkRealityField(rawWork, workRealityFieldLabels.operatingContext);
+  const autonomy = extractSanitizedWorkRealityField(rawWork, workRealityFieldLabels.autonomy);
+  const unexpectedEvents = extractSanitizedWorkRealityField(rawWork, workRealityFieldLabels.unexpectedEvents);
   const companyDescription = companyDescriptionFromRoleContext(role);
   const channel = channelFromAnswers(answers);
   const roleCard: RoleCard = {
@@ -873,6 +873,12 @@ function extractWorkRealityField(text: string, labels: readonly string[]): strin
   return '';
 }
 
+function extractSanitizedWorkRealityField(text: string, labels: readonly string[]): string {
+  const value = extractWorkRealityField(text, labels);
+  return value ? stripNonCanonicalDedicatedFacts(value) : '';
+}
+
+
 function applicationInstructionsFromText(text: string): Fact<string> | undefined {
   const value = extractCreateField(text, channelFieldLabels.application);
   if (!value || isUnknownAnswer(value)) return undefined;
@@ -895,7 +901,7 @@ function hasHybridDistribution(text: string): boolean {
 function detectCreateFactualPreservationIssues(answers: PersistedAnswer[], roleCard: RoleCard): string[] {
   const issues: string[] = [];
   const offer = answerFor(answers, 'OFFER');
-  const work = stripNonCanonicalDedicatedFacts(answerFor(answers, 'WORK_REALITY'));
+  const rawWork = answerFor(answers, 'WORK_REALITY');
   const channelApplication = answerFor(answers, 'CHANNEL_APPLICATION');
   const requirements = stripNonCanonicalDedicatedFacts(answerFor(answers, 'REQUIREMENTS'));
 
@@ -945,13 +951,13 @@ function detectCreateFactualPreservationIssues(answers: PersistedAnswer[], roleC
     issues.push('on-call availability lost declared value');
   }
 
-  const operatingContext = extractWorkRealityField(work, workRealityFieldLabels.operatingContext);
+  const operatingContext = extractSanitizedWorkRealityField(rawWork, workRealityFieldLabels.operatingContext);
   if (operatingContext && !isUnknownAnswer(operatingContext) && !containsMeaningfulWords(textValue(roleCard.attractionContext.operatingContext), operatingContext)) issues.push('operating context lost declared value');
 
-  const autonomy = extractWorkRealityField(work, workRealityFieldLabels.autonomy);
+  const autonomy = extractSanitizedWorkRealityField(rawWork, workRealityFieldLabels.autonomy);
   if (autonomy && !isUnknownAnswer(autonomy) && !containsMeaningfulWords(textValue(roleCard.attractionContext.autonomy), autonomy)) issues.push('autonomy lost declared value');
 
-  const unexpectedEvents = extractWorkRealityField(work, workRealityFieldLabels.unexpectedEvents);
+  const unexpectedEvents = extractSanitizedWorkRealityField(rawWork, workRealityFieldLabels.unexpectedEvents);
   if (unexpectedEvents && !isUnknownAnswer(unexpectedEvents) && !containsMeaningfulWords(textValue(roleCard.attractionContext.unexpectedEvents), unexpectedEvents)) issues.push('unexpected events lost declared value');
 
   const application = extractCreateField(channelApplication, channelFieldLabels.application);

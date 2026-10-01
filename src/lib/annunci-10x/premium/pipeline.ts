@@ -1257,9 +1257,24 @@ function canonicalRequirementsSection(roleCard: RoleCard): GeneratedAd['sections
     TRAINABLE: 'Apprendibili',
     DISQUALIFYING: 'Vincoli',
   };
+  const conditionDisqualifierCategories = new Set(
+    roleCard.requirements
+      .filter((requirement) => requirement.classification === 'DISQUALIFYING')
+      .flatMap((requirement) => requirementConditionCategories(String(requirement.label.value ?? ''), roleCard)),
+  );
   const facts = roleCard.requirements.flatMap((requirement) => {
     const fact = publishableFact(requirement.label);
-    return fact ? [{ ...fact, value: `${labels[requirement.classification]}: ${fact.value}` }] : [];
+    if (!fact) return [];
+    const items = splitRequirementItems(fact.value).filter((item) => {
+      if (requirement.classification !== 'REQUIRED') return true;
+      const categories = requirementConditionCategories(item, roleCard);
+      return !categories.some((category) => conditionDisqualifierCategories.has(category));
+    });
+    if (!items.length) return [];
+    return [{
+      ...fact,
+      value: `${labels[requirement.classification]}:\n${items.map((item) => `- ${item}`).join('\n')}`,
+    }];
   });
   if (!facts.length) return null;
   return canonicalSection(
@@ -1269,6 +1284,32 @@ function canonicalRequirementsSection(roleCard: RoleCard): GeneratedAd['sections
     facts.map((fact) => fact.value).join('\n'),
     facts.flatMap((fact) => fact.sourceIds),
   );
+}
+
+type RequirementConditionCategory = 'WORK_MODE' | 'SHIFTS' | 'ON_CALL' | 'SCHEDULE';
+
+function splitRequirementItems(value: string): string[] {
+  return value
+    .split(/[,;]\s*|\s+e\s+(?=disponibilit(?:a|à)\b)/i)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function requirementConditionCategories(value: string, roleCard: RoleCard): RequirementConditionCategory[] {
+  const categories: RequirementConditionCategory[] = [];
+  if (publishableFact(roleCard.attractionContext.workModeDetail) ?? publishableFact(roleCard.attractionContext.workMode)) {
+    if (/disponibilit|obblig|vincol/i.test(value) && /presenza|in sede|remot|ibrid/i.test(value)) categories.push('WORK_MODE');
+  }
+  if (publishableFact(roleCard.attractionContext.shifts)) {
+    if (/disponibilit|obblig|vincol/i.test(value) && /turn|seral|weekend|sabato|domenica|notturn/i.test(value)) categories.push('SHIFTS');
+  }
+  if (publishableFact(roleCard.attractionContext.onCall)) {
+    if (/reperibil/i.test(value)) categories.push('ON_CALL');
+  }
+  if (publishableFact(roleCard.attractionContext.schedule)) {
+    if (/disponibilit|obblig|vincol/i.test(value) && /orario|fascia|ore\b/i.test(value)) categories.push('SCHEDULE');
+  }
+  return categories;
 }
 
 function canonicalConditionsSection(roleCard: RoleCard): GeneratedAd['sections'][number] | null {
