@@ -577,22 +577,22 @@ export function buildResendScoreReportPayload(input: ScoreReportEmailInput & {
   ].join('\n');
   const areaHtml = input.areaScores.map((area) => [
     '<tr>',
-    `<td style="padding:12px 0;border-bottom:1px solid #dce4d3"><strong>${escapeHtml(area.label)}</strong><div style="font-size:13px;color:#5c6a60">${area.evaluatedCheckCount}/${area.totalCheckCount} controlli valutabili</div></td>`,
-    `<td align="right" style="padding:12px 0;border-bottom:1px solid #dce4d3;font-weight:700">${escapeHtml(formatAreaScore(area))}</td>`,
+    `<td style="padding:14px 0;border-bottom:1px solid #31434a;color:#f7f4e8"><strong style="color:#f7f4e8">${escapeHtml(area.label)}</strong><div style="font-size:13px;color:#aebbb7">${area.evaluatedCheckCount}/${area.totalCheckCount} controlli valutabili</div></td>`,
+    `<td align="right" style="padding:14px 0;border-bottom:1px solid #31434a;color:#d8ff42;font-weight:800">${escapeHtml(formatAreaScore(area))}</td>`,
     '</tr>',
   ].join('')).join('');
   const priorityHtml = input.priorities.map((priority) => [
-    '<li style="margin-bottom:14px">',
-    `<strong>${escapeHtml(priority.label)}</strong>`,
-    `<div><strong>Perché conta:</strong> ${escapeHtml(priority.reason)}</div>`,
+    '<li style="margin-bottom:18px;color:#f7f4e8">',
+    `<strong style="color:#d8ff42;font-size:15px">${escapeHtml(priority.label)}</strong>`,
+    `<div style="margin-top:6px;color:#d7dfdc;line-height:1.5"><strong style="color:#f7f4e8">Perché conta:</strong> ${escapeHtml(priority.reason)}</div>`,
     priority.missing.length
-      ? `<div><strong>Da chiarire:</strong> ${escapeHtml(priority.missing.join('; '))}</div>`
+      ? `<div style="margin-top:4px;color:#d7dfdc;line-height:1.5"><strong style="color:#f7f4e8">Da chiarire:</strong> ${escapeHtml(priority.missing.join('; '))}</div>`
       : '',
     '</li>',
   ].join('')).join('');
   const prioritySectionHtml = priorityHtml
-    ? `<ol style="padding-left:22px;margin:0">${priorityHtml}</ol>`
-    : '<p style="margin:0">Non emergono priorità specifiche dai controlli valutabili.</p>';
+    ? `<ol style="padding-left:22px;margin:0;color:#f7f4e8">${priorityHtml}</ol>`
+    : '<p style="margin:0;color:#d7dfdc">Non emergono priorità specifiche dai controlli valutabili.</p>';
   const rewriteButton = analysisUrl
     ? `<a href="${escapeHtml(analysisUrl)}" style="display:inline-block;background:#c8f531;color:#102229;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:6px">Migliora questo annuncio — ${escapeHtml(rewritePrice)}</a>`
     : `<strong>Migliora questo annuncio — ${escapeHtml(rewritePrice)}</strong>`;
@@ -605,36 +605,36 @@ export function buildResendScoreReportPayload(input: ScoreReportEmailInput & {
   const html = [
     '<!doctype html>',
     '<html lang="it" dir="ltr">',
-    '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Il tuo report Annunci 10X</title></head>',
-    '<body style="margin:0;background:#07171d;padding:24px 12px;font-family:Arial,sans-serif;color:#102229">',
+    '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark light"><meta name="supported-color-schemes" content="dark light"><title>Il tuo report Annunci 10X</title></head>',
+    '<body style="margin:0;background:#07171d;padding:24px 12px;font-family:Arial,sans-serif;color:#f7f4e8">',
     '<div style="display:none;max-height:0;overflow:hidden;opacity:0">Il tuo mini-report Annunci 10X con score, aree e priorità.</div>',
-    '<main style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #dce4d3;border-radius:8px;overflow:hidden">',
-    '<section style="background:#102229;color:#ffffff;padding:28px 28px 24px">',
-    '<div style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#c8f531;font-weight:700">Annunci 10X</div>',
-    '<h1 style="font-size:26px;line-height:1.2;margin:10px 0 10px">Il tuo Score Annunci 10X</h1>',
-    `<p style="margin:0 0 8px;color:#ffffff"><strong>Annuncio:</strong> ${escapeHtml(input.roleTitle)}</p>`,
-    `<p style="margin:0;color:#dce4d3">${escapeHtml(greeting)} ecco la lettura sintetica dell’analisi V2.</p>`,
+    '<main style="max-width:640px;margin:0 auto;background:#07171d;border:1px solid #24383f;border-radius:8px;overflow:hidden">',
+    '<section style="background:#102229;color:#f7f4e8;padding:28px 28px 24px">',
+    '<div style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#d8ff42;font-weight:700">Annunci 10X</div>',
+    '<h1 style="font-size:26px;line-height:1.2;margin:10px 0 10px;color:#f7f4e8">Il tuo Score Annunci 10X</h1>',
+    `<p style="margin:0 0 8px;color:#f7f4e8"><strong>Annuncio:</strong> ${escapeHtml(input.roleTitle)}</p>`,
+    `<p style="margin:0;color:#cdd6d4">${escapeHtml(greeting)} ecco la lettura sintetica dell’analisi V2.</p>`,
     '</section>',
-    '<section style="padding:28px">',
-    `<div style="font-size:42px;line-height:1;font-weight:800;margin:0 0 6px">${escapeHtml(scoreLabel)}</div>`,
-    `<div style="font-size:18px;font-weight:700;margin-bottom:14px">${escapeHtml(input.band ?? 'Fascia non assegnata')}</div>`,
-    `<p style="margin:0 0 22px;line-height:1.55">${escapeHtml(input.interpretation)}</p>`,
-    '<h2 style="font-size:18px;margin:0 0 12px">Punteggi per area</h2>',
-    `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-bottom:24px">${areaHtml}</table>`,
-    '<h2 style="font-size:18px;margin:0 0 12px">Le 3 priorità su cui intervenire</h2>',
+    '<section style="padding:30px 28px 28px;background:#07171d;color:#f7f4e8">',
+    `<div style="font-size:44px;line-height:1;font-weight:800;margin:0 0 8px;color:#d8ff42">${escapeHtml(scoreLabel)}</div>`,
+    `<div style="font-size:19px;font-weight:800;margin-bottom:14px;color:#f7f4e8">${escapeHtml(input.band ?? 'Fascia non assegnata')}</div>`,
+    `<p style="margin:0 0 26px;line-height:1.6;color:#d7dfdc">${escapeHtml(input.interpretation)}</p>`,
+    '<h2 style="font-size:18px;margin:0 0 12px;color:#d8ff42">Punteggi per area</h2>',
+    `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-bottom:28px;color:#f7f4e8">${areaHtml}</table>`,
+    '<h2 style="font-size:18px;margin:0 0 14px;color:#d8ff42">Le 3 priorità su cui intervenire</h2>',
     prioritySectionHtml,
-    coverageLine ? `<p style="margin:18px 0 0;color:#5c6a60">${escapeHtml(coverageLine)}</p>` : '',
-    `<p style="margin:22px 0 0;color:#5c6a60;font-size:13px;line-height:1.5">${escapeHtml(disclaimer)}</p>`,
+    coverageLine ? `<p style="margin:20px 0 0;color:#c8f531;line-height:1.5">${escapeHtml(coverageLine)}</p>` : '',
+    `<p style="margin:22px 0 0;color:#aebbb7;font-size:13px;line-height:1.55">${escapeHtml(disclaimer)}</p>`,
     '</section>',
-    '<section style="padding:24px 28px;background:#f4f7ef;border-top:1px solid #dce4d3">',
-    `<h2 style="font-size:18px;margin:0 0 8px">${escapeHtml(rewriteOffer.displayName)} — ${escapeHtml(rewritePrice)}</h2>`,
-    '<p style="margin:0 0 16px;line-height:1.5">1 annuncio · 1 versione · 1 canale. Puoi riaprire Annunci 10X e procedere dal flusso esistente.</p>',
-    `<p style="margin:0 0 22px">${rewriteButton}</p>`,
-    `<h2 style="font-size:18px;margin:0 0 8px">${escapeHtml(guide.displayName)} — ${escapeHtml(guidePrice)}</h2>`,
-    `<p style="margin:0 0 16px;line-height:1.5">${escapeHtml(guideDescription)}</p>`,
+    '<section style="padding:26px 28px;background:#f4f1e8;color:#102229;border-top:1px solid #dce4d3">',
+    `<h2 style="font-size:18px;margin:0 0 8px;color:#102229">${escapeHtml(rewriteOffer.displayName)} — ${escapeHtml(rewritePrice)}</h2>`,
+    '<p style="margin:0 0 16px;line-height:1.5;color:#31434a">1 annuncio · 1 versione · 1 canale. Puoi riaprire Annunci 10X e procedere dal flusso esistente.</p>',
+    `<p style="margin:0 0 24px">${rewriteButton}</p>`,
+    `<h2 style="font-size:18px;margin:0 0 8px;color:#102229">${escapeHtml(guide.displayName)} — ${escapeHtml(guidePrice)}</h2>`,
+    `<p style="margin:0 0 16px;line-height:1.5;color:#31434a">${escapeHtml(guideDescription)}</p>`,
     `<p style="margin:0">${guideButton}${guidePreviewButton}</p>`,
     '</section>',
-    '<footer style="padding:20px 28px;color:#5c6a60;font-size:13px">Horyzon<br>Annunci 10X</footer>',
+    '<footer style="padding:20px 28px;background:#102229;color:#aebbb7;font-size:13px">Horyzon<br>Annunci 10X</footer>',
     '</main>',
     '</body>',
     '</html>',
