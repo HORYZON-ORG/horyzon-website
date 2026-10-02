@@ -8,129 +8,98 @@ import { FaqSection } from '@/components/faq-section';
 import { publicFaqs } from '@/content/public-faq';
 
 const description = 'Analizza quanto il tuo sito è accessibile, comprensibile e citabile dai sistemi AI con una metodologia Horyzon versionata e spiegabile.';
-const heroBalanceCss = `
-.ai-score-hero {
-  display: block !important;
-}
 
-.ai-score-hero .page-intro {
-  color: #c7d1d0;
-}
-
-@media (min-width: 851px) {
-  .ai-score-hero-grid {
-    display: block !important;
-    width: 100% !important;
-    max-width: 1120px !important;
-    margin-inline: auto !important;
-  }
-
-  .ai-score-hero-copy {
-    max-width: 940px !important;
-    margin-inline: auto !important;
-  }
-
-  .ai-score-hero h1 {
-    max-width: 940px !important;
-  }
-
-  .ai-score-hero .page-intro {
-    max-width: 720px !important;
-    color: #c7d1d0;
-  }
-
-  .ai-score-horizon-visual {
-    position: absolute !important;
-    top: 36px !important;
-    right: 9vw !important;
-    width: min(42vw, 560px) !important;
-    min-height: 0 !important;
-    aspect-ratio: 1 !important;
-    opacity: .42 !important;
-  }
-
-  .ai-score-product {
-    display: block !important;
-    margin: 32px auto 0 !important;
-    max-width: 940px !important;
-    width: 100% !important;
-  }
-
-  .ai-score-form,
-  .ai-score-progress,
-  .ai-score-error {
-    width: 100% !important;
-    max-width: 940px !important;
-    margin-inline: auto !important;
-  }
-
-  .ai-score-form {
-    padding: 20px !important;
-  }
-
-  .ai-score-input-row {
-    grid-template-columns: minmax(0,1fr) minmax(210px,260px) !important;
-  }
-
-  .ai-score-product:has(.ai-score-results) {
-    max-width: 1280px !important;
-  }
-}
-
-@media (min-width: 851px) and (max-width: 1100px) {
-  .ai-score-hero-grid {
-    max-width: 860px !important;
-  }
-
-  .ai-score-hero-copy,
-  .ai-score-hero h1,
-  .ai-score-product,
-  .ai-score-form,
-  .ai-score-progress,
-  .ai-score-error {
-    max-width: 760px !important;
-  }
-
-  .ai-score-horizon-visual {
-    right: -16vw !important;
-    width: min(58vw, 560px) !important;
-    opacity: .36 !important;
-  }
-}
-`;
+const scoreSignals = [
+  {
+    tag: 'Readiness',
+    heading: 'Predisposizione',
+    text: 'Quanto il sito è pronto per essere scoperto, interpretato e citato dai sistemi AI.',
+  },
+  {
+    tag: 'Visibility',
+    heading: 'Presenza reale',
+    text: 'La visibilità nelle risposte AI resta separata e viene mostrata solo quando è realmente misurata.',
+  },
+  {
+    tag: 'Confidence',
+    heading: 'Evidenze',
+    text: 'Il risultato indica anche quanto sono solide le evidenze disponibili per leggere correttamente lo Score.',
+  },
+] as const;
 
 export const metadata: Metadata = pageMetadata({ path: '/ai-score', title: 'Horyzon AI Score', description });
 
 export default function AiScorePage() {
   return <>
     <PageStructuredData path="/ai-score" name="Horyzon AI Score" description={description} breadcrumbs={[{ name: 'Horyzon', path: '/' }, { name: 'AI Score', path: '/ai-score' }]} faqs={publicFaqs['/ai-score']} />
-    <style>{heroBalanceCss}</style>
     <SiteHeader />
-    <main id="content" className="inside editorial-page narrative-page ai-score-page" data-page="ai-score">
-      <nav className="editorial-breadcrumb" aria-label="Percorso di navigazione"><Link href="/">Horyzon</Link><span aria-hidden="true">/</span><span aria-current="page">AI Score</span></nav>
-      <section className="inside-hero ai-score-hero">
-        <div className="ai-score-hero-grid">
-          <div className="ai-score-hero-copy">
-            <p className="eyebrow"><span />Horyzon / AI Score</p>
-            <h1>Quanto è pronto il tuo sito per l’AI?</h1>
-            <p className="page-intro">Scopri quanto il tuo sito è pronto per essere trovato, compreso e citato dai sistemi AI.</p>
-          </div>
-          <div className="ai-score-horizon-visual" aria-hidden="true">
-            <span />
-            <i />
-          </div>
-          <AiScoreClient />
+    <main id="content" className="rd ai-score-page ai-score-revamp" data-page="ai-score">
+      <section className="rd-hero rd-hero-page ai-score-hero" aria-labelledby="ai-score-title">
+        <div className="rd-hero-copy ai-score-hero-copy">
+          <nav className="rd-crumbs" aria-label="Percorso di navigazione">
+            <Link href="/">Horyzon</Link>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page">AI Score</span>
+          </nav>
+          <p className="rd-label rd-rise">AI Score <i>·</i> Analisi gratuita <i>·</i> Nessuna carta</p>
+          <h1 id="ai-score-title">
+            <span className="rd-mask"><span className="rd-line">Quanto è pronto il tuo sito</span></span>
+            <span className="rd-mask"><span className="rd-line rd-accent">per farsi capire dall’AI?</span></span>
+          </h1>
+          <p className="rd-lead rd-rise">Scopri quanto il tuo sito è pronto per essere trovato, compreso e citato dai sistemi AI.</p>
         </div>
+
+        <figure className="rd-hero-aside ai-score-scan-visual" aria-hidden="true">
+          <div className="ai-score-scan-orbit">
+            <span className="ai-score-ring ai-score-ring-outer" />
+            <span className="ai-score-ring ai-score-ring-mid" />
+            <span className="ai-score-ring ai-score-ring-inner" />
+            <i className="ai-score-scan-beam" />
+            <b className="ai-score-scan-dot ai-score-scan-dot-a" />
+            <b className="ai-score-scan-dot ai-score-scan-dot-b" />
+            <b className="ai-score-scan-dot ai-score-scan-dot-c" />
+            <div className="ai-score-scan-core">
+              <small>Horyzon</small>
+              <strong>AI</strong>
+              <span>Scan</span>
+            </div>
+          </div>
+          <figcaption>
+            <span>Accessibilità</span>
+            <span>Contenuti</span>
+            <span>Citabilità</span>
+          </figcaption>
+        </figure>
+
+        <AiScoreClient />
       </section>
-      <section className="narrative-section ai-score-method">
-        <header>
-          <p className="section-kicker">Metodologia</p>
-          <h2>Un punteggio trasparente, non una black box.</h2>
-          <p className="narrative-lede">Horyzon separa predisposizione tecnica e visibilità reale e assegna punti solo a segnali effettivamente misurati.</p>
+
+      <section className="rd-map ai-score-method" aria-labelledby="ai-score-method-title">
+        <header className="rd-reveal">
+          <p className="rd-label">Metodologia</p>
+          <h2 id="ai-score-method-title">Un punteggio trasparente. <span>Non una black box.</span></h2>
+          <p className="ai-score-method-lede">Horyzon separa predisposizione tecnica, visibilità reale e qualità delle evidenze. Ogni risultato dichiara ciò che è stato misurato e ciò che non lo è.</p>
         </header>
-        <Link className="text-link" href="/ai-score/methodology">Scopri la metodologia ↗︎</Link>
+        <ul className="rd-tiles">
+          {scoreSignals.map(({ tag, heading, text }, index) => <li key={tag} className="rd-reveal" style={{ '--i': index } as React.CSSProperties}>
+            <article className="rd-tile">
+              <span className="rd-tile-tag">{tag}</span>
+              <h3>{heading}</h3>
+              <p>{text}</p>
+            </article>
+          </li>)}
+        </ul>
+        <Link className="rd-link ai-score-method-link" href="/ai-score/methodology">Scopri la metodologia ↗︎</Link>
       </section>
-      <FaqSection items={publicFaqs['/ai-score']} />
+
+      <FaqSection items={publicFaqs['/ai-score']} variant="dark" />
+
+      <section className="rd-final rd-final-glow ai-score-final" aria-labelledby="ai-score-final-title">
+        <p className="rd-label">Il prossimo passo</p>
+        <h2 id="ai-score-final-title">Parti dal tuo dominio. <em>Guarda cosa vede davvero l’AI.</em></h2>
+        <p>L’analisi gratuita distingue i segnali misurati da quelli non ancora disponibili e ti restituisce una lettura più chiara del punto di partenza.</p>
+        <a className="rd-cta" href="#ai-score-audit">Analizza il mio sito <span aria-hidden="true">↑</span></a>
+      </section>
     </main>
     <SiteFooter />
   </>;

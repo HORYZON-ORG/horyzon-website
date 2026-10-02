@@ -90,12 +90,12 @@ export function AiScoreClient() {
     }
   }
 
-  return <div className="ai-score-product" aria-live="polite">
+  return <div id="ai-score-audit" className="ai-score-product" aria-live="polite">
     <form className={running ? 'ai-score-form is-running' : 'ai-score-form'} onSubmit={submit}>
       <label htmlFor="ai-score-url">Dominio o URL da analizzare</label>
       <div className="ai-score-input-row">
         <input id="ai-score-url" value={url} onChange={event => setUrl(event.target.value)} placeholder="https://azienda.it" inputMode="url" autoComplete="url" disabled={running} aria-describedby="ai-score-help" />
-        <button className="button primary" type="submit" disabled={running}>{running ? 'Analisi in corso' : 'Analizza il sito'} <span aria-hidden="true">↗︎</span></button>
+        <button className="rd-cta ai-score-submit" type="submit" disabled={running}>{running ? 'Analisi in corso' : 'Analizza il sito'} <span aria-hidden="true">↗︎</span></button>
       </div>
       <div className="ai-score-form-meta" id="ai-score-help">
         <span>Analisi gratuita · Nessuna carta richiesta</span>
