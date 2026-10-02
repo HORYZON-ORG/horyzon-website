@@ -18,6 +18,7 @@ export default function TermsConditionsPage() {
       name="Termini e condizioni"
       description="Condizioni di utilizzo di horyzon.it e delle offerte digitali e professionali di Horyzon Consulting."
       type="WebPage"
+      dateModified="2026-10-01"
       breadcrumbs={[
         { name: 'Horyzon', path: '/' },
         { name: 'Termini e condizioni', path: '/termini-condizioni' },

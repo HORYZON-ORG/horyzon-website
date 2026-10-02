@@ -22,6 +22,7 @@ const sitemap = await get('/sitemap.xml', true);
 const urls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => decode(match[1]));
 assert(urls.length > 10, 'Sitemap unexpectedly empty');
 assert.equal(new Set(urls).size, urls.length, 'Duplicate sitemap URL');
+assert.match(sitemap, /<lastmod>2026-10-02<\/lastmod>/, 'Known AI Score content updates must expose an accurate sitemap lastmod');
 const excluded = ['/radar', '/privacy-policy', '/cookie-policy', '/v/frank', '/llms.txt', '/index.md'];
 const faqRoutes = new Set(['/', '/horyzon', '/metodo', '/radar-impresa', '/ai-score', '/le-tre-aree', '/piattaforma', '/contatti']);
 const titleSet = new Set();
@@ -52,8 +53,14 @@ for (const url of urls) {
   return value['@graph'] ?? [value];
  });
  const ids = new Set(nodes.map(node => node['@id']));
- assert(nodes.some(node => node['@type'] === 'Organization'));
+ const organization = nodes.find(node => node['@type'] === 'Organization');
+ assert(organization);
  assert(nodes.some(node => node['@type'] === 'WebSite'));
+ const team = nodes.filter(node => node['@type'] === 'Person');
+ assert(team.length >= 3, `Organization team graph missing: ${route}`);
+ assert.equal(organization.founder?.['@id'], `${origin}/angelo#person`);
+ assert(organization.member?.some(item => item['@id'] === `${origin}/frank#person`));
+ assert(team.some(node => node['@id'] === `${origin}/frank#person` && node.sameAs?.includes('https://www.instagram.com/frank_cannols/')), `Verified person sameAs missing: ${route}`);
  const page = nodes.find(node => ['WebPage', 'AboutPage', 'ProfilePage', 'ContactPage'].includes(node['@type']));
  assert(page, `Missing page entity: ${route}`);
  assert.equal(page.inLanguage, route.match(/^\/(en|de|fr)(?:\/|$)/)?.[1] ?? 'it');
@@ -98,6 +105,12 @@ const radar = await get('/radar-impresa');
 assert(radar.includes('Qual è la differenza tra Horyzon Hub e Platform?'));
 assert(radar.includes('Le integrazioni sono già attive per ogni azienda?'));
 assert((await get('/')).includes('type="text/markdown"'));
+const terms = await get('/termini-condizioni');
+const termsNodes = [...terms.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].flatMap(match => {
+ const value = JSON.parse(match[1]);
+ return value['@graph'] ?? [value];
+});
+assert.equal(termsNodes.find(node => node['@id'] === `${origin}/termini-condizioni#webpage`)?.dateModified, '2026-10-01', 'Terms dateModified must match the published update date');
 
 if (base) {
  for (const route of ['/', '/radar', '/frank', '/index.md', '/llms.txt', '/not-a-real-horyzon-page-404']) {

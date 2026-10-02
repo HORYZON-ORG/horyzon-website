@@ -153,6 +153,7 @@ assert.match(audit, /meta_robots_indexable', blocksIndexing\(context\.home\.meta
 assert.match(audit, /x_robots_indexable', blocksIndexing\(context\.home\.xRobots\) \? 'fail' : 'pass'/, 'Missing X-Robots-Tag must keep the default indexable state');
 assert.match(audit, /hasSchema\(context\.pages, 'AboutPage'\)/, 'About-page presence must accept structured-data evidence');
 assert.match(audit, /hasSchema\(context\.pages, 'ContactPage'\)/, 'Contact-page presence must accept structured-data evidence');
+assert.match(audit, /aggiornato\|aggiornamento\|updated\|last updated/, 'Freshness detection must recognize Italian update wording');
 
 const hardcodedSecretPattern = /(sk-[A-Za-z0-9_-]{20,}|AIza[0-9A-Za-z_-]{20,}|pplx-[A-Za-z0-9_-]{20,})/;
 for (const [name, content] of Object.entries({ methodology, providers, visibility, externalFootprint, types, client, methodologyPage })) {
