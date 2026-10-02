@@ -377,32 +377,46 @@
   .ai-score-page.rd .ai-score-score-panel,.ai-score-page.rd .ai-score-premium{grid-template-columns:1fr}
   .ai-score-page.rd .ai-score-confidence{grid-column:auto}
   .ai-score-page.rd .ai-score-notice,.ai-score-page.rd .ai-score-interpretation{padding:18px 20px}
-  .ai-score-page.rd .ai-score-method{padding:84px 5vw}
+  .ai-score-page.rd .ai-score-method{padding:84px 5vw!important}
 }
 @media(prefers-reduced-motion:reduce){
   .ai-score-scan-beam,.ai-score-scan-dot{animation:none!important}
 }
 
 
-/* AI Score alignment + methodology page visual system. */
+/* AI Score alignment + methodology page visual system.
+   Override the legacy two-column .ai-score-method grid completely: this section is one vertical composition. */
+.ai-score-page.rd .ai-score-method{
+  display:block;
+  grid-template-columns:none;
+  width:100%;
+  padding:120px 6vw 110px!important;
+}
 .ai-score-page.rd .ai-score-method > header{
   width:min(100%,980px);
-  margin-inline:auto;
+  max-width:none;
+  margin:0 auto;
   text-align:center;
 }
 .ai-score-page.rd .ai-score-method > header .rd-label{text-align:center}
 .ai-score-page.rd .ai-score-method > header h2{
   max-width:13ch;
-  margin-inline:auto;
-}
-.ai-score-page.rd .ai-score-method-lede{
   margin-left:auto;
   margin-right:auto;
+}
+.ai-score-page.rd .ai-score-method-lede{
+  max-width:58ch;
+  margin-left:auto;
+  margin-right:auto;
+}
+.ai-score-page.rd .ai-score-method .rd-tiles{
+  width:min(100%,1180px);
+  margin:58px auto 0;
 }
 .ai-score-page.rd .ai-score-method-link{
   display:flex;
-  margin-left:auto;
-  margin-right:auto;
+  width:max-content;
+  margin:32px auto 0;
 }
 
 /* /ai-score/methodology */
