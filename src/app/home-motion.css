@@ -245,7 +245,12 @@ em .kin-w{transition:transform .9s cubic-bezier(.34,1.45,.64,1) calc(var(--d,0ms
  .chapter-copy h1{font-size:clamp(56px,6vw,100px);line-height:1.02;margin-bottom:22px}
  .chapter-copy h2{font-size:clamp(46px,5vw,82px);line-height:1.02;margin-bottom:20px}
  .chapter-hero h1{max-width:940px}
- .chapter-arrival h2{font-size:clamp(56px,6.3vw,108px)}
+ .chapter-arrival{padding-top:68px;padding-bottom:148px}
+ .chapter-arrival .chapter-copy{width:min(1180px,90vw)}
+ .chapter-arrival h2{font-size:clamp(46px,4.9vw,78px);line-height:1.01;margin-bottom:16px}
+ .chapter-arrival .arrival-horizon{margin-bottom:24px}
+ .chapter-arrival .chapter-intro{font-size:16px;line-height:1.45;margin-bottom:10px}
+ .chapter-arrival .journey-actions{margin-top:16px}
  .chapter-label{margin-bottom:18px;font-size:11px}
  .chapter-intro{font-size:clamp(16px,1.25vw,19px);line-height:1.5;margin-bottom:18px;max-width:560px}
  .journey-actions{margin-top:22px}
@@ -286,7 +291,11 @@ em .kin-w{transition:transform .9s cubic-bezier(.34,1.45,.64,1) calc(var(--d,0ms
  .journey-chapter{padding-top:68px;padding-bottom:100px}
  .chapter-copy h1{font-size:clamp(50px,5.4vw,88px)}
  .chapter-copy h2{font-size:clamp(42px,4.5vw,72px)}
- .chapter-arrival h2{font-size:clamp(50px,5.8vw,94px)}
+ .chapter-arrival{padding-top:54px;padding-bottom:136px}
+ .chapter-arrival h2{font-size:clamp(42px,4.35vw,68px);line-height:1;margin-bottom:12px}
+ .chapter-arrival .arrival-horizon{margin-bottom:18px}
+ .chapter-arrival .chapter-intro{font-size:15px;line-height:1.4;margin-bottom:8px}
+ .chapter-arrival .journey-actions{margin-top:12px}
  .chapter-label{margin-bottom:14px}
  .chapter-intro{font-size:16px;line-height:1.45;margin-bottom:14px}
  .journey-actions{margin-top:18px}
