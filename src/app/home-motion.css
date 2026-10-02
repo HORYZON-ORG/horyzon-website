@@ -237,3 +237,49 @@ em .kin-w{transition:transform .9s cubic-bezier(.34,1.45,.64,1) calc(var(--d,0ms
 .wellbeing-paths .dimension-arrow{transition:transform .35s cubic-bezier(.2,.8,.2,1),color .35s}
 .wellbeing-paths a:hover .dimension-arrow,.wellbeing-paths a:focus-visible .dimension-arrow{transform:translate(3px,-3px);color:#d9e65f}
 @media(max-width:850px){.wellbeing-paths a:hover{padding-left:20px}}
+
+/* Compact desktop journey for laptop and short browser viewports. */
+@media(min-width:851px) and (max-height:900px){
+ .journey-chapter{padding-top:84px;padding-bottom:112px}
+ .chapter-hero{padding-top:40px;padding-bottom:112px}
+ .chapter-copy h1{font-size:clamp(56px,6vw,100px);line-height:1.02;margin-bottom:22px}
+ .chapter-copy h2{font-size:clamp(46px,5vw,82px);line-height:1.02;margin-bottom:20px}
+ .chapter-hero h1{max-width:940px}
+ .chapter-arrival h2{font-size:clamp(56px,6.3vw,108px)}
+ .chapter-label{margin-bottom:18px;font-size:11px}
+ .chapter-intro{font-size:clamp(16px,1.25vw,19px);line-height:1.5;margin-bottom:18px;max-width:560px}
+ .journey-actions{margin-top:22px}
+ .chapter-current .chapter-copy{width:min(590px,45vw)}
+ .radar-scene{width:min(400px,26vw)}
+ .wellbeing-paths{margin-top:28px;gap:12px}
+ .wellbeing-paths a{min-height:158px;padding:18px 20px}
+ .wellbeing-paths h3{font-size:clamp(24px,2.05vw,34px)}
+ .wellbeing-paths p{font-size:14px;line-height:1.5}
+ .dimension-number{padding-top:4px}
+ .kinetic .method-pin{padding:76px 7vw 112px}
+ .kinetic .method-line{margin-top:36px}
+ .kinetic .chapter-method .journey-method li{padding-top:24px}
+ .kinetic .chapter-method .journey-method strong{font-size:clamp(28px,3vw,46px)}
+ .kinetic .chapter-method .journey-method small{margin-top:8px;font-size:14px}
+ .kinetic .chapter-method .journey-actions{margin-top:30px}
+}
+@media(min-width:851px) and (max-height:760px){
+ .journey-chapter{padding-top:68px;padding-bottom:100px}
+ .chapter-copy h1{font-size:clamp(50px,5.4vw,88px)}
+ .chapter-copy h2{font-size:clamp(42px,4.5vw,72px)}
+ .chapter-arrival h2{font-size:clamp(50px,5.8vw,94px)}
+ .chapter-label{margin-bottom:14px}
+ .chapter-intro{font-size:16px;line-height:1.45;margin-bottom:14px}
+ .journey-actions{margin-top:18px}
+ .radar-scene{width:min(360px,24vw)}
+ .wellbeing-paths{margin-top:22px}
+ .wellbeing-paths a{min-height:140px;padding:16px 18px}
+ .wellbeing-paths h3{font-size:clamp(22px,1.9vw,30px)}
+ .wellbeing-paths p{font-size:13px}
+ .kinetic .method-pin{padding:64px 7vw 100px}
+ .kinetic .method-line{margin-top:28px}
+ .kinetic .chapter-method .journey-method li{padding-top:20px}
+ .kinetic .chapter-method .journey-method strong{font-size:clamp(26px,2.7vw,40px)}
+ .kinetic .chapter-method .journey-method small{font-size:13px}
+ .kinetic .chapter-method .journey-actions{margin-top:24px}
+}
