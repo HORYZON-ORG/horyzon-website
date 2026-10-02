@@ -145,6 +145,14 @@ assert.match(ssrf, /type PinnedLookup/, 'Fetcher must use a pinned DNS lookup');
 assert.match(ssrf, /lookup,/, 'Pinned lookup must be passed to the request options');
 assert.match(ssrf, /socket\.remoteAddress/, 'Fetcher must validate remote socket address');
 assert.match(audit, /export function classifyPageType\(url: string/, 'Page classification must be exposed');
+assert.match(audit, /schemaTypes\.some\(\(type\) => \/\\bAboutPage\\b\/i\.test\(type\)\)/, 'AboutPage schema must classify an About page');
+assert.match(audit, /schemaTypes\.some\(\(type\) => \/\\bContactPage\\b\/i\.test\(type\)\)/, 'ContactPage schema must classify a Contact page');
+assert.match(audit, /const brandIdentityLink = home\.internalLinks\.find/, 'Crawl sampling must prioritize a brand identity page when present');
+assert.match(audit, /Main navigation is generally more representative than arbitrary sitemap order/, 'Crawl sampling must prefer navigation before sitemap fill');
+assert.match(audit, /meta_robots_indexable', blocksIndexing\(context\.home\.metaRobots\) \? 'fail' : 'pass'/, 'Missing meta robots must keep the default indexable state');
+assert.match(audit, /x_robots_indexable', blocksIndexing\(context\.home\.xRobots\) \? 'fail' : 'pass'/, 'Missing X-Robots-Tag must keep the default indexable state');
+assert.match(audit, /hasSchema\(context\.pages, 'AboutPage'\)/, 'About-page presence must accept structured-data evidence');
+assert.match(audit, /hasSchema\(context\.pages, 'ContactPage'\)/, 'Contact-page presence must accept structured-data evidence');
 
 const hardcodedSecretPattern = /(sk-[A-Za-z0-9_-]{20,}|AIza[0-9A-Za-z_-]{20,}|pplx-[A-Za-z0-9_-]{20,})/;
 for (const [name, content] of Object.entries({ methodology, providers, visibility, externalFootprint, types, client, methodologyPage })) {

@@ -226,7 +226,7 @@ function analyzePage(url: string, status: number, headers: Headers, html: string
   const h1 = extractTagText(html, 'h1');
   const h2 = extractTagText(html, 'h2');
   const h3 = extractTagText(html, 'h3');
-  const classification = classifyPageType(url, `${h1.join(' ')} ${h2.join(' ')} ${text.slice(0, 500)}`);
+  const classification = classifyPageType(url, `${h1.join(' ')} ${h2.join(' ')} ${text.slice(0, 500)}`, schemaTypes);
 
   return {
     url,
@@ -273,9 +273,15 @@ function analyzePage(url: string, status: number, headers: Headers, html: string
   };
 }
 
-export function classifyPageType(url: string, text = ''): PageClassification {
-  const haystack = `${new URL(url).pathname} ${text}`.toLowerCase();
-  if (/^\/?$/.test(new URL(url).pathname)) return 'home';
+export function classifyPageType(url: string, text = '', schemaTypes: string[] = []): PageClassification {
+  const pathname = new URL(url).pathname;
+  const haystack = `${pathname} ${text}`.toLowerCase();
+  if (/^\/?$/.test(pathname)) return 'home';
+  if (schemaTypes.some((type) => /\bAboutPage\b/i.test(type))) return 'about';
+  if (schemaTypes.some((type) => /\bContactPage\b/i.test(type))) return 'contact';
+  if (schemaTypes.some((type) => /\bService\b/i.test(type))) return 'service';
+  if (schemaTypes.some((type) => /\bProduct\b/i.test(type))) return 'product';
+  if (schemaTypes.some((type) => /\b(Article|NewsArticle|BlogPosting)\b/i.test(type))) return 'article';
   if (/\b(about|chi-siamo|azienda|studio|team)\b/.test(haystack)) return 'about';
   if (/\b(contact|contatti|contatto|preventivo)\b/.test(haystack)) return 'contact';
   if (/\b(service|servizi|consulenza|solutions|soluzioni)\b/.test(haystack)) return 'service';
@@ -287,20 +293,32 @@ export function classifyPageType(url: string, text = ''): PageClassification {
 
 function selectCrawlCandidates(home: PageFacts, sitemap: OptionalFetch, limit: number): string[] {
   const candidates = new Set<string>();
+  const homeUrl = new URL(home.finalUrl);
+  const brandToken = homeUrl.hostname.replace(/^www\./, '').split('.')[0]?.toLowerCase().replace(/[^a-z0-9]+/g, '') ?? '';
+  const brandIdentityLink = home.internalLinks.find((link) => {
+    const firstSegment = new URL(link).pathname.split('/').filter(Boolean)[0]?.toLowerCase().replace(/[^a-z0-9]+/g, '') ?? '';
+    return Boolean(brandToken && firstSegment && firstSegment === brandToken);
+  });
+  if (brandIdentityLink) candidates.add(stripHash(brandIdentityLink));
+
   for (const type of ['about', 'contact', 'service', 'product', 'article', 'legal'] as PageClassification[]) {
     const match = home.internalLinks.find((link) => classifyPageType(link) === type);
     if (match) candidates.add(stripHash(match));
   }
-  if (sitemap.status === 'measured') {
-    for (const loc of [...sitemap.body.matchAll(/<loc>([^<]+)<\/loc>/gi)].map((match) => match[1].trim())) {
-      if (isSameOrigin(new URL(home.finalUrl), loc) && isLikelyHtmlUrl(loc)) candidates.add(stripHash(loc));
-      if (candidates.size >= limit) break;
-    }
-  }
+
+  // Main navigation is generally more representative than arbitrary sitemap order.
   for (const link of home.internalLinks) {
     candidates.add(stripHash(link));
     if (candidates.size >= limit) break;
   }
+
+  if (candidates.size < limit && sitemap.status === 'measured') {
+    for (const loc of [...sitemap.body.matchAll(/<loc>([^<]+)<\/loc>/gi)].map((match) => match[1].trim())) {
+      if (isSameOrigin(homeUrl, loc) && isLikelyHtmlUrl(loc)) candidates.add(stripHash(loc));
+      if (candidates.size >= limit) break;
+    }
+  }
+
   return [...candidates].filter((url) => url !== home.finalUrl).slice(0, limit);
 }
 
@@ -356,8 +374,8 @@ function buildChecks(context: AuditContext, entity: EntityAnalysis): AuditCheck[
   add('redirect_chain_controlled', 'pass', [ev('redirect_chain_controlled', 'Fetch policy', `Redirect limit ${AI_SCORE_LIMITS.maxRedirects}`, context.home.finalUrl, 'derived')]);
   add('canonical_present', context.home.canonical ? 'pass' : 'fail', [ev('canonical_present', 'Canonical', context.home.canonical ?? 'Not found')]);
   add('canonical_same_origin', context.home.canonical ? (isSameOrigin(new URL(context.home.finalUrl), absolutize(context.home.finalUrl, context.home.canonical) ?? '') ? 'pass' : 'fail') : 'unknown', [ev('canonical_same_origin', 'Canonical', context.home.canonical ?? 'Not found')], Boolean(context.home.canonical));
-  add('meta_robots_indexable', blocksIndexing(context.home.metaRobots) ? 'fail' : context.home.metaRobots ? 'pass' : 'partial', [ev('meta_robots_indexable', 'Meta robots', context.home.metaRobots ?? 'Not declared')]);
-  add('x_robots_indexable', blocksIndexing(context.home.xRobots) ? 'fail' : context.home.xRobots ? 'pass' : 'partial', [ev('x_robots_indexable', 'X-Robots-Tag', context.home.xRobots ?? 'Not declared')]);
+  add('meta_robots_indexable', blocksIndexing(context.home.metaRobots) ? 'fail' : 'pass', [ev('meta_robots_indexable', 'Meta robots', context.home.metaRobots ?? 'Not declared (default: indexable)')]);
+  add('x_robots_indexable', blocksIndexing(context.home.xRobots) ? 'fail' : 'pass', [ev('x_robots_indexable', 'X-Robots-Tag', context.home.xRobots ?? 'Not declared (default: indexable)')]);
   add('robots_txt_available', hasRobots ? 'pass' : 'partial', [ev('robots_txt_available', 'robots.txt', optionalFetchLabel(context.robots), robotsFetch?.url ?? context.home.finalUrl)]);
   add('robots_allows_googlebot', hasRobots ? (robotsDisallows(robotsBody, 'googlebot') ? 'fail' : 'pass') : 'unknown', [ev('robots_allows_googlebot', 'Googlebot policy', hasRobots ? summarizeRobots(robotsBody, 'googlebot') : 'Not measured', context.home.finalUrl, 'derived')], hasRobots);
   add('robots_allows_oai_searchbot', hasRobots ? (robotsDisallows(robotsBody, 'oai-searchbot') ? 'fail' : 'pass') : 'unknown', [ev('robots_allows_oai_searchbot', 'OAI-SearchBot policy', hasRobots ? summarizeRobots(robotsBody, 'oai-searchbot') : 'Not measured', context.home.finalUrl, 'derived')], hasRobots);
@@ -402,8 +420,10 @@ function buildChecks(context: AuditContext, entity: EntityAnalysis): AuditCheck[
   add('faq_schema_alignment', context.pages.some((page) => page.hasFaqSignals) ? (hasSchema(context.pages, 'FAQPage') ? 'pass' : 'partial') : 'not_applicable', [ev('faq_schema_alignment', 'FAQ signals/schema', String(hasSchema(context.pages, 'FAQPage')))], context.pages.some((page) => page.hasFaqSignals));
   add('schema_relevance', unique(context.pages.flatMap((page) => page.schemaTypes)).length <= 10 ? 'pass' : 'partial', [ev('schema_relevance', 'Unique schema types', String(unique(context.pages.flatMap((page) => page.schemaTypes)).length), context.home.finalUrl, 'derived')]);
 
-  add('about_page_present', context.pages.some((page) => page.classification === 'about') || context.home.internalLinks.some((link) => classifyPageType(link) === 'about') ? 'pass' : 'fail', [ev('about_page_present', 'About page', String(context.pages.some((page) => page.classification === 'about')), context.home.finalUrl, 'derived')]);
-  add('contact_page_present', context.pages.some((page) => page.classification === 'contact') || context.home.internalLinks.some((link) => classifyPageType(link) === 'contact') ? 'pass' : 'fail', [ev('contact_page_present', 'Contact page', String(context.pages.some((page) => page.classification === 'contact')), context.home.finalUrl, 'derived')]);
+  const aboutPagePresent = context.pages.some((page) => page.classification === 'about') || hasSchema(context.pages, 'AboutPage') || context.home.internalLinks.some((link) => classifyPageType(link) === 'about');
+  const contactPagePresent = context.pages.some((page) => page.classification === 'contact') || hasSchema(context.pages, 'ContactPage') || context.home.internalLinks.some((link) => classifyPageType(link) === 'contact');
+  add('about_page_present', aboutPagePresent ? 'pass' : 'fail', [ev('about_page_present', 'About page', String(aboutPagePresent), context.home.finalUrl, 'derived')]);
+  add('contact_page_present', contactPagePresent ? 'pass' : 'fail', [ev('contact_page_present', 'Contact page', String(contactPagePresent), context.home.finalUrl, 'derived')]);
   add('privacy_page_present', context.pages.some((page) => page.classification === 'legal' && /privacy/i.test(page.finalUrl + page.text)) || context.home.internalLinks.some((link) => /privacy/i.test(link)) ? 'pass' : 'partial', [ev('privacy_page_present', 'Privacy signal', String(context.home.internalLinks.some((link) => /privacy/i.test(link))), context.home.finalUrl, 'derived')]);
   add('legal_terms_present', context.pages.some((page) => page.classification === 'legal') || context.home.internalLinks.some((link) => /terms|termini|legal|cookie/i.test(link)) ? 'pass' : 'partial', [ev('legal_terms_present', 'Legal links', String(context.home.internalLinks.filter((link) => /terms|termini|legal|cookie|privacy/i.test(link)).length), context.home.finalUrl, 'derived')]);
   add('team_or_author_present', entity.people.length > 0 || /\b(team|autore|author|fondatore|founder)\b/i.test(context.pages.map((page) => page.text).join(' ')) ? 'pass' : 'partial', [ev('team_or_author_present', 'Team/author signals', String(entity.people.length), context.home.finalUrl, 'derived')]);
