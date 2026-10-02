@@ -239,8 +239,56 @@ em .kin-w{transition:transform .9s cubic-bezier(.34,1.45,.64,1) calc(var(--d,0ms
 @media(max-width:850px){.wellbeing-paths a:hover{padding-left:20px}}
 
 
-/* Final chapter also compacts on medium-height desktop viewports. */
+/* Medium-height desktop viewports: keep every home chapter inside the visible frame above the horizon nav. */
 @media(min-width:851px) and (max-height:1050px){
+ .journey-chapter{padding-top:72px;padding-bottom:148px}
+ .chapter-hero{padding-top:42px;padding-bottom:150px}
+ .chapter-copy h1{font-size:clamp(54px,5.2vw,96px);line-height:1.02;margin-bottom:20px}
+ .chapter-copy h2{font-size:clamp(44px,4.5vw,76px);line-height:1.02;margin-bottom:18px}
+ .chapter-label{margin-bottom:16px;font-size:11px}
+ .chapter-intro{font-size:17px;line-height:1.48;margin-bottom:16px;max-width:560px}
+ .journey-actions{margin-top:20px}
+ .chapter-caption{bottom:118px;font-size:10px}
+
+ .chapter-current .chapter-copy{width:min(580px,44vw)}
+ .radar-scene{width:min(390px,25vw)}
+
+ .wellbeing-paths{margin-top:24px;gap:12px}
+ .wellbeing-paths a{min-height:148px;padding:16px 18px}
+ .wellbeing-paths h3{font-size:clamp(24px,1.9vw,32px);margin-bottom:6px}
+ .wellbeing-paths p{font-size:13px;line-height:1.45}
+ .dimension-number{padding-top:3px}
+
+ .kinetic .org-pin{height:100svh;padding:78px 6vw 128px}
+ .kinetic .chapter-org .chapter-label{margin-bottom:9px}
+ .kinetic .chapter-org h2{font-size:clamp(34px,2.8vw,48px);line-height:1.02;margin-bottom:8px}
+ .kinetic .chapter-org .chapter-intro{max-width:760px;margin-bottom:0;font-size:15px;line-height:1.35}
+ .kinetic .org-chart{margin-top:10px}
+ .kinetic .org-head{gap:2px;padding-bottom:18px}
+ .kinetic .org-head::after{height:18px}
+ .kinetic .org-head strong{font-size:23px}
+ .kinetic .org-head small{font-size:11px}
+ .kinetic .org-depts{gap:9px;padding-top:18px}
+ .kinetic .org-depts>li{padding:11px 11px 10px}
+ .kinetic .org-depts>li::before{top:-19px;height:18px}
+ .kinetic .org-index{font-size:9px}
+ .kinetic .org-depts h3{margin:4px 0 7px;font-size:clamp(18px,1.35vw,22px)}
+ .kinetic .org-functions{gap:4px;margin-bottom:8px}
+ .kinetic .org-functions li{padding:3px 6px;font-size:9.5px;line-height:1.25}
+ .kinetic .org-product{padding-top:7px;font-size:15px;line-height:1.18}
+ .kinetic .org-product span{margin-bottom:3px;font-size:8px}
+ .kinetic .chapter-org .org-note{margin-top:10px;font-size:12.5px;line-height:1.4}
+
+ .kinetic .method-pin{min-height:100svh;padding:72px 7vw 128px}
+ .kinetic .chapter-method h2{font-size:clamp(38px,3.8vw,64px);line-height:1.02;margin-bottom:10px}
+ .kinetic .chapter-method .chapter-label{margin-bottom:10px}
+ .kinetic .chapter-method .chapter-intro{max-width:620px;margin-bottom:0;font-size:15.5px;line-height:1.4}
+ .kinetic .method-line{margin-top:24px}
+ .kinetic .chapter-method .journey-method li{padding-top:18px}
+ .kinetic .chapter-method .journey-method strong{font-size:clamp(26px,2.4vw,38px)}
+ .kinetic .chapter-method .journey-method small{margin-top:6px;font-size:13px}
+ .kinetic .chapter-method .journey-actions{margin-top:18px}
+
  .chapter-arrival{padding-top:56px;padding-bottom:150px}
  .chapter-arrival .chapter-copy{width:min(1240px,90vw);max-width:1240px}
  .chapter-arrival h2{font-size:clamp(44px,4.3vw,82px);line-height:1;margin-bottom:14px}
