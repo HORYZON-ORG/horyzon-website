@@ -7,320 +7,6 @@ import { pageMetadata } from '@/content/seo';
 const description = 'Scopri cosa misura Horyzon AI Score e perché la valutazione distingue predisposizione, visibilità AI e solidità delle evidenze.';
 const publicVersion = 'Horyzon AI Score v1.0';
 
-const methodologyPageCss = `
-.ai-score-methodology-hero {
-  display: block !important;
-  padding-top: 70px;
-  padding-bottom: 78px;
-}
-
-.ai-method-hero-shell,
-.ai-method-section,
-.ai-method-principle,
-.ai-method-closing {
-  position: relative;
-  z-index: 1;
-  width: min(100%, 1120px);
-  margin-inline: auto;
-}
-
-.ai-method-hero-shell {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
-  gap: clamp(34px, 7vw, 88px);
-  align-items: end;
-}
-
-.ai-method-hero-copy h1 {
-  max-width: 920px;
-  margin: 24px 0 24px;
-  font-size: clamp(58px, 7.2vw, 106px);
-  line-height: .9;
-}
-
-.ai-method-hero-copy .page-intro,
-.ai-method-hero-copy .ai-method-subintro {
-  max-width: 760px;
-  color: #c7d1d0;
-}
-
-.ai-method-subintro {
-  margin: 18px 0 0;
-  font-size: clamp(16px, 1.35vw, 19px);
-  line-height: 1.75;
-}
-
-.ai-method-hero-panel {
-  border: 1px solid #d8ff4245;
-  background: #ffffff08;
-  padding: 28px;
-  color: #edf1e6;
-  box-shadow: 0 28px 80px #00000022;
-}
-
-.ai-method-hero-panel p {
-  margin: 0 0 28px;
-  color: #b8c8c3;
-  line-height: 1.7;
-}
-
-.ai-method-hero-panel strong {
-  display: block;
-  margin-bottom: 10px;
-  font:800 34px/1 var(--font-serif);
-  color: #f5f4eb;
-}
-
-.ai-method-hero-panel .button {
-  width: 100%;
-  margin-top: 2px;
-}
-
-.ai-method-section {
-  padding: 86px 0;
-}
-
-.ai-method-section + .ai-method-section,
-.ai-method-principle + .ai-method-section,
-.ai-method-section + .ai-method-principle {
-  border-top: 1px solid #c3cab9;
-}
-
-.ai-method-section header {
-  max-width: 820px;
-  margin-bottom: 36px;
-}
-
-.ai-method-section h2,
-.ai-method-principle h2,
-.ai-method-closing h2 {
-  margin: 12px 0 0;
-  font:800 clamp(38px, 5vw, 76px)/1.02 var(--font-serif);
-  letter-spacing: -.025em;
-}
-
-.ai-method-section .narrative-lede,
-.ai-method-principle p,
-.ai-method-closing p {
-  max-width: 760px;
-  color: #47564f;
-  line-height: 1.75;
-}
-
-.ai-method-measures {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1px;
-  background: #b9c3ac;
-  border: 1px solid #b9c3ac;
-}
-
-.ai-method-measures article {
-  min-width: 0;
-  background: #eef1e7;
-  padding: 30px;
-}
-
-.ai-method-measures span,
-.ai-method-areas span,
-.ai-method-product-label,
-.ai-method-version {
-  display: inline-block;
-  margin-bottom: 18px;
-  font-size: 11px;
-  letter-spacing: .16em;
-  text-transform: uppercase;
-  color: #64713b;
-  font-weight: 800;
-}
-
-.ai-method-measures h3,
-.ai-method-products h3 {
-  margin: 0 0 16px;
-  font:800 clamp(29px, 3vw, 42px)/1.05 var(--font-serif);
-  letter-spacing: -.015em;
-}
-
-.ai-method-measures p,
-.ai-method-areas p,
-.ai-method-products p {
-  margin: 0;
-  color: #455650;
-  line-height: 1.7;
-}
-
-.ai-method-measures p + p,
-.ai-method-products p + p {
-  margin-top: 14px;
-}
-
-.ai-method-areas {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1px;
-  background: #b9c3ac;
-  border: 1px solid #b9c3ac;
-}
-
-.ai-method-areas article {
-  min-width: 0;
-  background: #f4f3ea;
-  padding: 24px;
-}
-
-.ai-method-areas h3 {
-  margin: 0 0 12px;
-  font-size: 19px;
-  line-height: 1.25;
-  color: #102229;
-}
-
-.ai-method-principle {
-  display: grid;
-  grid-template-columns: minmax(0, .78fr) minmax(280px, .42fr);
-  gap: clamp(30px, 6vw, 76px);
-  align-items: center;
-  padding: 86px 0;
-}
-
-.ai-method-principle-card {
-  border: 1px solid #d8ff4255;
-  background: #07171d;
-  color: #f5f4eb;
-  padding: 34px;
-}
-
-.ai-method-principle-card strong {
-  display: block;
-  font:800 clamp(46px, 7vw, 86px)/.86 var(--font-serif);
-  color: #d8ff42;
-}
-
-.ai-method-principle-card span {
-  display: block;
-  margin-top: 18px;
-  color: #c7d1d0;
-  line-height: 1.7;
-}
-
-.ai-method-products {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1px;
-  background: #b9c3ac;
-  border: 1px solid #b9c3ac;
-}
-
-.ai-method-products article {
-  min-width: 0;
-  background: #e8ecdc;
-  padding: clamp(28px, 4vw, 44px);
-}
-
-.ai-method-products article:last-child {
-  background: #f4f3ea;
-}
-
-.ai-method-product-number {
-  display: block;
-  margin-bottom: 34px;
-  font:800 clamp(56px, 7vw, 92px)/.8 var(--font-serif);
-  color: #667333;
-}
-
-.ai-method-product-meaning {
-  display: block;
-  margin: 22px 0 24px;
-  color: #102229;
-  font-weight: 800;
-  line-height: 1.45;
-}
-
-.ai-method-status {
-  display: inline-flex;
-  align-items: center;
-  min-height: 48px;
-  border: 1px solid #9eac91;
-  padding: 0 18px;
-  color: #47564f;
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.ai-method-closing {
-  padding: 78px 0 92px;
-  border-top: 1px solid #c3cab9;
-}
-
-.ai-method-closing-inner {
-  display: flex;
-  gap: 28px;
-  align-items: end;
-  justify-content: space-between;
-}
-
-.ai-method-closing-copy {
-  max-width: 780px;
-}
-
-.ai-method-closing .button {
-  white-space: nowrap;
-}
-
-@media (max-width: 1000px) {
-  .ai-method-hero-shell,
-  .ai-method-principle,
-  .ai-method-closing-inner {
-    grid-template-columns: 1fr;
-    display: grid;
-  }
-
-  .ai-method-hero-panel {
-    max-width: 560px;
-  }
-
-  .ai-method-measures,
-  .ai-method-areas {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 720px) {
-  .ai-score-methodology-hero {
-    padding-top: 48px;
-    padding-bottom: 58px;
-  }
-
-  .ai-method-hero-copy h1 {
-    font-size: clamp(48px, 13vw, 76px);
-  }
-
-  .ai-method-section,
-  .ai-method-principle,
-  .ai-method-closing {
-    padding: 62px 0;
-  }
-
-  .ai-method-measures,
-  .ai-method-areas,
-  .ai-method-products {
-    grid-template-columns: 1fr;
-  }
-
-  .ai-method-measures article,
-  .ai-method-areas article,
-  .ai-method-products article,
-  .ai-method-hero-panel,
-  .ai-method-principle-card {
-    padding: 24px;
-  }
-
-  .ai-method-closing .button {
-    width: 100%;
-  }
-}
-`;
-
 const measures = [
   {
     id: '01',
@@ -364,123 +50,136 @@ export const metadata: Metadata = pageMetadata({ path: '/ai-score/methodology', 
 export default function AiScoreMethodologyPage() {
   return <>
     <PageStructuredData path="/ai-score/methodology" name="Come funziona Horyzon AI Score" description={description} breadcrumbs={[{ name: 'Horyzon', path: '/' }, { name: 'AI Score', path: '/ai-score' }, { name: 'Come funziona', path: '/ai-score/methodology' }]} />
-    <style>{methodologyPageCss}</style>
     <SiteHeader />
-    <main id="content" className="inside editorial-page narrative-page ai-score-page" data-page="ai-score-methodology">
-      <nav className="editorial-breadcrumb" aria-label="Percorso di navigazione"><Link href="/">Horyzon</Link><span aria-hidden="true">/</span><Link href="/ai-score">AI Score</Link><span aria-hidden="true">/</span><span aria-current="page">Come funziona</span></nav>
-
-      <section className="inside-hero ai-score-hero ai-score-methodology-hero">
-        <div className="ai-method-hero-shell">
-          <div className="ai-method-hero-copy">
-            <p className="eyebrow"><span />Horyzon / AI Score</p>
-            <h1>Come funziona Horyzon AI Score</h1>
-            <p className="page-intro">Analizziamo quanto un sito è predisposto a essere scoperto, compreso e utilizzato dai sistemi AI e, quando disponibile, quanto il brand emerge nelle superfici di ricerca AI.</p>
-            <p className="ai-method-subintro">La valutazione combina segnali tecnici, contenutistici, semantici e di autorevolezza attraverso una metodologia Horyzon basata su evidenze verificabili.</p>
+    <main id="content" className="rd ai-score-methodology-page" data-page="ai-score-methodology">
+      <section className="rd-hero rd-hero-page ai-method-hero" aria-labelledby="ai-method-title">
+        <div className="rd-hero-copy">
+          <nav className="rd-crumbs" aria-label="Percorso di navigazione">
+            <Link href="/">Horyzon</Link><span aria-hidden="true">/</span>
+            <Link href="/ai-score">AI Score</Link><span aria-hidden="true">/</span>
+            <span aria-current="page">Come funziona</span>
+          </nav>
+          <p className="rd-label rd-rise">AI Score <i>·</i> Metodologia <i>·</i> {publicVersion}</p>
+          <h1 id="ai-method-title">
+            <span className="rd-mask"><span className="rd-line">Come funziona</span></span>
+            <span className="rd-mask"><span className="rd-line rd-accent">Horyzon AI Score.</span></span>
+          </h1>
+          <p className="rd-lead rd-rise">Analizziamo quanto un sito è predisposto a essere scoperto, compreso e utilizzato dai sistemi AI e, quando disponibile, quanto il brand emerge nelle superfici di ricerca AI.</p>
+          <p className="ai-method-sublead rd-rise">La valutazione combina segnali tecnici, contenutistici, semantici e di autorevolezza attraverso una metodologia Horyzon basata su evidenze verificabili.</p>
+          <div className="rd-actions rd-rise">
+            <Link className="rd-cta" href="/ai-score">Analizza il tuo sito <span aria-hidden="true">→</span></Link>
+            <a className="rd-link" href="#misure">Vedi cosa misuriamo</a>
           </div>
-          <aside className="ai-method-hero-panel" aria-label="Avvia AI Score">
-            <strong>Parti dal tuo dominio.</strong>
-            <p>Il risultato gratuito mostra le tre misure principali e indica quando una metrica non può essere realmente osservata.</p>
-            <Link className="button primary" href="/ai-score">Analizza il tuo sito <span aria-hidden="true">→</span></Link>
-          </aside>
         </div>
+
+        <aside className="rd-hero-aside">
+          <figure className="rd-index ai-method-index">
+            <figcaption>Metodo / tre letture</figcaption>
+            <ol>
+              <li><b>01</b><span>AI Readiness</span></li>
+              <li><b>02</b><span>AI Visibility</span></li>
+              <li><b>03</b><span>Evidence Confidence</span></li>
+            </ol>
+            <p>Tre misure separate per non confondere predisposizione, presenza reale e qualità delle evidenze.</p>
+          </figure>
+        </aside>
       </section>
 
-      <section className="narrative-section ai-method-section">
-        <header>
-          <p className="section-kicker">La valutazione</p>
-          <h2>Tre misure, tre significati diversi.</h2>
+      <section id="misure" className="rd-map ai-method-measures-section" aria-labelledby="ai-method-measures-title">
+        <header className="ai-method-section-head rd-reveal">
+          <p className="rd-label">La valutazione</p>
+          <h2 id="ai-method-measures-title">Tre misure. <span>Tre significati diversi.</span></h2>
         </header>
-        <div className="ai-method-measures">
-          {measures.map((measure) => <article key={measure.id}>
-            <span>{measure.id}</span>
-            <h3>{measure.title}</h3>
-            <p>{measure.copy}</p>
-            {measure.note && <p>{measure.note}</p>}
-          </article>)}
-        </div>
+        <ul className="rd-tiles ai-method-measure-grid">
+          {measures.map((measure, index) => <li key={measure.id} className="rd-reveal" style={{ '--i': index } as React.CSSProperties}>
+            <article className="rd-tile">
+              <span className="rd-tile-tag">{measure.id}</span>
+              <h3>{measure.title}</h3>
+              <p>{measure.copy}</p>
+              {measure.note && <p className="ai-method-card-note">{measure.note}</p>}
+            </article>
+          </li>)}
+        </ul>
       </section>
 
-      <section className="narrative-section ai-method-section">
-        <header>
-          <p className="section-kicker">AI Readiness</p>
-          <h2>Cosa analizziamo</h2>
-          <p className="narrative-lede">AI Readiness considera diverse dimensioni del sito. Insieme descrivono quanto le informazioni siano accessibili, comprensibili e verificabili dai sistemi automatici.</p>
+      <section className="rd-section rd-tone-cream ai-method-readiness" aria-labelledby="ai-method-readiness-title">
+        <header className="rd-head">
+          <p className="rd-label">AI Readiness</p>
+          <h2 id="ai-method-readiness-title" className="rd-h2">Cosa analizziamo</h2>
+          <p className="rd-head-lead">AI Readiness considera diverse dimensioni del sito. Insieme descrivono quanto le informazioni siano accessibili, comprensibili e verificabili dai sistemi automatici.</p>
         </header>
         <div className="ai-method-areas">
-          {readinessAreas.map(([number, title, copy]) => <article key={number}>
-            <span>{number}</span>
+          {readinessAreas.map(([number, title, copy]) => <article className="rd-tile" key={number}>
+            <span className="rd-tile-tag">{number}</span>
             <h3>{title}</h3>
             <p>{copy}</p>
           </article>)}
         </div>
       </section>
 
-      <section className="narrative-section ai-method-principle">
-        <div>
-          <p className="section-kicker">Il nostro principio</p>
-          <h2>Misuriamo solo ciò che possiamo verificare.</h2>
-          <p>Quando un segnale non può essere realmente osservato, non inventiamo un risultato. La metrica viene indicata come non misurata e il livello di confidence tiene conto delle evidenze effettivamente disponibili.</p>
-          <p>Questo mantiene separati ciò che sappiamo, ciò che possiamo misurare e ciò che non è ancora verificabile.</p>
+      <section className="rd-section rd-tone-ink ai-method-principle" aria-labelledby="ai-method-principle-title">
+        <div className="ai-method-principle-copy">
+          <p className="rd-label">Il nostro principio</p>
+          <h2 id="ai-method-principle-title" className="rd-h2">Misuriamo solo ciò che possiamo <em>verificare.</em></h2>
+          <p className="rd-section-lead">Quando un segnale non può essere realmente osservato, non inventiamo un risultato. La metrica viene indicata come non misurata e il livello di confidence tiene conto delle evidenze effettivamente disponibili.</p>
+          <p className="ai-method-principle-extra">Questo mantiene separati ciò che sappiamo, ciò che possiamo misurare e ciò che non è ancora verificabile.</p>
         </div>
         <aside className="ai-method-principle-card" aria-label="Principio metodologico">
+          <span className="rd-label">Trasparenza</span>
           <strong>Not measured</strong>
-          <span>Non è un punteggio basso. È una dichiarazione di trasparenza quando una misurazione non ha evidenze sufficienti.</span>
+          <p>Non è un punteggio basso. È una dichiarazione di trasparenza quando una misurazione non ha evidenze sufficienti.</p>
         </aside>
       </section>
 
-      <section className="narrative-section ai-method-section">
-        <header>
-          <p className="section-kicker">Provider</p>
-          <h2>Superfici supportate</h2>
-          <p className="narrative-lede">Le superfici esterne restano fail-closed finche non sono presenti credenziali, budget, rate limit, circuit breaker e uno store persistente.</p>
+      <section className="rd-section rd-tone-sand ai-method-providers" aria-labelledby="ai-method-providers-title">
+        <header className="rd-head">
+          <p className="rd-label">Provider</p>
+          <h2 id="ai-method-providers-title" className="rd-h2">Superfici supportate</h2>
+          <p className="rd-head-lead">Le superfici esterne restano fail-closed finche non sono presenti credenziali, budget, rate limit, circuit breaker e uno store persistente.</p>
         </header>
-        <div className="ai-method-areas">
-          {supportedSurfaces.map(([surface, provider, status, copy]) => <article key={`${surface}-${provider}`}>
-            <span>{status}</span>
+        <div className="ai-method-provider-grid">
+          {supportedSurfaces.map(([surface, provider, status, copy]) => <article className="rd-tile" key={`${surface}-${provider}`}>
+            <span className="rd-tile-tag">{status}</span>
             <h3>{surface}</h3>
-            <p><strong>{provider}</strong></p>
+            <strong className="ai-method-provider-name">{provider}</strong>
             <p>{copy}</p>
           </article>)}
         </div>
       </section>
 
-      <section className="narrative-section ai-method-section">
-        <header>
-          <p className="section-kicker">Migliorare</p>
-          <h2>Due modi per andare oltre il punteggio.</h2>
-          <p className="narrative-lede">Conoscere il proprio AI Score è il primo passo. Il passo successivo è capire quali principi seguire oppure quali interventi servono nello specifico sito analizzato.</p>
+      <section className="rd-section rd-tone-panel ai-method-products-section" aria-labelledby="ai-method-products-title">
+        <header className="rd-head">
+          <p className="rd-label">Migliorare</p>
+          <h2 id="ai-method-products-title" className="rd-h2">Due modi per andare oltre il punteggio.</h2>
+          <p className="rd-head-lead">Conoscere il proprio AI Score è il primo passo. Il passo successivo è capire quali principi seguire oppure quali interventi servono nello specifico sito analizzato.</p>
         </header>
         <div className="ai-method-products">
-          <article>
+          <article className="ai-method-product-card">
             <span className="ai-method-product-number">01</span>
-            <span className="ai-method-product-label">Guida generale</span>
+            <span className="rd-label">Guida generale</span>
             <h3>Horyzon AI Optimization Guide</h3>
             <p>Una guida pratica ai principi e alle buone pratiche per costruire siti più accessibili, comprensibili e citabili dai sistemi AI.</p>
             <p>È pensata per chi vuole conoscere le regole generali dell&apos;ottimizzazione AI, indipendentemente da uno specifico audit.</p>
-            <strong className="ai-method-product-meaning">Come migliorare un sito per l&apos;AI in generale.</strong>
+            <strong>Come migliorare un sito per l&apos;AI in generale.</strong>
             <span className="ai-method-status">In arrivo</span>
           </article>
-          <article>
+          <article className="ai-method-product-card">
             <span className="ai-method-product-number">02</span>
-            <span className="ai-method-product-label">Piano personalizzato</span>
+            <span className="rd-label">Piano personalizzato</span>
             <h3>Horyzon AI Optimization Plan</h3>
             <p>Un piano costruito sui risultati reali dell&apos;audit del tuo sito, con problemi individuati, priorità e interventi specifici.</p>
             <p>Non contiene indicazioni generiche: parte dalle evidenze raccolte durante l&apos;analisi del dominio.</p>
-            <strong className="ai-method-product-meaning">Come migliorare il tuo sito sulla base dell&apos;audit.</strong>
-            <Link className="button ghost-dark" href="/ai-score">Analizza il tuo sito <span aria-hidden="true">→</span></Link>
+            <strong>Come migliorare il tuo sito sulla base dell&apos;audit.</strong>
+            <Link className="rd-link" href="/ai-score">Analizza il tuo sito ↗︎</Link>
           </article>
         </div>
       </section>
 
-      <section className="narrative-section ai-method-closing">
-        <div className="ai-method-closing-inner">
-          <div className="ai-method-closing-copy">
-            <span className="ai-method-version">{publicVersion}</span>
-            <h2>Una metodologia indipendente.</h2>
-            <p>Horyzon AI Score è una metodologia proprietaria indipendente che utilizza standard web, documentazione pubblica e segnali verificabili come riferimenti tecnici.</p>
-          </div>
-          <Link className="button primary" href="/ai-score">Analizza il tuo sito <span aria-hidden="true">→</span></Link>
-        </div>
+      <section className="rd-final rd-final-glow ai-method-final" aria-labelledby="ai-method-final-title">
+        <p className="rd-label">{publicVersion}</p>
+        <h2 id="ai-method-final-title">Una metodologia indipendente. <em>Un risultato spiegabile.</em></h2>
+        <p>Horyzon AI Score è una metodologia proprietaria indipendente che utilizza standard web, documentazione pubblica e segnali verificabili come riferimenti tecnici.</p>
+        <Link className="rd-cta" href="/ai-score">Analizza il tuo sito <span aria-hidden="true">→</span></Link>
       </section>
     </main>
     <SiteFooter />
