@@ -190,6 +190,14 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
     resultRef.current.focus({ preventScroll: true });
   }, [result]);
 
+  useEffect(() => {
+    if (window.location.hash !== '#guida-annunci-10x') return;
+    const timer = window.setTimeout(() => {
+      document.getElementById('guida-annunci-10x')?.scrollIntoView({ block: 'start', behavior: 'auto' });
+    }, 60);
+    return () => window.clearTimeout(timer);
+  }, [analysisRun?.id, analysisRun?.status, analysisRun?.stage, result, busy, commercial]);
+
   async function submitSource(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const cycle = flowCycleRef.current + 1;
