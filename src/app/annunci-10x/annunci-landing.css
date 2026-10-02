@@ -69,7 +69,7 @@
 .ax-price-copy h2{font-size:clamp(38px,4.6vw,72px);line-height:.98}
 .ax-price-copy>p:first-of-type{max-width:52ch;margin:26px 0 32px;font-size:clamp(17px,1.4vw,20px);line-height:1.55;font-weight:500;color:#cfd7d5}
 .ax-guarantee{max-width:62ch;margin:26px 0 0;padding-top:20px;border-top:1px solid var(--line);font:500 12px/1.7 var(--font-mono),monospace;letter-spacing:.03em;color:var(--muted)}
-.ax-guide{padding-top:110px;background:linear-gradient(135deg,rgba(216,255,66,.06),transparent 42%),var(--ink);border-bottom:1px solid var(--line)}
+.ax-guide{scroll-margin-top:24px;padding-top:110px;background:linear-gradient(135deg,rgba(216,255,66,.06),transparent 42%),var(--ink);border-bottom:1px solid var(--line)}
 .ax-guide-figure strong{font-size:clamp(88px,12vw,188px)}
 .ax-guide-list{display:grid;gap:12px;max-width:58ch;margin:0 0 30px;padding:0;list-style:none}
 .ax-guide-list li{position:relative;padding-left:24px;font-size:clamp(16px,1.2vw,18px);line-height:1.55;color:#d7dfdc}

@@ -244,6 +244,9 @@ for (const forbidden of ['amountCents', 'stripePriceId', 'successUrl', 'cancelUr
 assert.match(flow, /requestNonce:\s*analysisRequestNonceRef\.current/, 'analysis submit must carry a stable client request nonce');
 assert.match(flow, /analysisRequestNonceRef\.current = createAnalysisRequestNonce\(\)/, 'new analysis cycle must rotate the request nonce');
 assert.match(flow, /new URLSearchParams\(window\.location\.search\)\.get\('analysis'\)/, 'email analysis links must restore the requested run when the session is still available');
+assert.match(flow, /window\.location\.hash !== '#guida-annunci-10x'/, 'guide email anchor must be explicitly preserved after analysis hydration');
+assert.match(flow, /getElementById\('guida-annunci-10x'\)\?\.scrollIntoView\(\{ block: 'start', behavior: 'auto' \}\)/, 'guide email anchor must re-scroll after dynamic analysis layout settles');
+assert.match(landingCss, /\.ax-guide\{scroll-margin-top:24px;/, 'guide section must reserve a stable anchor offset');
 assert.match(flow, /Vuoi trasformarlo\?/, 'free result paid bridge missing');
 assert.match(flow, /ANNUNCI10X_REWRITE/, 'analyze rewrite offer must be wired');
 assert.equal(flow.includes('AGENT_RECRUITER'), false, 'analyze flow must not surface Agent Recruiter');

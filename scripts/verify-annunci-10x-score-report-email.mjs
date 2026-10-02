@@ -233,7 +233,11 @@ async function assertResendPayload() {
   assert.match(payload.text, /https:\/\/horyzon\.test\/annunci-10x#guida-annunci-10x/);
   assert.match(payload.text, /https:\/\/horyzon\.test\/annunci-10x\/annunci-10x-anteprima\.pdf/);
   assert.match(payload.html, /Score Annunci 10X/);
+  assert.match(payload.html, /color:#d8ff42[^>]*>67\/100</, 'score must stay visible in lime on the dark report background');
+  assert.match(payload.html, /background:#07171d;color:#f7f4e8/, 'report summary must use explicit high-contrast dark styling for Gmail dark mode');
   assert.match(payload.html, /Punteggi per area/);
+  assert.ok(payload.html.indexOf('67/100') < payload.html.indexOf('Punteggi per area'), 'score must appear before area scores');
+  assert.ok(payload.html.indexOf('Punteggi per area') < payload.html.indexOf('Le 3 priorità su cui intervenire'), 'area scores must appear before the three priorities');
   assert.doesNotMatch(payload.html, /I 20 controlli/);
   assert.doesNotMatch(payload.html, /Come migliorare:/);
   assert.match(payload.html, /Migliora questo annuncio/);
