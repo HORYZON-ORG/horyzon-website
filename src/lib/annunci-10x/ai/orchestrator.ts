@@ -24,6 +24,7 @@ export interface Annunci10xRunAiTaskInput<T extends AiOperationType = AiOperatio
   inputSnapshotId?: string | null;
   idempotencyInputIdentityOverride?: string;
   promptVersionOverride?: string;
+  systemPromptOverride?: string;
   model?: string;
   timeoutMs?: number;
 }
@@ -113,7 +114,7 @@ export class Annunci10xAiOrchestrator {
     }
 
     try {
-      const attempt = await this.executeAndValidate(input.operationType, prompt.instructions, projectedInput, prompt.outputSchema, model, timeoutMs, operation.id);
+      const attempt = await this.executeAndValidate(input.operationType, input.systemPromptOverride ?? prompt.instructions, projectedInput, prompt.outputSchema, model, timeoutMs, operation.id);
       operation = await this.persistence.completeAiOperation({
         operationId: operation.id,
         sessionSecret: input.sessionSecret,
@@ -184,11 +185,50 @@ export class Annunci10xAiOrchestrator {
       });
       try {
         return { output: validateAiOutputForOperation(operationType, second.output), providerResult: second, retryCount: 1 };
-      } catch {
-        throw new Annunci10xAiError('AI_INVALID_OUTPUT', `Annunci 10x AI output failed schema validation after one retry: ${(firstError as Error).message}`, { retryable: false });
+      } catch (secondError) {
+        throw new Annunci10xAiError('AI_INVALID_OUTPUT', `Annunci 10x AI output failed schema validation after one retry: ${(firstError as Error).message}`, {
+          retryable: false,
+          details: {
+            operationType,
+            firstValidationError: firstError instanceof Error ? firstError.message : String(firstError),
+            secondValidationError: secondError instanceof Error ? secondError.message : String(secondError),
+            firstOutputDiagnostics: structuredOutputDiagnostics(first.output),
+            secondOutputDiagnostics: structuredOutputDiagnostics(second.output),
+          },
+        });
       }
     }
   }
+}
+
+function structuredOutputDiagnostics(value: unknown): Record<string, unknown> | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const record = value as Record<string, unknown>;
+  const generatedAd = typeof record.generatedAd === 'object' && record.generatedAd !== null ? record.generatedAd as Record<string, unknown> : null;
+  const sections = Array.isArray(generatedAd?.sections) ? generatedAd.sections : Array.isArray(record.sections) ? record.sections : [];
+  return {
+    keys: Object.keys(record).slice(0, 20),
+    sectionCount: sections.length,
+    sections: sections.slice(0, 12).map((section, index) => {
+      if (typeof section !== 'object' || section === null) return { index, shape: typeof section };
+      const item = section as Record<string, unknown>;
+      const body = item.body;
+      return {
+        index,
+        id: typeof item.id === 'string' ? item.id : null,
+        type: typeof item.type === 'string' ? item.type : null,
+        title: typeof item.title === 'string' ? item.title.slice(0, 120) : null,
+        bodyState: typeof body === 'string' ? bodyState(body) : body === null ? 'null' : typeof body,
+        bodyPreview: typeof body === 'string' ? body.slice(0, 160) : null,
+      };
+    }),
+  };
+}
+
+function bodyState(value: string): 'empty' | 'whitespace' | 'non_empty' {
+  if (value === '') return 'empty';
+  if (!value.trim()) return 'whitespace';
+  return 'non_empty';
 }
 
 function isNewlyStartedRunningOperation(operation: PersistedAiOperation): boolean {

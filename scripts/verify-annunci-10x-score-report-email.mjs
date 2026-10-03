@@ -171,7 +171,7 @@ function assertCustomerFacingPriorityPresentation() {
   }
   assert.doesNotMatch(rendered.html, /<strong>\s*1\./i);
   assert.doesNotMatch(rendered.html, /1\.\s*1\./);
-  assert.match(rendered.html, /<li style="margin-bottom:14px"><strong>Classificazione dei requisiti<\/strong>/);
+  assert.match(rendered.html, /<li\b[^>]*>\s*<strong\b[^>]*>Classificazione dei requisiti<\/strong>/);
   assert.match(rendered.text, /1\. Classificazione dei requisiti/);
 
   const missingPriority = buildCustomerFacingPriorityV2(priorityCheckFixture('05', null, 'MISSING'));

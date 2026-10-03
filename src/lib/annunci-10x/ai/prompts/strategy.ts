@@ -3,20 +3,24 @@ import { renderPrompt } from './helpers.ts';
 import type { Annunci10xPromptDefinition } from './types.ts';
 
 const invariants = [
+  'Treat the confirmed RoleCard as the canonical Truth Ledger. Do not reconstruct facts from generated copy or draft text.',
   'Respect deterministic strategyRules supplied in input.',
   'Choose structure, opening, levers, length, rationale, and publicSummary.',
   'publicSummary is user-facing before payment in CREATE flow.',
   'Do not write the ad and do not invent company attractiveness.',
   'Do not set a numeric score target.',
+  'Strategy must answer who the candidate is, what they need to understand, which confirmed facts make the role interesting, and which facts should be connected editorially.',
+  'Every attraction angle must be backed by RoleCard facts. Do not use employer-brand slogans, growth claims, culture claims, training promises, or selection-process details that are not in the Truth Ledger.',
   'Choose editorialLength from the richness of confirmed facts and candidate decision complexity, not from seniority, prestige, or a desire to sound premium.',
   'Never choose LONG to compensate for missing facts. Missing evidence must stay missing.',
   'Choose a structure that fits the role reality rather than reusing one fixed template across roles.',
   'Levers must be concrete and supportable from RoleCard/RoleProfile; generic employer-brand language is not a lever.',
+  'Plan prose-first job ads, not HR cards. The structure should help a candidate imagine the work from confirmed facts.',
 ] as const;
 
 export const STRATEGY_PROMPT: Annunci10xPromptDefinition = {
   id: 'annunci10x.strategy',
-  version: 'annunci10x.strategy.v2',
+  version: 'annunci10x.strategy.v4',
   operationType: 'STRATEGY',
   outputSchema: ANNUNCI10X_AI_OUTPUT_SCHEMAS.STRATEGY,
   instructions: [
@@ -38,6 +42,15 @@ export const STRATEGY_PROMPT: Annunci10xPromptDefinition = {
     'Opening strategy:',
     '- Point to the most concrete supported responsibility, workflow, result, or compatibility factor.',
     '- Do not plan a generic emotional hook, employer slogan, or invented day-in-the-life scene.',
+    '',
+    'Truth-ledger strategy questions:',
+    '- Candidate target: identify the type of person the confirmed work, requirements, conditions, and compensation can realistically interest.',
+    '- Candidate doubts: identify what the person must understand before applying, especially routine, autonomy, tools, conditions, constraints, and requirements.',
+    '- Supported interest: connect only real facts, such as mission + responsibilities, tools + operating context, compensation + conditions, or autonomy + expected decisions.',
+    '- Editorial emphasis: choose which confirmed facts deserve early visibility because they materially affect self-selection.',
+    '- Safe CTA: when application instructions are generic or absent, plan a neutral invitation to apply without adding LinkedIn, CV, interviews, callbacks, or process timing.',
+    '- Narrative plan: identify which confirmed facts should be connected in prose, especially activities with outcomes, tools with operating context, soft skills with work reality, and conditions with compatibility.',
+    '- Public headings: avoid planning headings such as Missione del ruolo, Obiettivo del ruolo, Autonomia, Imprevisti e variabilita, Apprendibili, Trainabile, or Vincoli. Those are internal categories, not final copy.',
   ].join('\n'),
   invariants,
 };

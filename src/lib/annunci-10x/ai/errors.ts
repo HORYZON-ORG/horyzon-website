@@ -7,13 +7,15 @@ export class Annunci10xAiError extends Error {
   readonly code: Annunci10xAiErrorCode;
   readonly retryable: boolean;
   readonly status?: number;
+  readonly details?: Record<string, unknown>;
 
-  constructor(code: Annunci10xAiErrorCode, message: string, options: { retryable?: boolean; status?: number } = {}) {
+  constructor(code: Annunci10xAiErrorCode, message: string, options: { retryable?: boolean; status?: number; details?: Record<string, unknown> } = {}) {
     super(message);
     this.name = 'Annunci10xAiError';
     this.code = code;
     this.retryable = options.retryable ?? false;
     this.status = options.status;
+    this.details = options.details;
   }
 }
 
@@ -32,6 +34,7 @@ export interface PublicAnnunci10xAiError {
   message: string;
   retryable: boolean;
   status?: number;
+  details?: Record<string, unknown>;
 }
 
 export function isAnnunci10xAiOperationInProgressError(error: unknown): error is Annunci10xAiOperationInProgressError {
@@ -45,6 +48,7 @@ export function toPublicAiError(error: unknown): PublicAnnunci10xAiError {
       message: error.message,
       retryable: error.retryable,
       status: error.status,
+      details: error.details,
     };
   }
   return {
@@ -61,6 +65,7 @@ export function sanitizeAiErrorPayload(error: unknown): Record<string, unknown> 
     message: publicError.message,
     retryable: publicError.retryable,
     status: publicError.status ?? null,
+    details: publicError.details ?? null,
   };
 }
 

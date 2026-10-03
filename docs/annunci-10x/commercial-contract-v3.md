@@ -35,6 +35,26 @@ The public product keeps two internal capabilities because runtime behavior is d
 
 `AGENT_RECRUITER` remains a backend/internal offer and entitlement package. It is not shown in the public funnel unless `ANNUNCI10X_AGENT_RECRUITER_ENABLED` is explicitly enabled server-side.
 
+## CREATE runtime architecture
+
+The paid CREATE runtime uses the Phase B Decision Engine path:
+
+`Questionario -> Truth Ledger -> Decision Engine Preflight -> Base Ad factual -> Single AI Writer -> Hard Facts Decision Engine -> optional Single Surgical Repair -> READY_FOR_CLIENT`.
+
+The previous `PROFILE -> STRATEGY -> VALIDATE -> REVISE -> VALIDATE` loop is not the canonical CREATE generation path. The existing-ad analysis path remains separate and may still use the analysis/evaluation runtime for `annuncio esistente -> EXTRACT -> ANALYZE / IMPROVE`.
+
+Runtime rules:
+
+- Truth Ledger is the canonical source of facts.
+- Base Ad is deterministic and candidate-facing, but internal negative constraints stay metadata and must not be printed as copy.
+- The Writer may develop confirmed facts into natural prose, but may not add plausible tools, processes, benefits, conditions, channels, outcomes or selection steps that are absent from the Truth Ledger.
+- UNKNOWN non-critical decisions are retained as warnings and do not block delivery.
+- FIX_REQUIRED allows at most one surgical repair before the Decision Engine recheck.
+- BLOCK must not expose the generated Master as the paid final output.
+- The persisted diagnostic payload should include Truth Ledger version, Base Ad, initial Master, Decision Report, repair request/result, final Master, final decision, UNKNOWN warnings, provider calls, cost where available and timestamps.
+
+Client-facing post-delivery revisions are limited to 3 per Master. A revision targets one section at a time, must preserve hard facts, and must not replace the previous published section if the Decision Engine blocks the revised text. After 3 accepted revisions the product returns `REVISION_LIMIT_REACHED`.
+
 ## Free result semantics
 
 Public score name: Score di chiarezza.

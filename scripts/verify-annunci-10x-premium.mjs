@@ -158,7 +158,7 @@ assert.deepEqual(
   assert.equal(result.provider, 'MOCK');
   assert.equal(result.master.kind, 'MASTER');
   assert.equal(result.channelVariant?.channel, 'LINKEDIN');
-  assert.equal(result.operations.map((operation) => operation.type).join('>'), 'GENERATE>VALIDATE>EVALUATE>CHANNEL_ADAPTER');
+  assert.equal(result.operations.map((operation) => operation.type).join('>'), 'GENERATE>EVALUATE>CHANNEL_ADAPTER');
   assert.equal(result.score.checks.length, 20);
   assert.equal(result.score.rubricVersion, 'annunci10x-rubric-v2');
   assert.equal(result.score.scoreSemanticsVersion, 'annunci10x-score-semantics-v2');
@@ -185,16 +185,7 @@ assert.deepEqual(
 }
 
 {
-  const context = makeContext(new MockAnnunci10xProvider([
-    'unsupported_claim',
-    'unsupported_claim',
-    'success',
-    'unsupported_claim',
-    'success',
-    'unsupported_claim',
-    'success',
-    'success',
-  ]));
+  const context = makeContext(new MockAnnunci10xProvider(['success', 'success', 'success']));
   const created = await createReadySession(context);
   const result = await runAnnunci10xPremiumGeneration({
     sessionId: created.session.id,
@@ -202,15 +193,15 @@ assert.deepEqual(
     context,
     authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
   });
-  assert.equal(result.operations.filter((operation) => operation.type === 'REVISE').length, 2, 'automatic repair is bounded to at most two revisions');
-  assert.equal(result.master.annunci10xPremium?.automaticRevisionCount, 2, 'premium payload records both bounded automatic revisions');
+  assert.equal(result.operations.filter((operation) => operation.type === 'REVISE').length, 0, 'CREATE premium does not run old editorial revisions when hard facts pass');
+  assert.equal(result.master.annunci10xPremium?.automaticRevisionCount, 0, 'premium payload records zero automatic repairs for a clean hard-facts run');
   assert.match(result.masterText, /Pulizia uffici, corridoi e spazi comuni/i, 'responsibilities survive partial revisions');
   assert.match(result.masterText, /Bari/i, 'location survives partial revisions');
   assert.match(result.masterText, /Part-time/i, 'conditions survive partial revisions');
   assert.equal(result.master.sections.some((section) => section.id.startsWith('confirmed-role-')), false, 'premium output must not rely on canonical RoleCard dump sections');
   assert.doesNotMatch(result.masterText, /^(Autonomia|Imprevisti e variabilit[aà]|Apprendibili|Vincoli|Benefit|Turni|Reperibilit[aà]):/im, 'premium output must not expose internal RoleCard labels');
-  assert.equal(result.gate.status, 'NEEDS_VERIFICATION', 'residual unsupported claim after the two-revision cap prevents READY');
-  assert.ok(result.claimCheck.some((claim) => claim.status === 'UNSUPPORTED'));
+  assert.equal(result.gate.status, 'READY', 'clean hard-facts output can reach READY without the old revision loop');
+  assert.equal(result.claimCheck.some((claim) => claim.status === 'UNSUPPORTED'), false);
 }
 
 {

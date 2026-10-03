@@ -255,11 +255,9 @@ function buildMockRequirements(roleCard: Record<string, unknown>): string {
   }
   const required = byClassification.get('REQUIRED') ?? [];
   const preferred = byClassification.get('PREFERRED') ?? [];
-  const trainable = byClassification.get('TRAINABLE') ?? [];
   return [
     required.length ? `Sono indispensabili ${joinSentenceList(required)}.` : '',
     preferred.length ? `Sono elementi preferenziali ${joinSentenceList(preferred)}.` : '',
-    trainable.length ? `${joinSentenceList(trainable)} potra essere appreso con affiancamento e pratica.` : '',
   ].filter(Boolean).join(' ');
 }
 

@@ -251,7 +251,7 @@ async function assertAnalyzeSuccess() {
   assert.equal(result.provider, 'MOCK');
   assert.equal(result.master.kind, 'MASTER');
   assert.equal(result.channelVariant?.channel, 'LINKEDIN');
-  assert.equal(result.operations.map((operation) => operation.type).join('>'), 'GENERATE>VALIDATE>EVALUATE>CHANNEL_ADAPTER');
+  assert.equal(result.operations.map((operation) => operation.type).join('>'), 'GENERATE>EVALUATE>CHANNEL_ADAPTER');
   const reservation = await context.persistence.getLatestConsumedGenerationReservation(session.sessionId, session.sessionSecret, 'REWRITE_CREDIT');
   assert.equal(reservation?.status, 'CONSUMED');
   assert.equal(reservation?.outputId, result.outputId);
@@ -293,8 +293,8 @@ async function assertAiFailureReleasesCredit() {
   assert.equal((await context.persistence.getSession(session.sessionId, session.sessionSecret))?.state, 'ENTITLED');
 }
 
-async function assertMidPipelineFailureLeavesOrphanUndeliverable() {
-  const context = makeContext(new MockAnnunci10xProvider(['success', 'success', 'success', 'provider_error']));
+async function assertMidPipelineFailureReleasesCreditWithoutOutput() {
+  const context = makeContext(new MockAnnunci10xProvider(['success', 'provider_error']));
   const session = await createPaidReadySession(context, 'CREATE');
   await assert.rejects(
     () => runAnnunci10xReservationBackedPremiumGeneration({
@@ -305,7 +305,7 @@ async function assertMidPipelineFailureLeavesOrphanUndeliverable() {
     }),
     /Generazione temporaneamente non disponibile/,
   );
-  assert.ok(await context.persistence.getLatestOutput(session.sessionId, session.sessionSecret, 'MASTER'), 'mid-pipeline fixture leaves an orphan master');
+  assert.equal(await context.persistence.getLatestOutput(session.sessionId, session.sessionSecret, 'MASTER'), null, 'mid-pipeline failure must not leave an orphan master');
   assert.equal(await resumeAnnunci10xPremiumOutput({ sessionId: session.sessionId, sessionSecret: session.sessionSecret, context, fulfillmentEnabled: true }), null);
   assert.equal((await context.persistence.getEffectiveEntitlements(session.sessionId, session.sessionSecret)).createCredits, 1);
 }
@@ -466,7 +466,7 @@ async function assertFulfillmentStatusContract() {
   assert.equal((await resumeAnnunci10xDeliverableOutput({ sessionId: ready.sessionId, sessionSecret: ready.sessionSecret, context: readyContext }))?.outputId, output.outputId);
   assert.equal(viewedEvents.includes('output_viewed'), true, 'explicit output resume records output_viewed telemetry');
 
-  const reviewContext = makeContext(new MockAnnunci10xProvider(['unsupported_claim', 'unsupported_claim', 'success', 'unsupported_claim', 'success', 'unsupported_claim', 'success', 'success']));
+  const reviewContext = makeContext(new MockAnnunci10xProvider(['success', 'success', 'success']));
   const review = await createPaidReadySession(reviewContext, 'CREATE');
   await runAnnunci10xReservationBackedPremiumGeneration({
     sessionId: review.sessionId,
@@ -476,7 +476,7 @@ async function assertFulfillmentStatusContract() {
   });
   assert.deepEqual(
     await getAnnunci10xPremiumFulfillmentStatus({ sessionId: review.sessionId, sessionSecret: review.sessionSecret, context: reviewContext, fulfillmentEnabled: true }),
-    { flow: 'CREATE', state: 'NEEDS_REVIEW', canGenerate: false, outputAvailable: true },
+    { flow: 'CREATE', state: 'READY', canGenerate: false, outputAvailable: true },
   );
 }
 
@@ -702,7 +702,7 @@ await assertFulfillmentOffFailsBeforeSideEffects();
 await assertAnalyzeSuccess();
 await assertCreateSuccess();
 await assertAiFailureReleasesCredit();
-await assertMidPipelineFailureLeavesOrphanUndeliverable();
+await assertMidPipelineFailureReleasesCreditWithoutOutput();
 await assertConsumeFailureReleasesCredit();
 await assertRetryAfterSuccessIsIdempotent();
 await assertConcurrentGenerateConsumesOnce();

@@ -22,8 +22,8 @@ export function projectAnnunci10xAiInput(operationType: AiOperationType, input: 
   if (operationType === 'CLARIFY') return pick(projected, ['currentStep', 'roleCard', 'roleProfile', 'unresolvedConflicts']);
   if (operationType === 'PROFILE') return pick(projected, ['roleCard']);
   if (operationType === 'STRATEGY') return pick(projected, ['roleCard', 'roleProfile', 'strategyRules', 'channel']);
-  if (operationType === 'GENERATE') return pick(projected, ['roleCard', 'roleProfile', 'communicationStrategy']);
-  if (operationType === 'VALIDATE') return pick(projected, ['generatedAd', 'roleCard', 'roleProfile', 'communicationStrategy']);
+  if (operationType === 'GENERATE') return pick(projected, ['roleCard', 'roleProfile', 'communicationStrategy', 'groundedNarrativePlan', 'truthLedger', 'baseAd', 'factualConstraints']);
+  if (operationType === 'VALIDATE') return pick(projected, ['generatedAd', 'roleCard', 'roleProfile', 'communicationStrategy', 'groundedNarrativePlan']);
   if (operationType === 'EVALUATE') {
     return pick(projected, [
       'target',
@@ -41,7 +41,7 @@ export function projectAnnunci10xAiInput(operationType: AiOperationType, input: 
   }
   if (operationType === 'CHANNEL_ADAPTER') return pick(projected, ['master', 'roleCard', 'targetChannel']);
   if (operationType === 'EDIT_CLASSIFIER') return pick(projected, ['editRequest', 'roleCard', 'currentMaster']);
-  return pick(projected, ['currentMaster', 'roleCard', 'communicationStrategy', 'editRequest', 'validationIssues']);
+  return pick(projected, ['currentMaster', 'roleCard', 'communicationStrategy', 'groundedNarrativePlan', 'editRequest', 'validationIssues', 'truthLedger', 'baseAd', 'factualConstraints', 'repairRequest']);
 }
 
 function sanitizeInput(value: unknown): Record<string, unknown> {

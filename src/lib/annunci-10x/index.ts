@@ -4,6 +4,7 @@ export * from './analysis-run.ts';
 export * from './commercial.ts';
 export * from './constants.ts';
 export * from './create-flow.ts';
+export * from './decision-engine/index.ts';
 export * from './fixtures.ts';
 export * from './free-result.ts';
 export * from './gates.ts';

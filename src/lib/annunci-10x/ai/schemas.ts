@@ -346,11 +346,17 @@ export function validateStrategyOutput(value: unknown): Annunci10xStrategyOutput
 
 export function validateGenerateOutput(value: unknown): Annunci10xGenerateOutput {
   const record = requireRecord(value, 'generate');
-  const ad = validateGeneratedAd(record.generatedAd);
+  const normalizedGeneratedAd = normalizeGeneratedAdTransport(record.generatedAd, 'generate.generatedAd');
+  const ad = validateGeneratedAd(normalizedGeneratedAd);
   if (!ad.ok) throw new Error(`generate.generatedAd invalid: ${ad.errors.join('; ')}`);
   requireString(record.fullText, 'generate.fullText');
   requireStringArray(record.sourcePaths, 'generate.sourcePaths');
-  return record as unknown as Annunci10xGenerateOutput;
+  return {
+    ...record,
+    generatedAd: ad.value,
+    sections: ad.value.sections,
+    fullText: buildGeneratedAdText(ad.value),
+  } as unknown as Annunci10xGenerateOutput;
 }
 
 export function validateValidateOutput(value: unknown): Annunci10xValidateOutput {
@@ -528,6 +534,41 @@ function generatedSectionSchema(): unknown {
     body: stringSchema(),
     sourceFactIds: arraySchema(stringSchema()),
   });
+}
+
+function normalizeGeneratedAdTransport(value: unknown, path: string): GeneratedAd {
+  const record = requireRecord(value, path);
+  const sections = requireArray(record.sections, `${path}.sections`)
+    .map((section, index) => normalizeGeneratedSectionTransport(section, `${path}.sections[${index}]`))
+    .filter((section): section is GeneratedSection => Boolean(section));
+  if (sections.length === 0) throw new Error(`${path}.sections must contain at least one non-empty section`);
+  return { ...record, sections } as unknown as GeneratedAd;
+}
+
+function normalizeGeneratedSectionTransport(value: unknown, path: string): GeneratedSection | null {
+  const record = requireRecord(value, path);
+  const type = typeof record.type === 'string' ? record.type : '';
+  const title = typeof record.title === 'string' ? record.title.trim() : '';
+  const body = typeof record.body === 'string' ? record.body.trim() : '';
+  const sourceFactIds = Array.isArray(record.sourceFactIds)
+    ? record.sourceFactIds.filter((item): item is string => typeof item === 'string')
+    : [];
+  if (type !== 'TITLE' && isEmptyProviderSection(title, body)) return null;
+  return { ...record, title, body, sourceFactIds } as unknown as GeneratedSection;
+}
+
+function isEmptyProviderSection(title: string, body: string): boolean {
+  if (!body) return true;
+  if (/^(?:n\/a|na|non dichiarat[oaie]|non specificat[oaie]|non indicat[oaie]|non disponibil[ei]|informazione non disponibile|informazioni non disponibili)$/i.test(body)) return true;
+  if (/^(?:n\/a|na|non dichiarat[oaie]|non specificat[oaie]|non indicat[oaie]|non disponibil[ei]|informazione non disponibile|informazioni non disponibili)$/i.test(title)) return true;
+  return false;
+}
+
+function buildGeneratedAdText(ad: GeneratedAd): string {
+  return ad.sections
+    .map((section) => [section.title, section.body].map((item) => item.trim()).filter(Boolean).join('\n'))
+    .filter(Boolean)
+    .join('\n\n');
 }
 
 function generatedAdSchema(): unknown {

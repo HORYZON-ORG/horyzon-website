@@ -203,21 +203,8 @@ export async function answerAnnunci10xCreateStep(input: AnswerCreateStepInput): 
   });
 
   const operations: PublicAnnunci10xOperation[] = [];
-  const orchestrator = new Annunci10xAiOrchestrator({ provider: context.provider, persistence: context.persistence });
   const currentAnswers = await context.persistence.getAnswers(input.sessionId, input.sessionSecret);
   const previousSnapshot = await context.persistence.getLatestSnapshot(input.sessionId, input.sessionSecret);
-  const extract = await orchestrator.runTask({
-    sessionId: input.sessionId,
-    sessionSecret: input.sessionSecret,
-    operationType: 'EXTRACT',
-    input: {
-      userAnswers: [{ stepId: input.stepId, answer }],
-      existingRoleCard: previousSnapshot?.roleCard ?? null,
-    },
-    inputSnapshotId: previousSnapshot?.id ?? null,
-    promptVersionOverride: `${ANNUNCI10X_PROMPT_PACK_VERSION}.create.${input.stepId.toLowerCase()}.extract-paths-v2`,
-  });
-  operations.push(toPublicOperation(extract, 'EXTRACT', context.configuredProvider));
 
   const roleCard = buildCreateRoleCard(currentAnswers);
   let snapshot = await context.persistence.appendSnapshot({
@@ -232,6 +219,7 @@ export async function answerAnnunci10xCreateStep(input: AnswerCreateStepInput): 
 
   const localClarification = deriveBlockingClarification(currentAnswers);
   if (localClarification) {
+    const orchestrator = new Annunci10xAiOrchestrator({ provider: context.provider, persistence: context.persistence });
     const clarify = await orchestrator.runTask({
       sessionId: input.sessionId,
       sessionSecret: input.sessionSecret,
