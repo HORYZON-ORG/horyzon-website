@@ -107,7 +107,7 @@
   .ax-hero-sheet{transform:scale(.9) rotate(1deg);transform-origin:top center}
 }
 @media (max-width:600px){
-  .ax{overflow-x:hidden}
+  .ax{overflow-x:clip}
   .ax .rd-header{gap:14px}
   .ax .rd-header .rd-cta{flex:0 0 auto;gap:10px;min-width:0;padding:10px 12px;white-space:nowrap}
   .ax-brand img{width:clamp(150px,42vw,168px)}
