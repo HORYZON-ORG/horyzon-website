@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { RADAR_AREAS, radarSteps } from '@/lib/radar/domain';
 import type { RadarAnswer, RadarStep } from '@/lib/radar/types';
 import styles from './radar.module.css';
@@ -29,13 +29,19 @@ function groups(steps: RadarStep[]): Group[] {
   return list;
 }
 
-export function RadarQuestionnaire({ questionnaireVersion, stepIndex, value, saving, onAnswer, onBack }: { questionnaireVersion?: string; stepIndex: number; value?: RadarAnswer; saving: boolean; onAnswer: (value: RadarAnswer, advance?: boolean) => void; onBack: () => void }) {
+// saving: the questionnaire is closing (last answer), so it blocks. syncing: answers still travelling to the
+// server in the background; only the status label shows it, the questions stay usable.
+export function RadarQuestionnaire({ questionnaireVersion, stepIndex, value, saving, syncing = false, onAnswer, onBack }: { questionnaireVersion?: string; stepIndex: number; value?: RadarAnswer; saving: boolean; syncing?: boolean; onAnswer: (value: RadarAnswer, advance?: boolean) => void; onBack: () => void }) {
   const steps = radarSteps(questionnaireVersion);
   const step = steps[stepIndex];
-  const choices = !step ? [] : step.kind === 'LIKERT' ? LIKERT : step.kind === 'SEASONAL' ? ['No, continuativa', 'Sì, stagionale'] : step.options ?? [];
+  // The next question appears under the finger at once: ignore taps for a moment so a double tap
+  // does not answer it too.
+  const readyAt = useRef(0);
+  useEffect(() => { readyAt.current = Date.now() + 350; }, [stepIndex]);
+  const choices = step ? choicesFor(step) : [];
   const valueOf = (index: number) => step?.kind === 'LIKERT' ? index + 1 : index;
   const choose = (index: number) => {
-    if (!step || saving) return;
+    if (!step || saving || Date.now() < readyAt.current) return;
     const answer = valueOf(index);
     onAnswer(step.kind === 'AI_MULTI' ? toggle(value, answer) : answer, step.kind !== 'AI_MULTI');
   };
@@ -67,33 +73,55 @@ export function RadarQuestionnaire({ questionnaireVersion, stepIndex, value, sav
       })}
     </ol>
 
-    <div key={step.id} className={styles.question}>
-      <p className={styles.kicker}>
-        <span>{group.label}{group.count > 1 ? ` · ${stepIndex - group.from + 1} di ${group.count}` : ''}</span>
-        <span className={styles.counter}>Domanda {stepIndex + 1} di {steps.length}</span>
-      </p>
-      <h2 id="radar-question-title">{step.title}</h2>
-      {step.autonomy ? <p className={styles.tag}>Misura quanto il reparto va avanti senza di te</p> : null}
-      <p className={styles.hint} id="radar-question-hint">{HINTS[step.kind]}</p>
-      {step.kind === 'OWNER_HOURS' || step.kind === 'COMPANY_PROFIT'
-        ? <EconomicAnswerForm key={step.id} kind={step.kind} value={value} saving={saving} onAnswer={onAnswer} />
-        : <div className={step.kind === 'LIKERT' ? styles.scale : styles.choices} role="group" aria-labelledby="radar-question-title" aria-describedby="radar-question-hint">
-        {choices.map((label, index) => {
-          const answer = valueOf(index);
-          const selected = Array.isArray(value) ? value.includes(answer) : value === answer;
-          return <button key={label} type="button" aria-pressed={selected} className={selected ? styles.selected : undefined} disabled={saving} onClick={() => choose(index)}>
-            <span className={styles.key} aria-hidden="true">{index + 1}</span><span>{label}</span>
-          </button>;
-        })}
-      </div>}
+    {/* Every question sits in the same grid cell; only the current one is visible. The card is always as
+        tall as the tallest question at this width, so it never resizes between steps. */}
+    <div className={styles.stack}>
+      {steps.map((item, index) => {
+        if (index !== stepIndex) return <div key={item.id} className={`${styles.question} ${styles.phantom}`} aria-hidden="true" inert><QuestionBody step={item} index={index} steps={steps} groups={all} /></div>;
+        return <div key={`${item.id}-live`} className={styles.question}>
+          <QuestionBody step={item} index={index} steps={steps} groups={all} live />
+          {item.kind === 'OWNER_HOURS' || item.kind === 'COMPANY_PROFIT'
+            ? <EconomicAnswerForm key={item.id} kind={item.kind} value={value} saving={saving} onAnswer={onAnswer} />
+            : <div className={item.kind === 'LIKERT' ? styles.scale : styles.choices} role="group" aria-labelledby="radar-question-title" aria-describedby="radar-question-hint">
+            {choices.map((label, choice) => {
+              const answer = valueOf(choice);
+              const selected = Array.isArray(value) ? value.includes(answer) : value === answer;
+              return <button key={label} type="button" aria-pressed={selected} className={selected ? styles.selected : undefined} disabled={saving} onClick={() => choose(choice)}>
+                <span className={styles.key} aria-hidden="true">{choice + 1}</span><span>{label}</span>
+              </button>;
+            })}
+          </div>}
+        </div>;
+      })}
     </div>
 
     <div className={styles.actions}>
       <button type="button" className={styles.ghost} onClick={onBack} disabled={stepIndex === 0 || saving}>← Indietro</button>
-      <span className={saving ? styles.saving : styles.saved}>{saving ? 'Salvataggio…' : 'Risposte salvate'}</span>
+      <span className={saving || syncing ? styles.saving : styles.saved} aria-live="polite">{saving ? 'Chiusura del Radar…' : syncing ? 'Salvataggio…' : 'Risposte salvate'}</span>
       {step.kind === 'AI_MULTI' ? <button type="button" disabled={saving || !Array.isArray(value) || value.length === 0} onClick={() => onAnswer(value!, true)}>Continua</button> : null}
     </div>
   </section>;
+}
+
+function choicesFor(step: RadarStep): readonly string[] {
+  return step.kind === 'LIKERT' ? LIKERT : step.kind === 'SEASONAL' ? ['No, continuativa', 'Sì, stagionale'] : step.options ?? [];
+}
+
+// Heading, hint and (for hidden steps) a stand-in of the answers with the same footprint.
+function QuestionBody({ step, index, steps, groups: all, live = false }: { step: RadarStep; index: number; steps: RadarStep[]; groups: Group[]; live?: boolean }) {
+  const group = all.find((g) => index >= g.from && index < g.from + g.count)!;
+  return <>
+    <p className={styles.kicker}>
+      <span>{group.label}{group.count > 1 ? ` · ${index - group.from + 1} di ${group.count}` : ''}</span>
+      <span className={styles.counter}>Domanda {index + 1} di {steps.length}</span>
+    </p>
+    <h2 id={live ? 'radar-question-title' : undefined}>{step.title}</h2>
+    {step.autonomy ? <p className={styles.tag}>Misura quanto il reparto va avanti senza di te</p> : null}
+    <p className={styles.hint} id={live ? 'radar-question-hint' : undefined}>{HINTS[step.kind]}</p>
+    {live ? null : step.kind === 'OWNER_HOURS' || step.kind === 'COMPANY_PROFIT'
+      ? <EconomicAnswerForm kind={step.kind} saving onAnswer={() => {}} />
+      : <div className={step.kind === 'LIKERT' ? styles.scale : styles.choices}>{choicesFor(step).map((label, choice) => <button key={label} type="button" tabIndex={-1}><span className={styles.key}>{choice + 1}</span><span>{label}</span></button>)}</div>}
+  </>;
 }
 
 function EconomicAnswerForm({ kind, value, saving, onAnswer }: { kind: 'OWNER_HOURS' | 'COMPANY_PROFIT'; value?: RadarAnswer; saving: boolean; onAnswer: (value: RadarAnswer) => void }) {

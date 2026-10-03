@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { RADAR_QUESTIONNAIRE_VERSION, type RadarAnswers } from '@/lib/radar/types';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { RADAR_QUESTIONNAIRE_VERSION, type RadarAnswer, type RadarAnswers } from '@/lib/radar/types';
 import type { RadarReport } from '@/lib/radar/report';
 import { radarSteps } from '@/lib/radar/domain';
 import { clearRecovery, createRecoveryEnvelope, loadActiveRecovery, saveRecovery } from './radar-recovery';
@@ -19,21 +19,72 @@ export function RadarClient() {
   const [phase, setPhase] = useState<Phase>('QUALIFICATION');
   const [assessmentId, setAssessmentId] = useState('');
   const [questionnaireVersion, setQuestionnaireVersion] = useState<string>(RADAR_QUESTIONNAIRE_VERSION);
-  const [revision, setRevision] = useState(0);
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState<RadarAnswers>({});
-  const [saving, setSaving] = useState(false);
+  const [finishing, setFinishing] = useState(false);
+  const [pending, setPending] = useState(0);
+  const [failed, setFailed] = useState(0);
   const [syncError, setSyncError] = useState('');
   const [report, setReport] = useState<RadarReport | null>(null);
   const [aziendaNome, setAziendaNome] = useState('');
   const steps = useMemo(() => radarSteps(questionnaireVersion), [questionnaireVersion]);
 
+  // Answers sync in the background, one at a time (each save must carry the latest revision).
+  // The next question shows at once; the browser copy (radar-recovery) covers a reload meanwhile.
+  const sync = useRef({ revision: 0, queue: Promise.resolve(), pending: 0, failed: new Map<string, { value: RadarAnswer; currentStep: number }>(), answers: {} as RadarAnswers, step: 0, assessmentId: '', version: RADAR_QUESTIONNAIRE_VERSION as string });
+
+  const finishRequested = useRef(false);
+
+  function remember(nextAnswers: RadarAnswers, nextStep: number) {
+    const state = sync.current;
+    state.answers = nextAnswers; state.step = nextStep;
+    if (state.assessmentId) saveRecovery(localStorage, createRecoveryEnvelope({ assessmentId: state.assessmentId, revision: state.revision, currentStep: nextStep, answers: nextAnswers, questionnaireVersion: state.version }));
+  }
+
+  async function postAnswer(answerKey: string, value: RadarAnswer, currentStep: number): Promise<boolean> {
+    for (let attempt = 0; attempt < 4; attempt++) {
+      if (attempt) await wait(500 * attempt);
+      const response = await fetch('/api/radar/answer', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ answerKey, value, expectedRevision: sync.current.revision, currentStep }) }).catch(() => null);
+      if (response?.ok) {
+        const payload = await response.json();
+        sync.current.revision = payload.progress.revision;
+        remember(sync.current.answers, sync.current.step);
+        return true;
+      }
+      // Another tab (or a lost response) moved the revision on: read it back and try again.
+      if (response?.status === 409) {
+        const resumed = await fetch('/api/radar/session/resume', { cache: 'no-store' }).catch(() => null);
+        if (resumed?.ok) sync.current.revision = (await resumed.json()).session.revision;
+      } else if (response && response.status < 500) return false;
+    }
+    return false;
+  }
+
+  function enqueue(answerKey: string, value: RadarAnswer, currentStep: number) {
+    const state = sync.current;
+    state.failed.delete(answerKey);
+    state.pending += 1; setPending(state.pending);
+    state.queue = state.queue.then(async () => {
+      const ok = await postAnswer(answerKey, value, currentStep);
+      if (!ok) state.failed.set(answerKey, { value, currentStep });
+      state.pending -= 1; setPending(state.pending); setFailed(state.failed.size);
+      if (!ok) setSyncError('Alcune risposte non sono ancora salvate. Controlla la connessione e premi Riprova.');
+    });
+  }
+
+  function retryFailed() {
+    setSyncError('');
+    for (const [answerKey, entry] of [...sync.current.failed]) enqueue(answerKey, entry.value, entry.currentStep);
+    // The failure stopped the last step: once the retry lands, finish goes on by itself.
+    if (finishRequested.current) void finish();
+  }
+
   async function resume() {
     const local = loadActiveRecovery(localStorage, RADAR_QUESTIONNAIRE_VERSION) ?? loadActiveRecovery(localStorage, 'radar-v1');
     if (local) {
+      sync.current = { ...sync.current, revision: local.revision, assessmentId: local.assessmentId, version: local.questionnaireVersion, answers: local.answers, step: local.currentStep };
       setQuestionnaireVersion(local.questionnaireVersion);
       setAssessmentId(local.assessmentId);
-      setRevision(local.revision);
       setStepIndex(Math.min(radarSteps(local.questionnaireVersion).length - 1, local.currentStep));
       setAnswers(local.answers);
       setPhase('QUESTIONS');
@@ -42,12 +93,20 @@ export function RadarClient() {
     if (!response.ok) return;
     const payload = await response.json();
     const session = payload.session;
-    let restored = { answers: session.answers ?? {}, currentStep: session.currentStep, revision: session.revision };
-    if (local && local.assessmentId === session.id && local.questionnaireVersion === (session.questionnaireVersion ?? 'radar-v1') && local.revision >= session.revision) restored = local;
-    setQuestionnaireVersion(session.questionnaireVersion ?? 'radar-v1');
-    setAssessmentId(session.id); setRevision(restored.revision); setStepIndex(Math.min(radarSteps(session.questionnaireVersion ?? 'radar-v1').length - 1, restored.currentStep)); setAnswers(restored.answers);
+    const version = session.questionnaireVersion ?? 'radar-v1';
+    let restored = { answers: (session.answers ?? {}) as RadarAnswers, currentStep: session.currentStep as number };
+    const useLocal = Boolean(local && local.assessmentId === session.id && local.questionnaireVersion === version && local.revision >= session.revision);
+    if (useLocal && local) restored = local;
+    sync.current = { ...sync.current, revision: session.revision, assessmentId: session.id, version, answers: restored.answers, step: restored.currentStep };
+    setQuestionnaireVersion(version);
+    setAssessmentId(session.id); setStepIndex(Math.min(radarSteps(version).length - 1, restored.currentStep)); setAnswers(restored.answers);
     // A finished Radar opens its result (free); the payment gate shows only when the result stays locked.
-    if (!['PAYMENT_REQUIRED', 'PAID', 'COMPLETED'].includes(session.status)) { setPhase('QUESTIONS'); return; }
+    if (!['PAYMENT_REQUIRED', 'PAID', 'COMPLETED'].includes(session.status)) {
+      setPhase('QUESTIONS');
+      // Answers given offline or before a reload, not yet on the server: send them now.
+      if (useLocal) for (const [key, value] of Object.entries(restored.answers)) if (JSON.stringify(session.answers?.[key]) !== JSON.stringify(value)) enqueue(key, value, restored.currentStep);
+      return;
+    }
     if (!(await loadResult(session.id))) setPhase('PAYMENT');
   }
 
@@ -59,6 +118,14 @@ export function RadarClient() {
     return () => window.clearTimeout(timer);
   }, []);
 
+  // Leaving the page with answers still in flight: let the browser warn.
+  useEffect(() => {
+    if (!pending) return;
+    const onLeave = (event: BeforeUnloadEvent) => { event.preventDefault(); };
+    window.addEventListener('beforeunload', onLeave);
+    return () => window.removeEventListener('beforeunload', onLeave);
+  }, [pending]);
+
   async function start(form: FormData) {
     const entries = Object.fromEntries(form.entries());
     const body = { ...entries, seasonal: entries.seasonal === 'true' };
@@ -66,36 +133,38 @@ export function RadarClient() {
     if (!response.ok) { setSyncError('Non è stato possibile avviare il Radar.'); return; }
     const payload = await response.json();
     const initialAnswers = { 'qualificazione#stagionale': body.seasonal ? 1 : 0 };
-    setAssessmentId(payload.session.id); setRevision(payload.session.revision); setAnswers(initialAnswers); setAziendaNome(String(entries.aziendaNome ?? '').trim()); setPhase('QUESTIONS');
-    saveRecovery(localStorage, createRecoveryEnvelope({ assessmentId: payload.session.id, revision: payload.session.revision, currentStep: 0, answers: initialAnswers, questionnaireVersion }));
+    sync.current = { ...sync.current, revision: payload.session.revision, assessmentId: payload.session.id, version: questionnaireVersion, failed: new Map() };
+    setAssessmentId(payload.session.id); setAnswers(initialAnswers); setAziendaNome(String(entries.aziendaNome ?? '').trim()); setSyncError(''); setPhase('QUESTIONS');
+    remember(initialAnswers, 0);
   }
 
-  async function answer(value: number | number[], advance = true) {
+  // advance=false (AI multi-choice toggles) only updates the screen; the answer is saved on Continua.
+  function answer(value: RadarAnswer, advance = true) {
     const step = steps[stepIndex]!;
     const nextAnswers = { ...answers, [step.id]: value };
-    setAnswers(nextAnswers); setSaving(true); setSyncError('');
-    if (assessmentId) saveRecovery(localStorage, createRecoveryEnvelope({ assessmentId, revision, currentStep: stepIndex, answers: nextAnswers, questionnaireVersion }));
-    try {
-      const response = await fetch('/api/radar/answer', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ answerKey: step.id, value, expectedRevision: revision, currentStep: stepIndex + 1 }) });
-      if (!response.ok) throw new Error('sync');
-      const payload = await response.json();
-      const nextStep = advance ? Math.min(steps.length, stepIndex + 1) : stepIndex;
-      setRevision(payload.progress.revision);
-      if (assessmentId) saveRecovery(localStorage, createRecoveryEnvelope({ assessmentId, revision: payload.progress.revision, currentStep: nextStep, answers: nextAnswers, questionnaireVersion }));
-      if (!advance) return;
-      if (stepIndex === steps.length - 1) await finish();
-      else setStepIndex((current) => current + 1);
-    } catch { setSyncError('Risposta non ancora sincronizzata. Riprova prima di continuare.'); }
-    finally { setSaving(false); }
+    setAnswers(nextAnswers);
+    if (!advance) return;
+    const last = stepIndex === steps.length - 1;
+    const nextStep = last ? stepIndex : stepIndex + 1;
+    remember(nextAnswers, nextStep);
+    enqueue(step.id, value, stepIndex + 1);
+    if (last) void finish();
+    else setStepIndex(nextStep);
   }
 
-  // Last answer saved: the processing animation runs while the Radar completes and the report is built.
+  // Last answer: wait for every save to land, then the processing animation runs while the Radar completes.
   async function finish() {
+    finishRequested.current = true;
+    setFinishing(true);
+    await sync.current.queue;
+    setFinishing(false);
+    if (sync.current.failed.size) return;
+    finishRequested.current = false;
     const startedAt = Date.now();
     setPhase('PROCESSING');
     document.getElementById('radar-prodotto')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
     const completed = await fetch('/api/radar/complete', { method: 'POST' }).catch(() => null);
-    if (!completed?.ok) { setPhase('QUESTIONS'); throw new Error('complete'); }
+    if (!completed?.ok) { setPhase('QUESTIONS'); setSyncError('Non è stato possibile completare il Radar. Riprova tra un momento.'); return; }
     if (!(await loadResult(assessmentId, startedAt))) setPhase('PAYMENT');
   }
 
@@ -105,7 +174,8 @@ export function RadarClient() {
     await fetch('/api/radar/session', { method: 'DELETE' }).catch(() => undefined);
     if (assessmentId) clearRecovery(localStorage, assessmentId);
     localStorage.removeItem('horyzon:radar:recovery:active');
-    setQuestionnaireVersion(RADAR_QUESTIONNAIRE_VERSION); setAssessmentId(''); setRevision(0); setStepIndex(0); setAnswers({}); setReport(null); setAziendaNome(''); setSyncError(''); setPhase('QUALIFICATION');
+    sync.current = { revision: 0, queue: Promise.resolve(), pending: 0, failed: new Map(), answers: {}, step: 0, assessmentId: '', version: RADAR_QUESTIONNAIRE_VERSION };
+    setQuestionnaireVersion(RADAR_QUESTIONNAIRE_VERSION); setAssessmentId(''); setStepIndex(0); setAnswers({}); setReport(null); setAziendaNome(''); setPending(0); setFailed(0); setSyncError(''); setPhase('QUALIFICATION');
     document.getElementById('radar-prodotto')?.scrollIntoView({ block: 'start' });
   }
 
@@ -121,7 +191,7 @@ export function RadarClient() {
   }
 
   if (phase === 'QUALIFICATION') return <Qualification onStart={start} error={syncError}/>;
-  if (phase === 'QUESTIONS') return <><RadarQuestionnaire questionnaireVersion={questionnaireVersion} stepIndex={stepIndex} value={answers[steps[stepIndex]?.id ?? '']} saving={saving} onAnswer={answer} onBack={() => setStepIndex((current) => Math.max(0, current - 1))}/>{syncError ? <p className={styles.syncError} role="alert">{syncError}</p> : null}<p className={styles.restartRow}><button type="button" className={styles.restart} onClick={restart}>Rifai il test da zero</button></p></>;
+  if (phase === 'QUESTIONS') return <><RadarQuestionnaire questionnaireVersion={questionnaireVersion} stepIndex={stepIndex} value={answers[steps[stepIndex]?.id ?? '']} saving={finishing} syncing={pending > 0} onAnswer={answer} onBack={() => setStepIndex((current) => Math.max(0, current - 1))}/>{syncError ? <p className={styles.syncError} role="alert">{syncError}{failed ? <> <button type="button" className={styles.retry} onClick={retryFailed}>Riprova</button></> : null}</p> : null}<p className={styles.restartRow}><button type="button" className={styles.restart} onClick={restart}>Rifai il test da zero</button></p></>;
   if (phase === 'PROCESSING') return <RadarProcessing answers={answers} aziendaNome={aziendaNome}/>;
   if (phase === 'PAYMENT') return <RadarPaymentGate onPreviewUnlocked={async () => { await loadResult(); }} onRestart={restart}/>;
   return report ? <RadarResult report={report} onRestart={restart}/> : null;
