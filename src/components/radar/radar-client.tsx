@@ -6,11 +6,14 @@ import type { RadarReport } from '@/lib/radar/report';
 import { radarSteps } from '@/lib/radar/domain';
 import { clearRecovery, createRecoveryEnvelope, loadActiveRecovery, saveRecovery } from './radar-recovery';
 import { RadarPaymentGate } from './radar-payment-gate';
+import { RADAR_PROCESSING_MS, RadarProcessing } from './radar-processing';
 import { RadarQuestionnaire } from './radar-questionnaire';
 import { RadarResult } from './radar-result';
 import styles from './radar.module.css';
 
-type Phase = 'QUALIFICATION' | 'QUESTIONS' | 'PAYMENT' | 'RESULT';
+type Phase = 'QUALIFICATION' | 'QUESTIONS' | 'PROCESSING' | 'PAYMENT' | 'RESULT';
+
+const wait = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
 export function RadarClient() {
   const [phase, setPhase] = useState<Phase>('QUALIFICATION');
@@ -22,6 +25,7 @@ export function RadarClient() {
   const [saving, setSaving] = useState(false);
   const [syncError, setSyncError] = useState('');
   const [report, setReport] = useState<RadarReport | null>(null);
+  const [aziendaNome, setAziendaNome] = useState('');
   const steps = useMemo(() => radarSteps(questionnaireVersion), [questionnaireVersion]);
 
   async function resume() {
@@ -62,7 +66,7 @@ export function RadarClient() {
     if (!response.ok) { setSyncError('Non è stato possibile avviare il Radar.'); return; }
     const payload = await response.json();
     const initialAnswers = { 'qualificazione#stagionale': body.seasonal ? 1 : 0 };
-    setAssessmentId(payload.session.id); setRevision(payload.session.revision); setAnswers(initialAnswers); setPhase('QUESTIONS');
+    setAssessmentId(payload.session.id); setRevision(payload.session.revision); setAnswers(initialAnswers); setAziendaNome(String(entries.aziendaNome ?? '').trim()); setPhase('QUESTIONS');
     saveRecovery(localStorage, createRecoveryEnvelope({ assessmentId: payload.session.id, revision: payload.session.revision, currentStep: 0, answers: initialAnswers, questionnaireVersion }));
   }
 
@@ -79,10 +83,20 @@ export function RadarClient() {
       setRevision(payload.progress.revision);
       if (assessmentId) saveRecovery(localStorage, createRecoveryEnvelope({ assessmentId, revision: payload.progress.revision, currentStep: nextStep, answers: nextAnswers, questionnaireVersion }));
       if (!advance) return;
-      if (stepIndex === steps.length - 1) { const completed = await fetch('/api/radar/complete', { method: 'POST' }); if (!completed.ok) throw new Error('complete'); if (!(await loadResult())) setPhase('PAYMENT'); }
+      if (stepIndex === steps.length - 1) await finish();
       else setStepIndex((current) => current + 1);
     } catch { setSyncError('Risposta non ancora sincronizzata. Riprova prima di continuare.'); }
     finally { setSaving(false); }
+  }
+
+  // Last answer saved: the processing animation runs while the Radar completes and the report is built.
+  async function finish() {
+    const startedAt = Date.now();
+    setPhase('PROCESSING');
+    document.getElementById('radar-prodotto')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    const completed = await fetch('/api/radar/complete', { method: 'POST' }).catch(() => null);
+    if (!completed?.ok) { setPhase('QUESTIONS'); throw new Error('complete'); }
+    if (!(await loadResult(assessmentId, startedAt))) setPhase('PAYMENT');
   }
 
   // Start again from the qualification form: forget the session cookie and the local recovery copy.
@@ -91,20 +105,24 @@ export function RadarClient() {
     await fetch('/api/radar/session', { method: 'DELETE' }).catch(() => undefined);
     if (assessmentId) clearRecovery(localStorage, assessmentId);
     localStorage.removeItem('horyzon:radar:recovery:active');
-    setQuestionnaireVersion(RADAR_QUESTIONNAIRE_VERSION); setAssessmentId(''); setRevision(0); setStepIndex(0); setAnswers({}); setReport(null); setSyncError(''); setPhase('QUALIFICATION');
+    setQuestionnaireVersion(RADAR_QUESTIONNAIRE_VERSION); setAssessmentId(''); setRevision(0); setStepIndex(0); setAnswers({}); setReport(null); setAziendaNome(''); setSyncError(''); setPhase('QUALIFICATION');
     document.getElementById('radar-prodotto')?.scrollIntoView({ block: 'start' });
   }
 
-  async function loadResult(id = assessmentId): Promise<boolean> {
+  // startedAt: keep the processing animation on screen for its whole timeline before the result replaces it.
+  async function loadResult(id = assessmentId, startedAt?: number): Promise<boolean> {
     const response = await fetch('/api/radar/result', { cache: 'no-store' });
     if (!response.ok) return false;
-    const payload = await response.json(); setReport(payload.report); setPhase('RESULT');
+    const payload = await response.json();
+    if (startedAt) await wait(Math.max(0, RADAR_PROCESSING_MS - (Date.now() - startedAt)));
+    setReport(payload.report); setPhase('RESULT');
     if (id) clearRecovery(localStorage, id);
     return true;
   }
 
   if (phase === 'QUALIFICATION') return <Qualification onStart={start} error={syncError}/>;
   if (phase === 'QUESTIONS') return <><RadarQuestionnaire questionnaireVersion={questionnaireVersion} stepIndex={stepIndex} value={answers[steps[stepIndex]?.id ?? '']} saving={saving} onAnswer={answer} onBack={() => setStepIndex((current) => Math.max(0, current - 1))}/>{syncError ? <p className={styles.syncError} role="alert">{syncError}</p> : null}<p className={styles.restartRow}><button type="button" className={styles.restart} onClick={restart}>Rifai il test da zero</button></p></>;
+  if (phase === 'PROCESSING') return <RadarProcessing answers={answers} aziendaNome={aziendaNome}/>;
   if (phase === 'PAYMENT') return <RadarPaymentGate onPreviewUnlocked={async () => { await loadResult(); }} onRestart={restart}/>;
   return report ? <RadarResult report={report} onRestart={restart}/> : null;
 }

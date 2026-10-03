@@ -39,7 +39,7 @@
 .rd-steps{list-style:none;counter-reset:step;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:34px 0 0;padding:0}
 .rd-steps li{counter-increment:step;display:grid;gap:6px;padding-top:14px;border-top:2px solid var(--line);font-size:14px;line-height:1.45;color:#cdd6d4}
 /* Step track follows the questionnaire (data-phase set by radar-client.tsx): done and current steps are lit. */
-.rd-steps li:first-child,[data-phase=QUESTIONS] .rd-steps li:nth-child(-n+2),[data-phase=PAYMENT] .rd-steps li,[data-phase=RESULT] .rd-steps li{border-color:var(--lime)}
+.rd-steps li:first-child,[data-phase=QUESTIONS] .rd-steps li:nth-child(-n+2),[data-phase=PROCESSING] .rd-steps li,[data-phase=PAYMENT] .rd-steps li,[data-phase=RESULT] .rd-steps li{border-color:var(--lime)}
 .rd-steps li{transition:border-color .4s}
 .rd-steps b{font:500 12px var(--font-mono),monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--cream)}
 .rd-steps b::before{content:counter(step,decimal-leading-zero) "  ";color:var(--lime)}
