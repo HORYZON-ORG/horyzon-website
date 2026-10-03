@@ -13,6 +13,7 @@ import { runPersistedAnnunci10xEvaluateV2 } from '../ai/evaluate-v2.ts';
 import { Annunci10xAiOrchestrator } from '../ai/orchestrator.ts';
 import { createFact, validateGeneratedAd } from '../validation.ts';
 import {
+  applyAnnunci10xClientRevision,
   runAnnunci10xDecisionEngineCreateRuntime,
   type Annunci10xDecisionEngineWriter,
 } from '../decision-engine/create-runtime.ts';
@@ -33,6 +34,7 @@ import type {
   ComparisonResult,
   Fact,
   GeneratedAd,
+  GeneratedSection,
   PublicationChannel,
   PublicationGate,
   RoleCard,
@@ -97,6 +99,8 @@ export interface PublicAnnunci10xPremiumOutput {
     promptVersion: string;
   };
   generatedAt: string;
+  clientRevisionCount: number;
+  clientRevisionLimit: 3;
 }
 
 export type Annunci10xPremiumFulfillmentPublicState =
@@ -124,10 +128,18 @@ export interface PremiumEditInput {
 }
 
 export interface PublicAnnunci10xPremiumEditResult {
-  status: 'EDITORIAL_REVISED' | 'REQUIRES_REGENERATION' | 'CONFIRMATION_REQUIRED';
+  status:
+    | 'EDITORIAL_REVISED'
+    | 'REQUIRES_REGENERATION'
+    | 'CONFIRMATION_REQUIRED'
+    | 'REVISION_APPLIED'
+    | 'REVISION_BLOCKED'
+    | 'REVISION_LIMIT_REACHED';
   intent: Annunci10xEditClassifierOutput['intent'];
   reason: string;
   affectedPaths: string[];
+  revisionCount?: number;
+  revisionLimit?: 3;
   output?: PublicAnnunci10xPremiumOutput;
   operations: PublicAnnunci10xOperation[];
 }
@@ -172,6 +184,17 @@ const DECISION_ENGINE_REPAIR_PROMPT = [
   'Se un fatto manca, aggiungilo con formulazione fedele. Se un claim e inventato, rimuovi o sostituisci soltanto quel concetto usando evidence reale.',
   'Non accorciare automaticamente il resto del Master e non introdurre nuovi fatti.',
   'Restituisci soltanto le sezioni modificate nello schema REVISE.',
+].join('\n');
+
+const CLIENT_REVISION_LIMIT = 3 as const;
+const DECISION_ENGINE_CLIENT_REVISION_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-client-revision`;
+const DECISION_ENGINE_CLIENT_REVISION_PROMPT = [
+  'Sei l\'editor di Annunci 10x.',
+  'Devi riscrivere esclusivamente la sezione indicata dal cliente, senza cambiare titolo, id, tipo o struttura delle altre sezioni.',
+  'Usa il Truth Ledger come unica fonte fattuale. Non aggiungere fatti, condizioni, strumenti, benefit, interlocutori o processi non dichiarati.',
+  'Segui la richiesta editoriale del cliente finche non altera la realta confermata.',
+  'Restituisci nello schema REVISE una sola revisedSection: quella target. changedSectionIds deve contenere solo il suo id.',
+  'Preserva un testo candidate-facing naturale, discorsivo e pronto da pubblicare.',
 ].join('\n');
 
 export async function runAnnunci10xPremiumGeneration(input: Annunci10xPremiumGenerationInput): Promise<PublicAnnunci10xPremiumOutput> {
@@ -452,6 +475,19 @@ export async function requestAnnunci10xPremiumEdit(input: PremiumEditInput): Pro
   if (!validation.ok) throw new Annunci10xPublicError('INTERNAL', 'Output premium non valido.', 500);
   if (!input.editRequest.trim()) throw new Annunci10xPublicError('INVALID_INPUT', 'Inserisci una modifica.', 400);
 
+  if (session.flow === 'CREATE') {
+    return requestAnnunci10xCreateClientRevision({
+      context,
+      session,
+      sessionSecret: input.sessionSecret,
+      output,
+      snapshot,
+      master: validation.value,
+      editRequest: input.editRequest,
+      targetSectionId: input.targetPath,
+    });
+  }
+
   const orchestrator = new Annunci10xAiOrchestrator({ provider: context.provider, persistence: context.persistence });
   const operations: PublicAnnunci10xOperation[] = [];
   const classifier = await orchestrator.runTask({
@@ -583,6 +619,215 @@ export async function requestAnnunci10xPremiumEdit(input: PremiumEditInput): Pro
       comparison,
       operations,
       provider: context.configuredProvider,
+    }),
+  };
+}
+
+
+async function requestAnnunci10xCreateClientRevision(input: {
+  context: Annunci10xRuntimeContext;
+  session: PersistedAnnunci10xSession;
+  sessionSecret: string;
+  output: PersistedOutput;
+  snapshot: PersistedSnapshot;
+  master: GeneratedAd;
+  editRequest: string;
+  targetSectionId?: string;
+}): Promise<PublicAnnunci10xPremiumEditResult> {
+  const targetSectionId = input.targetSectionId?.trim() ?? '';
+  if (!targetSectionId || !input.master.sections.some((section) => section.id === targetSectionId)) {
+    throw new Annunci10xPublicError('INVALID_INPUT', 'Seleziona la sezione da modificare.', 400);
+  }
+
+  const payload = readPremiumPayload(input.master);
+  const revisionCount = payload.clientRevisionCount;
+  if (revisionCount >= CLIENT_REVISION_LIMIT) {
+    return {
+      status: 'REVISION_LIMIT_REACHED',
+      intent: 'EDITORIAL',
+      reason: 'Hai utilizzato le 3 modifiche incluse per questo annuncio.',
+      affectedPaths: [targetSectionId],
+      revisionCount,
+      revisionLimit: CLIENT_REVISION_LIMIT,
+      operations: [],
+    };
+  }
+
+  const evaluation = await input.context.persistence.getEvaluationByOutputId(
+    input.output.id,
+    input.session.id,
+    input.sessionSecret,
+  );
+  if (!evaluation) throw new Annunci10xPublicError('INTERNAL', 'Valutazione premium non disponibile.', 500);
+  const persistedEvaluation = requirePremiumEvaluation(evaluation);
+  const currentGate = persistedEvaluation.gate ?? payload.gate;
+  if (!currentGate) throw new Annunci10xPublicError('INTERNAL', 'Gate premium Annunci 10x non valida.', 500);
+
+  const orchestrator = new Annunci10xAiOrchestrator({
+    provider: input.context.provider,
+    persistence: input.context.persistence,
+  });
+  const operations: PublicAnnunci10xOperation[] = [];
+
+  const revision = await applyAnnunci10xClientRevision({
+    master: input.master,
+    roleCard: input.snapshot.roleCard,
+    revisionCount,
+    targetSectionId,
+    userInstruction: input.editRequest,
+    reviseSection: async ({ previousSection, userInstruction, revisionNumber, truthLedger }) => {
+      const result = await orchestrator.runTask({
+        sessionId: input.session.id,
+        sessionSecret: input.sessionSecret,
+        operationType: 'REVISE',
+        input: {
+          currentMaster: input.master,
+          roleCard: input.snapshot.roleCard,
+          truthLedger,
+          targetSection: {
+            id: previousSection.id,
+            title: previousSection.title,
+            body: previousSection.body,
+          },
+          editRequest: userInstruction,
+          revisionNumber,
+        },
+        inputSnapshotId: input.snapshot.id,
+        idempotencyInputIdentityOverride: stableHash({
+          snapshotId: input.snapshot.id,
+          outputId: input.output.id,
+          targetSectionId: previousSection.id,
+          editRequest: userInstruction,
+          revisionNumber,
+          operation: 'DECISION_ENGINE_CLIENT_REVISION',
+        }),
+        promptVersionOverride: DECISION_ENGINE_CLIENT_REVISION_PROMPT_VERSION,
+        systemPromptOverride: DECISION_ENGINE_CLIENT_REVISION_PROMPT,
+      });
+      operations.push(toPublicOperation(result, 'REVISE', input.context.configuredProvider));
+      const revised = result.output as Annunci10xReviseOutput;
+      const candidate = revised.revisedSections.find((section) => section.id === previousSection.id)
+        ?? revised.revisedSections[0];
+      if (!candidate?.body?.trim()) {
+        throw new Annunci10xPublicError('GENERATION_BLOCKED', 'La modifica non ha prodotto una sezione valida.', 409);
+      }
+      return {
+        ...previousSection,
+        body: candidate.body.trim(),
+        sourceFactIds: [...new Set([...previousSection.sourceFactIds, ...candidate.sourceFactIds])],
+      } satisfies GeneratedSection;
+    },
+  });
+
+  if (revision.status === 'REVISION_LIMIT_REACHED') {
+    return {
+      status: revision.status,
+      intent: 'EDITORIAL',
+      reason: 'Hai utilizzato le 3 modifiche incluse per questo annuncio.',
+      affectedPaths: [targetSectionId],
+      revisionCount: revision.revisionCount,
+      revisionLimit: CLIENT_REVISION_LIMIT,
+      operations,
+    };
+  }
+
+  if (revision.status !== 'REVISION_APPLIED' || !revision.decisionReport) {
+    await appendEventBestEffort(input.context, input.session.id, 'client_revision_blocked', {
+      outputId: input.output.id,
+      targetSectionId,
+      revisionNumber: revision.revisionNumber,
+      hardFailures: revision.decisionReport?.hardFailures ?? [],
+    });
+    return {
+      status: 'REVISION_BLOCKED',
+      intent: 'EDITORIAL',
+      reason: 'La modifica cambierebbe informazioni confermate. Prova a chiedere una riscrittura di tono o chiarezza senza cambiare i fatti.',
+      affectedPaths: [targetSectionId],
+      revisionCount,
+      revisionLimit: CLIENT_REVISION_LIMIT,
+      operations,
+    };
+  }
+
+  const nextGate = gateFromDecisionReport(revision.decisionReport, currentGate);
+  if (nextGate.status === 'BLOCKED') {
+    return {
+      status: 'REVISION_BLOCKED',
+      intent: 'EDITORIAL',
+      reason: 'La modifica non supera il controllo dei fatti confermati.',
+      affectedPaths: [targetSectionId],
+      revisionCount,
+      revisionLimit: CLIENT_REVISION_LIMIT,
+      operations,
+    };
+  }
+
+  const claimCheck = claimCheckFromDecisionReport(revision.decisionReport);
+  const masterToPersist = attachPremiumPayload(revision.master, {
+    comparison: payload.comparison,
+    claimCheck,
+    gate: nextGate,
+    rationale: payload.rationale,
+    automaticRevisionCount: payload.automaticRevisionCount,
+    clientRevisionCount: revision.revisionCount,
+    validationResult: 'PASS',
+    decisionEngine: {
+      ...(payload.decisionEngine ?? {}),
+      clientRevision: {
+        revisionNumber: revision.revisionNumber,
+        targetSectionId,
+        decisionReport: revision.decisionReport,
+        updatedAt: new Date().toISOString(),
+      },
+    },
+  });
+
+  const saved = await input.context.persistence.saveOutput({
+    sessionId: input.session.id,
+    sessionSecret: input.sessionSecret,
+    snapshotId: input.snapshot.id,
+    outputType: 'MASTER',
+    generatedContent: masterToPersist,
+    parentMasterId: input.output.id,
+    validationState: nextGate.status,
+  });
+
+  await input.context.persistence.saveEvaluation({
+    sessionId: input.session.id,
+    sessionSecret: input.sessionSecret,
+    target: { kind: 'GENERATED_MASTER', generatedAdId: revision.master.id },
+    targetRef: revision.master.id,
+    targetOutputId: saved.id,
+    score: persistedEvaluation.score,
+    gate: null,
+  });
+  await appendEventBestEffort(input.context, input.session.id, 'client_revision_applied', {
+    previousOutputId: input.output.id,
+    outputId: saved.id,
+    targetSectionId,
+    revisionNumber: revision.revisionNumber,
+  });
+
+  return {
+    status: 'REVISION_APPLIED',
+    intent: 'EDITORIAL',
+    reason: 'Modifica applicata.',
+    affectedPaths: [targetSectionId],
+    revisionCount: revision.revisionCount,
+    revisionLimit: CLIENT_REVISION_LIMIT,
+    operations,
+    output: await publicPremiumOutput({
+      session: input.session,
+      snapshot: input.snapshot,
+      output: saved,
+      master: masterToPersist,
+      channelVariant: null,
+      score: persistedEvaluation.score,
+      gate: nextGate,
+      claimCheck,
+      comparison: payload.comparison,
+      operations,
+      provider: input.context.configuredProvider,
     }),
   };
 }
@@ -1808,6 +2053,8 @@ async function publicPremiumOutput(input: {
     operations: input.operations,
     versions: versions(),
     generatedAt: input.output.createdAt,
+    clientRevisionCount: payload.clientRevisionCount,
+    clientRevisionLimit: CLIENT_REVISION_LIMIT,
   };
 }
 
@@ -1817,6 +2064,7 @@ function attachPremiumPayload(master: GeneratedAd, payload: {
   gate: PublicationGate;
   rationale: string[];
   automaticRevisionCount: 0 | 1 | 2 | 3;
+  clientRevisionCount?: number;
   validationResult: Annunci10xValidateOutput['result'];
   decisionEngine?: Record<string, unknown>;
 }): GeneratedAd {
@@ -1828,21 +2076,45 @@ function attachPremiumPayload(master: GeneratedAd, payload: {
       gate: payload.gate,
       rationale: payload.rationale,
       automaticRevisionCount: payload.automaticRevisionCount,
+      clientRevisionCount: payload.clientRevisionCount ?? 0,
       validationResult: payload.validationResult,
       decisionEngine: payload.decisionEngine ?? null,
     },
   } as GeneratedAd;
 }
 
-function readPremiumPayload(master: GeneratedAd): { comparison: ComparisonResult | null; claimCheck: ClaimCheck[]; gate: PublicationGate | null; rationale: string[] } {
+function readPremiumPayload(master: GeneratedAd): {
+  comparison: ComparisonResult | null;
+  claimCheck: ClaimCheck[];
+  gate: PublicationGate | null;
+  rationale: string[];
+  automaticRevisionCount: 0 | 1 | 2 | 3;
+  clientRevisionCount: number;
+  decisionEngine: Record<string, unknown> | null;
+} {
   const payload = (master as GeneratedAd & { annunci10xPremium?: unknown }).annunci10xPremium;
-  if (typeof payload !== 'object' || payload === null) return { comparison: null, claimCheck: [], gate: null, rationale: [] };
-  const record = payload as { comparison?: ComparisonResult | null; claimCheck?: ClaimCheck[]; gate?: PublicationGate | null; rationale?: string[] };
+  if (typeof payload !== 'object' || payload === null) {
+    return { comparison: null, claimCheck: [], gate: null, rationale: [], automaticRevisionCount: 0, clientRevisionCount: 0, decisionEngine: null };
+  }
+  const record = payload as {
+    comparison?: ComparisonResult | null;
+    claimCheck?: ClaimCheck[];
+    gate?: PublicationGate | null;
+    rationale?: string[];
+    automaticRevisionCount?: number;
+    clientRevisionCount?: number;
+    decisionEngine?: Record<string, unknown> | null;
+  };
+  const automaticRevisionCount = Math.max(0, Math.min(3, Number(record.automaticRevisionCount ?? 0))) as 0 | 1 | 2 | 3;
+  const clientRevisionCount = Math.max(0, Math.min(CLIENT_REVISION_LIMIT, Number(record.clientRevisionCount ?? 0)));
   return {
     comparison: record.comparison ?? null,
     claimCheck: Array.isArray(record.claimCheck) ? record.claimCheck : [],
     gate: record.gate ?? null,
     rationale: Array.isArray(record.rationale) ? record.rationale : [],
+    automaticRevisionCount,
+    clientRevisionCount,
+    decisionEngine: record.decisionEngine && typeof record.decisionEngine === 'object' ? record.decisionEngine : null,
   };
 }
 
