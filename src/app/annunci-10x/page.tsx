@@ -11,7 +11,7 @@ import '@/styles/horyzon-landing.css';
 import './annunci-landing.css';
 
 const title = 'Annunci 10x — Score di chiarezza e annuncio pronto a 7 €';
-const description = 'Valuta gratis chiarezza e completezza del tuo annuncio. Poi scegli Annuncio 10x: 7 € per un annuncio, una versione e un canale.';
+const description = 'Valuta gratis chiarezza e completezza del tuo annuncio. Poi scegli Annuncio 10x: 7 € per un annuncio, una versione finale, fino a 3 modifiche mirate e un canale.';
 const image = `${SITE_URL}/opengraph-image`;
 
 export const metadata: Metadata = {
