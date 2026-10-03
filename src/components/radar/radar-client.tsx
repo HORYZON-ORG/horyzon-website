@@ -42,7 +42,9 @@ export function RadarClient() {
     if (local && local.assessmentId === session.id && local.questionnaireVersion === (session.questionnaireVersion ?? 'radar-v1') && local.revision >= session.revision) restored = local;
     setQuestionnaireVersion(session.questionnaireVersion ?? 'radar-v1');
     setAssessmentId(session.id); setRevision(restored.revision); setStepIndex(Math.min(radarSteps(session.questionnaireVersion ?? 'radar-v1').length - 1, restored.currentStep)); setAnswers(restored.answers);
-    setPhase(['PAYMENT_REQUIRED', 'PAID', 'COMPLETED'].includes(session.status) ? 'PAYMENT' : 'QUESTIONS');
+    // A finished Radar opens its result (free); the payment gate shows only when the result stays locked.
+    if (!['PAYMENT_REQUIRED', 'PAID', 'COMPLETED'].includes(session.status)) { setPhase('QUESTIONS'); return; }
+    if (!(await loadResult(session.id))) setPhase('PAYMENT');
   }
 
   // The landing's step track (Contesto, Domande, Profilo) reads the current phase from its section.
@@ -77,7 +79,7 @@ export function RadarClient() {
       setRevision(payload.progress.revision);
       if (assessmentId) saveRecovery(localStorage, createRecoveryEnvelope({ assessmentId, revision: payload.progress.revision, currentStep: nextStep, answers: nextAnswers, questionnaireVersion }));
       if (!advance) return;
-      if (stepIndex === steps.length - 1) { const completed = await fetch('/api/radar/complete', { method: 'POST' }); if (!completed.ok) throw new Error('complete'); setPhase('PAYMENT'); }
+      if (stepIndex === steps.length - 1) { const completed = await fetch('/api/radar/complete', { method: 'POST' }); if (!completed.ok) throw new Error('complete'); if (!(await loadResult())) setPhase('PAYMENT'); }
       else setStepIndex((current) => current + 1);
     } catch { setSyncError('Risposta non ancora sincronizzata. Riprova prima di continuare.'); }
     finally { setSaving(false); }
@@ -93,16 +95,17 @@ export function RadarClient() {
     document.getElementById('radar-prodotto')?.scrollIntoView({ block: 'start' });
   }
 
-  async function loadResult() {
+  async function loadResult(id = assessmentId): Promise<boolean> {
     const response = await fetch('/api/radar/result', { cache: 'no-store' });
-    if (!response.ok) return;
+    if (!response.ok) return false;
     const payload = await response.json(); setReport(payload.report); setPhase('RESULT');
-    if (assessmentId) clearRecovery(localStorage, assessmentId);
+    if (id) clearRecovery(localStorage, id);
+    return true;
   }
 
   if (phase === 'QUALIFICATION') return <Qualification onStart={start} error={syncError}/>;
   if (phase === 'QUESTIONS') return <><RadarQuestionnaire questionnaireVersion={questionnaireVersion} stepIndex={stepIndex} value={answers[steps[stepIndex]?.id ?? '']} saving={saving} onAnswer={answer} onBack={() => setStepIndex((current) => Math.max(0, current - 1))}/>{syncError ? <p className={styles.syncError} role="alert">{syncError}</p> : null}<p className={styles.restartRow}><button type="button" className={styles.restart} onClick={restart}>Rifai il test da zero</button></p></>;
-  if (phase === 'PAYMENT') return <RadarPaymentGate onPreviewUnlocked={loadResult} onRestart={restart}/>;
+  if (phase === 'PAYMENT') return <RadarPaymentGate onPreviewUnlocked={async () => { await loadResult(); }} onRestart={restart}/>;
   return report ? <RadarResult report={report} onRestart={restart}/> : null;
 }
 

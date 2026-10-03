@@ -3,7 +3,7 @@ import { isRadarComplete, radarSteps } from '../domain.ts';
 import { validOwnerEconomicsAnswer } from '../owner-economics.ts';
 import { RADAR_QUESTIONNAIRE_VERSION, type RadarAnswers, type RadarJourneyStatus } from '../types.ts';
 import { createOwnerSecret } from './security.ts';
-import type { RadarAccessEventInput, RadarAdviceRow, RadarReportOwnerContext, RadarOwnedSession, RadarOwnership, RadarPersistence, RadarProgressProjection, RadarQualificationInput, RadarResumeProjection, SaveRadarAnswerInput } from './types.ts';
+import type { RadarAccessEventInput, RadarAdviceRow, RadarReportOwnerContext, RadarOwnedSession, RadarOwnership, RadarPersistence, RadarProgressProjection, RadarQualificationInput, RadarResumeProjection, RadarStaffRecord, SaveRadarAnswerInput } from './types.ts';
 
 function validateAnswer(input: SaveRadarAnswerInput): void {
   if (!radarSteps().some((step) => step.id === input.answerKey)) throw new Error('Invalid Radar answer key.');
@@ -11,6 +11,10 @@ function validateAnswer(input: SaveRadarAnswerInput): void {
 }
 
 type MemoryRow = RadarQualificationInput & RadarResumeProjection & { ownerSecretHash: string };
+
+export class RadarNotFoundError extends Error {
+  constructor() { super('Radar assessment not found.'); this.name = 'RadarNotFoundError'; }
+}
 
 export class RadarRevisionConflictError extends Error {
   constructor() { super('Radar revision conflict.'); this.name = 'RadarRevisionConflictError'; }
@@ -62,7 +66,7 @@ class MemoryRadarPersistence implements RadarPersistence {
 
   async readReportContext(input: RadarOwnership): Promise<RadarReportOwnerContext> {
     const row = this.owned(input);
-    return { aziendaNome: row.aziendaNome, referenteNome: row.referenteNome, referenteEmail: row.referenteEmail, settore: row.settore, numeroDipendenti: row.numeroDipendenti, volumeAffari: row.volumeAffari, completedAt: null };
+    return { aziendaNome: row.aziendaNome, referenteNome: row.referenteNome, referenteEmail: row.referenteEmail, referenteTelefono: row.referenteTelefono, settore: row.settore, numeroDipendenti: row.numeroDipendenti, volumeAffari: row.volumeAffari, completedAt: null };
   }
 
   readonly advice: RadarAdviceRow[] = [];
@@ -73,6 +77,18 @@ class MemoryRadarPersistence implements RadarPersistence {
     if (this.emailed.has(assessmentId)) return false;
     this.emailed.add(assessmentId);
     return true;
+  }
+
+  async markCompletedFree(input: RadarOwnership): Promise<void> {
+    const row = this.owned(input);
+    if (!isRadarComplete(row.answers, row.questionnaireVersion)) throw new Error('Radar is not complete.');
+    row.status = 'COMPLETED';
+  }
+
+  async readStaffRecord(assessmentId: string): Promise<RadarStaffRecord> {
+    const row = this.rows.get(assessmentId);
+    if (!row) throw new RadarNotFoundError();
+    return { id: row.id, questionnaireVersion: row.questionnaireVersion, status: row.status, answers: structuredClone(row.answers), context: { aziendaNome: row.aziendaNome, referenteNome: row.referenteNome, referenteEmail: row.referenteEmail, referenteTelefono: row.referenteTelefono, settore: row.settore, numeroDipendenti: row.numeroDipendenti, volumeAffari: row.volumeAffari, completedAt: null } };
   }
 
   private owned(input: RadarOwnership): MemoryRow {
@@ -156,11 +172,11 @@ export class SupabaseRadarPersistence implements RadarPersistence {
   }
 
   async readReportContext(input: RadarOwnership): Promise<RadarReportOwnerContext> {
-    const rows = await this.request<Record<string, unknown>[]>(`/rest/v1/radar_assessments?id=eq.${encodeURIComponent(input.assessmentId)}&owner_secret_hash=eq.${encodeURIComponent(input.ownerSecretHash)}&select=azienda_nome,referente_nome,referente_email,settore,numero_dipendenti,volume_affari,completato_il,payment_gate_at`, { method: 'GET' });
+    const rows = await this.request<Record<string, unknown>[]>(`/rest/v1/radar_assessments?id=eq.${encodeURIComponent(input.assessmentId)}&owner_secret_hash=eq.${encodeURIComponent(input.ownerSecretHash)}&select=azienda_nome,referente_nome,referente_email,referente_telefono,settore,numero_dipendenti,volume_affari,completato_il,payment_gate_at`, { method: 'GET' });
     const row = rows[0];
     if (!row) throw new Error('Radar ownership verification failed.');
     const text = (value: unknown) => typeof value === 'string' ? value : '';
-    return { aziendaNome: text(row.azienda_nome), referenteNome: text(row.referente_nome), referenteEmail: text(row.referente_email), settore: text(row.settore), numeroDipendenti: text(row.numero_dipendenti), volumeAffari: text(row.volume_affari), completedAt: text(row.completato_il) || text(row.payment_gate_at) || null };
+    return { aziendaNome: text(row.azienda_nome), referenteNome: text(row.referente_nome), referenteEmail: text(row.referente_email), referenteTelefono: text(row.referente_telefono), settore: text(row.settore), numeroDipendenti: text(row.numero_dipendenti), volumeAffari: text(row.volume_affari), completedAt: text(row.completato_il) || text(row.payment_gate_at) || null };
   }
 
   async listAdvice(): Promise<RadarAdviceRow[]> {
@@ -170,6 +186,24 @@ export class SupabaseRadarPersistence implements RadarPersistence {
   async claimReportEmail(assessmentId: string): Promise<boolean> {
     const rows = await this.request<unknown[]>(`/rest/v1/radar_assessments?id=eq.${encodeURIComponent(assessmentId)}&report_emailed_at=is.null&select=id`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ report_emailed_at: new Date().toISOString() }) });
     return Array.isArray(rows) && rows.length > 0;
+  }
+
+  // The Hub reads `stato` and `completato_il` (its own quiz wrote them), so a free completion fills them too.
+  async markCompletedFree(input: RadarOwnership): Promise<void> {
+    const now = new Date().toISOString();
+    const rows = await this.request<unknown[]>(`/rest/v1/radar_assessments?id=eq.${encodeURIComponent(input.assessmentId)}&owner_secret_hash=eq.${encodeURIComponent(input.ownerSecretHash)}&journey_status=in.(PAYMENT_REQUIRED,COMPLETED)&select=id`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ journey_status: 'COMPLETED', stato: 'completato', completato_il: now, result_unlocked_at: now, last_activity_at: now }) });
+    if (!Array.isArray(rows) || rows.length === 0) throw new Error('Radar free completion failed.');
+  }
+
+  async readStaffRecord(assessmentId: string): Promise<RadarStaffRecord> {
+    const rows = await this.request<Record<string, unknown>[]>(`/rest/v1/radar_assessments?id=eq.${encodeURIComponent(assessmentId)}&select=id,questionnaire_version,journey_status,risposte,azienda_nome,referente_nome,referente_email,referente_telefono,settore,numero_dipendenti,volume_affari,completato_il,payment_gate_at`, { method: 'GET' });
+    const row = rows[0];
+    if (!row) throw new RadarNotFoundError();
+    const text = (value: unknown) => typeof value === 'string' ? value : '';
+    return {
+      id: String(row.id), questionnaireVersion: String(row.questionnaire_version ?? 'radar-v1'), status: row.journey_status as RadarJourneyStatus, answers: (row.risposte ?? {}) as RadarAnswers,
+      context: { aziendaNome: text(row.azienda_nome), referenteNome: text(row.referente_nome), referenteEmail: text(row.referente_email), referenteTelefono: text(row.referente_telefono), settore: text(row.settore), numeroDipendenti: text(row.numero_dipendenti), volumeAffari: text(row.volume_affari), completedAt: text(row.completato_il) || text(row.payment_gate_at) || null },
+    };
   }
 
   private async request<T>(path: string, init: RequestInit): Promise<T> {

@@ -4,22 +4,33 @@ import { buildRadarReport } from './report.ts';
 import { lockedRadarProjection, unlockedRadarProjection } from './public-projection.ts';
 import { createPreviewToken, timingSafePinMatch, verifyPreviewToken } from './preview.ts';
 import { hashOwnerSecret } from './persistence/security.ts';
-import type { RadarPersistence, RadarQualificationInput, SaveRadarAnswerInput } from './persistence/types.ts';
+import type { RadarAdviceRow, RadarPersistence, RadarQualificationInput, RadarReportOwnerContext, SaveRadarAnswerInput } from './persistence/types.ts';
+import type { RadarAnswers } from './types.ts';
 
 export class RadarAccessError extends Error {
   readonly status: number;
   constructor(message: string, status = 403) { super(message); this.name = 'RadarAccessError'; this.status = status; }
 }
 
-export function createRadarService(config: { persistence: RadarPersistence; previewPin?: string; previewEnabled?: boolean; tokenSecret?: string }) {
+function composeReport(answers: RadarAnswers, owner: RadarReportOwnerContext, rows: RadarAdviceRow[]) {
+  return buildRadarReport({ scores: calculateRadarScores(answers), answers, advice: mergeAdvice(rows as Partial<RadarAdvice>[]), context: { aziendaNome: owner.aziendaNome, referenteNome: owner.referenteNome, settore: owner.settore, numeroDipendenti: owner.numeroDipendenti, volumeAffari: owner.volumeAffari, completedAt: owner.completedAt } });
+}
+
+/** `freeAccess`: the Radar is a free lead magnet, so a completed assessment opens its result without purchase or PIN. */
+export function createRadarService(config: { persistence: RadarPersistence; previewPin?: string; previewEnabled?: boolean; tokenSecret?: string; freeAccess?: boolean }) {
   const tokenSecret = config.tokenSecret?.trim();
+  const freeAccess = config.freeAccess === true;
   return {
+    freeAccess,
     createAssessment: (input: RadarQualificationInput) => config.persistence.createAssessment(input),
     resumeAssessment: (assessmentId: string, ownerSecret: string) => config.persistence.resumeAssessment({ assessmentId, ownerSecretHash: hashOwnerSecret(ownerSecret) }),
     saveAnswer: (input: Omit<SaveRadarAnswerInput, 'ownerSecretHash'> & { ownerSecret: string }) => config.persistence.saveAnswer({ ...input, ownerSecretHash: hashOwnerSecret(input.ownerSecret) }),
     async completeAssessment(assessmentId: string, ownerSecret: string) {
-      const session = await config.persistence.completeAssessment({ assessmentId, ownerSecretHash: hashOwnerSecret(ownerSecret) });
-      return lockedRadarProjection({ status: 'PAYMENT_REQUIRED', answeredCount: session.answeredCount });
+      const ownership = { assessmentId, ownerSecretHash: hashOwnerSecret(ownerSecret) };
+      const session = await config.persistence.completeAssessment(ownership);
+      if (freeAccess) await config.persistence.markCompletedFree(ownership);
+      // Scores never travel with completion: the client reads them from /api/radar/result.
+      return lockedRadarProjection({ status: freeAccess ? 'COMPLETED' : 'PAYMENT_REQUIRED', answeredCount: session.answeredCount });
     },
     async grantPreview(input: { assessmentId: string; ownerSecret: string; pin: string; ipKey: string }) {
       if (!config.previewEnabled || !config.previewPin || !tokenSecret) throw new RadarAccessError('Anteprima non disponibile.', 404);
@@ -49,10 +60,21 @@ export function createRadarService(config: { persistence: RadarPersistence; prev
         config.persistence.readReportContext(ownership),
         config.persistence.listAdvice().catch(() => []),
       ]);
-      const report = buildRadarReport({ scores: calculateRadarScores(session.answers), answers: session.answers, advice: mergeAdvice(rows as Partial<RadarAdvice>[]), context: { aziendaNome: owner.aziendaNome, referenteNome: owner.referenteNome, settore: owner.settore, numeroDipendenti: owner.numeroDipendenti, volumeAffari: owner.volumeAffari, completedAt: owner.completedAt } });
-      return { report, recipient: { email: owner.referenteEmail, name: owner.referenteNome } };
+      return { report: composeReport(session.answers, owner, rows), recipient: { email: owner.referenteEmail, name: owner.referenteNome }, owner };
     },
     claimReportEmail: (assessmentId: string) => config.persistence.claimReportEmail(assessmentId),
+    async readFreeResult(assessmentId: string, ownerSecret: string) {
+      if (!freeAccess) throw new RadarAccessError('Risultato non autorizzato.', 402);
+      const session = await config.persistence.resumeAssessment({ assessmentId, ownerSecretHash: hashOwnerSecret(ownerSecret) });
+      if (!isRadarComplete(session.answers, session.questionnaireVersion)) throw new RadarAccessError('Il Radar non è completo.', 409);
+      return unlockedRadarProjection({ status: 'COMPLETED', answeredCount: session.answeredCount, scores: calculateRadarScores(session.answers) });
+    },
+    /** The report of any assessment, by id. Call only after verifying a Hub staff session (staff-auth.ts). */
+    async readStaffReport(assessmentId: string) {
+      const [record, rows] = await Promise.all([config.persistence.readStaffRecord(assessmentId), config.persistence.listAdvice().catch(() => [])]);
+      if (!isRadarComplete(record.answers, record.questionnaireVersion)) throw new RadarAccessError('Il Radar non è ancora completo.', 409);
+      return composeReport(record.answers, record.context, rows);
+    },
     async readOwnedResult(assessmentId: string, ownerSecret: string) {
       const session = await config.persistence.resumeAssessment({ assessmentId, ownerSecretHash: hashOwnerSecret(ownerSecret) });
       await config.persistence.appendAccessEvent({ assessmentId, accessSource: 'PURCHASE', eventType: 'RESULT_OPENED' });

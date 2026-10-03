@@ -2,7 +2,7 @@ import type { RadarReport, ReportIndex } from '@/lib/radar/report';
 import { RadarGrid, radarPath, radarPoint } from './radar-scope';
 import styles from './radar.module.css';
 
-// The paid Radar report on the page: same content as the PDF, which the person can download and also receives by email.
+// The Radar report on the page: same content as the PDF, which the person can download and also receives by email.
 export const DEBRIEFING_MAILTO = (company: string) => `mailto:info@horyzon.it?subject=${encodeURIComponent(`Debriefing Radar d’Impresa — ${company}`)}`;
 
 const euro = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 });

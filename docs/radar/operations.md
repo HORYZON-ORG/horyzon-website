@@ -24,3 +24,20 @@
 ## Rollback
 
 Impostare prima `RADAR_CHECKOUT_ENABLED=0`, mantenendo attivo il webhook per riconciliare sessioni già emesse. Riportare `VITE_RADAR_WEBSITE_CUTOVER=0` per riaprire temporaneamente il percorso storico nell’Hub. Non eliminare acquisti, eventi, grant o assessment: sono evidenze operative. Un rollback del codice non richiede una migration distruttiva; eventuali colonne e tabelle additive restano inattive.
+
+## Radar gratuito (lead magnet)
+
+Il Radar è gratuito: al termine del questionario il risultato si apre subito, l’assessment passa a `journey_status = COMPLETED` (e `stato = completato` per l’Hub) e il report PDF parte via email se Resend è configurato. Checkout e PIN restano nel codice ma non vengono mostrati. Per tornare al risultato a pagamento impostare `RADAR_PAID_ACCESS=1` e ridistribuire; tutto il resto della procedura sopra resta valido.
+
+## HighLevel
+
+Ogni Radar diventa un contatto HighLevel (API v2, `services.leadconnectorhq.com`):
+
+- all’avvio: upsert del contatto (nome, email, telefono in formato E.164, azienda) e tag `radar-impresa`, `radar-avviato`;
+- al completamento: tag `radar-completato`, `radar-indice-<critico|da-consolidare|solido>`, `radar-utile-ora-<…>` e una nota con punteggi, utile per ora, priorità e link all’Hub.
+
+Variabili server del Website: `HIGHLEVEL_PRIVATE_TOKEN` (Private Integration token del sub-account, scope contatti in scrittura) e `HIGHLEVEL_LOCATION_ID`. Senza entrambe l’integrazione è spenta; un errore HighLevel viene solo registrato nei log e non blocca il Radar. Le automazioni (email, SMS, pipeline) si costruiscono in HighLevel con trigger “Contact Tag added”.
+
+## PDF dall’Hub
+
+`GET /api/radar/staff/report/pdf?id=<assessment>` restituisce il report PDF di qualsiasi Radar completo. Richiede l’header `Authorization: Bearer <sessione Supabase dell’Hub>` di un utente con ruolo `superadmin` in `hub.user_roles` (stessa regola della RLS). CORS consentito a `https://hub.horyzon.it`, configurabile con `RADAR_STAFF_ORIGINS` (lista separata da virgole).

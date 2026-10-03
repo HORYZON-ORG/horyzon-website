@@ -30,7 +30,7 @@ const steps = [
 
 const faqs = [
   ['Quanto tempo richiede?', 'Circa 8 minuti. Le risposte vengono salvate mentre procedi, quindi puoi riprendere più tardi.'],
-  ['Il risultato è gratuito?', 'No. Il profilo viene calcolato al termine e si sblocca dopo il pagamento. Il prezzo è mostrato prima dell’acquisto.'],
+  ['Il risultato è gratuito?', 'Sì. Il profilo completo si apre appena rispondi all’ultima domanda e puoi scaricarlo in PDF, senza costi e senza carta di credito.'],
   ['Devo avere dati finanziari a portata di mano?', 'Serve una stima dell’utile aziendale prima delle tasse, mensile o annuale, e delle tue ore medie di lavoro. L’utile è ciò che resta dopo tutti i costi: il solo fatturato non basta.'],
   ['È una diagnosi completa?', 'No. È una prima fotografia guidata. Una diagnosi completa richiede confronto, numeri e osservazione dei processi reali. Non è una valutazione finanziaria, fiscale o legale.'],
   ['Per chi è pensato?', 'Per chi ha già un’impresa con clienti e collaboratori e sente che troppe decisioni dipendono ancora da sé. Il Radar non promette autonomia o crescita entro una data: indica da dove partire.'],
@@ -75,7 +75,7 @@ export default function CommercialRadarPage() {
           <ol className="rd-steps">{steps.map(([title, text]) => <li key={title}><b>{title}</b><span>{text}</span></li>)}</ol>
         </header>
         <RadarClient />
-        <p className="rd-product-note">Salvataggio progressivo <i>·</i> Risultato a pagamento, prezzo mostrato prima dell’acquisto <i>·</i> <Link href="/privacy-policy">Privacy ↗︎</Link></p>
+        <p className="rd-product-note">Salvataggio progressivo <i>·</i> Risultato gratuito, subito al termine <i>·</i> <Link href="/privacy-policy">Privacy ↗︎</Link></p>
       </section>
 
       <section className="rd-frank" aria-labelledby="rd-frank-title">

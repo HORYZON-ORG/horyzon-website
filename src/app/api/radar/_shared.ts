@@ -1,7 +1,7 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { createRadarPersistence, createRadarService, RadarAccessError, RadarRevisionConflictError } from '@/lib/radar';
+import { createRadarPersistence, createRadarService, RadarAccessError, RadarNotFoundError, RadarRevisionConflictError } from '@/lib/radar';
 
 export const RADAR_SESSION_COOKIE = 'horyzon_radar_session';
 export const RADAR_PREVIEW_COOKIE = 'horyzon_radar_preview';
@@ -10,8 +10,13 @@ export const RADAR_PREVIEW_COOKIE_PATH = '/api/radar';
 
 export interface RadarSessionCookie { assessmentId: string; ownerSecret: string }
 
+// The Radar is free (lead magnet). RADAR_PAID_ACCESS=1 brings back the purchase / PIN gate.
+export function radarFreeAccess(env: Record<string, string | undefined> = process.env): boolean {
+  return env.RADAR_PAID_ACCESS?.trim() !== '1';
+}
+
 export function createService() {
-  return createRadarService({ persistence: createRadarPersistence(), previewPin: process.env.RADAR_PREVIEW_PIN, previewEnabled: process.env.RADAR_PREVIEW_ENABLED === '1', tokenSecret: process.env.RADAR_COOKIE_SECRET });
+  return createRadarService({ persistence: createRadarPersistence(), previewPin: process.env.RADAR_PREVIEW_PIN, previewEnabled: process.env.RADAR_PREVIEW_ENABLED === '1', tokenSecret: process.env.RADAR_COOKIE_SECRET, freeAccess: radarFreeAccess() });
 }
 
 export async function readJson(request: Request): Promise<Record<string, unknown>> {
@@ -53,7 +58,7 @@ export function unseal(value: string): RadarSessionCookie {
 }
 
 export function errorResponse(error: unknown): NextResponse {
-  const status = error instanceof RadarAccessError ? error.status : error instanceof RadarRevisionConflictError ? 409 : 500;
+  const status = error instanceof RadarAccessError ? error.status : error instanceof RadarRevisionConflictError ? 409 : error instanceof RadarNotFoundError ? 404 : 500;
   if (status === 500) {
     console.error('Radar API failure', {
       name: error instanceof Error ? error.name : 'UnknownError',
