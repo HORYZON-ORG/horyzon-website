@@ -115,6 +115,9 @@ assert.equal(flow.includes('workspaceRef.current?.scrollTo'), false, 'post-analy
 assert.match(page, /import '@\/styles\/horyzon-landing\.css';/, 'landing must use the shared landing kit');
 assert.match(radarPage, /import '@\/styles\/horyzon-landing\.css';/, 'Radar must use the same shared landing kit');
 assert.match(page, /<div className="rd ax">/, 'landing must use the kit root and the Annunci modifier');
+assert.equal(landingCss.includes('.ax{overflow-x:hidden}'), false, 'mobile landing root must not use overflow-x:hidden because it breaks the sticky rewrite story');
+assert.match(landingCss, /\.ax\{overflow-x:clip\}/, 'mobile landing root should clip horizontal paint without creating a scroll container');
+assert.match(kitCss, /\.rd-story\.is-live \.rd-story-stage\{position:sticky/, 'rewrite story must keep its sticky stage');
 assert.match(page, /<AdSheet className="ax-hero-sheet" scan \/>/, 'hero must show the ad under the lens');
 assert.equal(/Image[^>]*hero\.jpeg/.test(`${page}\n${client}`), false, 'stock hero photo must not return');
 assert.match(kitCss, /--lime:#d8ff42/, 'landing kit palette missing');
