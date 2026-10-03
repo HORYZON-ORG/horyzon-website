@@ -868,9 +868,18 @@ function extractSanitizedWorkRealityField(text: string, labels: readonly string[
 
 
 function applicationInstructionsFromText(text: string): Fact<string> | undefined {
-  const value = extractCreateField(text, channelFieldLabels.application);
+  const value = extractCreateField(text, channelFieldLabels.application)
+    || extractNaturalApplicationInstructions(text);
   if (!value || isUnknownAnswer(value)) return undefined;
   return fact(value, 'USER_DECLARED', 'create-application-instructions');
+}
+
+function extractNaturalApplicationInstructions(text: string): string {
+  const normalized = text.replace(/\r/g, '\n');
+  const match = normalized.match(
+    /(?:^|[\n.;])\s*(?:candidatura|come ci si candida|destinazione)\s*(?![:\-]\s*$)(?:[:\-]\s*)?([^\n;]+)/i,
+  );
+  return match?.[1] ? clean(match[1]) : '';
 }
 
 function hasResolvedHybridWorkMode(answers: PersistedAnswer[]): boolean {
