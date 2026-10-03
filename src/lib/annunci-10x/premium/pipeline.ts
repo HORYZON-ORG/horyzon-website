@@ -661,14 +661,9 @@ async function resolveLatestMasterFromConsumedReservation(
 
   const latestMaster = await context.persistence.getLatestOutput(session.id, sessionSecret, 'MASTER');
   if (!latestMaster || latestMaster.id === reservedOutput.id) return reservedOutput;
-
-  let cursor: PersistedOutput | null = latestMaster;
-  for (let depth = 0; cursor && depth <= CLIENT_REVISION_LIMIT; depth += 1) {
-    if (cursor.id === reservedOutput.id) return latestMaster;
-    if (!cursor.parentMasterId) break;
-    cursor = await context.persistence.getOutputById(cursor.parentMasterId, session.id, sessionSecret);
-  }
-  return reservedOutput;
+  if (latestMaster.snapshotId !== reservedOutput.snapshotId) return reservedOutput;
+  if (Date.parse(latestMaster.createdAt) < Date.parse(reservedOutput.createdAt)) return reservedOutput;
+  return latestMaster;
 }
 
 
@@ -836,7 +831,6 @@ async function requestAnnunci10xCreateClientRevision(input: {
     snapshotId: input.snapshot.id,
     outputType: 'MASTER',
     generatedContent: masterToPersist,
-    parentMasterId: input.output.id,
     validationState: nextGate.status,
   });
 
