@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
+import Stripe from 'stripe';
 
 process.env.ANNUNCI10X_EMAIL_VERIFICATION_PEPPER = `${randomUUID()}${randomUUID()}`;
 
@@ -15,6 +16,8 @@ const {
   createAnonymousAnalyzeSession,
   createAnonymousCreateSession,
   createAnnunci10xCheckoutSession,
+  createAnnunci10xPaymentGateway,
+  createAnnunci10xWebhookGateway,
   hashEmailVerificationCode,
   processAnnunci10xStripeWebhook,
   requestAnnunci10xEmailVerification,
@@ -28,6 +31,7 @@ await assertCheckoutDisabled();
 await assertCheckoutEnabledAndRetry();
 await assertClientTamperingAndUnverified();
 await assertStripeWrapper();
+await assertWebhookVerifierDoesNotRequireApiKey();
 await assertPaidWebhookDuplicateAndConcurrent();
 await assertMismatchAndLifecycleEvents();
 await assertPaymentFailureLifecycle();
@@ -216,6 +220,41 @@ async function assertStripeWrapper() {
   assert.equal(calls[0].payload.customer_email, 'verified@example.com');
   assert.equal(JSON.stringify(calls[0].payload).includes('sessionSecret'), false);
   assert.equal(JSON.stringify(calls[0].payload).includes('RoleCard'), false);
+}
+
+
+async function assertWebhookVerifierDoesNotRequireApiKey() {
+  assert.throws(
+    () => createAnnunci10xPaymentGateway({}),
+    (error) => error.code === 'CHECKOUT_UNAVAILABLE',
+    'checkout gateway must still require STRIPE_SECRET_KEY',
+  );
+
+  const webhookSecret = 'whsec_annunci10x_test';
+  const rawBody = stripeEvent({
+    id: 'evt_webhook_only_gateway',
+    type: 'checkout.session.expired',
+    object: { id: 'cs_test_webhook_only' },
+  });
+  const signer = new Stripe('sk_test_annunci10x_signer');
+  const signature = signer.webhooks.generateTestHeaderString({ payload: rawBody, secret: webhookSecret });
+  const webhookGateway = createAnnunci10xWebhookGateway({});
+  const event = await webhookGateway.constructWebhookEvent(rawBody, signature, webhookSecret);
+  assert.equal(event.id, 'evt_webhook_only_gateway');
+  assert.equal(event.type, 'checkout.session.expired');
+
+  await assert.rejects(
+    () => webhookGateway.createCheckoutSession({
+      purchaseId: 'purchase-webhook-only',
+      offerCode: 'ANNUNCI10X_CREATE',
+      stripePriceId: 'price_create_test',
+      customerEmail: 'verified@example.com',
+      successUrl: 'https://horyzon.test/success',
+      cancelUrl: 'https://horyzon.test/cancel',
+    }),
+    (error) => error.code === 'CHECKOUT_UNAVAILABLE',
+    'webhook-only gateway must never create checkout sessions',
+  );
 }
 
 async function assertPaidWebhookDuplicateAndConcurrent() {
