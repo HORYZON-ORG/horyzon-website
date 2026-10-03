@@ -8,6 +8,7 @@ import { Annunci10xPublicError, type Annunci10xRuntimeContext, type Annunci10xSe
 import type { PersistedPurchase } from '../persistence/types.ts';
 import {
   createAnnunci10xPaymentGateway,
+  createAnnunci10xWebhookGateway,
   readStripeWebhookSecret,
   resolveAnnunci10xPublicBaseUrl,
   resolveStripePriceId,
@@ -125,7 +126,7 @@ export async function createAnnunci10xCheckoutSession(input: CreateAnnunci10xChe
 export async function processAnnunci10xStripeWebhook(input: ProcessAnnunci10xStripeWebhookInput): Promise<ProcessAnnunci10xStripeWebhookResult> {
   if (!input.signature) throw new Annunci10xPublicError('PAYMENT_INVALID', 'Firma Stripe non valida.', 400);
   const env = input.env ?? process.env;
-  const gateway = input.gateway ?? createAnnunci10xPaymentGateway(env);
+  const gateway = input.gateway ?? createAnnunci10xWebhookGateway(env);
   let event: Annunci10xStripeWebhookEvent;
   try {
     event = await gateway.constructWebhookEvent(input.rawBody, input.signature, readStripeWebhookSecret(env));
