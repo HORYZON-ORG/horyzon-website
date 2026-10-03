@@ -465,17 +465,14 @@ export async function getAnnunci10xPremiumFulfillmentStatus(input: {
 export async function requestAnnunci10xPremiumEdit(input: PremiumEditInput): Promise<PublicAnnunci10xPremiumEditResult> {
   const context = input.context ?? createAnnunci10xRuntimeContext();
   const session = await requireOwnedSession(context, input.sessionId, input.sessionSecret);
-  const authorizationProvider = input.authorizationProvider ?? createProductionGenerationAuthorizationProvider();
-  const authorization = await authorizationProvider.authorize({ session, productCode: 'AD_GENERATION' });
-  if (authorization.status !== 'AUTHORIZED') throw generationDenied(authorization);
-  const output = await context.persistence.getLatestOutput(input.sessionId, input.sessionSecret, 'MASTER');
-  const snapshot = await requireGeneratableSnapshot(context, input.sessionId, input.sessionSecret);
-  if (!output) throw new Annunci10xPublicError('INVALID_INPUT', 'Nessun output premium da modificare.', 409);
-  const validation = validateGeneratedAd(output.generatedContent);
-  if (!validation.ok) throw new Annunci10xPublicError('INTERNAL', 'Output premium non valido.', 500);
   if (!input.editRequest.trim()) throw new Annunci10xPublicError('INVALID_INPUT', 'Inserisci una modifica.', 400);
 
   if (session.flow === 'CREATE') {
+    const output = await requireCreateRevisionOutput(context, session, input.sessionSecret);
+    const snapshot = await context.persistence.getSnapshotById(output.snapshotId, session.id, input.sessionSecret);
+    if (!snapshot) throw new Annunci10xPublicError('INTERNAL', 'Snapshot Annunci 10x non disponibile.', 500);
+    const validation = validateGeneratedAd(output.generatedContent);
+    if (!validation.ok) throw new Annunci10xPublicError('INTERNAL', 'Output premium non valido.', 500);
     return requestAnnunci10xCreateClientRevision({
       context,
       session,
@@ -487,6 +484,15 @@ export async function requestAnnunci10xPremiumEdit(input: PremiumEditInput): Pro
       targetSectionId: input.targetPath,
     });
   }
+
+  const authorizationProvider = input.authorizationProvider ?? createProductionGenerationAuthorizationProvider();
+  const authorization = await authorizationProvider.authorize({ session, productCode: 'AD_GENERATION' });
+  if (authorization.status !== 'AUTHORIZED') throw generationDenied(authorization);
+  const output = await context.persistence.getLatestOutput(input.sessionId, input.sessionSecret, 'MASTER');
+  const snapshot = await requireGeneratableSnapshot(context, input.sessionId, input.sessionSecret);
+  if (!output) throw new Annunci10xPublicError('INVALID_INPUT', 'Nessun output premium da modificare.', 409);
+  const validation = validateGeneratedAd(output.generatedContent);
+  if (!validation.ok) throw new Annunci10xPublicError('INTERNAL', 'Output premium non valido.', 500);
 
   const orchestrator = new Annunci10xAiOrchestrator({ provider: context.provider, persistence: context.persistence });
   const operations: PublicAnnunci10xOperation[] = [];
@@ -621,6 +627,48 @@ export async function requestAnnunci10xPremiumEdit(input: PremiumEditInput): Pro
       provider: context.configuredProvider,
     }),
   };
+}
+
+
+async function requireCreateRevisionOutput(
+  context: Annunci10xRuntimeContext,
+  session: PersistedAnnunci10xSession,
+  sessionSecret: string,
+): Promise<PersistedOutput> {
+  const reservation = await context.persistence.getLatestConsumedGenerationReservation(
+    session.id,
+    sessionSecret,
+    'CREATE_CREDIT',
+  );
+  if (!reservation?.outputId) {
+    throw new Annunci10xPublicError('PAYMENT_REQUIRED', 'La revisione è disponibile solo per un Annuncio 10x già generato.', 402);
+  }
+  const output = await resolveLatestMasterFromConsumedReservation(context, session, sessionSecret, reservation);
+  if (!output) throw new Annunci10xPublicError('INVALID_INPUT', 'Nessun output premium da modificare.', 409);
+  return output;
+}
+
+async function resolveLatestMasterFromConsumedReservation(
+  context: Annunci10xRuntimeContext,
+  session: PersistedAnnunci10xSession,
+  sessionSecret: string,
+  reservation: PersistedCreditReservation,
+): Promise<PersistedOutput | null> {
+  if (!reservation.outputId) return null;
+  const reservedOutput = await context.persistence.getOutputById(reservation.outputId, session.id, sessionSecret);
+  if (!reservedOutput || reservedOutput.outputType !== 'MASTER') return null;
+  if (session.flow !== 'CREATE') return reservedOutput;
+
+  const latestMaster = await context.persistence.getLatestOutput(session.id, sessionSecret, 'MASTER');
+  if (!latestMaster || latestMaster.id === reservedOutput.id) return reservedOutput;
+
+  let cursor: PersistedOutput | null = latestMaster;
+  for (let depth = 0; cursor && depth <= CLIENT_REVISION_LIMIT; depth += 1) {
+    if (cursor.id === reservedOutput.id) return latestMaster;
+    if (!cursor.parentMasterId) break;
+    cursor = await context.persistence.getOutputById(cursor.parentMasterId, session.id, sessionSecret);
+  }
+  return reservedOutput;
 }
 
 
@@ -2139,8 +2187,13 @@ async function resumeConsumedReservationOutput(input: {
 }): Promise<PublicAnnunci10xPremiumOutput | null> {
   const reservation = await input.context.persistence.getLatestConsumedGenerationReservation(input.session.id, input.sessionSecret, input.capability);
   if (!reservation?.outputId) return null;
-  const output = await input.context.persistence.getOutputById(reservation.outputId, input.session.id, input.sessionSecret);
-  if (!output || output.outputType !== 'MASTER') return null;
+  const output = await resolveLatestMasterFromConsumedReservation(
+    input.context,
+    input.session,
+    input.sessionSecret,
+    reservation,
+  );
+  if (!output) return null;
   const validation = validateGeneratedAd(output.generatedContent);
   if (!validation.ok) throw new Annunci10xPublicError('INTERNAL', 'Output Annunci 10x non valido.', 500);
   const snapshot = await input.context.persistence.getSnapshotById(output.snapshotId, input.session.id, input.sessionSecret);
