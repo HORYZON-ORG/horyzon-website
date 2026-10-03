@@ -41,6 +41,7 @@ assert.deepEqual(offerCatalog.map((item) => item.price.display), ['7,00 EUR', '7
 assert.deepEqual(offerCatalog.map((item) => item.displayName), ['Annuncio 10x', 'Annuncio 10x', 'Agent Recruiter']);
 assert.deepEqual(offerCatalog.find((item) => item.offerCode === 'ANNUNCI10X_REWRITE').capabilities.map((item) => item.capability), ['REWRITE_CREDIT']);
 assert.deepEqual(offerCatalog.find((item) => item.offerCode === 'ANNUNCI10X_CREATE').capabilities.map((item) => item.capability), ['CREATE_CREDIT']);
+assert.match(offerCatalog.find((item) => item.offerCode === 'ANNUNCI10X_CREATE').description, /3 modifiche mirate/i, 'CREATE commercial copy must describe the included client revisions');
 assert.deepEqual(offerCatalog.find((item) => item.offerCode === 'AGENT_RECRUITER').capabilities.map((item) => item.capability), ['GUIDE_ACCESS', 'AGENT_RECRUITER_ACCESS']);
 
 assert.equal(isAnnunci10xAgentRecruiterEnabled({}), false);
