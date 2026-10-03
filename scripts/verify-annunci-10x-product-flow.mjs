@@ -1880,6 +1880,8 @@ assert.equal(requirementsByClass.REQUIRED, 'italiano scritto chiaro');
 assert.equal(requirementsByClass.PREFERRED, 'esperienza CRM');
 assert.equal(requirementsByClass.TRAINABLE, 'procedure interne');
 assert.equal(requirementsByClass.DISQUALIFYING, 'indisponibilita ai turni');
+assert.match(createState.roleCard.applicationInstructions, /tramite form con CV aggiornato/i, 'natural application wording must be preserved without requiring a colon');
+assert.equal(createState.roleCard.missingFacts.includes('Candidatura'), false, 'declared application instructions must not remain missing');
 assert.equal(createState.canConfirm, false, 'blocking clarification prevents confirmation');
 await assert.rejects(
   () => confirmAnnunci10xCreate({
