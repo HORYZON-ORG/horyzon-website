@@ -9,9 +9,11 @@ import {
   fetchAnnunci10xPremiumOutput,
   generateAnnunci10xPremiumOutput,
   isAnnunci10xPaymentVerificationStopState,
+  requestAnnunci10xPremiumEdit,
   shouldPollAnnunci10xPaymentVerification,
   shouldReturnToAnnunci10xCreate,
   type PremiumCheckoutNotice,
+  type PremiumEditResult,
   type PremiumFulfillmentState,
   type PremiumFulfillmentStatus,
   type PremiumOutput,
@@ -178,7 +180,8 @@ export function Annunci10xFulfillmentPanel({
     };
   }, [status?.state]);
 
-  const primarySections = useMemo(() => outputSections(output), [output]);
+  const canClientRevise = status?.flow === 'CREATE';
+  const primarySections = useMemo(() => outputSections(output, canClientRevise), [output, canClientRevise]);
   const state = status?.state ?? 'NONE';
   if (state === 'NONE' && checkoutNotice !== 'success' && checkoutNotice !== 'cancelled') return null;
   const checkoutCancelledBeforeGeneration = checkoutNotice === 'cancelled' && state === 'READY_TO_GENERATE';
@@ -189,14 +192,23 @@ export function Annunci10xFulfillmentPanel({
     setCopyMessage('Annuncio copiato.');
   }
 
+  const reviseSection = useCallback(async (sectionId: string, instruction: string): Promise<PremiumEditResult> => {
+    const result = await requestAnnunci10xPremiumEdit({ editRequest: instruction, targetSectionId: sectionId });
+    if (result.status === 'REVISION_APPLIED' && result.output) {
+      setOutput(result.output);
+      setStatus((current) => current ? { ...current, state: 'READY', outputAvailable: true, canGenerate: false } : current);
+    }
+    return result;
+  }, []);
+
   return <section ref={panelRef} tabIndex={-1} className={styles.fulfillmentPanel} aria-labelledby="annunci10x-fulfillment-title" aria-live="polite">
     {state === 'PAYMENT_CONFIRMED' && <StatusBlock title="Pagamento registrato" body="Il tuo Annuncio 10x è al sicuro. La generazione è temporaneamente non disponibile. Non perderai il tuo acquisto." />}
     {checkoutNotice === 'success' && state === 'NONE' && <StatusBlock title="Stiamo ancora verificando il pagamento" body="Non sblocchiamo nulla dal browser: aggiorniamo lo stato appena il server conferma." loaderLabel="Verifichiamo il pagamento" />}
     {checkoutCancelledBeforeGeneration && <StatusBlock title="Pagamento annullato" body="Non è stata avviata alcuna generazione." />}
     {state === 'READY_TO_GENERATE' && !checkoutCancelledBeforeGeneration && <PreparingBlock loading={loading} />}
     {state === 'PREPARING' && <PreparingBlock loading />}
-    {state === 'READY' && output && <OutputBlock output={output} title="Il tuo Annuncio 10x è pronto" badge="Pronto da usare" sections={primarySections} copyMessage={copyMessage} onCopy={copyAd} />}
-    {state === 'NEEDS_REVIEW' && output && <OutputBlock output={output} title="Il tuo Annuncio 10x è pronto" badge="Da verificare prima della pubblicazione" sections={primarySections} copyMessage={copyMessage} onCopy={copyAd} />}
+    {state === 'READY' && output && <OutputBlock output={output} title="Il tuo Annuncio 10x è pronto" badge="Pronto da usare" sections={primarySections} copyMessage={copyMessage} onCopy={copyAd} canRevise={canClientRevise} onRevise={reviseSection} />}
+    {state === 'NEEDS_REVIEW' && output && <OutputBlock output={output} title="Il tuo Annuncio 10x è pronto" badge="Da verificare prima della pubblicazione" sections={primarySections} copyMessage={copyMessage} onCopy={copyAd} canRevise={false} onRevise={reviseSection} />}
     {checkoutNotice === 'cancelled' && state === 'NONE' && <StatusBlock title="Pagamento annullato" body="Non è stato completato alcun acquisto." />}
     {message && <p className={styles.fulfillmentMessage}>{message}</p>}
     {manualRetryAvailable && <div className={styles.fulfillmentActions}><button type="button" onClick={() => void startGeneration()} disabled={loading}>Riprova</button></div>}
@@ -226,6 +238,8 @@ function OutputBlock({
   sections,
   copyMessage,
   onCopy,
+  canRevise,
+  onRevise,
 }: {
   output: PremiumOutput;
   title: string;
@@ -233,16 +247,108 @@ function OutputBlock({
   sections: PremiumSection[];
   copyMessage: string;
   onCopy: () => void;
+  canRevise: boolean;
+  onRevise: (sectionId: string, instruction: string) => Promise<PremiumEditResult>;
 }) {
   const needsReview = output.validationState === 'NEEDS_VERIFICATION' || output.validationState === 'BLOCKED';
+  const revisionLimit = output.clientRevisionLimit || 3;
+  const revisionCount = Math.min(output.clientRevisionCount || 0, revisionLimit);
+  const revisionRemaining = Math.max(0, revisionLimit - revisionCount);
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
+  const [instruction, setInstruction] = useState('');
+  const [revisionMessage, setRevisionMessage] = useState('');
+  const [revising, setRevising] = useState(false);
+
+  useEffect(() => {
+    if (selectedSectionId && !sections.some((section) => section.id === selectedSectionId)) {
+      setSelectedSectionId(null);
+      setInstruction('');
+    }
+  }, [sections, selectedSectionId]);
+
+  async function submitRevision(sectionId: string) {
+    const request = instruction.trim();
+    if (!request || revising) return;
+    setRevising(true);
+    setRevisionMessage('');
+    try {
+      const result = await onRevise(sectionId, request);
+      if (result.status === 'REVISION_APPLIED') {
+        const used = result.revisionCount ?? revisionCount + 1;
+        setRevisionMessage(`Modifica applicata · ${used}/${result.revisionLimit ?? revisionLimit} utilizzate.`);
+        setSelectedSectionId(null);
+        setInstruction('');
+      } else if (result.status === 'REVISION_LIMIT_REACHED') {
+        setRevisionMessage('Hai utilizzato le 3 modifiche incluse per questo annuncio.');
+      } else if (result.status === 'REVISION_BLOCKED') {
+        setRevisionMessage(result.reason || 'Questa modifica cambierebbe informazioni confermate. Prova a chiedere una modifica di tono o chiarezza.');
+      } else {
+        setRevisionMessage('Questa richiesta richiede una verifica diversa. Il testo attuale non è stato modificato.');
+      }
+    } catch {
+      setRevisionMessage('Non siamo riusciti ad applicare la modifica. Il testo attuale è rimasto invariato.');
+    } finally {
+      setRevising(false);
+    }
+  }
+
   return <div className={styles.fulfillmentOutput}>
     <div className={styles.fulfillmentHead}>
       <div><p className={styles.fulfillmentEyebrow}>Annuncio 10x</p><h2 id="annunci10x-fulfillment-title">{title}</h2></div>
       <span data-review={needsReview}>{badge}</span>
     </div>
-    {output.channelVariant && <p className={styles.channelBadge}>Canale: {output.channelVariant.channel}</p>}
+    {output.channelVariant && !canRevise && <p className={styles.channelBadge}>Canale: {output.channelVariant.channel}</p>}
     {needsReview && <p className={styles.fulfillmentMessage}>Il testo richiede una verifica prima di essere pubblicato.</p>}
-    <div className={styles.outputSections}>{sections.map((section) => <article key={section.id}><h3>{section.title}</h3>{section.body.trim() && <p>{section.body}</p>}</article>)}</div>
+
+    {canRevise && !needsReview && <div className={styles.revisionIntro}>
+      <div>
+        <strong>Rifiniscilo come vuoi.</strong>
+        <p>Hai fino a 3 modifiche mirate incluse. Seleziona una sezione e dimmi cosa vuoi cambiare: i fatti confermati restano protetti.</p>
+      </div>
+      <span className={styles.revisionCounter} data-complete={revisionRemaining === 0}>{revisionCount}/{revisionLimit}</span>
+    </div>}
+
+    <div className={styles.outputSections}>{sections.map((section) => {
+      const isEditing = selectedSectionId === section.id;
+      return <article key={section.id} className={isEditing ? styles.outputSectionEditing : undefined}>
+        <div className={styles.outputSectionHead}>
+          <h3>{section.title}</h3>
+          {canRevise && !needsReview && revisionRemaining > 0 && <button
+            type="button"
+            className={styles.sectionEditButton}
+            aria-expanded={isEditing}
+            onClick={() => {
+              setSelectedSectionId(isEditing ? null : section.id);
+              setInstruction('');
+              setRevisionMessage('');
+            }}
+          >{isEditing ? 'Chiudi' : 'Modifica'}</button>}
+        </div>
+        {section.body.trim() && <p className={styles.outputSectionBody}>{section.body}</p>}
+        {isEditing && <div className={styles.sectionRevisionEditor}>
+          <label htmlFor={`annunci10x-revision-${section.id}`}>Cosa vuoi cambiare in questa sezione?</label>
+          <textarea
+            id={`annunci10x-revision-${section.id}`}
+            value={instruction}
+            maxLength={600}
+            rows={4}
+            autoFocus
+            placeholder="Es. Rendila più diretta e discorsiva, senza cambiare le informazioni."
+            onChange={(event) => setInstruction(event.target.value)}
+          />
+          <div className={styles.sectionRevisionActions}>
+            <button type="button" onClick={() => void submitRevision(section.id)} disabled={revising || !instruction.trim()}>
+              {revising ? 'Applico la modifica…' : 'Applica modifica'}
+            </button>
+            <button type="button" className={styles.sectionRevisionCancel} onClick={() => { setSelectedSectionId(null); setInstruction(''); }} disabled={revising}>Annulla</button>
+          </div>
+          <small>La modifica usa 1 delle {revisionLimit} revisioni incluse solo se viene applicata.</small>
+        </div>}
+      </article>;
+    })}</div>
+
+    {canRevise && revisionRemaining === 0 && <p className={styles.revisionLimitMessage}>Hai utilizzato le 3 modifiche incluse. Questo è il tuo testo finale.</p>}
+    {revisionMessage && <p className={styles.revisionFeedback} aria-live="polite">{revisionMessage}</p>}
     {needsReview && output.checklist.length > 0 && <div className={styles.reviewChecklist}><h3>Prima della pubblicazione</h3><ul>{output.checklist.slice(0, 5).map((item) => <li key={item}>{item}</li>)}</ul></div>}
     {output.rationale.length > 0 && <div className={styles.reviewChecklist}><h3>Perché è costruito così</h3><ul>{output.rationale.slice(0, 3).map((item) => <li key={item}>{item}</li>)}</ul></div>}
     <div className={styles.fulfillmentActions}><button type="button" onClick={onCopy}>Copia annuncio</button><span aria-live="polite">{copyMessage}</span></div>
@@ -250,8 +356,9 @@ function OutputBlock({
   </div>;
 }
 
-function outputSections(output: PremiumOutput | null): PremiumSection[] {
+function outputSections(output: PremiumOutput | null, preferMaster = false): PremiumSection[] {
   if (!output) return [];
+  if (preferMaster) return output.master.sections;
   return output.channelVariant?.sections?.length ? output.channelVariant.sections : output.master.sections;
 }
 

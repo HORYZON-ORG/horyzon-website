@@ -26,6 +26,23 @@ export interface PremiumOutput {
   validationState: 'READY' | 'READY_WITH_WARNINGS' | 'NEEDS_VERIFICATION' | 'BLOCKED';
   checklist: string[];
   rationale: string[];
+  clientRevisionCount: number;
+  clientRevisionLimit: number;
+}
+
+export interface PremiumEditResult {
+  status:
+    | 'EDITORIAL_REVISED'
+    | 'REQUIRES_REGENERATION'
+    | 'CONFIRMATION_REQUIRED'
+    | 'REVISION_APPLIED'
+    | 'REVISION_BLOCKED'
+    | 'REVISION_LIMIT_REACHED';
+  reason: string;
+  affectedPaths: string[];
+  revisionCount?: number;
+  revisionLimit?: number;
+  output?: PremiumOutput;
 }
 
 export function shouldPollAnnunci10xPaymentVerification(checkoutNotice: PremiumCheckoutNotice, state: PremiumFulfillmentState | null | undefined): boolean {
@@ -64,6 +81,22 @@ export async function generateAnnunci10xPremiumOutput(input: { channel?: string 
   const payload = await response.json();
   if (!response.ok || !payload.ok) {
     const error = new Error(payload.error?.message ?? payload.error?.code ?? 'PREMIUM_GENERATION_UNAVAILABLE') as Error & { code?: string };
+    error.code = payload.error?.code;
+    throw error;
+  }
+  return payload.result;
+}
+
+
+export async function requestAnnunci10xPremiumEdit(input: { editRequest: string; targetSectionId: string }): Promise<PremiumEditResult> {
+  const response = await fetch('/api/annunci-10x/premium/edit', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ editRequest: input.editRequest, targetPath: input.targetSectionId }),
+  });
+  const payload = await response.json();
+  if (!response.ok || !payload.ok) {
+    const error = new Error(payload.error?.message ?? payload.error?.code ?? 'PREMIUM_EDIT_UNAVAILABLE') as Error & { code?: string };
     error.code = payload.error?.code;
     throw error;
   }
