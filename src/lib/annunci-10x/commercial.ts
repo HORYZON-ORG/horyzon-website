@@ -49,7 +49,7 @@ export const ANNUNCI10X_OFFER_CATALOG: readonly Annunci10xOfferCatalogItem[] = [
   {
     offerCode: 'ANNUNCI10X_CREATE',
     displayName: 'Annuncio 10x',
-    description: 'Creazione di un nuovo annuncio partendo dai fatti del ruolo. 1 annuncio, 1 versione, 1 canale.',
+    description: 'Creazione di un nuovo annuncio partendo dai fatti del ruolo. 1 annuncio, 1 versione finale, fino a 3 modifiche mirate, 1 canale.',
     price: { amountCents: 700, currency: 'EUR', display: '7,00 EUR' },
     capabilities: [{ capability: 'CREATE_CREDIT', quantity: 1 }],
     flows: ['CREATE'],
