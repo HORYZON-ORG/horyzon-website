@@ -42,18 +42,21 @@ type StripeLikeClient = {
 export class StripeAnnunci10xPaymentGateway implements Annunci10xPaymentGateway {
   readonly kind = 'STRIPE';
   private readonly client: StripeLikeClient;
+  private readonly checkoutEnabled: boolean;
 
-  constructor(input: { secretKey?: string | null; client?: StripeLikeClient }) {
+  constructor(input: { secretKey?: string | null; client?: StripeLikeClient; webhookOnly?: boolean }) {
+    this.checkoutEnabled = input.webhookOnly !== true;
     if (input.client) {
       this.client = input.client;
       return;
     }
     const secretKey = input.secretKey?.trim();
-    if (!secretKey) throw checkoutUnavailable();
-    this.client = new Stripe(secretKey);
+    if (!secretKey && this.checkoutEnabled) throw checkoutUnavailable();
+    this.client = new Stripe(secretKey || 'sk_test_annunci10x_webhook_verifier');
   }
 
   async createCheckoutSession(input: CreateCheckoutSessionInput): Promise<CreatedCheckoutSession> {
+    if (!this.checkoutEnabled) throw checkoutUnavailable();
     const metadata = {
       annunci10x_purchase_id: input.purchaseId,
       annunci10x_offer_code: input.offerCode,
@@ -106,6 +109,10 @@ export class MockAnnunci10xPaymentGateway implements Annunci10xPaymentGateway {
 
 export function createAnnunci10xPaymentGateway(env: Record<string, string | undefined> = process.env): Annunci10xPaymentGateway {
   return new StripeAnnunci10xPaymentGateway({ secretKey: env.STRIPE_SECRET_KEY });
+}
+
+export function createAnnunci10xWebhookGateway(env: Record<string, string | undefined> = process.env): Annunci10xPaymentGateway {
+  return new StripeAnnunci10xPaymentGateway({ secretKey: env.STRIPE_SECRET_KEY, webhookOnly: true });
 }
 
 export function stripeCheckoutIdempotencyKey(purchaseId: string): string {
