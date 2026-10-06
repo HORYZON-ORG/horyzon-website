@@ -42,7 +42,7 @@ export const ANNUNCI10X_OFFER_CATALOG: readonly Annunci10xOfferCatalogItem[] = [
     offerCode: 'ANNUNCI10X_REWRITE',
     displayName: 'Annuncio 10x',
     description: 'Potenziamento di un testo esistente. 1 annuncio, 1 versione, 1 canale.',
-    price: { amountCents: 700, currency: 'EUR', display: '7,00 EUR' },
+    price: { amountCents: 0, currency: 'EUR', display: 'Gratis' },
     capabilities: [{ capability: 'REWRITE_CREDIT', quantity: 1 }],
     flows: ['ANALYZE'],
   },
@@ -50,7 +50,7 @@ export const ANNUNCI10X_OFFER_CATALOG: readonly Annunci10xOfferCatalogItem[] = [
     offerCode: 'ANNUNCI10X_CREATE',
     displayName: 'Annuncio 10x',
     description: 'Creazione di un nuovo annuncio partendo dai fatti del ruolo. 1 annuncio, 1 versione finale, fino a 3 modifiche mirate, 1 canale.',
-    price: { amountCents: 700, currency: 'EUR', display: '7,00 EUR' },
+    price: { amountCents: 0, currency: 'EUR', display: 'Gratis' },
     capabilities: [{ capability: 'CREATE_CREDIT', quantity: 1 }],
     flows: ['CREATE'],
   },
@@ -345,6 +345,7 @@ function offerFor(item: Annunci10xOfferCatalogItem, input: Annunci10xOfferEngine
 
 function unavailableReasonFor(item: Annunci10xOfferCatalogItem, input: Annunci10xOfferEngineInput): Annunci10xCommercialUnavailableReason | null {
   if (!item.flows.includes(input.flow)) return 'FLOW_NOT_APPLICABLE';
+  if (item.offerCode === 'ANNUNCI10X_REWRITE' || item.offerCode === 'ANNUNCI10X_CREATE') return 'PURCHASE_DISABLED';
   if (item.offerCode === 'AGENT_RECRUITER' && input.entitlements.agentRecruiterAccess) return 'ALREADY_ENTITLED';
   if (!input.checkoutEnabled) return 'PURCHASE_DISABLED';
   if (!input.identityVerified || input.subject.kind === 'ANONYMOUS') return 'EMAIL_NOT_VERIFIED';

@@ -13,6 +13,9 @@ export async function POST(request: NextRequest) {
     const limited = checkAnnunci10xRateLimit(request, cookie.sessionId);
     if (limited) return limited;
     const payload = await readJsonBody(request);
+    if (payload.offerCode === 'ANNUNCI10X_REWRITE' || payload.offerCode === 'ANNUNCI10X_CREATE') {
+      throw new Annunci10xPublicError('INVALID_INPUT', 'Creazione e miglioramento Annunci 10x sono gratuiti e non richiedono pagamento.', 409);
+    }
     const result = await createAnnunci10xCheckoutSession({
       session: cookie,
       offerCode: payload.offerCode,
