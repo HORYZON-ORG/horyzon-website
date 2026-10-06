@@ -10,6 +10,10 @@ import Link from 'next/link';
 import '@/styles/horyzon-landing.css';
 import './annunci-landing.css';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
+
 const title = 'Annunci 10x — Score e annuncio pronti gratis';
 const description = 'Valuta gratis chiarezza e completezza del tuo annuncio. Poi miglioralo o creane uno da zero gratuitamente, con un testo completo costruito solo sui fatti che confermi.';
 const image = `${SITE_URL}/opengraph-image`;
