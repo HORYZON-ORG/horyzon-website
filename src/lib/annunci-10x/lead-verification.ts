@@ -483,6 +483,8 @@ export function buildResendOtpPayload(input: {
     '',
     'Se non hai richiesto questa analisi, puoi ignorare questa email.',
     '',
+    'Nota sul servizio: Score, miglioramento e creazione dell’annuncio sono gratuiti. La Guida Annunci 10X è separata e costa 49 €.',
+    '',
     'Horyzon',
   ].join('\n');
   const html = [
@@ -492,6 +494,7 @@ export function buildResendOtpPayload(input: {
     `<p style="font-size:28px;font-weight:700;letter-spacing:0.08em">${input.code}</p>`,
     `<p>Il codice scade tra ${minutes} minuti.</p>`,
     '<p>Se non hai richiesto questa analisi, puoi ignorare questa email.</p>',
+    '<p style="font-size:13px;color:#5b6b70">Nota sul servizio: Score, miglioramento e creazione dell’annuncio sono gratuiti. La Guida Annunci 10X è separata e costa 49 €.</p>',
     '<p>Horyzon</p>',
     '</div>',
   ].join('');
@@ -525,6 +528,7 @@ export function buildResendScoreReportPayload(input: ScoreReportEmailInput & {
   const analysisUrl = annunci10xUrl
     ? `${annunci10xUrl}?analysis=${encodeURIComponent(input.analysisRunId)}#valuta`
     : null;
+  const createUrl = annunci10xUrl ? `${annunci10xUrl}#crea-annuncio` : null;
   const guideSectionUrl = publicBaseUrl ? `${publicBaseUrl}/annunci-10x#guida-annunci-10x` : null;
   const guidePreviewUrl = publicBaseUrl ? `${publicBaseUrl}/annunci-10x/annunci-10x-anteprima.pdf` : null;
   const rewriteOffer = getAnnunci10xOffer('ANNUNCI10X_REWRITE');
@@ -563,9 +567,11 @@ export function buildResendScoreReportPayload(input: ScoreReportEmailInput & {
     disclaimer,
     '',
     `${rewriteOffer.displayName} — ${rewritePrice}`,
-    '1 annuncio · 1 versione · 1 canale',
+    'Miglioramento gratuito · 1 annuncio · 1 versione · 1 canale',
     `Migliora questo annuncio — ${rewritePrice}`,
-    ...(analysisUrl ? [analysisUrl, ''] : ['Riapri Annunci 10X dal sito Horyzon.', '']),
+    ...(analysisUrl ? [analysisUrl] : ['Riapri Annunci 10X dal sito Horyzon.']),
+    'Non hai ancora un annuncio? Crealo da zero — Gratis',
+    ...(createUrl ? [createUrl, ''] : ['Riapri Annunci 10X dal sito Horyzon.', '']),
     `${guide.displayName} — ${guidePrice}`,
     guideDescription,
     `Scopri la Guida Annunci 10X — ${guidePrice}`,
@@ -596,6 +602,9 @@ export function buildResendScoreReportPayload(input: ScoreReportEmailInput & {
   const rewriteButton = analysisUrl
     ? `<a href="${escapeHtml(analysisUrl)}" style="display:inline-block;background:#c8f531;color:#102229;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:6px">Migliora questo annuncio — ${escapeHtml(rewritePrice)}</a>`
     : `<strong>Migliora questo annuncio — ${escapeHtml(rewritePrice)}</strong>`;
+  const createButton = createUrl
+    ? `<a href="${escapeHtml(createUrl)}" style="display:inline-block;background:#102229;color:#f7f4e8;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:6px;margin-left:8px">Crea un annuncio da zero — Gratis</a>`
+    : '<strong>Crea un annuncio da zero — Gratis</strong>';
   const guideButton = guideSectionUrl
     ? `<a href="${escapeHtml(guideSectionUrl)}" style="display:inline-block;background:#c8f531;color:#102229;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:6px">Scopri la Guida Annunci 10X — ${escapeHtml(guidePrice)}</a>`
     : `<strong>Scopri la Guida Annunci 10X — ${escapeHtml(guidePrice)}</strong>`;
@@ -628,8 +637,8 @@ export function buildResendScoreReportPayload(input: ScoreReportEmailInput & {
     '</section>',
     '<section style="padding:26px 28px;background:#f4f1e8;color:#102229;border-top:1px solid #dce4d3">',
     `<h2 style="font-size:18px;margin:0 0 8px;color:#102229">${escapeHtml(rewriteOffer.displayName)} — ${escapeHtml(rewritePrice)}</h2>`,
-    '<p style="margin:0 0 16px;line-height:1.5;color:#31434a">1 annuncio · 1 versione · 1 canale. Puoi riaprire Annunci 10X e procedere dal flusso esistente.</p>',
-    `<p style="margin:0 0 24px">${rewriteButton}</p>`,
+    '<p style="margin:0 0 16px;line-height:1.5;color:#31434a">Miglioramento e creazione dell’annuncio sono gratuiti. Nessuna carta di credito.</p>',
+    `<p style="margin:0 0 24px">${rewriteButton}${createButton}</p>`,
     `<h2 style="font-size:18px;margin:0 0 8px;color:#102229">${escapeHtml(guide.displayName)} — ${escapeHtml(guidePrice)}</h2>`,
     `<p style="margin:0 0 16px;line-height:1.5;color:#31434a">${escapeHtml(guideDescription)}</p>`,
     `<p style="margin:0">${guideButton}${guidePreviewButton}</p>`,
@@ -655,6 +664,7 @@ function formatAreaScore(area: ScoreReportEmailAreaInput): string {
 }
 
 function formatCommercialPrice(price: { amountCents: number; currency: string }): string {
+  if (price.amountCents === 0) return 'Gratis';
   if (price.currency !== 'EUR') return `${(price.amountCents / 100).toFixed(2)} ${price.currency}`;
   const euros = price.amountCents / 100;
   const amount = Number.isInteger(euros)

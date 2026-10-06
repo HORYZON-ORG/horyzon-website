@@ -73,7 +73,11 @@ assert.match(body.html, /&lt;Ada &amp; Team&gt;/, 'escaped firstName appears in 
 assert.doesNotMatch(body.text, new RegExp(verificationId), 'verificationId is not customer-facing text');
 assert.doesNotMatch(body.html, new RegExp(verificationId), 'verificationId is not customer-facing HTML');
 assert.doesNotMatch(JSON.stringify(request.init.headers), /123456/, 'OTP appears only in email body, not headers');
-for (const forbidden of ['7 €', '9 €', '49 €', 'newsletter', 'marketing']) {
+assert.match(body.text, /Score, miglioramento e creazione dell’annuncio sono gratuiti/);
+assert.match(body.text, /Guida Annunci 10X è separata e costa 49 €/);
+assert.match(body.html, /Score, miglioramento e creazione dell’annuncio sono gratuiti/);
+assert.match(body.html, /Guida Annunci 10X è separata e costa 49 €/);
+for (const forbidden of ['7 €', '9 €', 'newsletter', 'marketing']) {
   assert.doesNotMatch(body.text, new RegExp(escapeRegExp(forbidden), 'i'), `OTP email text must not include ${forbidden}`);
   assert.doesNotMatch(body.html, new RegExp(escapeRegExp(forbidden), 'i'), `OTP email HTML must not include ${forbidden}`);
 }

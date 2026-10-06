@@ -222,10 +222,12 @@ async function assertResendPayload() {
   assert.doesNotMatch(payload.text, /Come migliorare:/);
   assert.match(payload.text, /Le 3 priorità su cui intervenire/);
   assert.match(payload.text, /Il punteggio valuta la chiarezza e la completezza/);
-  assert.match(payload.text, /Annuncio 10x — 7 €/);
-  assert.match(payload.text, /1 annuncio · 1 versione · 1 canale/);
-  assert.match(payload.text, /Migliora questo annuncio — 7 €/);
+  assert.match(payload.text, /Annuncio 10x — Gratis/);
+  assert.match(payload.text, /Miglioramento gratuito · 1 annuncio · 1 versione · 1 canale/);
+  assert.match(payload.text, /Migliora questo annuncio — Gratis/);
   assert.match(payload.text, /annunci-10x\?analysis=analysis-run-123#valuta/);
+  assert.match(payload.text, /Non hai ancora un annuncio\? Crealo da zero — Gratis/);
+  assert.match(payload.text, /annunci-10x#crea-annuncio/);
   assert.match(payload.text, /Guida Annunci 10x — 49 €/);
   assert.match(payload.text, /Scopri la Guida Annunci 10X — 49 €/);
   assert.match(payload.text, /Anteprima/);
@@ -240,7 +242,9 @@ async function assertResendPayload() {
   assert.ok(payload.html.indexOf('Punteggi per area') < payload.html.indexOf('Le 3 priorità su cui intervenire'), 'area scores must appear before the three priorities');
   assert.doesNotMatch(payload.html, /I 20 controlli/);
   assert.doesNotMatch(payload.html, /Come migliorare:/);
-  assert.match(payload.html, /Migliora questo annuncio/);
+  assert.match(payload.html, /Migliora questo annuncio — Gratis/);
+  assert.match(payload.html, /Crea un annuncio da zero — Gratis/);
+  assert.match(payload.html, /Miglioramento e creazione dell’annuncio sono gratuiti/);
   assert.match(payload.html, /Scopri la Guida Annunci 10X — 49 €/);
   assert.match(payload.html, /annunci-10x#guida-annunci-10x/);
   assert.match(payload.html, /annunci-10x\/annunci-10x-anteprima\.pdf/);
@@ -248,6 +252,8 @@ async function assertResendPayload() {
     assert.doesNotMatch(payload.text, new RegExp(escapeRegExp(forbidden), 'i'));
     assert.doesNotMatch(payload.html, new RegExp(escapeRegExp(forbidden), 'i'));
   }
+  assert.doesNotMatch(payload.text, /(^|[^\d])7 €/i);
+  assert.doesNotMatch(payload.html, /(^|[^\d])7 €/i);
   assert.doesNotMatch(payload.text, /(^|[^\d])9 €/i);
   assert.doesNotMatch(payload.html, /(^|[^\d])9 €/i);
   assertResendPayloadEdgeCases();
