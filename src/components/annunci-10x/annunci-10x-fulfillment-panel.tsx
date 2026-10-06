@@ -125,14 +125,6 @@ export function Annunci10xFulfillmentPanel() {
 
   const canClientRevise = status?.flow === 'CREATE';
   const primarySections = useMemo(() => outputSections(output, canClientRevise), [output, canClientRevise]);
-  const state = status?.state ?? 'NONE';
-  if (state === 'NONE') return null;
-
-  async function copyAd() {
-    const text = primarySections.map((section) => [section.title, section.body].filter((part) => part.trim().length > 0).join('\n')).join('\n\n');
-    await navigator.clipboard.writeText(text);
-    setCopyMessage('Annuncio copiato.');
-  }
 
   const reviseSection = useCallback(async (sectionId: string, instruction: string): Promise<PremiumEditResult> => {
     const result = await requestAnnunci10xPremiumEdit({ editRequest: instruction, targetSectionId: sectionId });
@@ -142,6 +134,15 @@ export function Annunci10xFulfillmentPanel() {
     }
     return result;
   }, []);
+
+  const state = status?.state ?? 'NONE';
+  if (state === 'NONE') return null;
+
+  async function copyAd() {
+    const text = primarySections.map((section) => [section.title, section.body].filter((part) => part.trim().length > 0).join('\n')).join('\n\n');
+    await navigator.clipboard.writeText(text);
+    setCopyMessage('Annuncio copiato.');
+  }
 
   return <section ref={panelRef} tabIndex={-1} className={styles.fulfillmentPanel} aria-labelledby="annunci10x-fulfillment-title" aria-live="polite">
     {state === 'READY_TO_GENERATE' && <PreparingBlock loading={loading} />}
