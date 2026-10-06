@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import {
   Annunci10xPublicError,
   isAnnunci10xFulfillmentEnabled,
-  runAnnunci10xReservationBackedPremiumGeneration,
+  runAnnunci10xPremiumGeneration,
   sanitizeGenerationClientPayload,
 } from '@/lib/annunci-10x';
 import { checkAnnunci10xRateLimit, createContext, getSessionCookie, readJsonBody, toErrorResponse } from '../../_shared';
@@ -23,12 +23,11 @@ export async function POST(request: Request) {
       throw new Annunci10xPublicError('GENERATION_BLOCKED', 'Generazione temporaneamente non disponibile.', 503);
     }
     const payload = sanitizeGenerationClientPayload(await readJsonBody(request));
-    const result = await runAnnunci10xReservationBackedPremiumGeneration({
+    const result = await runAnnunci10xPremiumGeneration({
       sessionId: cookie.sessionId,
       sessionSecret: cookie.sessionSecret,
       channel: parseChannel(payload.channel),
       context,
-      fulfillmentEnabled: true,
     });
     return NextResponse.json({ ok: true, result }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {

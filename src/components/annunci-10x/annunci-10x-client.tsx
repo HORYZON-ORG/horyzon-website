@@ -3,15 +3,7 @@
 import type { FormEvent, ReactNode } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Annunci10xAnalyzeFlow } from './annunci-10x-analyze-flow';
-import {
-  checkoutCtaLabel,
-  customerSafeCheckoutError,
-  fetchAnnunci10xCommercialOffers,
-  offerPriceLabel,
-  startAnnunci10xCheckout,
-  type Annunci10xCommercialOffer,
-  type Annunci10xCommercialState,
-} from './annunci-10x-commerce-client';
+import { ANNUNCI10X_FULFILLMENT_REFRESH_EVENT, generateAnnunci10xPremiumOutput } from './annunci-10x-premium-client';
 import { Annunci10xIdentityGate } from './annunci-10x-identity-gate';
 import { Annunci10xFulfillmentPanel } from './annunci-10x-fulfillment-panel';
 import { Annunci10xLoader } from './annunci-10x-loader';
@@ -38,7 +30,7 @@ interface CreateState {
   sessionId: string;
   state: string;
   provider: 'MOCK' | 'OPENAI';
-  currentStep: CreateStepId | 'SUMMARY' | 'COMMERCIAL';
+  currentStep: CreateStepId | 'SUMMARY' | 'READY';
   completedSteps: CreateStepId[];
   completion: { answered: number; total: number; coverage: number };
   roleCard: {
@@ -68,21 +60,9 @@ interface CreateState {
   strategy: { summary: string; candidateAngle: string; channelPriorities: string[]; riskNotes: string[]; missingFacts: string[] } | null;
   clarification: { id: string; targetPath: string; question: string; reason: string; blocking: boolean; canAdvance: boolean } | null;
   canConfirm: boolean;
-  paymentRequired: boolean;
+  generationReady: boolean;
   contactSaved?: boolean;
   emailVerified?: boolean;
-  commercial: {
-    checkoutEnabled: boolean;
-    pricingStatus: 'FIXED';
-    availableOffers: Annunci10xCommercialOffer[];
-    entitlementSummary: {
-      guide: boolean;
-      rewriteCredits: number;
-      createCredits: number;
-      agentRecruiterAccess: boolean;
-      source: string;
-    };
-  };
   operations: PublicOperation[];
 }
 
@@ -199,8 +179,6 @@ const createWizardSteps: readonly {
     requiredFields: [{ key: 'application', id: 'create-application' }],
   },
 ];
-const guaranteeCopy = '7 € per un annuncio, una versione e un canale. Dopo la conferma del pagamento generiamo il testo completo e te lo rendiamo disponibile. Se non ti è utile, puoi chiedere il rimborso integrale entro 14 giorni dalla consegna, senza motivazione, scrivendo a info@horyzon.it dall’email usata per l’acquisto.';
-
 export function Annunci10xClient() {
   const [mode, setMode] = useState<Mode>('ANALYZE');
   const [createState, setCreateState] = useState<CreateState | null>(null);
@@ -212,17 +190,9 @@ export function Annunci10xClient() {
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [createLoader, setCreateLoader] = useState<CreateLoaderState | null>(null);
-  const [checkoutNotice] = useState<'success' | 'cancelled' | null>(() => initialCheckoutNotice());
-  const [commerceRefreshToken, setCommerceRefreshToken] = useState(0);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const analyzeRef = useRef<HTMLDivElement | null>(null);
   const createRef = useRef<HTMLElement | null>(null);
-  const showCreateAfterCheckout = useCallback(() => {
-    setMode('CREATE');
-    window.setTimeout(() => {
-      if (createRef.current) scrollToElement(createRef.current);
-    }, 0);
-  }, []);
 
   useEffect(() => {
     fetch('/api/annunci-10x/create/state', { cache: 'no-store' })
@@ -230,44 +200,9 @@ export function Annunci10xClient() {
       .then((payload: { ok: boolean; result: CreateState | null }) => {
         if (!payload.ok || !payload.result) return;
         setCreateState(payload.result);
-        if (checkoutNotice === 'success' || checkoutNotice === 'cancelled') setMode('CREATE');
       })
       .catch(() => undefined);
-  }, [checkoutNotice]);
-
-  useEffect(() => {
-    if (checkoutNotice !== 'success') return;
-
-    const delays = [0, 1500, 3000, 5000];
-    let cancelled = false;
-    let baselineFingerprint: string | null = null;
-    const timers: number[] = [];
-    const stopPolling = () => {
-      cancelled = true;
-      timers.forEach((timer) => window.clearTimeout(timer));
-    };
-    delays.forEach((delay) => {
-      const timer = window.setTimeout(async () => {
-        if (cancelled) return;
-        try {
-          const commercial = await fetchAnnunci10xCommercialOffers();
-          const fingerprint = commerceStateFingerprint(commercial);
-          if (baselineFingerprint === null) {
-            baselineFingerprint = fingerprint;
-            return;
-          }
-          if (fingerprint !== baselineFingerprint) {
-            setCommerceRefreshToken((value) => value + 1);
-            stopPolling();
-          }
-        } catch {
-          // Query params are UX only; failed refresh must not unlock anything.
-        }
-      }, delay);
-      timers.push(timer);
-    });
-    return stopPolling;
-  }, [checkoutNotice]);
+  }, []);
 
   const selectMode = useCallback((nextMode: Mode) => {
     setMode(nextMode);
@@ -281,7 +216,7 @@ export function Annunci10xClient() {
     }, 0);
   }, []);
 
-  // The landing around this component is server-rendered: its "crea a 7 €" links open the create flow
+  // The landing around this component is server-rendered: its "crea gratis" links open the create flow
   // through a window event, and #crea-annuncio works as a deep link.
   useEffect(() => {
     const openCreate = () => selectMode('CREATE');
@@ -292,13 +227,6 @@ export function Annunci10xClient() {
       if (deepLink !== null) window.clearTimeout(deepLink);
     };
   }, [selectMode]);
-
-  // Back from the payment page the visitor lands at the top of a long page: bring the payment status into view.
-  useEffect(() => {
-    if (!checkoutNotice) return;
-    const timer = window.setTimeout(() => { if (rootRef.current) scrollToElement(rootRef.current); }, 0);
-    return () => window.clearTimeout(timer);
-  }, [checkoutNotice]);
 
   async function startCreate(): Promise<CreateState | null> {
     setMode('CREATE');
@@ -334,7 +262,7 @@ export function Annunci10xClient() {
         if (!response.ok || !payload.ok) throw new Error(payload.error?.message ?? 'Avvio non riuscito.');
         state = payload.result;
       }
-      if (!state || state.paymentRequired) return;
+      if (!state || state.generationReady) return;
       let nextState = state;
       const answers = composeCreateAnswers(createDraft, unknowns);
       for (const [index, stepId] of createStepOrder.entries()) {
@@ -423,22 +351,20 @@ export function Annunci10xClient() {
   }
 
   return <div ref={rootRef} className={styles.flowRoot}>
-    {checkoutNotice === 'success' && <div className={styles.checkoutBanner} role="status" aria-live="polite"><strong>Pagamento ricevuto.</strong><span>Stiamo preparando il tuo accesso.</span><Annunci10xLoader variant="inline" indeterminate label="Verifichiamo il pagamento" /></div>}
-    {checkoutNotice === 'cancelled' && <div className={styles.checkoutBanner} role="status" aria-live="polite"><strong>Pagamento annullato.</strong><span>Non è stato completato alcun acquisto.</span></div>}
-    <Annunci10xFulfillmentPanel checkoutNotice={checkoutNotice} onCreateReturn={showCreateAfterCheckout} />
+    <Annunci10xFulfillmentPanel />
 
     <div ref={analyzeRef} className={styles.heroPanel} aria-label="Analisi gratuita Annunci 10x">
-      <Annunci10xAnalyzeFlow commerceRefreshToken={commerceRefreshToken} />
+      <Annunci10xAnalyzeFlow />
     </div>
-    {mode !== 'CREATE' && <p className={styles.createSwitch}>Non hai ancora un annuncio? <button type="button" onClick={() => selectMode('CREATE')}>Crealo a 7 € con un brief guidato</button></p>}
+    {mode !== 'CREATE' && <p className={styles.createSwitch}>Non hai ancora un annuncio? <button type="button" onClick={() => selectMode('CREATE')}>Crealo gratis con un brief guidato</button></p>}
 
     {mode === 'CREATE' && <section ref={createRef} id="crea-annuncio" className={styles.createSection} aria-labelledby="create-route-title">
       <div className={styles.sectionHeading}>
         <p>Percorso guidato</p>
         <h2 id="create-route-title">Crea il tuo annuncio da zero</h2>
-        <span>Se il testo non esiste ancora, parti dai fatti del ruolo. Raccogliamo i dati in tre blocchi progressivi, poi generiamo il testo completo solo dopo pagamento confermato.</span>
+        <span>Se il testo non esiste ancora, parti dai fatti del ruolo. Raccogliamo i dati in tre blocchi progressivi, poi generiamo gratuitamente il testo completo dopo la verifica dell’email.</span>
       </div>
-      <CreateFlow state={createState} draft={createDraft} unknowns={unknowns} running={running} loading={createLoader} clarificationAnswer={clarificationAnswer} editTarget={editTarget} editValue={editValue} error={error} commerceRefreshToken={commerceRefreshToken} onStart={startCreate} onDraft={setCreateDraft} onUnknowns={setUnknowns} onSubmitStructured={submitStructuredCreate} onClarificationAnswer={setClarificationAnswer} onSubmitClarification={submitCreateClarification} onEditTarget={setEditTarget} onEditValue={setEditValue} onSubmitEdit={submitEdit} onConfirm={confirmCreate} />
+      <CreateFlow state={createState} draft={createDraft} unknowns={unknowns} running={running} loading={createLoader} clarificationAnswer={clarificationAnswer} editTarget={editTarget} editValue={editValue} error={error} onStart={startCreate} onDraft={setCreateDraft} onUnknowns={setUnknowns} onSubmitStructured={submitStructuredCreate} onClarificationAnswer={setClarificationAnswer} onSubmitClarification={submitCreateClarification} onEditTarget={setEditTarget} onEditValue={setEditValue} onSubmitEdit={submitEdit} onConfirm={confirmCreate} />
     </section>}
   </div>;
 }
@@ -453,7 +379,6 @@ function CreateFlow(props: {
   editTarget: string;
   editValue: string;
   error: string | null;
-  commerceRefreshToken: number;
   onStart: () => Promise<CreateState | null>;
   onDraft: (value: CreateDraft) => void;
   onUnknowns: (value: Record<UnknownKey, boolean>) => void;
@@ -466,11 +391,11 @@ function CreateFlow(props: {
   onConfirm: () => void;
 }) {
   return <section className={styles.createShell} aria-label="Crea da zero">
-    {props.state && <div className={styles.createNotice}><div><p>Hai un lavoro in corso.</p><strong>{props.state.currentStep === 'COMMERCIAL' ? 'La posizione è confermata.' : props.state.currentStep === 'SUMMARY' ? 'La scheda è pronta da verificare.' : 'Stiamo raccogliendo i fatti.'}</strong></div><div><span>{props.state.completion.coverage}%</span><small>dati raccolti</small></div></div>}
+    {props.state && <div className={styles.createNotice}><div><p>Hai un lavoro in corso.</p><strong>{props.state.currentStep === 'READY' ? 'La posizione è confermata.' : props.state.currentStep === 'SUMMARY' ? 'La scheda è pronta da verificare.' : 'Stiamo raccogliendo i fatti.'}</strong></div><div><span>{props.state.completion.coverage}%</span><small>dati raccolti</small></div></div>}
     {props.loading && <Annunci10xLoader variant="panel" label={props.loading.label} progress={props.loading.progress} indeterminate={props.loading.indeterminate} complete={props.loading.complete} />}
-    {!props.state?.paymentRequired && props.state?.currentStep !== 'SUMMARY' && <StructuredCreateForm key={createWizardResumeKey(props.state)} state={props.state} draft={props.draft} unknowns={props.unknowns} running={props.running} error={props.error} onDraft={props.onDraft} onUnknowns={props.onUnknowns} onSubmit={props.onSubmitStructured} />}
+    {!props.state?.generationReady && props.state?.currentStep !== 'SUMMARY' && <StructuredCreateForm key={createWizardResumeKey(props.state)} state={props.state} draft={props.draft} unknowns={props.unknowns} running={props.running} error={props.error} onDraft={props.onDraft} onUnknowns={props.onUnknowns} onSubmit={props.onSubmitStructured} />}
     {props.state?.clarification && <div className={styles.clarification}><p>Chiarimento necessario</p><h3>{props.state.clarification.question}</h3><small>{props.state.clarification.reason}</small><Field label="Risposta" htmlFor="annunci10x-create-clarification"><textarea id="annunci10x-create-clarification" rows={3} value={props.clarificationAnswer} onChange={(event) => props.onClarificationAnswer(event.target.value)} disabled={props.running} /></Field><div className={styles.actions}><button type="button" onClick={() => props.onSubmitClarification(false)} disabled={props.running}>Salva chiarimento</button><button type="button" onClick={() => props.onSubmitClarification(true)} disabled={props.running}>Non lo so</button></div></div>}
-    {props.state && (props.state.currentStep === 'SUMMARY' || props.state.currentStep === 'COMMERCIAL') && <CreateSummary state={props.state} running={props.running} editTarget={props.editTarget} editValue={props.editValue} commerceRefreshToken={props.commerceRefreshToken} onEditTarget={props.onEditTarget} onEditValue={props.onEditValue} onSubmitEdit={props.onSubmitEdit} onConfirm={props.onConfirm} />}
+    {props.state && (props.state.currentStep === 'SUMMARY' || props.state.currentStep === 'READY') && <CreateSummary state={props.state} running={props.running} editTarget={props.editTarget} editValue={props.editValue} onEditTarget={props.onEditTarget} onEditValue={props.onEditValue} onSubmitEdit={props.onSubmitEdit} onConfirm={props.onConfirm} />}
     {!props.state && <div className={styles.startCreate}><p>Puoi compilare i campi e preparare direttamente la scheda. Salviamo il percorso quando inizi.</p><button type="button" onClick={props.onStart} disabled={props.running}>Inizia da zero</button></div>}
   </section>;
 }
@@ -606,7 +531,6 @@ function CreateSummary(props: {
   running: boolean;
   editTarget: string;
   editValue: string;
-  commerceRefreshToken: number;
   onEditTarget: (value: string) => void;
   onEditValue: (value: string) => void;
   onSubmitEdit: (event: FormEvent<HTMLFormElement>) => void;
@@ -615,34 +539,11 @@ function CreateSummary(props: {
   const groups = groupRequirements(props.state.roleCard.requirements);
   const [contactSavedLocally, setContactSavedLocally] = useState(false);
   const [emailVerifiedLocally, setEmailVerifiedLocally] = useState(false);
-  const [commercial, setCommercial] = useState<Annunci10xCommercialState | null>(null);
-  const [commercialStatus, setCommercialStatus] = useState<string | null>(null);
   const contactSaved = contactSavedLocally || Boolean(props.state.contactSaved);
   const emailVerified = emailVerifiedLocally || Boolean(props.state.emailVerified);
 
-  useEffect(() => {
-    if (!props.state.paymentRequired || !emailVerified) return;
-    let cancelled = false;
-    const timer = window.setTimeout(() => {
-      setCommercialStatus('Caricamento offerte in corso.');
-      fetchAnnunci10xCommercialOffers()
-        .then((nextCommercial) => {
-          if (cancelled) return;
-          setCommercial(nextCommercial);
-          setCommercialStatus(null);
-        })
-        .catch((cause) => {
-          if (!cancelled) setCommercialStatus(customerSafeCheckoutError(cause));
-        });
-    }, 0);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [props.state.paymentRequired, emailVerified, props.commerceRefreshToken]);
-
   return <section className={styles.result} aria-labelledby="create-summary-title">
-    <div className={styles.resultHead}><div><p>Questa è la posizione che abbiamo capito.</p><h2 id="create-summary-title">{props.state.roleCard.title}</h2></div><div className={styles.scoreBox}><span>Dati raccolti</span><strong>{props.state.completion.coverage}%</strong></div><div className={styles.gateBox}><span>Stato</span><strong>{props.state.paymentRequired ? 'Pronta per il confine commerciale' : 'Da confermare'}</strong></div></div>
+    <div className={styles.resultHead}><div><p>Questa è la posizione che abbiamo capito.</p><h2 id="create-summary-title">{props.state.roleCard.title}</h2></div><div className={styles.scoreBox}><span>Dati raccolti</span><strong>{props.state.completion.coverage}%</strong></div><div className={styles.gateBox}><span>Stato</span><strong>{props.state.generationReady ? 'Pronta per la generazione' : 'Da confermare'}</strong></div></div>
     <div className={styles.confirmationGrid}>
       <Panel title="Risultato" items={[props.state.roleCard.mission, ...props.state.roleCard.outcomes]} empty="Da definire." />
       <Panel title="Attività" items={props.state.roleCard.responsibilities} empty="Da definire." />
@@ -663,22 +564,23 @@ function CreateSummary(props: {
       <ul>{props.state.conflicts.map((conflict) => <li key={conflict.id}><strong>{conflict.label}: {conflict.canonicalValue}</strong><span>In “{conflict.sourceLabel}” avevi anche indicato “{conflict.conflictingValue}”. {conflict.resolution}</span></li>)}</ul>
     </div>}
     {props.state.strategy && <div className={styles.strategyPanel}><p>Strategia</p><h3>{props.state.strategy.summary}</h3><span>{props.state.strategy.candidateAngle}</span></div>}
-    {!props.state.paymentRequired && <form className={styles.inlineEdit} onSubmit={props.onSubmitEdit}><Field label="Modifica" htmlFor="create-edit-target"><select id="create-edit-target" value={props.editTarget} onChange={(event) => props.onEditTarget(event.target.value)} disabled={props.running}><option value="title">Ruolo</option><option value="mission">Risultato</option><option value="responsibilities">Attività</option><option value="requirements">Requisiti</option><option value="attractionContext.companyDescription">Azienda / contesto</option><option value="attractionContext.operatingContext">Contesto operativo</option><option value="attractionContext.autonomy">Autonomia</option><option value="attractionContext.unexpectedEvents">Imprevisti</option><option value="attractionContext.location">Sede</option><option value="attractionContext.workMode">Modalità</option><option value="attractionContext.contractType">Contratto</option><option value="attractionContext.schedule">Orario</option><option value="attractionContext.shifts">Turni</option><option value="attractionContext.onCall">Reperibilità</option><option value="compensation.amountText">Compenso</option><option value="applicationInstructions">Candidatura</option></select></Field><Field label="Nuovo valore" htmlFor="create-edit-value"><input id="create-edit-value" value={props.editValue} onChange={(event) => props.onEditValue(event.target.value)} disabled={props.running} /></Field><button type="submit" disabled={props.running}>Modifica</button></form>}
-    {props.state.paymentRequired ? <section className={styles.commercialPanel} aria-labelledby="create-commercial-title">
-      <p>Prossimo passo</p>
-      <h3 id="create-commercial-title">Annuncio 10x</h3>
+    {!props.state.generationReady && <form className={styles.inlineEdit} onSubmit={props.onSubmitEdit}><Field label="Modifica" htmlFor="create-edit-target"><select id="create-edit-target" value={props.editTarget} onChange={(event) => props.onEditTarget(event.target.value)} disabled={props.running}><option value="title">Ruolo</option><option value="mission">Risultato</option><option value="responsibilities">Attività</option><option value="requirements">Requisiti</option><option value="attractionContext.companyDescription">Azienda / contesto</option><option value="attractionContext.operatingContext">Contesto operativo</option><option value="attractionContext.autonomy">Autonomia</option><option value="attractionContext.unexpectedEvents">Imprevisti</option><option value="attractionContext.location">Sede</option><option value="attractionContext.workMode">Modalità</option><option value="attractionContext.contractType">Contratto</option><option value="attractionContext.schedule">Orario</option><option value="attractionContext.shifts">Turni</option><option value="attractionContext.onCall">Reperibilità</option><option value="compensation.amountText">Compenso</option><option value="applicationInstructions">Candidatura</option></select></Field><Field label="Nuovo valore" htmlFor="create-edit-value"><input id="create-edit-value" value={props.editValue} onChange={(event) => props.onEditValue(event.target.value)} disabled={props.running} /></Field><button type="submit" disabled={props.running}>Modifica</button></form>}
+    {props.state.generationReady ? <section className={styles.commercialPanel} aria-labelledby="create-free-title">
+      <p>Ultimo passo</p>
+      <h3 id="create-free-title">Genera il tuo Annuncio 10x gratis</h3>
       <ul>
-        <li>7 €</li>
+        <li>Gratis</li>
         <li>1 annuncio</li>
-        <li>1 versione</li>
+        <li>1 versione finale</li>
+        <li>fino a 3 modifiche mirate</li>
         <li>1 canale</li>
       </ul>
-      <span>{guaranteeCopy}</span>
+      <span>Nessuna carta di credito. Generiamo il testo usando solo i fatti che hai confermato.</span>
       {!emailVerified
         ? <Annunci10xIdentityGate
-            eyebrow="Prima del pagamento"
+            eyebrow="Prima di generare"
             title="Dove ti mandiamo il tuo annuncio?"
-            description="Verifichiamo l'email aziendale prima di mostrarti le opzioni di acquisto."
+            description="Verifichiamo l’email prima di generare gratuitamente il testo completo."
             submitLabel="Salva contatto"
             otpTitle="Ti mandiamo un codice di 6 cifre per proseguire."
             idPrefix="create-lead"
@@ -690,47 +592,36 @@ function CreateSummary(props: {
             }}
             onVerified={() => setEmailVerifiedLocally(true)}
           />
-        : <OfferCards offers={commercial?.availableOffers ?? []} status={commercialStatus} empty="Le opzioni di acquisto non sono disponibili in questo momento." />}
+        : <FreeGenerationAction />}
     </section> : <div className={styles.actions}><button type="button" onClick={props.onConfirm} disabled={props.running || !props.state.canConfirm}>Conferma</button><span>Puoi modificare i campi prima della conferma.</span></div>}
   </section>;
 }
 
-function OfferCards({ offers, status, empty }: { offers: Annunci10xCommercialOffer[]; status: string | null; empty: string }) {
-  const createOffer = offers.find((offer) => offer.offerCode === 'ANNUNCI10X_CREATE');
-  if (!createOffer && status && /caricamento/i.test(status)) return <div className={styles.offerPanel}><Annunci10xLoader variant="compact" indeterminate label="Carichiamo l'offerta Annuncio 10x" /></div>;
-  if (!createOffer) return <div className={styles.offerPanel}><h3>{empty}</h3><p>{status ?? 'Riprova tra qualche minuto.'}</p><button type="button" disabled>Pagamento temporaneamente non disponibile</button></div>;
-  return <div className={styles.offerList} aria-label="Opzioni di acquisto Annunci 10x">
-    <CheckoutOfferCard offer={createOffer} detail="1 annuncio · 1 versione · 1 canale" primary />
-  </div>;
-}
-
-function CheckoutOfferCard({ offer, detail, primary = false }: { offer: Annunci10xCommercialOffer; detail: string; primary?: boolean }) {
-  const [status, setStatus] = useState<string | null>(null);
+function FreeGenerationAction() {
   const [loading, setLoading] = useState(false);
-  async function checkout() {
-    if (!offer.purchaseEnabled || offer.reasonUnavailable === 'EMAIL_NOT_VERIFIED') {
-      setStatus(offer.reasonUnavailable === 'EMAIL_NOT_VERIFIED' ? 'Verifica prima la tua email' : null);
-      return;
-    }
+  const [status, setStatus] = useState<string | null>(null);
+
+  async function generate() {
     setLoading(true);
-    setStatus('Preparazione pagamento…');
+    setStatus(null);
     try {
-      await startAnnunci10xCheckout(offer.offerCode);
-    } catch (cause) {
-      setStatus(customerSafeCheckoutError(cause));
+      await generateAnnunci10xPremiumOutput();
+      setStatus('Annuncio generato.');
+      window.dispatchEvent(new Event(ANNUNCI10X_FULFILLMENT_REFRESH_EVENT));
+    } catch {
+      setStatus('Non siamo riusciti a generare il testo. Riprova tra poco.');
+    } finally {
       setLoading(false);
     }
   }
 
-  return <article className={styles.offerPanel} data-featured={primary} data-secondary={!primary}>
-    <h3>{offer.displayName}</h3>
-    <div className={styles.offerMeta}><strong>{offerPriceLabel(offer)}</strong><span>{detail}</span></div>
-    <p>{offer.description}</p>
-    <small>Output completo dopo pagamento confermato. Rimborso integrale entro 14 giorni dalla consegna.</small>
-    <button type="button" onClick={checkout} disabled={!offer.purchaseEnabled || loading}>{loading ? 'Preparazione pagamento…' : checkoutCtaLabel(offer)}</button>
-    {loading && <Annunci10xLoader variant="compact" indeterminate label="Prepariamo il pagamento sicuro" />}
+  return <div className={styles.offerPanel}>
+    <h3>Il brief è pronto.</h3>
+    <p>Ora trasformiamolo nel testo completo.</p>
+    <button type="button" onClick={generate} disabled={loading}>{loading ? 'Generazione in corso…' : 'Genera il mio annuncio — gratis'}</button>
+    {loading && <Annunci10xLoader variant="compact" indeterminate label="Generiamo il tuo Annuncio 10x" />}
     {status && <span className={styles.offerStatus} aria-live="polite">{status}</span>}
-  </article>;
+  </div>;
 }
 
 function CreateGuidanceNote() {
@@ -787,7 +678,7 @@ function displayValue(value: string) {
 
 function inferCreateWizardStep(state: CreateState | null): CreateWizardStepId {
   if (!state) return 'ROLE_RESULT';
-  if (state.currentStep === 'SUMMARY' || state.currentStep === 'COMMERCIAL') return 'CONDITIONS_APPLICATION';
+  if (state.currentStep === 'SUMMARY' || state.currentStep === 'READY') return 'CONDITIONS_APPLICATION';
   const currentDomainStep = state.currentStep as CreateStepId;
   const currentStep = createWizardSteps.find((step) => step.domainStepIds.includes(currentDomainStep));
   if (currentStep) return currentStep.id;
@@ -833,27 +724,6 @@ function focusCreateField(id: string) {
 
 function cleanDraft(value: string) {
   return value.replace(/\s+/g, ' ').trim();
-}
-
-function initialCheckoutNotice(): 'success' | 'cancelled' | null {
-  if (typeof window === 'undefined') return null;
-  const checkout = new URLSearchParams(window.location.search).get('checkout');
-  return checkout === 'success' || checkout === 'cancelled' ? checkout : null;
-}
-
-function commerceStateFingerprint(commercial: Annunci10xCommercialState): string {
-  return JSON.stringify({
-    checkoutEnabled: commercial.checkoutEnabled,
-    guide: Boolean(commercial.entitlements?.guide),
-    rewriteCredits: Number(commercial.entitlements?.rewriteCredits ?? 0),
-    createCredits: Number(commercial.entitlements?.createCredits ?? 0),
-    agentRecruiterAccess: Boolean(commercial.entitlements?.agentRecruiterAccess),
-    offers: commercial.availableOffers.map((offer) => ({
-      offerCode: offer.offerCode,
-      eligibility: offer.eligibility,
-      reasonUnavailable: offer.reasonUnavailable ?? null,
-    })),
-  });
 }
 
 function scrollToElement(element: HTMLElement) {

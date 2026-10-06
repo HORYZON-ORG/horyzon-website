@@ -2,15 +2,7 @@
 
 import type { FormEvent, KeyboardEvent, ReactNode } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  customerSafeCheckoutError,
-  fetchAnnunci10xCommercialOffers,
-  startAnnunci10xCheckout,
-  checkoutCtaLabel,
-  offerPriceLabel,
-  type Annunci10xCommercialOffer,
-  type Annunci10xCommercialState,
-} from './annunci-10x-commerce-client';
+import { ANNUNCI10X_FULFILLMENT_REFRESH_EVENT, generateAnnunci10xPremiumOutput } from './annunci-10x-premium-client';
 import { Annunci10xIdentityGate } from './annunci-10x-identity-gate';
 import { Annunci10xLoader } from './annunci-10x-loader';
 import { annunci10xProgressForAnalysisStage, type Annunci10xAnalysisStage } from '@/lib/annunci-10x/loading';
@@ -54,7 +46,7 @@ Candidatura via email con CV aggiornato.`;
 
 const POLL_MS = 2500;
 
-export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRefreshToken?: number }) {
+export function Annunci10xAnalyzeFlow() {
   const [sourceMode, setSourceMode] = useState<SourceMode>('PASTED_TEXT');
   const [text, setText] = useState('');
   const [url, setUrl] = useState('');
@@ -62,8 +54,6 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
   const [contactSaved, setContactSaved] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
   const [result, setResult] = useState<FreeResult | null>(null);
-  const [commercial, setCommercial] = useState<Annunci10xCommercialState | null>(null);
-  const [commercialStatus, setCommercialStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -77,19 +67,6 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
   const resultRef = useRef<HTMLDivElement | null>(null);
   const workspaceRef = useRef<HTMLDivElement | null>(null);
 
-  const loadCommercialOffers = useCallback(async (cycle = flowCycleRef.current) => {
-    setCommercialStatus('Caricamento offerte in corso.');
-    try {
-      const nextCommercial = await fetchAnnunci10xCommercialOffers();
-      if (cycle !== flowCycleRef.current) return;
-      setCommercial(nextCommercial);
-      setCommercialStatus(null);
-    } catch (cause) {
-      if (cycle !== flowCycleRef.current) return;
-      setCommercialStatus(customerSafeCheckoutError(cause));
-    }
-  }, []);
-
   const loadResult = useCallback(async (id: string, cycle = flowCycleRef.current) => {
     setBusy('result');
     try {
@@ -98,7 +75,6 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
       if (!response.ok || !payload.ok) throw new Error(payload.error?.message ?? 'Risultato non disponibile.');
       if (cycle !== flowCycleRef.current) return;
       setResult(payload.result);
-      await loadCommercialOffers(cycle);
     } catch (cause) {
       if (cycle !== flowCycleRef.current) return;
       resultFetchRef.current = null;
@@ -106,7 +82,7 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
     } finally {
       if (cycle === flowCycleRef.current) setBusy(null);
     }
-  }, [loadCommercialOffers]);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -178,14 +154,6 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
   }, [analysisRun?.resultEligible, analysisRun?.id, loadResult]);
 
   useEffect(() => {
-    if (!commerceRefreshToken || !result) return;
-    const timer = window.setTimeout(() => {
-      void loadCommercialOffers();
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [commerceRefreshToken, result, loadCommercialOffers]);
-
-  useEffect(() => {
     if (!result || !resultRef.current) return;
     resultRef.current.focus({ preventScroll: true });
   }, [result]);
@@ -196,7 +164,7 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
       document.getElementById('guida-annunci-10x')?.scrollIntoView({ block: 'start', behavior: 'auto' });
     }, 60);
     return () => window.clearTimeout(timer);
-  }, [analysisRun?.id, analysisRun?.status, analysisRun?.stage, result, busy, commercial]);
+  }, [analysisRun?.id, analysisRun?.status, analysisRun?.stage, result, busy]);
 
   async function submitSource(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -208,8 +176,6 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
     setAnalysisRun(null);
     setContactSaved(false);
     setEmailVerified(false);
-    setCommercial(null);
-    setCommercialStatus(null);
     setIdentityResetKey((value) => value + 1);
     resultFetchRef.current = null;
     setBusy('source');
@@ -264,8 +230,6 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
     setContactSaved(false);
     setEmailVerified(false);
     setResult(null);
-    setCommercial(null);
-    setCommercialStatus(null);
     setStatusMessage(null);
     setError(null);
     setBusy(null);
@@ -282,8 +246,6 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
     setContactSaved(false);
     setEmailVerified(false);
     setResult(null);
-    setCommercial(null);
-    setCommercialStatus(null);
     setStatusMessage(null);
     setError(null);
     setBusy(null);
@@ -414,7 +376,7 @@ export function Annunci10xAnalyzeFlow({ commerceRefreshToken = 0 }: { commerceRe
 
       {result && <div ref={resultRef} tabIndex={-1} className={styles.resultStack}>
         <FreeResultCard result={result} />
-        <RewriteOfferCard offer={commercial?.availableOffers.find((offer) => offer.offerCode === 'ANNUNCI10X_REWRITE')} commercialStatus={commercialStatus} />
+        <RewriteFreeCard />
       </div>}
     </div>}
   </section>;
@@ -427,7 +389,7 @@ const FLOW_STEPS = [
 ] as const;
 
 // The free result reads as a report: one big number, the band on a five-step scale, the interpretation and
-// a single caveat. The paid rewrite is a separate card under it, so the score never looks like a sales pitch.
+// a single caveat. The free rewrite is a separate action card under it, so the score remains readable as a report.
 function FreeResultCard({ result }: { result: FreeResult }) {
   const displayScore = getDisplayScore(result.score);
   const activeBandLabel = result.band?.label ?? scoreBandLabelForValue(displayScore);
@@ -450,17 +412,20 @@ function FreeResultCard({ result }: { result: FreeResult }) {
   </section>;
 }
 
-function RewriteOfferCard({ offer, commercialStatus }: { offer?: Annunci10xCommercialOffer; commercialStatus: string | null }) {
+function RewriteFreeCard() {
   const [status, setStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  async function checkout() {
-    if (!offer?.purchaseEnabled) return;
+
+  async function generate() {
     setLoading(true);
     setStatus(null);
     try {
-      await startAnnunci10xCheckout(offer.offerCode);
-    } catch (cause) {
-      setStatus(customerSafeCheckoutError(cause));
+      await generateAnnunci10xPremiumOutput();
+      setStatus('Annuncio migliorato. Lo trovi qui sopra.');
+      window.dispatchEvent(new Event(ANNUNCI10X_FULFILLMENT_REFRESH_EVENT));
+    } catch {
+      setStatus('Non siamo riusciti a generare il testo. Riprova tra poco.');
+    } finally {
       setLoading(false);
     }
   }
@@ -477,18 +442,12 @@ function RewriteOfferCard({ offer, commercialStatus }: { offer?: Annunci10xComme
     </div>
     <div className={styles.offerBuy}>
       <span>Annuncio 10x</span>
-      <strong>{offer ? offerPriceLabel(offer) : '7 €'}</strong>
-      {offer
-        ? offer.purchaseEnabled
-          ? <button type="button" onClick={checkout} disabled={loading}>{loading ? 'Preparazione pagamento…' : checkoutCtaLabel(offer)}<span aria-hidden="true">→</span></button>
-          : <p className={styles.offerUnavailable} role="status">{checkoutCtaLabel(offer)}</p>
-        : commercialStatus && !/caricamento/i.test(commercialStatus)
-          ? <p className={styles.offerUnavailable} role="status">{commercialStatus}</p>
-          : <Annunci10xLoader variant="strip" indeterminate label="Carichiamo l'offerta Annuncio 10x" />}
-      {loading && <Annunci10xLoader variant="strip" indeterminate label="Prepariamo il pagamento sicuro" />}
+      <strong>Gratis</strong>
+      <button type="button" onClick={generate} disabled={loading}>{loading ? 'Generazione in corso…' : 'Migliora il mio annuncio — gratis'}<span aria-hidden="true">→</span></button>
+      {loading && <Annunci10xLoader variant="strip" indeterminate label="Riscriviamo il tuo annuncio" />}
       {status && <span className={styles.offerStatus} aria-live="polite">{status}</span>}
     </div>
-    <p className={styles.offerFine}>Output completo dopo pagamento confermato. Rimborso integrale entro 14 giorni dalla consegna, senza motivazione, scrivendo a info@horyzon.it dall’email usata per l’acquisto.</p>
+    <p className={styles.offerFine}>Nessuna carta di credito. Il testo viene generato usando solo i fatti confermati.</p>
   </section>;
 }
 

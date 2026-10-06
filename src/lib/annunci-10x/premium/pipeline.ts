@@ -200,6 +200,10 @@ const DECISION_ENGINE_CLIENT_REVISION_PROMPT = [
 export async function runAnnunci10xPremiumGeneration(input: Annunci10xPremiumGenerationInput): Promise<PublicAnnunci10xPremiumOutput> {
   const context = input.context ?? createAnnunci10xRuntimeContext();
   const session = await requireOwnedSession(context, input.sessionId, input.sessionSecret);
+  const lead = await context.persistence.getLead(input.sessionId, input.sessionSecret);
+  if (!lead?.emailVerifiedAt) {
+    throw new Annunci10xPublicError('EMAIL_VERIFICATION_REQUIRED', 'Verifica la tua email per generare gratuitamente il tuo Annuncio 10x.', 403);
+  }
   const authorizationProvider = input.authorizationProvider ?? createProductionGenerationAuthorizationProvider();
   const authorization = await authorizationProvider.authorize({ session, productCode: 'AD_GENERATION' });
   if (authorization.status !== 'AUTHORIZED') {
@@ -263,7 +267,7 @@ export async function runAnnunci10xPremiumGeneration(input: Annunci10xPremiumGen
     });
   } catch (error) {
     const blocked = error instanceof Annunci10xPublicError && error.code === 'GENERATION_BLOCKED';
-    await context.persistence.updateSession({ sessionId: input.sessionId, sessionSecret: input.sessionSecret, state: blocked ? 'NEEDS_VERIFICATION' : 'ERROR' });
+    await context.persistence.updateSession({ sessionId: input.sessionId, sessionSecret: input.sessionSecret, state: blocked ? 'NEEDS_VERIFICATION' : 'ENTITLED' });
     await context.persistence.appendEvent({ sessionId: input.sessionId, eventName: 'generation_failed', metadata: { reason: error instanceof Error ? error.name : 'unknown' } });
     throw error;
   }
@@ -424,16 +428,9 @@ export async function getAnnunci10xPremiumFulfillmentStatus(input: {
 }): Promise<PublicAnnunci10xPremiumFulfillmentStatus> {
   const context = input.context ?? createAnnunci10xRuntimeContext();
   const session = await requireOwnedSession(context, input.sessionId, input.sessionSecret);
-  const capability = capabilityForSession(session);
-  const deliverable = await resumeConsumedReservationOutput({
-    context,
-    session,
-    sessionSecret: input.sessionSecret,
-    capability,
-    recordViewEvent: false,
-  });
-  if (deliverable) {
-    const ready = deliverable.validationState === 'READY' || deliverable.validationState === 'READY_WITH_WARNINGS';
+  const output = await context.persistence.getLatestOutput(session.id, input.sessionSecret, 'MASTER');
+  if (output) {
+    const ready = output.validationState === 'READY' || output.validationState === 'READY_WITH_WARNINGS';
     return {
       flow: session.flow,
       state: ready ? 'READY' : 'NEEDS_REVIEW',
@@ -442,18 +439,16 @@ export async function getAnnunci10xPremiumFulfillmentStatus(input: {
     };
   }
 
-  const latestReservation = await context.persistence.getLatestGenerationReservation(session.id, input.sessionSecret, capability);
-  if (latestReservation?.status === 'RESERVED' && Date.parse(latestReservation.leaseExpiresAt) > Date.now()) {
+  if (session.state === 'GENERATING') {
     return { flow: session.flow, state: 'PREPARING', canGenerate: false, outputAvailable: false };
   }
 
-  const entitlements = await context.persistence.getEffectiveEntitlements(session.id, input.sessionSecret);
-  const creditCount = capability === 'REWRITE_CREDIT' ? entitlements.rewriteCredits : entitlements.createCredits;
-  if (creditCount > 0) {
-    const enabled = input.fulfillmentEnabled ?? isAnnunci10xFulfillmentEnabled();
+  const lead = await context.persistence.getLead(session.id, input.sessionSecret);
+  const enabled = input.fulfillmentEnabled ?? isAnnunci10xFulfillmentEnabled();
+  if (lead?.emailVerifiedAt && isGeneratableState(session.state)) {
     return {
       flow: session.flow,
-      state: enabled ? 'READY_TO_GENERATE' : 'PAYMENT_CONFIRMED',
+      state: enabled ? 'READY_TO_GENERATE' : 'NONE',
       canGenerate: enabled,
       outputAvailable: false,
     };
@@ -461,7 +456,6 @@ export async function getAnnunci10xPremiumFulfillmentStatus(input: {
 
   return { flow: session.flow, state: 'NONE', canGenerate: false, outputAvailable: false };
 }
-
 export async function requestAnnunci10xPremiumEdit(input: PremiumEditInput): Promise<PublicAnnunci10xPremiumEditResult> {
   const context = input.context ?? createAnnunci10xRuntimeContext();
   const session = await requireOwnedSession(context, input.sessionId, input.sessionSecret);

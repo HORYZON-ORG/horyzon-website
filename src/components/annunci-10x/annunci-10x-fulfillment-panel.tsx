@@ -2,17 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  MAX_PAYMENT_VERIFY_ATTEMPTS,
-  PAYMENT_VERIFY_POLL_MS,
-  PAYMENT_VERIFY_TIMEOUT_MESSAGE,
+  ANNUNCI10X_FULFILLMENT_REFRESH_EVENT,
   fetchAnnunci10xFulfillmentStatus,
   fetchAnnunci10xPremiumOutput,
   generateAnnunci10xPremiumOutput,
-  isAnnunci10xPaymentVerificationStopState,
   requestAnnunci10xPremiumEdit,
-  shouldPollAnnunci10xPaymentVerification,
-  shouldReturnToAnnunci10xCreate,
-  type PremiumCheckoutNotice,
   type PremiumEditResult,
   type PremiumFulfillmentState,
   type PremiumFulfillmentStatus,
@@ -25,30 +19,16 @@ import styles from './annunci-10x.module.css';
 const POLL_MS = 3000;
 const MAX_POLL_ATTEMPTS = 40;
 
-export function Annunci10xFulfillmentPanel({
-  checkoutNotice,
-  onCreateReturn,
-}: {
-  checkoutNotice: PremiumCheckoutNotice;
-  onCreateReturn?: () => void;
-}) {
+export function Annunci10xFulfillmentPanel() {
   const [status, setStatus] = useState<PremiumFulfillmentStatus | null>(null);
   const [output, setOutput] = useState<PremiumOutput | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [copyMessage, setCopyMessage] = useState('');
   const [manualRetryAvailable, setManualRetryAvailable] = useState(false);
   const [pollTimedOut, setPollTimedOut] = useState(false);
-  const [paymentVerifyTimedOut, setPaymentVerifyTimedOut] = useState(false);
   const [loading, setLoading] = useState(false);
   const generatedForCycle = useRef(false);
-  const createReturnNotified = useRef(false);
   const panelRef = useRef<HTMLElement | null>(null);
-
-  const notifyCreateReturn = useCallback((nextStatus: PremiumFulfillmentStatus) => {
-    if (!shouldReturnToAnnunci10xCreate(checkoutNotice, nextStatus.flow) || createReturnNotified.current) return;
-    createReturnNotified.current = true;
-    onCreateReturn?.();
-  }, [checkoutNotice, onCreateReturn]);
 
   const refresh = useCallback(async (focus = false) => {
     const nextStatus = await fetchAnnunci10xFulfillmentStatus();
@@ -63,7 +43,6 @@ export function Annunci10xFulfillmentPanel({
     setMessage(null);
     setManualRetryAvailable(false);
     setPollTimedOut(false);
-    setPaymentVerifyTimedOut(false);
     try {
       const result = await generateAnnunci10xPremiumOutput();
       setOutput(result);
@@ -73,11 +52,7 @@ export function Annunci10xFulfillmentPanel({
       const safe = generationMessage(cause);
       setMessage(safe.message);
       setManualRetryAvailable(Boolean(safe.retry));
-      if (safe.state) {
-        const nextState = safe.state;
-        setPollTimedOut(false);
-        setStatus((current) => current ? { ...current, state: nextState, canGenerate: false } : current);
-      }
+      if (safe.state) setStatus((current) => current ? { ...current, state: safe.state!, canGenerate: false } : current);
       if (safe.refetch) {
         try {
           await refresh();
@@ -93,62 +68,30 @@ export function Annunci10xFulfillmentPanel({
   useEffect(() => {
     let cancelled = false;
     const timer = window.setTimeout(() => {
-      refresh(checkoutNotice === 'success')
-        .then((nextStatus) => {
-          if (cancelled) return;
-          notifyCreateReturn(nextStatus);
-        })
-        .catch(() => {
-          if (!cancelled) setMessage('Serve aiuto? Scrivi a info@horyzon.it');
-        });
+      refresh().catch(() => {
+        if (!cancelled) setMessage('Serve aiuto? Scrivi a info@horyzon.it');
+      });
     }, 0);
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [checkoutNotice, notifyCreateReturn, refresh]);
+  }, [refresh]);
 
   useEffect(() => {
-    if (checkoutNotice === 'cancelled' || status?.state !== 'READY_TO_GENERATE' || !status.canGenerate || generatedForCycle.current) return;
+    const handleRefresh = () => {
+      generatedForCycle.current = true;
+      void refresh(true);
+    };
+    window.addEventListener(ANNUNCI10X_FULFILLMENT_REFRESH_EVENT, handleRefresh);
+    return () => window.removeEventListener(ANNUNCI10X_FULFILLMENT_REFRESH_EVENT, handleRefresh);
+  }, [refresh]);
+
+  useEffect(() => {
+    if (status?.state !== 'READY_TO_GENERATE' || !status.canGenerate || generatedForCycle.current) return;
     generatedForCycle.current = true;
     void startGeneration();
-  }, [checkoutNotice, startGeneration, status?.canGenerate, status?.state]);
-
-  useEffect(() => {
-    if (!shouldPollAnnunci10xPaymentVerification(checkoutNotice, status?.state)) return;
-    let cancelled = false;
-    let attempts = 0;
-    let timer: ReturnType<typeof setTimeout> | null = null;
-
-    async function pollPayment() {
-      attempts += 1;
-      try {
-        const nextStatus = await fetchAnnunci10xFulfillmentStatus();
-        if (cancelled) return;
-        setStatus(nextStatus);
-        notifyCreateReturn(nextStatus);
-        if (isAnnunci10xPaymentVerificationStopState(nextStatus.state)) {
-          setPaymentVerifyTimedOut(false);
-          if (checkoutNotice === 'success') focusPanel(panelRef.current);
-          if (nextStatus.state === 'READY' || nextStatus.state === 'NEEDS_REVIEW') {
-            const nextOutput = await fetchAnnunci10xPremiumOutput();
-            if (!cancelled) setOutput(nextOutput);
-          }
-          return;
-        }
-      } catch {
-        // Payment reconciliation can be briefly delayed after Stripe redirects.
-      }
-      if (!cancelled && attempts < MAX_PAYMENT_VERIFY_ATTEMPTS) timer = setTimeout(pollPayment, PAYMENT_VERIFY_POLL_MS);
-      if (!cancelled && attempts >= MAX_PAYMENT_VERIFY_ATTEMPTS) setPaymentVerifyTimedOut(true);
-    }
-
-    timer = setTimeout(pollPayment, PAYMENT_VERIFY_POLL_MS);
-    return () => {
-      cancelled = true;
-      if (timer) window.clearTimeout(timer);
-    };
-  }, [checkoutNotice, notifyCreateReturn, status?.state]);
+  }, [startGeneration, status?.canGenerate, status?.state]);
 
   useEffect(() => {
     if (status?.state !== 'PREPARING') return;
@@ -183,8 +126,7 @@ export function Annunci10xFulfillmentPanel({
   const canClientRevise = status?.flow === 'CREATE';
   const primarySections = useMemo(() => outputSections(output, canClientRevise), [output, canClientRevise]);
   const state = status?.state ?? 'NONE';
-  if (state === 'NONE' && checkoutNotice !== 'success' && checkoutNotice !== 'cancelled') return null;
-  const checkoutCancelledBeforeGeneration = checkoutNotice === 'cancelled' && state === 'READY_TO_GENERATE';
+  if (state === 'NONE') return null;
 
   async function copyAd() {
     const text = primarySections.map((section) => [section.title, section.body].filter((part) => part.trim().length > 0).join('\n')).join('\n\n');
@@ -202,23 +144,14 @@ export function Annunci10xFulfillmentPanel({
   }, []);
 
   return <section ref={panelRef} tabIndex={-1} className={styles.fulfillmentPanel} aria-labelledby="annunci10x-fulfillment-title" aria-live="polite">
-    {state === 'PAYMENT_CONFIRMED' && <StatusBlock title="Pagamento registrato" body="Il tuo Annuncio 10x è al sicuro. La generazione è temporaneamente non disponibile. Non perderai il tuo acquisto." />}
-    {checkoutNotice === 'success' && state === 'NONE' && <StatusBlock title="Stiamo ancora verificando il pagamento" body="Non sblocchiamo nulla dal browser: aggiorniamo lo stato appena il server conferma." loaderLabel="Verifichiamo il pagamento" />}
-    {checkoutCancelledBeforeGeneration && <StatusBlock title="Pagamento annullato" body="Non è stata avviata alcuna generazione." />}
-    {state === 'READY_TO_GENERATE' && !checkoutCancelledBeforeGeneration && <PreparingBlock loading={loading} />}
+    {state === 'READY_TO_GENERATE' && <PreparingBlock loading={loading} />}
     {state === 'PREPARING' && <PreparingBlock loading />}
     {state === 'READY' && output && <OutputBlock output={output} title="Il tuo Annuncio 10x è pronto" badge="Pronto da usare" sections={primarySections} copyMessage={copyMessage} onCopy={copyAd} canRevise={canClientRevise} onRevise={reviseSection} />}
     {state === 'NEEDS_REVIEW' && output && <OutputBlock output={output} title="Il tuo Annuncio 10x è pronto" badge="Da verificare prima della pubblicazione" sections={primarySections} copyMessage={copyMessage} onCopy={copyAd} canRevise={false} onRevise={reviseSection} />}
-    {checkoutNotice === 'cancelled' && state === 'NONE' && <StatusBlock title="Pagamento annullato" body="Non è stato completato alcun acquisto." />}
     {message && <p className={styles.fulfillmentMessage}>{message}</p>}
     {manualRetryAvailable && <div className={styles.fulfillmentActions}><button type="button" onClick={() => void startGeneration()} disabled={loading}>Riprova</button></div>}
-    {paymentVerifyTimedOut && <div className={styles.fulfillmentTimeout}><p>{PAYMENT_VERIFY_TIMEOUT_MESSAGE}</p><button type="button" onClick={() => { setPaymentVerifyTimedOut(false); void refresh(true); }}>Aggiorna stato</button></div>}
     {pollTimedOut && <div className={styles.fulfillmentTimeout}><p>La preparazione sta richiedendo più del previsto.</p><button type="button" onClick={() => { setPollTimedOut(false); void refresh(true); }}>Aggiorna stato</button></div>}
   </section>;
-}
-
-function StatusBlock({ title, body, loaderLabel }: { title: string; body: string; loaderLabel?: string }) {
-  return <div><p className={styles.fulfillmentEyebrow}>Annuncio 10x</p><h2 id="annunci10x-fulfillment-title">{title}</h2><span>{body}</span>{loaderLabel && <Annunci10xLoader variant="compact" indeterminate label={loaderLabel} />}</div>;
 }
 
 function PreparingBlock({ loading }: { loading: boolean }) {
@@ -352,7 +285,7 @@ function OutputBlock({
     {needsReview && output.checklist.length > 0 && <div className={styles.reviewChecklist}><h3>Prima della pubblicazione</h3><ul>{output.checklist.slice(0, 5).map((item) => <li key={item}>{item}</li>)}</ul></div>}
     {output.rationale.length > 0 && <div className={styles.reviewChecklist}><h3>Perché è costruito così</h3><ul>{output.rationale.slice(0, 3).map((item) => <li key={item}>{item}</li>)}</ul></div>}
     <div className={styles.fulfillmentActions}><button type="button" onClick={onCopy}>Copia annuncio</button><span aria-live="polite">{copyMessage}</span></div>
-    <p className={styles.guaranteeNote}>Garanzia: rimborso integrale entro 14 giorni dalla consegna secondo le condizioni di vendita.</p>
+    <p className={styles.guaranteeNote}>Generazione gratuita · nessuna carta di credito.</p>
   </div>;
 }
 
@@ -366,8 +299,8 @@ function generationMessage(cause: unknown): { message: string; state?: PremiumFu
   const message = cause instanceof Error ? cause.message : '';
   const code = typeof cause === 'object' && cause !== null && typeof (cause as { code?: unknown }).code === 'string' ? (cause as { code: string }).code : '';
   if (/già in preparazione/i.test(message)) return { message: '', state: 'PREPARING' };
-  if (/temporaneamente non disponibile|GENERATION_BLOCKED/i.test(`${message} ${code}`)) return { message: 'Il tuo acquisto è registrato. Riprova più tardi: il credito non viene perso.', retry: true };
-  if (/PAYMENT_REQUIRED|Generazione Annunci 10x non autorizzata/i.test(`${message} ${code}`)) return { message: 'Stiamo ancora verificando il pagamento.', refetch: true };
+  if (/temporaneamente non disponibile|GENERATION_BLOCKED/i.test(`${message} ${code}`)) return { message: 'La generazione è temporaneamente non disponibile. Riprova tra poco.', retry: true };
+  if (/PAYMENT_REQUIRED|Generazione Annunci 10x non autorizzata|EMAIL_VERIFICATION_REQUIRED/i.test(`${message} ${code}`)) return { message: 'Verifica la tua email per generare gratuitamente l’annuncio.', refetch: true };
   return { message: 'Serve aiuto? Scrivi a info@horyzon.it' };
 }
 

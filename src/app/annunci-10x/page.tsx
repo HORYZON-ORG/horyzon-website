@@ -10,8 +10,8 @@ import Link from 'next/link';
 import '@/styles/horyzon-landing.css';
 import './annunci-landing.css';
 
-const title = 'Annunci 10x — Score di chiarezza e annuncio pronto a 7 €';
-const description = 'Valuta gratis chiarezza e completezza del tuo annuncio. Poi scegli Annuncio 10x: 7 € per un annuncio, una versione finale, fino a 3 modifiche mirate e un canale.';
+const title = 'Annunci 10x — Score e annuncio pronti gratis';
+const description = 'Valuta gratis chiarezza e completezza del tuo annuncio. Poi miglioralo o creane uno da zero gratuitamente, con un testo completo costruito solo sui fatti che confermi.';
 const image = `${SITE_URL}/opengraph-image`;
 
 export const metadata: Metadata = {
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
 // line by line in the story), one lime field.
 // The copy states only what the product does; the score itself is never shown or invented here.
 const scoreDisclaimer = 'Il punteggio valuta la chiarezza e la completezza delle informazioni disponibili nell’annuncio. Non prevede il numero di candidature né sostituisce la valutazione delle persone.';
-const guaranteeCopy = '7 € per un annuncio, una versione finale, un canale e fino a 3 modifiche mirate incluse. Dopo la conferma del pagamento generiamo il testo completo e te lo rendiamo disponibile. Se non ti è utile, puoi chiedere il rimborso integrale entro 14 giorni dalla consegna, senza motivazione, scrivendo a info@horyzon.it dall’email usata per l’acquisto.';
+const freeGenerationCopy = 'Creazione e miglioramento dell’annuncio sono gratuiti. Nessuna carta di credito: dopo la verifica dell’email generiamo il testo completo usando solo i fatti che hai confermato.';
 const guidePreviewPath = '/annunci-10x/annunci-10x-anteprima.pdf';
 
 const outputs = [
@@ -51,7 +51,7 @@ const roles = ['operaio di produzione', 'saldatore', 'manutentore meccanico', 'e
 
 const faqs = [
   ['Devo sostituire una persona: da dove parto?', 'Dall’annuncio con cui l’hai trovata. Se lo ripubblichi uguale, rischi di attirare di nuovo lo stesso profilo. Lo Score ti mostra che cosa chiarire prima di ripubblicarlo.'],
-  ['Quanto costa?', 'Lo Score è gratuito. Annuncio 10x costa 7 €: un annuncio, una versione finale, un canale e fino a 3 modifiche mirate incluse. Puoi arrivarci partendo da un testo esistente o da un brief guidato.'],
+  ['Quanto costa?', 'Lo Score, il miglioramento di un annuncio esistente e la creazione di un nuovo annuncio sono gratuiti. Puoi partire da un testo già scritto oppure da un brief guidato.'],
   ['Perché mi chiedete l’email?', 'Serve per collegare il report alla tua richiesta e inviartelo. Comunicazioni marketing solo con consenso separato.'],
   ['Mi garantite più candidature?', 'No. Le candidature dipendono da mercato, canale, condizioni e attrattività dell’offerta. Annunci 10x lavora su chiarezza e coerenza dell’annuncio.'],
   ['Usate l’intelligenza artificiale?', 'Sì. L’intelligenza artificiale applica i controlli del metodo. Il sistema è progettato per non riempire informazioni mancanti con fatti professionali inventati.'],
@@ -106,14 +106,14 @@ export default function Annunci10xPage() {
       <section id="annuncio-10x" className="ax-price" aria-labelledby="ax-price-title">
         <div className="ax-price-figure">
           <p className="rd-label">Annuncio 10x</p>
-          <strong>7 €</strong>
+          <strong>Gratis</strong>
           <ul><li>1 annuncio</li><li>1 versione finale</li><li>3 modifiche mirate</li><li>1 canale</li></ul>
         </div>
         <div className="ax-price-copy">
           <h2 id="ax-price-title">Poi, se serve, <em>lo scriviamo noi.</em></h2>
-          <p>Parti dal risultato dello Score o, se il testo non esiste ancora, da un brief guidato sui fatti del ruolo. Generiamo il testo completo dopo il pagamento, senza aggiungere fatti che non hai confermato.</p>
-          <CreateCta className="rd-cta" position="price">Non ho ancora un annuncio: crealo a 7 €<span aria-hidden="true">↑</span></CreateCta>
-          <p className="ax-guarantee">{guaranteeCopy}</p>
+          <p>Parti dal risultato dello Score o, se il testo non esiste ancora, da un brief guidato sui fatti del ruolo. Generiamo gratuitamente il testo completo, senza aggiungere fatti che non hai confermato.</p>
+          <CreateCta className="rd-cta" position="price">Non ho ancora un annuncio: crealo gratis<span aria-hidden="true">↑</span></CreateCta>
+          <p className="ax-guarantee">{freeGenerationCopy}</p>
         </div>
       </section>
 

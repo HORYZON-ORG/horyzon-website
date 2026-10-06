@@ -7,12 +7,6 @@ import {
   ANNUNCI10X_STRATEGY_VERSION,
 } from './constants.ts';
 import { Annunci10xAiOrchestrator } from './ai/orchestrator.ts';
-import {
-  createPersistenceAnnunci10xCommerceEntitlementProvider,
-  isAnnunci10xCheckoutEnabled,
-  resolveAnnunci10xCommercial,
-  type Annunci10xCommercialOffer,
-} from './commercial.ts';
 import type { Annunci10xProfileOutput, Annunci10xStrategyOutput } from './ai/schemas.ts';
 import { deriveAnnunci10xStrategyRules, type StrategyRuleInput } from './strategy-rules.ts';
 import { canTransition } from './state-machine.ts';
@@ -47,7 +41,7 @@ export interface PublicAnnunci10xCreateState {
   flow: 'CREATE';
   state: SessionState;
   provider: Annunci10xConfiguredProvider;
-  currentStep: Annunci10xCreateStepId | 'SUMMARY' | 'COMMERCIAL';
+  currentStep: Annunci10xCreateStepId | 'SUMMARY' | 'READY';
   completedSteps: Annunci10xCreateStepId[];
   completion: { answered: number; total: number; coverage: number };
   roleCard: PublicCreateRoleCard;
@@ -55,21 +49,9 @@ export interface PublicAnnunci10xCreateState {
   strategy: PublicCreateStrategy | null;
   clarification: PublicCreateClarification | null;
   canConfirm: boolean;
-  paymentRequired: boolean;
+  generationReady: boolean;
   contactSaved: boolean;
   emailVerified: boolean;
-  commercial: {
-    checkoutEnabled: boolean;
-    pricingStatus: 'FIXED';
-    availableOffers: Annunci10xCommercialOffer[];
-    entitlementSummary: {
-      guide: boolean;
-      rewriteCredits: number;
-      createCredits: number;
-      agentRecruiterAccess: boolean;
-      source: string;
-    };
-  };
   operations: PublicAnnunci10xOperation[];
   updatedAt: string;
 }
@@ -187,7 +169,7 @@ export async function answerAnnunci10xCreateStep(input: AnswerCreateStepInput): 
   if (!answer) throw new Annunci10xPublicError('INVALID_INPUT', 'Inserisci una risposta per continuare.', 400);
   assertCreateStep(input.stepId);
   const session = await requireCreateSession(context, input.sessionId, input.sessionSecret);
-  if (session.state === 'PAYMENT_REQUIRED') throw new Annunci10xPublicError('INVALID_INPUT', 'La scheda e gia stata confermata.', 409);
+  if (['PAYMENT_REQUIRED', 'ENTITLED', 'GENERATING', 'OUTPUT_READY'].includes(session.state)) throw new Annunci10xPublicError('INVALID_INPUT', 'La scheda e gia stata confermata.', 409);
 
   await context.persistence.appendAnswer({
     sessionId: input.sessionId,
@@ -286,7 +268,7 @@ export async function editAnnunci10xCreate(input: EditCreateInput): Promise<Publ
   const value = input.value.trim();
   if (!value) throw new Annunci10xPublicError('INVALID_INPUT', 'Inserisci il nuovo valore.', 400);
   const session = await requireCreateSession(context, input.sessionId, input.sessionSecret);
-  if (!['ROLE_CARD_READY', 'USER_CONFIRMED', 'PAYMENT_REQUIRED'].includes(session.state)) {
+  if (!['ROLE_CARD_READY', 'USER_CONFIRMED', 'PAYMENT_REQUIRED', 'ENTITLED'].includes(session.state)) {
     throw new Annunci10xPublicError('INVALID_INPUT', 'La scheda non e ancora pronta per modifiche puntuali.', 409);
   }
   const latest = await context.persistence.getLatestSnapshot(input.sessionId, input.sessionSecret);
@@ -349,11 +331,11 @@ export async function confirmAnnunci10xCreate(input: ConfirmCreateInput): Promis
     communicationStrategy: latest?.communicationStrategy ?? null,
     reason: 'USER_CONFIRMATION',
   });
-  const toPayment = canTransition('USER_CONFIRMED', 'PAYMENT_REQUIRED', { flow: 'CREATE', roleCard, openClarifications: [] });
-  if (!toPayment.allowed) throw new Annunci10xPublicError('INVALID_INPUT', toPayment.reason ?? 'Pre-payment non disponibile.', 409);
-  await context.persistence.updateSession({ sessionId: input.sessionId, sessionSecret: input.sessionSecret, state: 'PAYMENT_REQUIRED', currentSnapshotId: snapshot.id });
+  const toGeneration = canTransition('USER_CONFIRMED', 'ENTITLED', { flow: 'CREATE', roleCard, openClarifications: [] });
+  if (!toGeneration.allowed) throw new Annunci10xPublicError('INVALID_INPUT', toGeneration.reason ?? 'Generazione non disponibile.', 409);
+  await context.persistence.updateSession({ sessionId: input.sessionId, sessionSecret: input.sessionSecret, state: 'ENTITLED', currentSnapshotId: snapshot.id });
   await context.persistence.appendEvent({ sessionId: input.sessionId, eventName: 'user_confirmed', metadata: { flow: 'CREATE' } });
-  await context.persistence.appendEvent({ sessionId: input.sessionId, eventName: 'payment_required', metadata: { checkoutEnabled: false, price: 'OPEN_DECISION' } });
+  await context.persistence.appendEvent({ sessionId: input.sessionId, eventName: 'free_generation_unlocked', metadata: { flow: 'CREATE' } });
   return publicCreateState({ context, sessionId: input.sessionId, sessionSecret: input.sessionSecret, operations: [] });
 }
 
@@ -379,25 +361,13 @@ async function publicCreateState(input: {
   const ready = isRoleCardReady(answers, roleCard) && !clarification;
   const lead = await input.context.persistence.getLead(input.sessionId, input.sessionSecret);
   const identityVerified = Boolean(lead?.emailVerifiedAt);
-  const checkoutEnabled = isAnnunci10xCheckoutEnabled();
-  const commercial = await resolveAnnunci10xCommercial({
-    subject: { kind: 'SESSION', sessionId: input.sessionId },
-    flow: 'CREATE',
-    journeyState: session.state,
-    checkoutEnabled,
-    identityVerified,
-    entitlementProvider: createPersistenceAnnunci10xCommerceEntitlementProvider({
-      persistence: input.context.persistence,
-      sessionId: input.sessionId,
-      sessionSecret: input.sessionSecret,
-    }),
-  });
+  const generationReady = ['PAYMENT_REQUIRED', 'ENTITLED', 'GENERATING', 'OUTPUT_READY', 'NEEDS_VERIFICATION'].includes(session.state);
   return {
     sessionId: input.sessionId,
     flow: 'CREATE',
     state: session.state,
     provider: input.context.configuredProvider,
-    currentStep: session.state === 'PAYMENT_REQUIRED' ? 'COMMERCIAL' : ready ? 'SUMMARY' : nextCreateStep(completedSteps),
+    currentStep: generationReady ? 'READY' : ready ? 'SUMMARY' : nextCreateStep(completedSteps),
     completedSteps,
     completion: {
       answered: completedSteps.length,
@@ -409,21 +379,9 @@ async function publicCreateState(input: {
     strategy: snapshot?.communicationStrategy ? publicStrategy(snapshot.communicationStrategy) : null,
     clarification,
     canConfirm: session.state === 'ROLE_CARD_READY' && ready,
-    paymentRequired: session.state === 'PAYMENT_REQUIRED',
+    generationReady,
     contactSaved: Boolean(lead),
     emailVerified: identityVerified,
-    commercial: {
-      checkoutEnabled: commercial.checkoutEnabled,
-      pricingStatus: commercial.pricingStatus,
-      availableOffers: commercial.availableOffers,
-      entitlementSummary: {
-        guide: commercial.entitlements.guide,
-        rewriteCredits: commercial.entitlements.rewriteCredits,
-        createCredits: commercial.entitlements.createCredits,
-        agentRecruiterAccess: commercial.entitlements.agentRecruiterAccess,
-        source: commercial.entitlements.source,
-      },
-    },
     operations: input.operations,
     updatedAt: session.updatedAt,
   };

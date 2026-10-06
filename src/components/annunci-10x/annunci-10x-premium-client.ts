@@ -6,6 +6,7 @@ export type PremiumSection = { id: string; title: string; body: string };
 export type PremiumChannelVariant = { channel: string; sections: PremiumSection[] } | null;
 export type PremiumCheckoutNotice = 'success' | 'cancelled' | null;
 
+export const ANNUNCI10X_FULFILLMENT_REFRESH_EVENT = 'annunci10x:fulfillment-refresh';
 export const PAYMENT_VERIFY_POLL_MS = 1500;
 export const MAX_PAYMENT_VERIFY_ATTEMPTS = 12;
 export const PAYMENT_VERIFY_TIMEOUT_MESSAGE = 'Stiamo ancora verificando il pagamento. Puoi aggiornare lo stato tra qualche secondo.';

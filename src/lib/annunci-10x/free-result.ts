@@ -46,6 +46,22 @@ export async function getGatedAnnunci10xFreeResult(input: {
   const evaluation = await context.persistence.getEvaluationById(run.evaluationId, run.sessionId, input.session.sessionSecret);
   if (!evaluation) throw new Annunci10xPublicError('RESULT_NOT_AVAILABLE', 'Il risultato non è disponibile per questa analisi.', 409);
 
+  const session = await context.persistence.getSession(input.session.sessionId, input.session.sessionSecret);
+  if (!session || session.flow !== 'ANALYZE') throw new Annunci10xPublicError('INVALID_INPUT', 'Sessione Annunci 10x non valida.', 401);
+  if (['STARTED', 'ANALYSIS_READY', 'READY_FOR_PURCHASE'].includes(session.state)) {
+    await context.persistence.updateSession({
+      sessionId: input.session.sessionId,
+      sessionSecret: input.session.sessionSecret,
+      state: 'ENTITLED',
+      currentSnapshotId: session.currentSnapshotId ?? undefined,
+    });
+    await context.persistence.appendEvent({
+      sessionId: input.session.sessionId,
+      eventName: 'free_generation_unlocked',
+      metadata: { flow: 'ANALYZE', analysisRunId: run.id },
+    });
+  }
+
   await context.persistence.appendEvent({
     sessionId: input.session.sessionId,
     eventName: 'result_revealed',

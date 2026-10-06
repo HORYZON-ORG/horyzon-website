@@ -17,12 +17,28 @@ export interface GenerationAuthorizationProvider {
 }
 
 export function createProductionGenerationAuthorizationProvider(): GenerationAuthorizationProvider {
+  const authorityId = 'annunci10x-free-generation-authority-v1';
   return {
     async authorize({ session }) {
-      return deniedAuthorization(session.id, 'NOT_AUTHORIZED', 'Checkout e acquisto Annunci 10x non sono ancora attivi.');
+      if (!isGeneratableState(session.state)) {
+        return deniedAuthorization(session.id, 'INVALID_STATE', 'Stato sessione non valido per la generazione gratuita.', authorityId, 0);
+      }
+      return {
+        status: 'AUTHORIZED',
+        authorityId,
+        identity: `${authorityId}:${session.id}:free`,
+        reason: 'Generazione gratuita abilitata server-side.',
+        remainingCredits: 1,
+        checkedAt: new Date().toISOString(),
+      };
     },
-    async consume({ session }) {
-      return deniedAuthorization(session.id, 'NOT_AUTHORIZED', 'Nessun credito generazione disponibile.');
+    async consume({ authorization }) {
+      if (authorization.status !== 'AUTHORIZED') return authorization;
+      return {
+        ...authorization,
+        remainingCredits: 0,
+        checkedAt: new Date().toISOString(),
+      };
     },
   };
 }
