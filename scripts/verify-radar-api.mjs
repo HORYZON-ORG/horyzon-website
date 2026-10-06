@@ -16,11 +16,11 @@ let revision = 0;
 let currentStep = 0;
 for (const step of radarSteps().filter((item) => item.id !== 'qualificazione#stagionale')) {
   currentStep += 1;
-  const saved = await service.saveAnswer({ assessmentId: first.id, ownerSecret: first.ownerSecret, answerKey: step.id, value: step.kind === 'OWNER_HOURS' ? [0, 60, 0] : step.kind === 'COMPANY_PROFIT' ? [0, 30000] : step.kind === 'AI_MULTI' ? [0] : 3, expectedRevision: revision, currentStep });
+  const saved = await service.saveAnswer({ assessmentId: first.id, ownerSecret: first.ownerSecret, answerKey: step.id, value: step.kind === 'OWNER_HOURS' ? [0, 60, 0] : step.kind === 'COMPANY_PROFIT' ? [0, 30000] : step.kind === 'OWNER_SALARY' ? [1, 1, 2000] : step.kind === 'PARTNERS' ? [1, 50] : step.kind === 'AI_MULTI' ? [0] : 3, expectedRevision: revision, currentStep });
   revision = saved.revision;
 }
 const completed = await service.completeAssessment(first.id, first.ownerSecret);
-assert.equal(completed.answeredCount, 32);
+assert.equal(completed.answeredCount, 34, 'v3: 33 questions + the seasonal answer from the form');
 assert.equal('scores' in completed, false);
 await assert.rejects(() => service.saveAnswer({ assessmentId: first.id, ownerSecret: first.ownerSecret, answerKey: 'economia#ore', value: [0, 0, 0], expectedRevision: revision, currentStep: 32 }), /economic answer/i);
 const grant = await service.grantPreview({ assessmentId: first.id, ownerSecret: first.ownerSecret, pin: '789987', ipKey: 'test-ip' });

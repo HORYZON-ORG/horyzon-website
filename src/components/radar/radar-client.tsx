@@ -110,6 +110,17 @@ export function RadarClient() {
     if (!(await loadResult(session.id))) setPhase('PAYMENT');
   }
 
+  // Remember the utm_* of the landing link for this tab: the hash navigation (#radar-prodotto) keeps them in the URL,
+  // but a reload or a "Rifai il test" must not lose the channel that brought the person here.
+  useEffect(() => { rememberUtm(); }, []);
+
+  // Once the result replaces the questionnaire, bring its top into view (call 5 Oct 2026).
+  useEffect(() => {
+    if (phase !== 'RESULT') return;
+    const frame = window.requestAnimationFrame(() => (document.querySelector('[aria-labelledby="radar-result-title"]') ?? document.getElementById('radar-prodotto'))?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+    return () => window.cancelAnimationFrame(frame);
+  }, [phase]);
+
   // The landing's step track (Contesto, Domande, Profilo) reads the current phase from its section.
   useEffect(() => { document.getElementById('radar-prodotto')?.setAttribute('data-phase', phase); }, [phase]);
 
@@ -128,7 +139,7 @@ export function RadarClient() {
 
   async function start(form: FormData) {
     const entries = Object.fromEntries(form.entries());
-    const body = { ...entries, seasonal: entries.seasonal === 'true' };
+    const body = { ...entries, seasonal: entries.seasonal === 'true', utm: readUtm() };
     const response = await fetch('/api/radar/session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     if (!response.ok) { setSyncError('Non è stato possibile avviare il Radar.'); return; }
     const payload = await response.json();
@@ -197,6 +208,30 @@ export function RadarClient() {
   return report ? <RadarResult report={report} onRestart={restart}/> : null;
 }
 
+const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as const;
+const UTM_STORAGE = 'horyzon:radar:utm';
+function rememberUtm() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const found = Object.fromEntries(UTM_KEYS.flatMap((key) => params.get(key) ? [[key, params.get(key)!.slice(0, 100)]] : []));
+    if (Object.keys(found).length) sessionStorage.setItem(UTM_STORAGE, JSON.stringify(found));
+  } catch { /* storage unavailable: the source is simply not recorded */ }
+}
+function readUtm(): Record<string, string> | null {
+  try { const raw = sessionStorage.getItem(UTM_STORAGE); return raw ? JSON.parse(raw) as Record<string, string> : null; } catch { return null; }
+}
+
 function Qualification({ onStart, error }: { onStart: (form: FormData) => Promise<void>; error: string }) {
-  return <section className={styles.panel} aria-labelledby="radar-start-title"><p className={styles.kicker}>Inizia il Radar</p><h2 id="radar-start-title">Raccontaci il contesto.</h2><form action={onStart} className={styles.form}><label>Nome e cognome<input name="referenteNome" required autoComplete="name"/></label><label>Azienda<input name="aziendaNome" required autoComplete="organization"/></label><label>Email<input name="referenteEmail" type="email" required autoComplete="email"/></label><label>Telefono<input name="referenteTelefono" required autoComplete="tel"/></label><label>Settore<input name="settore" required/></label><label>Volume d’affari<select name="volumeAffari" required><option value="">Seleziona</option><option>Meno di 250.000 €</option><option>250.000 – 1.000.000 €</option><option>1 – 5 milioni €</option><option>Oltre 5 milioni €</option></select></label><label>Dipendenti<select name="numeroDipendenti" required><option value="">Seleziona</option><option>Nessuno</option><option>1-5</option><option>6-20</option><option>21-50</option><option>Oltre 50</option></select></label><label>Attività stagionale<select name="seasonal"><option value="false">No</option><option value="true">Sì</option></select></label><button type="submit">Comincia</button>{error ? <p role="alert">{error}</p> : null}</form></section>;
+  return <section className={styles.panel} aria-labelledby="radar-start-title"><p className={styles.kicker}>Inizia il Radar</p><h2 id="radar-start-title">Raccontaci il contesto.</h2><form action={onStart} className={styles.form}>
+    <label>Nome e cognome<input name="referenteNome" required autoComplete="name"/></label>
+    <label>Azienda<input name="aziendaNome" required autoComplete="organization"/></label>
+    <label>Email<input name="referenteEmail" type="email" required autoComplete="email"/></label>
+    <label>Telefono<input name="referenteTelefono" type="tel" required autoComplete="tel"/></label>
+    <label>Settore<input name="settore" required placeholder="Es. Ristorazione, edilizia, commercio"/></label>
+    <label>Fatturato annuo (€)<input name="volumeAffariEuro" type="number" inputMode="numeric" min={0} step={1} required placeholder="Es. 1500000"/></label>
+    <label className={styles.formWide}>Cosa fa la tua azienda<textarea name="descrizioneAttivita" required maxLength={400} rows={2} placeholder="Es. Ristorante con 80 coperti e servizio catering per eventi aziendali"/></label>
+    <label>Dipendenti<select name="numeroDipendenti" required><option value="">Seleziona</option><option>Nessuno</option><option>1-5</option><option>6-20</option><option>21-50</option><option>Oltre 50</option></select></label>
+    <label>Attività stagionale<select name="seasonal"><option value="false">No</option><option value="true">Sì</option></select></label>
+    <button type="submit">Comincia</button>{error ? <p role="alert">{error}</p> : null}
+  </form></section>;
 }

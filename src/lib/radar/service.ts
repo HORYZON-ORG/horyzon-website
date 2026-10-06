@@ -13,7 +13,7 @@ export class RadarAccessError extends Error {
 }
 
 function composeReport(answers: RadarAnswers, owner: RadarReportOwnerContext, rows: RadarAdviceRow[]) {
-  return buildRadarReport({ scores: calculateRadarScores(answers), answers, advice: mergeAdvice(rows as Partial<RadarAdvice>[]), context: { aziendaNome: owner.aziendaNome, referenteNome: owner.referenteNome, settore: owner.settore, numeroDipendenti: owner.numeroDipendenti, volumeAffari: owner.volumeAffari, completedAt: owner.completedAt } });
+  return buildRadarReport({ scores: calculateRadarScores(answers), answers, advice: mergeAdvice(rows as Partial<RadarAdvice>[]), context: { aziendaNome: owner.aziendaNome, referenteNome: owner.referenteNome, descrizioneAttivita: owner.descrizioneAttivita, settore: owner.settore, numeroDipendenti: owner.numeroDipendenti, volumeAffari: owner.volumeAffari, completedAt: owner.completedAt } });
 }
 
 /** `freeAccess`: the Radar is a free lead magnet, so a completed assessment opens its result without purchase or PIN. */

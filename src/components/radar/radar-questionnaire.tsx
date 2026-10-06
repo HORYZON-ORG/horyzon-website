@@ -12,6 +12,8 @@ const HINTS: Record<RadarStep['kind'], string> = {
   AI_MULTI: 'Puoi scegliere più risposte, poi premi Continua.',
   OWNER_HOURS: 'Considera una settimana media dell’anno, inclusi telefonate, messaggi e lavoro da casa. Per attività stagionali, fai la media anche sui periodi di chiusura.',
   COMPANY_PROFIT: 'Inserisci l’utile prima delle imposte: ricavi meno tutti i costi, inclusi interessi e ammortamenti. Puoi usare una stima e inserire zero o un valore negativo se l’azienda è in perdita.',
+  OWNER_SALARY: 'Utile e stipendio non sono la stessa cosa. Indica il compenso lordo che l’azienda ti riconosce (come amministratore, in busta paga o con prelievi fissi), non l’utile.',
+  PARTNERS: 'Se ci sono soci, l’utile si divide: indica la tua quota di partecipazione nell’azienda.',
 };
 
 // The questionnaire walks the five departments of the organisation chart, then context and AI.
@@ -82,6 +84,8 @@ export function RadarQuestionnaire({ questionnaireVersion, stepIndex, value, sav
           <QuestionBody step={item} index={index} steps={steps} groups={all} live />
           {item.kind === 'OWNER_HOURS' || item.kind === 'COMPANY_PROFIT'
             ? <EconomicAnswerForm key={item.id} kind={item.kind} value={value} saving={saving} onAnswer={onAnswer} />
+            : item.kind === 'OWNER_SALARY' || item.kind === 'PARTNERS'
+            ? <OwnerAnswerForm key={item.id} kind={item.kind} value={value} saving={saving} onAnswer={onAnswer} />
             : <div className={item.kind === 'LIKERT' ? styles.scale : styles.choices} role="group" aria-labelledby="radar-question-title" aria-describedby="radar-question-hint">
             {choices.map((label, choice) => {
               const answer = valueOf(choice);
@@ -120,6 +124,8 @@ function QuestionBody({ step, index, steps, groups: all, live = false }: { step:
     <p className={styles.hint} id={live ? 'radar-question-hint' : undefined}>{HINTS[step.kind]}</p>
     {live ? null : step.kind === 'OWNER_HOURS' || step.kind === 'COMPANY_PROFIT'
       ? <EconomicAnswerForm kind={step.kind} saving onAnswer={() => {}} />
+      : step.kind === 'OWNER_SALARY' || step.kind === 'PARTNERS'
+      ? <OwnerAnswerForm kind={step.kind} saving onAnswer={() => {}} phantom />
       : <div className={step.kind === 'LIKERT' ? styles.scale : styles.choices}>{choicesFor(step).map((label, choice) => <button key={label} type="button" tabIndex={-1}><span className={styles.key}>{choice + 1}</span><span>{label}</span></button>)}</div>}
   </>;
 }
@@ -147,6 +153,42 @@ function EconomicAnswerForm({ kind, value, saving, onAnswer }: { kind: 'OWNER_HO
     {hours && period === 1 ? <label>Giorni medi lavorati a settimana<input name="days" type="number" inputMode="numeric" required disabled={saving} min={1} max={7} step={1} defaultValue={saved[0] === 1 ? saved[2] : undefined} placeholder="Es. 6" /></label> : null}
     {!hours ? <p className={styles.economicHint}>Il fatturato è già nel tuo profilo. Qui serve ciò che resta dopo i costi, prima delle imposte: un valore diverso da fatturato, incassi ed EBITDA. Per l’importo annuale, usa lo stesso anno cui si riferisce la media delle ore.</p> : null}
     <button type="submit" disabled={saving}>Continua</button>
+  </form>;
+}
+
+// Salary: [0] none, or [1, 0 = annual / 1 = monthly, gross euros]. Partners: [0] sole owner, or [1, owner's share %].
+// The amount field stays in the layout (disabled) when the answer is "no", so the card keeps one height.
+function OwnerAnswerForm({ kind, value, saving, onAnswer, phantom = false }: { kind: 'OWNER_SALARY' | 'PARTNERS'; value?: RadarAnswer; saving: boolean; onAnswer: (value: RadarAnswer) => void; phantom?: boolean }) {
+  const saved = Array.isArray(value) ? value : [];
+  const salary = kind === 'OWNER_SALARY';
+  const initial = saved[0] === 1 ? (salary ? (saved[1] === 1 ? 2 : 1) : 1) : saved[0] === 0 ? 0 : -1;
+  const [choice, setChoice] = useState(phantom ? 1 : initial);
+  const yes = choice > 0;
+  return <form className={styles.form} aria-labelledby="radar-question-title" aria-describedby="radar-question-hint" onSubmit={(event) => {
+    event.preventDefault();
+    if (saving || choice < 0) return;
+    if (!yes) { onAnswer([0]); return; }
+    const amount = Number(new FormData(event.currentTarget).get('amount'));
+    onAnswer(salary ? [1, choice === 2 ? 1 : 0, amount] : [1, amount]);
+  }}>
+    <label>{salary ? 'Il tuo stipendio' : 'Soci'}
+      <select value={choice} required disabled={saving} onChange={(event) => setChoice(Number(event.target.value))}>
+        <option value={-1} disabled>Seleziona</option>
+        {salary
+          ? <><option value={0}>No, non mi prendo uno stipendio</option><option value={1}>Sì, lordo annuo</option><option value={2}>Sì, lordo mensile</option></>
+          : <><option value={0}>No, sono l’unico titolare</option><option value={1}>Sì, ho dei soci</option></>}
+      </select>
+    </label>
+    <label>{salary ? 'Importo lordo (€)' : 'La tua quota (%)'}
+      <input key={choice} name="amount" type="number" required={yes} disabled={saving || !yes} inputMode={salary ? undefined : 'decimal'}
+        min={salary ? 0 : 1} max={salary ? undefined : 99} step={salary ? '0.01' : 'any'}
+        defaultValue={yes && saved[0] === 1 ? (salary ? saved[2] : saved[1]) : undefined}
+        placeholder={!yes ? '—' : salary ? choice === 2 ? 'Es. 3000' : 'Es. 36000' : 'Es. 50'} />
+    </label>
+    <p className={styles.economicHint}>{salary
+      ? 'Se non ti prendi uno stipendio, il costo reale della tua presenza in azienda non compare da nessuna parte: è uno dei motivi per cui l’utile sembra più alto di quello che è.'
+      : 'Con un socio al 50%, metà dell’utile non è tuo: il Radar calcola quanto rende la tua ora sulla tua quota.'}</p>
+    <button type="submit" disabled={saving || choice < 0}>Continua</button>
   </form>;
 }
 

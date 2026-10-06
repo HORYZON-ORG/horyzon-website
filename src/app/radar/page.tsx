@@ -2,8 +2,7 @@ import { PageStructuredData } from '@/components/structured-data';
 import { pageMetadata } from '@/content/seo';
 import type { Metadata } from 'next';
 import Image from 'next/image';
-import Link from 'next/link';
-import { Wordmark } from '@/components/site-shell';
+import { CompanyChart } from '@/components/radar/company-chart';
 import { OwnerStory } from '@/components/radar/owner-story';
 import { RadarClient } from '@/components/radar/radar-client';
 import { RadarDock } from '@/components/radar/radar-dock';
@@ -18,23 +17,30 @@ const outputs = [
   ['Autonomia', 'Autonomia dal titolare', 'Quanto l’impresa va avanti senza di te.'],
   ['Sintesi', 'Indice globale', 'Struttura e autonomia in un solo valore.'],
   ['AI', 'Intelligenza artificiale', 'Quanto l’AI è presente e se il team è pronto.'],
-  ['Tempo e utile', 'Quanto rende la tua ora', 'L’utile aziendale prima delle tasse diviso le ore che lavori.'],
+  ['Tempo e utile', 'Quanto rende la tua ora', 'La tua quota di utile prima delle tasse diviso le ore che lavori, accanto al tuo stipendio.'],
   ['Priorità', 'Area forte e area prioritaria', 'Su cosa puoi contare. Da dove partire.'],
 ] as const;
 
 const steps = [
   ['Contesto', 'Azienda, settore, dimensione.'],
-  ['Domande', 'Cinque reparti, AI, ore lavorate e utile.'],
+  ['Domande', 'Cinque reparti, AI, ore, utile, stipendio e soci.'],
   ['Profilo', 'Indici, utile per ora e area prioritaria.'],
 ] as const;
 
 const faqs = [
   ['Quanto tempo richiede?', 'Circa 8 minuti. Le risposte vengono salvate mentre procedi, quindi puoi riprendere più tardi.'],
   ['Il risultato è gratuito?', 'Sì. Il profilo completo si apre appena rispondi all’ultima domanda e puoi scaricarlo in PDF, senza costi e senza carta di credito.'],
-  ['Devo avere dati finanziari a portata di mano?', 'Serve una stima dell’utile aziendale prima delle tasse, mensile o annuale, e delle tue ore medie di lavoro. L’utile è ciò che resta dopo tutti i costi: il solo fatturato non basta.'],
+  ['Devo avere dati finanziari a portata di mano?', 'Servono il fatturato annuo, una stima dell’utile aziendale prima delle tasse, le tue ore medie di lavoro, lo stipendio che ti prendi (se te lo prendi) e la tua quota, se hai dei soci. L’utile è ciò che resta dopo tutti i costi: il solo fatturato non basta.'],
   ['È una diagnosi completa?', 'No. È una prima fotografia guidata. Una diagnosi completa richiede confronto, numeri e osservazione dei processi reali. Non è una valutazione finanziaria, fiscale o legale.'],
   ['Per chi è pensato?', 'Per chi ha già un’impresa con clienti e collaboratori e sente che troppe decisioni dipendono ancora da sé. Il Radar non promette autonomia o crescita entro una data: indica da dove partire.'],
 ] as const;
+
+// The landing is a closed funnel (call 5 Oct 2026): no link leads to other Horyzon pages, so the logo is not a
+// link and the only way out is the privacy notice, which opens in a new tab. Traffic sources come from utm_*.
+function Logo() {
+  return <span className="wordmark" aria-label="Horyzon Consulting"><span className="wordmark-logo-wrap"><Image className="wordmark-logo" src="/horyzon-logo-canonical.png" alt="Horyzon Consulting" width={1670} height={390} sizes="(max-width: 850px) 138px, 178px" /></span></span>;
+}
+const PRIVACY = { href: '/privacy-policy', target: '_blank', rel: 'noopener' } as const;
 
 const delay = (ms: number) => ({ '--d': `${ms}ms` }) as React.CSSProperties;
 
@@ -45,7 +51,7 @@ function Cta({ position, children = 'Inizia il Radar' }: { position: string; chi
 export default function CommercialRadarPage() {
   return <div className="radar-commercial rd">
     <PageStructuredData path="/radar" name="Inizia il Radar d’Impresa" description="Una prima fotografia guidata di cinque reparti, processi, autonomia dal titolare e uso dell’intelligenza artificiale." />
-    <header className="rd-header"><Wordmark /><Cta position="header">Inizia</Cta></header>
+    <header className="rd-header"><Logo /><Cta position="header">Inizia</Cta></header>
 
     <main id="content">
       <section id="rd-hero" className="rd-hero" aria-labelledby="rd-hero-title">
@@ -56,6 +62,16 @@ export default function CommercialRadarPage() {
           <div className="rd-actions rd-rise" style={delay(760)}><Cta position="hero" /><a className="rd-link" href="#rd-story-title">Prima fammi vedere</a></div>
         </div>
         <RadarScope className="rd-hero-scope" />
+      </section>
+
+      <section className="rd-company" aria-labelledby="rd-company-title">
+        <header className="rd-company-head rd-reveal">
+          <p className="rd-label">Cosa misura il Radar</p>
+          <h2 id="rd-company-title">Un’azienda non è il suo titolare. <span>È un sistema di reparti.</span></h2>
+          <p className="rd-company-def"><b>Un’azienda è un’organizzazione che trasforma il lavoro di più persone in valore per i clienti.</b> Anche la più piccola svolge cinque funzioni, che ci sia o no qualcuno dedicato a ciascuna: tenere i conti, produrre, vendere, farsi conoscere, guidare le persone. In un’azienda tradizionale, però, sono tutte schiacciate sul titolare.</p>
+        </header>
+        <CompanyChart />
+        <p className="rd-company-foot">Il Radar misura ogni reparto con cinque domande: <b>quanto è organizzato e quanto va avanti senza di te</b>. Poi guarda l’intelligenza artificiale e i tuoi numeri: ore lavorate, utile, stipendio e quota nei soci.</p>
       </section>
 
       <OwnerStory />
@@ -75,7 +91,7 @@ export default function CommercialRadarPage() {
           <ol className="rd-steps">{steps.map(([title, text]) => <li key={title}><b>{title}</b><span>{text}</span></li>)}</ol>
         </header>
         <RadarClient />
-        <p className="rd-product-note">Salvataggio progressivo <i>·</i> Risultato gratuito, subito al termine <i>·</i> <Link href="/privacy-policy">Privacy ↗︎</Link></p>
+        <p className="rd-product-note">Salvataggio progressivo <i>·</i> Risultato gratuito, subito al termine <i>·</i> <a {...PRIVACY}>Privacy ↗︎</a></p>
       </section>
 
       <section className="rd-frank" aria-labelledby="rd-frank-title">
@@ -84,7 +100,6 @@ export default function CommercialRadarPage() {
           <p className="rd-label">Frank Cannoletta · Horyzon</p>
           <h2 id="rd-frank-title" className="sr-only">Perché abbiamo costruito il Radar</h2>
           <blockquote>“Il Radar serve a rendere visibile la situazione di oggi. Il lavoro utile comincia quando la colleghiamo <em>agli obiettivi dell’impresa.</em>”</blockquote>
-          <Link className="rd-link" href="/metodo">Come lavora Horyzon ↗︎</Link>
         </div>
       </section>
 
@@ -98,11 +113,10 @@ export default function CommercialRadarPage() {
         <p className="rd-label">Il prossimo passo</p>
         <h2 id="rd-final-title">Prima di aggiungere un altro strumento, <em>scegli dove intervenire.</em></h2>
         <Cta position="final" />
-        <Link className="rd-link" href="/radar-impresa">Preferisci capire prima il metodo?</Link>
       </section>
     </main>
 
-    <footer className="rd-footer"><Wordmark /><nav aria-label="Informazioni"><Link href="/radar-impresa">Radar d’Impresa</Link><Link href="/privacy-policy">Privacy</Link><a href="mailto:info@horyzon.it">info@horyzon.it</a></nav></footer>
+    <footer className="rd-footer"><Logo /><nav aria-label="Informazioni"><a {...PRIVACY}>Privacy</a><a href="mailto:info@horyzon.it">info@horyzon.it</a></nav></footer>
     <RadarDock />
   </div>;
 }

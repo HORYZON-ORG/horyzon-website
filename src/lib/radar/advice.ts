@@ -13,8 +13,11 @@ export const ADVICE_BAND_LABELS: Record<AdviceBand, string> = { critico: 'Critic
 export function answerBand(answer: number): AdviceBand { return answer <= 2 ? 'critico' : answer === 3 ? 'da_consolidare' : 'solido'; }
 /** A 0-100 index: below 40 critical, 40-69 to consolidate, 70+ solid. */
 export function scoreBand(score: number): AdviceBand { return score < 40 ? 'critico' : score < 70 ? 'da_consolidare' : 'solido'; }
-/** Company profit per owner hour, in euro. */
-export function hourlyProfitBand(hourlyProfit: number): AdviceBand { return hourlyProfit < 15 ? 'critico' : hourlyProfit < 50 ? 'da_consolidare' : 'solido'; }
+/** The owner's share of profit per hour worked, in euro (call 5 Oct 2026): under 50 the owner is an entrepreneur
+ *  only on paper; about 180 is the minimum worth aiming for (30,000 € of monthly profit over 166 hours). */
+export const HOURLY_PROFIT_CRITICAL = 50;
+export const HOURLY_PROFIT_TARGET = 180;
+export function hourlyProfitBand(hourlyProfit: number): AdviceBand { return hourlyProfit < HOURLY_PROFIT_CRITICAL ? 'critico' : hourlyProfit < HOURLY_PROFIT_TARGET ? 'da_consolidare' : 'solido'; }
 
 export const adviceKey = (kind: AdviceKind, subject: string, band: AdviceBand) => `${kind}:${subject}:${band}`;
 
@@ -161,8 +164,8 @@ export const DEFAULT_RADAR_ADVICE: readonly RadarAdvice[] = [
     ['AI in sperimentazione', 'L’AI viene usata, ma a macchia di leopardo e senza regole comuni.', 'Raccogli gli usi che funzionano, scrivi due regole d’uso (dati e verifica) e condividile con tutti.'],
     ['AI nel lavoro quotidiano', 'Il team usa l’AI e si sente pronto: può diventare una leva per ridurre la dipendenza da te.', 'Collega l’AI alle procedure scritte, così aiuta a fare il lavoro senza chiedere a te.']),
   ...set('economics', 'utile_ora',
-    ['Il tuo tempo rende poco', 'Ogni ora che dedichi all’impresa genera poco utile. Lavorare di più non basta: serve cambiare dove va il tuo tempo.', 'Elenca le attività a basso valore che fai ogni settimana e decidi quali delegare o eliminare.'],
-    ['Il tuo tempo rende, con margini di miglioramento', 'Il tuo tempo produce utile, ma una parte delle ore va in attività che altri potrebbero fare.', 'Sposta almeno cinque ore a settimana da attività operative a vendita, sviluppo o controllo.'],
+    ['Imprenditore solo sulla carta', 'Sotto i 50 € per ora lavorata, la tua impresa ti paga meno di molti dei tuoi collaboratori. Ti senti imprenditore, ma economicamente stai facendo un lavoro da dipendente, senza le sue tutele: quante ore puoi ancora aggiungere prima che sia l’impresa a consumare te?', 'Elenca le attività a basso valore che fai ogni settimana e decidi quali delegare o eliminare entro 30 giorni. Poi guarda i margini: con questo rendimento il problema non è lavorare di più.'],
+    ['Il tuo tempo rende, ma non quanto dovrebbe', 'Il tuo tempo produce utile, ma resti sotto i 180 € per ora che un’impresa sana dovrebbe restituire a chi la guida. Quante delle tue ore oggi vanno in attività che potrebbe fare qualcun altro?', 'Sposta almeno cinque ore a settimana da attività operative a vendita, sviluppo o controllo, e misura di nuovo tra 90 giorni.'],
     ['Il tuo tempo rende bene', 'Ogni ora che dedichi all’impresa produce un utile significativo.', 'Proteggi le ore ad alto valore e delega il resto: è così che l’utile per ora continua a crescere.']),
   ...set('global', 'indice',
     ['Fondamenta da costruire', 'L’impresa funziona soprattutto grazie a te e a poche persone: organizzazione e autonomia sono ancora deboli.', 'Nei prossimi 90 giorni lavora su un solo reparto, quello prioritario: meglio un passo fatto che dieci iniziati.'],

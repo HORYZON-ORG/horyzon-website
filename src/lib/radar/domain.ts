@@ -1,6 +1,6 @@
 import type { RadarAnswers, RadarAreaId, RadarAreaScore, RadarScores, RadarStep } from './types.ts';
 import { RADAR_QUESTIONNAIRE_VERSION } from './types.ts';
-import { calculateOwnerEconomics, COMPANY_PROFIT_KEY, OWNER_HOURS_KEY, validOwnerEconomicsAnswer } from './owner-economics.ts';
+import { calculateOwnerEconomics, COMPANY_PROFIT_KEY, OWNER_HOURS_KEY, OWNER_SALARY_KEY, PARTNERS_KEY, validOwnerEconomicsAnswer } from './owner-economics.ts';
 
 type AreaDefinition = { id: RadarAreaId; label: string; questions: readonly string[] };
 
@@ -57,12 +57,17 @@ export function radarSteps(version: string = RADAR_QUESTIONNAIRE_VERSION): Radar
     areaId: area.id,
     autonomy: index === 4,
   })));
-  return [...areaSteps, { id: 'qualificazione#stagionale', kind: 'SEASONAL', title: 'L’attività della tua azienda ha carattere stagionale?' }, ...AI_STEPS,
-    ...(version === 'radar-v1' ? [] : [
-      { id: OWNER_HOURS_KEY, kind: 'OWNER_HOURS' as const, title: 'Quante ore lavori davvero nella tua impresa?' },
-      { id: COMPANY_PROFIT_KEY, kind: 'COMPANY_PROFIT' as const, title: 'Quanto resta alla tua azienda prima delle tasse?' },
-    ]),
+  const economics: RadarStep[] = [
+    { id: OWNER_HOURS_KEY, kind: 'OWNER_HOURS', title: 'Quante ore lavori davvero nella tua impresa?' },
+    { id: COMPANY_PROFIT_KEY, kind: 'COMPANY_PROFIT', title: 'Quanto resta alla tua azienda prima delle tasse?' },
   ];
+  // v3: the seasonal question is answered once, in the qualification form; salary and partners follow the profit.
+  if (version === 'radar-v3') return [...areaSteps, ...AI_STEPS, ...economics,
+    { id: OWNER_SALARY_KEY, kind: 'OWNER_SALARY', title: 'Ti prendi uno stipendio da imprenditore?' },
+    { id: PARTNERS_KEY, kind: 'PARTNERS', title: 'Hai dei soci?' },
+  ];
+  const seasonal: RadarStep = { id: 'qualificazione#stagionale', kind: 'SEASONAL', title: 'L’attività della tua azienda ha carattere stagionale?' };
+  return [...areaSteps, seasonal, ...AI_STEPS, ...(version === 'radar-v1' ? [] : economics)];
 }
 
 export function isRadarComplete(answers: RadarAnswers, version: string = RADAR_QUESTIONNAIRE_VERSION): boolean {

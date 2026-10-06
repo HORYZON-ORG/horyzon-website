@@ -6,9 +6,14 @@ import { RADAR_PREVIEW_COOKIE, RADAR_PREVIEW_COOKIE_PATH, RADAR_SESSION_COOKIE, 
 export async function POST(request: Request) {
   try {
     const body = await readJson(request);
-    const text = (key: string) => typeof body[key] === 'string' ? String(body[key]).trim() : '';
-    const input = { aziendaNome: text('aziendaNome'), referenteNome: text('referenteNome'), referenteEmail: text('referenteEmail'), referenteTelefono: text('referenteTelefono'), settore: text('settore'), volumeAffari: text('volumeAffari'), numeroDipendenti: text('numeroDipendenti'), seasonal: body.seasonal === true };
-    if (Object.entries(input).some(([key, value]) => key !== 'seasonal' && !value)) return NextResponse.json({ ok: false, error: { message: 'Compila tutti i campi.' } }, { status: 400 });
+    const text = (key: string, max = 200) => typeof body[key] === 'string' ? String(body[key]).trim().slice(0, max) : '';
+    // Exact annual turnover (call 5 Oct 2026); the formatted text keeps volume_affari readable in the Hub and the report.
+    const turnover = Number(String(body.volumeAffariEuro ?? '').replace(/[^\d.,-]/g, '').replace(/\./g, '').replace(',', '.'));
+    const volumeAffariEuro = Number.isFinite(turnover) && turnover >= 0 && String(body.volumeAffariEuro ?? '').trim() !== '' ? Math.round(turnover) : null;
+    const volumeAffari = volumeAffariEuro === null ? text('volumeAffari') : `${new Intl.NumberFormat('it-IT').format(volumeAffariEuro)} €`;
+    const required = { aziendaNome: text('aziendaNome'), referenteNome: text('referenteNome'), referenteEmail: text('referenteEmail'), referenteTelefono: text('referenteTelefono'), settore: text('settore'), descrizioneAttivita: text('descrizioneAttivita', 400), volumeAffari, numeroDipendenti: text('numeroDipendenti') };
+    if (Object.values(required).some((value) => !value)) return NextResponse.json({ ok: false, error: { message: 'Compila tutti i campi.' } }, { status: 400 });
+    const input = { ...required, volumeAffariEuro, fonteUtm: utmFrom(body.utm), seasonal: body.seasonal === true };
     const created = await createService().createAssessment(input);
     await setSessionCookie({ assessmentId: created.id, ownerSecret: created.ownerSecret });
     // A started Radar is already a lead: the CRM can follow up whoever stops halfway.
@@ -17,6 +22,17 @@ export async function POST(request: Request) {
   } catch (error) { return errorResponse(error); }
 }
 
+
+// utm_source, utm_medium, utm_campaign, utm_content, utm_term of the landing link: short strings only.
+function utmFrom(value: unknown): Record<string, string> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const out: Record<string, string> = {};
+  for (const key of ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term']) {
+    const raw = (value as Record<string, unknown>)[key];
+    if (typeof raw === 'string' && raw.trim()) out[key] = raw.trim().slice(0, 100);
+  }
+  return Object.keys(out).length ? out : null;
+}
 
 // "Rifai il test da zero": this browser forgets its Radar. The saved assessment stays in the database.
 export async function DELETE() {

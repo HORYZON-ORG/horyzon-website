@@ -103,6 +103,13 @@ function ReportDocument({ report }: { report: RadarReport }) {
         {[['Reparto più solido', report.strongest.label, report.strongest.score], ['Reparto prioritario', report.weakest.label, report.weakest.score], ['Organizzazione', 'Maturità dei reparti', report.organizationalMaturity]].map(([label, value, score]) =>
           <View key={String(label)} style={[s.card, { flex: 1 }]}><Text style={s.label}>{label}</Text><Text style={s.h3}>{value}</Text><Text style={{ fontSize: 18, fontWeight: 800 }}>{score}</Text></View>)}
       </View>
+      {report.profile.length ? <View style={[s.card, { flexDirection: 'row', flexWrap: 'wrap' }]} wrap={false}>
+        <Text style={[s.label, { width: '100%' }]}>La tua azienda</Text>
+        {report.profile.map((line) => <View key={line.label} style={{ width: line.label === 'Cosa fa l’azienda' ? '100%' : '33%', marginBottom: 6, paddingRight: 8 }}>
+          <Text style={{ fontFamily: 'Mono', fontSize: 6.5, letterSpacing: 1, textTransform: 'uppercase', color: C.muted }}>{line.label}</Text>
+          <Text style={{ fontSize: 9.5, fontWeight: 800, marginTop: 2 }}>{line.value}</Text>
+        </View>)}
+      </View> : null}
       <Text style={[s.label, { marginTop: 4 }]}>Prossimi 90 giorni</Text>
       <Text style={s.h2}>Le tre priorità</Text>
       {report.priorities.length ? report.priorities.map((priority, i) => <View key={priority.question} style={[s.card, { flexDirection: 'row' }]} wrap={false}>
@@ -119,7 +126,8 @@ function ReportDocument({ report }: { report: RadarReport }) {
       {report.economics ? <View style={s.card} wrap={false}>
         <Text style={s.chip}>Utile per ora lavorata · {euro(report.economics.hourlyProfit)}</Text>
         <Text style={s.h3}>{report.economics.reading.title}</Text><Text style={s.body}>{report.economics.reading.body}</Text>
-        <Text style={[s.body, { marginTop: 4, color: C.muted, fontSize: 8.5 }]}>Utile medio mensile {euro(report.economics.monthlyProfit)} · {Math.round(report.economics.monthlyHours)} ore al mese. Stima sui dati dichiarati, non è il tuo reddito personale.</Text>
+        <Text style={[s.body, { marginTop: 4, color: C.muted, fontSize: 8.5 }]}>Utile medio mensile {euro(report.economics.monthlyProfit)}{report.economics.ownerShare < 1 ? ` · la tua quota (${Math.round(report.economics.ownerShare * 100)}%) ${euro(report.economics.ownerMonthlyProfit)}` : ''} · {Math.round(report.economics.monthlyHours)} ore al mese{report.economics.monthlySalary ? ` · stipendio ${euro(report.economics.monthlySalary)} al mese: stipendio + quota di utile rendono ${euro(report.economics.hourlyEarnings ?? 0)} l’ora` : ''}. Stima sui dati dichiarati, non è il tuo reddito personale netto.</Text>
+        <Text style={[s.body, { marginTop: 3, fontSize: 8.5 }]}>Sotto {report.hourlyBenchmark.critical} € l’ora sei imprenditore solo sulla carta; un’impresa sana restituisce a chi la guida almeno {report.hourlyBenchmark.target} € l’ora.{report.economics.monthlySalary === 0 ? ' Non ti prendi uno stipendio: il costo della tua presenza non compare nei conti, e l’utile sembra più alto di quello che è.' : ''}</Text>
         <Text style={s.action}><Text style={{ fontWeight: 800 }}>Da fare: </Text>{report.economics.reading.action}</Text>
       </View> : null}
       <View style={s.card} wrap={false}>
@@ -149,7 +157,7 @@ function ReportDocument({ report }: { report: RadarReport }) {
     <Page size="A4" style={[s.cover, { justifyContent: 'center' }]}>
       <Text style={s.labelLime}>Il passo successivo</Text>
       <Text style={[s.h1, { marginTop: 14 }]}>Leggiamo insieme il tuo Radar.</Text>
-      <Text style={{ marginTop: 14, fontSize: 12, color: '#CFD7D5', lineHeight: 1.5 }}>Nel debriefing con Frank Cannoletta colleghiamo questi risultati agli obiettivi della tua impresa e scegliamo da dove partire, con un piano per i prossimi 90 giorni.</Text>
+      <Text style={{ marginTop: 14, fontSize: 12, color: '#CFD7D5', lineHeight: 1.5 }}>Nel debriefing con uno dei nostri consulenti colleghiamo questi risultati agli obiettivi della tua impresa e scegliamo da dove partire, con un piano per i prossimi 90 giorni.</Text>
       <View style={{ marginTop: 26, alignSelf: 'flex-start', backgroundColor: C.lime, borderRadius: 6, paddingVertical: 10, paddingHorizontal: 16 }}>
         <Link src={`mailto:info@horyzon.it?subject=${encodeURIComponent(`Debriefing Radar d’Impresa — ${report.company.aziendaNome}`)}`} style={{ color: C.ink, fontWeight: 800, fontSize: 12, textDecoration: 'none' }}>Prenota il debriefing: scrivi a info@horyzon.it</Link>
       </View>

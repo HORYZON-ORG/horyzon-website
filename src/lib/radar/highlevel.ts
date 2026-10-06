@@ -19,6 +19,23 @@ export interface RadarLead {
   settore: string;
   volumeAffari: string;
   numeroDipendenti: string;
+  descrizioneAttivita?: string;
+  /** utm_* of the landing link: the channel (billboard, fair, door to door, Telegram…) that brought the lead. */
+  fonteUtm?: Record<string, string> | null;
+}
+
+const slug = (value: string) => value.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
+
+/** One tag per channel, e.g. radar-fonte-fiera-milano; nothing when the link carried no utm_source. */
+export function radarSourceTags(lead: RadarLead): string[] {
+  const source = lead.fonteUtm?.utm_source ? slug(lead.fonteUtm.utm_source) : '';
+  return source ? [`radar-fonte-${source}`] : [];
+}
+
+function sourceLine(lead: RadarLead): string {
+  const utm = lead.fonteUtm ?? {};
+  const parts = [utm.utm_source, utm.utm_medium, utm.utm_campaign, utm.utm_content].filter(Boolean);
+  return parts.length ? parts.join(' / ') : 'diretto (nessun UTM)';
 }
 
 export interface HighLevelConfig { token: string; locationId: string; fetchImpl?: typeof fetch }
@@ -45,8 +62,8 @@ function splitName(full: string): { firstName: string; lastName: string } {
 
 const euro = (value: number, digits = 0) => new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value);
 
-export function radarOutcomeTags(report: RadarReport): string[] {
-  const tags = [RADAR_TAG, RADAR_COMPLETED_TAG, `radar-indice-${report.global.band.replace(/_/g, '-')}`];
+export function radarOutcomeTags(report: RadarReport, lead?: RadarLead): string[] {
+  const tags = [RADAR_TAG, RADAR_COMPLETED_TAG, `radar-indice-${report.global.band.replace(/_/g, '-')}`, ...(lead ? radarSourceTags(lead) : [])];
   if (report.economics) tags.push(`radar-utile-ora-${report.economics.band.replace(/_/g, '-')}`);
   return tags;
 }
@@ -61,13 +78,16 @@ export function radarLeadNote(lead: RadarLead, report: RadarReport): string {
     `Più solido: ${report.strongest.label} · Prioritario: ${report.weakest.label}`,
   ];
   if (report.economics) {
-    lines.push(`Utile per ora lavorata: ${euro(report.economics.hourlyProfit, 2)} (${report.economics.bandLabel}) — utile ${euro(report.economics.monthlyProfit)}/mese, ${Math.round(report.economics.monthlyHours)} ore/mese`);
+    const e = report.economics;
+    lines.push(`Utile per ora lavorata${e.ownerShare < 1 ? ` (quota ${Math.round(e.ownerShare * 100)}%)` : ''}: ${euro(e.hourlyProfit, 2)} (${e.bandLabel}) — utile ${euro(e.monthlyProfit)}/mese, ${Math.round(e.monthlyHours)} ore/mese`);
+    if (e.monthlySalary !== null) lines.push(e.monthlySalary > 0 ? `Stipendio titolare: ${euro(e.monthlySalary)}/mese · stipendio + quota utile = ${euro(e.hourlyEarnings ?? 0, 2)}/ora` : 'Stipendio titolare: nessuno');
   }
   if (report.priorities.length) {
     lines.push('', 'Priorità dei prossimi 90 giorni:');
     report.priorities.forEach((priority, index) => lines.push(`${index + 1}. ${priority.advice.title || priority.question} (${priority.area})`));
   }
-  lines.push('', `Settore: ${lead.settore} · Dipendenti: ${lead.numeroDipendenti} · Volume d’affari: ${lead.volumeAffari}${report.seasonal ? ' · Attività stagionale' : ''}`);
+  lines.push('', 'Azienda:', ...report.profile.map((line) => `- ${line.label}: ${line.value}`));
+  lines.push('', `Provenienza: ${sourceLine(lead)}`);
   lines.push(`Scheda completa e PDF nell’Hub: ${HUB_RADAR_URL}`);
   return lines.join('\n');
 }
@@ -91,7 +111,7 @@ async function upsertContact(config: HighLevelConfig, lead: RadarLead): Promise<
     email: lead.referenteEmail,
     phone: normalizePhone(lead.referenteTelefono) || undefined,
     companyName: lead.aziendaNome,
-    source: 'Radar d’Impresa (horyzon.it)',
+    source: lead.fonteUtm?.utm_source ? `Radar d’Impresa (horyzon.it) · ${lead.fonteUtm.utm_source}` : 'Radar d’Impresa (horyzon.it)',
   });
   const id = payload.contact?.id;
   if (!id) throw new Error('HighLevel upsert returned no contact id');
@@ -100,13 +120,13 @@ async function upsertContact(config: HighLevelConfig, lead: RadarLead): Promise<
 
 export async function syncRadarLeadStarted(config: HighLevelConfig, lead: RadarLead): Promise<string> {
   const contactId = await upsertContact(config, lead);
-  await call(config, `/contacts/${encodeURIComponent(contactId)}/tags`, { tags: [RADAR_TAG, RADAR_STARTED_TAG] });
+  await call(config, `/contacts/${encodeURIComponent(contactId)}/tags`, { tags: [RADAR_TAG, RADAR_STARTED_TAG, ...radarSourceTags(lead)] });
   return contactId;
 }
 
 export async function syncRadarLeadCompleted(config: HighLevelConfig, lead: RadarLead, report: RadarReport): Promise<string> {
   const contactId = await upsertContact(config, lead);
-  await call(config, `/contacts/${encodeURIComponent(contactId)}/tags`, { tags: radarOutcomeTags(report) });
+  await call(config, `/contacts/${encodeURIComponent(contactId)}/tags`, { tags: radarOutcomeTags(report, lead) });
   await call(config, `/contacts/${encodeURIComponent(contactId)}/notes`, { body: radarLeadNote(lead, report) });
   return contactId;
 }

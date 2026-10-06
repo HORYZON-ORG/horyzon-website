@@ -55,6 +55,10 @@
 .form input,.form select,.pin input{min-height:48px;padding:10px 12px;border:1px solid rgba(242,238,227,.24);border-radius:4px;background:rgba(242,238,227,.05);color:#f7f4e8;font:inherit;font-size:16px}
 .form select option{color:#07171d}
 .form button{grid-column:1/-1;justify-self:start;margin-top:8px}
+.form .formWide{grid-column:1/-1}
+.form textarea{min-height:64px;padding:10px 12px;border:1px solid rgba(242,238,227,.24);border-radius:4px;background:rgba(242,238,227,.05);color:#f7f4e8;font:inherit;font-size:16px;resize:vertical}
+.form textarea:focus-visible{outline:2px solid #d9e65f;outline-offset:3px}
+.form select:disabled,.form input:disabled{opacity:.45}
 
 /* Card footer: restart on the left, preview unlock at the bottom right. */
 .cardFoot{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:34px;padding-top:18px;border-top:1px solid rgba(247,244,232,.12)}
@@ -78,6 +82,14 @@
 .hourlyDetails dt{font-size:14px;color:#c9d3d4}
 .hourlyDetails dd{margin:6px 0 0;font-size:22px;font-weight:700;overflow-wrap:anywhere}
 .hourlyResult .hourlyNote{font-size:14px;color:#b8c6c8}
+.hourlyResult .hourlyBenchmark{margin:10px 0 0;font-size:14px;color:#e7ef9e}
+.hourlyNote b{color:#f7f4e8}
+/* Company profile: the data given at the start and in the economic questions. */
+.profileList{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0}
+.profileList div{padding:12px 14px;border:1px solid rgba(247,244,232,.14);border-radius:10px;min-width:0}
+.profileList dt{font:500 10px/1.4 var(--font-mono),monospace;letter-spacing:.12em;text-transform:uppercase;color:#9fb0b3}
+.profileList dd{margin:6px 0 0;font-weight:700;font-size:15px;overflow-wrap:anywhere}
+@media(max-width:760px){.profileList{grid-template-columns:1fr 1fr}}
 
 @media(max-width:700px){
   .panel{padding:24px 18px;border-radius:14px}

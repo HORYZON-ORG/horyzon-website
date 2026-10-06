@@ -1,5 +1,6 @@
 // The paid Radar report: scores, answers and advice composed into one document (page, PDF and email share it).
-import { ADVICE_BAND_LABELS, adviceKey, answerBand, hourlyProfitBand, scoreBand, type AdviceBand, type RadarAdvice } from './advice.ts';
+import { ADVICE_BAND_LABELS, adviceKey, answerBand, HOURLY_PROFIT_CRITICAL, HOURLY_PROFIT_TARGET, hourlyProfitBand, scoreBand, type AdviceBand, type RadarAdvice } from './advice.ts';
+import { OWNER_SALARY_KEY, PARTNERS_KEY } from './owner-economics.ts';
 import { RADAR_AREAS } from './domain.ts';
 import type { RadarAnswers, RadarAreaId, RadarOwnerEconomics, RadarScores } from './types.ts';
 
@@ -11,6 +12,8 @@ export interface RadarReportContext {
   settore: string;
   numeroDipendenti: string;
   volumeAffari: string;
+  /** What the company actually does, in the owner's words (v3 qualification). */
+  descrizioneAttivita?: string;
   completedAt: string | null;
 }
 
@@ -33,6 +36,10 @@ export interface RadarReport {
   weakest: { label: string; score: number };
   priorities: ReportPriority[];
   seasonal: boolean;
+  /** The data given at the start and in the economic questions, as label/value lines for page, PDF and CRM. */
+  profile: { label: string; value: string }[];
+  /** Reference values for the hourly figure, so every surface quotes the same thresholds. */
+  hourlyBenchmark: { critical: number; target: number };
 }
 
 const AI_USES = ['Contenuti e marketing', 'Amministrazione e reportistica', 'Servizio clienti', 'Analisi dati e decisioni', 'Non la utilizziamo ancora', 'Altro'];
@@ -101,5 +108,24 @@ export function buildRadarReport(input: { scores: RadarScores; answers: RadarAns
     weakest: { label: scores.weakestArea.label, score: scores.weakestArea.score },
     priorities: chosen.map(({ area, gap }) => ({ area: area.label, question: gap.question, answerLabel: gap.answerLabel, advice: gap.advice })),
     seasonal: scores.seasonal,
+    profile: companyProfile(context, answers, scores.seasonal),
+    hourlyBenchmark: { critical: HOURLY_PROFIT_CRITICAL, target: HOURLY_PROFIT_TARGET },
   };
+}
+
+const euroWhole = (value: number) => `${new Intl.NumberFormat('it-IT', { maximumFractionDigits: 0 }).format(value)} €`;
+
+function companyProfile(context: RadarReportContext, answers: RadarAnswers, seasonal: boolean): { label: string; value: string }[] {
+  const salary = answers[OWNER_SALARY_KEY];
+  const partners = answers[PARTNERS_KEY];
+  const lines: [string, string | undefined][] = [
+    ['Settore', context.settore],
+    ['Cosa fa l’azienda', context.descrizioneAttivita],
+    ['Fatturato annuo', context.volumeAffari],
+    ['Dipendenti', context.numeroDipendenti],
+    ['Attività stagionale', seasonal ? 'Sì' : 'No'],
+    ['Soci', Array.isArray(partners) ? (partners[0] === 1 ? `Sì · la tua quota è il ${partners[1]}%` : 'No, unico titolare') : undefined],
+    ['Stipendio del titolare', Array.isArray(salary) ? (salary[0] === 1 ? `${euroWhole(salary[2] ?? 0)} lordi ${salary[1] === 1 ? 'al mese' : 'l’anno'}` : 'Nessuno') : undefined],
+  ];
+  return lines.filter((line): line is [string, string] => Boolean(line[1]?.trim())).map(([label, value]) => ({ label, value }));
 }

@@ -7,6 +7,7 @@ export const DEBRIEFING_MAILTO = (company: string) => `mailto:info@horyzon.it?su
 
 const euro = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const number = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 1 });
+const euroWhole = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
 
 function ReportRadar({ report }: { report: RadarReport }) {
   const values = report.areas.map((area) => Math.max(0.04, area.score / 100));
@@ -47,6 +48,11 @@ export function RadarResult({ report, onRestart }: { report: RadarReport; onRest
       <ReportRadar report={report} />
     </div>
 
+    {report.profile.length ? <>
+      <h3 className={styles.reportH3}>La tua azienda</h3>
+      <dl className={styles.profileList}>{report.profile.map((line) => <div key={line.label}><dt>{line.label}</dt><dd>{line.value}</dd></div>)}</dl>
+    </> : null}
+
     <h3 className={styles.reportH3}>Le tre priorità dei prossimi 90 giorni</h3>
     {report.priorities.length ? <ol className={styles.priorities}>{report.priorities.map((priority) => <li key={priority.question}>
       <p className={styles.indexLabel}>{priority.area}</p><h4>{priority.advice.title}</h4><p>{priority.advice.action}</p>
@@ -60,13 +66,18 @@ export function RadarResult({ report, onRestart }: { report: RadarReport; onRest
     {economics ? <article className={styles.hourlyResult} aria-labelledby="radar-hourly-title">
       <h3 id="radar-hourly-title">Quanto rende ogni ora che lavori?</h3>
       <p className={styles.hourlyValue}>{euro.format(economics.hourlyProfit)}<span> / ora</span></p>
+      <p className={styles.hourlyBenchmark}>Sotto {euroWhole.format(report.hourlyBenchmark.critical)} l’ora sei imprenditore solo sulla carta. Un’impresa sana restituisce a chi la guida almeno {euroWhole.format(report.hourlyBenchmark.target)} l’ora.</p>
       <dl className={styles.hourlyDetails}>
-        <div><dt>Utile medio mensile</dt><dd>{euro.format(economics.monthlyProfit)}</dd></div>
+        <div><dt>Utile medio mensile{economics.ownerShare < 1 ? ' (azienda)' : ''}</dt><dd>{euro.format(economics.monthlyProfit)}</dd></div>
+        {economics.ownerShare < 1 ? <div><dt>La tua quota ({number.format(economics.ownerShare * 100)}%)</dt><dd>{euro.format(economics.ownerMonthlyProfit)}</dd></div> : null}
         <div><dt>Ore medie mensili</dt><dd>{number.format(economics.monthlyHours)}</dd></div>
+        {economics.monthlySalary !== null ? <div><dt>Stipendio mensile lordo</dt><dd>{economics.monthlySalary > 0 ? euro.format(economics.monthlySalary) : 'Nessuno'}</dd></div> : null}
+        {economics.hourlyEarnings !== null && economics.monthlySalary ? <div><dt>Stipendio + quota di utile, per ora</dt><dd>{euro.format(economics.hourlyEarnings)}</dd></div> : null}
       </dl>
+      {economics.monthlySalary === 0 ? <p className={styles.hourlyNote}><b>Non ti prendi uno stipendio.</b> Il costo della tua presenza in azienda non compare nei conti: l’utile sembra più alto di quello che è, e se un giorno dovessi pagare qualcuno per fare il tuo lavoro, quanto resterebbe?</p> : null}
       <h4>{economics.reading.title}</h4><p>{economics.reading.body}</p>
       <p className={styles.todo}><b>Da fare</b>{economics.reading.action}</p>
-      <p className={styles.hourlyNote}>Calcolo: utile mensile ÷ ore mensili. Convertiamo l’utile annuale dividendo per 12 e le ore settimanali moltiplicando per 52 ÷ 12. È una stima basata sui dati dichiarati: non rappresenta il tuo stipendio, i dividendi o il reddito personale netto.</p>
+      <p className={styles.hourlyNote}>Calcolo: {economics.ownerShare < 1 ? 'la tua quota dell’utile mensile' : 'utile mensile'} ÷ ore mensili. Convertiamo l’utile annuale dividendo per 12 e le ore settimanali moltiplicando per 52 ÷ 12. È una stima basata sui dati dichiarati: non è il tuo reddito personale netto.</p>
     </article> : <p className={styles.gapNote}>Utile per ora non disponibile: questo Radar non contiene i dati su ore lavorate e utile.</p>}
 
     <h3 className={styles.reportH3}>Reparto per reparto</h3>
@@ -88,8 +99,8 @@ export function RadarResult({ report, onRestart }: { report: RadarReport; onRest
     <aside className={styles.debriefing}>
       <p className={styles.indexLabel}>Il passo successivo</p>
       <h3>Leggiamo insieme il tuo Radar.</h3>
-      <p>Nel debriefing con Frank Cannoletta colleghiamo questi risultati agli obiettivi della tua impresa e scegliamo da dove partire, con un piano per i prossimi 90 giorni.</p>
-      <a href={DEBRIEFING_MAILTO(report.company.aziendaNome)}>Prenota il debriefing con Frank</a>
+      <p>Nel debriefing con uno dei nostri consulenti colleghiamo questi risultati agli obiettivi della tua impresa e scegliamo da dove partire, con un piano per i prossimi 90 giorni.</p>
+      <a href={DEBRIEFING_MAILTO(report.company.aziendaNome)}>Prenota il debriefing</a>
     </aside>
     <p className={styles.gapNote}>Una fotografia guidata basata sulle tue risposte: non è una diagnosi completa né una valutazione finanziaria, fiscale o legale.</p>
     <div className={styles.cardFoot}><button type="button" className={styles.restart} onClick={onRestart}>Rifai il test da zero</button></div>

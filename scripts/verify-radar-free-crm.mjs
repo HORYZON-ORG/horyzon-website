@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { createMemoryRadarPersistence } from '../src/lib/radar/persistence/adapter.ts';
 import { createRadarService, RadarAccessError } from '../src/lib/radar/service.ts';
 import { radarSteps } from '../src/lib/radar/domain.ts';
-import { normalizePhone, radarLeadNote, radarOutcomeTags, syncRadarLeadCompleted, syncRadarLeadStarted } from '../src/lib/radar/highlevel.ts';
+import { normalizePhone, radarLeadNote, radarOutcomeTags, radarSourceTags, syncRadarLeadCompleted, syncRadarLeadStarted } from '../src/lib/radar/highlevel.ts';
 import { bearerToken, staffOrigins, verifyRadarStaff } from '../src/lib/radar/staff-auth.ts';
 
 // Free Radar: completing opens the result, no purchase or PIN.
@@ -15,7 +15,7 @@ let revision = 0;
 let currentStep = 0;
 for (const step of radarSteps().filter((item) => item.id !== 'qualificazione#stagionale')) {
   currentStep += 1;
-  const saved = await free.saveAnswer({ assessmentId: owner.id, ownerSecret: owner.ownerSecret, answerKey: step.id, value: step.kind === 'OWNER_HOURS' ? [0, 60, 0] : step.kind === 'COMPANY_PROFIT' ? [0, 30000] : step.kind === 'AI_MULTI' ? [0] : 2, expectedRevision: revision, currentStep });
+  const saved = await free.saveAnswer({ assessmentId: owner.id, ownerSecret: owner.ownerSecret, answerKey: step.id, value: step.kind === 'OWNER_HOURS' ? [0, 60, 0] : step.kind === 'COMPANY_PROFIT' ? [0, 30000] : step.kind === 'OWNER_SALARY' ? [1, 1, 2000] : step.kind === 'PARTNERS' ? [1, 50] : step.kind === 'AI_MULTI' ? [0] : 2, expectedRevision: revision, currentStep });
   revision = saved.revision;
 }
 const completed = await free.completeAssessment(owner.id, owner.ownerSecret);
@@ -36,6 +36,25 @@ const staffReport = await free.readStaffReport(owner.id);
 assert.equal(staffReport.company.aziendaNome, 'Acme');
 assert.ok(staffReport.economics && staffReport.economics.hourlyProfit > 0);
 await assert.rejects(() => free.readStaffReport('00000000-0000-0000-0000-000000000000'), /not found/i);
+
+// v3 report: company profile (form + economic answers) and the hourly benchmark from the call of 5 Oct 2026.
+const profile = Object.fromEntries(staffReport.profile.map((line) => [line.label, line.value]));
+assert.equal(profile['Soci'], 'Sì · la tua quota è il 50%');
+assert.equal(profile['Stipendio del titolare'], '2000 € lordi al mese');
+assert.equal(profile['Attività stagionale'], 'No');
+assert.equal(profile['Settore'], 'Servizi');
+assert.deepEqual(staffReport.hourlyBenchmark, { critical: 50, target: 180 });
+assert.equal(staffReport.economics.ownerShare, 0.5);
+assert.equal(staffReport.economics.band, 'critico');
+
+// Traffic source: one tag per utm_source, and the note says where the lead came from.
+const fromFair = { ...qualification, fonteUtm: { utm_source: 'Fiera Milano', utm_medium: 'qr' } };
+assert.deepEqual(radarSourceTags(fromFair), ['radar-fonte-fiera-milano']);
+assert.deepEqual(radarSourceTags(qualification), []);
+assert.match(radarLeadNote(fromFair, staffReport), /Provenienza: Fiera Milano \/ qr/);
+assert.match(radarLeadNote(qualification, staffReport), /Provenienza: diretto/);
+assert.match(radarLeadNote(fromFair, staffReport), /- Stipendio del titolare: 2000 € lordi al mese/);
+assert.ok(radarOutcomeTags(staffReport, fromFair).includes('radar-fonte-fiera-milano'));
 
 // HighLevel: upsert without tags (they would replace existing ones), then add tags, then the note.
 assert.equal(normalizePhone('333 123 4567'), '+393331234567');

@@ -9,6 +9,12 @@ export interface RadarQualificationInput {
   volumeAffari: string;
   numeroDipendenti: string;
   seasonal: boolean;
+  /** What the company actually does, in the owner's words. */
+  descrizioneAttivita?: string;
+  /** Exact annual turnover in euros (volumeAffari keeps it formatted for people). */
+  volumeAffariEuro?: number | null;
+  /** utm_* parameters of the link that brought the person to the Radar. */
+  fonteUtm?: Record<string, string> | null;
 }
 
 export interface RadarOwnedSession {
@@ -24,7 +30,7 @@ export interface RadarProgressProjection { revision: number; currentStep: number
 export interface SaveRadarAnswerInput extends RadarOwnership { answerKey: string; value: RadarAnswer; expectedRevision: number; currentStep: number }
 export interface RadarAccessEventInput { assessmentId: string; accessSource: 'PURCHASE' | 'PREVIEW'; eventType: 'PREVIEW_GRANTED' | 'PREVIEW_DENIED' | 'RESULT_OPENED' }
 
-export interface RadarReportOwnerContext { aziendaNome: string; referenteNome: string; referenteEmail: string; referenteTelefono: string; settore: string; numeroDipendenti: string; volumeAffari: string; completedAt: string | null }
+export interface RadarReportOwnerContext { aziendaNome: string; referenteNome: string; referenteEmail: string; referenteTelefono: string; descrizioneAttivita: string; fonteUtm: Record<string, string> | null; settore: string; numeroDipendenti: string; volumeAffari: string; completedAt: string | null }
 /** One assessment read by id alone, for staff tools that authorised the caller themselves. */
 export interface RadarStaffRecord { id: string; questionnaireVersion: string; status: RadarJourneyStatus; answers: RadarAnswers; context: RadarReportOwnerContext }
 export interface RadarAdviceRow { kind: string; subject: string; band: string; title: string | null; body: string | null; action: string | null }

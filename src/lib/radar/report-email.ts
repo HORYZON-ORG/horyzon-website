@@ -16,10 +16,10 @@ export function buildRadarReportEmail(input: RadarReportEmailInput, from: string
 <p style="font-size:15px;line-height:1.55">Indice globale <b>${report.global.score}/100</b> · ${escape(report.global.reading.title)}.<br>Reparto più solido: <b>${escape(report.strongest.label)}</b>. Reparto prioritario: <b>${escape(report.weakest.label)}</b>.</p>
 ${priorities ? `<p style="font-size:15px;margin:20px 0 8px"><b>Le tre priorità dei prossimi 90 giorni</b></p><ol style="padding:0;list-style:none;font-size:14px">${priorities}</ol>` : ''}
 <p style="font-size:15px;line-height:1.55">Trovi il report completo, reparto per reparto, nel PDF allegato.</p>
-<p style="margin:24px 0"><a href="mailto:info@horyzon.it?subject=${encodeURIComponent(`Debriefing Radar d’Impresa — ${report.company.aziendaNome}`)}" style="background:#D8FF42;color:#07171D;text-decoration:none;font-weight:800;padding:12px 18px;border-radius:6px;display:inline-block">Prenota il debriefing con Frank</a></p>
+<p style="margin:24px 0"><a href="mailto:info@horyzon.it?subject=${encodeURIComponent(`Debriefing Radar d’Impresa — ${report.company.aziendaNome}`)}" style="background:#D8FF42;color:#07171D;text-decoration:none;font-weight:800;padding:12px 18px;border-radius:6px;display:inline-block">Prenota il debriefing con un nostro consulente</a></p>
 <p style="font-size:12px;color:#5A6868">Una fotografia guidata basata sulle tue risposte: non è una diagnosi completa né una valutazione finanziaria, fiscale o legale.</p>
 </div><p style="text-align:center;font-size:12px;color:#5A6868">Horyzon Consulting · horyzon.it</p></div>`;
-  const text = `Ecco il report del Radar d’Impresa di ${report.company.aziendaNome}.\nIndice globale ${report.global.score}/100. Reparto prioritario: ${report.weakest.label}.\nIl report completo è nel PDF allegato.\nPrenota il debriefing con Frank: scrivi a info@horyzon.it`;
+  const text = `Ecco il report del Radar d’Impresa di ${report.company.aziendaNome}.\nIndice globale ${report.global.score}/100. Reparto prioritario: ${report.weakest.label}.\nIl report completo è nel PDF allegato.\nPrenota il debriefing con un nostro consulente: scrivi a info@horyzon.it`;
   const slug = report.company.aziendaNome.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'impresa';
   return {
     from, to: [input.to], ...(replyTo ? { reply_to: replyTo } : {}),

@@ -66,7 +66,7 @@ class MemoryRadarPersistence implements RadarPersistence {
 
   async readReportContext(input: RadarOwnership): Promise<RadarReportOwnerContext> {
     const row = this.owned(input);
-    return { aziendaNome: row.aziendaNome, referenteNome: row.referenteNome, referenteEmail: row.referenteEmail, referenteTelefono: row.referenteTelefono, settore: row.settore, numeroDipendenti: row.numeroDipendenti, volumeAffari: row.volumeAffari, completedAt: null };
+    return { aziendaNome: row.aziendaNome, referenteNome: row.referenteNome, referenteEmail: row.referenteEmail, referenteTelefono: row.referenteTelefono, descrizioneAttivita: row.descrizioneAttivita ?? '', fonteUtm: row.fonteUtm ?? null, settore: row.settore, numeroDipendenti: row.numeroDipendenti, volumeAffari: row.volumeAffari, completedAt: null };
   }
 
   readonly advice: RadarAdviceRow[] = [];
@@ -88,7 +88,7 @@ class MemoryRadarPersistence implements RadarPersistence {
   async readStaffRecord(assessmentId: string): Promise<RadarStaffRecord> {
     const row = this.rows.get(assessmentId);
     if (!row) throw new RadarNotFoundError();
-    return { id: row.id, questionnaireVersion: row.questionnaireVersion, status: row.status, answers: structuredClone(row.answers), context: { aziendaNome: row.aziendaNome, referenteNome: row.referenteNome, referenteEmail: row.referenteEmail, referenteTelefono: row.referenteTelefono, settore: row.settore, numeroDipendenti: row.numeroDipendenti, volumeAffari: row.volumeAffari, completedAt: null } };
+    return { id: row.id, questionnaireVersion: row.questionnaireVersion, status: row.status, answers: structuredClone(row.answers), context: { aziendaNome: row.aziendaNome, referenteNome: row.referenteNome, referenteEmail: row.referenteEmail, referenteTelefono: row.referenteTelefono, descrizioneAttivita: row.descrizioneAttivita ?? '', fonteUtm: row.fonteUtm ?? null, settore: row.settore, numeroDipendenti: row.numeroDipendenti, volumeAffari: row.volumeAffari, completedAt: null } };
   }
 
   private owned(input: RadarOwnership): MemoryRow {
@@ -122,6 +122,9 @@ export class SupabaseRadarPersistence implements RadarPersistence {
         settore: input.settore,
         volume_affari: input.volumeAffari,
         numero_dipendenti: input.numeroDipendenti,
+        descrizione_attivita: input.descrizioneAttivita || null,
+        volume_affari_euro: input.volumeAffariEuro ?? null,
+        fonte_utm: input.fonteUtm && Object.keys(input.fonteUtm).length ? input.fonteUtm : null,
         token: randomUUID().replaceAll('-', ''),
         owner_secret_hash: owner.secretHash,
         questionnaire_version: RADAR_QUESTIONNAIRE_VERSION,
@@ -172,11 +175,11 @@ export class SupabaseRadarPersistence implements RadarPersistence {
   }
 
   async readReportContext(input: RadarOwnership): Promise<RadarReportOwnerContext> {
-    const rows = await this.request<Record<string, unknown>[]>(`/rest/v1/radar_assessments?id=eq.${encodeURIComponent(input.assessmentId)}&owner_secret_hash=eq.${encodeURIComponent(input.ownerSecretHash)}&select=azienda_nome,referente_nome,referente_email,referente_telefono,settore,numero_dipendenti,volume_affari,completato_il,payment_gate_at`, { method: 'GET' });
+    const rows = await this.request<Record<string, unknown>[]>(`/rest/v1/radar_assessments?id=eq.${encodeURIComponent(input.assessmentId)}&owner_secret_hash=eq.${encodeURIComponent(input.ownerSecretHash)}&select=azienda_nome,referente_nome,referente_email,referente_telefono,descrizione_attivita,fonte_utm,settore,numero_dipendenti,volume_affari,completato_il,payment_gate_at`, { method: 'GET' });
     const row = rows[0];
     if (!row) throw new Error('Radar ownership verification failed.');
     const text = (value: unknown) => typeof value === 'string' ? value : '';
-    return { aziendaNome: text(row.azienda_nome), referenteNome: text(row.referente_nome), referenteEmail: text(row.referente_email), referenteTelefono: text(row.referente_telefono), settore: text(row.settore), numeroDipendenti: text(row.numero_dipendenti), volumeAffari: text(row.volume_affari), completedAt: text(row.completato_il) || text(row.payment_gate_at) || null };
+    return { aziendaNome: text(row.azienda_nome), referenteNome: text(row.referente_nome), referenteEmail: text(row.referente_email), referenteTelefono: text(row.referente_telefono), descrizioneAttivita: text(row.descrizione_attivita), fonteUtm: row.fonte_utm && typeof row.fonte_utm === 'object' ? row.fonte_utm as Record<string, string> : null, settore: text(row.settore), numeroDipendenti: text(row.numero_dipendenti), volumeAffari: text(row.volume_affari), completedAt: text(row.completato_il) || text(row.payment_gate_at) || null };
   }
 
   async listAdvice(): Promise<RadarAdviceRow[]> {
@@ -196,13 +199,13 @@ export class SupabaseRadarPersistence implements RadarPersistence {
   }
 
   async readStaffRecord(assessmentId: string): Promise<RadarStaffRecord> {
-    const rows = await this.request<Record<string, unknown>[]>(`/rest/v1/radar_assessments?id=eq.${encodeURIComponent(assessmentId)}&select=id,questionnaire_version,journey_status,risposte,azienda_nome,referente_nome,referente_email,referente_telefono,settore,numero_dipendenti,volume_affari,completato_il,payment_gate_at`, { method: 'GET' });
+    const rows = await this.request<Record<string, unknown>[]>(`/rest/v1/radar_assessments?id=eq.${encodeURIComponent(assessmentId)}&select=id,questionnaire_version,journey_status,risposte,azienda_nome,referente_nome,referente_email,referente_telefono,descrizione_attivita,fonte_utm,settore,numero_dipendenti,volume_affari,completato_il,payment_gate_at`, { method: 'GET' });
     const row = rows[0];
     if (!row) throw new RadarNotFoundError();
     const text = (value: unknown) => typeof value === 'string' ? value : '';
     return {
       id: String(row.id), questionnaireVersion: String(row.questionnaire_version ?? 'radar-v1'), status: row.journey_status as RadarJourneyStatus, answers: (row.risposte ?? {}) as RadarAnswers,
-      context: { aziendaNome: text(row.azienda_nome), referenteNome: text(row.referente_nome), referenteEmail: text(row.referente_email), referenteTelefono: text(row.referente_telefono), settore: text(row.settore), numeroDipendenti: text(row.numero_dipendenti), volumeAffari: text(row.volume_affari), completedAt: text(row.completato_il) || text(row.payment_gate_at) || null },
+      context: { aziendaNome: text(row.azienda_nome), referenteNome: text(row.referente_nome), referenteEmail: text(row.referente_email), referenteTelefono: text(row.referente_telefono), descrizioneAttivita: text(row.descrizione_attivita), fonteUtm: row.fonte_utm && typeof row.fonte_utm === 'object' ? row.fonte_utm as Record<string, string> : null, settore: text(row.settore), numeroDipendenti: text(row.numero_dipendenti), volumeAffari: text(row.volume_affari), completedAt: text(row.completato_il) || text(row.payment_gate_at) || null },
     };
   }
 
