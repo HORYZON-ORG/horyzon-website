@@ -234,7 +234,7 @@ assert.deepEqual(
 
 {
   const context = makeContext(new MockAnnunci10xProvider(['success', 'success', 'success', 'success', 'success', 'success', 'success', 'success']));
-  const created = await createReadySession(context);
+  const created = await createReadySession(context, 'ANALYZE');
   await runAnnunci10xPremiumGeneration({
     sessionId: created.session.id,
     sessionSecret: created.sessionSecret,
