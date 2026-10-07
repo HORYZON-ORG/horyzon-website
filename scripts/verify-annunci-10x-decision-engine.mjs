@@ -692,6 +692,15 @@ const completeGoodBody = [
 }
 
 {
+  const report = check(
+    completeGoodBody + '\nNella giornata tipo gestirai le richieste dei clienti.',
+    { responsibilities: 'Gestire le richieste dei clienti.' },
+  );
+  assert.equal(report.violations.responsibilityExpansion, true, 'undeclared daily cadence must require repair');
+  assert.equal(report.final, 'FIX_REQUIRED');
+}
+
+{
   const report = check('Il patentino muletto e gradito ma non obbligatorio: facilita l inserimento operativo.');
   assert.equal(report.violations.preferredConsequence, true, 'preferred requirements must not invent candidate-facing consequences');
 }
