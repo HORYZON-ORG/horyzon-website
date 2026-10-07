@@ -1,8 +1,21 @@
 import type { GeneratedAd, GeneratedSection } from '../types.ts';
 import { factValue } from './ledger.ts';
+import { includesEquivalent, normalizeForDecision } from './text.ts';
 import type { Annunci10xTruthLedger } from './types.ts';
 
 const GENERIC_APPLICATION_CTA = 'Se questa posizione ti interessa, inviaci la tua candidatura.';
+
+const CANDIDATE_SECTION_TITLES = new Map<string, string>([
+  ['OPENING', 'Il ruolo'],
+  ['MISSION', 'Il tuo obiettivo'],
+  ['RESPONSIBILITIES', 'Cosa farai'],
+  ['CONTEXT', 'Con chi lavorerai'],
+  ['REQUIREMENTS', 'Cosa cerchiamo'],
+  ['CONDITIONS', 'Condizioni di lavoro'],
+  ['GROWTH', 'Cosa trovi'],
+  ['APPLICATION', 'Candidatura'],
+]);
+
 
 const INTERNAL_TITLE_REWRITES = new Map<string, string>([
   ['contesto', 'Chi siamo'],
@@ -54,10 +67,8 @@ export function sanitizeAnnunci10xCandidateMaster(master: GeneratedAd, ledger: A
   const stripListMarkers = hasNarrativeBodyProse(master);
   const sections = master.sections
     .map((section) => sanitizeSection(section, ledger, stripListMarkers))
-    .filter((section): section is GeneratedSection => {
-      if (section.type === 'TITLE') return Boolean(section.title.trim() || section.body.trim());
-      return Boolean(section.title.trim() || section.body.trim());
-    });
+    .filter((section): section is GeneratedSection => Boolean(section.title.trim() || section.body.trim()))
+    .filter((section) => !isRedundantGrowthSection(section, ledger));
   return { ...master, sections };
 }
 
@@ -66,7 +77,20 @@ function sanitizeSection(section: GeneratedSection, ledger: Annunci10xTruthLedge
   const dropWholeSection = INTERNAL_DROP_TITLE_MARKERS.includes(normalizedTitle);
   if (dropWholeSection) return { ...section, title: '', body: '' };
 
-  const title = INTERNAL_TITLE_REWRITES.get(normalizedTitle) ?? section.title;
+  if (section.type === 'TITLE') {
+    const role = factValue(ledger.roleCard.title).trim();
+    const roleFact = ledger.facts.find((fact) => fact.category === 'ROLE');
+    return {
+      ...section,
+      title: '',
+      body: role || sanitizeCandidateText(section.body, ledger, stripListMarkers),
+      sourceFactIds: roleFact ? [roleFact.id] : section.sourceFactIds,
+    };
+  }
+
+  const title = CANDIDATE_SECTION_TITLES.get(section.type)
+    ?? INTERNAL_TITLE_REWRITES.get(normalizedTitle)
+    ?? section.title;
   const genericApplication = section.type === 'APPLICATION'
     && !hasSpecificApplicationInstruction(factValue(ledger.roleCard.applicationInstructions));
   const body = genericApplication
@@ -147,11 +171,48 @@ function stripOrRewriteInternalPrefix(value: string): string {
   if (label === 'attivita confermate' || label === 'attivita tipiche incluse nel ruolo') {
     return content;
   }
+  if (label === 'elementi concreti da valorizzare') {
+    return content;
+  }
   if (label === 'candidatura') {
     return content;
   }
 
   return value;
+}
+
+function isRedundantGrowthSection(section: GeneratedSection, ledger: Annunci10xTruthLedger): boolean {
+  if (section.type !== 'GROWTH') return false;
+  const clauses = section.body
+    .replace(/^elementi concreti da valorizzare\s*:\s*/i, '')
+    .split(/[;\n]+/)
+    .map((value) => value.trim())
+    .filter(Boolean);
+  if (clauses.length === 0) return true;
+
+  const knownFacts = ledger.facts
+    .filter((fact) => fact.publishable && fact.category !== 'BENEFIT')
+    .map((fact) => normalizeForDecision(fact.value))
+    .filter(Boolean);
+  const hasPreferred = ledger.facts.some((fact) => fact.category === 'REQUIREMENT_PREFERRED' && fact.publishable);
+  const hasWorkMode = ledger.facts.some((fact) => fact.key === 'workMode' && fact.publishable);
+  const hasSchedule = ledger.facts.some((fact) => fact.key === 'schedule' && fact.publishable);
+  const hasContract = ledger.facts.some((fact) => fact.key === 'contract' && fact.publishable);
+  const hasCompensation = ledger.facts.some((fact) => fact.key === 'compensation' && fact.publishable);
+  const hasLocation = ledger.facts.some((fact) => fact.key === 'location' && fact.publishable);
+
+  return clauses.every((clause) => {
+    const normalized = normalizeForDecision(clause);
+    if (!normalized) return true;
+    if (knownFacts.some((known) => includesEquivalent(known, normalized) || includesEquivalent(normalized, known))) return true;
+    if (hasWorkMode && /\b(?:modalita|ibrid|remot|ufficio|presenza)\b/.test(normalized)) return true;
+    if (hasPreferred && /\besperien/.test(normalized) && /\b(?:prefer|gradit|non obblig)/.test(normalized)) return true;
+    if (hasSchedule && /\b(?:orario|lunedi|martedi|mercoledi|giovedi|venerdi|sabato|domenica)\b/.test(normalized)) return true;
+    if (hasContract && /\bcontratt/.test(normalized)) return true;
+    if (hasCompensation && /\b(?:ral|retribu|compenso)\b/.test(normalized)) return true;
+    if (hasLocation && /\b(?:sede|luogo|localit)\b/.test(normalized)) return true;
+    return false;
+  });
 }
 
 function sanitizeApplicationPlaceholder(value: string, ledger: Annunci10xTruthLedger): string {
