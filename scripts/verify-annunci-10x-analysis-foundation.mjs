@@ -170,6 +170,11 @@ assert.equal(completed?.stage, 'COMPLETE');
 assert.ok(completed?.evaluationId);
 assert.equal(context.provider.calls.length, 6);
 assert.ok('CLARIFY' in completed.operationRefs, 'V1 keeps clarification operation refs');
+assert.equal(
+  (await context.persistence.getSession(session.sessionId, session.sessionSecret))?.state,
+  'ENTITLED',
+  'completed analysis must make the session eligible for the free rewrite',
+);
 
 const status = await getAnnunci10xAnalysisRunStatus({ analysisRunId: started.run.id, session, context });
 assert.deepEqual(status && {
@@ -271,6 +276,11 @@ assert.equal(v2Completed?.status, 'READY');
 assert.equal(v2Context.provider.calls.length, 5, 'V2 public uses shared preprocessing plus EVALUATE only');
 assert.deepEqual(v2Context.provider.calls.map((call) => call.operationType), ['PRECHECK', 'EXTRACT', 'PROFILE', 'STRATEGY', 'EVALUATE']);
 assert.equal('CLARIFY' in (v2Completed?.operationRefs ?? {}), false, 'V2 public skips V1 clarification');
+assert.equal(
+  (await v2Context.persistence.getSession(v2Session.sessionId, v2Session.sessionSecret))?.state,
+  'ENTITLED',
+  'V2 completed analysis must make the session eligible for the free rewrite',
+);
 const v2Evaluation = await v2Context.persistence.getLatestEvaluation(v2Session.sessionId, v2Session.sessionSecret);
 assert.equal(v2Evaluation?.score.rubricVersion, 'annunci10x-rubric-v2');
 assert.equal(v2Evaluation?.gate, null);
