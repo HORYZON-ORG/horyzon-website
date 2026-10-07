@@ -5,20 +5,28 @@ import type { Annunci10xTruthLedger } from './types.ts';
 const GENERIC_APPLICATION_CTA = 'Se questa posizione ti interessa, inviaci la tua candidatura.';
 
 const INTERNAL_TITLE_REWRITES = new Map<string, string>([
+  ['contesto', 'Chi siamo'],
+  ['missione', 'Il tuo obiettivo'],
+  ['attivita principali', 'Cosa farai'],
   ['attivita confermate', 'Cosa farai'],
   ['attivita tipiche incluse nel ruolo', 'Cosa farai'],
-  ['requisiti obbligatori', 'Cosa serve'],
-  ['requisiti principali', 'Cosa serve'],
-  ['requisiti principali obbligatori', 'Cosa serve'],
-  ['indispensabili', 'Cosa serve'],
+  ['contesto operativo', 'Con chi lavorerai'],
+  ['requisiti', 'Cosa cerchiamo'],
+  ['requisiti obbligatori', 'Cosa cerchiamo'],
+  ['requisiti principali', 'Cosa cerchiamo'],
+  ['requisiti principali obbligatori', 'Cosa cerchiamo'],
+  ['indispensabili', 'Cosa cerchiamo'],
   ['requisiti preferenziali', 'Cosa e gradito'],
   ['requisiti preferiti', 'Cosa e gradito'],
   ['preferenziali', 'Cosa e gradito'],
-  ['condizioni confermate', 'Condizioni'],
+  ['condizioni', 'Condizioni di lavoro'],
+  ['condizioni confermate', 'Condizioni di lavoro'],
+  ['benefit attrattivita dichiarati', 'Cosa trovi'],
+  ['benefit attrattivita', 'Cosa trovi'],
   ['candidatura', 'Candidatura'],
   ['autonomia', 'Come lavorerai'],
   ['imprevisti e variabilita', 'Nel lavoro quotidiano'],
-  ['obiettivo del ruolo', 'Il ruolo'],
+  ['obiettivo del ruolo', 'Il tuo obiettivo'],
 ]);
 
 const INTERNAL_DROP_TITLE_MARKERS = [

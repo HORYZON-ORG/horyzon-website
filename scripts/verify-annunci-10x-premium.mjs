@@ -197,6 +197,10 @@ assert.deepEqual(
   assert.equal(result.comparison?.generatedAdId, result.master.id, 'Analyze path includes comparison');
   assert.equal(JSON.stringify(context.provider.calls).includes('commercialContext'), false, 'generation prompts do not receive commercial context');
   assert.equal(JSON.stringify(context.provider.calls).includes('"payment"'), false, 'generation prompts do not receive payment state');
+  const generateCall = context.provider.calls.find((call) => call.operationType === 'GENERATE');
+  assert.equal(generateCall?.input?.communicationStrategy?.summary, strategy.summary, 'Writer receives the grounded communication strategy');
+  assert.equal(generateCall?.input?.communicationStrategy?.candidateAngle, strategy.candidateAngle, 'Writer receives candidate-facing editorial direction');
+  assert.equal(JSON.stringify(generateCall?.input?.communicationStrategy ?? {}).includes('commercialContext'), false, 'Writer strategy guidance remains free of commercial state');
   const evaluateCall = context.provider.calls.find((call) => call.operationType === 'EVALUATE');
   assert.equal(evaluateCall?.outputSchemaName, 'annunci10x_evaluate_v2', 'premium evaluates generated master through V2 schema');
   assert.equal(evaluateCall?.input?.target?.kind, 'GENERATED_MASTER', 'premium V2 evaluate target is GENERATED_MASTER');
