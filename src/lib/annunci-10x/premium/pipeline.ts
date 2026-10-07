@@ -272,7 +272,18 @@ export async function runAnnunci10xPremiumGeneration(input: Annunci10xPremiumGen
   } catch (error) {
     const blocked = error instanceof Annunci10xPublicError && error.code === 'GENERATION_BLOCKED';
     await context.persistence.updateSession({ sessionId: input.sessionId, sessionSecret: input.sessionSecret, state: blocked ? 'NEEDS_VERIFICATION' : 'ENTITLED' });
-    await context.persistence.appendEvent({ sessionId: input.sessionId, eventName: 'generation_failed', metadata: { reason: error instanceof Error ? error.name : 'unknown' } });
+    const errorRecord = typeof error === 'object' && error !== null
+      ? error as { causeCode?: unknown; message?: unknown }
+      : {};
+    await context.persistence.appendEvent({
+      sessionId: input.sessionId,
+      eventName: 'generation_failed',
+      metadata: {
+        reason: error instanceof Error ? error.name : 'unknown',
+        causeCode: typeof errorRecord.causeCode === 'string' ? errorRecord.causeCode : null,
+        detail: typeof errorRecord.message === 'string' ? errorRecord.message.slice(0, 240) : null,
+      },
+    });
     throw error;
   }
 }
