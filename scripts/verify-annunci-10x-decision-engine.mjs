@@ -318,6 +318,28 @@ const completeGoodBody = [
 }
 
 {
+  const ledger = createAnnunci10xTruthLedger(roleCard());
+  const master = {
+    ...makeMaster('PMI italiana che distribuisce prodotti alimentari.'),
+    sections: [
+      { id: 's-opening', type: 'OPENING', key: 'opening', title: 'CONTESTO', body: 'PMI italiana che distribuisce prodotti alimentari.', sourceFactIds: ['F09'] },
+      { id: 's-mission', type: 'MISSION', key: 'mission', title: 'MISSIONE', body: 'Gestire merce in entrata e preparazione ordini.', sourceFactIds: ['F02'] },
+      { id: 's-work', type: 'RESPONSIBILITIES', key: 'work', title: 'ATTIVITÀ PRINCIPALI', body: 'Ricezione merce e controllo quantità.', sourceFactIds: ['F04'] },
+      { id: 's-context', type: 'CONTEXT', key: 'context', title: 'CONTESTO OPERATIVO', body: 'Collaborazione con autisti e ufficio ordini.', sourceFactIds: ['F16'] },
+      { id: 's-req', type: 'REQUIREMENTS', key: 'requirements', title: 'REQUISITI', body: 'Affidabilità, puntualità e attenzione agli errori.', sourceFactIds: ['F05'] },
+      { id: 's-cond', type: 'CONDITIONS', key: 'conditions', title: 'CONDIZIONI', body: 'Sede: Bari.', sourceFactIds: ['F10'] },
+      { id: 's-growth', type: 'GROWTH', key: 'growth', title: 'BENEFIT / ATTRATTIVITÀ DICHIARATI', body: 'Orari definiti.', sourceFactIds: ['F19'] },
+    ],
+  };
+  const sanitized = sanitizeAnnunci10xCandidateMaster(master, ledger);
+  assert.deepEqual(
+    sanitized.sections.map((section) => section.title),
+    ['Chi siamo', 'Il tuo obiettivo', 'Cosa farai', 'Con chi lavorerai', 'Cosa cerchiamo', 'Condizioni di lavoro', 'Cosa trovi'],
+    'candidate sanitizer must normalize system-like section titles into publication-ready language',
+  );
+}
+
+{
   const ledger = createAnnunci10xTruthLedger(roleCard({ required: 'Autonomia; orientamento agli obiettivi' }));
   const sanitized = sanitizeAnnunci10xCandidateMaster(makeMaster('- Autonomia\n- Orientamento agli obiettivi'), ledger);
   const text = masterText(sanitized);
