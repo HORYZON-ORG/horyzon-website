@@ -301,7 +301,7 @@ function generationMessage(cause: unknown): { message: string; state?: PremiumFu
   const code = typeof cause === 'object' && cause !== null && typeof (cause as { code?: unknown }).code === 'string' ? (cause as { code: string }).code : '';
   if (/già in preparazione/i.test(message)) return { message: '', state: 'PREPARING' };
   if (/temporaneamente non disponibile|GENERATION_BLOCKED/i.test(`${message} ${code}`)) return { message: 'La generazione è temporaneamente non disponibile. Riprova tra poco.', retry: true };
-  if (/PAYMENT_REQUIRED|Generazione Annunci 10x non autorizzata|EMAIL_VERIFICATION_REQUIRED/i.test(`${message} ${code}`)) return { message: 'Verifica la tua email per generare gratuitamente l’annuncio.', refetch: true };
+  if (/Generazione Annunci 10x non autorizzata|EMAIL_VERIFICATION_REQUIRED/i.test(`${message} ${code}`)) return { message: 'Verifica la tua email per generare gratuitamente l’annuncio.', refetch: true };
   return { message: 'Serve aiuto? Scrivi a info@horyzon.it' };
 }
 

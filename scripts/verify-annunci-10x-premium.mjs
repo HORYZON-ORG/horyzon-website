@@ -80,7 +80,36 @@ function makeContext(provider) {
 
 async function createReadySession(context, flow = 'CREATE') {
   const created = await context.persistence.createSession({ flow, selectedChannel: 'LINKEDIN', commercialContext });
-  await context.persistence.updateSession({ sessionId: created.session.id, sessionSecret: created.sessionSecret, state: 'PAYMENT_REQUIRED' });
+  await context.persistence.updateSession({ sessionId: created.session.id, sessionSecret: created.sessionSecret, state: 'ENTITLED' });
+  const lead = await context.persistence.saveLead({
+    sessionId: created.session.id,
+    sessionSecret: created.sessionSecret,
+    firstName: 'Test',
+    lastName: 'Annunci10x',
+    companyName: 'Horyzon Test',
+    businessRole: 'OWNER_ENTREPRENEUR',
+    emailNormalized: 'annunci10x-test@example.com',
+    marketingConsent: false,
+    marketingConsentVersion: 'annunci10x-marketing-consent-v1',
+  });
+  const verification = await context.persistence.createEmailVerification({
+    sessionId: created.session.id,
+    sessionSecret: created.sessionSecret,
+    leadId: lead.id,
+    emailNormalized: lead.emailNormalized,
+    codeHash: 'a'.repeat(64),
+    expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
+    maxAttempts: 5,
+    pendingGraceSeconds: 15,
+  });
+  await context.persistence.markEmailVerificationSent(verification.id, created.sessionSecret);
+  const verified = await context.persistence.verifyEmailCode({
+    sessionId: created.session.id,
+    sessionSecret: created.sessionSecret,
+    verificationId: verification.id,
+    codeMatches: true,
+  });
+  assert.equal(verified.outcome, 'VERIFIED');
   const snapshot = await context.persistence.appendSnapshot({
     sessionId: created.session.id,
     sessionSecret: created.sessionSecret,
@@ -134,16 +163,15 @@ assert.deepEqual(
 {
   const context = makeContext(new MockAnnunci10xProvider('success'));
   const created = await createReadySession(context);
-  await assert.rejects(
-    () => runAnnunci10xPremiumGeneration({
-      sessionId: created.session.id,
-      sessionSecret: created.sessionSecret,
-      context,
-      authorizationProvider: createProductionGenerationAuthorizationProvider(),
-    }),
-    /Checkout e acquisto Annunci 10x non sono ancora attivi/,
-    'production provider denies premium generation before checkout exists',
-  );
+  const result = await runAnnunci10xPremiumGeneration({
+    sessionId: created.session.id,
+    sessionSecret: created.sessionSecret,
+    context,
+    authorizationProvider: createProductionGenerationAuthorizationProvider(),
+  });
+  assert.equal(result.provider, 'MOCK');
+  assert.equal(result.master.kind, 'MASTER');
+  assert.equal(result.gate.status, 'READY', 'production authorization must allow verified free generation without checkout');
 }
 
 {
@@ -206,7 +234,7 @@ assert.deepEqual(
 
 {
   const context = makeContext(new MockAnnunci10xProvider(['success', 'success', 'success', 'success', 'success', 'success', 'success', 'success']));
-  const created = await createReadySession(context);
+  const created = await createReadySession(context, 'ANALYZE');
   await runAnnunci10xPremiumGeneration({
     sessionId: created.session.id,
     sessionSecret: created.sessionSecret,

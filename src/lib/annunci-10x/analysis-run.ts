@@ -344,6 +344,11 @@ async function runEvaluateStage(
       errorPayload: null,
       leaseExpiresAt: null,
     });
+    await context.persistence.updateSession({
+      sessionId: run.sessionId,
+      sessionSecret: session.sessionSecret,
+      state: 'ENTITLED',
+    });
     await triggerScoreReportEmailAfterReady(readyRun, session, context);
     return readyRun;
   }
@@ -428,6 +433,11 @@ async function runClarifyStage(
     completedAt: new Date().toISOString(),
     errorPayload: null,
     leaseExpiresAt: null,
+  });
+  await context.persistence.updateSession({
+    sessionId: run.sessionId,
+    sessionSecret: session.sessionSecret,
+    state: 'ENTITLED',
   });
   await triggerScoreReportEmailAfterReady(readyRun, session, context);
   return readyRun;
