@@ -1087,6 +1087,26 @@ const completeGoodBody = [
 }
 
 {
+  const expanded = makeMaster([
+    completeGoodBody,
+    'Controllerai le quantità indicate nei documenti.',
+    'Ti occuperai della registrazione degli arrivi.',
+    'Preparerai articoli destinati alla consegna secondo le indicazioni operative ricevute.',
+  ].join(' '));
+  const repaired = makeMaster(completeGoodBody);
+  const { runtime } = await runtimeWithMasters([expanded, repaired]);
+  assert.equal(runtime.status, 'READY_FOR_CLIENT', 'grounded responsibility repair should recover unsupported logistics expansion');
+  assert.ok(
+    runtime.repairRequest?.repairInstructions.some((item) => item.kind === 'GROUNDED_RESPONSIBILITY_REWRITE'),
+    'responsibility expansion must generate a grounded rewrite instruction',
+  );
+  const grounded = runtime.repairRequest?.repairInstructions.find((item) => item.kind === 'GROUNDED_RESPONSIBILITY_REWRITE');
+  assert.match(grounded?.canonicalText ?? '', /ricezione merce/i);
+  assert.match(grounded?.canonicalText ?? '', /collabora con autisti e ufficio ordini/i);
+  assert.doesNotMatch(grounded?.canonicalText ?? '', /documenti|consegna|registrazione degli arrivi/i);
+}
+
+{
   const bad = makeMaster('PMI alimentare a Bari. Retribuzione da definire in base all esperienza. Sono richieste affidabilità, puntualità e attenzione agli errori.');
   const stillBad = makeMaster('PMI alimentare a Bari. Retribuzione da definire in base all esperienza. Sono richieste affidabilità, puntualità e attenzione agli errori.');
   const { runtime, generateCalls, repairCalls } = await runtimeWithMasters([bad, stillBad]);
