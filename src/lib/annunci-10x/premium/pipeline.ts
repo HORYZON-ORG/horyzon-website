@@ -163,8 +163,8 @@ export interface Annunci10xNarrativeSufficiencyResult {
   questions: Annunci10xNarrativeSufficiencyQuestion[];
 }
 
-const DECISION_ENGINE_WRITER_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-writer.v5.2`;
-const DECISION_ENGINE_REPAIR_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-repair.v3.2`;
+const DECISION_ENGINE_WRITER_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-writer.v5.3`;
+const DECISION_ENGINE_REPAIR_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-repair.v3.3`;
 
 const DECISION_ENGINE_WRITER_PROMPT = [
   'Sei il Writer Annunci 10x. Scrivi copy recruiting finale, non materiale da rielaborare.',
@@ -181,6 +181,11 @@ const DECISION_ENGINE_WRITER_PROMPT = [
   'RESPONSIBILITIES: e la sezione piu importante. Trasforma le attivita confermate in 2-4 paragrafi collegati, non in una lista di micro-task. Spiega come le attivita stanno insieme, usando solo relazioni gia supportate dai facts. Integra qui interlocutori, autonomia e gestione degli imprevisti quando pertinenti.',
   'Preserva il livello operativo esatto dei verbi confermati. "Verificare che una richiesta sia gestita" non autorizza "risolta", "chiusa", "portata a soluzione", "fino alla risoluzione" o altre conseguenze ulteriori. Allo stesso modo non trasformare segnalare/escalare in prendere in carico o risolvere.',
   'Preserva anche gli oggetti operativi nominati. Se il fact dice "servizi", scrivi servizi: non sostituirlo con soluzioni, offerte, prodotti o consulenza. Se dice "richieste amministrative semplici", non trasformarle in gestione operativa, pratiche o processi amministrativi. Se dice "problemi", non trasformarli in casi, ticket, anomalie o casistiche salvo che siano facts confermati.',
+  'Le COMPOSITION tra facts possono collegare due fatti confermati con connettivi neutri, ma non possono inventare scopo, causa, conseguenza, sequenza o risultato. Evita formule come "per garantire", "per assicurare", "in modo che", "cosi da", "affinche", "per ripristinare", "per migliorare" salvo che quella finalita sia esplicitamente confermata.',
+  'communicationStrategy, RoleProfile e attractivenessEvidence orientano priorita e tono ma non autorizzano nuovi fatti operativi. Non trasformare parole strategiche come routine, pianificato, stabilita, onboarding, flusso di lavoro o complessita in claim pubblici se non sono fatti confermati.',
+  'I facts TRAINABLE restano interni e non devono comparire nel Master. La presenza separata di un affiancamento o di un elemento formativo pubblico non autorizza a dire che specifiche procedure interne verranno insegnate, illustrate o apprese durante quell affiancamento.',
+  'Non derivare entita tecniche o operative piu specifiche da facts generici: frontend non autorizza componenti UI; PostgreSQL non autorizza coerenza dei dati; ricezione merce non autorizza consegne; code review non autorizza workflow o processi di rilascio.',
+  'Quando un elemento attrattivo pubblico e gia espresso in condizioni o requisiti, non aggiungere etichette come "Elementi di attrattivita". Integralo naturalmente o omettilo se sarebbe solo ripetizione.',
   'Non inventare sequenze, frequenze o una giornata tipo. Evita "ogni giorno", "quotidianamente", "spesso", "regolarmente" se non confermati.',
   'REQUIREMENTS: scrivi un breve paragrafo di fit candidato. Distingui chiaramente obbligatori e preferenziali, ma evita etichette da modulo quando puoi esprimerli in prosa naturale.',
   'I requisiti REQUIRED devono restare semanticamente e lessicalmente riconoscibili: se il Truth Ledger dice ascolto, chiarezza nella comunicazione, pazienza, organizzazione, precisione e capacita di gestire piu richieste, mantieni espliciti proprio questi concetti nella frase. Non trasformare pazienza in paziente, organizzazione in organizzata o precisione in precisa se cosi il requisito canonico smette di essere visibile.',
@@ -207,6 +212,8 @@ const DECISION_ENGINE_REPAIR_PROMPT = [
   'Se un fatto manca, aggiungilo nel punto piu naturale con formulazione fedele. Se un claim e inventato, rimuovi o sostituisci soltanto quel concetto usando evidence reale.',
   'Se hardFailures include requiredRequirements, ripristina i requisiti REQUIRED con formulazione naturale ma mantenendo espliciti i concetti canonici del Truth Ledger; non sostituire nomi come pazienza, organizzazione o precisione soltanto con aggettivi.',
   'Se hardFailures segnala responsibilityExpansion, riporta verbo e oggetto al livello esatto del fatto: gestita non significa risolta/chiusa/portata a soluzione; servizi non significa soluzioni/offerte/prodotti; richieste amministrative semplici non significa processi o pratiche amministrative.',
+  'Nel repair elimina anche scopi, conseguenze e causalita non confermati: rimuovi "per garantire/per assicurare/in modo che/cosi da" quando il relativo risultato non e un fact. Non compensare con nuove parafrasi creative.',
+  'Non pubblicare TRAINABLE facts durante il repair e non collegarli a onboarding, affiancamento o formazione salvo supporto esplicito del Truth Ledger.',
   'Non trasformare il Master in una checklist o in una scheda HR. Non accorciare automaticamente il resto del Master e non introdurre nuovi fatti.',
   'Restituisci soltanto le sezioni modificate nello schema REVISE.',
 ].join('\n');
