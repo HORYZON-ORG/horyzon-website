@@ -240,7 +240,7 @@ function preferredConsequenceAnchors(ledger: Annunci10xTruthLedger, item: string
 
 function hasTrainablePromise(ledger: Annunci10xTruthLedger, masterText: string): boolean {
   if (factsByCategory(ledger, 'REQUIREMENT_TRAINABLE').length === 0) return false;
-  if (/\b(?:ti formeremo|sarai format[oa]|formazione prevista|percorso formativo|imparerai sul posto|si apprendono sul posto|verrai affiancat[oa])\b/i.test(masterText)) return true;
+  if (/\b(?:ti formeremo|sarai format[oa]|formazione prevista|percorso formativo|imparerai (?:sul posto|in azienda)|si apprendono (?:sul posto|in azienda)|verrai affiancat[oa])\b/i.test(masterText)) return true;
   const trainable = factsByCategory(ledger, 'REQUIREMENT_TRAINABLE').flatMap((fact) => publishableRequirementItems(fact.value));
   return trainable.some((item) => {
     const tokens = trainableRequirementAnchors(ledger, item);
@@ -249,7 +249,7 @@ function hasTrainablePromise(ledger: Annunci10xTruthLedger, masterText: string):
       const normalizedSentence = normalizeForDecision(sentence);
       const matches = tokens.filter((token) => normalizedSentence.includes(token)).length;
       return matches >= Math.min(2, tokens.length)
-        && /\b(?:utile|familiarita|familiarit[aà]|serve|richiest[oaie]|necessari[oaie])\b/.test(normalizedSentence);
+        && /\b(?:utile|familiarita|familiarit[aà]|serve|richiest[oaie]|necessari[oaie]|fornit[aeio]|apprend\w*|insegn\w*)\b/.test(normalizedSentence);
     });
   });
 }
@@ -306,7 +306,14 @@ function hasEntityExpansion(ledger: Annunci10xTruthLedger, masterText: string): 
   const knownText = normalizeForDecision(ledger.facts.map((fact) => fact.value).join(' '));
   if (/\baltri reparti\b/i.test(masterText) && !/altri reparti/.test(knownText)) return true;
   if (/\bdiversi team aziendali\b/i.test(masterText) && !/diversi team aziendali/.test(knownText)) return true;
-  if (/\b(?:team|reparti|uffici|stakeholder|management)\b/i.test(masterText) && !/\b(?:team|reparti|uffici|stakeholder|management)\b/i.test(knownText)) return true;
+  const entityTerms: Array<[RegExp, RegExp]> = [
+    [/\bteam\b/i, /\bteam\b/],
+    [/\breparti\b/i, /\breparti\b/],
+    [/\buffici\b/i, /\buffici\b/],
+    [/\bstakeholder\b/i, /\bstakeholder\b/],
+    [/\bmanagement\b/i, /\bmanagement\b/],
+  ];
+  if (entityTerms.some(([mentioned, evidence]) => mentioned.test(masterText) && !evidence.test(knownText))) return true;
   return false;
 }
 
@@ -378,6 +385,11 @@ function hasResponsibilityExpansion(ledger: Annunci10xTruthLedger, masterText: s
     [/\bimballaggio\b/i, /\bimballaggio/],
     [/\b(?:risoluzione|risolvere|risolta|risolto|chiusura|chiudere|chiusa|chiuso)\b/i, /\b(?:risoluzione|risolvere|risolta|risolto|chiusura|chiudere|chiusa|chiuso)\b/],
     [/\b(?:giornata tipo|ogni giorno|quotidianamente|attivit[aà] quotidian[ae]|regolarmente|spesso)\b/i, /\b(?:giornata tipo|ogni giorno|quotidianamente|attivit[aà] quotidian[ae]|regolarmente|spesso)\b/],
+    [/\b(?:stabilire|stabilendo|definire|definendo|gestire|gestendo)\s+(?:le\s+)?priorit[aà]\b/i, /\bpriorit[aà]\b/],
+    [/\bpassaggio\s+di\s+responsabilit[aà]\b/i, /\bpassaggio\s+di\s+responsabilit[aà]\b/],
+    [/\bpresa\s+in\s+carico\b/i, /\bpresa\s+in\s+carico\b/],
+    [/\bsoluzion[ei]\b/i, /\bsoluzion[ei]\b/],
+    [/\b(?:rapidamente|tempestivamente|velocemente)\b/i, /\b(?:rapidamente|tempestivamente|velocemente)\b/],
   ];
   return expansions.some(([pattern, evidence]) => pattern.test(masterText) && !evidence.test(knownText));
 }

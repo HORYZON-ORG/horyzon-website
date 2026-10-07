@@ -701,6 +701,18 @@ const completeGoodBody = [
 }
 
 {
+  const report = check(
+    'Gestirai più richieste contemporaneamente, stabilendo priorità e assicurando il passaggio di responsabilità con presa in carico rapida e spiegando soluzioni.',
+    {
+      responsibilities: 'Gestire più richieste contemporaneamente; segnalare internamente i problemi che richiedono amministrazione o commerciale.',
+      unexpectedEvents: 'Gestire più richieste contemporaneamente e segnalare quelle che richiedono altri reparti.',
+    },
+  );
+  assert.equal(report.violations.responsibilityExpansion, true, 'priority, handoff ownership, intake, solution and speed language require explicit evidence');
+  assert.equal(report.final, 'FIX_REQUIRED');
+}
+
+{
   const report = check('Il patentino muletto e gradito ma non obbligatorio: facilita l inserimento operativo.');
   assert.equal(report.violations.preferredConsequence, true, 'preferred requirements must not invent candidate-facing consequences');
 }
@@ -739,6 +751,11 @@ const completeGoodBody = [
 {
   const report = check('Le procedure interne si apprendono sul posto.');
   assert.equal(report.violations.trainablePromise, true, 'passive trainable-as-training promise should fail');
+}
+
+{
+  const report = check('Le procedure interne sono fornite e si apprendono in azienda.');
+  assert.equal(report.violations.trainablePromise, true, 'trainable internal fact must not become a public training or provisioning promise');
 }
 
 {
@@ -873,6 +890,14 @@ const completeGoodBody = [
     operatingContext: 'Collaborazione con operatori di produzione e responsabile manutenzione',
   });
   assert.equal(report.violations.entityExpansion, true, 'unsupported team abstraction must fail when only production operators are declared');
+}
+
+{
+  const report = check('Collaborerai con il team amministrazione e commerciale.', {
+    operatingContext: 'collabora con amministrazione e commerciale',
+    unexpectedEvents: 'segnala le richieste che richiedono altri reparti',
+  });
+  assert.equal(report.violations.entityExpansion, true, 'declared generic reparti must not authorize inventing a team entity');
 }
 
 {
