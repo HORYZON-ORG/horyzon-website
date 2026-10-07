@@ -374,6 +374,26 @@ const completeGoodBody = [
 }
 
 {
+  const ledger = createAnnunci10xTruthLedger(roleCard());
+  const company = 'PMI italiana che distribuisce prodotti alimentari a ristoranti e attività commerciali.';
+  const master = {
+    ...makeMaster(completeGoodBody),
+    sections: [
+      { id: 's-title', type: 'TITLE', key: 'role', title: 'RUOLO', body: 'Magazziniere / Addetto logistica', sourceFactIds: ['F01'] },
+      { id: 's-opening', type: 'OPENING', key: 'opening', title: 'Apertura', body: `Cerchiamo un Magazziniere / Addetto logistica. ${company}`, sourceFactIds: ['F01', 'F09'] },
+      { id: 's-company-context', type: 'CONTEXT', key: 'context', title: 'CONTESTO', body: company, sourceFactIds: ['F09'] },
+      { id: 's-work', type: 'RESPONSIBILITIES', key: 'work', title: 'ATTIVITÀ PRINCIPALI', body: completeGoodBody, sourceFactIds: ['F04'] },
+    ],
+  };
+  const sanitized = sanitizeAnnunci10xCandidateMaster(master, ledger);
+  assert.equal(
+    sanitized.sections.some((section) => section.id === 's-company-context'),
+    false,
+    'company-only context section must be removed when the opening already contains the same company context',
+  );
+}
+
+{
   const ledger = createAnnunci10xTruthLedger(roleCard({
     benefit: 'Elementi concreti da valorizzare: In sede; esperienza precedente in magazzino e patentino muletto, graditi ma non obbligatori; orario lunedì-venerdì, 08:00-17:00 con pausa pranzo.',
   }));
