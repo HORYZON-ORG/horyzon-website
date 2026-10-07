@@ -714,6 +714,15 @@ async function requestAnnunci10xCreateClientRevision(input: {
     persistence: input.context.persistence,
   });
   const operations: PublicAnnunci10xOperation[] = [];
+  const editorialMaster: GeneratedAd = {
+    id: input.master.id,
+    sessionId: input.master.sessionId,
+    kind: input.master.kind,
+    sections: input.master.sections.map((section) => ({ ...section, sourceFactIds: [...section.sourceFactIds] })),
+    sourceOfTruth: input.master.sourceOfTruth,
+    generatedAt: input.master.generatedAt,
+    promptVersion: input.master.promptVersion,
+  };
 
   const revision = await applyAnnunci10xClientRevision({
     master: input.master,
@@ -727,7 +736,7 @@ async function requestAnnunci10xCreateClientRevision(input: {
         sessionSecret: input.sessionSecret,
         operationType: 'REVISE',
         input: {
-          currentMaster: input.master,
+          currentMaster: editorialMaster,
           roleCard: input.snapshot.roleCard,
           truthLedger,
           targetSection: {
