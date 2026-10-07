@@ -68,7 +68,8 @@ export function sanitizeAnnunci10xCandidateMaster(master: GeneratedAd, ledger: A
   const sections = master.sections
     .map((section) => sanitizeSection(section, ledger, stripListMarkers))
     .filter((section): section is GeneratedSection => Boolean(section.title.trim() || section.body.trim()))
-    .filter((section) => !isRedundantGrowthSection(section, ledger));
+    .filter((section) => !isRedundantGrowthSection(section, ledger))
+    .filter((section, _index, allSections) => !isRedundantCompanyContextSection(section, allSections, ledger));
   return { ...master, sections };
 }
 
@@ -88,15 +89,40 @@ function sanitizeSection(section: GeneratedSection, ledger: Annunci10xTruthLedge
     };
   }
 
-  const title = CANDIDATE_SECTION_TITLES.get(section.type)
-    ?? INTERNAL_TITLE_REWRITES.get(normalizedTitle)
-    ?? section.title;
+  const title = publicSectionTitle(section, ledger, normalizedTitle);
   const genericApplication = section.type === 'APPLICATION'
     && !hasSpecificApplicationInstruction(factValue(ledger.roleCard.applicationInstructions));
   const body = genericApplication
     ? GENERIC_APPLICATION_CTA
     : sanitizeCandidateText(section.body, ledger, stripListMarkers);
   return { ...section, title, body };
+}
+
+function publicSectionTitle(section: GeneratedSection, ledger: Annunci10xTruthLedger, normalizedTitle: string): string {
+  if (section.type === 'CONTEXT') {
+    const company = factValue(ledger.roleCard.attractionContext.companyDescription);
+    const operatingContext = factValue(ledger.roleCard.attractionContext.operatingContext);
+    if (operatingContext && includesEquivalent(section.body, operatingContext)) return 'Con chi lavorerai';
+    if (company && includesEquivalent(section.body, company)) return 'Chi siamo';
+    return 'Il contesto di lavoro';
+  }
+  return CANDIDATE_SECTION_TITLES.get(section.type)
+    ?? INTERNAL_TITLE_REWRITES.get(normalizedTitle)
+    ?? section.title;
+}
+
+function isRedundantCompanyContextSection(
+  section: GeneratedSection,
+  sections: GeneratedSection[],
+  ledger: Annunci10xTruthLedger,
+): boolean {
+  if (section.type !== 'CONTEXT') return false;
+  const company = factValue(ledger.roleCard.attractionContext.companyDescription);
+  const operatingContext = factValue(ledger.roleCard.attractionContext.operatingContext);
+  if (!company || !includesEquivalent(section.body, company)) return false;
+  if (operatingContext && includesEquivalent(section.body, operatingContext)) return false;
+  const opening = sections.find((candidate) => candidate.type === 'OPENING');
+  return Boolean(opening && includesEquivalent(opening.body, company));
 }
 
 function sanitizeCandidateText(value: string, ledger: Annunci10xTruthLedger, stripListMarkers: boolean): string {
