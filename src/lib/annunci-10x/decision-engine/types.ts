@@ -104,7 +104,7 @@ export interface Annunci10xRepairRequest {
   currentMaster: string;
   hardFailures: string[];
   repairInstructions: Array<{
-    kind: 'ENTITY_CANONICALIZATION' | 'EXACT_NUMBER_CANONICALIZATION';
+    kind: 'ENTITY_CANONICALIZATION' | 'EXACT_NUMBER_CANONICALIZATION' | 'GROUNDED_RESPONSIBILITY_REWRITE';
     unsupportedText: string;
     canonicalText: string;
     instruction: string;
