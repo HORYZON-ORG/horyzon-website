@@ -971,6 +971,23 @@ const completeGoodBody = [
   const revision = await applyAnnunci10xClientRevision({
     master,
     roleCard: roleCard(),
+    revisionCount: 1,
+    targetSectionId: 's-body',
+    userInstruction: 'Rendi piu coinvolgente.',
+    async reviseSection({ previousSection }) {
+      return { ...previousSection, body: previousSection.body };
+    },
+  });
+  assert.equal(revision.status, 'REVISION_BLOCKED', 'no-op revision must not consume a client revision');
+  assert.equal(revision.revisionCount, 1, 'no-op revision must preserve the current revision count');
+  assert.equal(revision.master, master, 'no-op revision must preserve the current master');
+}
+
+{
+  const master = makeMaster(completeGoodBody);
+  const revision = await applyAnnunci10xClientRevision({
+    master,
+    roleCard: roleCard(),
     revisionCount: 3,
     targetSectionId: 's-body',
     userInstruction: 'Ancora una modifica.',
