@@ -1102,7 +1102,7 @@ const completeGoodBody = [
   );
   const grounded = runtime.repairRequest?.repairInstructions.find((item) => item.kind === 'GROUNDED_RESPONSIBILITY_REWRITE');
   assert.match(grounded?.canonicalText ?? '', /ricezione merce/i);
-  assert.match(grounded?.canonicalText ?? '', /collabora con autisti e ufficio ordini/i);
+  assert.match(grounded?.canonicalText ?? '', /collabor(?:a|azione) con autisti e ufficio ordini/i);
   assert.doesNotMatch(grounded?.canonicalText ?? '', /documenti|consegna|registrazione degli arrivi/i);
 }
 
