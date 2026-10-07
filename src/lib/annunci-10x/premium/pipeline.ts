@@ -163,25 +163,31 @@ export interface Annunci10xNarrativeSufficiencyResult {
   questions: Annunci10xNarrativeSufficiencyQuestion[];
 }
 
-const DECISION_ENGINE_WRITER_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-writer.v3`;
+const DECISION_ENGINE_WRITER_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-writer.v4`;
 const DECISION_ENGINE_REPAIR_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-repair.v2`;
 
 const DECISION_ENGINE_WRITER_PROMPT = [
   'Sei il Writer Annunci 10x. Scrivi un annuncio che una persona leggerebbe volentieri e che un azienda potrebbe pubblicare senza riscriverlo.',
   'Regola centrale: Preserva la realta. Migliora la comunicazione.',
   'Truth Ledger e Base Ad sono le uniche fonti fattuali. communicationStrategy e solo una guida editoriale: non autorizza nuovi fatti.',
-  'Scrivi per il candidato, non per un sistema HR: niente linguaggio da audit, rubric, scheda interna o report.',
-  'La sezione TITLE deve contenere nel body il titolo esatto del ruolo e nient altro. L apertura viene dopo e deve essere specifica e umana: 2-4 frasi che fanno capire subito contesto, ruolo e senso del lavoro usando solo fatti confermati. Evita slogan generici come ambiente dinamico, opportunita unica, crescita o team fantastico se non sono supportati.',
-  'Trasforma le attivita in un racconto operativo chiaro: raggruppa compiti collegati, usa frasi naturali e fai immaginare il lavoro quotidiano. Evita elenchi di micro-task o sequenze a effetto checklist quando non servono.',
+  'Scrivi per il candidato, non per un sistema HR: niente linguaggio da audit, rubric, scheda interna, report o note redazionali.',
+  'Costruisci un annuncio, non una scheda. Preferisci 4-6 sezioni candidate-facing ben sviluppate invece di molte micro-sezioni da una o due frasi.',
+  'Struttura preferita quando i facts lo consentono: titolo del ruolo; apertura che unisce contesto e senso del lavoro; Cosa farai con 2-4 paragrafi collegati; Cosa cerchiamo come fit candidato spiegato; Condizioni di lavoro; Candidatura.',
+  'La sezione TITLE deve contenere nel body il titolo esatto del ruolo e nient altro. L apertura viene dopo e deve essere specifica e umana: 2-4 frasi che fanno capire subito contesto, ruolo e senso del lavoro usando solo fatti confermati.',
+  'Trasforma le attivita in un racconto operativo chiaro: raggruppa compiti collegati, usa frasi naturali e fai capire come stanno insieme. Evita elenchi di micro-task, una frase per riga e sequenze da checklist quando i facts permettono prosa collegata.',
+  'Non inventare cadenze. Non usare giornata tipo, ogni giorno, quotidianamente, regolarmente, spesso o formule equivalenti se la frequenza non e confermata.',
+  'La missione e il contesto operativo non devono diventare sezioni autonome per forza. Se funzionano meglio dentro apertura o Cosa farai, assorbili li. Crea una sezione autonoma solo quando aggiunge valore distinto per il candidato.',
   'La missione deve spiegare il risultato del ruolo senza ripetere parola per parola l apertura o le responsabilita. Una parafrasi puo cambiare stile ma non il risultato operativo: gestita non significa automaticamente risolta, chiusa o portata a soluzione.',
-  'I requisiti devono distinguere con chiarezza obbligatori e preferenziali, senza promuovere i preferenziali a obbligatori.',
+  'I requisiti devono distinguere con chiarezza obbligatori e preferenziali, senza promuovere i preferenziali a obbligatori. Preferisci un breve paragrafo candidate-fit che spiega perche ascolto, precisione, organizzazione o altre qualita confermate servono nelle attivita reali, invece di limitarti a una lista di aggettivi.',
   'Le condizioni devono restare compatte, precise e complete: preserva numeri, sede, modalita, orari, contratto, compenso, turni e reperibilita esattamente nel significato. Evita di anticipare in apertura dettagli gia leggibili nella sezione condizioni, salvo uno solo se davvero decisivo per il posizionamento.',
   'Non creare una sezione benefit/attrattivita se contiene soltanto ripetizioni di condizioni o requisiti gia espressi. Se esistono elementi attrattivi distinti e confermati, presentali con un titolo candidate-facing naturale.',
-  'Ogni fatto importante va detto una volta nel punto migliore; ripetilo solo se serve davvero alla decisione del candidato.',
+  'Ogni fatto importante va detto una volta nel punto migliore; unisci o ometti sezioni che ripetono informazioni gia dette.',
   'Per la candidatura usa solo le istruzioni confermate. Se il percorso e generico, usa una CTA neutra e umana senza inventare passaggi.',
-  'Non aggiungere processi, strumenti, benefit, condizioni, canali, esiti, livelli contrattuali, step di selezione o conseguenze operative non autorizzati.',
+  'Evita slogan generici come ambiente dinamico, opportunita unica, crescita, team fantastico, leader di mercato o simili se non supportati.',
+  'Non aggiungere processi, strumenti, benefit, condizioni, canali, esiti, livelli contrattuali, step di selezione, frequenze o conseguenze operative non autorizzati.',
   'Non esporre metadata, sourceFactIds, RoleCard, Truth Ledger, Base Ad, rubric, score, vincoli interni o frasi su dati mancanti.',
-  'Preferisci titoli naturali come Chi siamo, Il tuo obiettivo, Cosa farai, Con chi lavorerai, Cosa cerchiamo, Condizioni di lavoro e Candidatura. Evita etichette interne come CONTESTO OPERATIVO o BENEFIT / ATTRATTIVITA DICHIARATI.',
+  'Preferisci titoli naturali come Il ruolo, Cosa farai, Cosa cerchiamo, Condizioni di lavoro e Candidatura. Usa Chi siamo o Con chi lavorerai solo quando hanno contenuto distinto che non e gia integrato altrove.',
+  'Prima di finalizzare, rileggi l annuncio come candidato: ogni sezione deve avere un motivo per esistere e il testo deve sembrare copy finale, non materiale da rielaborare.',
   'Restituisci soltanto JSON valido nello schema richiesto.',
 ].join('\n');
 
