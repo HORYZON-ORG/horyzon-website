@@ -93,6 +93,32 @@ function makeMockOutput(request: Annunci10xAiProviderRequest, mode: MockAnnunci1
   }
   if (request.operationType === 'CHANNEL_ADAPTER') return mockChannelVariant(request.input);
   if (request.operationType === 'EDIT_CLASSIFIER') return classifyMockEdit(readEditRequest(request.input));
+  if (request.operationType === 'REVISE') return mockRevision(request.input);
+  return mockRevision(request.input);
+}
+
+function mockRevision(input: unknown): unknown {
+  const targetId = readStringPath(input, ['targetSection', 'id']);
+  if (targetId && typeof input === 'object' && input !== null) {
+    const currentMaster = (input as Record<string, unknown>).currentMaster;
+    const sections = typeof currentMaster === 'object' && currentMaster !== null
+      && Array.isArray((currentMaster as Record<string, unknown>).sections)
+      ? (currentMaster as Record<string, unknown>).sections as unknown[]
+      : [];
+    const target = sections.find((section) => (
+      typeof section === 'object'
+      && section !== null
+      && (section as Record<string, unknown>).id === targetId
+    ));
+    if (typeof target === 'object' && target !== null) {
+      return {
+        revisedSections: [{ ...(target as Record<string, unknown>) }],
+        changedSectionIds: [targetId],
+        changeSummary: 'Targeted editorial revision preserving confirmed facts.',
+        requiresValidation: true,
+      };
+    }
+  }
   return {
     revisedSections: [mockSection('section-1', 'OPENING', 'Apertura', 'Testo rivisto senza claim non supportati.', ['answer-title'])],
     changedSectionIds: ['section-1'],
