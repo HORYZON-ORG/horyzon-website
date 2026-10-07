@@ -287,11 +287,31 @@ function repairInstructionsForDecision(
   currentMaster: string,
   decisionReport: Annunci10xDecisionReport,
 ): Annunci10xRepairRequest['repairInstructions'] {
-  if (!decisionReport.violations.entityExpansion && !decisionReport.violations.numericDrift) return [];
   return [
     ...entityCanonicalizationInstructions(truthLedger, currentMaster),
     ...exactNumberCanonicalizationInstructions(truthLedger, currentMaster),
+    ...groundedResponsibilityRewriteInstructions(truthLedger, decisionReport),
   ];
+}
+
+function groundedResponsibilityRewriteInstructions(
+  truthLedger: Annunci10xTruthLedger,
+  decisionReport: Annunci10xDecisionReport,
+): Annunci10xRepairRequest['repairInstructions'] {
+  if (!decisionReport.violations.responsibilityExpansion && !decisionReport.violations.relationPurposeExpansion) return [];
+  const canonicalFacts = truthLedger.facts
+    .filter((fact) => fact.publishable && (fact.category === 'ACTIVITY' || fact.category === 'INTERLOCUTOR'))
+    .map((fact) => fact.value.trim())
+    .filter(Boolean)
+    .filter((value, index, values) => values.indexOf(value) === index);
+  if (canonicalFacts.length === 0) return [];
+  const canonicalText = canonicalFacts.join('; ');
+  return [{
+    kind: 'GROUNDED_RESPONSIBILITY_REWRITE',
+    unsupportedText: 'Sezione attività con dettagli, relazioni o finalità non supportati',
+    canonicalText,
+    instruction: `Riscrivi esclusivamente la sezione delle attività usando solo questi fatti canonici: ${canonicalText}. Puoi collegarli con connettivi neutri, ma non aggiungere documenti, registrazioni, consegne, spedizioni, indicazioni operative, workflow, scopi, cause, conseguenze, strumenti, entità o risultati ulteriori. Mantieni gli oggetti e i verbi al livello esatto dei facts. Non modificare le altre sezioni salvo stretta necessità grammaticale.`,
+  }];
 }
 
 function entityCanonicalizationInstructions(
