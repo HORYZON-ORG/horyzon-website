@@ -163,8 +163,8 @@ export interface Annunci10xNarrativeSufficiencyResult {
   questions: Annunci10xNarrativeSufficiencyQuestion[];
 }
 
-const DECISION_ENGINE_WRITER_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-writer.v5`;
-const DECISION_ENGINE_REPAIR_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-repair.v3`;
+const DECISION_ENGINE_WRITER_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-writer.v5.1`;
+const DECISION_ENGINE_REPAIR_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-repair.v3.1`;
 
 const DECISION_ENGINE_WRITER_PROMPT = [
   'Sei il Writer Annunci 10x. Scrivi copy recruiting finale, non materiale da rielaborare.',
@@ -179,8 +179,10 @@ const DECISION_ENGINE_WRITER_PROMPT = [
   'TITLE: usa il titolo esatto del ruolo nel body. Nient altro.',
   'OPENING: 2-4 frasi naturali. Deve far capire subito contesto aziendale, ruolo e risultato del lavoro. Non iniziare con slogan, domande generiche o frasi da employer branding. Se non esiste un motivo supportato per dire "unisciti al team", non dirlo.',
   'RESPONSIBILITIES: e la sezione piu importante. Trasforma le attivita confermate in 2-4 paragrafi collegati, non in una lista di micro-task. Spiega come le attivita stanno insieme, usando solo relazioni gia supportate dai facts. Integra qui interlocutori, autonomia e gestione degli imprevisti quando pertinenti.',
+  'Preserva il livello operativo esatto dei verbi confermati. "Verificare che una richiesta sia gestita" non autorizza "risolta", "chiusa", "portata a soluzione", "fino alla risoluzione" o altre conseguenze ulteriori. Allo stesso modo non trasformare segnalare/escalare in prendere in carico o risolvere.',
   'Non inventare sequenze, frequenze o una giornata tipo. Evita "ogni giorno", "quotidianamente", "spesso", "regolarmente" se non confermati.',
-  'REQUIREMENTS: scrivi un breve paragrafo di fit candidato. Distingui chiaramente obbligatori e preferenziali, ma evita etichette da modulo come "Obbligatori:" e "Preferenziale:" quando puoi esprimerli in prosa naturale.',
+  'REQUIREMENTS: scrivi un breve paragrafo di fit candidato. Distingui chiaramente obbligatori e preferenziali, ma evita etichette da modulo quando puoi esprimerli in prosa naturale.',
+  'I requisiti REQUIRED devono restare semanticamente e lessicalmente riconoscibili: se il Truth Ledger dice ascolto, chiarezza nella comunicazione, pazienza, organizzazione, precisione e capacita di gestire piu richieste, mantieni espliciti proprio questi concetti nella frase. Non trasformare pazienza in paziente, organizzazione in organizzata o precisione in precisa se cosi il requisito canonico smette di essere visibile.',
   'Collega soft skill e requisiti alle attivita concrete che li rendono rilevanti. Non limitarti a un elenco di aggettivi.',
   'CONDITIONS: sii compatto e preciso. Preserva esattamente sede, modalita, orario, contratto, compenso, turni e reperibilita nel significato e nei numeri.',
   'APPLICATION: se il percorso e generico, usa una CTA neutra e umana. Non inventare CV, email, form, colloqui, tempi di risposta o step di selezione.',
@@ -202,6 +204,8 @@ const DECISION_ENGINE_REPAIR_PROMPT = [
   'Non creare nuove sezioni MISSION, CONTEXT o GROWTH se il fatto puo essere ripristinato dentro OPENING, RESPONSIBILITIES, REQUIREMENTS o CONDITIONS.',
   'Non creare una sezione Benefit / Attrattivita se ripete modalita di lavoro, orario, esperienza preferenziale, contratto, compenso o altri fatti gia presenti.',
   'Se un fatto manca, aggiungilo nel punto piu naturale con formulazione fedele. Se un claim e inventato, rimuovi o sostituisci soltanto quel concetto usando evidence reale.',
+  'Se hardFailures include requiredRequirements, ripristina i requisiti REQUIRED con formulazione naturale ma mantenendo espliciti i concetti canonici del Truth Ledger; non sostituire nomi come pazienza, organizzazione o precisione soltanto con aggettivi.',
+  'Se hardFailures segnala responsibilityExpansion, riporta il verbo al livello esatto del fatto: gestita non significa risolta, chiusa o portata a soluzione.',
   'Non trasformare il Master in una checklist o in una scheda HR. Non accorciare automaticamente il resto del Master e non introdurre nuovi fatti.',
   'Restituisci soltanto le sezioni modificate nello schema REVISE.',
 ].join('\n');
