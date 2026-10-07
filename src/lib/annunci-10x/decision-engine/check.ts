@@ -360,6 +360,7 @@ function hasResponsibilityExpansion(ledger: Annunci10xTruthLedger, masterText: s
     [/\bprocedure di qualita\b/i, /\bqualit/],
     [/\bdocumenti di trasporto|ddt\b/i, /\bddt|documenti di trasporto/],
     [/\bimballaggio\b/i, /\bimballaggio/],
+    [/\b(?:risoluzione|risolvere|risolta|risolto|chiusura|chiudere|chiusa|chiuso)\b/i, /\b(?:risoluzione|risolvere|risolta|risolto|chiusura|chiudere|chiusa|chiuso)\b/],
   ];
   return expansions.some(([pattern, evidence]) => pattern.test(masterText) && !evidence.test(knownText));
 }
