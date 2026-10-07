@@ -652,6 +652,17 @@ const completeGoodBody = [
 }
 
 {
+  const report = check(
+    'Obbligatori: ascolto, chiarezza nella comunicazione, pazienza, organizzazione, precisione e capacità di gestire più richieste contemporaneamente. Preferenziali: almeno 1 anno di esperienza in assistenza clienti (non obbligatorio).',
+    {
+      required: 'ascolto, chiarezza nella comunicazione, pazienza, organizzazione, precisione e capacita di gestire piu richieste',
+      preferred: 'almeno 1 anno di esperienza in assistenza clienti, ma non obbligatorio',
+    },
+  );
+  assert.equal(report.violations.requirementPromotion, false, 'required and preferred lines in the same section must not cross-match through generic mandatory wording');
+}
+
+{
   const report = check('Sono richiesti esperienza precedente in magazzino e patentino muletto. Sono richieste affidabilità, puntualità e attenzione agli errori.');
   assert.equal(report.violations.requirementPromotion, true, 'preferred promoted to required should fail');
 }

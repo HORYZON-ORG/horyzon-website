@@ -190,7 +190,7 @@ function hasRequirementPromotion(ledger: Annunci10xTruthLedger, masterText: stri
   const preferred = factsByCategory(ledger, 'REQUIREMENT_PREFERRED').flatMap((fact) => publishableRequirementItems(fact.value));
   const textSentences = sentences(masterText);
   return preferred.some((item) => {
-    const tokens = meaningfulTokens(item);
+    const tokens = preferredRequirementAnchors(ledger, item);
     return textSentences.some((sentence) => {
       const normalizedSentence = normalizeForDecision(sentence);
       return tokens.some((token) => normalizedSentence.includes(token))
@@ -199,6 +199,22 @@ function hasRequirementPromotion(ledger: Annunci10xTruthLedger, masterText: stri
         && !/\bnon\b.{0,24}\b(?:obbligator|necessari)/.test(normalizedSentence);
     });
   });
+}
+
+function preferredRequirementAnchors(ledger: Annunci10xTruthLedger, item: string): string[] {
+  const generic = new Set([
+    'precedente', 'precedenti', 'gradito', 'gradita', 'graditi', 'gradite',
+    'obbligatorio', 'obbligatoria', 'obbligatori', 'obbligatorie',
+    'preferibile', 'preferibili', 'preferenziale', 'preferenziali',
+    'non', 'almeno',
+  ]);
+  const tokens = meaningfulTokens(item).filter((token) => !generic.has(token));
+  const nonPreferredText = normalizeForDecision(ledger.facts
+    .filter((fact) => fact.category !== 'REQUIREMENT_PREFERRED')
+    .map((fact) => fact.value)
+    .join(' '));
+  const distinctive = tokens.filter((token) => !nonPreferredText.includes(token));
+  return distinctive.length > 0 ? distinctive : tokens;
 }
 
 function hasPreferredConsequence(ledger: Annunci10xTruthLedger, masterText: string): boolean {
