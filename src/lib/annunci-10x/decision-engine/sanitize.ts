@@ -160,7 +160,7 @@ function sanitizeApplicationPlaceholder(value: string, ledger: Annunci10xTruthLe
 function hasSpecificApplicationInstruction(value: string): boolean {
   const normalized = normalizeMarker(value);
   if (!normalized) return false;
-  if (/candidatura tramite il canale(?: dell annuncio)?/.test(normalized)) return false;
+  if (/^(?:candidatura\s+)?tramite il canale(?: dell annuncio)?(?:\b|[,.;])/.test(normalized)) return false;
   return /@|https?:\/\/|www\.|\blinkedin\b|\bform\b|\bcv\b|\bcurriculum\b|\boggetto\b|\bemail\b|\bmail\b|\blettera\b|\bdocument[oi]\b/.test(value.toLowerCase());
 }
 
