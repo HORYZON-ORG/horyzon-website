@@ -278,6 +278,24 @@ const completeGoodBody = [
 }
 
 {
+  const ledger = createAnnunci10xTruthLedger(roleCard({
+    benefit: 'Elementi concreti da valorizzare: In sede; esperienza precedente in magazzino e patentino muletto, graditi ma non obbligatori; orario lunedì-venerdì, 08:00-17:00 con pausa pranzo.',
+  }));
+  assert.deepEqual(factsByCategory(ledger, 'BENEFIT'), [], 'attractiveness evidence that only repeats work mode, preferred requirements and schedule must not become duplicate benefit facts');
+}
+
+{
+  const ledger = createAnnunci10xTruthLedger(roleCard({
+    benefit: 'Elementi concreti da valorizzare: In sede; buoni pasto 8 EUR; orario lunedì-venerdì, 08:00-17:00 con pausa pranzo.',
+  }));
+  assert.deepEqual(
+    factsByCategory(ledger, 'BENEFIT').map((fact) => fact.value),
+    ['buoni pasto 8 EUR'],
+    'mixed attractiveness evidence must preserve only the distinct grounded benefit',
+  );
+}
+
+{
   const report = check('Il ruolo prevede laptop e telefono aziendale. Sono previsti anche buoni pasto.', {
     benefit: 'Laptop e telefono aziendale.',
   });
