@@ -137,7 +137,7 @@ function hasInventedApplicationProcess(ledger: Annunci10xTruthLedger, masterText
 function hasSpecificApplicationInstruction(application: string): boolean {
   const normalized = normalizeForDecision(application);
   if (!normalized) return false;
-  if (/candidatura tramite il canale(?: dell'? annuncio)?/.test(normalized)) return false;
+  if (/^(?:candidatura\s+)?tramite il canale(?: dell'? annuncio)?(?:\b|[,.;])/.test(normalized)) return false;
   return /@|https?:\/\/|www\.|\blinkedin\b|\bform\b|\bcv\b|\bcurriculum\b|\boggetto\b|\bemail\b|\bmail\b|\blettera\b|\bdocument[oi]\b/.test(normalized);
 }
 
