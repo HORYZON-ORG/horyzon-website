@@ -350,7 +350,7 @@ const completeGoodBody = [
   };
   const sanitized = sanitizeAnnunci10xCandidateMaster(master, ledger);
   const title = sanitized.sections.find((section) => section.type === 'TITLE');
-  assert.equal(title?.title, '', 'TITLE section must not expose a system label');
+  assert.equal(title?.title, 'Posizione', 'TITLE section must use a publication-ready label');
   assert.equal(title?.body, 'Magazziniere / Addetto logistica', 'TITLE body must always preserve the exact confirmed role');
   assert.deepEqual(title?.sourceFactIds, ['F01'], 'TITLE section must point back to the canonical role fact');
 }
