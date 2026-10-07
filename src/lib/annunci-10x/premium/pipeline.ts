@@ -163,25 +163,34 @@ export interface Annunci10xNarrativeSufficiencyResult {
   questions: Annunci10xNarrativeSufficiencyQuestion[];
 }
 
-const DECISION_ENGINE_WRITER_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-writer`;
-const DECISION_ENGINE_REPAIR_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-repair`;
+const DECISION_ENGINE_WRITER_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-writer.v2`;
+const DECISION_ENGINE_REPAIR_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-repair.v2`;
 
 const DECISION_ENGINE_WRITER_PROMPT = [
-  'Sei il Writer Annunci 10x.',
-  'Obiettivo: produrre un annuncio completo, umano, discorsivo e pubblicabile partendo solo dalla realta confermata.',
+  'Sei il Writer Annunci 10x. Scrivi un annuncio che una persona leggerebbe volentieri e che un azienda potrebbe pubblicare senza riscriverlo.',
   'Regola centrale: Preserva la realta. Migliora la comunicazione.',
-  'Usa Truth Ledger, Base Ad e factualConstraints come unica fonte. Puoi spiegare il significato dei facts, ma non completare il mondo con dettagli plausibili non dichiarati.',
+  'Truth Ledger e Base Ad sono le uniche fonti fattuali. communicationStrategy e solo una guida editoriale: non autorizza nuovi fatti.',
+  'Scrivi per il candidato, non per un sistema HR: niente linguaggio da audit, rubric, scheda interna o report.',
+  'L apertura deve essere specifica e umana: 2-4 frasi che fanno capire subito contesto, ruolo e senso del lavoro usando solo fatti confermati. Evita slogan generici come ambiente dinamico, opportunita unica, crescita o team fantastico se non sono supportati.',
+  'Trasforma le attivita in un racconto operativo chiaro: raggruppa compiti collegati, usa frasi naturali e fai immaginare il lavoro quotidiano. Evita elenchi di micro-task o sequenze a effetto checklist quando non servono.',
+  'La missione deve spiegare il risultato del ruolo senza ripetere parola per parola l apertura o le responsabilita.',
+  'I requisiti devono distinguere con chiarezza obbligatori e preferenziali, senza promuovere i preferenziali a obbligatori.',
+  'Le condizioni devono restare compatte, precise e complete: preserva numeri, sede, modalita, orari, contratto, compenso, turni e reperibilita esattamente nel significato.',
+  'Non creare una sezione benefit/attrattivita se contiene soltanto ripetizioni di condizioni o requisiti gia espressi. Se esistono elementi attrattivi distinti e confermati, presentali con un titolo candidate-facing naturale.',
+  'Ogni fatto importante va detto una volta nel punto migliore; ripetilo solo se serve davvero alla decisione del candidato.',
+  'Per la candidatura usa solo le istruzioni confermate. Se il percorso e generico, usa una CTA neutra e umana senza inventare passaggi.',
   'Non aggiungere processi, strumenti, benefit, condizioni, canali, esiti, livelli contrattuali, step di selezione o conseguenze operative non autorizzati.',
-  'Non esporre metadata, sourceFactIds, RoleCard, rubric, score, vincoli interni o frasi su dati mancanti.',
-  'Mantieni lunghezza utile e tono candidate-facing: chi legge deve capire lavoro reale, condizioni, requisiti e candidatura.',
+  'Non esporre metadata, sourceFactIds, RoleCard, Truth Ledger, Base Ad, rubric, score, vincoli interni o frasi su dati mancanti.',
+  'Preferisci titoli naturali come Chi siamo, Il tuo obiettivo, Cosa farai, Con chi lavorerai, Cosa cerchiamo, Condizioni di lavoro e Candidatura. Evita etichette interne come CONTESTO OPERATIVO o BENEFIT / ATTRATTIVITA DICHIARATI.',
   'Restituisci soltanto JSON valido nello schema richiesto.',
 ].join('\n');
 
 const DECISION_ENGINE_REPAIR_PROMPT = [
   'Sei il Reviser chirurgico Annunci 10x.',
   'Ricevi un Master, Truth Ledger, Base Ad e hardFailures del Decision Engine.',
-  'Modifica solo i claim indicati come non grounded o mancanti, preservando profondita, continuita narrativa e tono umano.',
-  'Se un fatto manca, aggiungilo con formulazione fedele. Se un claim e inventato, rimuovi o sostituisci soltanto quel concetto usando evidence reale.',
+  'Modifica solo i claim indicati come non grounded o mancanti, preservando profondita, continuita narrativa, titoli candidate-facing e tono umano.',
+  'Se un fatto manca, aggiungilo nel punto piu naturale con formulazione fedele. Se un claim e inventato, rimuovi o sostituisci soltanto quel concetto usando evidence reale.',
+  'Non trasformare il Master in una checklist, non reintrodurre etichette interne e non creare una sezione benefit duplicando condizioni o requisiti.',
   'Non accorciare automaticamente il resto del Master e non introdurre nuovi fatti.',
   'Restituisci soltanto le sezioni modificate nello schema REVISE.',
 ].join('\n');
@@ -1065,6 +1074,13 @@ function decisionEngineWriter(input: {
           roleCard: writerInput.roleCard,
           truthLedger: writerInput.truthLedger,
           baseAd: writerInput.baseAd,
+          communicationStrategy: input.snapshot.communicationStrategy ? {
+            summary: input.snapshot.communicationStrategy.summary,
+            candidateAngle: input.snapshot.communicationStrategy.candidateAngle,
+            reasons: input.snapshot.communicationStrategy.reasons,
+            proofPoints: input.snapshot.communicationStrategy.proofPoints,
+            riskNotes: input.snapshot.communicationStrategy.riskNotes,
+          } : null,
           factualConstraints: writerInput.factualConstraints,
         },
         inputSnapshotId: input.snapshot.id,
