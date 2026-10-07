@@ -1064,6 +1064,15 @@ const completeGoodBody = [
 }
 
 {
+  const report = check(
+    completeGoodBody + '\nLa richiesta viene portata fino a una risoluzione.',
+    { responsibilities: 'Ricezione richieste; registrazione nel CRM; verifica che la richiesta sia stata gestita.' },
+  );
+  assert.equal(report.violations.responsibilityExpansion, true, 'gestita must not be strengthened into risoluzione without explicit evidence');
+  assert.equal(report.final, 'FIX_REQUIRED');
+}
+
+{
   const master = makeMaster(completeGoodBody);
   const revision = await applyAnnunci10xClientRevision({
     master,
