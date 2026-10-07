@@ -340,6 +340,60 @@ const completeGoodBody = [
 }
 
 {
+  const ledger = createAnnunci10xTruthLedger(roleCard());
+  const master = {
+    ...makeMaster('PMI alimentare a Bari.'),
+    sections: [
+      { id: 's-title-wrong', type: 'TITLE', key: 'role', title: 'Chi siamo', body: 'PMI alimentare a Bari.', sourceFactIds: ['F09'] },
+      { id: 's-opening', type: 'OPENING', key: 'opening', title: 'Apertura', body: 'PMI alimentare a Bari.', sourceFactIds: ['F09'] },
+    ],
+  };
+  const sanitized = sanitizeAnnunci10xCandidateMaster(master, ledger);
+  const title = sanitized.sections.find((section) => section.type === 'TITLE');
+  assert.equal(title?.title, '', 'TITLE section must not expose a system label');
+  assert.equal(title?.body, 'Magazziniere / Addetto logistica', 'TITLE body must always preserve the exact confirmed role');
+  assert.deepEqual(title?.sourceFactIds, ['F01'], 'TITLE section must point back to the canonical role fact');
+}
+
+{
+  const ledger = createAnnunci10xTruthLedger(roleCard({
+    benefit: 'Elementi concreti da valorizzare: In sede; esperienza precedente in magazzino e patentino muletto, graditi ma non obbligatori; orario lunedì-venerdì, 08:00-17:00 con pausa pranzo.',
+  }));
+  const master = {
+    ...makeMaster(completeGoodBody),
+    sections: [
+      ...makeMaster(completeGoodBody).sections,
+      {
+        id: 's-growth-redundant',
+        type: 'GROWTH',
+        key: 'growth',
+        title: 'BENEFIT / ATTRATTIVITÀ DICHIARATI',
+        body: 'Elementi concreti da valorizzare: In sede; esperienza precedente in magazzino e patentino muletto, graditi ma non obbligatori; orario lunedì-venerdì, 08:00-17:00 con pausa pranzo.',
+        sourceFactIds: ['F19'],
+      },
+    ],
+  };
+  const sanitized = sanitizeAnnunci10xCandidateMaster(master, ledger);
+  assert.equal(sanitized.sections.some((section) => section.type === 'GROWTH'), false, 'growth section must be omitted when it only repeats work mode, preferred experience and schedule');
+}
+
+{
+  const ledger = createAnnunci10xTruthLedger(roleCard({ benefit: 'Buoni pasto 8 EUR.' }));
+  const master = {
+    ...makeMaster(completeGoodBody),
+    sections: [
+      ...makeMaster(completeGoodBody).sections,
+      { id: 's-growth-real', type: 'GROWTH', key: 'growth', title: 'BENEFIT / ATTRATTIVITÀ DICHIARATI', body: 'Buoni pasto 8 EUR.', sourceFactIds: ['F19'] },
+    ],
+  };
+  const sanitized = sanitizeAnnunci10xCandidateMaster(master, ledger);
+  const growth = sanitized.sections.find((section) => section.type === 'GROWTH');
+  assert.ok(growth, 'distinct grounded benefits must remain candidate-facing');
+  assert.equal(growth?.title, 'Cosa trovi');
+  assert.match(growth?.body ?? '', /Buoni pasto 8 EUR/i);
+}
+
+{
   const ledger = createAnnunci10xTruthLedger(roleCard({ required: 'Autonomia; orientamento agli obiettivi' }));
   const sanitized = sanitizeAnnunci10xCandidateMaster(makeMaster('- Autonomia\n- Orientamento agli obiettivi'), ledger);
   const text = masterText(sanitized);
