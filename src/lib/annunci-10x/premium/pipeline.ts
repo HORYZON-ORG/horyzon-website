@@ -201,7 +201,11 @@ export async function runAnnunci10xPremiumGeneration(input: Annunci10xPremiumGen
   const context = input.context ?? createAnnunci10xRuntimeContext();
   const session = await requireOwnedSession(context, input.sessionId, input.sessionSecret);
   const lead = await context.persistence.getLead(input.sessionId, input.sessionSecret);
-  if (!lead?.emailVerifiedAt) {
+  const canaryEmail = process.env.ANNUNCI10X_CANARY_EMAIL?.trim().toLowerCase();
+  const canaryBypassEnabled = process.env.ANNUNCI10X_CANARY_EMAIL_BYPASS === '1'
+    && Boolean(canaryEmail)
+    && lead?.emailNormalized === canaryEmail;
+  if (!lead?.emailVerifiedAt && !canaryBypassEnabled) {
     throw new Annunci10xPublicError('EMAIL_VERIFICATION_REQUIRED', 'Verifica la tua email per generare gratuitamente il tuo Annuncio 10x.', 403);
   }
   const authorizationProvider = input.authorizationProvider ?? createProductionGenerationAuthorizationProvider();
