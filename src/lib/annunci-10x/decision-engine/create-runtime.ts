@@ -221,6 +221,18 @@ export async function applyAnnunci10xClientRevision(input: Annunci10xClientRevis
     revisionNumber,
     truthLedger,
   });
+  if (normalizeForDecision(revisedSection.body) === normalizeForDecision(previousSection.body)) {
+    return {
+      status: 'REVISION_BLOCKED',
+      revisionCount: input.revisionCount,
+      revisionNumber,
+      targetSection: previousSection.id,
+      previousText: previousSection.body,
+      newText: revisedSection.body,
+      master: input.master,
+      decisionReport: null,
+    };
+  }
   const candidate: GeneratedAd = {
     ...input.master,
     sections: input.master.sections.map((section) => (section.id === previousSection.id ? revisedSection : section)),
