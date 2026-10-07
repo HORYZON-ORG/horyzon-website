@@ -59,7 +59,11 @@ function sanitizeSection(section: GeneratedSection, ledger: Annunci10xTruthLedge
   if (dropWholeSection) return { ...section, title: '', body: '' };
 
   const title = INTERNAL_TITLE_REWRITES.get(normalizedTitle) ?? section.title;
-  const body = sanitizeCandidateText(section.body, ledger, stripListMarkers);
+  const genericApplication = section.type === 'APPLICATION'
+    && !hasSpecificApplicationInstruction(factValue(ledger.roleCard.applicationInstructions));
+  const body = genericApplication
+    ? GENERIC_APPLICATION_CTA
+    : sanitizeCandidateText(section.body, ledger, stripListMarkers);
   return { ...section, title, body };
 }
 

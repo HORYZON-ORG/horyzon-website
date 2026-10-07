@@ -406,6 +406,25 @@ const completeGoodBody = [
 }
 
 {
+  const ledger = createAnnunci10xTruthLedger(roleCard({
+    application: 'tramite il canale dell annuncio, senza documenti o passaggi aggiuntivi non dichiarati',
+  }));
+  const master = makeMaster('Inviare la candidatura tramite il canale dell annuncio, senza documenti o passaggi aggiuntivi non dichiarati.');
+  master.sections[1] = {
+    ...master.sections[1],
+    id: 's-application',
+    type: 'APPLICATION',
+    key: 'application',
+    title: 'CANDIDATURA',
+    sourceFactIds: ['F21'],
+  };
+  const sanitized = sanitizeAnnunci10xCandidateMaster(master, ledger);
+  const application = sanitized.sections.find((section) => section.type === 'APPLICATION');
+  assert.ok(application, 'generic application section must remain present after sanitization');
+  assert.equal(application.body, 'Se questa posizione ti interessa, inviaci la tua candidatura.', 'generic application with missing-data wording must become the neutral CTA');
+}
+
+{
   const ledger = createAnnunci10xTruthLedger(roleCard({ application: 'Invia CV a recruiting@azienda-test.it con oggetto Magazziniere.' }));
   const sanitized = sanitizeAnnunci10xCandidateMaster(makeMaster('Per candidarti, invia CV a recruiting@azienda-test.it con oggetto Magazziniere.'), ledger);
   const text = masterText(sanitized);
