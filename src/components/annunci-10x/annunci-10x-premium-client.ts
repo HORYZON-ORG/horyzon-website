@@ -1,16 +1,10 @@
 "use client";
 
-export type PremiumFulfillmentState = 'NONE' | 'PAYMENT_CONFIRMED' | 'READY_TO_GENERATE' | 'PREPARING' | 'READY' | 'NEEDS_REVIEW';
+export type PremiumFulfillmentState = 'NONE' | 'READY_TO_GENERATE' | 'PREPARING' | 'READY' | 'NEEDS_REVIEW';
 export type PremiumFulfillmentFlow = 'ANALYZE' | 'CREATE' | null;
 export type PremiumSection = { id: string; title: string; body: string };
 export type PremiumChannelVariant = { channel: string; sections: PremiumSection[] } | null;
-export type PremiumCheckoutNotice = 'success' | 'cancelled' | null;
-
 export const ANNUNCI10X_FULFILLMENT_REFRESH_EVENT = 'annunci10x:fulfillment-refresh';
-export const PAYMENT_VERIFY_POLL_MS = 1500;
-export const MAX_PAYMENT_VERIFY_ATTEMPTS = 12;
-export const PAYMENT_VERIFY_TIMEOUT_MESSAGE = 'Stiamo ancora verificando il pagamento. Puoi aggiornare lo stato tra qualche secondo.';
-
 export interface PremiumFulfillmentStatus {
   flow: PremiumFulfillmentFlow;
   state: PremiumFulfillmentState;
@@ -44,18 +38,6 @@ export interface PremiumEditResult {
   revisionCount?: number;
   revisionLimit?: number;
   output?: PremiumOutput;
-}
-
-export function shouldPollAnnunci10xPaymentVerification(checkoutNotice: PremiumCheckoutNotice, state: PremiumFulfillmentState | null | undefined): boolean {
-  return checkoutNotice === 'success' && state === 'NONE';
-}
-
-export function isAnnunci10xPaymentVerificationStopState(state: PremiumFulfillmentState): boolean {
-  return state === 'PAYMENT_CONFIRMED' || state === 'READY_TO_GENERATE' || state === 'PREPARING' || state === 'READY' || state === 'NEEDS_REVIEW';
-}
-
-export function shouldReturnToAnnunci10xCreate(checkoutNotice: PremiumCheckoutNotice, flow: PremiumFulfillmentFlow): boolean {
-  return (checkoutNotice === 'success' || checkoutNotice === 'cancelled') && flow === 'CREATE';
 }
 
 export async function fetchAnnunci10xFulfillmentStatus(): Promise<PremiumFulfillmentStatus> {
