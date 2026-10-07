@@ -377,6 +377,7 @@ function hasResponsibilityExpansion(ledger: Annunci10xTruthLedger, masterText: s
     [/\bdocumenti di trasporto|ddt\b/i, /\bddt|documenti di trasporto/],
     [/\bimballaggio\b/i, /\bimballaggio/],
     [/\b(?:risoluzione|risolvere|risolta|risolto|chiusura|chiudere|chiusa|chiuso)\b/i, /\b(?:risoluzione|risolvere|risolta|risolto|chiusura|chiudere|chiusa|chiuso)\b/],
+    [/\b(?:giornata tipo|ogni giorno|quotidianamente|attivit[aà] quotidian[ae]|regolarmente|spesso)\b/i, /\b(?:giornata tipo|ogni giorno|quotidianamente|attivit[aà] quotidian[ae]|regolarmente|spesso)\b/],
   ];
   return expansions.some(([pattern, evidence]) => pattern.test(masterText) && !evidence.test(knownText));
 }
