@@ -1,6 +1,6 @@
 import type { Requirement, RoleCard } from '../types.ts';
 import type { Annunci10xTruthFact, Annunci10xTruthLedger } from './types.ts';
-import { compactText, hasUnknownText, normalizeForDecision, splitListLike, unique } from './text.ts';
+import { compactText, hasUnknownText, includesEquivalent, normalizeForDecision, splitListLike, unique } from './text.ts';
 
 export function factValue<T>(fact: { value: T } | undefined | null): string {
   if (!fact) return '';
@@ -45,7 +45,17 @@ export function createAnnunci10xTruthLedger(roleCard: RoleCard): Annunci10xTruth
   addDeclaredFact({ key: 'unexpectedEvents', label: 'Imprevisti', value: factValue(context.unexpectedEvents), category: 'ACTIVITY', sourcePath: 'roleCard.attractionContext.unexpectedEvents', publishable: true });
   context.attractivenessEvidence.forEach((item, index) => {
     const value = cleanAttractivenessFact(factValue(item));
-    if (value && !isUnknownOptionalFact(value)) addFact({ key: `benefit.${index}`, label: 'Benefit / attrattività', value, category: 'BENEFIT', sourcePath: `roleCard.attractionContext.attractivenessEvidence.${index}`, publishable: true });
+    distinctAttractivenessFacts(value, roleCard).forEach((distinctValue, partIndex) => {
+      if (!distinctValue || isUnknownOptionalFact(distinctValue)) return;
+      addFact({
+        key: `benefit.${index}.${partIndex}`,
+        label: 'Benefit / attrattività',
+        value: distinctValue,
+        category: 'BENEFIT',
+        sourcePath: `roleCard.attractionContext.attractivenessEvidence.${index}`,
+        publishable: true,
+      });
+    });
   });
 
   const compensation = compensationText(roleCard);
@@ -97,6 +107,7 @@ function addRequirementFacts(
 function cleanAttractivenessFact(value: string): string {
   const cleaned = value
     .replace(/\bBenefit\s*:\s*/gi, '')
+    .replace(/\bElementi concreti da valorizzare\s*:\s*/gi, '')
     .replace(/\bFormazione\/crescita\s*:\s*/gi, '')
     .replace(/\bFormazione e crescita concreta\s*:\s*/gi, '')
     .replace(/\s+/g, ' ')
@@ -106,6 +117,54 @@ function cleanAttractivenessFact(value: string): string {
     .map((sentence) => sentence.trim().replace(/[.!?]+$/g, ''))
     .filter((sentence) => sentence && !isMissingAttractivenessDisclosure(sentence))
     .join('. ');
+}
+
+function distinctAttractivenessFacts(value: string, roleCard: RoleCard): string[] {
+  if (!value) return [];
+  const clauses = value
+    .split(/[;\n]|(?<=[.!?])\s+/g)
+    .map((clause) => clause.trim().replace(/[.!?]+$/g, ''))
+    .filter(Boolean);
+
+  const context = roleCard.attractionContext;
+  const preferredRequirements = roleCard.requirements
+    .filter((requirement) => requirement.classification === 'PREFERRED')
+    .map((requirement) => factValue(requirement.label))
+    .filter(Boolean);
+  const referenceValues = [
+    factValue(context.workModeDetail) || factValue(context.workMode),
+    factValue(context.schedule),
+    factValue(context.contractType),
+    factValue(context.location),
+    factValue(context.shifts),
+    factValue(context.onCall),
+    compensationText(roleCard),
+    ...preferredRequirements,
+  ].filter(Boolean);
+
+  const hasWorkMode = Boolean(factValue(context.workModeDetail) || factValue(context.workMode));
+  const hasSchedule = Boolean(factValue(context.schedule));
+  const hasContract = Boolean(factValue(context.contractType));
+  const hasLocation = Boolean(factValue(context.location));
+  const hasShifts = Boolean(factValue(context.shifts));
+  const hasOnCall = Boolean(factValue(context.onCall));
+  const hasCompensation = Boolean(compensationText(roleCard));
+  const hasPreferred = preferredRequirements.length > 0;
+
+  return clauses.filter((clause) => {
+    const normalized = normalizeForDecision(clause);
+    if (!normalized) return false;
+    if (referenceValues.some((reference) => includesEquivalent(reference, clause) || includesEquivalent(clause, reference))) return false;
+    if (hasWorkMode && /\b(?:modalita|ibrid|remot|ufficio|presenza)\b/.test(normalized)) return false;
+    if (hasPreferred && /\besperien/.test(normalized) && /\b(?:prefer|gradit|non obblig)/.test(normalized)) return false;
+    if (hasSchedule && /\b(?:orario|lunedi|martedi|mercoledi|giovedi|venerdi|sabato|domenica)\b/.test(normalized)) return false;
+    if (hasContract && /\bcontratt/.test(normalized)) return false;
+    if (hasCompensation && /\b(?:ral|retribu|compenso)\b/.test(normalized)) return false;
+    if (hasLocation && /\b(?:sede|luogo|localit)\b/.test(normalized)) return false;
+    if (hasShifts && /\bturn/.test(normalized)) return false;
+    if (hasOnCall && /\breperibil/.test(normalized)) return false;
+    return true;
+  });
 }
 
 function isMissingAttractivenessDisclosure(value: string): boolean {
