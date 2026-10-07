@@ -82,7 +82,7 @@ function sanitizeSection(section: GeneratedSection, ledger: Annunci10xTruthLedge
     const roleFact = ledger.facts.find((fact) => fact.category === 'ROLE');
     return {
       ...section,
-      title: '',
+      title: 'Posizione',
       body: role || sanitizeCandidateText(section.body, ledger, stripListMarkers),
       sourceFactIds: roleFact ? [roleFact.id] : section.sourceFactIds,
     };
