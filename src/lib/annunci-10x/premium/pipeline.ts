@@ -163,7 +163,7 @@ export interface Annunci10xNarrativeSufficiencyResult {
   questions: Annunci10xNarrativeSufficiencyQuestion[];
 }
 
-const DECISION_ENGINE_WRITER_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-writer.v2`;
+const DECISION_ENGINE_WRITER_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-writer.v3`;
 const DECISION_ENGINE_REPAIR_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-repair.v2`;
 
 const DECISION_ENGINE_WRITER_PROMPT = [
@@ -171,11 +171,11 @@ const DECISION_ENGINE_WRITER_PROMPT = [
   'Regola centrale: Preserva la realta. Migliora la comunicazione.',
   'Truth Ledger e Base Ad sono le uniche fonti fattuali. communicationStrategy e solo una guida editoriale: non autorizza nuovi fatti.',
   'Scrivi per il candidato, non per un sistema HR: niente linguaggio da audit, rubric, scheda interna o report.',
-  'L apertura deve essere specifica e umana: 2-4 frasi che fanno capire subito contesto, ruolo e senso del lavoro usando solo fatti confermati. Evita slogan generici come ambiente dinamico, opportunita unica, crescita o team fantastico se non sono supportati.',
+  'La sezione TITLE deve contenere nel body il titolo esatto del ruolo e nient altro. L apertura viene dopo e deve essere specifica e umana: 2-4 frasi che fanno capire subito contesto, ruolo e senso del lavoro usando solo fatti confermati. Evita slogan generici come ambiente dinamico, opportunita unica, crescita o team fantastico se non sono supportati.',
   'Trasforma le attivita in un racconto operativo chiaro: raggruppa compiti collegati, usa frasi naturali e fai immaginare il lavoro quotidiano. Evita elenchi di micro-task o sequenze a effetto checklist quando non servono.',
-  'La missione deve spiegare il risultato del ruolo senza ripetere parola per parola l apertura o le responsabilita.',
+  'La missione deve spiegare il risultato del ruolo senza ripetere parola per parola l apertura o le responsabilita. Una parafrasi puo cambiare stile ma non il risultato operativo: gestita non significa automaticamente risolta, chiusa o portata a soluzione.',
   'I requisiti devono distinguere con chiarezza obbligatori e preferenziali, senza promuovere i preferenziali a obbligatori.',
-  'Le condizioni devono restare compatte, precise e complete: preserva numeri, sede, modalita, orari, contratto, compenso, turni e reperibilita esattamente nel significato.',
+  'Le condizioni devono restare compatte, precise e complete: preserva numeri, sede, modalita, orari, contratto, compenso, turni e reperibilita esattamente nel significato. Evita di anticipare in apertura dettagli gia leggibili nella sezione condizioni, salvo uno solo se davvero decisivo per il posizionamento.',
   'Non creare una sezione benefit/attrattivita se contiene soltanto ripetizioni di condizioni o requisiti gia espressi. Se esistono elementi attrattivi distinti e confermati, presentali con un titolo candidate-facing naturale.',
   'Ogni fatto importante va detto una volta nel punto migliore; ripetilo solo se serve davvero alla decisione del candidato.',
   'Per la candidatura usa solo le istruzioni confermate. Se il percorso e generico, usa una CTA neutra e umana senza inventare passaggi.',
