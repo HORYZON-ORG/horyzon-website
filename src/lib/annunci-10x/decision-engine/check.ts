@@ -390,6 +390,10 @@ function hasResponsibilityExpansion(ledger: Annunci10xTruthLedger, masterText: s
     [/\bpresa\s+in\s+carico\b/i, /\bpresa\s+in\s+carico\b/],
     [/\bsoluzion[ei]\b/i, /\bsoluzion[ei]\b/],
     [/\b(?:rapidamente|tempestivamente|velocemente)\b/i, /\b(?:rapidamente|tempestivamente|velocemente)\b/],
+    [/\b(?:documenti|documentazione)\b/i, /\b(?:documenti|documentazione)\b/],
+    [/\b(?:registrazione|registrare|registri)\s+(?:degli\s+)?arrivi\b/i, /\b(?:registrazione|registrare|registri)\s+(?:degli\s+)?arrivi\b/],
+    [/\b(?:consegna|consegne|destinat[oi]\s+alla\s+consegna)\b/i, /\b(?:consegna|consegne|destinat[oi]\s+alla\s+consegna)\b/],
+    [/\b(?:secondo|seguendo)\s+(?:le\s+)?(?:indicazioni|istruzioni)\s+(?:ricevute|operative)\b/i, /\b(?:indicazioni|istruzioni)\s+(?:ricevute|operative)\b/],
   ];
   return expansions.some(([pattern, evidence]) => pattern.test(masterText) && !evidence.test(knownText));
 }
