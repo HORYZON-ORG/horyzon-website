@@ -644,16 +644,10 @@ async function requireCreateRevisionOutput(
   session: PersistedAnnunci10xSession,
   sessionSecret: string,
 ): Promise<PersistedOutput> {
-  const reservation = await context.persistence.getLatestConsumedGenerationReservation(
-    session.id,
-    sessionSecret,
-    'CREATE_CREDIT',
-  );
-  if (!reservation?.outputId) {
-    throw new Annunci10xPublicError('PAYMENT_REQUIRED', 'La revisione è disponibile solo per un Annuncio 10x già generato.', 402);
+  const output = await context.persistence.getLatestOutput(session.id, sessionSecret, 'MASTER');
+  if (!output) {
+    throw new Annunci10xPublicError('INVALID_INPUT', 'La revisione è disponibile solo per un Annuncio 10x già generato.', 409);
   }
-  const output = await resolveLatestMasterFromConsumedReservation(context, session, sessionSecret, reservation);
-  if (!output) throw new Annunci10xPublicError('INVALID_INPUT', 'Nessun output premium da modificare.', 409);
   return output;
 }
 
