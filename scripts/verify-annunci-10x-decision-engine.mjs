@@ -1118,6 +1118,33 @@ const completeGoodBody = [
 }
 
 {
+  const warehouseFacts = {
+    responsibilities: 'ricezione merce; controllo quantità; sistemazione prodotti; preparazione ordini; collaborazione con autisti e ufficio ordini',
+    operatingContext: 'collabora con autisti e ufficio ordini',
+    unexpectedEvents: 'differenze tra quantità attese e merce ricevuta, urgenze nella preparazione ordini',
+  };
+  const clean = check(
+    'Ti occuperai di ricezione merce, controllo quantità, sistemazione prodotti e preparazione ordini. Collaborerai con autisti e ufficio ordini e gestirai differenze tra quantità attese e merce ricevuta.',
+    warehouseFacts,
+  );
+  assert.equal(clean.violations.responsibilityExpansion, false, 'canonical warehouse responsibilities must pass');
+
+  for (const invented of [
+    'Controllerai le quantità indicate nei documenti.',
+    'Ti occuperai della registrazione degli arrivi.',
+    'Preparerai articoli destinati alla consegna.',
+    'Preparerai gli ordini secondo le indicazioni operative ricevute.',
+  ]) {
+    const report = check(
+      'Ti occuperai di ricezione merce, controllo quantità, sistemazione prodotti e preparazione ordini. ' + invented,
+      warehouseFacts,
+    );
+    assert.equal(report.violations.responsibilityExpansion, true, 'unsupported logistics expansion must fail: ' + invented);
+    assert.equal(report.final, 'FIX_REQUIRED');
+  }
+}
+
+{
   const master = makeMaster(completeGoodBody);
   const revision = await applyAnnunci10xClientRevision({
     master,
