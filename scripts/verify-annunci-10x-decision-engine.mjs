@@ -334,7 +334,7 @@ const completeGoodBody = [
   const sanitized = sanitizeAnnunci10xCandidateMaster(master, ledger);
   assert.deepEqual(
     sanitized.sections.map((section) => section.title),
-    ['Chi siamo', 'Il tuo obiettivo', 'Cosa farai', 'Con chi lavorerai', 'Cosa cerchiamo', 'Condizioni di lavoro', 'Cosa trovi'],
+    ['Il ruolo', 'Il tuo obiettivo', 'Cosa farai', 'Con chi lavorerai', 'Cosa cerchiamo', 'Condizioni di lavoro', 'Cosa trovi'],
     'candidate sanitizer must normalize system-like section titles into publication-ready language',
   );
 }
