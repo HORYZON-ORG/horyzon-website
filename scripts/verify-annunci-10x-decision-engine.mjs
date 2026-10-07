@@ -314,7 +314,7 @@ const completeGoodBody = [
   const master = makeMaster('Gestisce attivita standard in autonomia.');
   master.sections[1].title = 'Autonomia';
   const sanitized = sanitizeAnnunci10xCandidateMaster(master, ledger);
-  assert.equal(sanitized.sections[1]?.title, 'Come lavorerai', 'candidate sanitizer must rewrite internal headings only in section-title context');
+  assert.equal(sanitized.sections[1]?.title, 'Cosa farai', 'candidate sanitizer must derive the public heading from the section type');
 }
 
 {
