@@ -600,6 +600,14 @@ const completeGoodBody = [
 }
 
 {
+  const report = check('Se questa posizione ti interessa, inviaci la tua candidatura.', {
+    application: 'tramite il canale dell annuncio, senza documenti o passaggi aggiuntivi non dichiarati',
+  });
+  assert.equal(report.preservation.application, 'PASS', 'generic channel application with negative document wording must remain generic');
+  assert.equal(report.violations.inventedApplicationProcess, false, 'neutral CTA must not invent an application process when generic channel wording is declared');
+}
+
+{
   const report = check("Candidatura tramite il canale dell'annuncio.");
   assert.equal(report.violations.mechanicalApplicationPlaceholder, true, 'mechanical channel CTA placeholder should require repair');
 }
