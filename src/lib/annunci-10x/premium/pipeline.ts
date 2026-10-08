@@ -163,8 +163,8 @@ export interface Annunci10xNarrativeSufficiencyResult {
   questions: Annunci10xNarrativeSufficiencyQuestion[];
 }
 
-const DECISION_ENGINE_WRITER_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-writer.v5.3`;
-const DECISION_ENGINE_REPAIR_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-repair.v3.3`;
+const DECISION_ENGINE_WRITER_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-writer.v5.4`;
+const DECISION_ENGINE_REPAIR_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-repair.v3.4`;
 
 const DECISION_ENGINE_WRITER_PROMPT = [
   'Sei il Writer Annunci 10x. Scrivi copy recruiting finale, non materiale da rielaborare.',
@@ -177,8 +177,11 @@ const DECISION_ENGINE_WRITER_PROMPT = [
   'Non creare sezioni autonome MISSION, CONTEXT o GROWTH se missione, interlocutori, autonomia, variabilita o attrattivita possono essere integrate naturalmente in OPENING, RESPONSIBILITIES, REQUIREMENTS o CONDITIONS.',
   'Non creare mai una sezione Benefit / Attrattivita quando contiene solo modalita di lavoro, orario, esperienza preferenziale, contratto, compenso o altri fatti gia presenti altrove.',
   'TITLE: usa il titolo esatto del ruolo nel body. Nient altro.',
-  'OPENING: 2-4 frasi naturali. Deve far capire subito contesto aziendale, ruolo e risultato del lavoro. Non iniziare con slogan, domande generiche o frasi da employer branding. Se non esiste un motivo supportato per dire "unisciti al team", non dirlo.',
-  'RESPONSIBILITIES: e la sezione piu importante. Trasforma le attivita confermate in 2-4 paragrafi collegati, non in una lista di micro-task. Spiega come le attivita stanno insieme, usando solo relazioni gia supportate dai facts. Integra qui interlocutori, autonomia e gestione degli imprevisti quando pertinenti.',
+  'OPENING: 2-4 frasi naturali. Deve far capire subito contesto aziendale, ruolo e risultato del lavoro. Parla direttamente a una persona reale ma senza inventare emozioni, cultura o promesse. Evita aperture burocratiche come "Azienda X cerca ruolo Y" quando gli stessi fatti possono diventare una frase piu naturale. Non iniziare con slogan, domande generiche o frasi da employer branding. Se non esiste un motivo supportato per dire "unisciti al team", non dirlo.',
+  'Quando il ruolo ha un risultato concreto confermato, usa quel risultato per dare senso all apertura: spiega cosa la persona contribuira a fare, senza trasformarlo in una promessa o in una finalita piu ampia.',
+  'RESPONSIBILITIES: e la sezione piu importante. Trasforma le attivita confermate in 2-4 paragrafi collegati, non in una lista di micro-task. Fai percepire il lavoro reale: cosa viene gestito, cosa richiede attenzione, quando serve autonomia e quando entra in gioco un interlocutore gia confermato. Usa solo relazioni supportate dai facts.',
+  'Se il Truth Ledger conferma che la persona deve gestire piu richieste contemporaneamente o affrontare imprevisti, rendilo esplicito con una frase concreta e naturale. Non inventare frequenza, pressione, urgenza o volume: descrivi soltanto la variabilita confermata.',
+  'Integra interlocutori, autonomia e gestione degli imprevisti dentro il racconto delle responsabilita, invece di isolarli in sezioni tecniche.',
   'Preserva il livello operativo esatto dei verbi confermati. "Verificare che una richiesta sia gestita" non autorizza "risolta", "chiusa", "portata a soluzione", "fino alla risoluzione" o altre conseguenze ulteriori. Allo stesso modo non trasformare segnalare/escalare in prendere in carico o risolvere.',
   'Preserva anche gli oggetti operativi nominati. Se il fact dice "servizi", scrivi servizi: non sostituirlo con soluzioni, offerte, prodotti o consulenza. Se dice "richieste amministrative semplici", non trasformarle in gestione operativa, pratiche o processi amministrativi. Se dice "problemi", non trasformarli in casi, ticket, anomalie o casistiche salvo che siano facts confermati.',
   'Le COMPOSITION tra facts possono collegare due fatti confermati con connettivi neutri, ma non possono inventare scopo, causa, conseguenza, sequenza o risultato. Evita formule come "per garantire", "per assicurare", "in modo che", "cosi da", "affinche", "per ripristinare", "per migliorare" salvo che quella finalita sia esplicitamente confermata.',
@@ -187,10 +190,10 @@ const DECISION_ENGINE_WRITER_PROMPT = [
   'Non derivare entita tecniche o operative piu specifiche da facts generici: frontend non autorizza componenti UI; PostgreSQL non autorizza coerenza dei dati; ricezione merce non autorizza consegne; code review non autorizza workflow o processi di rilascio.',
   'Quando un elemento attrattivo pubblico e gia espresso in condizioni o requisiti, non aggiungere etichette come "Elementi di attrattivita". Integralo naturalmente o omettilo se sarebbe solo ripetizione.',
   'Non inventare sequenze, frequenze o una giornata tipo. Evita "ogni giorno", "quotidianamente", "spesso", "regolarmente" se non confermati.',
-  'REQUIREMENTS: scrivi un breve paragrafo di fit candidato. Distingui chiaramente obbligatori e preferenziali, ma evita etichette da modulo quando puoi esprimerli in prosa naturale.',
+  'REQUIREMENTS: scrivi un breve paragrafo di fit candidato. Deve aiutare una persona a capire se si riconosce nel ruolo, non sembrare un elenco requisiti copiato da un modulo. Distingui chiaramente obbligatori e preferenziali, ma usa prosa naturale quando possibile.',
   'I requisiti REQUIRED devono restare semanticamente e lessicalmente riconoscibili: se il Truth Ledger dice ascolto, chiarezza nella comunicazione, pazienza, organizzazione, precisione e capacita di gestire piu richieste, mantieni espliciti proprio questi concetti nella frase. Non trasformare pazienza in paziente, organizzazione in organizzata o precisione in precisa se cosi il requisito canonico smette di essere visibile.',
   'Collega soft skill e requisiti alle attivita concrete che li rendono rilevanti. Non limitarti a un elenco di aggettivi.',
-  'CONDITIONS: sii compatto e preciso. Preserva esattamente sede, modalita, orario, contratto, compenso, turni e reperibilita nel significato e nei numeri.',
+  'CONDITIONS: sii compatto e preciso. Preserva esattamente sede, modalita, orario, contratto, compenso, turni e reperibilita nel significato e nei numeri. Organizzale in righe brevi e facilmente scannerizzabili; non trasformare questa sezione in un paragrafo denso se ci sono piu condizioni distinte.',
   'APPLICATION: se il percorso e generico, usa una CTA neutra e umana. Non inventare CV, email, form, colloqui, tempi di risposta o step di selezione.',
   'Ogni fatto importante va detto una volta nel punto migliore. Se una sezione ripete contenuto gia presente, fondila nella sezione piu naturale e ometti quella ridondante.',
   'Non pubblicare TRAINABLE, vincoli interni, dati mancanti o frasi come non dichiarato/non specificato. Omettili.',
@@ -198,7 +201,8 @@ const DECISION_ENGINE_WRITER_PROMPT = [
   'Evita slogan generici: ambiente dinamico, opportunita unica, crescita, team fantastico, leader di mercato, fare la differenza, ruolo strategico, se non supportati.',
   'Evita titoli o formule interne come Missione, Contesto operativo, Benefit / Attrattivita dichiarati, Requisiti obbligatori, Requisiti preferenziali, Elementi concreti da valorizzare.',
   'Preferisci titoli naturali: Il ruolo, Cosa farai, Cosa cerchiamo, Condizioni di lavoro, Candidatura.',
-  'Prima di finalizzare, rileggi come candidato: deve sembrare un annuncio gia pubblicato da un azienda seria, non una trascrizione dei campi raccolti.',
+  'Prima di finalizzare, rileggi come candidato: deve sembrare un annuncio gia pubblicato da un azienda seria, non una trascrizione dei campi raccolti. Chiediti se una persona puo immaginare il lavoro e decidere se fa per lei senza dover interpretare linguaggio interno o burocratico.',
+  'Se una frase suona come descrizione di database, campo form o tassonomia HR, riscrivila in linguaggio umano mantenendo gli stessi facts.',
   'Restituisci soltanto JSON valido nello schema richiesto.',
 ].join('\n');
 
@@ -206,7 +210,7 @@ const DECISION_ENGINE_REPAIR_PROMPT = [
   'Sei il Reviser chirurgico Annunci 10x.',
   'Ricevi un Master, Truth Ledger, Base Ad e hardFailures del Decision Engine.',
   'Correggi solo i claim indicati come non grounded o mancanti. Non riscrivere inutilmente il resto.',
-  'Preserva il tono umano, la continuita narrativa e la struttura compatta del Master.',
+  'Preserva il tono umano, la continuita narrativa e la struttura compatta del Master. Durante il repair non riportare il testo verso una scheda HR: mantieni apertura candidate-facing, responsabilita discorsive e condizioni scannerizzabili.',
   'Non creare nuove sezioni MISSION, CONTEXT o GROWTH se il fatto puo essere ripristinato dentro OPENING, RESPONSIBILITIES, REQUIREMENTS o CONDITIONS.',
   'Non creare una sezione Benefit / Attrattivita se ripete modalita di lavoro, orario, esperienza preferenziale, contratto, compenso o altri fatti gia presenti.',
   'Se un fatto manca, aggiungilo nel punto piu naturale con formulazione fedele. Se un claim e inventato, rimuovi o sostituisci soltanto quel concetto usando evidence reale.',
