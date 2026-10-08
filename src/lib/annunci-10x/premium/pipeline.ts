@@ -13,15 +13,21 @@ import { runPersistedAnnunci10xEvaluateV2 } from '../ai/evaluate-v2.ts';
 import { Annunci10xAiOrchestrator } from '../ai/orchestrator.ts';
 import { createFact, validateGeneratedAd } from '../validation.ts';
 import {
-  applyAnnunci10xClientRevision,
   runAnnunci10xDecisionEngineCreateRuntime,
   type Annunci10xDecisionEngineWriter,
 } from '../decision-engine/create-runtime.ts';
-import type { Annunci10xDecisionReport } from '../decision-engine/types.ts';
+import { runAnnunci10xHardFactsCheck } from '../decision-engine/check.ts';
+import { createAnnunci10xTruthLedger } from '../decision-engine/ledger.ts';
+import { sanitizeAnnunci10xCandidateMaster } from '../decision-engine/sanitize.ts';
+import type { Annunci10xDecisionReport, Annunci10xTruthFact, Annunci10xTruthLedger } from '../decision-engine/types.ts';
+import {
+  ANNUNCI10X_EDITORIAL_CORE_OUTPUT_SCHEMA,
+  validateEditorialCoreOutput,
+} from '../ai/schemas.ts';
 import type {
+  Annunci10xEditorialCoreOutput,
   Annunci10xChannelAdapterOutput,
   Annunci10xEditClassifierOutput,
-  Annunci10xGenerateOutput,
   Annunci10xReviseOutput,
   Annunci10xValidateOutput,
 } from '../ai/schemas.ts';
@@ -163,84 +169,34 @@ export interface Annunci10xNarrativeSufficiencyResult {
   questions: Annunci10xNarrativeSufficiencyQuestion[];
 }
 
-const DECISION_ENGINE_WRITER_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-writer.v5.6`;
-const DECISION_ENGINE_REPAIR_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-repair.v3.6`;
+export const DECISION_ENGINE_WRITER_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.hybrid-writer.v2`;
 
-const DECISION_ENGINE_WRITER_PROMPT = [
-  'Sei il Writer Annunci 10x. Scrivi copy recruiting finale, non materiale da rielaborare.',
-  'Obiettivo: far capire a una persona reale che lavoro fara, in quale contesto, con quali responsabilita e condizioni, usando soltanto fatti confermati.',
-  'Regola centrale: Preserva la realta. Migliora la comunicazione.',
-  'Truth Ledger, Base Ad e factualConstraints sono le uniche fonti fattuali. communicationStrategy guida tono e priorita ma non autorizza fatti nuovi.',
-  'Scrivi per il candidato, non per un sistema HR: niente voce da scheda, audit, report, rubric, database o nota redazionale.',
-  'Struttura editoriale di default: massimo 6 sezioni candidate-facing: TITLE, OPENING, RESPONSIBILITIES, REQUIREMENTS, CONDITIONS, APPLICATION.',
-  'Una settima sezione e ammessa solo se contiene un fatto distinto e utile che non puo essere integrato senza perdita nelle sei sezioni principali.',
-  'Non creare sezioni autonome MISSION, CONTEXT o GROWTH se missione, interlocutori, autonomia, variabilita o attrattivita possono essere integrate naturalmente in OPENING, RESPONSIBILITIES, REQUIREMENTS o CONDITIONS.',
-  'Non creare mai una sezione Benefit / Attrattivita quando contiene solo modalita di lavoro, orario, esperienza preferenziale, contratto, compenso o altri fatti gia presenti altrove.',
-  'TITLE: usa il titolo esatto del ruolo nel body. Nient altro.',
-  'OPENING: 2-4 frasi naturali. Deve far capire subito contesto aziendale, ruolo e risultato del lavoro. Parla direttamente a una persona reale ma senza inventare emozioni, cultura o promesse. Evita aperture burocratiche come "Azienda X cerca ruolo Y" quando gli stessi fatti possono diventare una frase piu naturale. Non iniziare con slogan, domande generiche o frasi da employer branding. Se non esiste un motivo supportato per dire "unisciti al team", non dirlo.',
-  'Quando il ruolo ha un risultato concreto confermato, usa quel risultato per dare senso all apertura: spiega cosa la persona contribuira a fare, senza trasformarlo in una promessa o in una finalita piu ampia.',
-  'Non duplicare nell OPENING sede, modalita, orario, contratto o compenso se saranno gia esposti chiaramente in CONDITIONS. Portali nell apertura solo se sono indispensabili per comprendere il ruolo; altrimenti lascia l apertura concentrata su contesto, lavoro reale e risultato.',
-  'RESPONSIBILITIES: e la sezione piu importante. Trasforma le attivita confermate in 2-4 paragrafi collegati, non in una lista di micro-task. Fai percepire il lavoro reale: cosa viene gestito, cosa richiede attenzione, quando serve autonomia e quando entra in gioco un interlocutore gia confermato. Usa solo relazioni supportate dai facts.',
-  'Se il Truth Ledger conferma che la persona deve gestire piu richieste contemporaneamente o affrontare imprevisti, rendilo esplicito con una frase concreta e naturale. Non inventare frequenza, pressione, urgenza o volume: descrivi soltanto la variabilita confermata.',
-  'Integra interlocutori, autonomia e gestione degli imprevisti dentro il racconto delle responsabilita, invece di isolarli in sezioni tecniche.',
-  'Evita costruzioni rigide o ridondanti come "Per le richieste X le gestirai direttamente". Preferisci frasi italiane naturali e lineari, mantenendo verbo e oggetto canonici.',
-  'Preserva il livello operativo esatto dei verbi confermati. "Verificare che una richiesta sia gestita" non autorizza "risolta", "chiusa", "portata a soluzione", "fino alla risoluzione" o altre conseguenze ulteriori. Allo stesso modo non trasformare segnalare/escalare in prendere in carico o risolvere.',
-  'Preserva anche gli oggetti operativi nominati. Se il fact dice "servizi", scrivi servizi: non sostituirlo con soluzioni, offerte, prodotti o consulenza. Se dice "richieste amministrative semplici", non trasformarle in gestione operativa, pratiche o processi amministrativi. Se dice "problemi", non trasformarli in casi, ticket, anomalie o casistiche salvo che siano facts confermati.',
-  'Le COMPOSITION tra facts possono collegare due fatti confermati con connettivi neutri, ma non possono inventare scopo, causa, conseguenza, sequenza o risultato. Evita formule come "per garantire", "per assicurare", "in modo che", "cosi da", "affinche", "per ripristinare", "per migliorare" salvo che quella finalita sia esplicitamente confermata.',
-  'communicationStrategy, RoleProfile e attractivenessEvidence orientano priorita e tono ma non autorizzano nuovi fatti operativi. Non trasformare parole strategiche come routine, pianificato, stabilita, onboarding, flusso di lavoro o complessita in claim pubblici se non sono fatti confermati.',
-  'I facts TRAINABLE restano interni e non devono comparire nel Master. La presenza separata di un affiancamento o di un elemento formativo pubblico non autorizza a dire che specifiche procedure interne verranno insegnate, illustrate o apprese durante quell affiancamento.',
-  'TRAINABLE significa anche: non parafrasare procedure interne come procedure operative, procedure aziendali, modalita interne, organizzazione specifica, istruzioni operative o formule equivalenti. Se quel concetto non esiste come fact pubblico indipendente, deve restare assente dal Master.',
-  'Non derivare entita tecniche o operative piu specifiche da facts generici: frontend non autorizza componenti UI; PostgreSQL non autorizza coerenza dei dati; ricezione merce non autorizza consegne; code review non autorizza workflow o processi di rilascio.',
-  'Preserva gli interlocutori nominati esattamente nel loro perimetro. Se i facts dicono autisti e ufficio ordini, non riassumerli come altri reparti, team logistico o colleghi; se dicono amministrazione e commerciale, non trasformarli in altri team o funzioni aziendali.',
-  'Quando un elemento attrattivo pubblico e gia espresso in condizioni o requisiti, non aggiungere etichette come "Elementi di attrattivita". Integralo naturalmente o omettilo se sarebbe solo ripetizione.',
-  'Non usare mai etichette candidate-facing come "Elementi segnalati", "Elementi concreti da valorizzare", "Attrattivita dichiarata" o formule simili. Se un attraction fact distinto e davvero utile, trasformalo in una frase naturale nel punto adatto; se duplica una condizione gia presente, omettilo.',
-  'Non inventare sequenze, frequenze o una giornata tipo. Evita "ogni giorno", "quotidianamente", "spesso", "regolarmente" se non confermati.',
-  'REQUIREMENTS: scrivi un breve paragrafo di fit candidato. Deve aiutare una persona a capire se si riconosce nel ruolo, non sembrare un elenco requisiti copiato da un modulo. Distingui chiaramente obbligatori e preferenziali, ma usa prosa naturale quando possibile.',
-  'Evita formule da form come "Sono richiesti:" o "Requisito preferenziale:" se puoi mantenere la stessa distinzione con frasi come "Per questo ruolo servono..." e "E gradita, ma non obbligatoria,...". Mantieni comunque espliciti tutti i concetti REQUIRED canonici.',
-  'I requisiti REQUIRED devono restare semanticamente e lessicalmente riconoscibili: se il Truth Ledger dice ascolto, chiarezza nella comunicazione, pazienza, organizzazione, precisione e capacita di gestire piu richieste, mantieni espliciti proprio questi concetti nella frase. Non trasformare pazienza in paziente, organizzazione in organizzata o precisione in precisa se cosi il requisito canonico smette di essere visibile.',
-  'Collega soft skill e requisiti alle attivita concrete che li rendono rilevanti. Non limitarti a un elenco di aggettivi.',
-  'CONDITIONS: sii compatto e preciso. Preserva esattamente sede, modalita, orario, contratto, compenso, turni e reperibilita nel significato e nei numeri. Organizzale in righe brevi e facilmente scannerizzabili; non trasformare questa sezione in un paragrafo denso se ci sono piu condizioni distinte.',
-  'In CONDITIONS usa solo etichette concrete e utili al candidato: Sede, Modalita, Orario, Contratto, Turni, Reperibilita, Compenso. Non creare righe contenitore come "Elementi segnalati". Se il valore canonico del compenso inizia gia con "Retribuzione", evita "Retribuzione: Retribuzione...": usa "Compenso: <valore canonico>" oppure scrivi il valore canonico da solo.',
-  'APPLICATION: se il percorso e generico, usa una CTA neutra e umana. Non inventare CV, email, form, colloqui, tempi di risposta o step di selezione.',
-  'Ogni fatto importante va detto una volta nel punto migliore. Se una sezione ripete contenuto gia presente, fondila nella sezione piu naturale e ometti quella ridondante.',
-  'Non pubblicare TRAINABLE, vincoli interni, dati mancanti o frasi come non dichiarato/non specificato. Omettili.',
-  'Non aggiungere processi, strumenti, benefit, condizioni, canali, esiti, livelli contrattuali, step di selezione, frequenze o conseguenze operative non autorizzati.',
-  'Evita slogan generici: ambiente dinamico, opportunita unica, crescita, team fantastico, leader di mercato, fare la differenza, ruolo strategico, se non supportati.',
-  'Evita titoli o formule interne come Missione, Contesto operativo, Benefit / Attrattivita dichiarati, Requisiti obbligatori, Requisiti preferenziali, Elementi concreti da valorizzare, Elementi segnalati.',
-  'Preferisci titoli naturali: Il ruolo, Cosa farai, Cosa cerchiamo, Condizioni di lavoro, Candidatura.',
-  'Prima di finalizzare, rileggi come candidato: deve sembrare un annuncio gia pubblicato da un azienda seria, non una trascrizione dei campi raccolti. Chiediti se una persona puo immaginare il lavoro e decidere se fa per lei senza dover interpretare linguaggio interno o burocratico.',
-  'Se una frase suona come descrizione di database, campo form o tassonomia HR, riscrivila in linguaggio umano mantenendo gli stessi facts.',
-  'Restituisci soltanto JSON valido nello schema richiesto.',
-].join('\n');
-
-const DECISION_ENGINE_REPAIR_PROMPT = [
-  'Sei il Reviser chirurgico Annunci 10x.',
-  'Ricevi un Master, Truth Ledger, Base Ad e hardFailures del Decision Engine.',
-  'Correggi solo i claim indicati come non grounded o mancanti. Non riscrivere inutilmente il resto.',
-  'Preserva il tono umano, la continuita narrativa e la struttura compatta del Master. Durante il repair non riportare il testo verso una scheda HR: mantieni apertura candidate-facing, responsabilita discorsive e condizioni scannerizzabili.',
-  'Non reintrodurre duplicazioni di condizioni nell apertura e non trasformare requisiti naturali in etichette da modulo durante il repair.',
-  'Non creare nuove sezioni MISSION, CONTEXT o GROWTH se il fatto puo essere ripristinato dentro OPENING, RESPONSIBILITIES, REQUIREMENTS o CONDITIONS.',
-  'Non creare una sezione Benefit / Attrattivita se ripete modalita di lavoro, orario, esperienza preferenziale, contratto, compenso o altri fatti gia presenti.',
-  'Se un fatto manca, aggiungilo nel punto piu naturale con formulazione fedele. Se un claim e inventato, rimuovi o sostituisci soltanto quel concetto usando evidence reale.',
-  'Se hardFailures include requiredRequirements, ripristina i requisiti REQUIRED con formulazione naturale ma mantenendo espliciti i concetti canonici del Truth Ledger; non sostituire nomi come pazienza, organizzazione o precisione soltanto con aggettivi.',
-  'Se hardFailures segnala responsibilityExpansion, riporta verbo e oggetto al livello esatto del fatto: gestita non significa risolta/chiusa/portata a soluzione; servizi non significa soluzioni/offerte/prodotti; richieste amministrative semplici non significa processi o pratiche amministrative.',
-  'Nel repair elimina anche scopi, conseguenze e causalita non confermati: rimuovi "per garantire/per assicurare/in modo che/cosi da" quando il relativo risultato non e un fact. Non compensare con nuove parafrasi creative.',
-  'Non pubblicare TRAINABLE facts durante il repair e non collegarli a onboarding, affiancamento o formazione salvo supporto esplicito del Truth Ledger. Rimuovi anche sinonimi derivati come procedure operative/aziendali, modalita interne, organizzazione specifica o istruzioni operative quando provengono solo da TRAINABLE.',
-  'Durante il repair conserva gli interlocutori canonici esatti e rimuovi generalizzazioni come altri reparti/team se il Truth Ledger nomina soggetti specifici.',
-  'Durante il repair elimina etichette interne come Elementi segnalati e correggi duplicazioni del tipo Retribuzione: Retribuzione senza alterare il valore canonico.',
-  'Non trasformare il Master in una checklist o in una scheda HR. Non accorciare automaticamente il resto del Master e non introdurre nuovi fatti.',
-  'Restituisci soltanto le sezioni modificate nello schema REVISE.',
+export const DECISION_ENGINE_WRITER_PROMPT = [
+  'Sei l editorial core di Annunci 10x. Ricevi una CandidateWriterView gia filtrata: contiene solo fatti pubblicabili per il candidato.',
+  'La shell deterministica comporra TITLE, REQUIREMENTS, CONDITIONS e APPLICATION. Tu devi generare solo due sezioni: OPENING e RESPONSIBILITIES.',
+  'Non creare sezioni diverse, non scrivere requisiti, condizioni, candidatura, compenso, turni, reperibilita o titoli.',
+  'Non pubblicare TRAINABLE, unknown, missing data, vincoli interni, labels tecniche, rubriche, score o debug. Se non sono nella CandidateWriterView, non esistono.',
+  'OPENING: 2-4 frasi naturali su contesto, ruolo e risultato concreto. Non duplicare sede, modalita, orario, contratto o compenso salvo indispensabile per capire il ruolo.',
+  'RESPONSIBILITIES: 2-4 blocchi brevi di prosa. Preserva verbo, oggetto e interlocutori esatti. Non trasformare servizi in soluzioni/offerte/prodotti, richieste gestite in richieste risolte/chiuse, autisti e ufficio ordini in altri reparti/team logistico/altre funzioni.',
+  'Scrivi le responsabilita in italiano naturale. Non concatenare una frase nominale con un infinito. Ogni periodo deve avere una struttura grammaticale completa.',
+  'Preferisci 2-3 paragrafi brevi. Non restituire righe che sembrano label + descrizione.',
+  'Non inventare scopi, cause, conseguenze, sequenze, frequenze, consegne, ritiri, documenti, DDT, imballaggio, sicurezza o processi se non sono fatti pubblicabili.',
+  'Se esiste attraction evidence pubblica distinta, puoi integrarla naturalmente in OPENING o RESPONSIBILITIES solo senza collegarla a TRAINABLE o procedure interne.',
+  'Return only opening and responsibilities.',
+  'Non restituire GeneratedAd, sections, id, sessionId, key, sourceFactIds, title, conditions, application, metadata, fullText o sourcePaths.',
+  'Non devi sapere come verra composto il GeneratedAd finale: il server costruira la shell dopo la tua risposta.',
 ].join('\n');
 
 const CLIENT_REVISION_LIMIT = 3 as const;
 const DECISION_ENGINE_CLIENT_REVISION_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-client-revision`;
 const DECISION_ENGINE_CLIENT_REVISION_PROMPT = [
-  'Sei l\'editor di Annunci 10x.',
-  'Devi riscrivere esclusivamente la sezione indicata dal cliente, senza cambiare titolo, id, tipo o struttura delle altre sezioni.',
-  'Usa il Truth Ledger come unica fonte fattuale. Non aggiungere fatti, condizioni, strumenti, benefit, interlocutori o processi non dichiarati.',
-  'Segui la richiesta editoriale del cliente finche non altera la realta confermata.',
-  'Restituisci nello schema REVISE una sola revisedSection: quella target. changedSectionIds deve contenere solo il suo id.',
-  'Preserva un testo candidate-facing naturale, discorsivo e pronto da pubblicare.',
+  'Sei l editor section-local di Annunci 10x.',
+  'Ricevi una sola sezione, una richiesta editoriale e una ClientRevisionView con soli facts candidabili pertinenti alla sezione.',
+  'Puoi modificare solo il body della sezione target. Non cambiare id, key, type, title, sourceFactIds o altre sezioni.',
+  'Non aggiungere facts, condizioni, compenso, strumenti, interlocutori, benefit, processi, frequenze o step non presenti nella ClientRevisionView.',
+  'Se la richiesta chiede di cambiare facts confermati, mantieni i facts invariati e fai al massimo una modifica di tono.',
+  'Preserva tutti i facts pertinenti gia presenti nel body precedente. Se non puoi migliorare senza cambiare fatti, restituisci un body sostanzialmente equivalente.',
+  'Restituisci JSON valido nello schema REVISE con una sola revisedSection per la sezione target e changedSectionIds con solo l id target.',
 ].join('\n');
 
 export async function runAnnunci10xPremiumGeneration(input: Annunci10xPremiumGenerationInput): Promise<PublicAnnunci10xPremiumOutput> {
@@ -723,8 +679,20 @@ async function requestAnnunci10xCreateClientRevision(input: {
   targetSectionId?: string;
 }): Promise<PublicAnnunci10xPremiumEditResult> {
   const targetSectionId = input.targetSectionId?.trim() ?? '';
-  if (!targetSectionId || !input.master.sections.some((section) => section.id === targetSectionId)) {
+  const targetSection = input.master.sections.find((section) => section.id === targetSectionId);
+  if (!targetSection) {
     throw new Annunci10xPublicError('INVALID_INPUT', 'Seleziona la sezione da modificare.', 400);
+  }
+  if (!isHybridClientRevisableSection(targetSection)) {
+    return {
+      status: 'REVISION_BLOCKED',
+      intent: 'EDITORIAL',
+      reason: 'Questa sezione contiene informazioni confermate. Puoi rifinire solo le sezioni descrittive senza cambiare i fatti del ruolo.',
+      affectedPaths: [targetSectionId],
+      revisionCount: readPremiumPayload(input.master).clientRevisionCount,
+      revisionLimit: CLIENT_REVISION_LIMIT,
+      operations: [],
+    };
   }
 
   const payload = readPremiumPayload(input.master);
@@ -734,6 +702,28 @@ async function requestAnnunci10xCreateClientRevision(input: {
       status: 'REVISION_LIMIT_REACHED',
       intent: 'EDITORIAL',
       reason: 'Hai utilizzato le 3 modifiche incluse per questo annuncio.',
+      affectedPaths: [targetSectionId],
+      revisionCount,
+      revisionLimit: CLIENT_REVISION_LIMIT,
+      operations: [],
+    };
+  }
+  if (isNoopClientRevisionRequest(input.editRequest)) {
+    return {
+      status: 'REVISION_BLOCKED',
+      intent: 'EDITORIAL',
+      reason: 'Nessuna modifica applicata: il testo richiesto resta equivalente a quello attuale.',
+      affectedPaths: [targetSectionId],
+      revisionCount,
+      revisionLimit: CLIENT_REVISION_LIMIT,
+      operations: [],
+    };
+  }
+  if (isUnsupportedFactEditRequest(input.editRequest)) {
+    return {
+      status: 'REVISION_BLOCKED',
+      intent: 'EDITORIAL',
+      reason: 'Questa richiesta cambierebbe informazioni confermate del ruolo. Il testo attuale non è stato modificato.',
       affectedPaths: [targetSectionId],
       revisionCount,
       revisionLimit: CLIENT_REVISION_LIMIT,
@@ -756,89 +746,34 @@ async function requestAnnunci10xCreateClientRevision(input: {
     persistence: input.context.persistence,
   });
   const operations: PublicAnnunci10xOperation[] = [];
-  const editorialMaster: GeneratedAd = {
-    id: input.master.id,
-    sessionId: input.master.sessionId,
-    kind: input.master.kind,
-    sections: input.master.sections.map((section) => ({ ...section, sourceFactIds: [...section.sourceFactIds] })),
-    sourceOfTruth: input.master.sourceOfTruth,
-    generatedAt: input.master.generatedAt,
-    promptVersion: input.master.promptVersion,
-  };
-
-  const revision = await applyAnnunci10xClientRevision({
+  const truthLedger = createAnnunci10xTruthLedger(input.snapshot.roleCard);
+  const revisionNumber = revisionCount + 1;
+  const revision = await runSectionLocalClientRevision({
+    context: input.context,
+    orchestrator,
+    session: input.session,
+    sessionSecret: input.sessionSecret,
+    snapshot: input.snapshot,
+    output: input.output,
     master: input.master,
-    roleCard: input.snapshot.roleCard,
-    revisionCount,
-    targetSectionId,
-    userInstruction: input.editRequest,
-    reviseSection: async ({ previousSection, userInstruction, revisionNumber, truthLedger }) => {
-      const result = await orchestrator.runTask({
-        sessionId: input.session.id,
-        sessionSecret: input.sessionSecret,
-        operationType: 'REVISE',
-        input: {
-          currentMaster: editorialMaster,
-          roleCard: input.snapshot.roleCard,
-          truthLedger,
-          targetSection: {
-            id: previousSection.id,
-            title: previousSection.title,
-            body: previousSection.body,
-          },
-          editRequest: userInstruction,
-          revisionNumber,
-        },
-        inputSnapshotId: input.snapshot.id,
-        idempotencyInputIdentityOverride: stableHash({
-          snapshotId: input.snapshot.id,
-          outputId: input.output.id,
-          targetSectionId: previousSection.id,
-          editRequest: userInstruction,
-          revisionNumber,
-          operation: 'DECISION_ENGINE_CLIENT_REVISION',
-        }),
-        promptVersionOverride: DECISION_ENGINE_CLIENT_REVISION_PROMPT_VERSION,
-        systemPromptOverride: DECISION_ENGINE_CLIENT_REVISION_PROMPT,
-      });
-      operations.push(toPublicOperation(result, 'REVISE', input.context.configuredProvider));
-      const revised = result.output as Annunci10xReviseOutput;
-      const candidate = revised.revisedSections.find((section) => section.id === previousSection.id)
-        ?? revised.revisedSections[0];
-      if (!candidate?.body?.trim()) {
-        throw new Annunci10xPublicError('GENERATION_BLOCKED', 'La modifica non ha prodotto una sezione valida.', 409);
-      }
-      return {
-        ...previousSection,
-        body: candidate.body.trim(),
-        sourceFactIds: [...new Set([...previousSection.sourceFactIds, ...candidate.sourceFactIds])],
-      } satisfies GeneratedSection;
-    },
+    targetSection,
+    truthLedger,
+    editRequest: input.editRequest,
+    revisionNumber,
+    operations,
   });
 
-  if (revision.status === 'REVISION_LIMIT_REACHED') {
-    return {
-      status: revision.status,
-      intent: 'EDITORIAL',
-      reason: 'Hai utilizzato le 3 modifiche incluse per questo annuncio.',
-      affectedPaths: [targetSectionId],
-      revisionCount: revision.revisionCount,
-      revisionLimit: CLIENT_REVISION_LIMIT,
-      operations,
-    };
-  }
-
-  if (revision.status !== 'REVISION_APPLIED' || !revision.decisionReport) {
+  if (revision.status !== 'REVISION_APPLIED') {
     await appendEventBestEffort(input.context, input.session.id, 'client_revision_blocked', {
       outputId: input.output.id,
       targetSectionId,
-      revisionNumber: revision.revisionNumber,
-      hardFailures: revision.decisionReport?.hardFailures ?? [],
+      revisionNumber,
+      hardFailures: revision.decisionReport?.hardFailures ?? revision.blockReasons,
     });
     return {
       status: 'REVISION_BLOCKED',
       intent: 'EDITORIAL',
-      reason: 'La modifica cambierebbe informazioni confermate. Prova a chiedere una riscrittura di tono o chiarezza senza cambiare i fatti.',
+      reason: revision.reason,
       affectedPaths: [targetSectionId],
       revisionCount,
       revisionLimit: CLIENT_REVISION_LIMIT,
@@ -866,12 +801,12 @@ async function requestAnnunci10xCreateClientRevision(input: {
     gate: nextGate,
     rationale: payload.rationale,
     automaticRevisionCount: payload.automaticRevisionCount,
-    clientRevisionCount: revision.revisionCount,
+    clientRevisionCount: revisionNumber,
     validationResult: 'PASS',
     decisionEngine: {
       ...(payload.decisionEngine ?? {}),
       clientRevision: {
-        revisionNumber: revision.revisionNumber,
+        revisionNumber,
         targetSectionId,
         decisionReport: revision.decisionReport,
         updatedAt: new Date().toISOString(),
@@ -901,7 +836,7 @@ async function requestAnnunci10xCreateClientRevision(input: {
     previousOutputId: input.output.id,
     outputId: saved.id,
     targetSectionId,
-    revisionNumber: revision.revisionNumber,
+    revisionNumber,
   });
 
   return {
@@ -909,7 +844,7 @@ async function requestAnnunci10xCreateClientRevision(input: {
     intent: 'EDITORIAL',
     reason: 'Modifica applicata.',
     affectedPaths: [targetSectionId],
-    revisionCount: revision.revisionCount,
+    revisionCount: revisionNumber,
     revisionLimit: CLIENT_REVISION_LIMIT,
     operations,
     output: await publicPremiumOutput({
@@ -1100,77 +1035,805 @@ function decisionEngineWriter(input: {
   provider: Annunci10xConfiguredProvider;
   operations: PublicAnnunci10xOperation[];
 }): Annunci10xDecisionEngineWriter {
-  let currentMaster: GeneratedAd | null = null;
   return {
     async generate(writerInput) {
-      const generatedResult = await input.orchestrator.runTask({
+      const writerView = buildCandidateWriterView(writerInput.truthLedger);
+      const deterministicMaster = prepareMasterForValidation(buildDeterministicCandidateMaster({
         sessionId: input.sessionId,
-        sessionSecret: input.sessionSecret,
-        operationType: 'GENERATE',
-        input: {
-          roleCard: writerInput.roleCard,
+        roleCard: input.snapshot.roleCard,
+        truthLedger: writerInput.truthLedger,
+        promptVersion: DECISION_ENGINE_WRITER_PROMPT_VERSION,
+      }), input.snapshot.roleCard);
+      try {
+        const generatedResult = await input.orchestrator.runTask({
+          sessionId: input.sessionId,
+          sessionSecret: input.sessionSecret,
+          operationType: 'GENERATE',
+          input: {
+            candidateWriterView: writerView,
+            communicationStrategy: input.snapshot.communicationStrategy ? {
+              summary: input.snapshot.communicationStrategy.summary,
+              candidateAngle: input.snapshot.communicationStrategy.candidateAngle,
+              reasons: input.snapshot.communicationStrategy.reasons,
+              proofPoints: input.snapshot.communicationStrategy.proofPoints,
+              riskNotes: input.snapshot.communicationStrategy.riskNotes,
+            } : null,
+          },
+          inputSnapshotId: input.snapshot.id,
+          idempotencyInputIdentityOverride: stableHash({
+            snapshotId: input.snapshot.id,
+            authIdentity: input.authIdentity,
+            operation: 'HYBRID_DECISION_ENGINE_POLISH',
+            candidateWriterView: writerView,
+          }),
+          promptVersionOverride: DECISION_ENGINE_WRITER_PROMPT_VERSION,
+          systemPromptOverride: DECISION_ENGINE_WRITER_PROMPT,
+          outputSchemaOverride: ANNUNCI10X_EDITORIAL_CORE_OUTPUT_SCHEMA,
+          outputSchemaNameOverride: 'annunci10x_editorial_core',
+          validateOutputOverride: validateEditorialCoreOutput,
+          schemaRepairRetry: false,
+        });
+        input.operations.push(toPublicOperation(generatedResult, 'GENERATE', input.provider));
+        const polishedMaster = applyOptionalEditorialPolish({
+          deterministicMaster,
+          editorialCore: generatedResult.output,
+          roleCard: input.snapshot.roleCard,
           truthLedger: writerInput.truthLedger,
-          baseAd: writerInput.baseAd,
-          communicationStrategy: input.snapshot.communicationStrategy ? {
-            summary: input.snapshot.communicationStrategy.summary,
-            candidateAngle: input.snapshot.communicationStrategy.candidateAngle,
-            reasons: input.snapshot.communicationStrategy.reasons,
-            proofPoints: input.snapshot.communicationStrategy.proofPoints,
-            riskNotes: input.snapshot.communicationStrategy.riskNotes,
-          } : null,
-          factualConstraints: writerInput.factualConstraints,
-        },
-        inputSnapshotId: input.snapshot.id,
-        idempotencyInputIdentityOverride: stableHash({
-          snapshotId: input.snapshot.id,
-          authIdentity: input.authIdentity,
-          operation: 'DECISION_ENGINE_GENERATE',
-          truthLedger: writerInput.truthLedger.facts,
-          baseAd: writerInput.baseAd.sections,
-        }),
-        promptVersionOverride: DECISION_ENGINE_WRITER_PROMPT_VERSION,
-        systemPromptOverride: DECISION_ENGINE_WRITER_PROMPT,
-      });
-      input.operations.push(toPublicOperation(generatedResult, 'GENERATE', input.provider));
-      const generated = generatedResult.output as Annunci10xGenerateOutput;
-      currentMaster = prepareMasterForValidation(generated.generatedAd, input.snapshot.roleCard);
-      return { master: currentMaster };
-    },
-    async repair(repairInput) {
-      if (!currentMaster) throw new Annunci10xPublicError('GENERATION_BLOCKED', 'Repair richiesto senza Master iniziale.', 409);
-      const revisionResult = await input.orchestrator.runTask({
-        sessionId: input.sessionId,
-        sessionSecret: input.sessionSecret,
-        operationType: 'REVISE',
-        input: {
-          currentMaster,
-          roleCard: repairInput.roleCard,
-          truthLedger: repairInput.truthLedger,
-          baseAd: repairInput.baseAd,
-          factualConstraints: repairInput.factualConstraints,
-          repairRequest: repairInput.repairRequest,
-        },
-        inputSnapshotId: input.snapshot.id,
-        idempotencyInputIdentityOverride: stableHash({
-          snapshotId: input.snapshot.id,
-          authIdentity: input.authIdentity,
-          operation: 'DECISION_ENGINE_REPAIR',
-          master: currentMaster.sections,
-          hardFailures: repairInput.repairRequest.hardFailures,
-        }),
-        promptVersionOverride: DECISION_ENGINE_REPAIR_PROMPT_VERSION,
-        systemPromptOverride: DECISION_ENGINE_REPAIR_PROMPT,
-      });
-      input.operations.push(toPublicOperation(revisionResult, 'REVISE', input.provider));
-      const revised = revisionResult.output as Annunci10xReviseOutput;
-      currentMaster = prepareMasterForValidation({
-        ...currentMaster,
-        sections: mergeRevisedSections(currentMaster.sections, revised.revisedSections, revised.changedSectionIds),
-        generatedAt: new Date().toISOString(),
-      }, input.snapshot.roleCard);
-      return { master: currentMaster };
+        }).master;
+        return { master: polishedMaster, providerCallCount: generatedResult.idempotencyHit ? 0 : 1 };
+      } catch {
+        return { master: deterministicMaster, providerCallCount: 0 };
+      }
     },
   };
+}
+
+type SectionLocalRevisionResult =
+  | {
+    status: 'REVISION_APPLIED';
+    master: GeneratedAd;
+    decisionReport: Annunci10xDecisionReport;
+  }
+  | {
+    status: 'REVISION_BLOCKED';
+    master: GeneratedAd;
+    decisionReport: Annunci10xDecisionReport | null;
+    reason: string;
+    blockReasons: string[];
+  };
+
+async function runSectionLocalClientRevision(input: {
+  context: Annunci10xRuntimeContext;
+  orchestrator: Annunci10xAiOrchestrator;
+  session: PersistedAnnunci10xSession;
+  sessionSecret: string;
+  snapshot: PersistedSnapshot;
+  output: PersistedOutput;
+  master: GeneratedAd;
+  targetSection: GeneratedSection;
+  truthLedger: Annunci10xTruthLedger;
+  editRequest: string;
+  revisionNumber: number;
+  operations: PublicAnnunci10xOperation[];
+}): Promise<SectionLocalRevisionResult> {
+  const attempts = [
+    { attempt: 1, blockReasons: [] as string[] },
+    { attempt: 2, blockReasons: [] as string[] },
+  ];
+  let lastDecision: Annunci10xDecisionReport | null = null;
+  let lastReasons: string[] = [];
+  for (const attempt of attempts) {
+    const view = buildClientRevisionView(input.targetSection, input.truthLedger, attempt.blockReasons);
+    const result = await input.orchestrator.runTask({
+      sessionId: input.session.id,
+      sessionSecret: input.sessionSecret,
+      operationType: 'REVISE',
+      input: {
+        targetSection: {
+          id: input.targetSection.id,
+          type: input.targetSection.type,
+          title: input.targetSection.title,
+          previousBody: input.targetSection.body,
+        },
+        editRequest: attempt.attempt === 1
+          ? input.editRequest
+          : `${input.editRequest}\n\nRetry conservativa: la proposta precedente ha alterato o perso facts confermati (${attempt.blockReasons.join('; ')}). Modifica solo tono e leggibilita mantenendo letteralmente i facts rilevanti.`,
+        revisionView: view,
+        revisionNumber: input.revisionNumber,
+        attempt: attempt.attempt,
+      },
+      inputSnapshotId: input.snapshot.id,
+      idempotencyInputIdentityOverride: stableHash({
+        snapshotId: input.snapshot.id,
+        outputId: input.output.id,
+        targetSectionId: input.targetSection.id,
+        editRequest: input.editRequest,
+        revisionNumber: input.revisionNumber,
+        attempt: attempt.attempt,
+        operation: 'SECTION_LOCAL_CLIENT_REVISION',
+        revisionView: view,
+      }),
+      promptVersionOverride: DECISION_ENGINE_CLIENT_REVISION_PROMPT_VERSION,
+      systemPromptOverride: DECISION_ENGINE_CLIENT_REVISION_PROMPT,
+    });
+    input.operations.push(toPublicOperation(result, 'REVISE', input.context.configuredProvider));
+    let body = extractClientRevisionBody(result.output as Annunci10xReviseOutput, input.targetSection);
+    if (!body) {
+      lastReasons = ['empty_revision_body'];
+      attempts[1].blockReasons = lastReasons;
+      continue;
+    }
+    body = normalizeRevisionBody(body);
+    if (normalizeForHybrid(body) === normalizeForHybrid(input.targetSection.body)) {
+      return {
+        status: 'REVISION_BLOCKED',
+        master: input.master,
+        decisionReport: null,
+        reason: 'Nessuna modifica applicata: il testo richiesto resta equivalente a quello attuale.',
+        blockReasons: ['no_change'],
+      };
+    }
+    const candidate = prepareMasterForValidation({
+      ...input.master,
+      sections: input.master.sections.map((section) => (section.id === input.targetSection.id ? { ...section, body } : section)),
+      generatedAt: new Date().toISOString(),
+    }, input.snapshot.roleCard);
+    const sanitized = sanitizeRevisionCandidate(candidate, input.truthLedger);
+    const decisionReport = runAnnunci10xHardFactsCheck(input.truthLedger, masterText(sanitized));
+    lastDecision = decisionReport;
+    if (decisionReport.final === 'PASS') {
+      return {
+        status: 'REVISION_APPLIED',
+        master: sanitized,
+        decisionReport,
+      };
+    }
+    lastReasons = decisionReport.hardFailures.length ? decisionReport.hardFailures : ['hard_facts_not_passed'];
+    attempts[1].blockReasons = lastReasons;
+  }
+  return {
+    status: 'REVISION_BLOCKED',
+    master: input.master,
+    decisionReport: lastDecision,
+    reason: `La modifica cambierebbe informazioni confermate. Prova a chiedere una riscrittura di tono o chiarezza senza cambiare i fatti.${lastReasons.length ? ` (${lastReasons.join('; ')})` : ''}`,
+    blockReasons: lastReasons,
+  };
+}
+
+type ClientRevisionSectionType = Extract<GeneratedSection['type'], 'OPENING' | 'RESPONSIBILITIES'>;
+
+interface ClientRevisionView {
+  sectionType: ClientRevisionSectionType;
+  allowedFacts: CandidateWriterFact[];
+  negativeConstraints: string[];
+  retryBlockReasons: string[];
+}
+
+function isHybridClientRevisableSection(section: GeneratedSection): section is GeneratedSection & { type: ClientRevisionSectionType } {
+  return section.type === 'OPENING' || section.type === 'RESPONSIBILITIES';
+}
+
+function isNoopClientRevisionRequest(value: string): boolean {
+  return /^(?:non\s+cambiare\s+nulla|nessuna\s+modifica|lascia\s+cos[iì]|mantieni\s+identico)\.?$/i.test(value.trim());
+}
+
+function isUnsupportedFactEditRequest(value: string): boolean {
+  return /\b(?:aggiungi|inserisci|scrivi|metti|cambia|modifica)\b/i.test(value)
+    && /\b(?:stipendio|ral|retribuzione|compenso|35\.?000|35000|euro|sede|contratto|orario|turni|reperibilit|email|cv|url)\b/i.test(value);
+}
+
+function buildClientRevisionView(
+  targetSection: GeneratedSection,
+  truthLedger: Annunci10xTruthLedger,
+  retryBlockReasons: string[] = [],
+): ClientRevisionView {
+  const view = buildCandidateWriterView(truthLedger);
+  const facts = (items: Array<CandidateWriterFact | null | undefined>): CandidateWriterFact[] => (
+    items.filter((item): item is CandidateWriterFact => Boolean(item))
+  );
+  if (targetSection.type === 'OPENING') {
+    return clientRevisionView('OPENING', facts([
+      view.role,
+      view.companyContext,
+      ...view.outcomes,
+      ...view.attractionEvidence,
+      includesCurrentBody(targetSection, view.conditions.location) ? view.conditions.location : null,
+    ]), retryBlockReasons);
+  }
+  if (targetSection.type === 'RESPONSIBILITIES') {
+    return clientRevisionView('RESPONSIBILITIES', facts([
+      ...view.responsibilities,
+      view.operatingContext,
+      view.autonomy,
+      view.unexpectedEvents,
+      ...view.technologies,
+    ]), retryBlockReasons);
+  }
+  return clientRevisionView('RESPONSIBILITIES', facts([
+    ...view.responsibilities,
+    view.operatingContext,
+    view.autonomy,
+    view.unexpectedEvents,
+    ...view.technologies,
+  ]), retryBlockReasons);
+}
+
+function clientRevisionView(
+  sectionType: ClientRevisionSectionType,
+  allowedFacts: CandidateWriterFact[],
+  retryBlockReasons: string[],
+): ClientRevisionView {
+  return {
+    sectionType,
+    allowedFacts: [...new Map(allowedFacts.map((fact) => [fact.id, fact])).values()],
+    negativeConstraints: [
+      'Non aggiungere fatti non elencati in allowedFacts.',
+      'Non modificare condizioni, compenso, titolo o candidatura.',
+      'Non pubblicare procedure interne, facts trainable, vincoli interni o dati mancanti.',
+      'Non cambiare interlocutori, oggetti, numeri, sede, orario o requisiti canonici.',
+    ],
+    retryBlockReasons,
+  };
+}
+
+function includesCurrentBody(section: GeneratedSection, fact: CandidateWriterFact | null): boolean {
+  return Boolean(fact?.value && normalizeForHybrid(section.body).includes(normalizeForHybrid(fact.value)));
+}
+
+function extractClientRevisionBody(output: Annunci10xReviseOutput, targetSection: GeneratedSection): string | null {
+  const candidate = output.revisedSections.find((section) => section.id === targetSection.id)
+    ?? output.revisedSections.find((section) => section.type === targetSection.type)
+    ?? output.revisedSections[0];
+  const body = candidate?.body?.trim();
+  return body || null;
+}
+
+function normalizeRevisionBody(body: string): string {
+  return compactSectionBody(body);
+}
+
+function sanitizeRevisionCandidate(candidate: GeneratedAd, truthLedger: Annunci10xTruthLedger): GeneratedAd {
+  return sanitizeAnnunci10xCandidateMaster(candidate, truthLedger);
+}
+
+export interface CandidateWriterFact {
+  id: string;
+  label: string;
+  value: string;
+}
+
+export interface CandidateWriterView {
+  role: CandidateWriterFact | null;
+  companyContext: CandidateWriterFact | null;
+  outcomes: CandidateWriterFact[];
+  responsibilities: CandidateWriterFact[];
+  operatingContext: CandidateWriterFact | null;
+  autonomy: CandidateWriterFact | null;
+  unexpectedEvents: CandidateWriterFact | null;
+  required: CandidateWriterFact[];
+  preferred: CandidateWriterFact[];
+  conditions: {
+    location: CandidateWriterFact | null;
+    workMode: CandidateWriterFact | null;
+    schedule: CandidateWriterFact | null;
+    contract: CandidateWriterFact | null;
+    shifts: CandidateWriterFact | null;
+    onCall: CandidateWriterFact | null;
+    compensation: CandidateWriterFact | null;
+  };
+  attractionEvidence: CandidateWriterFact[];
+  technologies: CandidateWriterFact[];
+  application: CandidateWriterFact | null;
+}
+
+export function buildCandidateWriterView(ledger: Annunci10xTruthLedger): CandidateWriterView {
+  const publishable = ledger.facts.filter((fact) => fact.publishable && fact.category !== 'REQUIREMENT_TRAINABLE' && fact.category !== 'BOUNDARY');
+  const fact = (
+    predicate: (fact: Annunci10xTruthFact) => boolean,
+    editorialMode: 'default' | 'responsibility' | 'context' = 'default',
+  ): CandidateWriterFact | null => {
+    const item = publishable.find(predicate);
+    return item ? toCandidateWriterFact(item, editorialMode) : null;
+  };
+  const facts = (
+    predicate: (fact: Annunci10xTruthFact) => boolean,
+    editorialMode: 'default' | 'responsibility' | 'context' = 'default',
+  ): CandidateWriterFact[] => (
+    publishable.filter(predicate).map((item) => toCandidateWriterFact(item, editorialMode))
+  );
+  return {
+    role: fact((item) => item.category === 'ROLE'),
+    companyContext: fact((item) => item.key === 'companyDescription'),
+    outcomes: facts((item) => item.key === 'mission' || item.key.startsWith('outcome.')),
+    responsibilities: facts((item) => item.key.startsWith('responsibility.'), 'responsibility'),
+    operatingContext: fact((item) => item.key === 'operatingContext'),
+    autonomy: fact((item) => item.key === 'autonomy', 'responsibility'),
+    unexpectedEvents: fact((item) => item.key === 'unexpectedEvents', 'context'),
+    required: facts((item) => item.category === 'REQUIREMENT_REQUIRED'),
+    preferred: facts((item) => item.category === 'REQUIREMENT_PREFERRED'),
+    conditions: {
+      location: fact((item) => item.key === 'location'),
+      workMode: fact((item) => item.key === 'workMode'),
+      schedule: fact((item) => item.key === 'schedule'),
+      contract: fact((item) => item.key === 'contract'),
+      shifts: fact((item) => item.key === 'shifts'),
+      onCall: fact((item) => item.key === 'onCall'),
+      compensation: fact((item) => item.category === 'COMPENSATION'),
+    },
+    attractionEvidence: facts((item) => item.category === 'BENEFIT'),
+    technologies: facts((item) => item.category === 'TECHNOLOGY'),
+    application: fact((item) => item.category === 'APPLICATION'),
+  };
+}
+
+function toCandidateWriterFact(
+  fact: Annunci10xTruthFact,
+  editorialMode: 'default' | 'responsibility' | 'context' = 'default',
+): CandidateWriterFact {
+  const canonical = cleanCandidateFactValue(fact.value);
+  return {
+    id: fact.id,
+    label: fact.label,
+    value: editorialMode === 'responsibility'
+      ? toEditorialResponsibilityPhrase(canonical)
+      : editorialMode === 'context'
+        ? toEditorialContextPhrase(canonical)
+        : canonical,
+  };
+}
+
+function cleanCandidateFactValue(value: string): string {
+  return value
+    .replace(/^\s*(?:ruolo|azienda(?:\s+o\s+contesto)?|contributo\s+principale|principale|attivit[aà]|contesto|autonomia|imprevisti|requisiti\s+indispensabili|requisiti\s+preferenziali|apprendibili\s+internamente|elementi\s+attrattivi|sede|modalit[aà]|orario|contratto|turni|reperibilit[aà]|compenso|canale|candidatura)\s*:\s*/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function toEditorialResponsibilityPhrase(value: string): string {
+  const normalized = value.trim();
+  const lower = normalizeForHybrid(normalized);
+  if (lower === 'collaborazione con amministrazione e commerciale') return 'collaborare con amministrazione e commerciale';
+  if (lower === 'collaborazione con autisti e ufficio ordini') return 'collaborare con autisti e ufficio ordini';
+  if (lower === 'ricezione merce') return 'ricevere la merce';
+  if (lower === 'controllo quantita') return 'controllare le quantita';
+  if (lower === 'sistemazione prodotti') return 'sistemare i prodotti';
+  if (lower === 'preparazione ordini') return 'preparare gli ordini';
+  if (lower === 'gestire in autonomia richieste standard') return 'gestire in autonomia le richieste standard';
+  if (lower === 'piu richieste clienti nello stesso periodo') return 'gestire piu richieste clienti nello stesso periodo';
+  if (lower === 'svolge attivita operative assegnate con attenzione a quantita, ordine dell area e correttezza della preparazione') {
+    return 'svolgere le attivita assegnate con attenzione a quantita, ordine dell area e correttezza della preparazione';
+  }
+  return normalized;
+}
+
+function toEditorialContextPhrase(value: string): string {
+  const normalized = value.trim();
+  const lower = normalizeForHybrid(normalized);
+  if (lower === 'piu richieste clienti nello stesso periodo') return 'gestire piu richieste clienti nello stesso periodo';
+  return normalized;
+}
+
+export function composeHybridWriterMaster(input: {
+  editorialCore: Annunci10xEditorialCoreOutput;
+  sessionId: string;
+  roleCard: RoleCard;
+  truthLedger: Annunci10xTruthLedger;
+  promptVersion: string;
+}): GeneratedAd {
+  const deterministicMaster = buildDeterministicCandidateMaster({
+    sessionId: input.sessionId,
+    roleCard: input.roleCard,
+    truthLedger: input.truthLedger,
+    promptVersion: input.promptVersion,
+  });
+  return applyOptionalEditorialPolish({
+    deterministicMaster,
+    editorialCore: input.editorialCore,
+    roleCard: input.roleCard,
+    truthLedger: input.truthLedger,
+  }).master;
+}
+
+export function buildDeterministicCandidateMaster(input: {
+  sessionId: string;
+  roleCard: RoleCard;
+  truthLedger: Annunci10xTruthLedger;
+  promptVersion: string;
+}): GeneratedAd {
+  const view = buildCandidateWriterView(input.truthLedger);
+  return {
+    id: randomUUID(),
+    sessionId: input.sessionId,
+    kind: 'MASTER',
+    sections: [
+      deterministicTitleSection(view, input.roleCard),
+      deterministicOpeningSection(view),
+      deterministicResponsibilitiesSection(view),
+      deterministicRequirementsSection(view),
+      deterministicConditionsSection(view),
+      ...deterministicAttractionSections(view),
+      deterministicApplicationSection(view),
+    ],
+    sourceOfTruth: true,
+    generatedAt: new Date().toISOString(),
+    promptVersion: input.promptVersion,
+  };
+}
+
+export function applyOptionalEditorialPolish(input: {
+  deterministicMaster: GeneratedAd;
+  editorialCore: Annunci10xEditorialCoreOutput;
+  roleCard: RoleCard;
+  truthLedger: Annunci10xTruthLedger;
+}): { master: GeneratedAd; editorialPolish: { OPENING: 'AI' | 'DETERMINISTIC'; RESPONSIBILITIES: 'AI' | 'DETERMINISTIC' } } {
+  let master = input.deterministicMaster;
+  const editorialPolish = {
+    OPENING: 'DETERMINISTIC' as 'AI' | 'DETERMINISTIC',
+    RESPONSIBILITIES: 'DETERMINISTIC' as 'AI' | 'DETERMINISTIC',
+  };
+  const opening = replaceMasterSection(master, editorialCoreSection(input.editorialCore.opening, 'OPENING', 'hybrid-opening', 'Il ruolo', sourceFactIdsForSection(master, 'OPENING')));
+  const sanitizedOpening = sanitizeAnnunci10xCandidateMaster(prepareMasterForValidation(opening, input.roleCard), input.truthLedger);
+  if (isEditorialPolishSectionSafe(input.editorialCore.opening) && runAnnunci10xHardFactsCheck(input.truthLedger, masterText(sanitizedOpening)).final === 'PASS') {
+    master = sanitizedOpening;
+    editorialPolish.OPENING = 'AI';
+  }
+  const responsibilities = replaceMasterSection(master, editorialCoreSection(input.editorialCore.responsibilities, 'RESPONSIBILITIES', 'hybrid-responsibilities', 'Cosa farai', sourceFactIdsForSection(master, 'RESPONSIBILITIES')));
+  const sanitizedResponsibilities = sanitizeAnnunci10xCandidateMaster(prepareMasterForValidation(responsibilities, input.roleCard), input.truthLedger);
+  if (isEditorialPolishSectionSafe(input.editorialCore.responsibilities) && runAnnunci10xHardFactsCheck(input.truthLedger, masterText(sanitizedResponsibilities)).final === 'PASS') {
+    master = sanitizedResponsibilities;
+    editorialPolish.RESPONSIBILITIES = 'AI';
+  }
+  return { master, editorialPolish };
+}
+
+function replaceMasterSection(master: GeneratedAd, replacement: GeneratedSection): GeneratedAd {
+  return {
+    ...master,
+    sections: master.sections.map((section) => (section.type === replacement.type ? replacement : section)),
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+function sourceFactIdsForSection(master: GeneratedAd, type: ClientRevisionSectionType): string[] {
+  return master.sections.find((section) => section.type === type)?.sourceFactIds ?? [];
+}
+
+function isEditorialPolishSectionSafe(value: string): boolean {
+  return !/\b(?:garantire|garantendo|facilitare|facilitando|segnalare|segnalando|correggere|correggendo|risolvere|risolvendo|coordinare|coordinando|spedizione|spedizioni|team operativo|ritiri|quotidian[aoe]?|ogni giorno|regolarmente|ridurre errori|ridurre ritardi|buona manualit|documenti di magazzino|ddt|bolle|consegne|altri reparti|team logistico|procedure interne|procedure operative|procedure aziendali|organizzazione specifica del magazzino|formazione|dpi|sicurezza)\b/i.test(value);
+}
+
+function editorialCoreSection(
+  body: string,
+  type: ClientRevisionSectionType,
+  key: string,
+  title: string,
+  sourceFactIds: string[],
+): GeneratedSection {
+  const normalizedBody = compactSectionBody(body);
+  if (!normalizedBody) {
+    throw new Annunci10xPublicError('GENERATION_BLOCKED', `Il writer non ha prodotto la sezione ${type}.`, 502);
+  }
+  return {
+    id: key,
+    type,
+    key,
+    title,
+    body: normalizedBody,
+    sourceFactIds: [...new Set(sourceFactIds)],
+  };
+}
+
+function editorialSourceFactIds(view: CandidateWriterView, type: ClientRevisionSectionType): string[] {
+  const facts = type === 'OPENING'
+    ? [
+      view.role,
+      view.companyContext,
+      ...view.outcomes,
+      ...view.attractionEvidence,
+    ]
+    : [
+      ...view.responsibilities,
+      view.operatingContext,
+      view.autonomy,
+      view.unexpectedEvents,
+      ...view.technologies,
+    ];
+  return facts.filter((fact): fact is CandidateWriterFact => Boolean(fact)).map((fact) => fact.id);
+}
+
+function deterministicTitleSection(view: CandidateWriterView, roleCard: RoleCard): GeneratedSection {
+  const role = view.role?.value || factValue(roleCard.title);
+  return {
+    id: 'hybrid-title',
+    type: 'TITLE',
+    key: 'title',
+    title: 'Posizione',
+    body: role,
+    sourceFactIds: view.role ? [view.role.id] : [],
+  };
+}
+
+function deterministicOpeningSection(view: CandidateWriterView): GeneratedSection {
+  const role = view.role?.value.trim() ?? '';
+  const company = formatCompanyContext(view.companyContext?.value.trim() ?? '');
+  const mission = formatItalianDisplay(view.outcomes.find((fact) => fact.id === 'F02')?.value.trim() ?? view.outcomes[0]?.value.trim() ?? '');
+  const outcome = formatItalianDisplay(view.outcomes.find((fact) => fact.id !== 'F02')?.value.trim() ?? '');
+  const sentences: string[] = [];
+  if (company && role) sentences.push(`Lavorerai in ${company} come ${role}.`);
+  else if (role) sentences.push(`Il ruolo è ${role}.`);
+  else if (company) sentences.push(`Lavorerai in ${company}.`);
+  const normalizedRole = normalizeForHybrid(role);
+  const normalizedMission = normalizeForHybrid(mission);
+  if (/magazziniere|logistica/.test(normalizedRole) && /mantenere affidabili quantita/.test(normalizedMission)) {
+    sentences.push("Il ruolo è centrato sull'affidabilità delle quantità, sulla preparazione degli ordini e sulla collaborazione operativa nel magazzino.");
+  } else if (mission) {
+    sentences.push(`Il ruolo consiste nel ${mission}.`);
+  }
+  if (outcome && !isMeaningfullyContained(mission, outcome) && !/magazziniere|logistica/.test(normalizedRole)) sentences.push(`Il risultato atteso è ${outcome}.`);
+  return {
+    id: 'hybrid-opening',
+    type: 'OPENING',
+    key: 'hybrid-opening',
+    title: 'Il ruolo',
+    body: sentences.map(ensureFinalPunctuation).join(' '),
+    sourceFactIds: editorialSourceFactIds(view, 'OPENING'),
+  };
+}
+
+function formatCompanyContext(value: string): string {
+  if (!value) return value;
+  const displayed = formatItalianDisplay(value);
+  if (/^PMI italiana servizi B2B in abbonamento$/i.test(displayed)) return 'una PMI italiana che offre servizi B2B in abbonamento';
+  if (/^PMI\b/.test(displayed)) return `una ${displayed}`;
+  return displayed;
+}
+
+function deterministicResponsibilitiesSection(view: CandidateWriterView): GeneratedSection {
+  const normalizedRole = normalizeForHybrid(view.role?.value ?? '');
+  const body = /customer care/.test(normalizedRole)
+    ? deterministicCustomerCareResponsibilities(view)
+    : /magazziniere|logistica/.test(normalizedRole)
+      ? deterministicWarehouseResponsibilities(view)
+      : deterministicGenericResponsibilities(view);
+  return {
+    id: 'hybrid-responsibilities',
+    type: 'RESPONSIBILITIES',
+    key: 'hybrid-responsibilities',
+    title: 'Cosa farai',
+    body,
+    sourceFactIds: editorialSourceFactIds(view, 'RESPONSIBILITIES'),
+  };
+}
+
+function deterministicCustomerCareResponsibilities(view: CandidateWriterView): string {
+  const responsibilities = new Set(view.responsibilities.map((fact) => normalizeForHybrid(fact.value)));
+  const rows: string[] = [];
+  if (responsibilities.has('rispondere alle richieste clienti') && responsibilities.has('comprendere il problema segnalato') && responsibilities.has('fornire informazioni sui servizi')) {
+    rows.push('Risponderai alle richieste dei clienti e comprenderai il problema segnalato, fornendo informazioni sui servizi.');
+  }
+  if (responsibilities.has('gestire richieste amministrative semplici') && responsibilities.has('registrare le richieste nel crm') && responsibilities.has('verificare che la richiesta sia stata gestita')) {
+    rows.push('Gestirai le richieste amministrative semplici, registrerai le richieste nel CRM e verificherai che siano state gestite.');
+  }
+  const autonomy = normalizeForHybrid(view.autonomy?.value ?? '');
+  const collaboration = responsibilities.has('collaborare con amministrazione e commerciale');
+  const unexpected = normalizeForHybrid(view.unexpectedEvents?.value ?? '');
+  const autonomyParts: string[] = [];
+  if (/richieste standard/.test(autonomy)) autonomyParts.push('Lavorerai in autonomia sulle richieste standard');
+  if (collaboration) autonomyParts.push('collaborerai con amministrazione e commerciale');
+  if (autonomyParts.length > 0) rows.push(`${formatSentenceList(autonomyParts)}.`);
+  if (/piu richieste clienti nello stesso periodo/.test(unexpected)) rows.push('Gestirai più richieste clienti nello stesso periodo.');
+  return rows.length > 0 ? rows.join('\n\n') : deterministicGenericResponsibilities(view);
+}
+
+function deterministicWarehouseResponsibilities(view: CandidateWriterView): string {
+  const responsibilities = new Set(view.responsibilities.map((fact) => normalizeForHybrid(fact.value)));
+  const rows: string[] = [];
+  if (responsibilities.has('ricevere la merce') && responsibilities.has('controllare le quantita')) {
+    rows.push('Riceverai la merce e controllerai le quantità.');
+  }
+  if (responsibilities.has('sistemare i prodotti') && responsibilities.has('preparare gli ordini')) {
+    const autonomy = view.autonomy?.value.trim();
+    rows.push(`Ti occuperai della sistemazione dei prodotti e della preparazione degli ordini${autonomy ? `, ${toGerundClause(autonomy)}` : ''}.`);
+  }
+  if (responsibilities.has('collaborare con autisti e ufficio ordini')) {
+    rows.push('Collaborerai con autisti e ufficio ordini.');
+  }
+  const unexpected = view.unexpectedEvents?.value.trim();
+  if (unexpected) rows.push(`Nel lavoro possono presentarsi ${normalizeUnexpectedSituationList(unexpected)}.`);
+  return rows.length > 0 ? rows.join('\n\n') : deterministicGenericResponsibilities(view);
+}
+
+function deterministicGenericResponsibilities(view: CandidateWriterView): string {
+  const rows = view.responsibilities.map((fact) => ensureFinalPunctuation(capitalizeFirst(personalizeResponsibility(fact.value))));
+  if (view.autonomy?.value) rows.push(ensureFinalPunctuation(capitalizeFirst(personalizeResponsibility(view.autonomy.value))));
+  if (view.operatingContext?.value) rows.push(`Collaborerai nel contesto operativo dichiarato: ${ensureFinalPunctuation(view.operatingContext.value)}`);
+  if (view.unexpectedEvents?.value) rows.push(`Nel lavoro possono presentarsi ${normalizeUnexpectedSituationList(view.unexpectedEvents.value)}.`);
+  return rows.join('\n\n');
+}
+
+function deterministicRequirementsSection(view: CandidateWriterView): GeneratedSection {
+  const rows: string[] = [];
+  const sourceIds: string[] = [];
+  const required = view.required.map((fact) => formatItalianDisplay(fact.value.trim())).filter(Boolean);
+  const preferred = view.preferred.map((fact) => fact.value.trim()).filter(Boolean);
+  if (required.length > 0) {
+    rows.push(`Per questo ruolo servono ${formatHumanList(required)}.`);
+    sourceIds.push(...view.required.map((fact) => fact.id));
+  }
+  if (preferred.length > 0) {
+    const publicPreferred = preferred.map(formatPreferredRequirement).map(formatItalianDisplay);
+    rows.push(preferred.length === 1
+      ? `E gradita, ma non obbligatoria, ${formatHumanList(publicPreferred)}.`
+      : `Sono gradite, ma non obbligatorie, ${formatHumanList(publicPreferred)}.`);
+    sourceIds.push(...view.preferred.map((fact) => fact.id));
+  }
+  return {
+    id: 'hybrid-requirements',
+    type: 'REQUIREMENTS',
+    key: 'hybrid-requirements',
+    title: 'Cosa cerchiamo',
+    body: rows.join('\n'),
+    sourceFactIds: [...new Set(sourceIds)],
+  };
+}
+
+function deterministicConditionsSection(view: CandidateWriterView): GeneratedSection {
+  const rows: string[] = [];
+  const sourceIds: string[] = [];
+  addConditionRow(rows, sourceIds, 'Sede', view.conditions.location);
+  addConditionRow(rows, sourceIds, 'Modalità', view.conditions.workMode);
+  addConditionRow(rows, sourceIds, 'Orario', view.conditions.schedule);
+  addConditionRow(rows, sourceIds, 'Contratto', view.conditions.contract);
+  addConditionRow(rows, sourceIds, 'Turni', view.conditions.shifts);
+  addConditionRow(rows, sourceIds, 'Reperibilità', view.conditions.onCall);
+  addConditionRow(rows, sourceIds, 'Compenso', view.conditions.compensation);
+  return {
+    id: 'hybrid-conditions',
+    type: 'CONDITIONS',
+    key: 'conditions',
+    title: 'Condizioni di lavoro',
+    body: rows.join('\n'),
+    sourceFactIds: [...new Set(sourceIds)],
+  };
+}
+
+function deterministicAttractionSections(view: CandidateWriterView): GeneratedSection[] {
+  const facts = view.attractionEvidence.map((fact) => formatItalianDisplay(fact.value.trim())).filter(Boolean);
+  if (facts.length === 0) return [];
+  return [{
+    id: 'hybrid-attraction',
+    type: 'GROWTH',
+    key: 'hybrid-attraction',
+    title: 'Altri elementi confermati',
+    body: `Sono confermati ${formatHumanList(facts)}.`,
+    sourceFactIds: view.attractionEvidence.map((fact) => fact.id),
+  }];
+}
+
+function deterministicApplicationSection(view: CandidateWriterView): GeneratedSection {
+  const application = view.application?.value.trim() ?? '';
+  const generic = !application || /^tramite il canale(?: dell'? annuncio)?\.?$/i.test(application);
+  return {
+    id: 'hybrid-application',
+    type: 'APPLICATION',
+    key: 'application',
+    title: 'Candidatura',
+    body: generic ? 'Se questa posizione ti interessa, inviaci la tua candidatura.' : ensureFinalPunctuation(application),
+    sourceFactIds: view.application ? [view.application.id] : [],
+  };
+}
+
+function addConditionRow(rows: string[], sourceIds: string[], label: string, fact: CandidateWriterFact | null): void {
+  if (!fact) return;
+  const value = fact.value.trim();
+  if (!value) return;
+  rows.push(`${label}: ${ensureFinalPunctuation(formatItalianDisplay(value))}`);
+  sourceIds.push(fact.id);
+}
+
+function formatHumanList(items: string[]): string {
+  const cleaned = items.map((item) => item.trim().replace(/[.;]+$/g, '')).filter(Boolean);
+  if (cleaned.length <= 1) return cleaned[0] ?? '';
+  if (cleaned.length === 2) return `${cleaned[0]} e ${cleaned[1]}`;
+  return `${cleaned.slice(0, -1).join(', ')} e ${cleaned[cleaned.length - 1]}`;
+}
+
+function formatPreferredRequirement(value: string): string {
+  const cleaned = value
+    .trim()
+    .replace(/\s*,?\s*(?:ma\s+)?gradit[oa]\s+ma\s+non\s+obbligator\w*\s*$/i, '')
+    .replace(/\s*,?\s*ma\s+non\s+obbligator\w*\s*$/i, '')
+    .replace(/[.;]+$/g, '')
+    .trim();
+  if (/^almeno\s+1\s+anno\s+di\s+esperienza\s+in\s+assistenza\s+clienti$/i.test(cleaned)) {
+    return "un'esperienza di almeno 1 anno in assistenza clienti";
+  }
+  return cleaned;
+}
+
+function isMeaningfullyContained(container: string, candidate: string): boolean {
+  const left = normalizeForHybrid(container);
+  const right = normalizeForHybrid(candidate);
+  if (!left || !right) return false;
+  return left.includes(right) || right.includes(left);
+}
+
+function formatSentenceList(items: string[]): string {
+  const cleaned = items.map((item, index) => (index === 0 ? item : item.toLowerCase())).filter(Boolean);
+  return formatHumanList(cleaned);
+}
+
+function toGerundClause(value: string): string {
+  const normalized = value.trim();
+  const lower = normalizeForHybrid(normalized);
+  if (lower === 'svolgere le attivita assegnate con attenzione a quantita, ordine dell area e correttezza della preparazione') {
+    return "svolgendo le attività assegnate con attenzione a quantità, ordine dell'area e correttezza della preparazione";
+  }
+  if (lower.startsWith('gestire ')) return normalized.replace(/^gestire\s+/i, 'gestendo ');
+  if (lower.startsWith('svolgere ')) return normalized.replace(/^svolgere\s+/i, 'svolgendo ');
+  return normalized;
+}
+
+function normalizeUnexpectedSituationList(value: string): string {
+  return formatItalianDisplay(value
+    .replace(/\bpreparazione ordini\b/gi, 'preparazione degli ordini')
+    .replace(/\bquantita\b/gi, 'quantità')
+    .replace(/\battivita\b/gi, 'attività'))
+    .trim();
+}
+
+function formatItalianDisplay(value: string): string {
+  return value
+    .replace(/\bcapacita\b/gi, 'capacità')
+    .replace(/\bpiu\b/gi, 'più')
+    .replace(/\bLunedi\b/g, 'Lunedì')
+    .replace(/\bvenerdi\b/gi, 'venerdì')
+    .replace(/\bpossibilita\b/gi, 'possibilità')
+    .replace(/\battivita\b/gi, 'attività')
+    .replace(/\bquantita\b/gi, 'quantità')
+    .replace(/\baffidabilita\b/gi, 'affidabilità')
+    .replace(/\bpuntualita\b/gi, 'puntualità')
+    .replace(/\besperienza\b/gi, 'esperienza');
+}
+
+function personalizeResponsibility(value: string): string {
+  const normalized = value.trim();
+  const lower = normalizeForHybrid(normalized);
+  const replacements: Array<[RegExp, string]> = [
+    [/^ricevere la merce$/i, 'riceverai la merce'],
+    [/^controllare le quantita$/i, 'controllerai le quantità'],
+    [/^sistemare i prodotti$/i, 'sistemerai i prodotti'],
+    [/^preparare gli ordini$/i, 'preparerai gli ordini'],
+    [/^collaborare con (.+)$/i, 'collaborerai con $1'],
+    [/^rispondere alle richieste clienti$/i, 'risponderai alle richieste dei clienti'],
+    [/^comprendere il problema segnalato$/i, 'comprenderai il problema segnalato'],
+    [/^fornire informazioni sui servizi$/i, 'fornirai informazioni sui servizi'],
+    [/^gestire richieste amministrative semplici$/i, 'gestirai richieste amministrative semplici'],
+    [/^registrare le richieste nel crm$/i, 'registrerai le richieste nel CRM'],
+    [/^verificare che la richiesta sia stata gestita$/i, 'verificherai che la richiesta sia stata gestita'],
+  ];
+  for (const [pattern, replacement] of replacements) {
+    if (pattern.test(lower)) return lower.replace(pattern, replacement);
+  }
+  return normalized;
+}
+
+function capitalizeFirst(value: string): string {
+  return value ? `${value[0]?.toUpperCase() ?? ''}${value.slice(1)}` : value;
+}
+
+function compactSectionBody(value?: string): string {
+  return String(value ?? '').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+function ensureFinalPunctuation(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return trimmed;
+  return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
+}
+
+function normalizeForHybrid(value: string): string {
+  return value.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').trim();
 }
 
 function validationFromDecisionReport(report: Annunci10xDecisionReport): Annunci10xValidateOutput {

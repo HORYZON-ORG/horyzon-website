@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import {
   ANNUNCI10X_COOKIE_NAME,
   Annunci10xPublicError,
@@ -20,6 +21,7 @@ import {
   deriveResultStrengths,
   formatAnnunci10xScore,
   formatCheckScore,
+  hashEmailVerificationCode,
   priorityHeading,
   publicationCopy,
   resumeAnnunci10xCreate,
@@ -29,12 +31,48 @@ import {
   assessAnnunci10xNarrativeSufficiency,
 } from '../src/lib/annunci-10x/index.ts';
 
+process.env.ANNUNCI10X_EMAIL_VERIFICATION_PEPPER ??= `${randomUUID()}${randomUUID()}`;
+
 function makeContext(provider = new MockAnnunci10xProvider('success')) {
   return {
     persistence: new MemoryAnnunci10xPersistenceAdapter(),
     provider,
     configuredProvider: 'MOCK',
   };
+}
+
+async function verifyCreateSessionEmail(context, session) {
+  const email = `create.${randomUUID()}@example.com`;
+  const lead = await context.persistence.saveLead({
+    sessionId: session.sessionId,
+    sessionSecret: session.sessionSecret,
+    firstName: 'Ada',
+    lastName: 'Lovelace',
+    companyName: null,
+    businessRole: null,
+    emailNormalized: email,
+    marketingConsent: false,
+    marketingConsentVersion: 'test',
+  });
+  const verificationId = randomUUID();
+  await context.persistence.createEmailVerification({
+    id: verificationId,
+    sessionId: session.sessionId,
+    sessionSecret: session.sessionSecret,
+    leadId: lead.id,
+    emailNormalized: email,
+    codeHash: hashEmailVerificationCode(process.env.ANNUNCI10X_EMAIL_VERIFICATION_PEPPER, verificationId, email, '123456'),
+    expiresAt: new Date(Date.now() + 60_000).toISOString(),
+    maxAttempts: 5,
+    pendingGraceSeconds: 15,
+  });
+  await context.persistence.markEmailVerificationSent(verificationId, session.sessionSecret);
+  await context.persistence.verifyEmailCode({
+    sessionId: session.sessionId,
+    sessionSecret: session.sessionSecret,
+    verificationId,
+    codeMatches: true,
+  });
 }
 
 class PersistentEditorialRevisionProvider extends MockAnnunci10xProvider {
@@ -1850,7 +1888,7 @@ const createContext = makeContext();
 const startedCreate = await startAnnunci10xCreate({ context: createContext });
 assert.equal(startedCreate.result.state, 'COLLECTING');
 assert.equal(startedCreate.result.currentStep, 'ROLE_CONTEXT');
-assert.equal(startedCreate.result.paymentRequired, false);
+assert.equal(startedCreate.result.generationReady, false);
 
 const createAnswers = [
   ['ROLE_CONTEXT', 'Cerchiamo un customer care specialist per azienda SaaS B2B con sede a Bari.'],
@@ -1922,21 +1960,15 @@ const confirmedCreate = await confirmAnnunci10xCreate({
   sessionSecret: startedCreate.cookie.sessionSecret,
   context: createContext,
 });
-assert.equal(confirmedCreate.state, 'PAYMENT_REQUIRED');
-assert.equal(confirmedCreate.currentStep, 'COMMERCIAL');
-assert.equal(confirmedCreate.paymentRequired, true);
-assert.equal(confirmedCreate.commercial.checkoutEnabled, false);
-assert.equal('price' in confirmedCreate.commercial, false);
-assert.equal('discountValue' in confirmedCreate.commercial, false);
-assert.equal('entitlements' in confirmedCreate.commercial, false);
-assert.equal(confirmedCreate.commercial.pricingStatus, 'FIXED');
-assert.deepEqual(Object.keys(confirmedCreate.commercial.entitlementSummary).sort(), ['agentRecruiterAccess', 'createCredits', 'guide', 'rewriteCredits', 'source']);
-assert.deepEqual(confirmedCreate.commercial.availableOffers.map((offer) => offer.offerCode), ['ANNUNCI10X_CREATE']);
-assert.equal(confirmedCreate.commercial.availableOffers.every((offer) => offer.purchaseEnabled === false), true);
+assert.equal(confirmedCreate.state, 'ENTITLED');
+assert.equal(confirmedCreate.currentStep, 'READY');
+assert.equal(confirmedCreate.generationReady, true);
+assert.equal('commercial' in confirmedCreate, false);
+assert.equal('paymentRequired' in confirmedCreate, false);
 
 const resumedCreate = await resumeAnnunci10xCreate(startedCreate.cookie, createContext);
-assert.equal(resumedCreate.paymentRequired, true);
-assert.deepEqual(resumedCreate.commercial.availableOffers.map((offer) => offer.offerCode), ['ANNUNCI10X_CREATE']);
+assert.equal(resumedCreate.generationReady, true);
+assert.equal(resumedCreate.currentStep, 'READY');
 
 const canonicalConflictContext = makeContext();
 const startedCanonicalConflict = await startAnnunci10xCreate({ context: canonicalConflictContext });
@@ -2005,9 +2037,8 @@ const waiterRequirementAnswers = [
   ['OFFER', 'Sede: Monopoli, centro. Modalita: In sede. Contratto: Tempo determinato 8 mesi. Orario: Full-time 40 ore settimanali secondo turnazione. Turni: Pranzo e cena secondo programmazione; presenza richiesta anche nei weekend. Reperibilita: Non prevista. Compenso: RAL 22.000-25.000 EUR.'],
   ['CHANNEL_APPLICATION', 'Canale: INDEED. Candidatura: Invia CV a recruiting@azienda-test.it.'],
 ];
-let waiterRequirementState = waiterRequirementStarted.result;
 for (const [stepId, answer] of waiterRequirementAnswers) {
-  waiterRequirementState = await answerAnnunci10xCreateStep({
+  await answerAnnunci10xCreateStep({
     sessionId: waiterRequirementStarted.cookie.sessionId,
     sessionSecret: waiterRequirementStarted.cookie.sessionSecret,
     stepId,
@@ -2015,6 +2046,7 @@ for (const [stepId, answer] of waiterRequirementAnswers) {
     context: waiterRequirementContext,
   });
 }
+await verifyCreateSessionEmail(waiterRequirementContext, waiterRequirementStarted.cookie);
 await confirmAnnunci10xCreate({
   sessionId: waiterRequirementStarted.cookie.sessionId,
   sessionSecret: waiterRequirementStarted.cookie.sessionSecret,
@@ -2028,7 +2060,7 @@ const waiterRequirementPremium = await runAnnunci10xPremiumGeneration({
   authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
 });
 assert.match(waiterRequirementPremium.masterText, /Almeno 1 anno/i, 'required experience must remain visible in candidate-facing copy');
-assert.match(waiterRequirementPremium.masterText, /capacita di gestire piu tavoli/i, 'required table-management ability must remain visible in candidate-facing copy');
+assert.match(waiterRequirementPremium.masterText, /capacit[aà] di gestire pi[uù] tavoli/i, 'required table-management ability must remain visible in candidate-facing copy');
 assert.match(waiterRequirementPremium.masterText, /turni serali|weekend|Pranzo e cena secondo programmazione/i, 'shift compatibility remains explicit through candidate-facing conditions');
 assert.doesNotMatch(waiterRequirementPremium.masterText, /^(Indispensabili|Apprendibili|Vincoli):/im, 'technical requirement labels must not be printed in the final master');
 assert.equal(/disponibilita al lavoro serale e nei weekend[\s\S]*disponibilita al lavoro serale e nei weekend/i.test(waiterRequirementPremium.masterText), false, 'shift compatibility must not be duplicated in the candidate-facing output');
@@ -2100,6 +2132,7 @@ async function runPremiumForAnswers(provider, answers = preservationAnswers, cha
       context,
     });
   }
+  await verifyCreateSessionEmail(context, started.cookie);
   await confirmAnnunci10xCreate({
     sessionId: started.cookie.sessionId,
     sessionSecret: started.cookie.sessionSecret,
@@ -2273,12 +2306,13 @@ assert.match(preservationState.roleCard.compensation, /8\.000/i);
 assert.match(preservationState.roleCard.compensation, /variabile/i);
 assert.match(preservationState.roleCard.applicationInstructions, /sales-recruiting@azienda-test\.it/i);
 
+await verifyCreateSessionEmail(preservationContext, startedPreservationCreate.cookie);
 const preservationConfirmed = await confirmAnnunci10xCreate({
   sessionId: startedPreservationCreate.cookie.sessionId,
   sessionSecret: startedPreservationCreate.cookie.sessionSecret,
   context: preservationContext,
 });
-assert.equal(preservationConfirmed.state, 'PAYMENT_REQUIRED');
+assert.equal(preservationConfirmed.state, 'ENTITLED');
 
 const preservationPremium = await runAnnunci10xPremiumGeneration({
   sessionId: startedPreservationCreate.cookie.sessionId,
@@ -2289,8 +2323,8 @@ const preservationPremium = await runAnnunci10xPremiumGeneration({
 });
 assert.match(preservationPremium.masterText, /sales-recruiting@azienda-test\.it/i, 'master output contains application destination');
 assert.equal(JSON.stringify(preservationPremium.channelVariant).includes('sales-recruiting@azienda-test.it'), true, 'channel adapter output contains application destination');
-assert.match(preservationPremium.masterText, /turni\s+Non previsti/i, 'confirmed no-shifts condition must be explicit in the final master');
-assert.match(preservationPremium.masterText, /reperibilit[aà]\s+Non prevista/i, 'confirmed no-on-call condition must be explicit in the final master');
+assert.match(preservationPremium.masterText, /turni:?\s+Non previsti/i, 'confirmed no-shifts condition must be explicit in the final master');
+assert.match(preservationPremium.masterText, /reperibilit[aà]:?\s+Non prevista/i, 'confirmed no-on-call condition must be explicit in the final master');
 assert.match(preservationPremium.masterText, /Sviluppare nuove opportunita commerciali qualificate/i, 'confirmed mission must remain explicit in the final master');
 assert.match(preservationPremium.masterText, /Organizza in autonomia prospecting/i, 'confirmed autonomy must remain explicit in the final master');
 assert.match(preservationPremium.masterText, /Lead urgenti/i, 'confirmed unexpected events must remain explicit in the final master');
@@ -2313,11 +2347,11 @@ const generateCall = preservationContext.provider.calls.find((call) => call.oper
 const channelCall = preservationContext.provider.calls.find((call) => call.operationType === 'CHANNEL_ADAPTER');
 const evaluateCall = preservationContext.provider.calls.find((call) => call.operationType === 'EVALUATE' && call.outputSchemaName === 'annunci10x_evaluate_v2');
 assert.equal(JSON.stringify(generateCall?.input ?? {}).includes('sales-recruiting@azienda-test.it'), true, 'generator receives application instructions');
-assert.equal(Array.isArray(generateCall?.input?.truthLedger?.facts), true, 'generator receives the Truth Ledger');
-assert.equal(generateCall?.input?.truthLedger?.facts?.some((fact) => /^F\d{2}$/.test(fact.id) && fact.publishable === true), true, 'Truth Ledger contains stable publishable fact refs');
-assert.equal(Array.isArray(generateCall?.input?.baseAd?.sections), true, 'generator receives the deterministic Base Ad');
-assert.equal(Array.isArray(generateCall?.input?.baseAd?.internalBoundaries), true, 'Base Ad carries internal boundaries outside candidate-facing text');
-assert.equal(JSON.stringify(generateCall?.input?.baseAd?.sections ?? []).includes('NON INVENTARE'), false, 'Base Ad text sections must not expose negative constraints');
+assert.equal(Array.isArray(generateCall?.input?.candidateWriterView?.responsibilities), true, 'generator receives the CandidateWriterView');
+assert.equal(generateCall?.input?.candidateWriterView?.responsibilities?.some((fact) => /^F\d{2}$/.test(fact.id)), true, 'CandidateWriterView contains stable fact refs');
+assert.equal(Object.hasOwn(generateCall?.input ?? {}, 'truthLedger'), false, 'generator must not receive raw Truth Ledger');
+assert.equal(Object.hasOwn(generateCall?.input ?? {}, 'baseAd'), false, 'generator must not receive raw Base Ad');
+assert.equal(JSON.stringify(generateCall?.input?.candidateWriterView ?? {}).includes('NON INVENTARE'), false, 'CandidateWriterView must not expose negative constraints');
 assert.equal(preservationContext.provider.calls.some((call) => call.operationType === 'VALIDATE'), false, 'CREATE premium must not run the old validation loop after Decision Engine integration');
 assert.equal(JSON.stringify(channelCall?.input ?? {}).includes('sales-recruiting@azienda-test.it'), true, 'channel adapter receives application instructions');
 assert.equal(evaluateCall?.input?.target?.applicationDestination, 'Inviare CV o profilo LinkedIn a sales-recruiting@azienda-test.it', 'evaluator receives application destination');
@@ -2326,10 +2360,9 @@ assert.equal(preservationContext.provider.calls.some((call) => call.operationTyp
 const naturalCopyRun = await runPremiumForPreservationAnswers(new NaturalCandidateCopyProvider('success'));
 assert.equal(naturalCopyRun.premium.gate.status, 'READY', 'natural candidate-facing copy with semantic mission coverage can reach READY');
 assert.equal(naturalCopyRun.context.provider.calls.some((call) => call.operationType === 'EXTRACT'), false, 'premium CREATE generation must not reconstruct the Truth Ledger from generated master text');
-assert.doesNotMatch(naturalCopyRun.premium.masterText, /Sviluppare nuove opportunita commerciali qualificate e accompagnarle fino alla chiusura o a un next step concordato/i, 'mission preservation must not require verbatim source wording');
-assert.match(naturalCopyRun.premium.masterText, /aprire opportunita B2B qualificate e accompagnarle verso la chiusura o il prossimo passo concordato/i, 'semantic mission wording must be accepted when faithful');
+assert.match(naturalCopyRun.premium.masterText, /Sviluppare nuove opportunita commerciali qualificate e accompagnarle fino alla chiusura o a un next step concordato/i, 'mission must remain explicit in the generated master');
 assert.doesNotMatch(naturalCopyRun.premium.masterText, /\b(?:Non dichiarat[ioaie]|Non specificat[ioaie]|Non disponibile|non sono stat[ioaie] dichiarat[ioaie]|Apprendibili:|Trainabile:|Formabili in sede:|Contesto operativo e autonomia|Autonomia:|Imprevisti e variabilit[aà]:)\b/i, 'candidate-facing copy must not expose missing-data placeholders or internal RoleCard labels');
-assert.match(naturalCopyRun.premium.masterText, /Invia il CV o il profilo LinkedIn a sales-recruiting@azienda-test\.it/i, 'application CTA should be concrete and natural when a destination exists');
+assert.match(naturalCopyRun.premium.masterText, /Inviare CV o profilo LinkedIn a sales-recruiting@azienda-test\.it/i, 'application CTA should preserve the declared destination');
 assert.equal(naturalCopyRun.premium.gate.warnings.some((warning) => /offer fact \d/i.test(warning)), false, 'factual warnings must not expose opaque offer fact labels');
 
 const mechanicalCtaRun = await runPremiumForAnswers(new MechanicalCtaProvider('success'), genericApplicationAnswers, 'INDEED');
@@ -2352,41 +2385,35 @@ const unicodeRangeRun = await runPremiumForPreservationAnswers(new UnicodeRangeC
 assert.equal(unicodeRangeRun.premium.gate.status, 'READY', 'unicode-equivalent time, RAL and numeric ranges must preserve the same factual meaning');
 assert.equal(unicodeRangeRun.premium.claimCheck.some((claim) => /9:00|18:00|30\.000|36\.000/i.test(claim.claim) && claim.status !== 'SUPPORTED'), false, 'unicode range normalization must avoid false factual-preservation warnings');
 
-await assert.rejects(
-  () => runPremiumForPreservationAnswers(new ConditionNegotiabilityOverreachProvider('success')),
-  (error) => error?.code === 'GENERATION_BLOCKED' && /conditionNegotiability/.test(String(error.message)),
-  'declared contract and schedule reframed as negotiable must block final Master exposure',
-);
+const conditionNegotiabilityRun = await runPremiumForPreservationAnswers(new ConditionNegotiabilityOverreachProvider('success'));
+assert.equal(conditionNegotiabilityRun.premium.gate.status, 'READY', 'ignored condition-negotiability overreach must not block deterministic fallback output');
+assert.doesNotMatch(conditionNegotiabilityRun.premium.masterText, /Contratto e orario sono concordati con l'azienda/i, 'ignored condition-negotiability overreach must not reach final Master');
 
 const preferredConsequenceRun = await runPremiumForPreservationAnswers(new PreferredRequirementConsequenceProvider('success'));
-assert.equal(preferredConsequenceRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length >= 1, true, 'a preferred requirement consequence must trigger surgical revision');
-assert.equal(preferredConsequenceRun.premium.gate.status, 'READY', 'a preferred requirement consequence can become READY after surgical removal');
+assert.equal(preferredConsequenceRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length, 0, 'ignored preferred-requirement consequence must not require surgical revision');
+assert.equal(preferredConsequenceRun.premium.gate.status, 'READY', 'a preferred requirement consequence can remain READY after deterministic fallback');
 assert.doesNotMatch(preferredConsequenceRun.premium.masterText, /riduce i tempi di inserimento/i, 'preferred requirement consequence overreach must be removed from candidate-facing copy');
 
-await assert.rejects(
-  () => runPremiumForPreservationAnswers(new CollaborationProcessOverreachProvider('success')),
-  (error) => error?.code === 'GENERATION_BLOCKED' && /relationPurposeExpansion/.test(String(error.message)),
-  'collaboration facts must not become an invented structured process',
-);
+const collaborationProcessRun = await runPremiumForPreservationAnswers(new CollaborationProcessOverreachProvider('success'));
+assert.equal(collaborationProcessRun.premium.gate.status, 'READY', 'ignored collaboration-process overreach must not block deterministic fallback output');
+assert.doesNotMatch(collaborationProcessRun.premium.masterText, /processo commerciale strutturato/i, 'ignored collaboration-process overreach must not reach final Master');
 
-await assert.rejects(
-  () => runPremiumForPreservationAnswers(new ScheduleEvaluationOverreachProvider('success')),
-  (error) => error?.code === 'GENERATION_BLOCKED' && /schedulePreferenceInference/.test(String(error.message)),
-  'schedule facts must not imply an unsupported candidate preference or compatibility claim',
-);
+const scheduleEvaluationRun = await runPremiumForPreservationAnswers(new ScheduleEvaluationOverreachProvider('success'));
+assert.equal(scheduleEvaluationRun.premium.gate.status, 'READY', 'ignored schedule-evaluation overreach must not block deterministic fallback output');
+assert.doesNotMatch(scheduleEvaluationRun.premium.masterText, /pensato per chi preferisce una routine lavorativa prevedibile/i, 'ignored schedule-evaluation overreach must not reach final Master');
 
 const validCompositionRun = await runPremiumForPreservationAnswers(new ValidCompositionProvider('success'));
 assert.equal(validCompositionRun.premium.gate.status, 'READY', 'valid editorial composition from real facts must remain publishable');
-assert.match(validCompositionRun.premium.masterText, /Precisione e metodo contano/i, 'valid composition should survive as candidate-facing prose');
+assert.doesNotMatch(validCompositionRun.premium.masterText, /Precisione e metodo contano/i, 'full-output provider composition must not bypass the hybrid writer contract');
 
 const warehouseRelationOverreachRun = await runPremiumForAnswers(new WarehouseRelationProvider('overreach'), enrichedWarehouseAnswers, 'INDEED');
-assert.equal(warehouseRelationOverreachRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length >= 1, true, 'collaboration with operational actors must trigger revision when it invents an undeclared operational outcome');
-assert.doesNotMatch(warehouseRelationOverreachRun.premium.masterText, /gestire le consegne/i, 'revision must remove only the ungrounded operational object');
-assert.match(warehouseRelationOverreachRun.premium.masterText, /chiarire quantit[aà], articoli o discrepanze/i, 'revision must replace with operational objects supported by the Truth Ledger');
+assert.equal(warehouseRelationOverreachRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length, 0, 'ignored warehouse relation overreach must not require surgical revision');
+assert.doesNotMatch(warehouseRelationOverreachRun.premium.masterText, /gestire le consegne/i, 'ignored warehouse relation overreach must not reach final Master');
+assert.match(warehouseRelationOverreachRun.premium.masterText, /autisti|ufficio ordini/i, 'deterministic fallback must preserve grounded operational actors');
 
 const warehouseGroundedRelationRun = await runPremiumForAnswers(new WarehouseRelationProvider('grounded'), enrichedWarehouseAnswers, 'INDEED');
 assert.equal(warehouseGroundedRelationRun.premium.claimCheck.some((claim) => /oggetto operativo non supportato/i.test(claim.claim)), false, 'collaboration grounded in declared discrepancies and quantities must not be flagged as operational overreach');
-assert.match(warehouseGroundedRelationRun.premium.masterText, /discrepanze nelle quantita/i, 'grounded operational relation should stay candidate-facing');
+assert.match(warehouseGroundedRelationRun.premium.masterText, /quantit[aà]|discrepanze|ufficio ordini/i, 'grounded operational relation should stay candidate-facing');
 
 const requirementsEnumeratedRun = await runPremiumForAnswers(new EditorialSurgeryProvider('requirements-enumerated'), enrichedWarehouseAnswers, 'INDEED', 'OPENAI');
 assert.equal(requirementsEnumeratedRun.premium.gate.status, 'READY', 'fact-complete enumerated candidate-fit facts are acceptable in the Decision Engine runtime');
@@ -2394,102 +2421,93 @@ assert.equal(requirementsEnumeratedRun.context.provider.calls.some((call) => cal
 
 const requirementsExplainedRun = await runPremiumForAnswers(new EditorialSurgeryProvider('requirements-explained-depth'), enrichedWarehouseAnswers, 'INDEED', 'OPENAI');
 assert.equal(requirementsExplainedRun.premium.claimCheck.some((claim) => /requisiti\/fit candidato|troppo schematica|troppo sintetico|categoria di interlocutori|oggetto operativo non supportato/i.test(claim.claim)), false, 'explained candidate fit grounded in real tasks must not be flagged as schematic or overreach');
-assert.match(requirementsExplainedRun.premium.masterText, /La precisione non e richiesta in astratto/i, 'explained fit must connect qualities to real activities');
-assert.match(requirementsExplainedRun.premium.masterText, /lavoro di squadra ha un significato concreto/i, 'explained fit must contextualize teamwork with grounded relations');
+assert.doesNotMatch(requirementsExplainedRun.premium.masterText, /La precisione non e richiesta in astratto|lavoro di squadra ha un significato concreto/i, 'full-output explained fit must not bypass the hybrid writer contract');
+assert.match(requirementsExplainedRun.premium.masterText, /affidabilit[aà], puntualit[aà], capacit[aà] di lavorare fisicamente/i, 'deterministic fallback must preserve required candidate-fit facts');
 
 const relationOnlyRun = await runPremiumForAnswers(new EditorialSurgeryProvider('relation-only'), enrichedWarehouseAnswers, 'INDEED');
 assert.equal(relationOnlyRun.premium.claimCheck.some((claim) => /oggetto operativo non supportato|consegne|roadmap/i.test(claim.claim)), false, 'a relation fact alone can be stated without inventing a purpose');
-assert.match(relationOnlyRun.premium.masterText, /Collaborerai con gli autisti/i, 'relation-only wording must remain candidate-facing');
+assert.match(relationOnlyRun.premium.masterText, /autisti|ufficio ordini/i, 'relation-only wording must remain candidate-facing');
 
 const entitySetValidRun = await runPremiumForAnswers(new EditorialSurgeryProvider('entity-set-valid'), enrichedWarehouseAnswers, 'INDEED');
 assert.equal(entitySetValidRun.premium.claimCheck.some((claim) => /categoria di interlocutori|reparti|team aziendali|stakeholder/i.test(claim.claim)), false, 'declared interlocutors can be named directly');
-assert.match(entitySetValidRun.premium.masterText, /Collaborerai con autisti e ufficio ordini/i, 'declared entity set must remain candidate-facing');
+assert.match(entitySetValidRun.premium.masterText, /autisti|ufficio ordini/i, 'declared entity set must remain candidate-facing');
 
 const entitySetExpansionRun = await runPremiumForAnswers(new EditorialSurgeryProvider('entity-set-expansion'), enrichedWarehouseAnswers, 'INDEED');
-assert.equal(entitySetExpansionRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length >= 1, true, 'expanded entity category must trigger revision');
-assert.doesNotMatch(entitySetExpansionRun.premium.masterText, /altri reparti aziendali/i, 'revision must remove the expanded entity category');
-assert.match(entitySetExpansionRun.premium.masterText, /Collaborerai con autisti e ufficio ordini/i, 'revision must preserve grounded interlocutors');
-assert.match(entitySetExpansionRun.premium.masterText, /Questo paragrafo operativo deve restare invariato/i, 'entity-set surgery must not rewrite unrelated text');
+assert.equal(entitySetExpansionRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length, 0, 'ignored expanded entity category must not require revision');
+assert.doesNotMatch(entitySetExpansionRun.premium.masterText, /altri reparti aziendali/i, 'ignored expanded entity category must not reach final Master');
+assert.match(entitySetExpansionRun.premium.masterText, /autisti|ufficio ordini/i, 'deterministic fallback must preserve grounded interlocutors');
+assert.doesNotMatch(entitySetExpansionRun.premium.masterText, /Questo paragrafo operativo deve restare invariato/i, 'legacy provider marker must not reach final Master');
 
 const entitySetSafeAbstractionRun = await runPremiumForAnswers(new EditorialSurgeryProvider('entity-set-safe-abstraction'), enrichedWarehouseAnswers, 'INDEED');
 assert.equal(entitySetSafeAbstractionRun.premium.claimCheck.some((claim) => /categoria di interlocutori|interlocutori non supportati/i.test(claim.claim)), false, 'safe anaphoric abstraction must remain valid when concrete entities were named first');
-assert.match(entitySetSafeAbstractionRun.premium.masterText, /questi interlocutori fa parte del lavoro/i, 'safe abstraction should remain candidate-facing');
+assert.doesNotMatch(entitySetSafeAbstractionRun.premium.masterText, /questi interlocutori fa parte del lavoro/i, 'legacy provider abstraction must not bypass the hybrid writer contract');
 
 const relationInventedPurposeRun = await runPremiumForAnswers(new EditorialSurgeryProvider('relation-invented-purpose'), enrichedWarehouseAnswers, 'INDEED');
-assert.equal(relationInventedPurposeRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length >= 1, true, 'relation plus invented purpose must trigger revision');
-assert.match(relationInventedPurposeRun.premium.masterText, /Collaborerai con gli autisti/i, 'revision must preserve the relation fact');
-assert.doesNotMatch(relationInventedPurposeRun.premium.masterText, /coordinare le consegne/i, 'revision must remove the invented purpose');
+assert.equal(relationInventedPurposeRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length, 0, 'ignored relation invented purpose must not require revision');
+assert.match(relationInventedPurposeRun.premium.masterText, /autisti|ufficio ordini/i, 'deterministic fallback must preserve relation facts');
+assert.doesNotMatch(relationInventedPurposeRun.premium.masterText, /coordinare le consegne/i, 'ignored relation invented purpose must not reach final Master');
 
 const purposeSupportedRun = await runPremiumForAnswers(new EditorialSurgeryProvider('purpose-supported'), enrichedWarehouseAnswers, 'INDEED');
 assert.equal(purposeSupportedRun.premium.claimCheck.some((claim) => /oggetto operativo non supportato|discrepanze nelle quantita/i.test(claim.claim)), false, 'relation plus separately supported discrepancy signalling must remain valid');
-assert.match(purposeSupportedRun.premium.masterText, /segnalerai eventuali discrepanze nelle quantita ai referenti interni/i, 'supported purpose wording must remain candidate-facing');
+assert.match(purposeSupportedRun.premium.masterText, /quantit[aà]|discrepanze/i, 'supported purpose facts must remain candidate-facing');
 
 const collaborationValidRun = await runPremiumForAnswers(new EditorialSurgeryProvider('collaboration-valid'), enrichedWarehouseAnswers, 'INDEED');
 assert.equal(collaborationValidRun.premium.claimCheck.some((claim) => /oggetto operativo non supportato|priorit|dubbi/i.test(claim.claim)), false, 'collaboration plus supported discrepancy signalling must remain valid');
-assert.match(collaborationValidRun.premium.masterText, /segnalerai eventuali discrepanze nelle quantita/i, 'valid collaboration wording must remain candidate-facing');
+assert.match(collaborationValidRun.premium.masterText, /quantit[aà]|discrepanze|ufficio ordini/i, 'valid collaboration facts must remain candidate-facing');
 
 const collaborationOverreachRun = await runPremiumForAnswers(new EditorialSurgeryProvider('collaboration-overreach'), enrichedWarehouseAnswers, 'INDEED');
-assert.equal(collaborationOverreachRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length >= 1, true, 'collaboration that invents purpose or process must trigger surgical revision');
-assert.match(collaborationOverreachRun.premium.masterText, /Collaborerai con autisti e ufficio ordini/i, 'revision must preserve the collaboration fact');
-assert.doesNotMatch(collaborationOverreachRun.premium.masterText, /gestire priorita|risolvere dubbi/i, 'revision must remove unsupported collaboration purpose and outcome');
-assert.match(collaborationOverreachRun.premium.masterText, /Questo paragrafo operativo deve restare invariato/i, 'collaboration surgery must not alter unrelated text');
+assert.equal(collaborationOverreachRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length, 0, 'ignored collaboration overreach must not require surgical revision');
+assert.match(collaborationOverreachRun.premium.masterText, /autisti|ufficio ordini/i, 'deterministic fallback must preserve collaboration facts');
+assert.doesNotMatch(collaborationOverreachRun.premium.masterText, /gestire priorita|risolvere dubbi|Questo paragrafo operativo deve restare invariato/i, 'ignored collaboration overreach and legacy marker must not reach final Master');
 
 const developerRelationValidRun = await runPremiumForAnswers(new EditorialSurgeryProvider('developer-relation-valid'), sufficientNarrativeDeveloperAnswers, 'INDEED');
 assert.equal(developerRelationValidRun.premium.claimCheck.some((claim) => /roadmap|oggetto operativo non supportato/i.test(claim.claim)), false, 'a product-owner relation can be stated without invented product-process purpose');
-assert.match(developerRelationValidRun.premium.masterText, /Collaborerai con il responsabile prodotto/i, 'developer relation-only wording must remain candidate-facing');
+assert.match(developerRelationValidRun.premium.masterText, /responsabile prodotto/i, 'developer relation-only wording must remain candidate-facing');
 
 const developerRelationOverreachRun = await runPremiumForAnswers(new EditorialSurgeryProvider('developer-relation-overreach'), sufficientNarrativeDeveloperAnswers, 'INDEED');
-assert.equal(developerRelationOverreachRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length >= 1, true, 'developer relation plus invented roadmap purpose must trigger revision');
-assert.match(developerRelationOverreachRun.premium.masterText, /Collaborerai con il responsabile prodotto/i, 'developer revision must preserve the relation fact');
-assert.doesNotMatch(developerRelationOverreachRun.premium.masterText, /definire roadmap e priorita/i, 'developer revision must remove unsupported relation purpose');
+assert.equal(developerRelationOverreachRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length, 0, 'ignored developer relation overreach must not require revision');
+assert.match(developerRelationOverreachRun.premium.masterText, /responsabile prodotto/i, 'developer fallback must preserve the relation fact');
+assert.doesNotMatch(developerRelationOverreachRun.premium.masterText, /definire roadmap e priorita/i, 'ignored developer relation purpose must not reach final Master');
 
 const developerEntitySetExpansionRun = await runPremiumForAnswers(new EditorialSurgeryProvider('developer-entity-set-expansion'), sufficientNarrativeDeveloperAnswers, 'INDEED');
-assert.equal(developerEntitySetExpansionRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length >= 1, true, 'developer expanded team category must trigger revision');
-assert.doesNotMatch(developerEntitySetExpansionRun.premium.masterText, /diversi team aziendali/i, 'developer revision must remove expanded entity category');
-assert.match(developerEntitySetExpansionRun.premium.masterText, /Collaborerai con altri sviluppatori e responsabile prodotto/i, 'developer revision must preserve grounded entity set');
+assert.equal(developerEntitySetExpansionRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length, 0, 'ignored developer expanded team category must not require revision');
+assert.doesNotMatch(developerEntitySetExpansionRun.premium.masterText, /diversi team aziendali/i, 'ignored developer expanded entity category must not reach final Master');
+assert.match(developerEntitySetExpansionRun.premium.masterText, /altri sviluppatori|responsabile prodotto/i, 'developer fallback must preserve grounded entity set');
 
 const missingDataDisclosureRun = await runPremiumForAnswers(new EditorialSurgeryProvider('missing-data'), noBenefitWarehouseAnswers, 'INDEED');
-assert.equal(missingDataDisclosureRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length >= 1, true, 'missing-data disclosure must trigger surgical revision');
+assert.equal(missingDataDisclosureRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length, 0, 'ignored missing-data disclosure must not require surgical revision');
 assert.doesNotMatch(missingDataDisclosureRun.premium.masterText, /Non sono stati dichiarati benefit|non vengono indicat[ei]|non sono disponibili dettagli/i, 'missing-data disclosure must be removed, not rephrased');
 
 const preferredValidRun = await runPremiumForAnswers(new EditorialSurgeryProvider('preferred-valid'), enrichedWarehouseAnswers, 'INDEED');
 assert.equal(preferredValidRun.premium.claimCheck.some((claim) => /vantaggio pratico|facilit|inserimento operativo|requisito preferenziale/i.test(claim.claim)), false, 'a simple preferred requirement must remain valid');
-assert.match(preferredValidRun.premium.masterText, /esperienza precedente in magazzino e patentino muletto sono graditi ma non obbligatori/i, 'preferred requirement wording must remain candidate-facing');
+assert.match(preferredValidRun.premium.masterText, /esperienza precedente in magazzino e patentino muletto, entrambi graditi/i, 'preferred requirement wording must remain candidate-facing');
 
 const preferredOverreachRun = await runPremiumForAnswers(new EditorialSurgeryProvider('preferred-overreach'), enrichedWarehouseAnswers, 'INDEED');
-assert.equal(preferredOverreachRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length >= 1, true, 'unsupported consequence inferred from a preferred requirement must trigger revision');
-assert.match(preferredOverreachRun.premium.masterText, /esperienza precedente in magazzino e patentino muletto sono graditi ma non obbligatori/i, 'revision must preserve the preferred requirement itself');
-assert.doesNotMatch(preferredOverreachRun.premium.masterText, /facilita l inserimento operativo/i, 'revision must remove the invented consequence of a preferred requirement');
-assert.match(preferredOverreachRun.premium.masterText, /Questo paragrafo operativo deve restare invariato/i, 'surgical revision must not alter unrelated text in the same section');
+assert.equal(preferredOverreachRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length, 0, 'ignored preferred overreach must not require revision');
+assert.match(preferredOverreachRun.premium.masterText, /esperienza precedente in magazzino e patentino muletto, entrambi graditi/i, 'deterministic fallback must preserve the preferred requirement itself');
+assert.doesNotMatch(preferredOverreachRun.premium.masterText, /facilita l inserimento operativo|Questo paragrafo operativo deve restare invariato/i, 'ignored preferred overreach and legacy marker must not reach final Master');
 
 const preferredRapidOnboardingRun = await runPremiumForAnswers(new EditorialSurgeryProvider('preferred-rapid-onboarding'), enrichedWarehouseAnswers, 'INDEED');
-assert.equal(preferredRapidOnboardingRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length >= 1, true, 'rapid onboarding inferred from a preferred requirement must trigger revision');
-assert.match(preferredRapidOnboardingRun.premium.masterText, /esperienza precedente in magazzino e patentino muletto sono graditi ma non obbligatori/i, 'revision must keep the preferred fact');
-assert.doesNotMatch(preferredRapidOnboardingRun.premium.masterText, /inserimento operativo piu rapido|facilita il lavoro/i, 'revision must remove unsupported effects of preferred requirements');
-assert.match(preferredRapidOnboardingRun.premium.masterText, /Questo paragrafo operativo deve restare invariato/i, 'preferred surgery must preserve unrelated text');
+assert.equal(preferredRapidOnboardingRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length, 0, 'ignored rapid onboarding inference must not require revision');
+assert.match(preferredRapidOnboardingRun.premium.masterText, /esperienza precedente in magazzino e patentino muletto, entrambi graditi/i, 'deterministic fallback must keep the preferred fact');
+assert.doesNotMatch(preferredRapidOnboardingRun.premium.masterText, /inserimento operativo piu rapido|facilita il lavoro|Questo paragrafo operativo deve restare invariato/i, 'ignored preferred effects must not reach final Master');
 
-await assert.rejects(
-  () => runPremiumForPreservationAnswers(new RealRalOmissionValidationProvider('success')),
-  (error) => error?.code === 'GENERATION_BLOCKED' && /compensation/.test(String(error.message)),
-  'confirmed RAL omission must block final Master exposure',
-);
+const realRalOmissionRun = await runPremiumForPreservationAnswers(new RealRalOmissionValidationProvider('success'));
+assert.equal(realRalOmissionRun.premium.gate.status, 'READY', 'ignored RAL omission must not block deterministic fallback output');
+assert.match(realRalOmissionRun.premium.masterText, /RAL 30\.000-36\.000 EUR/i, 'deterministic fallback must preserve confirmed RAL');
 
-await assert.rejects(
-  () => runPremiumForPreservationAnswers(new RealHybridContradictionValidationProvider('success')),
-  (error) => error?.code === 'GENERATION_BLOCKED' && /workMode/.test(String(error.message)),
-  'confirmed work-mode contradiction must block final Master exposure',
-);
+const realHybridContradictionRun = await runPremiumForPreservationAnswers(new RealHybridContradictionValidationProvider('success'));
+assert.equal(realHybridContradictionRun.premium.gate.status, 'READY', 'ignored work-mode contradiction must not block deterministic fallback output');
+assert.match(realHybridContradictionRun.premium.masterText, /Ibrido: 3 giorni in sede e 2 da remoto/i, 'deterministic fallback must preserve confirmed work mode');
+assert.doesNotMatch(realHybridContradictionRun.premium.masterText, /lavoro si svolge in presenza/i, 'ignored work-mode contradiction must not reach final Master');
 
-await assert.rejects(
-  () => runPremiumForPreservationAnswers(new InventedBenefitProvider('success')),
-  (error) => error?.code === 'GENERATION_BLOCKED' && /inventedBenefit/.test(String(error.message)),
-  'invented benefit must block final Master exposure',
-);
+const inventedBenefitRun = await runPremiumForPreservationAnswers(new InventedBenefitProvider('success'));
+assert.equal(inventedBenefitRun.premium.gate.status, 'READY', 'ignored invented benefit must not block deterministic fallback output');
+assert.doesNotMatch(inventedBenefitRun.premium.masterText, /buoni pasto/i, 'ignored invented benefit must not reach final Master');
 
 const repairableRequirementLabelRun = await runPremiumForPreservationAnswers(new RepairableRequirementLabelProvider('success'));
-assert.equal(repairableRequirementLabelRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length >= 1, true, 'repairable requirement label defect must enter automatic revision instead of blocking for confirmation');
-assert.equal(repairableRequirementLabelRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length <= 2, true, 'repairable requirement label defect must stay within automatic revision budget');
-assert.equal(repairableRequirementLabelRun.premium.gate.status, 'READY', 'repairable requirement label can become READY after revision');
+assert.equal(repairableRequirementLabelRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length, 0, 'ignored requirement label defect must not require automatic revision');
+assert.equal(repairableRequirementLabelRun.premium.gate.status, 'READY', 'repairable requirement label can remain READY after deterministic fallback');
 assert.doesNotMatch(repairableRequirementLabelRun.premium.masterText, /Requisiti selettivi/i, 'misleading requirement label must be removed from final master');
 
 const neutralCtaRun = await runPremiumForAnswers(new NeutralCtaProvider('success'), genericApplicationAnswers, 'INDEED');
@@ -2497,45 +2515,35 @@ assert.equal(neutralCtaRun.premium.gate.status, 'READY', 'neutral CTA is valid w
 assert.match(neutralCtaRun.premium.masterText, /inviaci la tua candidatura/i, 'generic application path must become a human neutral CTA');
 assert.doesNotMatch(neutralCtaRun.premium.masterText, /LinkedIn|CV|colloqu|ricontatteremo|step successiv|canale dell[’']annuncio/i, 'neutral CTA must not invent channel, placeholder, or selection process details');
 
-await assert.rejects(
-  () => runPremiumForAnswers(new LinkedInWithoutDeclarationProvider('success'), genericApplicationAnswers, 'INDEED'),
-  (error) => error?.code === 'GENERATION_BLOCKED' && /inventedApplicationProcess|application/.test(String(error.message)),
-  'LinkedIn must not be invented when application instructions do not declare it',
-);
+const linkedInWithoutDeclarationRun = await runPremiumForAnswers(new LinkedInWithoutDeclarationProvider('success'), genericApplicationAnswers, 'INDEED');
+assert.equal(linkedInWithoutDeclarationRun.premium.gate.status, 'READY', 'ignored LinkedIn invention must not block deterministic fallback output');
+assert.doesNotMatch(linkedInWithoutDeclarationRun.premium.masterText, /LinkedIn/i, 'ignored LinkedIn invention must not reach final Master');
 
-await assert.rejects(
-  () => runPremiumForAnswers(new InventedSelectionProcessProvider('success'), genericApplicationAnswers, 'INDEED'),
-  (error) => error?.code === 'GENERATION_BLOCKED' && /inventedApplicationProcess/.test(String(error.message)),
-  'selection process details must not be invented',
-);
+const inventedSelectionProcessRun = await runPremiumForAnswers(new InventedSelectionProcessProvider('success'), genericApplicationAnswers, 'INDEED');
+assert.equal(inventedSelectionProcessRun.premium.gate.status, 'READY', 'ignored selection-process invention must not block deterministic fallback output');
+assert.doesNotMatch(inventedSelectionProcessRun.premium.masterText, /colloqu|ricontatteremo|step successiv/i, 'ignored selection-process invention must not reach final Master');
 
 const inventedEmployerBrandRun = await runPremiumForPreservationAnswers(new InventedEmployerBrandProvider('success'));
-assert.equal(inventedEmployerBrandRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length >= 1, true, 'invented employer branding must trigger surgical revision');
-assert.equal(inventedEmployerBrandRun.premium.gate.status, 'READY', 'invented employer branding can become READY after surgical removal');
+assert.equal(inventedEmployerBrandRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length, 0, 'ignored employer branding must not require surgical revision');
+assert.equal(inventedEmployerBrandRun.premium.gate.status, 'READY', 'invented employer branding can remain READY after deterministic fallback');
 assert.doesNotMatch(inventedEmployerBrandRun.premium.masterText, /ambiente dinamico|talento/i, 'unsupported employer-branding language must be removed');
 
-await assert.rejects(
-  () => runPremiumForAnswers(new InventedTrainingProvider('success'), noTrainingGenericApplicationAnswers, 'INDEED'),
-  (error) => error?.code === 'GENERATION_BLOCKED' && /inventedBenefit/.test(String(error.message)),
-  'training or growth must not be invented when absent from the Truth Ledger',
-);
+const inventedTrainingRun = await runPremiumForAnswers(new InventedTrainingProvider('success'), noTrainingGenericApplicationAnswers, 'INDEED');
+assert.equal(inventedTrainingRun.premium.gate.status, 'READY', 'ignored training invention must not block deterministic fallback output');
+assert.doesNotMatch(inventedTrainingRun.premium.masterText, /formazione|crescita|affiancamento/i, 'ignored training invention must not reach final Master when absent from the Truth Ledger');
 
 const internalHeadingRun = await runPremiumForPreservationAnswers(new InternalHeadingPassProvider('success'));
 assert.equal(internalHeadingRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length, 0, 'internal headings must be sanitized deterministically without consuming AI repair');
 assert.equal(internalHeadingRun.premium.gate.status, 'READY', 'internal headings can become READY after deterministic sanitization');
 assert.doesNotMatch(internalHeadingRun.premium.masterText, /Obiettivo del ruolo|Elementi apprendibili|Apprendibili:/i, 'internal headings must be removed from final master');
 
-await assert.rejects(
-  () => runPremiumForAnswers(new TrainablePromiseWithoutTrainingProvider('success'), noTrainingGenericApplicationAnswers, 'INDEED'),
-  (error) => error?.code === 'GENERATION_BLOCKED' && /trainablePromise/.test(String(error.message)),
-  'trainable internal facts must not become public training promises when no training is confirmed',
-);
+const trainablePromiseWithoutTrainingRun = await runPremiumForAnswers(new TrainablePromiseWithoutTrainingProvider('success'), noTrainingGenericApplicationAnswers, 'INDEED');
+assert.equal(trainablePromiseWithoutTrainingRun.premium.gate.status, 'READY', 'ignored training promise must not block deterministic fallback output');
+assert.doesNotMatch(trainablePromiseWithoutTrainingRun.premium.masterText, /imparerai|formazione|affiancamento/i, 'ignored trainable promise must not reach final Master when no training is confirmed');
 
-await assert.rejects(
-  () => runPremiumForAnswers(new TrainableFamiliarityRequirementProvider('success'), genericApplicationAnswers, 'INDEED'),
-  (error) => error?.code === 'GENERATION_BLOCKED' && /trainablePromise/.test(String(error.message)),
-  'trainable internal facts must not become useful familiarity or implicit requirements',
-);
+const trainableFamiliarityRequirementRun = await runPremiumForAnswers(new TrainableFamiliarityRequirementProvider('success'), genericApplicationAnswers, 'INDEED');
+assert.equal(trainableFamiliarityRequirementRun.premium.gate.status, 'READY', 'ignored trainable familiarity must not block deterministic fallback output');
+assert.doesNotMatch(trainableFamiliarityRequirementRun.premium.masterText, /familiarit[aà]|utile conoscere|apprenderai/i, 'ignored trainable familiarity must not reach final Master');
 
 const preferredRequirementRun = await runPremiumForAnswers(new PreferredRequirementPublicProvider('success'), genericApplicationAnswers, 'INDEED');
 assert.equal(preferredRequirementRun.premium.gate.status, 'READY', 'preferred requirements may be published as graditi/non obbligatori without being confused with TRAINABLE');
@@ -2546,17 +2554,13 @@ const discursiveSingleParagraphRun = await runPremiumForAnswers(new DiscursiveSi
 assert.equal(discursiveSingleParagraphRun.premium.gate.status, 'READY', 'a developed narrative paragraph must not trigger the compression guard only because it is one paragraph');
 assert.doesNotMatch(discursiveSingleParagraphRun.premium.claimCheck.map((claim) => claim.claim).join(' '), /condensa troppi fatti|responsabilit[aà] condensa/i, 'density guard must target list-like compression, not prose density alone');
 
-await assert.rejects(
-  () => runPremiumForAnswers(new EmbellishedNeutralCtaProvider('success'), genericApplicationAnswers, 'INDEED'),
-  (error) => error?.code === 'GENERATION_BLOCKED' && /inventedApplicationProcess|application/.test(String(error.message)),
-  'neutral CTA must not ask for experience or availability when not declared',
-);
+const embellishedNeutralCtaRun = await runPremiumForAnswers(new EmbellishedNeutralCtaProvider('success'), genericApplicationAnswers, 'INDEED');
+assert.equal(embellishedNeutralCtaRun.premium.gate.status, 'READY', 'ignored embellished CTA must not block deterministic fallback output');
+assert.doesNotMatch(embellishedNeutralCtaRun.premium.masterText, /indicando brevemente la tua esperienza e disponibilit[aà]/i, 'ignored embellished CTA must not reach final Master');
 
-await assert.rejects(
-  () => runPremiumForAnswers(new TechnicalOverreachProvider('success'), genericApplicationAnswers, 'INDEED'),
-  (error) => error?.code === 'GENERATION_BLOCKED' && /inventedTechnology|responsibilityExpansion/.test(String(error.message)),
-  'technology keywords must not be expanded into unsupported responsibilities',
-);
+const technicalOverreachRun = await runPremiumForAnswers(new TechnicalOverreachProvider('success'), genericApplicationAnswers, 'INDEED');
+assert.equal(technicalOverreachRun.premium.gate.status, 'READY', 'ignored technology overreach must not block deterministic fallback output');
+assert.doesNotMatch(technicalOverreachRun.premium.masterText, /API|dashboard|integrazioni|automazioni/i, 'ignored technology overreach must not reach final Master');
 
 const hrRequirementBlockRun = await runPremiumForAnswers(new HrRequirementBlockProvider('success'), genericApplicationAnswers, 'INDEED');
 assert.equal(hrRequirementBlockRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length, 0, 'HR-form requirement sublists must be sanitized deterministically without consuming AI repair');
@@ -2564,15 +2568,13 @@ assert.equal(hrRequirementBlockRun.premium.gate.status, 'READY', 'HR-form requir
 assert.doesNotMatch(hrRequirementBlockRun.premium.masterText, /Requisiti principali|Requisiti preferiti/i, 'HR-form requirement headings must be removed');
 
 const duplicateResponsibilityListRun = await runPremiumForAnswers(new DuplicateResponsibilityListProvider('success'), genericApplicationAnswers, 'INDEED');
-assert.equal(duplicateResponsibilityListRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length >= 1, true, 'duplicated responsibility prose plus bullet list must trigger surgical revision');
-assert.equal(duplicateResponsibilityListRun.premium.gate.status, 'READY', 'duplicated responsibility prose can become READY after removing the extra list');
+assert.equal(duplicateResponsibilityListRun.context.provider.calls.filter((call) => call.operationType === 'REVISE').length, 0, 'ignored duplicated responsibility list must not require surgical revision');
+assert.equal(duplicateResponsibilityListRun.premium.gate.status, 'READY', 'duplicated responsibility prose can remain READY after deterministic fallback');
 assert.doesNotMatch(duplicateResponsibilityListRun.premium.masterText, /Attivita tipiche incluse nel ruolo|natural-work-bullets|^- Fare prospecting/im, 'duplicated responsibility list must be removed');
 
-await assert.rejects(
-  () => runPremiumForPreservationAnswers(new ListOnlyProvider('success')),
-  (error) => error?.code === 'GENERATION_BLOCKED' && /internalStructureLeak/.test(String(error.message)),
-  'list-only output must not be exposed as final Master',
-);
+const listOnlyRun = await runPremiumForPreservationAnswers(new ListOnlyProvider('success'));
+assert.equal(listOnlyRun.premium.gate.status, 'READY', 'ignored list-only output must not block deterministic fallback output');
+assert.doesNotMatch(listOnlyRun.premium.masterText, /^-\s+/m, 'ignored list-only output must not reach final Master');
 
 const adminConflictContext = makeContext();
 const startedAdminConflict = await startAnnunci10xCreate({ context: adminConflictContext });
@@ -2604,6 +2606,7 @@ assert.match(adminConflictState.roleCard.unexpectedEvents, /Fatture con dati err
 assert.match(adminConflictState.roleCard.unexpectedEvents, /dati da chiarire con fornitori, clienti o reparti interni/i, 'long admin unexpected events must remain complete');
 assert.equal(/Ibrido/i.test(adminConflictState.roleCard.unexpectedEvents), false, 'shadow work mode must be removed from admin unexpected events');
 assert.equal(/Contesto operativo e interlocutori:/i.test(adminConflictState.roleCard.responsibilities.join(' ')), false, 'admin operating context must not contaminate responsibilities');
+await verifyCreateSessionEmail(adminConflictContext, startedAdminConflict.cookie);
 await confirmAnnunci10xCreate({
   sessionId: startedAdminConflict.cookie.sessionId,
   sessionSecret: startedAdminConflict.cookie.sessionSecret,
@@ -2625,9 +2628,8 @@ assert.doesNotMatch(adminConflictPremium.masterText, /^(Contesto operativo|Auton
 
 const semanticCoverageContext = makeContext(new SourceTaggedButSemanticallyMissingProvider('success'));
 const startedSemanticCoverage = await startAnnunci10xCreate({ context: semanticCoverageContext });
-let semanticCoverageState = startedSemanticCoverage.result;
 for (const [stepId, answer] of preservationAnswers) {
-  semanticCoverageState = await answerAnnunci10xCreateStep({
+  await answerAnnunci10xCreateStep({
     sessionId: startedSemanticCoverage.cookie.sessionId,
     sessionSecret: startedSemanticCoverage.cookie.sessionSecret,
     stepId,
@@ -2635,28 +2637,27 @@ for (const [stepId, answer] of preservationAnswers) {
     context: semanticCoverageContext,
   });
 }
+await verifyCreateSessionEmail(semanticCoverageContext, startedSemanticCoverage.cookie);
 await confirmAnnunci10xCreate({
   sessionId: startedSemanticCoverage.cookie.sessionId,
   sessionSecret: startedSemanticCoverage.cookie.sessionSecret,
   context: semanticCoverageContext,
 });
-await assert.rejects(
-  () => runAnnunci10xPremiumGeneration({
-    sessionId: startedSemanticCoverage.cookie.sessionId,
-    sessionSecret: startedSemanticCoverage.cookie.sessionSecret,
-    channel: 'LINKEDIN',
-    context: semanticCoverageContext,
-    authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
-  }),
-  (error) => error?.code === 'GENERATION_BLOCKED' && /Preservation failed/.test(String(error.message)),
-  'source tags alone must not expose a semantically incomplete master',
-);
+const semanticCoveragePremium = await runAnnunci10xPremiumGeneration({
+  sessionId: startedSemanticCoverage.cookie.sessionId,
+  sessionSecret: startedSemanticCoverage.cookie.sessionSecret,
+  channel: 'LINKEDIN',
+  context: semanticCoverageContext,
+  authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
+});
+assert.equal(semanticCoveragePremium.gate.status, 'READY', 'semantically incomplete provider output must be ignored in favor of deterministic fallback');
+assert.doesNotMatch(semanticCoveragePremium.masterText, /Lavorerai con il team commerciale su lead e opportunita/i, 'semantically incomplete provider context must not reach final Master');
+assert.match(semanticCoveragePremium.masterText, /Sviluppare nuove opportunit[aà] commerciali qualificate/i, 'deterministic fallback must preserve the primary contribution');
 
 const structuralDumpContext = makeContext(new StructuralDumpProvider('success'));
 const startedStructuralDump = await startAnnunci10xCreate({ context: structuralDumpContext });
-let structuralDumpState = startedStructuralDump.result;
 for (const [stepId, answer] of preservationAnswers) {
-  structuralDumpState = await answerAnnunci10xCreateStep({
+  await answerAnnunci10xCreateStep({
     sessionId: startedStructuralDump.cookie.sessionId,
     sessionSecret: startedStructuralDump.cookie.sessionSecret,
     stepId,
@@ -2664,28 +2665,27 @@ for (const [stepId, answer] of preservationAnswers) {
     context: structuralDumpContext,
   });
 }
+await verifyCreateSessionEmail(structuralDumpContext, startedStructuralDump.cookie);
 await confirmAnnunci10xCreate({
   sessionId: startedStructuralDump.cookie.sessionId,
   sessionSecret: startedStructuralDump.cookie.sessionSecret,
   context: structuralDumpContext,
 });
-await assert.rejects(
-  () => runAnnunci10xPremiumGeneration({
-    sessionId: startedStructuralDump.cookie.sessionId,
-    sessionSecret: startedStructuralDump.cookie.sessionSecret,
-    channel: 'LINKEDIN',
-    context: structuralDumpContext,
-    authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
-  }),
-  (error) => error?.code === 'GENERATION_BLOCKED' && /internalStructureLeak|Preservation failed/.test(String(error.message)),
-  'a structural RoleCard dump must not expose a final Master even when provider validation says PASS',
-);
+const structuralDumpPremium = await runAnnunci10xPremiumGeneration({
+  sessionId: startedStructuralDump.cookie.sessionId,
+  sessionSecret: startedStructuralDump.cookie.sessionSecret,
+  channel: 'LINKEDIN',
+  context: structuralDumpContext,
+  authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
+});
+assert.equal(structuralDumpPremium.gate.status, 'READY', 'structural provider dump must be ignored in favor of deterministic fallback');
+assert.doesNotMatch(structuralDumpPremium.masterText, /sourceFactIds|Vincoli:|Non sono stati dichiarati benefit|CRM interno/i, 'structural provider dump must not reach final Master');
+assert.match(structuralDumpPremium.masterText, /Sviluppare nuove opportunit[aà] commerciali qualificate/i, 'deterministic fallback must preserve semantic facts when provider validation would have passed a dump');
 
 const twoPassContext = makeContext(new TwoPassRepairProvider('success'));
 const startedTwoPass = await startAnnunci10xCreate({ context: twoPassContext });
-let twoPassState = startedTwoPass.result;
 for (const [stepId, answer] of preservationAnswers) {
-  twoPassState = await answerAnnunci10xCreateStep({
+  await answerAnnunci10xCreateStep({
     sessionId: startedTwoPass.cookie.sessionId,
     sessionSecret: startedTwoPass.cookie.sessionSecret,
     stepId,
@@ -2693,6 +2693,7 @@ for (const [stepId, answer] of preservationAnswers) {
     context: twoPassContext,
   });
 }
+await verifyCreateSessionEmail(twoPassContext, startedTwoPass.cookie);
 await confirmAnnunci10xCreate({
   sessionId: startedTwoPass.cookie.sessionId,
   sessionSecret: startedTwoPass.cookie.sessionSecret,
@@ -2723,6 +2724,7 @@ for (const [stepId, answer] of preservationAnswers) {
   });
 }
 assert.equal(persistentRevisionState.canConfirm, true);
+await verifyCreateSessionEmail(persistentRevisionContext, startedPersistentRevision.cookie);
 await confirmAnnunci10xCreate({
   sessionId: startedPersistentRevision.cookie.sessionId,
   sessionSecret: startedPersistentRevision.cookie.sessionSecret,
@@ -2885,6 +2887,7 @@ for (const [stepId, answer] of preservationAnswers) {
     context: deletingRevisionContext,
   });
 }
+await verifyCreateSessionEmail(deletingRevisionContext, startedDeletingRevision.cookie);
 await confirmAnnunci10xCreate({
   sessionId: startedDeletingRevision.cookie.sessionId,
   sessionSecret: startedDeletingRevision.cookie.sessionSecret,
@@ -2897,8 +2900,8 @@ const deletingRevisionPremium = await runAnnunci10xPremiumGeneration({
   context: deletingRevisionContext,
   authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
 });
-assert.equal(deletingRevisionPremium.master.sections.some((section) => section.id === 'section-responsibilities'), true, 'sanitizer must preserve useful responsibility sections');
-assert.equal(deletingRevisionPremium.master.sections.some((section) => section.id === 'section-title'), true, 'unaffected sections must survive deterministic sanitization');
+assert.equal(deletingRevisionPremium.master.sections.some((section) => section.id === 'hybrid-responsibilities'), true, 'sanitizer must preserve useful responsibility sections');
+assert.equal(deletingRevisionPremium.master.sections.some((section) => section.id === 'hybrid-title'), true, 'unaffected sections must survive deterministic sanitization');
 assert.doesNotMatch(deletingRevisionPremium.masterText, /Vincoli: contenuto interno non pubblicabile/i, 'sanitizer must remove internal boundary leaks from candidate-facing text');
 assert.equal(deletingRevisionContext.provider.calls.filter((call) => call.operationType === 'VALIDATE').length, 0, 'CREATE premium must not run the old validation loop for deterministic sanitization');
 assert.equal(deletingRevisionContext.provider.calls.filter((call) => call.operationType === 'REVISE').length, 0, 'deterministic internal leak sanitization must not consume the single Decision Engine repair');
@@ -2916,6 +2919,7 @@ for (const [stepId, answer] of preservationAnswers) {
     context: repairableBlockContext,
   });
 }
+await verifyCreateSessionEmail(repairableBlockContext, startedRepairableBlock.cookie);
 await confirmAnnunci10xCreate({
   sessionId: startedRepairableBlock.cookie.sessionId,
   sessionSecret: startedRepairableBlock.cookie.sessionSecret,
@@ -2944,6 +2948,7 @@ for (const [stepId, answer] of preservationAnswers) {
     context: duplicateEditorialContext,
   });
 }
+await verifyCreateSessionEmail(duplicateEditorialContext, startedDuplicateEditorial.cookie);
 await confirmAnnunci10xCreate({
   sessionId: startedDuplicateEditorial.cookie.sessionId,
   sessionSecret: startedDuplicateEditorial.cookie.sessionSecret,
@@ -2956,9 +2961,11 @@ const duplicateEditorialPremium = await runAnnunci10xPremiumGeneration({
   context: duplicateEditorialContext,
   authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
 });
-assert.equal(duplicateEditorialPremium.master.sections.find((section) => section.id === 'dup-title')?.body, '', 'duplicate TITLE body must be normalized away before validation/output');
-assert.equal(duplicateEditorialPremium.master.sections.some((section) => section.id === 'dup-opening'), true, 'revised OPENING must survive');
-assert.equal(duplicateEditorialPremium.master.sections.some((section) => section.id === 'dup-mission'), true, 'non-hard-fact OPENING/MISSION similarity must not trigger the old revision loop');
+assert.equal(duplicateEditorialPremium.master.sections.some((section) => section.id === 'dup-title'), false, 'duplicate provider TITLE must not reach deterministic output');
+assert.equal(duplicateEditorialPremium.master.sections.some((section) => section.id === 'dup-opening'), false, 'duplicate provider OPENING must not reach deterministic output');
+assert.equal(duplicateEditorialPremium.master.sections.some((section) => section.id === 'dup-mission'), false, 'duplicate provider MISSION must not reach deterministic output');
+assert.equal(duplicateEditorialPremium.master.sections.some((section) => section.id === 'hybrid-opening'), true, 'deterministic OPENING must survive');
+assert.equal(duplicateEditorialPremium.master.sections.some((section) => section.id === 'hybrid-responsibilities'), true, 'deterministic responsibilities must survive');
 assert.equal(duplicateEditorialContext.provider.calls.filter((call) => call.operationType === 'VALIDATE').length, 0, 'duplicate editorial content must not run the old validation loop in CREATE premium');
 assert.equal(duplicateEditorialContext.provider.calls.filter((call) => call.operationType === 'REVISE').length, 0, 'duplicate editorial content must not run old editorial revisions when hard facts pass');
 assert.equal(duplicateEditorialPremium.gate.status, 'READY', 'hard-facts PASS should produce READY without old duplicate cleanup');

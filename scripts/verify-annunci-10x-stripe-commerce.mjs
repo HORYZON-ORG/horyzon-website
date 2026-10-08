@@ -76,15 +76,18 @@ async function assertCreateLeadReachability() {
     env: process.env,
   });
   const gateway = new MockAnnunci10xPaymentGateway();
-  const checkout = await createAnnunci10xCheckoutSession({
-    session,
-    offerCode: 'ANNUNCI10X_CREATE',
-    context,
-    gateway,
-    env: env({ checkoutEnabled: true }),
-  });
-  assert.equal(checkout.offerCode, 'ANNUNCI10X_CREATE');
-  assert.equal(gateway.checkoutSessions[0].stripePriceId, 'price_create_test');
+  await assert.rejects(
+    () => createAnnunci10xCheckoutSession({
+      session,
+      offerCode: 'ANNUNCI10X_CREATE',
+      context,
+      gateway,
+      env: env({ checkoutEnabled: true }),
+    }),
+    (error) => error.code === 'CHECKOUT_DISABLED' && error.status === 503,
+    'free CREATE must not create a Stripe checkout session',
+  );
+  assert.equal(gateway.checkoutSessions.length, 0);
 }
 
 async function assertCheckoutDisabled() {
@@ -108,15 +111,15 @@ async function assertCheckoutEnabledAndRetry() {
   const gateway = new MockAnnunci10xPaymentGateway();
   const first = await createAnnunci10xCheckoutSession({
     session,
-    offerCode: 'ANNUNCI10X_REWRITE',
+    offerCode: 'AGENT_RECRUITER',
     context,
     gateway,
     env: env({ checkoutEnabled: true }),
   });
-  assert.equal(first.offerCode, 'ANNUNCI10X_REWRITE');
+  assert.equal(first.offerCode, 'AGENT_RECRUITER');
   assert.match(first.checkoutUrl, /^https:\/\/checkout\.stripe\.test/);
   assert.equal(gateway.checkoutSessions.length, 1);
-  assert.equal(gateway.checkoutSessions[0].stripePriceId, 'price_rewrite_test');
+  assert.equal(gateway.checkoutSessions[0].stripePriceId, 'price_agent_test');
   assert.equal(gateway.checkoutSessions[0].customerEmail, lead.emailNormalized);
   assert.equal(gateway.checkoutSessions[0].successUrl, 'https://horyzon.test/annunci-10x?checkout=success');
   assert.equal(gateway.checkoutSessions[0].cancelUrl, 'https://horyzon.test/annunci-10x?checkout=cancelled');
@@ -124,12 +127,12 @@ async function assertCheckoutEnabledAndRetry() {
   const purchase = await context.persistence.getPurchaseByCheckoutSessionId(gateway.checkoutSessions[0].purchaseId.startsWith('missing') ? 'missing' : `cs_test_${first.purchaseId.replaceAll('-', '').slice(0, 24)}`);
   assert.ok(purchase);
   assert.equal(purchase.status, 'PENDING');
-  assert.equal(purchase.expectedAmountCents, 700);
+  assert.equal(purchase.expectedAmountCents, 4900);
   assert.equal(purchase.currency, 'EUR');
 
   const second = await createAnnunci10xCheckoutSession({
     session,
-    offerCode: 'ANNUNCI10X_REWRITE',
+    offerCode: 'AGENT_RECRUITER',
     context,
     gateway,
     env: env({ checkoutEnabled: true }),
@@ -143,7 +146,7 @@ async function assertClientTamperingAndUnverified() {
   const { context, session } = await verifiedSession('ANALYZE');
   const gateway = new MockAnnunci10xPaymentGateway();
   const malicious = {
-    offerCode: 'ANNUNCI10X_REWRITE',
+    offerCode: 'AGENT_RECRUITER',
     amountCents: 1,
     currency: 'USD',
     stripePriceId: 'price_fake',
@@ -159,7 +162,7 @@ async function assertClientTamperingAndUnverified() {
     gateway,
     env: env({ checkoutEnabled: true }),
   });
-  assert.equal(gateway.checkoutSessions[0].stripePriceId, 'price_rewrite_test');
+  assert.equal(gateway.checkoutSessions[0].stripePriceId, 'price_agent_test');
   assert.equal(gateway.checkoutSessions[0].customerEmail.endsWith('@example.com'), true);
   assert.equal(gateway.checkoutSessions[0].successUrl, 'https://horyzon.test/annunci-10x?checkout=success');
 
@@ -168,7 +171,7 @@ async function assertClientTamperingAndUnverified() {
   await assert.rejects(
     () => createAnnunci10xCheckoutSession({
       session: unverified.session,
-      offerCode: 'ANNUNCI10X_REWRITE',
+      offerCode: 'AGENT_RECRUITER',
       context: unverified.context,
       gateway: blockedGateway,
       env: env({ checkoutEnabled: true }),
@@ -259,14 +262,14 @@ async function assertWebhookVerifierDoesNotRequireApiKey() {
 
 async function assertPaidWebhookDuplicateAndConcurrent() {
   const { context, session } = await verifiedSession('ANALYZE');
-  const checkout = await createCheckout(context, session, 'ANNUNCI10X_REWRITE');
+  const checkout = await createCheckout(context, session, 'AGENT_RECRUITER');
   const raw = stripeEvent({
     id: 'evt_paid_once',
     type: 'checkout.session.completed',
     object: {
       id: checkout.sessionId,
       payment_status: 'paid',
-      amount_total: 700,
+      amount_total: 4900,
       currency: 'eur',
       payment_intent: 'pi_paid_once',
       customer: 'cus_paid_once',
@@ -276,11 +279,11 @@ async function assertPaidWebhookDuplicateAndConcurrent() {
   assert.equal(first.status, 'PROCESSED');
   const purchase = await context.persistence.getPurchaseByCheckoutSessionId(checkout.sessionId);
   assert.equal(purchase.status, 'PAID');
-  assert.equal((await context.persistence.getEffectiveEntitlements(session.sessionId, session.sessionSecret)).rewriteCredits, 1);
+  assert.equal((await context.persistence.getEffectiveEntitlements(session.sessionId, session.sessionSecret)).agentRecruiterAccess, true);
 
   const duplicate = await processWebhook(context, raw);
   assert.equal(duplicate.status, 'DUPLICATE');
-  assert.equal((await context.persistence.getEffectiveEntitlements(session.sessionId, session.sessionSecret)).rewriteCredits, 1);
+  assert.equal((await context.persistence.getEffectiveEntitlements(session.sessionId, session.sessionSecret)).agentRecruiterAccess, true);
 
   const concurrent = await Promise.all([processWebhook(context, raw), processWebhook(context, raw)]);
   assert.deepEqual(concurrent.map((item) => item.status), ['DUPLICATE', 'DUPLICATE']);
@@ -288,7 +291,7 @@ async function assertPaidWebhookDuplicateAndConcurrent() {
 
 async function assertMismatchAndLifecycleEvents() {
   const amountCase = await verifiedSession('ANALYZE');
-  const amountCheckout = await createCheckout(amountCase.context, amountCase.session, 'ANNUNCI10X_REWRITE');
+  const amountCheckout = await createCheckout(amountCase.context, amountCase.session, 'AGENT_RECRUITER');
   const amountResult = await processWebhook(amountCase.context, stripeEvent({
     id: 'evt_bad_amount',
     type: 'checkout.session.completed',
@@ -296,19 +299,19 @@ async function assertMismatchAndLifecycleEvents() {
   }));
   assert.equal(amountResult.status, 'FAILED');
   assert.equal((await amountCase.context.persistence.getPurchaseByCheckoutSessionId(amountCheckout.sessionId)).status, 'PENDING');
-  assert.equal((await amountCase.context.persistence.getEffectiveEntitlements(amountCase.session.sessionId, amountCase.session.sessionSecret)).rewriteCredits, 0);
+  assert.equal((await amountCase.context.persistence.getEffectiveEntitlements(amountCase.session.sessionId, amountCase.session.sessionSecret)).agentRecruiterAccess, false);
 
   const currencyCase = await verifiedSession('ANALYZE');
-  const currencyCheckout = await createCheckout(currencyCase.context, currencyCase.session, 'ANNUNCI10X_REWRITE');
+  const currencyCheckout = await createCheckout(currencyCase.context, currencyCase.session, 'AGENT_RECRUITER');
   const currencyResult = await processWebhook(currencyCase.context, stripeEvent({
     id: 'evt_bad_currency',
     type: 'checkout.session.completed',
-    object: { id: currencyCheckout.sessionId, payment_status: 'paid', amount_total: 700, currency: 'usd' },
+    object: { id: currencyCheckout.sessionId, payment_status: 'paid', amount_total: 4900, currency: 'usd' },
   }));
   assert.equal(currencyResult.status, 'FAILED');
 
   const invalidCase = await verifiedSession('ANALYZE');
-  const invalidCheckout = await createCheckout(invalidCase.context, invalidCase.session, 'ANNUNCI10X_REWRITE');
+  const invalidCheckout = await createCheckout(invalidCase.context, invalidCase.session, 'AGENT_RECRUITER');
   await assert.rejects(
     () => processAnnunci10xStripeWebhook({
       rawBody: stripeEvent({ id: 'evt_invalid_signature', type: 'checkout.session.expired', object: { id: invalidCheckout.sessionId } }),
@@ -322,7 +325,7 @@ async function assertMismatchAndLifecycleEvents() {
   assert.equal((await invalidCase.context.persistence.getPurchaseByCheckoutSessionId(invalidCheckout.sessionId)).status, 'PENDING');
 
   const expiredCase = await verifiedSession('ANALYZE');
-  const expiredCheckout = await createCheckout(expiredCase.context, expiredCase.session, 'ANNUNCI10X_REWRITE');
+  const expiredCheckout = await createCheckout(expiredCase.context, expiredCase.session, 'AGENT_RECRUITER');
   assert.equal((await processWebhook(expiredCase.context, stripeEvent({ id: 'evt_expired', type: 'checkout.session.expired', object: { id: expiredCheckout.sessionId } }))).status, 'PROCESSED');
   assert.equal((await expiredCase.context.persistence.getPurchaseByCheckoutSessionId(expiredCheckout.sessionId)).status, 'CANCELED');
 
@@ -330,28 +333,28 @@ async function assertMismatchAndLifecycleEvents() {
 
 async function assertPaymentFailureLifecycle() {
   const failureCase = await verifiedSession('ANALYZE');
-  const checkout = await createCheckout(failureCase.context, failureCase.session, 'ANNUNCI10X_REWRITE');
+  const checkout = await createCheckout(failureCase.context, failureCase.session, 'AGENT_RECRUITER');
   const failed = await processWebhook(failureCase.context, stripeEvent({
     id: 'evt_payment_failed_once',
     type: 'payment_intent.payment_failed',
-    object: { id: 'pi_failed_once', metadata: { annunci10x_purchase_id: checkout.purchaseId, annunci10x_offer_code: 'ANNUNCI10X_REWRITE' } },
+    object: { id: 'pi_failed_once', metadata: { annunci10x_purchase_id: checkout.purchaseId, annunci10x_offer_code: 'AGENT_RECRUITER' } },
   }));
   assert.equal(failed.status, 'PROCESSED');
   let purchase = await failureCase.context.persistence.getPurchaseByCheckoutSessionId(checkout.sessionId);
   assert.equal(purchase.status, 'PENDING');
   assert.equal(purchase.failedAt, null);
-  assert.equal((await failureCase.context.persistence.getEffectiveEntitlements(failureCase.session.sessionId, failureCase.session.sessionSecret)).rewriteCredits, 0);
+  assert.equal((await failureCase.context.persistence.getEffectiveEntitlements(failureCase.session.sessionId, failureCase.session.sessionSecret)).agentRecruiterAccess, false);
   assert.equal(failureCase.context.persistence.stripeEvents.get('evt_payment_failed_once').status, 'PROCESSED');
 
   const repeated = await processWebhook(failureCase.context, stripeEvent({
     id: 'evt_payment_failed_twice',
     type: 'payment_intent.payment_failed',
-    object: { id: 'pi_failed_twice', metadata: { annunci10x_purchase_id: checkout.purchaseId, annunci10x_offer_code: 'ANNUNCI10X_REWRITE' } },
+    object: { id: 'pi_failed_twice', metadata: { annunci10x_purchase_id: checkout.purchaseId, annunci10x_offer_code: 'AGENT_RECRUITER' } },
   }));
   assert.equal(repeated.status, 'PROCESSED');
   purchase = await failureCase.context.persistence.getPurchaseByCheckoutSessionId(checkout.sessionId);
   assert.equal(purchase.status, 'PENDING');
-  assert.equal((await failureCase.context.persistence.getEffectiveEntitlements(failureCase.session.sessionId, failureCase.session.sessionSecret)).rewriteCredits, 0);
+  assert.equal((await failureCase.context.persistence.getEffectiveEntitlements(failureCase.session.sessionId, failureCase.session.sessionSecret)).agentRecruiterAccess, false);
   assert.equal(failureCase.context.persistence.stripeEvents.get('evt_payment_failed_twice').status, 'PROCESSED');
 
   const paidAfterFailure = await processWebhook(failureCase.context, stripeEvent({
@@ -360,7 +363,7 @@ async function assertPaymentFailureLifecycle() {
     object: {
       id: checkout.sessionId,
       payment_status: 'paid',
-      amount_total: 700,
+      amount_total: 4900,
       currency: 'eur',
       payment_intent: 'pi_paid_after_failure',
     },
@@ -368,14 +371,14 @@ async function assertPaymentFailureLifecycle() {
   assert.equal(paidAfterFailure.status, 'PROCESSED');
   purchase = await failureCase.context.persistence.getPurchaseByCheckoutSessionId(checkout.sessionId);
   assert.equal(purchase.status, 'PAID');
-  assert.equal((await failureCase.context.persistence.getEffectiveEntitlements(failureCase.session.sessionId, failureCase.session.sessionSecret)).rewriteCredits, 1);
+  assert.equal((await failureCase.context.persistence.getEffectiveEntitlements(failureCase.session.sessionId, failureCase.session.sessionSecret)).agentRecruiterAccess, true);
 
   const expiredCase = await verifiedSession('ANALYZE');
-  const expiredCheckout = await createCheckout(expiredCase.context, expiredCase.session, 'ANNUNCI10X_REWRITE');
+  const expiredCheckout = await createCheckout(expiredCase.context, expiredCase.session, 'AGENT_RECRUITER');
   assert.equal((await processWebhook(expiredCase.context, stripeEvent({
     id: 'evt_failure_before_expiry',
     type: 'payment_intent.payment_failed',
-    object: { id: 'pi_failure_before_expiry', metadata: { annunci10x_purchase_id: expiredCheckout.purchaseId, annunci10x_offer_code: 'ANNUNCI10X_REWRITE' } },
+    object: { id: 'pi_failure_before_expiry', metadata: { annunci10x_purchase_id: expiredCheckout.purchaseId, annunci10x_offer_code: 'AGENT_RECRUITER' } },
   }))).status, 'PROCESSED');
   assert.equal((await expiredCase.context.persistence.getPurchaseByCheckoutSessionId(expiredCheckout.sessionId)).status, 'PENDING');
   assert.equal((await processWebhook(expiredCase.context, stripeEvent({
@@ -384,7 +387,7 @@ async function assertPaymentFailureLifecycle() {
     object: { id: expiredCheckout.sessionId },
   }))).status, 'PROCESSED');
   assert.equal((await expiredCase.context.persistence.getPurchaseByCheckoutSessionId(expiredCheckout.sessionId)).status, 'CANCELED');
-  assert.equal((await expiredCase.context.persistence.getEffectiveEntitlements(expiredCase.session.sessionId, expiredCase.session.sessionSecret)).rewriteCredits, 0);
+  assert.equal((await expiredCase.context.persistence.getEffectiveEntitlements(expiredCase.session.sessionId, expiredCase.session.sessionSecret)).agentRecruiterAccess, false);
 }
 
 async function assertTransientRetryAndRouteStatus() {
@@ -392,7 +395,7 @@ async function assertTransientRetryAndRouteStatus() {
   assert.equal(annunci10xStripeWebhookErrorStatus(new Annunci10xStripeWebhookRetryableError()), 500);
 
   const terminalCase = await verifiedSession('ANALYZE');
-  const terminalCheckout = await createCheckout(terminalCase.context, terminalCase.session, 'ANNUNCI10X_REWRITE');
+  const terminalCheckout = await createCheckout(terminalCase.context, terminalCase.session, 'AGENT_RECRUITER');
   const terminal = await processWebhook(terminalCase.context, stripeEvent({
     id: 'evt_terminal_amount',
     type: 'checkout.session.completed',
@@ -401,7 +404,7 @@ async function assertTransientRetryAndRouteStatus() {
   assert.equal(terminal.status, 'FAILED');
 
   const transientCase = await verifiedSession('ANALYZE');
-  const transientCheckout = await createCheckout(transientCase.context, transientCase.session, 'ANNUNCI10X_REWRITE');
+  const transientCheckout = await createCheckout(transientCase.context, transientCase.session, 'AGENT_RECRUITER');
   const originalComplete = transientCase.context.persistence.completePaidPurchase.bind(transientCase.context.persistence);
   let failedOnce = false;
   transientCase.context.persistence.completePaidPurchase = async (input) => {
@@ -414,7 +417,7 @@ async function assertTransientRetryAndRouteStatus() {
   const raw = stripeEvent({
     id: 'evt_transient_retry',
     type: 'checkout.session.completed',
-    object: { id: transientCheckout.sessionId, payment_status: 'paid', amount_total: 700, currency: 'eur', payment_intent: 'pi_transient_retry' },
+    object: { id: transientCheckout.sessionId, payment_status: 'paid', amount_total: 4900, currency: 'eur', payment_intent: 'pi_transient_retry' },
   });
   await assert.rejects(
     () => processWebhook(transientCase.context, raw),
@@ -438,21 +441,21 @@ async function assertPendingPriceStability() {
   const gateway = new MockAnnunci10xPaymentGateway();
   const first = await createAnnunci10xCheckoutSession({
     session,
-    offerCode: 'ANNUNCI10X_REWRITE',
+    offerCode: 'AGENT_RECRUITER',
     context,
     gateway,
-    env: env({ checkoutEnabled: true, rewritePrice: 'price_rewrite_old' }),
+    env: env({ checkoutEnabled: true, agentPrice: 'price_agent_old' }),
   });
   const second = await createAnnunci10xCheckoutSession({
     session,
-    offerCode: 'ANNUNCI10X_REWRITE',
+    offerCode: 'AGENT_RECRUITER',
     context,
     gateway,
-    env: env({ checkoutEnabled: true, rewritePrice: 'price_rewrite_new' }),
+    env: env({ checkoutEnabled: true, agentPrice: 'price_agent_new' }),
   });
   assert.equal(second.purchaseId, first.purchaseId);
-  assert.equal(gateway.checkoutSessions[0].stripePriceId, 'price_rewrite_old');
-  assert.equal(gateway.checkoutSessions[1].stripePriceId, 'price_rewrite_old');
+  assert.equal(gateway.checkoutSessions[0].stripePriceId, 'price_agent_old');
+  assert.equal(gateway.checkoutSessions[1].stripePriceId, 'price_agent_old');
   assert.equal(stripeCheckoutIdempotencyKey(gateway.checkoutSessions[0].purchaseId), stripeCheckoutIdempotencyKey(gateway.checkoutSessions[1].purchaseId));
 }
 
@@ -468,30 +471,21 @@ async function assertEffectiveEntitlements() {
   assert.equal(entitlements.guideAccess, true);
   assert.equal(entitlements.agentRecruiterAccess, true);
 
-  const create = await createCheckout(context, session, 'ANNUNCI10X_CREATE');
-  await processWebhook(context, stripeEvent({
-    id: 'evt_create_paid',
-    type: 'checkout.session.completed',
-    object: { id: create.sessionId, payment_status: 'paid', amount_total: 700, currency: 'eur', payment_intent: 'pi_create' },
-  }));
-  entitlements = await context.persistence.getEffectiveEntitlements(session.sessionId, session.sessionSecret);
-  assert.equal(entitlements.createCredits, 1);
-
   const refundedCase = await verifiedSession('ANALYZE');
-  const refunded = await createCheckout(refundedCase.context, refundedCase.session, 'ANNUNCI10X_REWRITE');
+  const refunded = await createCheckout(refundedCase.context, refundedCase.session, 'AGENT_RECRUITER');
   await processWebhook(refundedCase.context, stripeEvent({
     id: 'evt_refund_paid',
     type: 'checkout.session.completed',
-    object: { id: refunded.sessionId, payment_status: 'paid', amount_total: 700, currency: 'eur', payment_intent: 'pi_refund', metadata: { annunci10x_purchase_id: refunded.purchaseId } },
+    object: { id: refunded.sessionId, payment_status: 'paid', amount_total: 4900, currency: 'eur', payment_intent: 'pi_refund', metadata: { annunci10x_purchase_id: refunded.purchaseId } },
   }));
-  assert.equal((await refundedCase.context.persistence.getEffectiveEntitlements(refundedCase.session.sessionId, refundedCase.session.sessionSecret)).rewriteCredits, 1);
+  assert.equal((await refundedCase.context.persistence.getEffectiveEntitlements(refundedCase.session.sessionId, refundedCase.session.sessionSecret)).agentRecruiterAccess, true);
   await processWebhook(refundedCase.context, stripeEvent({
     id: 'evt_refunded',
     type: 'charge.refunded',
     object: { id: 'ch_refunded', payment_intent: 'pi_refund' },
   }));
   assert.equal((await refundedCase.context.persistence.getPurchaseByCheckoutSessionId(refunded.sessionId)).status, 'REFUNDED');
-  assert.equal((await refundedCase.context.persistence.getEffectiveEntitlements(refundedCase.session.sessionId, refundedCase.session.sessionSecret)).rewriteCredits, 0);
+  assert.equal((await refundedCase.context.persistence.getEffectiveEntitlements(refundedCase.session.sessionId, refundedCase.session.sessionSecret)).agentRecruiterAccess, false);
 
   const ignored = await processWebhook(refundedCase.context, stripeEvent({ id: 'evt_ignored', type: 'customer.created', object: { id: 'cus_ignored' } }));
   assert.equal(ignored.status, 'IGNORED');
@@ -632,14 +626,14 @@ function makeContext() {
   };
 }
 
-function env({ checkoutEnabled, rewritePrice = 'price_rewrite_test' }) {
+function env({ checkoutEnabled, rewritePrice = 'price_rewrite_test', agentPrice = 'price_agent_test' }) {
   return {
     NODE_ENV: 'test',
     ANNUNCI10X_CHECKOUT_ENABLED: checkoutEnabled ? '1' : '0',
     ANNUNCI10X_PUBLIC_BASE_URL: 'https://horyzon.test',
     ANNUNCI10X_STRIPE_PRICE_REWRITE: rewritePrice,
     ANNUNCI10X_STRIPE_PRICE_CREATE: 'price_create_test',
-    ANNUNCI10X_STRIPE_PRICE_AGENT_RECRUITER: 'price_agent_test',
+    ANNUNCI10X_STRIPE_PRICE_AGENT_RECRUITER: agentPrice,
     STRIPE_WEBHOOK_SECRET: 'whsec_test',
     STRIPE_SECRET_KEY: 'sk_test_not_used',
   };

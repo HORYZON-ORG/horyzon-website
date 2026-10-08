@@ -189,17 +189,51 @@ function hasRequirementPromotion(ledger: Annunci10xTruthLedger, masterText: stri
   if (/\brequisiti\s+selettivi\b/i.test(masterText)) return true;
   const preferred = factsByCategory(ledger, 'REQUIREMENT_PREFERRED').flatMap((fact) => publishableRequirementItems(fact.value));
   const textSentences = sentences(masterText);
-  return preferred.some((item) => {
+  if (preferred.some((item) => {
     const tokens = preferredRequirementAnchors(ledger, item);
     return textSentences.some((sentence) => {
       const normalizedSentence = normalizeForDecision(sentence);
       return tokens.some((token) => normalizedSentence.includes(token))
-        && /\b(?:richiediamo|e\s+richiest[oaie]|sono\s+richiest[oaie]|viene\s+richiest[oaie]|indispensabile|necessari[oaie]|obbligatori[oaie]|devi avere|serve avere|requisito\s+obbligatorio)\b/.test(normalizedSentence)
-        && !/\b(?:preferenzial|preferibil|gradit|apprezzat|plus)\b/.test(normalizedSentence)
+        && /\b(?:richiediamo|e\s+richiest[oaie]\b|sono\s+richiest[oaie]|viene\s+richiest[oaie]|indispensabile|necessari[oaie]|obbligatori[oaie]|devi avere|serve avere|requisito\s+obbligatorio)\b/.test(normalizedSentence)
+        && !/\b(?:preferenzial[ei]?|preferibil[ei]?|gradit[oaie]|apprezzat[oaie]|plus)\b/.test(normalizedSentence)
         && !/\bnon\b.{0,24}\b(?:obbligator|necessari)/.test(normalizedSentence);
     });
+  })) return true;
+
+  const requirementText = normalizeForDecision(ledger.facts
+    .filter((fact) => fact.category.startsWith('REQUIREMENT'))
+    .map((fact) => fact.value)
+    .join(' '));
+  const unsupportedRequirementClaims: Array<[RegExp, RegExp]> = [
+    [/\bitaliano\s+scritto\s+chiaro\b/i, /\bitaliano\s+scritto\s+chiaro\b/],
+  ];
+  return masterText.split(/\n+/).some((segment) => {
+    const normalizedSentence = normalizeForDecision(segment);
+    if (unsupportedRequirementClaims.some(([mentioned, evidence]) => mentioned.test(normalizedSentence) && !evidence.test(requirementText))) return true;
+    return !/\bcrm\b/.test(requirementText) && hasUnsupportedCrmRequirementPromotion(normalizedSentence);
   });
 }
+
+function hasUnsupportedCrmRequirementPromotion(value: string): boolean {
+  return requirementPromotionClauses(value).some((clause) => CRM_REQUIREMENT_PROMOTION_PATTERNS.some((pattern) => pattern.test(clause)));
+}
+
+function requirementPromotionClauses(value: string): string[] {
+  return value
+    .split(/[.;\n]+|,\s*(?=e\s+(?:registrerai|registrare|userai|usare|utilizzerai|utilizzare|ti\s+occuperai|successivamente\s+(?:userai|usare|utilizzerai|utilizzare))\b)|\s+e\s+(?=(?:registrerai|registrare|userai|usare|utilizzerai|utilizzare|ti\s+occuperai|successivamente\s+(?:userai|usare|utilizzerai|utilizzare))\b)/i)
+    .map((clause) => clause.trim())
+    .filter(Boolean);
+}
+
+const CRM_REQUIREMENT_PROMOTION_PATTERNS = [
+  /\b(?:necessari[oaie]|indispensabile|obbligatori[oaie]|richiest[oaie])\b.{0,24}\b(?:conosc\w+|saper\s+usare|usare|utilizz\w+|avere\s+(?:esperienza|familiarita|competenze)|esperienza|competenze|familiarita)\b.{0,40}\bcrm\b/i,
+  /\b(?:conoscenza|uso|utilizzo|esperienza|familiarita|competenze)\b.{0,35}\bcrm\b.{0,35}\b(?:necessari[oaie]|indispensabile|obbligatori[oaie]|richiest[oaie]|gradit[oaie]|preferenzial[ei]|preferibil[ei]|plus|requisit[oi])\b/i,
+  /\bcrm\b.{0,35}\b(?:necessari[oaie]|indispensabile|obbligatori[oaie]|gradit[oaie]|preferenzial[ei]|preferibil[ei]|plus|requisit[oi])\b/i,
+  /\bcrm\b.{0,35}\b(?:e|è|sono|viene)\s+richiest[oaie]\b/i,
+  /\b(?:devi|serve|bisogna)\s+(?:avere\s+)?(?:conosc\w+|saper\s+usare|usare|utilizzare|avere\s+(?:esperienza|familiarita|competenze))\b.{0,40}\bcrm\b/i,
+  /\b(?:sono|e|è)\s+richiest\w+\s+(?:competenze|esperienza|conoscenza|familiarita)\b.{0,40}\bcrm\b/i,
+  /\bfamiliarita\s+(?:con\s+)?(?:il\s+)?crm\b/i,
+];
 
 function preferredRequirementAnchors(ledger: Annunci10xTruthLedger, item: string): string[] {
   const generic = new Set([
@@ -377,6 +411,16 @@ function escapeRegExp(value: string): string {
 function hasResponsibilityExpansion(ledger: Annunci10xTruthLedger, masterText: string): boolean {
   const knownText = normalizeForDecision(ledger.facts.map((fact) => fact.value).join(' '));
   const expansions: Array<[RegExp, RegExp]> = [
+    [/\bemail\b/i, /\bemail\b/],
+    [/\btelefono\b/i, /\btelefono\b/],
+    [/\bticket\b/i, /\bticket\b/],
+    [/\baggiorn\w*\s+(?:le\s+)?informazioni\b/i, /\baggiorn\w*\s+(?:le\s+)?informazioni\b/],
+    [/\brialline\w*\s+informazioni\b/i, /\brialline\w*\s+informazioni\b/],
+    [/\britiri\b/i, /\britiri\b/],
+    [/\bridurre\s+errori\b/i, /\bridurre\s+errori\b/],
+    [/\bridurre\s+ritardi\b/i, /\bridurre\s+ritardi\b/],
+    [/\bsegnala\w*\s+(?:eventuali\s+)?discrepanze\b/i, /\bsegnala\w*\s+(?:eventuali\s+)?discrepanze\b/],
+    [/\bbuona\s+manualit[aà]\b/i, /\bbuona\s+manualit[aà]\b/],
     [/\bprogettazione\s+(?:di\s+)?(?:rest\s+)?api\b/i, /\bprogettazion/],
     [/\bservizi esterni\b/i, /\bservizi esterni/],
     [/\bmicroservizi\b/i, /\bmicroservizi/],
@@ -384,7 +428,7 @@ function hasResponsibilityExpansion(ledger: Annunci10xTruthLedger, masterText: s
     [/\bdocumenti di trasporto|ddt\b/i, /\bddt|documenti di trasporto/],
     [/\bimballaggio\b/i, /\bimballaggio/],
     [/\b(?:risoluzione|risolvere|risolta|risolto|chiusura|chiudere|chiusa|chiuso)\b/i, /\b(?:risoluzione|risolvere|risolta|risolto|chiusura|chiudere|chiusa|chiuso)\b/],
-    [/\b(?:giornata tipo|ogni giorno|quotidianamente|attivit[aà] quotidian[ae]|regolarmente|spesso)\b/i, /\b(?:giornata tipo|ogni giorno|quotidianamente|attivit[aà] quotidian[ae]|regolarmente|spesso)\b/],
+    [/\b(?:giornata tipo|ogni giorno|quotidianamente|quotidian[oaie]|attivit[aà] quotidian[ae]|regolarmente|spesso)\b/i, /\b(?:giornata tipo|ogni giorno|quotidianamente|quotidian[oaie]|attivit[aà] quotidian[ae]|regolarmente|spesso)\b/],
     [/\b(?:stabilire|stabilendo|definire|definendo|gestire|gestendo)\s+(?:le\s+)?priorit[aà]\b/i, /\bpriorit[aà]\b/],
     [/\bpassaggio\s+di\s+responsabilit[aà]\b/i, /\bpassaggio\s+di\s+responsabilit[aà]\b/],
     [/\bpresa\s+in\s+carico\b/i, /\bpresa\s+in\s+carico\b/],
