@@ -357,8 +357,9 @@ async function assertProductionAuthorizationFailClosed() {
   const persistedSession = await context.persistence.getSession(session.sessionId, session.sessionSecret);
   const provider = createProductionGenerationAuthorizationProvider();
   const authorization = await provider.authorize({ session: persistedSession, productCode: 'AD_GENERATION' });
-  assert.equal(authorization.status, 'NOT_AUTHORIZED');
-  assert.equal(authorization.remainingCredits, 0);
+  assert.equal(authorization.status, 'AUTHORIZED');
+  assert.equal(authorization.remainingCredits, 1);
+  assert.match(authorization.reason, /gratuita/i);
 }
 
 async function assertMigration() {
@@ -412,17 +413,18 @@ async function assertStaticWiring() {
   assert.doesNotMatch(route, /entitlementProvider:\s*checkoutEnabled && session/s);
 
   const createFlow = await readFile('src/lib/annunci-10x/create-flow.ts', 'utf8');
-  assert.match(createFlow, /const checkoutEnabled = isAnnunci10xCheckoutEnabled\(\)/);
-  assert.match(createFlow, /entitlementProvider:\s*createPersistenceAnnunci10xCommerceEntitlementProvider/s);
-  assert.doesNotMatch(createFlow, /entitlementProvider:\s*checkoutEnabled\s*\?/s);
+  assert.match(createFlow, /state:\s*'ENTITLED'/);
+  assert.match(createFlow, /eventName:\s*'free_generation_unlocked'/);
+  assert.doesNotMatch(createFlow, /isAnnunci10xCheckoutEnabled|createPersistenceAnnunci10xCommerceEntitlementProvider/);
 
   const premiumAuth = await readFile('src/lib/annunci-10x/premium/authorization.ts', 'utf8');
-  assert.match(premiumAuth, /createProductionGenerationAuthorizationProvider\(\)[\s\S]*NOT_AUTHORIZED/s);
+  assert.match(premiumAuth, /annunci10x-free-generation-authority-v1/);
+  assert.match(premiumAuth, /status:\s*'AUTHORIZED'/);
   assert.doesNotMatch(premiumAuth, /isAnnunci10xFulfillmentEnabled|reserveGenerationCredit|consumeGenerationCredit/s);
 
   const premiumGenerateRoute = await readFile('src/app/api/annunci-10x/premium/generate/route.ts', 'utf8');
   assert.match(premiumGenerateRoute, /isAnnunci10xFulfillmentEnabled\(\)/);
-  assert.match(premiumGenerateRoute, /runAnnunci10xReservationBackedPremiumGeneration/);
+  assert.match(premiumGenerateRoute, /runAnnunci10xPremiumGeneration/);
   assert.doesNotMatch(premiumGenerateRoute, /createProductionGenerationAuthorizationProvider|authorizationProvider/s);
 
   const premiumEditRoute = await readFile('src/app/api/annunci-10x/premium/edit/route.ts', 'utf8');

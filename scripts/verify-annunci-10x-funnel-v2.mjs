@@ -42,13 +42,13 @@ const guidePreviewBuffer = await readFile(guidePreviewPath);
 const guidePreviewStat = await stat(guidePreviewPath);
 
 const publicSource = `${page}\n${client}\n${flow}\n${identityGate}\n${adSheet}\n${story}`;
-const guaranteeCopy = '7 € per un annuncio, una versione e un canale. Dopo la conferma del pagamento generiamo il testo completo e te lo rendiamo disponibile. Se non ti è utile, puoi chiedere il rimborso integrale entro 14 giorni dalla consegna, senza motivazione, scrivendo a info@horyzon.it dall’email usata per l’acquisto.';
+const freeGenerationCopy = 'Creazione e miglioramento dell’annuncio sono gratuiti. Nessuna carta di credito: dopo la verifica dell’email generiamo il testo completo usando solo i fatti che hai confermato.';
 const scoreDisclaimer = 'Il punteggio valuta la chiarezza e la completezza delle informazioni disponibili nell’annuncio. Non prevede il numero di candidature né sostituisce la valutazione delle persone.';
 
 assert.equal(page.includes('SiteHeader'), false, 'Annunci 10x route must not use global SiteHeader');
 assert.equal(page.includes('SiteFooter'), false, 'Annunci 10x route must not use global SiteFooter');
 assert.match(page, /robots:\s*\{\s*index:\s*false,\s*follow:\s*false,\s*nocache:\s*true\s*\}/s, 'route must stay noindex,nofollow,nocache');
-assert.match(page, /Annunci 10x — Score di chiarezza e annuncio pronto a 7 €/, 'metadata title must use V3 score/product copy');
+assert.match(page, /Annunci 10x — Score e annuncio pronti gratis/, 'metadata title must use free score/product copy');
 assert.match(page, /Valuta gratis chiarezza e completezza del tuo annuncio/, 'metadata description must use V3 score/product copy');
 assert.match(page, /siteName:\s*'Horyzon Consulting Recruiting'/, 'OG site name must use recruiting brand');
 
@@ -77,7 +77,7 @@ assert.match(page, /Un annuncio vago fa passare oltre chi sarebbe adatto e attir
 assert.match(page, /Annunci 10x <i>·<\/i> Score gratuito <i>·<\/i> 2 minuti/, 'hero label missing');
 assert.match(page, /Valuta il mio annuncio/, 'primary CTA missing');
 assert.match(page, /href="#ax-story-title">Prima fammi vedere/, 'soft secondary CTA must lead to the story');
-assert.match(page, /Non ho ancora un annuncio: crealo a 7 €/, 'create CTA missing');
+assert.match(page, /Non ho ancora un annuncio: crealo gratis/, 'create CTA missing');
 assert.equal(page.includes('Il tuo annuncio fa capire il lavoro alle persone giuste?'), false, 'V3 hero headline must not remain');
 assert.equal(client.includes('Il tuo annuncio sceglie i candidati prima di te.'), false, 'old hero headline must not remain');
 assert.equal(client.includes('Vedi subito lo Score'), false, 'old instant-score promise must not remain');
@@ -98,9 +98,9 @@ assert.match(flow, /data-flow="analyze" data-has-workspace=\{hasWorkspace\}/, 'a
 assert.match(flow, /ref=\{workspaceRef\} className=\{styles\.analysisWorkspace\}/, 'post-analysis states must render in a dedicated workspace surface');
 assert.match(flow, /const flowCycleRef = useRef\(0\)/, 'analyze flow must guard stale async responses with a local cycle token');
 assert.match(flow, /if \(cycle !== flowCycleRef\.current\) return;[\s\S]*setResult\(payload\.result\)/, 'stale result responses must not repopulate a reset analyze flow');
-assert.match(flow, /setCommercial\(null\);[\s\S]*setCommercialStatus\(null\);[\s\S]*setIdentityResetKey/, 'new analyze cycles must clear stale commercial and identity state');
+assert.match(flow, /setIdentityResetKey\(\(value\) => value \+ 1\);[\s\S]*resultFetchRef\.current = null/, 'new analyze cycles must clear stale identity/result state');
 assert.match(flow, /const nextRun = normalizeRun\(payload\.run\);[\s\S]*setAnalysisRun\(nextRun\);[\s\S]*setContactSaved\(Boolean\(nextRun\.contactSaved\)\);[\s\S]*setEmailVerified\(Boolean\(nextRun\.emailVerified\)\);/, 'new analysis runs must derive identity state from the normalized server run');
-assert.match(flow, /function analyzeAnother\(\)[\s\S]*flowCycleRef\.current \+= 1[\s\S]*setText\(''\)[\s\S]*setUrl\(''\)[\s\S]*setCommercial\(null\)/, 'Analyze another must fully reset source, result and offer state');
+assert.match(flow, /function analyzeAnother\(\)[\s\S]*flowCycleRef\.current \+= 1[\s\S]*setText\(''\)[\s\S]*setUrl\(''\)[\s\S]*setResult\(null\)/, 'Analyze another must fully reset source and result state');
 assert.match(flow, /function recoverUrlAsText\(\)[\s\S]*setSourceMode\('PASTED_TEXT'\)[\s\S]*setAnalysisRun\(null\)[\s\S]*focusSourceTextarea\(\)/, 'URL fetch failure must reopen the pasted-text form and focus the textarea');
 assert.match(flow, /ref=\{sourceTextareaRef\}/, 'pasted-text textarea must be focusable after URL fetch recovery');
 assert.match(flow, /const canShowContact = Boolean\(analysisRun\?\.id && !sourceFailed\)/, 'URL fetch failures must not continue into the contact/OTP step');
@@ -139,9 +139,9 @@ assert.equal(/\.analysisWorkspace \{[^}]*position:\s*absolute/.test(css), false,
 const resultBlock = cssBlock('.analysisWorkspace .result');
 assert.match(resultBlock, /display:\s*grid/, 'workspace result must render as a report card');
 assert.equal(/grid-template-columns/.test(resultBlock), false, 'workspace result must keep score and interpretation vertical');
-assert.match(flow, /<FreeResultCard result=\{result\} \/>\s*\n\s*<RewriteOfferCard /, 'rewrite offer must follow the report as its own card');
-const freeResultCardBlock = flow.slice(flow.indexOf('function FreeResultCard'), flow.indexOf('function RewriteOfferCard'));
-assert.equal(freeResultCardBlock.includes('RewriteOfferCard'), false, 'the report card must not contain the offer');
+assert.match(flow, /<FreeResultCard result=\{result\} \/>\s*\n\s*<RewriteFreeCard \/>/, 'free rewrite offer must follow the report as its own card');
+const freeResultCardBlock = flow.slice(flow.indexOf('function FreeResultCard'), flow.indexOf('function RewriteFreeCard'));
+assert.equal(freeResultCardBlock.includes('RewriteFreeCard'), false, 'the report card must not contain the offer');
 assert.match(flow, /className=\{styles\.flowSteps\}/, 'the free Score must show its three steps');
 assert.equal(page.includes('className="rd-steps"'), false, 'steps must not be duplicated above the flow');
 
@@ -159,11 +159,11 @@ assert.match(publicSource, /Score di chiarezza/, 'public score name missing');
 assert.equal(publicSource.includes('Annunci 10x Score'), false, 'old public score name must not remain');
 assert.match(publicSource, new RegExp(escapeRegExp(scoreDisclaimer)), 'score disclaimer missing');
 assert.equal(publicSource.includes('Performia'), false, 'Performia must be absent from the public funnel');
-assert.equal(publicSource.includes('49,00'), false, '49 EUR package must be hidden from the public funnel');
-assert.equal(/(^|[^\d])9 €/.test(publicSource), false, 'old 9 EUR CREATE price must not remain');
+assert.equal(publicSource.includes('49,00'), false, 'internal 49 EUR display must be hidden from the public funnel');
+assert.equal(/(^|[^\d])(?:7|9) €/.test(publicSource), false, 'old paid Annuncio 10x price must not remain');
 assert.equal(publicSource.includes('9,00'), false, 'old 9 EUR CREATE price must not remain');
 assert.match(publicSource, /Annuncio 10x/, 'single public product name missing');
-assert.match(publicSource, new RegExp(escapeRegExp(guaranteeCopy)), 'guarantee copy missing or altered');
+assert.match(publicSource, new RegExp(escapeRegExp(freeGenerationCopy)), 'free generation copy missing or altered');
 
 for (const label of ['Critico', 'Debole', 'Buona base', 'Forte', 'Eccellente']) {
   assert.equal(flow.includes(label), true, `flow score band label missing: ${label}`);
@@ -195,16 +195,16 @@ assert.match(page, /Non un voto\. <span>Una lista di priorità\.<\/span>/, 'resu
 assert.equal(client.includes('Caso reale in preparazione'), false, 'case-real-in-preparation block must be replaced');
 assert.equal(/[0-9]{1,3}\s*(?:→|->)\s*[0-9]{1,3}/.test(client), false, 'before/after must not invent numeric score improvement');
 
-assert.match(client, /7 €/, 'V3 price missing');
+assert.equal(/(^|[^\d])7 €/.test(client), false, 'paid Annuncio 10x price must not return in the client');
 assert.match(client, /1 annuncio/, 'single-ad unit missing');
 assert.match(client, /1 versione/, 'single-version unit missing');
 assert.match(client, /1 canale/, 'single-channel unit missing');
 assert.equal(commerceClient.includes('Disponibile a breve'), true, 'checkout-disabled customer-safe CTA missing');
-// V3 keeps Annuncio 10x as the paid rewrite/create service and adds the Guide as a separate informational product.
+// V3 keeps Annuncio 10x as the free rewrite/create service and adds the Guide as a separate informational product.
 const priceBlock = page.match(/<section id="annuncio-10x"[\s\S]*?<\/section>/)?.[0] ?? '';
-assert.match(priceBlock, /<strong>7 €<\/strong>[\s\S]*1 annuncio[\s\S]*1 versione[\s\S]*1 canale/, 'price section must state 7 EUR and its units');
-assert.match(priceBlock, /<CreateCta[^>]*>Non ho ancora un annuncio: crealo a 7 €/, 'price section must open the create-from-zero flow');
-assert.match(priceBlock, /\{guaranteeCopy\}/, 'guarantee must sit under the price');
+assert.match(priceBlock, /<strong>Gratis<\/strong>[\s\S]*1 annuncio[\s\S]*1 versione finale[\s\S]*1 canale/, 'price section must state the free Annuncio 10x unit');
+assert.match(priceBlock, /<CreateCta[^>]*>Non ho ancora un annuncio: crealo gratis/, 'price section must open the create-from-zero flow');
+assert.match(priceBlock, /\{freeGenerationCopy\}/, 'free generation note must sit under the product unit');
 assert.equal(priceBlock.includes('Valuta'), false, 'price section must not make the free evaluation look paid');
 const guideBlock = page.match(/<section id="guida-annunci-10x"[\s\S]*?<\/section>/)?.[0] ?? '';
 assert.match(guideBlock, /Guida Annunci 10x/, 'guide section must be published on the landing');
@@ -234,7 +234,7 @@ assert.equal(client.includes('AD_GENERATION'), false, 'client must not expose le
 assert.equal(client.includes('discountReason'), false, 'client must not use legacy discountReason');
 assert.match(commerceClient, /type Annunci10xOfferCode = 'ANNUNCI10X_REWRITE' \| 'ANNUNCI10X_CREATE' \| 'AGENT_RECRUITER'/, 'V3 offer code union missing');
 assert.match(commerceClient, /version:\s*'annunci10x-commercial-v3'/, 'client commercial version must be V3');
-assert.match(commerceClient, /Paga 7 € e genera il mio annuncio/, 'checkout CTA helper must use V3 paid CTA');
+assert.match(commerceClient, /Genera gratis il mio annuncio/, 'checkout CTA helper must not reintroduce paid Annuncio 10x copy');
 assert.match(commerceClient, /fetch\('\/api\/annunci-10x\/commercial\/offers'/, 'commercial offers fetch helper missing');
 assert.match(commerceClient, /fetch\('\/api\/annunci-10x\/commercial\/checkout'/, 'checkout helper missing');
 assert.match(commerceClient, /JSON\.stringify\(\{\s*offerCode\s*\}\)/s, 'checkout helper must post offerCode only');
@@ -250,8 +250,8 @@ assert.match(flow, /new URLSearchParams\(window\.location\.search\)\.get\('analy
 assert.match(flow, /window\.location\.hash !== '#guida-annunci-10x'/, 'guide email anchor must be explicitly preserved after analysis hydration');
 assert.match(flow, /getElementById\('guida-annunci-10x'\)\?\.scrollIntoView\(\{ block: 'start', behavior: 'auto' \}\)/, 'guide email anchor must re-scroll after dynamic analysis layout settles');
 assert.match(landingCss, /\.ax-guide\{scroll-margin-top:24px;/, 'guide section must reserve a stable anchor offset');
-assert.match(flow, /Vuoi trasformarlo\?/, 'free result paid bridge missing');
-assert.match(flow, /ANNUNCI10X_REWRITE/, 'analyze rewrite offer must be wired');
+assert.match(flow, /Vuoi trasformarlo\?/, 'free result rewrite bridge missing');
+assert.match(flow, /Migliora il mio annuncio — gratis/, 'analyze rewrite offer must stay free');
 assert.equal(flow.includes('AGENT_RECRUITER'), false, 'analyze flow must not surface Agent Recruiter');
 assert.match(client, /ANNUNCI10X_CREATE/, 'create offer must be wired');
 assert.match(client, /Dove ti mandiamo il tuo annuncio\?/, 'CREATE identity gate title missing');
@@ -259,9 +259,8 @@ assert.match(identityGate, /Dati facoltativi/, 'optional lead context section mi
 assert.match(identityGate, /companyName:\s*''/, 'company must start empty and optional');
 assert.match(identityGate, /businessRole:\s*'' as BusinessRole \| ''/, 'business role must start empty and optional');
 assert.match(identityGate, /analysisRunId \? \{ code: otpCode, analysisRunId: props\.analysisRunId \} : \{ code: otpCode \}/, 'CREATE OTP verify must omit analysisRunId');
-assert.match(client, /Pagamento ricevuto\./, 'checkout success banner missing');
-assert.match(client, /Pagamento annullato\./, 'checkout cancel banner missing');
-assert.match(client, /delays = \[0, 1500, 3000, 5000\]/, 'success refresh must be bounded to four attempts');
+assert.doesNotMatch(client, /Pagamento ricevuto\.|Pagamento annullato\./, 'checkout banners must not return while Annuncio 10x is free');
+assert.doesNotMatch(client, /delays = \[0, 1500, 3000, 5000\]/, 'checkout success polling must not return while Annuncio 10x is free');
 
 const createWizardConfig = client.match(/const createWizardSteps: readonly \{[\s\S]*?\n\];/)?.[0] ?? '';
 assert.match(client, /type CreateWizardStepId = 'ROLE_RESULT' \| 'PERSON_WORK' \| 'CONDITIONS_APPLICATION'/, 'create wizard step type missing');
@@ -323,19 +322,16 @@ assert.match(conditionsWizardPanel, /id="create-application" required aria-requi
 assert.match(conditionsWizardPanel, /Esempio: Invia CV a recruiting@azienda\.it indicando “Addetto customer care” nell’oggetto\./, 'application example missing');
 assert.equal(/id="create-compensation"[\s\S]{0,160}required/.test(conditionsWizardPanel), false, 'compensation must not become required');
 assert.equal(/id="create-channel"[\s\S]{0,160}FieldExample/.test(conditionsWizardPanel), false, 'channel select must not add unnecessary example microcopy');
-assert.match(client, /function inferCreateWizardStep[\s\S]*currentStep === 'SUMMARY' \|\| state\.currentStep === 'COMMERCIAL'[\s\S]*completedSteps/, 'resume must infer a sensible create wizard step');
+assert.match(client, /function inferCreateWizardStep[\s\S]*currentStep === 'SUMMARY' \|\| state\.currentStep === 'READY'[\s\S]*completedSteps/, 'resume must infer a sensible create wizard step');
 assert.match(client, /function firstInvalidCreateWizardField[\s\S]*for \(const step of createWizardSteps\)/, 'final validation must cover all wizard steps');
 assert.match(client, /function focusCreateField[\s\S]*control\?\.focus\(\)[\s\S]*control\?\.reportValidity\?\.\(\)/, 'wizard validation must focus and report the first invalid field');
 assert.match(css, /\.createStepIndicator[\s\S]*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/, 'desktop wizard step indicator must use three readable columns');
 assert.match(css, /\.createStepIndicator li\[data-state="active"\][\s\S]*background:\s*var\(--lime\)/, 'active wizard step must use Horyzon lime');
 assert.match(css, /@media \(max-width: 760px\)[\s\S]*\.createStepIndicator[\s\S]*grid-template-columns:\s*1fr/, 'mobile wizard step indicator must stack without horizontal overflow');
 
-assert.match(createFlow, /checkoutEnabled:\s*boolean/, 'PublicCreateState checkoutEnabled must be boolean');
-assert.match(createFlow, /pricingStatus:\s*'FIXED'/, 'PublicCreateState pricingStatus must be FIXED');
-assert.match(createFlow, /entitlementSummary:\s*\{[\s\S]*guide:\s*boolean[\s\S]*rewriteCredits:\s*number[\s\S]*createCredits:\s*number[\s\S]*agentRecruiterAccess:\s*boolean[\s\S]*source:\s*string/s, 'PublicCreateState V3 entitlement summary missing');
+assert.match(createFlow, /generationReady:\s*boolean/, 'PublicCreateState must expose free generation readiness');
 assert.match(createFlow, /const identityVerified = Boolean\(lead\?\.emailVerifiedAt\)/, 'identityVerified must be server-derived from lead');
-assert.match(createFlow, /const checkoutEnabled = isAnnunci10xCheckoutEnabled\(\)/, 'checkoutEnabled must be server-derived from env helper');
-assert.match(createFlow, /identityVerified,\s*\n\s*entitlementProvider:\s*createPersistenceAnnunci10xCommerceEntitlementProvider/s, 'commercial resolver must receive identityVerified and session entitlement provider independently from checkout');
+assert.match(createFlow, /free_generation_unlocked/, 'CREATE confirmation must unlock free generation server-side');
 
 assert.match(commercial, /ANNUNCI10X_AGENT_RECRUITER_ENABLED/, 'Agent Recruiter visibility flag missing');
 assert.match(commercial, /isAnnunci10xAgentRecruiterEnabled/, 'Agent Recruiter env helper missing');
@@ -369,11 +365,11 @@ assert.equal(count(finalBlock, '<Cta '), 1, 'final section must contain exactly 
 assert.match(contract, /Commercial contract V3/, 'commercial contract V3 doc missing');
 assert.match(contract, /Public products: Annuncio 10x; Guida Annunci 10x/, 'public products contract missing');
 assert.match(contract, /Guida Annunci 10x is a separate public informational product/, 'guide public product contract missing');
-assert.match(contract, /Price: 7 EUR/, 'V3 price contract missing');
+assert.match(contract, /Price: free/, 'V3 free price contract missing');
 assert.match(contract, /Price: 49 EUR/, 'guide price contract missing');
 assert.match(contract, /annunci-10x-anteprima\.pdf/, 'guide preview asset contract missing');
 assert.match(contract, /1 job ad, 1 version, 1 publication channel/, 'V3 unit contract missing');
-assert.match(contract, /legal review of the guarantee wording/, 'legal go-live blocker missing');
+assert.match(contract, /legal review of paid wording/, 'legal go-live blocker missing');
 assert.equal(contract.includes('BRAND_ASSET_PENDING'), false, 'resolved brand asset must not remain pending');
 assert.match(contract, /horyzon-consulting-recruiting-white\.png/, 'canonical transparent Recruiting logo path missing from commercial contract');
 

@@ -6,11 +6,11 @@ Public products: Annuncio 10x; Guida Annunci 10x.
 
 ## Public offer
 
-Annuncio 10x is the public paid rewrite/create service in the funnel.
+Annuncio 10x is the public free rewrite/create service in the funnel.
 
-Price: 7 EUR.
+Price: free.
 Unit: 1 job ad, 1 version, 1 publication channel.
-Delivery: the complete generated text is made available only after payment confirmation.
+Delivery: the complete generated text is made available after identity verification and role facts confirmation.
 
 Two public paths lead to the same product:
 
@@ -30,8 +30,8 @@ The public product keeps two internal capabilities because runtime behavior is d
 
 | Offer code | Capability | Public name | Price |
 | --- | --- | --- | --- |
-| `ANNUNCI10X_REWRITE` | `REWRITE_CREDIT` x1 | Annuncio 10x | 7 EUR |
-| `ANNUNCI10X_CREATE` | `CREATE_CREDIT` x1 | Annuncio 10x | 7 EUR |
+| `ANNUNCI10X_REWRITE` | `REWRITE_CREDIT` x1 | Annuncio 10x | Free |
+| `ANNUNCI10X_CREATE` | `CREATE_CREDIT` x1 | Annuncio 10x | Free |
 
 `AGENT_RECRUITER` remains a backend/internal offer and entitlement package. It is not shown in the public funnel unless `ANNUNCI10X_AGENT_RECRUITER_ENABLED` is explicitly enabled server-side.
 
@@ -91,28 +91,27 @@ The approved asset uses the transparent white/lime Horyzon Consulting Recruiting
 
 Performia must not appear in the public Annunci 10x funnel while this contract is active.
 
-## Guarantee
+## Service note
 
-Required guarantee copy:
+Required public note:
 
-> 7 € per un annuncio, una versione e un canale. Dopo la conferma del pagamento generiamo il testo completo e te lo rendiamo disponibile. Se non ti è utile, puoi chiedere il rimborso integrale entro 14 giorni dalla consegna, senza motivazione, scrivendo a info@horyzon.it dall’email usata per l’acquisto.
+> Creazione e miglioramento dell’annuncio sono gratuiti. Nessuna carta di credito: dopo la verifica dell’email generiamo il testo completo usando solo i fatti che hai confermato.
 
 ## Go-live blockers
 
-Checkout must remain disabled until all blockers below are explicitly cleared:
+Checkout must remain disabled unless a future commercial phase explicitly reauthorizes paid products:
 
-- legal review of the guarantee wording;
-- refund policy confirmation;
+- legal review of paid wording;
+- refund policy confirmation for paid products;
 - checkout terms and customer-facing conditions confirmed;
-- delivery timing and support process confirmed;
-- production Stripe prices verified for the 7 EUR product;
+- production Stripe prices verified for any future paid product;
 - post-payment fulfillment explicitly authorized.
 
 Current flags:
 
 - `ANNUNCI10X_CHECKOUT_ENABLED`: off.
 - `ANNUNCI10X_FULFILLMENT_ENABLED`: off.
-- Production premium authorization: not authorized.
+- Production premium authorization: free verified generation only.
 
 ## Out of scope for V3 realignment
 

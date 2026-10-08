@@ -61,7 +61,7 @@ export function offerPriceLabel(offer: Annunci10xCommercialOffer): string {
 
 export function checkoutCtaLabel(offer: Annunci10xCommercialOffer): string {
   if (!offer.purchaseEnabled) return unavailableCtaLabel(offer.reasonUnavailable);
-  if (offer.offerCode === 'ANNUNCI10X_REWRITE' || offer.offerCode === 'ANNUNCI10X_CREATE') return 'Paga 7 € e genera il mio annuncio';
+  if (offer.offerCode === 'ANNUNCI10X_REWRITE' || offer.offerCode === 'ANNUNCI10X_CREATE') return 'Genera gratis il mio annuncio';
   return `Ottieni Guida + Agent Recruiter — ${offerPriceLabel(offer)}`;
 }
 

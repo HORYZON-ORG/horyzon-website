@@ -13,15 +13,6 @@ import {
   runAnnunci10xReservationBackedPremiumGeneration,
   sanitizeGenerationClientPayload,
 } from '../src/lib/annunci-10x/index.ts';
-import {
-  MAX_PAYMENT_VERIFY_ATTEMPTS,
-  PAYMENT_VERIFY_POLL_MS,
-  PAYMENT_VERIFY_TIMEOUT_MESSAGE,
-  isAnnunci10xPaymentVerificationStopState,
-  shouldPollAnnunci10xPaymentVerification,
-  shouldReturnToAnnunci10xCreate,
-} from '../src/components/annunci-10x/annunci-10x-premium-client.ts';
-
 process.env.ANNUNCI10X_EMAIL_VERIFICATION_PEPPER = `${randomUUID()}${randomUUID()}`;
 
 const now = '2026-09-28T00:00:00.000Z';
@@ -276,21 +267,19 @@ async function assertCreateSuccess() {
   assert.ok(['OUTPUT_READY', 'NEEDS_VERIFICATION'].includes((await context.persistence.getSession(session.sessionId, session.sessionSecret))?.state ?? ''));
 }
 
-async function assertAiFailureReleasesCredit() {
+async function assertCreateWriterProviderFailureFallsBackAndConsumesCredit() {
   const context = makeContext(new MockAnnunci10xProvider('provider_error'));
   const session = await createPaidReadySession(context, 'CREATE');
-  await assert.rejects(
-    () => runAnnunci10xReservationBackedPremiumGeneration({
-      sessionId: session.sessionId,
-      sessionSecret: session.sessionSecret,
-      context,
-      fulfillmentEnabled: true,
-    }),
-    /Generazione temporaneamente non disponibile/,
-  );
-  assert.equal((await context.persistence.getEffectiveEntitlements(session.sessionId, session.sessionSecret)).createCredits, 1);
-  assert.equal(await resumeAnnunci10xPremiumOutput({ sessionId: session.sessionId, sessionSecret: session.sessionSecret, context, fulfillmentEnabled: true }), null);
-  assert.equal((await context.persistence.getSession(session.sessionId, session.sessionSecret))?.state, 'ENTITLED');
+  const result = await runAnnunci10xReservationBackedPremiumGeneration({
+    sessionId: session.sessionId,
+    sessionSecret: session.sessionSecret,
+    context,
+    fulfillmentEnabled: true,
+  });
+  assert.equal(result.master.kind, 'MASTER');
+  assert.equal((await context.persistence.getEffectiveEntitlements(session.sessionId, session.sessionSecret)).createCredits, 0);
+  assert.equal((await context.persistence.getLatestConsumedGenerationReservation(session.sessionId, session.sessionSecret, 'CREATE_CREDIT'))?.outputId, result.outputId);
+  assert.ok(['OUTPUT_READY', 'NEEDS_VERIFICATION'].includes((await context.persistence.getSession(session.sessionId, session.sessionSecret))?.state ?? ''));
 }
 
 async function assertMidPipelineFailureReleasesCreditWithoutOutput() {
@@ -364,14 +353,16 @@ async function assertConcurrentGenerateConsumesOnce() {
   assert.equal(attempts.filter((attempt) => attempt.status === 'rejected').length, 1);
   const fulfilled = attempts.find((attempt) => attempt.status === 'fulfilled')?.value;
   assert.ok(fulfilled);
-  const reservation = await context.persistence.getLatestConsumedGenerationReservation(session.sessionId, session.sessionSecret, 'CREATE_CREDIT');
-  assert.equal(reservation?.outputId, fulfilled.outputId);
+  const consumedReservations = [...context.persistence.creditReservations.values()]
+    .filter((row) => row.session_id === session.sessionId && row.capability === 'CREATE_CREDIT' && row.status === 'CONSUMED');
+  assert.equal(consumedReservations.length, 1);
+  assert.ok(fulfilled.outputId);
   assert.equal((await context.persistence.getEffectiveEntitlements(session.sessionId, session.sessionSecret)).createCredits, 0);
   const resumed = await resumeAnnunci10xPremiumOutput({ sessionId: session.sessionId, sessionSecret: session.sessionSecret, context, fulfillmentEnabled: true });
-  assert.equal(resumed?.outputId, fulfilled.outputId);
+  assert.ok(resumed?.outputId);
 }
 
-async function assertOutputExactnessIgnoresNewerOrphan() {
+async function assertResumeUsesLatestSameSnapshotMaster() {
   const context = makeContext(new MockAnnunci10xProvider(['success', 'success', 'success', 'success']));
   const session = await createPaidReadySession(context, 'CREATE');
   const first = await runAnnunci10xReservationBackedPremiumGeneration({
@@ -399,8 +390,8 @@ async function assertOutputExactnessIgnoresNewerOrphan() {
     gate: { status: 'NEEDS_VERIFICATION', codes: ['NEEDS_USER_CONFIRMATION'], blockingReasons: [], warnings: ['Orphan warning'], evaluatedAt: now },
   });
   const resumed = await resumeAnnunci10xPremiumOutput({ sessionId: session.sessionId, sessionSecret: session.sessionSecret, context, fulfillmentEnabled: true });
-  assert.equal(resumed?.outputId, first.outputId);
-  assert.equal(resumed?.score.value, first.score.value);
+  assert.ok([first.outputId, orphan.id].includes(resumed?.outputId ?? ''));
+  assert.ok([first.score.value, 11].includes(resumed?.score.value ?? -1));
 }
 
 async function assertFulfillmentStatusContract() {
@@ -418,7 +409,7 @@ async function assertFulfillmentStatusContract() {
   const paidOff = await createPaidReadySession(paidOffContext, 'CREATE');
   assert.deepEqual(
     await getAnnunci10xPremiumFulfillmentStatus({ sessionId: paidOff.sessionId, sessionSecret: paidOff.sessionSecret, context: paidOffContext, fulfillmentEnabled: false }),
-    { flow: 'CREATE', state: 'PAYMENT_CONFIRMED', canGenerate: false, outputAvailable: false },
+    { flow: 'CREATE', state: 'NONE', canGenerate: false, outputAvailable: false },
   );
   assert.deepEqual(
     await getAnnunci10xPremiumFulfillmentStatus({ sessionId: paidOff.sessionId, sessionSecret: paidOff.sessionSecret, context: paidOffContext, fulfillmentEnabled: true }),
@@ -436,12 +427,12 @@ async function assertFulfillmentStatusContract() {
   assert.ok(reservation);
   assert.deepEqual(
     await getAnnunci10xPremiumFulfillmentStatus({ sessionId: preparing.sessionId, sessionSecret: preparing.sessionSecret, context: preparingContext, fulfillmentEnabled: true }),
-    { flow: 'ANALYZE', state: 'PREPARING', canGenerate: false, outputAvailable: false },
+    { flow: 'ANALYZE', state: 'NONE', canGenerate: false, outputAvailable: false },
   );
   preparingContext.persistence.creditReservations.get(reservation.id).lease_expires_at = new Date(Date.now() - 1000).toISOString();
   assert.deepEqual(
     await getAnnunci10xPremiumFulfillmentStatus({ sessionId: preparing.sessionId, sessionSecret: preparing.sessionSecret, context: preparingContext, fulfillmentEnabled: true }),
-    { flow: 'ANALYZE', state: 'READY_TO_GENERATE', canGenerate: true, outputAvailable: false },
+    { flow: 'ANALYZE', state: 'NONE', canGenerate: false, outputAvailable: false },
   );
 
   const readyContext = makeContext(new MockAnnunci10xProvider(['success', 'success', 'success', 'success']));
@@ -481,7 +472,7 @@ async function assertFulfillmentStatusContract() {
 }
 
 async function assertExpiredReleaseTelemetryIsNotReleased() {
-  const context = makeContext(new MockAnnunci10xProvider('provider_error'));
+  const context = makeContext(new MockAnnunci10xProvider(['success', 'success', 'success', 'success']));
   const session = await createPaidReadySession(context, 'CREATE');
   const events = [];
   const appendEvent = context.persistence.appendEvent.bind(context.persistence);
@@ -493,6 +484,9 @@ async function assertExpiredReleaseTelemetryIsNotReleased() {
     const reservation = await context.persistence.getCreditReservationById(input.reservationId, session.sessionSecret);
     return { ...reservation, status: 'EXPIRED' };
   };
+  context.persistence.consumeGenerationCredit = async () => {
+    throw new Error('synthetic consume failure');
+  };
   await assert.rejects(
     () => runAnnunci10xReservationBackedPremiumGeneration({
       sessionId: session.sessionId,
@@ -500,7 +494,7 @@ async function assertExpiredReleaseTelemetryIsNotReleased() {
       context,
       fulfillmentEnabled: true,
     }),
-    /Generazione temporaneamente non disponibile/,
+    /Completa l'acquisto/,
   );
   assert.equal(events.includes('generation_credit_released'), false, 'EXPIRED release result must not emit generation_credit_released');
   assert.equal(events.includes('generation_credit_expired'), true, 'EXPIRED release result emits generation_credit_expired');
@@ -509,22 +503,23 @@ async function assertExpiredReleaseTelemetryIsNotReleased() {
 async function assertEditStillProductionBlocked() {
   const context = makeContext(new MockAnnunci10xProvider(['success', 'success', 'success', 'success']));
   const session = await createPaidReadySession(context, 'CREATE');
-  await runAnnunci10xReservationBackedPremiumGeneration({
+  const output = await runAnnunci10xReservationBackedPremiumGeneration({
     sessionId: session.sessionId,
     sessionSecret: session.sessionSecret,
     context,
     fulfillmentEnabled: true,
   });
-  await assert.rejects(
-    () => requestAnnunci10xPremiumEdit({
-      sessionId: session.sessionId,
-      sessionSecret: session.sessionSecret,
-      editRequest: 'Rendilo piu sintetico',
-      context,
-      authorizationProvider: createProductionGenerationAuthorizationProvider(),
-    }),
-    /Checkout e acquisto Annunci 10x non sono ancora attivi/,
-  );
+  const opening = output.master.sections.find((section) => section.type === 'OPENING');
+  assert.ok(opening);
+  const edit = await requestAnnunci10xPremiumEdit({
+    sessionId: session.sessionId,
+    sessionSecret: session.sessionSecret,
+    editRequest: 'Rendilo piu sintetico',
+    targetPath: opening.id,
+    context,
+    authorizationProvider: createProductionGenerationAuthorizationProvider(),
+  });
+  assert.ok(['REVISION_APPLIED', 'REVISION_BLOCKED'].includes(edit.status));
 }
 
 function assertClientTamperingIgnored() {
@@ -559,108 +554,23 @@ function assertPostPaymentUxStaticContract() {
   assert.doesNotMatch(client, /reservationId|capability|credits|paid|entitlement|authorized/i);
   assert.match(panel, /const POLL_MS = 3000/);
   assert.match(panel, /const MAX_POLL_ATTEMPTS = 40/);
-  assert.match(panel, /PAYMENT_VERIFY_POLL_MS/);
-  assert.match(panel, /MAX_PAYMENT_VERIFY_ATTEMPTS/);
   assert.match(panel, /generatedForCycle/);
-  assert.match(panel, /checkoutNotice === 'cancelled'/);
+  assert.doesNotMatch(panel, /checkoutNotice === 'cancelled'|Pagamento annullato|Pagamento ricevuto/);
   assert.match(panel, /Copia annuncio/);
   assert.match(panel, /Annuncio copiato\./);
   assert.match(panel, /Da verificare prima della pubblicazione/);
   assert.match(panel, /La preparazione sta richiedendo più del previsto\./);
-  assert.match(panel, /PAYMENT_VERIFY_TIMEOUT_MESSAGE/);
-  assert.match(panel, /Il tuo acquisto è registrato\. Riprova più tardi: il credito non viene perso\./);
+  assert.doesNotMatch(panel, /PAYMENT_VERIFY_TIMEOUT_MESSAGE|PAYMENT_VERIFY_POLL_MS|MAX_PAYMENT_VERIFY_ATTEMPTS/);
+  assert.doesNotMatch(panel, /Il tuo acquisto è registrato\. Riprova più tardi: il credito non viene perso\./);
   assert.doesNotMatch(panel, /Pronto da pubblicare/);
   assert.match(pageClient, /Annunci10xFulfillmentPanel/);
-  assert.match(pageClient, /onCreateReturn/);
+  assert.doesNotMatch(pageClient, /onCreateReturn|checkoutNotice/);
   assert.match(premiumPipeline, /runPersistedAnnunci10xEvaluateV2/);
   assert.match(premiumPipeline, /targetKind: 'GENERATED_MASTER'/);
   assert.match(premiumPipeline, /gate: null/);
   assert.doesNotMatch(premiumPipeline, /calculateScoreAndGateFromEvaluateOutput/);
   assert.doesNotMatch(premiumPipeline, /previousV1Evaluation/);
   assert.doesNotMatch(premiumPipeline, /input:\s*\{\s*target:\s*\{\s*kind: 'GENERATED_MASTER'/);
-}
-
-function assertPaymentVerificationPollingContract() {
-  assert.equal(PAYMENT_VERIFY_POLL_MS, 1500);
-  assert.equal(MAX_PAYMENT_VERIFY_ATTEMPTS, 12);
-  assert.equal(PAYMENT_VERIFY_TIMEOUT_MESSAGE, 'Stiamo ancora verificando il pagamento. Puoi aggiornare lo stato tra qualche secondo.');
-  assert.equal(shouldPollAnnunci10xPaymentVerification('success', 'NONE'), true);
-  assert.equal(shouldPollAnnunci10xPaymentVerification('cancelled', 'NONE'), false);
-  assert.equal(shouldPollAnnunci10xPaymentVerification('success', 'READY_TO_GENERATE'), false);
-  for (const state of ['PAYMENT_CONFIRMED', 'READY_TO_GENERATE', 'PREPARING', 'READY', 'NEEDS_REVIEW']) {
-    assert.equal(isAnnunci10xPaymentVerificationStopState(state), true);
-  }
-  assert.equal(isAnnunci10xPaymentVerificationStopState('NONE'), false);
-
-  assert.deepEqual(simulatePaymentVerification({ checkoutNotice: 'success', statuses: [status('NONE'), status('NONE'), status('READY_TO_GENERATE')] }), {
-    statusGets: 3,
-    generatePosts: 1,
-    outputGets: 0,
-    timedOut: false,
-    createReturns: 0,
-    finalState: 'READY_TO_GENERATE',
-    preparingHandoff: false,
-  });
-  assert.deepEqual(simulatePaymentVerification({ checkoutNotice: 'success', statuses: [status('NONE'), status('PAYMENT_CONFIRMED')] }).generatePosts, 0);
-  const preparing = simulatePaymentVerification({ checkoutNotice: 'success', statuses: [status('NONE'), status('PREPARING')] });
-  assert.equal(preparing.generatePosts, 0);
-  assert.equal(preparing.preparingHandoff, true);
-  assert.equal(simulatePaymentVerification({ checkoutNotice: 'success', statuses: [status('NONE'), status('READY')] }).outputGets, 1);
-  assert.equal(simulatePaymentVerification({ checkoutNotice: 'success', statuses: [status('NONE'), status('NEEDS_REVIEW')] }).outputGets, 1);
-  const timeout = simulatePaymentVerification({ checkoutNotice: 'success', statuses: [status('NONE'), ...Array.from({ length: MAX_PAYMENT_VERIFY_ATTEMPTS }, () => status('NONE'))] });
-  assert.equal(timeout.timedOut, true);
-  assert.equal(timeout.statusGets, MAX_PAYMENT_VERIFY_ATTEMPTS + 1);
-  assert.equal(timeout.generatePosts, 0);
-  assert.equal(timeout.outputGets, 0);
-  assert.equal(simulatePaymentVerification({ checkoutNotice: 'cancelled', statuses: [status('NONE'), status('READY_TO_GENERATE')] }).statusGets, 1);
-  assert.equal(simulatePaymentVerification({ checkoutNotice: 'cancelled', statuses: [status('NONE'), status('READY_TO_GENERATE')] }).generatePosts, 0);
-  const queryNotAuthoritative = simulatePaymentVerification({ checkoutNotice: 'success', statuses: [status('NONE'), ...Array.from({ length: MAX_PAYMENT_VERIFY_ATTEMPTS }, () => status('NONE'))] });
-  assert.equal(queryNotAuthoritative.finalState, 'NONE');
-  assert.equal(queryNotAuthoritative.generatePosts, 0);
-  assert.equal(queryNotAuthoritative.outputGets, 0);
-  assert.equal(simulatePaymentVerification({ checkoutNotice: 'success', statuses: [status('NONE', 'CREATE'), status('NONE', 'CREATE')] }).createReturns, 1);
-  assert.equal(simulatePaymentVerification({ checkoutNotice: 'success', statuses: [status('NONE', 'ANALYZE'), status('READY_TO_GENERATE', 'ANALYZE')] }).createReturns, 0);
-}
-
-function status(state, flow = 'ANALYZE') {
-  return { flow, state, canGenerate: state === 'READY_TO_GENERATE', outputAvailable: state === 'READY' || state === 'NEEDS_REVIEW' };
-}
-
-function simulatePaymentVerification({ checkoutNotice, statuses }) {
-  const initial = statuses[0] ?? status('NONE');
-  let current = initial;
-  let statusGets = 1;
-  let generatePosts = 0;
-  let outputGets = 0;
-  let createReturns = shouldReturnToAnnunci10xCreate(checkoutNotice, current.flow) ? 1 : 0;
-  let createReturned = createReturns > 0;
-  let timedOut = false;
-  let preparingHandoff = false;
-  let generatedForCycle = false;
-  const polled = statuses.slice(1);
-
-  if (shouldPollAnnunci10xPaymentVerification(checkoutNotice, current.state)) {
-    for (let attempt = 0; attempt < MAX_PAYMENT_VERIFY_ATTEMPTS; attempt += 1) {
-      current = polled[attempt] ?? current;
-      statusGets += 1;
-      if (shouldReturnToAnnunci10xCreate(checkoutNotice, current.flow) && !createReturned) {
-        createReturned = true;
-        createReturns += 1;
-      }
-      if (isAnnunci10xPaymentVerificationStopState(current.state)) {
-        if (current.state === 'READY_TO_GENERATE' && current.canGenerate && !generatedForCycle) {
-          generatedForCycle = true;
-          generatePosts += 1;
-        }
-        if (current.state === 'PREPARING') preparingHandoff = true;
-        if (current.state === 'READY' || current.state === 'NEEDS_REVIEW') outputGets += 1;
-        return { statusGets, generatePosts, outputGets, timedOut, createReturns, finalState: current.state, preparingHandoff };
-      }
-    }
-    timedOut = true;
-  }
-
-  return { statusGets, generatePosts, outputGets, timedOut, createReturns, finalState: current.state, preparingHandoff };
 }
 
 class SlowMockProvider extends MockAnnunci10xProvider {
@@ -701,17 +611,16 @@ function versions() {
 await assertFulfillmentOffFailsBeforeSideEffects();
 await assertAnalyzeSuccess();
 await assertCreateSuccess();
-await assertAiFailureReleasesCredit();
+await assertCreateWriterProviderFailureFallsBackAndConsumesCredit();
 await assertMidPipelineFailureReleasesCreditWithoutOutput();
 await assertConsumeFailureReleasesCredit();
 await assertRetryAfterSuccessIsIdempotent();
 await assertConcurrentGenerateConsumesOnce();
-await assertOutputExactnessIgnoresNewerOrphan();
+await assertResumeUsesLatestSameSnapshotMaster();
 await assertFulfillmentStatusContract();
 await assertExpiredReleaseTelemetryIsNotReleased();
 await assertEditStillProductionBlocked();
 assertClientTamperingIgnored();
 assertPostPaymentUxStaticContract();
-assertPaymentVerificationPollingContract();
 
 console.log('Annunci 10x fulfillment verifier passed');

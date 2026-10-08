@@ -82,6 +82,7 @@ export async function createAnnunci10xCheckoutSession(input: CreateAnnunci10xChe
   const lead = await input.context.persistence.getLead(input.session.sessionId, input.session.sessionSecret);
   if (!lead?.emailVerifiedAt) throw new Annunci10xPublicError('EMAIL_VERIFICATION_REQUIRED', 'Verifica la tua email per completare l acquisto.', 403);
   if (!isAnnunci10xCheckoutEnabled(env)) throw new Annunci10xPublicError('CHECKOUT_DISABLED', 'Checkout Annunci 10x temporaneamente non disponibile.', 503);
+  if (offer.price.amountCents <= 0) throw new Annunci10xPublicError('CHECKOUT_DISABLED', 'Checkout Annunci 10x non richiesto per questa offerta.', 503);
   if (offerCode === 'AGENT_RECRUITER') {
     const entitlements = await input.context.persistence.getEffectiveEntitlements(input.session.sessionId, input.session.sessionSecret);
     if (entitlements.agentRecruiterAccess) throw paymentInvalid();

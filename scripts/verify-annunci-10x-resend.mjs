@@ -77,9 +77,9 @@ assert.match(body.text, /Score, miglioramento e creazione dell’annuncio sono g
 assert.match(body.text, /Guida Annunci 10X è separata e costa 49 €/);
 assert.match(body.html, /Score, miglioramento e creazione dell’annuncio sono gratuiti/);
 assert.match(body.html, /Guida Annunci 10X è separata e costa 49 €/);
-for (const forbidden of ['7 €', '9 €', 'newsletter', 'marketing']) {
-  assert.doesNotMatch(body.text, new RegExp(escapeRegExp(forbidden), 'i'), `OTP email text must not include ${forbidden}`);
-  assert.doesNotMatch(body.html, new RegExp(escapeRegExp(forbidden), 'i'), `OTP email HTML must not include ${forbidden}`);
+for (const forbidden of [/(\D|^)7 €/i, /(\D|^)9 €/i, /newsletter/i, /marketing/i]) {
+  assert.doesNotMatch(body.text, forbidden, `OTP email text must not include ${forbidden}`);
+  assert.doesNotMatch(body.html, forbidden, `OTP email HTML must not include ${forbidden}`);
 }
 
 captured.length = 0;

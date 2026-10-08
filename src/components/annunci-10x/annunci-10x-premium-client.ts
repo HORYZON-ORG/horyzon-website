@@ -2,7 +2,7 @@
 
 export type PremiumFulfillmentState = 'NONE' | 'READY_TO_GENERATE' | 'PREPARING' | 'READY' | 'NEEDS_REVIEW';
 export type PremiumFulfillmentFlow = 'ANALYZE' | 'CREATE' | null;
-export type PremiumSection = { id: string; title: string; body: string };
+export type PremiumSection = { id: string; type?: string; title: string; body: string };
 export type PremiumChannelVariant = { channel: string; sections: PremiumSection[] } | null;
 export const ANNUNCI10X_FULFILLMENT_REFRESH_EVENT = 'annunci10x:fulfillment-refresh';
 export interface PremiumFulfillmentStatus {

@@ -36,8 +36,8 @@ for (const item of legacyCatalog) {
 
 const offerCatalog = getAnnunci10xOfferCatalog();
 assert.deepEqual(offerCatalog.map((item) => item.offerCode), ['ANNUNCI10X_REWRITE', 'ANNUNCI10X_CREATE', 'AGENT_RECRUITER']);
-assert.deepEqual(offerCatalog.map((item) => item.price.amountCents), [700, 700, 4900]);
-assert.deepEqual(offerCatalog.map((item) => item.price.display), ['7,00 EUR', '7,00 EUR', '49,00 EUR']);
+assert.deepEqual(offerCatalog.map((item) => item.price.amountCents), [0, 0, 4900]);
+assert.deepEqual(offerCatalog.map((item) => item.price.display), ['Gratis', 'Gratis', '49,00 EUR']);
 assert.deepEqual(offerCatalog.map((item) => item.displayName), ['Annuncio 10x', 'Annuncio 10x', 'Agent Recruiter']);
 assert.deepEqual(offerCatalog.find((item) => item.offerCode === 'ANNUNCI10X_REWRITE').capabilities.map((item) => item.capability), ['REWRITE_CREDIT']);
 assert.deepEqual(offerCatalog.find((item) => item.offerCode === 'ANNUNCI10X_CREATE').capabilities.map((item) => item.capability), ['CREATE_CREDIT']);
@@ -56,7 +56,7 @@ assert.deepEqual(
 );
 assert.deepEqual(
   buildAnnunci10xOffers({ subject, entitlements: none, flow: 'ANALYZE', journeyState: 'PRODUCT_PAGE', checkoutEnabled: true, identityVerified: true }).map((offer) => [offer.offerCode, offer.purchaseEnabled]),
-  [['ANNUNCI10X_REWRITE', true]],
+  [['ANNUNCI10X_REWRITE', false]],
 );
 assert.deepEqual(
   buildAnnunci10xOffers({ subject, entitlements: none, flow: 'CREATE', journeyState: 'COLLECTING', checkoutEnabled: true, identityVerified: true }).map((offer) => offer.offerCode),
@@ -65,7 +65,7 @@ assert.deepEqual(
 assert.deepEqual(
   buildAnnunci10xOffers({ subject, entitlements: none, flow: 'ANALYZE', journeyState: 'PRODUCT_PAGE', checkoutEnabled: true, identityVerified: true, agentRecruiterEnabled: true }).map((offer) => [offer.offerCode, offer.purchaseEnabled]),
   [
-    ['ANNUNCI10X_REWRITE', true],
+    ['ANNUNCI10X_REWRITE', false],
     ['AGENT_RECRUITER', true],
   ],
 );
@@ -100,7 +100,7 @@ assert.equal(resolved.version, ANNUNCI10X_COMMERCIAL_VERSION);
 assert.equal(resolved.checkoutEnabled, false);
 assert.equal(resolved.pricingStatus, 'FIXED');
 assert.deepEqual(resolved.availableOffers.map((offer) => offer.offerCode), ['ANNUNCI10X_REWRITE']);
-assert.equal(resolved.availableOffers[0].price.amountCents, 700);
+assert.equal(resolved.availableOffers[0].price.amountCents, 0);
 assert.equal(resolved.availableOffers[0].purchaseEnabled, false);
 
 assert.equal(isVerifiedCommercialSessionClaim(undefined, undefined), true);

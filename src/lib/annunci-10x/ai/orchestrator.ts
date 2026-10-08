@@ -12,11 +12,14 @@ import type {
   Annunci10xAiOutputByOperation,
   Annunci10xEvaluateOutput,
   Annunci10xGenerateOutput,
+  Annunci10xJsonSchema,
   Annunci10xValidateOutput,
 } from './schemas.ts';
 import { validateAiOutputForOperation } from './schemas.ts';
 
-export interface Annunci10xRunAiTaskInput<T extends AiOperationType = AiOperationType> {
+type Annunci10xOutputValidator<TOutput> = (value: unknown) => TOutput;
+
+export interface Annunci10xRunAiTaskInput<T extends AiOperationType = AiOperationType, TOutput = Annunci10xAiOutputByOperation[T]> {
   sessionId: string;
   sessionSecret: string;
   operationType: T;
@@ -25,12 +28,16 @@ export interface Annunci10xRunAiTaskInput<T extends AiOperationType = AiOperatio
   idempotencyInputIdentityOverride?: string;
   promptVersionOverride?: string;
   systemPromptOverride?: string;
+  outputSchemaOverride?: Annunci10xJsonSchema;
+  outputSchemaNameOverride?: string;
+  validateOutputOverride?: Annunci10xOutputValidator<TOutput>;
   model?: string;
   timeoutMs?: number;
+  schemaRepairRetry?: boolean;
 }
 
-export interface Annunci10xRunAiTaskResult<T extends AiOperationType = AiOperationType> {
-  output: Annunci10xAiOutputByOperation[T];
+export interface Annunci10xRunAiTaskResult<T extends AiOperationType = AiOperationType, TOutput = Annunci10xAiOutputByOperation[T]> {
+  output: TOutput;
   operation: PersistedAiOperation;
   provider: Annunci10xAiProviderResult['provider'];
   model: string;
@@ -61,11 +68,14 @@ export class Annunci10xAiOrchestrator {
     this.env = config.env ?? process.env;
   }
 
-  async runTask<T extends AiOperationType>(input: Annunci10xRunAiTaskInput<T>): Promise<Annunci10xRunAiTaskResult<T>> {
+  async runTask<T extends AiOperationType, TOutput = Annunci10xAiOutputByOperation[T]>(input: Annunci10xRunAiTaskInput<T, TOutput>): Promise<Annunci10xRunAiTaskResult<T, TOutput>> {
     const prompt = getAnnunci10xPrompt(input.operationType);
     const promptVersion = input.promptVersionOverride ?? prompt.version;
     const model = input.model ?? getAnnunci10xModelForOperation(input.operationType, this.env);
     const projectedInput = projectAnnunci10xAiInput(input.operationType, input.input);
+    const outputSchema = input.outputSchemaOverride ?? prompt.outputSchema;
+    const outputSchemaName = input.outputSchemaNameOverride ?? `annunci10x_${input.operationType.toLowerCase()}`;
+    const validateOutput = input.validateOutputOverride ?? ((value: unknown) => validateAiOutputForOperation(input.operationType, value) as TOutput);
     const idempotencyKey = createAnnunci10xAiIdempotencyKey({
       sessionId: input.sessionId,
       operationType: input.operationType,
@@ -84,7 +94,7 @@ export class Annunci10xAiOrchestrator {
     });
 
     if (operation.status === 'SUCCEEDED' && operation.outputPayload?.output !== undefined) {
-      const output = validateAiOutputForOperation(input.operationType, operation.outputPayload.output) as Annunci10xAiOutputByOperation[T];
+      const output = validateOutput(operation.outputPayload.output);
       return {
         output,
         operation,
@@ -114,7 +124,7 @@ export class Annunci10xAiOrchestrator {
     }
 
     try {
-      const attempt = await this.executeAndValidate(input.operationType, input.systemPromptOverride ?? prompt.instructions, projectedInput, prompt.outputSchema, model, timeoutMs, operation.id);
+      const attempt = await this.executeAndValidate(input.operationType, input.systemPromptOverride ?? prompt.instructions, projectedInput, outputSchema, outputSchemaName, validateOutput, model, timeoutMs, operation.id, input.schemaRepairRetry ?? true);
       operation = await this.persistence.completeAiOperation({
         operationId: operation.id,
         sessionSecret: input.sessionSecret,
@@ -131,7 +141,7 @@ export class Annunci10xAiOrchestrator {
         },
       });
       return {
-        output: attempt.output as Annunci10xAiOutputByOperation[T],
+        output: attempt.output,
         operation,
         provider: attempt.providerResult.provider,
         model,
@@ -151,40 +161,53 @@ export class Annunci10xAiOrchestrator {
     }
   }
 
-  private async executeAndValidate(
+  private async executeAndValidate<TOutput>(
     operationType: AiOperationType,
     systemPrompt: string,
     input: Record<string, unknown>,
-    outputSchema: Record<string, unknown>,
+    outputSchema: Annunci10xJsonSchema,
+    outputSchemaName: string,
+    validateOutput: Annunci10xOutputValidator<TOutput>,
     model: string,
     timeoutMs: number,
     operationId: string,
-  ): Promise<{ output: Annunci10xAiOutputByOperation[keyof Annunci10xAiOutputByOperation]; providerResult: Annunci10xAiProviderResult; retryCount: 0 | 1 }> {
+    schemaRepairRetry: boolean,
+  ): Promise<{ output: TOutput; providerResult: Annunci10xAiProviderResult; retryCount: 0 | 1 }> {
     const first = await this.provider.executeStructuredTask({
       operationType,
       systemPrompt,
       input,
       outputSchema: outputSchema as never,
-      outputSchemaName: `annunci10x_${operationType.toLowerCase()}`,
+      outputSchemaName,
       model,
       timeoutMs,
       operationId,
     });
     try {
-      return { output: validateAiOutputForOperation(operationType, first.output), providerResult: first, retryCount: 0 };
+      return { output: validateOutput(first.output), providerResult: first, retryCount: 0 };
     } catch (firstError) {
+      if (!schemaRepairRetry) {
+        throw new Annunci10xAiError('AI_INVALID_OUTPUT', `Annunci 10x AI output failed schema validation: ${(firstError as Error).message}`, {
+          retryable: false,
+          details: {
+            operationType,
+            firstValidationError: firstError instanceof Error ? firstError.message : String(firstError),
+            firstOutputDiagnostics: structuredOutputDiagnostics(first.output),
+          },
+        });
+      }
       const second = await this.provider.executeStructuredTask({
         operationType,
         systemPrompt: `${systemPrompt}\n\nSchema repair: return only a valid JSON object for the provided schema. Do not add explanations.`,
         input,
         outputSchema: outputSchema as never,
-        outputSchemaName: `annunci10x_${operationType.toLowerCase()}`,
+        outputSchemaName,
         model,
         timeoutMs,
         operationId,
       });
       try {
-        return { output: validateAiOutputForOperation(operationType, second.output), providerResult: second, retryCount: 1 };
+        return { output: validateOutput(second.output), providerResult: second, retryCount: 1 };
       } catch (secondError) {
         throw new Annunci10xAiError('AI_INVALID_OUTPUT', `Annunci 10x AI output failed schema validation after one retry: ${(firstError as Error).message}`, {
           retryable: false,

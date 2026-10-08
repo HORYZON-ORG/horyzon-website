@@ -192,13 +192,9 @@ function OutputBlock({
   const [instruction, setInstruction] = useState('');
   const [revisionMessage, setRevisionMessage] = useState('');
   const [revising, setRevising] = useState(false);
-
-  useEffect(() => {
-    if (selectedSectionId && !sections.some((section) => section.id === selectedSectionId)) {
-      setSelectedSectionId(null);
-      setInstruction('');
-    }
-  }, [sections, selectedSectionId]);
+  const activeSelectedSectionId = selectedSectionId && sections.some((section) => section.id === selectedSectionId)
+    ? selectedSectionId
+    : null;
 
   async function submitRevision(sectionId: string) {
     const request = instruction.trim();
@@ -236,18 +232,18 @@ function OutputBlock({
 
     {canRevise && !needsReview && <div className={styles.revisionIntro}>
       <div>
-        <strong>Rifiniscilo come vuoi.</strong>
-        <p>Hai fino a 3 modifiche mirate incluse. Seleziona una sezione e dimmi cosa vuoi cambiare: i fatti confermati restano protetti.</p>
+        <strong>Rifinisci il modo in cui è scritto.</strong>
+        <p>Hai fino a 3 modifiche mirate incluse sulle sezioni descrittive. Questo controllo non cambia i fatti confermati del ruolo.</p>
       </div>
       <span className={styles.revisionCounter} data-complete={revisionRemaining === 0}>{revisionCount}/{revisionLimit}</span>
     </div>}
 
     <div className={styles.outputSections}>{sections.map((section) => {
-      const isEditing = selectedSectionId === section.id;
+      const isEditing = activeSelectedSectionId === section.id;
       return <article key={section.id} className={isEditing ? styles.outputSectionEditing : undefined}>
         <div className={styles.outputSectionHead}>
           <h3>{section.title}</h3>
-          {canRevise && !needsReview && revisionRemaining > 0 && <button
+          {canRevise && !needsReview && revisionRemaining > 0 && isRevisableSection(section) && <button
             type="button"
             className={styles.sectionEditButton}
             aria-expanded={isEditing}
@@ -294,6 +290,10 @@ function outputSections(output: PremiumOutput | null, preferMaster = false): Pre
   if (!output) return [];
   if (preferMaster) return output.master.sections;
   return output.channelVariant?.sections?.length ? output.channelVariant.sections : output.master.sections;
+}
+
+function isRevisableSection(section: PremiumSection): boolean {
+  return section.type === 'OPENING' || section.type === 'RESPONSIBILITIES';
 }
 
 function generationMessage(cause: unknown): { message: string; state?: PremiumFulfillmentState; refetch?: boolean; retry?: boolean } {

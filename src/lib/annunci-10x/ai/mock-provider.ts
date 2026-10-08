@@ -73,7 +73,10 @@ function makeMockOutput(request: Annunci10xAiProviderRequest, mode: MockAnnunci1
     };
   }
   if (request.operationType === 'STRATEGY') return mockStrategy();
-  if (request.operationType === 'GENERATE') return mockGenerate(mode, request.input);
+  if (request.operationType === 'GENERATE') {
+    if (request.outputSchemaName === 'annunci10x_editorial_core') return mockEditorialCoreGenerate(mode, request.input);
+    return mockGenerate(mode, request.input);
+  }
   if (request.operationType === 'VALIDATE') {
     if (mode === 'unsupported_claim' || /leader di mercato|50000|50,000/i.test(stringifyInput(request.input))) {
       return {
@@ -99,6 +102,24 @@ function makeMockOutput(request: Annunci10xAiProviderRequest, mode: MockAnnunci1
 
 function mockRevision(input: unknown): unknown {
   const targetId = readStringPath(input, ['targetSection', 'id']);
+  const previousBody = readStringPath(input, ['targetSection', 'previousBody']);
+  const targetType = readStringPath(input, ['targetSection', 'type']) || 'OPENING';
+  const targetTitle = readStringPath(input, ['targetSection', 'title']) || 'Sezione';
+  const editRequest = readStringPath(input, ['editRequest']);
+  if (targetId && previousBody) {
+    const safeFacts = readFactArray(input, ['revisionView', 'allowedFacts']);
+    const body = /non cambiare nulla|nessuna modifica|mantieni identico/i.test(editRequest)
+      ? previousBody
+      : /stipendio|35\.?000|35000/i.test(editRequest)
+        ? `${previousBody}\n\nLo stipendio e 35.000 euro.`
+        : `${previousBody}\n\n${safeFacts.join(' ') || previousBody}`;
+    return {
+      revisedSections: [mockSection(targetId, targetType, targetTitle, body, [])],
+      changedSectionIds: [targetId],
+      changeSummary: 'Targeted section-local revision preserving confirmed facts.',
+      requiresValidation: true,
+    };
+  }
   if (targetId && typeof input === 'object' && input !== null) {
     const currentMaster = (input as Record<string, unknown>).currentMaster;
     const sections = typeof currentMaster === 'object' && currentMaster !== null
@@ -152,6 +173,9 @@ function mockStrategy(): unknown {
 }
 
 function mockGenerate(mode: MockAnnunci10xProviderMode, input: unknown): unknown {
+  const candidateWriterView = readRecordPath(input, ['candidateWriterView']);
+  if (Object.keys(candidateWriterView).length > 0) return mockHybridGenerate(mode, candidateWriterView);
+
   const roleCard = readRecordPath(input, ['roleCard']);
   const title = readStringPath(input, ['roleCard', 'title', 'value']) || 'Addetto pulizie';
   const application = readStringPath(input, ['roleCard', 'applicationInstructions', 'value']);
@@ -207,6 +231,67 @@ function mockGenerate(mode: MockAnnunci10xProviderMode, input: unknown): unknown
     sections,
     fullText: body,
     sourcePaths: ['title', 'responsibilities', ...(application ? ['applicationInstructions'] : [])],
+  };
+}
+
+function mockHybridGenerate(mode: MockAnnunci10xProviderMode, view: Record<string, unknown>): unknown {
+  const role = readViewFactValue(view, ['role']) || 'Ruolo da pubblicare';
+  const companyContext = readViewFactValue(view, ['companyContext']);
+  const outcomes = readViewFactValues(view, ['outcomes']);
+  const responsibilities = readViewFactValues(view, ['responsibilities']);
+  const required = readViewFactValues(view, ['required']);
+  const preferred = readViewFactValues(view, ['preferred']);
+  const attractionEvidence = readViewFactValues(view, ['attractionEvidence']);
+  const operatingContext = readViewFactValue(view, ['operatingContext']);
+  const autonomy = readViewFactValue(view, ['autonomy']);
+  const unexpectedEvents = readViewFactValue(view, ['unexpectedEvents']);
+  const opening = mode === 'unsupported_claim'
+    ? `${role} con buoni pasto e benefit non confermati.`
+    : [
+      companyContext,
+      outcomes.length ? `Il contributo atteso e ${joinSentenceList(outcomes)}.` : '',
+      attractionEvidence.length ? `L'offerta valorizza ${joinSentenceList(attractionEvidence)}.` : '',
+    ].filter(Boolean).join(' ');
+  const responsibilityBody = [
+    responsibilities.length ? `Ti occuperai di ${joinSentenceList(responsibilities)}.` : '',
+    operatingContext,
+    autonomy,
+    unexpectedEvents,
+  ].filter(Boolean).join(' ');
+  const requirementBody = [
+    required.length ? `Sono indispensabili ${joinSentenceList(required)}.` : '',
+    preferred.length ? `Sono elementi preferenziali ${joinSentenceList(preferred)}.` : '',
+  ].filter(Boolean).join(' ');
+  const sections = [
+    mockSection('section-opening', 'OPENING', 'Il ruolo', opening || `${role}: un ruolo basato su fatti confermati.`, viewFactIds(view, ['companyContext', 'outcomes', 'attractionEvidence'])),
+    mockSection('section-responsibilities', 'RESPONSIBILITIES', 'Cosa farai', responsibilityBody || 'Le attivita sono quelle confermate durante il percorso.', viewFactIds(view, ['responsibilities', 'operatingContext', 'autonomy', 'unexpectedEvents'])),
+    mockSection('section-requirements', 'REQUIREMENTS', 'Cosa cerchiamo', requirementBody || 'Cerchiamo una persona coerente con i requisiti confermati.', viewFactIds(view, ['required', 'preferred'])),
+  ];
+  return {
+    generatedAd: {
+      id: 'master-1',
+      sessionId: 'session-1',
+      kind: 'MASTER',
+      sections,
+      sourceOfTruth: true,
+      generatedAt: '2026-09-22T00:00:00.000Z',
+      promptVersion: ANNUNCI10X_PROMPT_PACK_VERSION,
+    },
+    title: role,
+    metadata: { language: 'it' },
+    sections,
+    fullText: sections.map((section) => typeof section === 'object' && section !== null ? String((section as Record<string, unknown>).body ?? '') : '').join('\n\n'),
+    sourcePaths: ['candidateWriterView'],
+  };
+}
+
+function mockEditorialCoreGenerate(mode: MockAnnunci10xProviderMode, input: unknown): unknown {
+  const view = readRecordPath(input, ['candidateWriterView']);
+  const legacy = mockHybridGenerate(mode, view) as { generatedAd?: { sections?: Array<Record<string, unknown>> } };
+  const sections = legacy.generatedAd?.sections ?? [];
+  return {
+    opening: String(sections.find((section) => section.type === 'OPENING')?.body ?? 'Apertura basata sui fatti confermati.'),
+    responsibilities: String(sections.find((section) => section.type === 'RESPONSIBILITIES')?.body ?? 'Responsabilita basate sui fatti confermati.'),
   };
 }
 
@@ -317,6 +402,35 @@ function cleanOfferFact(value: string): string {
     .replace(/\bFormazione e crescita concreta\s*:\s*/gi, '')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function readViewFactValue(input: unknown, path: readonly string[]): string {
+  const value = path.reduce<unknown>((current, key) => (
+    typeof current === 'object' && current !== null ? (current as Record<string, unknown>)[key] : undefined
+  ), input);
+  return typeof value === 'object' && value !== null && typeof (value as Record<string, unknown>).value === 'string'
+    ? String((value as Record<string, unknown>).value).trim()
+    : '';
+}
+
+function readViewFactValues(input: unknown, path: readonly string[]): string[] {
+  const value = path.reduce<unknown>((current, key) => (
+    typeof current === 'object' && current !== null ? (current as Record<string, unknown>)[key] : undefined
+  ), input);
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => readViewFactValue({ item }, ['item'])).filter(Boolean);
+}
+
+function viewFactIds(input: unknown, paths: readonly string[]): string[] {
+  const ids: string[] = [];
+  for (const path of paths) {
+    const value = typeof input === 'object' && input !== null ? (input as Record<string, unknown>)[path] : undefined;
+    const values = Array.isArray(value) ? value : [value];
+    for (const item of values) {
+      if (typeof item === 'object' && item !== null && typeof (item as Record<string, unknown>).id === 'string') ids.push(String((item as Record<string, unknown>).id));
+    }
+  }
+  return [...new Set(ids)];
 }
 
 function mockSection(id: string, type: string, title: string, body: string, sourceFactIds: string[]): unknown {

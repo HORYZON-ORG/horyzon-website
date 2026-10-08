@@ -89,6 +89,11 @@ export interface Annunci10xGenerateOutput {
   sourcePaths: string[];
 }
 
+export interface Annunci10xEditorialCoreOutput {
+  opening: string;
+  responsibilities: string;
+}
+
 export interface Annunci10xValidateOutput {
   claims: {
     id: string;
@@ -272,6 +277,11 @@ export const ANNUNCI10X_AI_OUTPUT_SCHEMAS = {
   }),
 } as const satisfies Record<string, Annunci10xJsonSchema>;
 
+export const ANNUNCI10X_EDITORIAL_CORE_OUTPUT_SCHEMA = objectSchema(['opening', 'responsibilities'], {
+  opening: stringSchema(),
+  responsibilities: stringSchema(),
+}) as Annunci10xJsonSchema;
+
 export function validateAiOutputForOperation(operationType: keyof Annunci10xAiOutputByOperation, value: unknown): Annunci10xAiOutputByOperation[keyof Annunci10xAiOutputByOperation] {
   if (operationType === 'PRECHECK') return validatePrecheckOutput(value);
   if (operationType === 'EXTRACT') return validateExtractOutput(value);
@@ -357,6 +367,18 @@ export function validateGenerateOutput(value: unknown): Annunci10xGenerateOutput
     sections: ad.value.sections,
     fullText: buildGeneratedAdText(ad.value),
   } as unknown as Annunci10xGenerateOutput;
+}
+
+export function validateEditorialCoreOutput(value: unknown): Annunci10xEditorialCoreOutput {
+  const record = requireRecord(value, 'editorialCore');
+  const allowed = new Set(['opening', 'responsibilities']);
+  for (const key of Object.keys(record)) {
+    if (!allowed.has(key)) throw new Error(`editorialCore.${key} is not allowed`);
+  }
+  return {
+    opening: requireString(record.opening, 'editorialCore.opening'),
+    responsibilities: requireString(record.responsibilities, 'editorialCore.responsibilities'),
+  };
 }
 
 export function validateValidateOutput(value: unknown): Annunci10xValidateOutput {

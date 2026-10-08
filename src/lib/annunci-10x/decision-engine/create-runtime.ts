@@ -27,6 +27,7 @@ export interface Annunci10xDecisionEngineRepairInput extends Annunci10xDecisionE
 
 export interface Annunci10xDecisionEngineWriterResult {
   master: GeneratedAd;
+  providerCallCount?: 0 | 1 | 2;
 }
 
 export interface Annunci10xDecisionEngineWriter {
@@ -126,7 +127,7 @@ export async function runAnnunci10xDecisionEngineCreateRuntime(
       sanitizedInitialMaster,
       initialDecisionReport,
       finalMaster: sanitizedInitialMaster,
-      providerCallCount: 1,
+      providerCallCount: generated.providerCallCount ?? 1,
     });
   }
 
@@ -139,7 +140,7 @@ export async function runAnnunci10xDecisionEngineCreateRuntime(
       sanitizedInitialMaster,
       initialDecisionReport,
       finalDecisionReport: initialDecisionReport,
-      providerCallCount: 1,
+      providerCallCount: generated.providerCallCount ?? 1,
       blockedReason: initialDecisionReport.hardFailures.join('; ') || 'Decision Engine blocked generated master.',
     });
   }
@@ -167,7 +168,7 @@ export async function runAnnunci10xDecisionEngineCreateRuntime(
       repairResult: repaired.master,
       sanitizedRepairResult,
       finalMaster: sanitizedRepairResult,
-      providerCallCount: 2,
+      providerCallCount: repaired.providerCallCount ?? 2,
     });
   }
 
@@ -182,7 +183,7 @@ export async function runAnnunci10xDecisionEngineCreateRuntime(
     repairResult: repaired.master,
     sanitizedRepairResult,
     finalDecisionReport,
-    providerCallCount: 2,
+    providerCallCount: repaired.providerCallCount ?? 2,
     blockedReason: finalDecisionReport.hardFailures.join('; ') || 'Decision Engine repair did not clear hard factual issues.',
   });
 }
@@ -436,7 +437,7 @@ function readyResult(input: {
   repairResult?: GeneratedAd | null;
   sanitizedRepairResult?: GeneratedAd | null;
   finalMaster: GeneratedAd;
-  providerCallCount: 1 | 2;
+  providerCallCount: 0 | 1 | 2;
 }): Annunci10xDecisionEngineCreateRuntimeResult {
   const finalDecisionReport = runAnnunci10xHardFactsCheck(input.truthLedger, masterText(input.finalMaster));
   return {
