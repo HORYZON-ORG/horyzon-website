@@ -163,8 +163,8 @@ export interface Annunci10xNarrativeSufficiencyResult {
   questions: Annunci10xNarrativeSufficiencyQuestion[];
 }
 
-const DECISION_ENGINE_WRITER_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-writer.v5.5`;
-const DECISION_ENGINE_REPAIR_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-repair.v3.5`;
+const DECISION_ENGINE_WRITER_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-writer.v5.6`;
+const DECISION_ENGINE_REPAIR_PROMPT_VERSION = `${ANNUNCI10X_PROMPT_PACK_VERSION_V2}.decision-engine-repair.v3.6`;
 
 const DECISION_ENGINE_WRITER_PROMPT = [
   'Sei il Writer Annunci 10x. Scrivi copy recruiting finale, non materiale da rielaborare.',
@@ -189,20 +189,24 @@ const DECISION_ENGINE_WRITER_PROMPT = [
   'Le COMPOSITION tra facts possono collegare due fatti confermati con connettivi neutri, ma non possono inventare scopo, causa, conseguenza, sequenza o risultato. Evita formule come "per garantire", "per assicurare", "in modo che", "cosi da", "affinche", "per ripristinare", "per migliorare" salvo che quella finalita sia esplicitamente confermata.',
   'communicationStrategy, RoleProfile e attractivenessEvidence orientano priorita e tono ma non autorizzano nuovi fatti operativi. Non trasformare parole strategiche come routine, pianificato, stabilita, onboarding, flusso di lavoro o complessita in claim pubblici se non sono fatti confermati.',
   'I facts TRAINABLE restano interni e non devono comparire nel Master. La presenza separata di un affiancamento o di un elemento formativo pubblico non autorizza a dire che specifiche procedure interne verranno insegnate, illustrate o apprese durante quell affiancamento.',
+  'TRAINABLE significa anche: non parafrasare procedure interne come procedure operative, procedure aziendali, modalita interne, organizzazione specifica, istruzioni operative o formule equivalenti. Se quel concetto non esiste come fact pubblico indipendente, deve restare assente dal Master.',
   'Non derivare entita tecniche o operative piu specifiche da facts generici: frontend non autorizza componenti UI; PostgreSQL non autorizza coerenza dei dati; ricezione merce non autorizza consegne; code review non autorizza workflow o processi di rilascio.',
+  'Preserva gli interlocutori nominati esattamente nel loro perimetro. Se i facts dicono autisti e ufficio ordini, non riassumerli come altri reparti, team logistico o colleghi; se dicono amministrazione e commerciale, non trasformarli in altri team o funzioni aziendali.',
   'Quando un elemento attrattivo pubblico e gia espresso in condizioni o requisiti, non aggiungere etichette come "Elementi di attrattivita". Integralo naturalmente o omettilo se sarebbe solo ripetizione.',
+  'Non usare mai etichette candidate-facing come "Elementi segnalati", "Elementi concreti da valorizzare", "Attrattivita dichiarata" o formule simili. Se un attraction fact distinto e davvero utile, trasformalo in una frase naturale nel punto adatto; se duplica una condizione gia presente, omettilo.',
   'Non inventare sequenze, frequenze o una giornata tipo. Evita "ogni giorno", "quotidianamente", "spesso", "regolarmente" se non confermati.',
   'REQUIREMENTS: scrivi un breve paragrafo di fit candidato. Deve aiutare una persona a capire se si riconosce nel ruolo, non sembrare un elenco requisiti copiato da un modulo. Distingui chiaramente obbligatori e preferenziali, ma usa prosa naturale quando possibile.',
   'Evita formule da form come "Sono richiesti:" o "Requisito preferenziale:" se puoi mantenere la stessa distinzione con frasi come "Per questo ruolo servono..." e "E gradita, ma non obbligatoria,...". Mantieni comunque espliciti tutti i concetti REQUIRED canonici.',
   'I requisiti REQUIRED devono restare semanticamente e lessicalmente riconoscibili: se il Truth Ledger dice ascolto, chiarezza nella comunicazione, pazienza, organizzazione, precisione e capacita di gestire piu richieste, mantieni espliciti proprio questi concetti nella frase. Non trasformare pazienza in paziente, organizzazione in organizzata o precisione in precisa se cosi il requisito canonico smette di essere visibile.',
   'Collega soft skill e requisiti alle attivita concrete che li rendono rilevanti. Non limitarti a un elenco di aggettivi.',
   'CONDITIONS: sii compatto e preciso. Preserva esattamente sede, modalita, orario, contratto, compenso, turni e reperibilita nel significato e nei numeri. Organizzale in righe brevi e facilmente scannerizzabili; non trasformare questa sezione in un paragrafo denso se ci sono piu condizioni distinte.',
+  'In CONDITIONS usa solo etichette concrete e utili al candidato: Sede, Modalita, Orario, Contratto, Turni, Reperibilita, Compenso. Non creare righe contenitore come "Elementi segnalati". Se il valore canonico del compenso inizia gia con "Retribuzione", evita "Retribuzione: Retribuzione...": usa "Compenso: <valore canonico>" oppure scrivi il valore canonico da solo.',
   'APPLICATION: se il percorso e generico, usa una CTA neutra e umana. Non inventare CV, email, form, colloqui, tempi di risposta o step di selezione.',
   'Ogni fatto importante va detto una volta nel punto migliore. Se una sezione ripete contenuto gia presente, fondila nella sezione piu naturale e ometti quella ridondante.',
   'Non pubblicare TRAINABLE, vincoli interni, dati mancanti o frasi come non dichiarato/non specificato. Omettili.',
   'Non aggiungere processi, strumenti, benefit, condizioni, canali, esiti, livelli contrattuali, step di selezione, frequenze o conseguenze operative non autorizzati.',
   'Evita slogan generici: ambiente dinamico, opportunita unica, crescita, team fantastico, leader di mercato, fare la differenza, ruolo strategico, se non supportati.',
-  'Evita titoli o formule interne come Missione, Contesto operativo, Benefit / Attrattivita dichiarati, Requisiti obbligatori, Requisiti preferenziali, Elementi concreti da valorizzare.',
+  'Evita titoli o formule interne come Missione, Contesto operativo, Benefit / Attrattivita dichiarati, Requisiti obbligatori, Requisiti preferenziali, Elementi concreti da valorizzare, Elementi segnalati.',
   'Preferisci titoli naturali: Il ruolo, Cosa farai, Cosa cerchiamo, Condizioni di lavoro, Candidatura.',
   'Prima di finalizzare, rileggi come candidato: deve sembrare un annuncio gia pubblicato da un azienda seria, non una trascrizione dei campi raccolti. Chiediti se una persona puo immaginare il lavoro e decidere se fa per lei senza dover interpretare linguaggio interno o burocratico.',
   'Se una frase suona come descrizione di database, campo form o tassonomia HR, riscrivila in linguaggio umano mantenendo gli stessi facts.',
@@ -221,7 +225,9 @@ const DECISION_ENGINE_REPAIR_PROMPT = [
   'Se hardFailures include requiredRequirements, ripristina i requisiti REQUIRED con formulazione naturale ma mantenendo espliciti i concetti canonici del Truth Ledger; non sostituire nomi come pazienza, organizzazione o precisione soltanto con aggettivi.',
   'Se hardFailures segnala responsibilityExpansion, riporta verbo e oggetto al livello esatto del fatto: gestita non significa risolta/chiusa/portata a soluzione; servizi non significa soluzioni/offerte/prodotti; richieste amministrative semplici non significa processi o pratiche amministrative.',
   'Nel repair elimina anche scopi, conseguenze e causalita non confermati: rimuovi "per garantire/per assicurare/in modo che/cosi da" quando il relativo risultato non e un fact. Non compensare con nuove parafrasi creative.',
-  'Non pubblicare TRAINABLE facts durante il repair e non collegarli a onboarding, affiancamento o formazione salvo supporto esplicito del Truth Ledger.',
+  'Non pubblicare TRAINABLE facts durante il repair e non collegarli a onboarding, affiancamento o formazione salvo supporto esplicito del Truth Ledger. Rimuovi anche sinonimi derivati come procedure operative/aziendali, modalita interne, organizzazione specifica o istruzioni operative quando provengono solo da TRAINABLE.',
+  'Durante il repair conserva gli interlocutori canonici esatti e rimuovi generalizzazioni come altri reparti/team se il Truth Ledger nomina soggetti specifici.',
+  'Durante il repair elimina etichette interne come Elementi segnalati e correggi duplicazioni del tipo Retribuzione: Retribuzione senza alterare il valore canonico.',
   'Non trasformare il Master in una checklist o in una scheda HR. Non accorciare automaticamente il resto del Master e non introdurre nuovi fatti.',
   'Restituisci soltanto le sezioni modificate nello schema REVISE.',
 ].join('\n');
