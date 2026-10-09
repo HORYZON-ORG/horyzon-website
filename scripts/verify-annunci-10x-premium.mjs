@@ -65,6 +65,39 @@ const roleCard = {
 
 const customerCareRoleCard = CUSTOMER_CARE_CANONICAL_FIXTURE.roleCard;
 const warehouseRoleCard = MAGAZZINIERE_CANONICAL_FIXTURE.roleCard;
+const sparseAnalyzeRoleCard = {
+  title: confirmed('addetto customer care', 'original-title'),
+  mission: createFact('N/D - missione da chiarire', 'SYSTEM_INFERRED', {
+    sourceId: 'mission-nd',
+    publishable: false,
+    confidence: 35,
+  }),
+  outcomes: [createFact('N/D - risultato atteso da chiarire', 'SYSTEM_INFERRED', {
+    sourceId: 'outcome-nd',
+    publishable: false,
+    confidence: 35,
+  })],
+  compensation: {
+    visibility: createFact('OPEN_DECISION', 'SYSTEM_INFERRED', {
+      sourceId: 'compensation-visibility',
+      publishable: false,
+      confidence: 35,
+    }),
+  },
+  requirements: [{
+    id: 'req-analyze-1',
+    label: confirmed('italiano scritto chiaro, precisione, disponibilità al lavoro su turni', 'original-requirement'),
+    classification: 'REQUIRED',
+  }],
+  responsibilities: [confirmed('gestirà richieste clienti, ticket e aggiornamento CRM', 'original-responsibility')],
+  attractionContext: {
+    location: confirmed('Bari', 'location'),
+    schedule: confirmed('turni', 'schedule'),
+    workMode: confirmed('In presenza', 'work-mode'),
+    contractType: confirmed('part-time', 'contract'),
+    attractivenessEvidence: [],
+  },
+};
 
 const roleProfile = {
   roleCard,
@@ -250,7 +283,7 @@ assert.throws(() => validateEditorialCoreOutput({
 
 {
   const context = makeContext(new MockAnnunci10xProvider(['success', 'success', 'success', 'success']));
-  const created = await createReadySession(context, 'ANALYZE');
+  const created = await createReadySession(context, 'ANALYZE', sparseAnalyzeRoleCard);
   const result = await runAnnunci10xPremiumGeneration({
     sessionId: created.session.id,
     sessionSecret: created.sessionSecret,
@@ -261,6 +294,8 @@ assert.throws(() => validateEditorialCoreOutput({
   assert.equal(result.master.kind, 'MASTER');
   assert.equal(result.channelVariant?.channel, 'LINKEDIN');
   assert.equal(result.operations.map((operation) => operation.type).join('>'), 'GENERATE>EVALUATE>CHANNEL_ADAPTER');
+  assert.match(result.masterText, /addetto customer care/i, 'ANALYZE rewrite can generate from facts already extracted from the scored ad');
+  assert.match(result.masterText, /ticket|CRM/i, 'ANALYZE rewrite preserves concrete facts from the original ad');
   assert.equal(result.score.checks.length, 20);
   assert.equal(result.score.rubricVersion, 'annunci10x-rubric-v2');
   assert.equal(result.score.scoreSemanticsVersion, 'annunci10x-score-semantics-v2');
@@ -411,6 +446,21 @@ await verifyCreateRevisionContract(warehouseRoleCard, 'warehouse');
     authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
   });
   assert.equal(unsupported.status, 'CONFIRMATION_REQUIRED');
+}
+
+{
+  const context = makeContext(new MockAnnunci10xProvider('success'));
+  const created = await createReadySession(context, 'CREATE', sparseAnalyzeRoleCard);
+  await assert.rejects(
+    runAnnunci10xPremiumGeneration({
+      sessionId: created.session.id,
+      sessionSecret: created.sessionSecret,
+      context,
+      authorizationProvider: createTestGenerationAuthorizationProvider({ credits: 1 }),
+    }),
+    /Servono alcuni chiarimenti sulla realta del ruolo/,
+    'CREATE keeps the narrative sufficiency gate for sparse from-zero inputs',
+  );
 }
 
 assert.throws(

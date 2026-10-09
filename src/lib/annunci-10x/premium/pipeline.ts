@@ -884,7 +884,9 @@ async function executePremiumPipeline(input: {
 }> {
   const orchestrator = new Annunci10xAiOrchestrator({ provider: input.context.provider, persistence: input.context.persistence });
   const operations: PublicAnnunci10xOperation[] = [];
-  assertNarrativeSufficiencyForGeneration(input.snapshot.roleCard, input.snapshot.roleProfile ?? null, input.snapshot.communicationStrategy ?? null);
+  if (input.session.flow === 'CREATE') {
+    assertNarrativeSufficiencyForGeneration(input.snapshot.roleCard, input.snapshot.roleProfile ?? null, input.snapshot.communicationStrategy ?? null);
+  }
   const runtime = await runAnnunci10xDecisionEngineCreateRuntime({
     roleCard: input.snapshot.roleCard,
     writer: decisionEngineWriter({
