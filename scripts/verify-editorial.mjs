@@ -16,8 +16,12 @@ for (const route of routes) {
   }
  }
  if (['benessere-organizzativo','benessere-patrimoniale','benessere-digitale'].includes(route)) {
+  assert(/class="rd rd-page\b/.test(html), `${route}: current shared page kit missing`);
+  assert(!html.includes('inside-hero'), `${route}: legacy hero must not return`);
+  assert(html.includes('data-wellbeing-scene='), `${route}: area illustration missing`);
+  for (const area of ['organizzativo', 'patrimoniale', 'digitale']) assert(html.includes(`href="/benessere-${area}"`), `${route}: area navigation missing ${area}`);
   for (const anchor of ['comprendere','ambiti','primo-passo']) assert(html.includes(`id="${anchor}"`), `${route}: missing ${anchor}`);
-  assert.equal((html.match(/class="service-row"/g) || []).length, 3);
+  assert.equal((html.match(/data-wellbeing-service=""/g) || []).length, 3, `${route}: three service links`);
  }
 }
 const radar = await readFile('.next/server/app/radar-impresa.html', 'utf8');
@@ -50,7 +54,7 @@ for (const [route, phrase] of [
 ]) {
  const html = await readFile(`.next/server/app/${route}.html`, 'utf8');
  assert(html.includes(phrase), `${route}: unique area question missing`);
- assert(html.includes('area-first-step'), `${route}: first-step section missing`);
+ assert(html.includes('id="primo-passo"'), `${route}: first-step section missing`);
 }
 for (const route of ['benessere-organizzativo', 'benessere-digitale/imprese', 'horyzon', 'angelo', 'metodo']) {
  const html = await readFile(`.next/server/app/${route}.html`, 'utf8');
