@@ -42,6 +42,14 @@ const serviceRoutes = [
 ];
 for (const route of serviceRoutes) {
  const html = await readFile(`.next/server/app/${route}.html`, 'utf8');
+ assert(/class="rd rd-page\b/.test(html), `${route}: current shared page kit missing`);
+ assert(!html.includes('inside-hero'), `${route}: legacy hero must not return`);
+ assert(html.includes('data-wellbeing-scene='), `${route}: animated area illustration missing`);
+ assert.equal((html.match(/<h1\b/g) || []).length, 1, `${route}: one page heading`);
+ for (const anchor of ['quando-serve', 'percorso', 'risultati', 'primo-passo']) assert(html.includes(`id="${anchor}"`), `${route}: missing ${anchor}`);
+ for (const sibling of serviceRoutes.filter(item => item.startsWith(route.split('/')[0] + '/') && item !== route)) {
+  assert(html.includes(`href="/${sibling}"`), `${route}: sibling navigation missing ${sibling}`);
+ }
  assert(html.includes('service-editorial'), `${route}: diagnostic story missing`);
  assert(html.includes('Quando diventa urgente'), `${route}: urgency section missing`);
  assert(html.includes('Cosa diventa visibile'), `${route}: evidence section missing`);

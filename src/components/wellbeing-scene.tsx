@@ -11,7 +11,7 @@ const captions: Record<Kind, string> = {
 };
 
 /** Complete static illustration in server HTML; the sequence plays once when it enters view. */
-export function WellbeingScene({ kind, words }: { kind: Kind; words: readonly string[] }) {
+export function WellbeingScene({ kind, words, caption }: { kind: Kind; words: readonly string[]; caption?: string }) {
   const figure = useRef<HTMLElement>(null);
   useEffect(() => {
     const element = figure.current;
@@ -55,6 +55,6 @@ export function WellbeingScene({ kind, words }: { kind: Kind; words: readonly st
         </>}
       </svg>
     </div>
-    <figcaption><p className={styles.words}>{words.map(word => <span key={word}>{word}</span>)}</p><p className={styles.caption}>{captions[kind]}</p></figcaption>
+    <figcaption><p className={styles.words}>{words.map(word => <span key={word}>{word}</span>)}</p><p className={styles.caption}>{caption ?? captions[kind]}</p></figcaption>
   </figure>;
 }
