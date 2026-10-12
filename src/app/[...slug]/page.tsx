@@ -9,6 +9,8 @@ import {MethodExperience} from '@/components/horizon';
 import {Assessment} from '@/components/assessment';
 import {EditorialVisual} from '@/components/inner-editorial';
 import {isWellbeingArea, WellbeingPage} from '@/components/wellbeing-page';
+import {isVisionRoute} from '@/content/vision';
+import {VisionPage} from '@/components/vision-page';
 import {JourneyContactForm} from '@/components/journey/contact-form';
 import {people} from '@/data/people';
 import {pages} from '@/data/pages';
@@ -45,6 +47,7 @@ export default async function Page({params}:{params:Promise<{slug:string[]}>}){
  const {slug}=await params;const key=slug.join('/');if(aliases[key])permanentRedirect('/'+aliases[key]);
  const person=people[key];const p=person||special[key]||pages[key]||archive[key];if(!p)notFound();const title=person?.name||(special[key]||pages[key]||archive[key])?.title;const language=['en','de','fr'].includes(slug[0])?slug[0]:'it';
  if(isWellbeingArea(key)) return <WellbeingPage area={key}/>;
+ if(isVisionRoute(key)) return <VisionPage route={key}/>;
  if(isServiceRoute(key)) return <ServiceEditorialPage route={key} title={archive[key].title} intro={archive[key].intro} content={serviceEditorial[key]}/>;
  const breadcrumbs=[{name:'Horyzon',path:'/'},...(slug.length>1&&(archive[slug[0]]||pages[slug[0]]||special[slug[0]])?[{name:slug[0].replaceAll('-',' '),path:`/${slug[0]}`}]:[]),{name:person?.name||key.split('/').at(-1)!.replaceAll('-',' '),path:`/${key}`}]; const faqs=publicFaqs[`/${key}`];
  const parentDestination=person?{href:'/persone',label:'Torna alle persone'}:key==='libro/management-umano'?{href:'/biblioteca',label:'Torna alla biblioteca'}:['impresa','economia','umanita'].includes(key)?{href:'/horyzon',label:'Torna a Horyzon'}:null;
