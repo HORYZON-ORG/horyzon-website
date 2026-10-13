@@ -9,7 +9,7 @@ const IUBENDA_PRIVACY_URL='https://www.iubenda.com/privacy-policy/64704330';
 const IUBENDA_COOKIE_URL='https://www.iubenda.com/privacy-policy/64704330/cookie-policy';
 const footerGroups=[
  {title:'Inizia da qui',links:[["Radar d’Impresa",'/radar-impresa'],['AI Score','/ai-score'],['Trova il punto di partenza','/misura'],['Parliamone','/contatti']]},
- {title:'Costruisci il percorso',links:[['I tre benesseri','/le-tre-aree'],['Come lavoriamo','/metodo'],['Radar d’Impresa','/radar-impresa'],['Horyzon Platform','/piattaforma']]},
+ {title:'Costruisci il percorso',links:[['I tre benesseri','/le-tre-aree'],['Come lavoriamo','/metodo'],['Radar d’Impresa','/radar-impresa']]},
  {title:'Approfondisci',links:[['Horyzon','/horyzon'],['Persone','/persone'],['Biblioteca','/biblioteca'],['Management Umano','/libro/management-umano']]},
 ] as const;
 export function Wordmark(){const path=usePathname();return <Link className="wordmark" href="/" aria-label="Horyzon, homepage" onClick={event=>{if(path==='/'&&!event.ctrlKey&&!event.metaKey&&!event.shiftKey&&!event.altKey){event.preventDefault();window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'})}}}><span className="wordmark-logo-wrap"><Image className="wordmark-logo" src="/horyzon-logo-canonical.png" alt="Horyzon Consulting" width={1670} height={390} sizes="(max-width: 850px) 138px, 178px"/></span></Link>}

@@ -24,7 +24,8 @@ assert(urls.length > 10, 'Sitemap unexpectedly empty');
 assert.equal(new Set(urls).size, urls.length, 'Duplicate sitemap URL');
 assert.match(sitemap, /<lastmod>2026-10-02<\/lastmod>/, 'Known AI Score content updates must expose an accurate sitemap lastmod');
 const excluded = ['/radar', '/privacy-policy', '/cookie-policy', '/v/frank', '/llms.txt', '/index.md'];
-const faqRoutes = new Set(['/', '/horyzon', '/metodo', '/radar-impresa', '/ai-score', '/le-tre-aree', '/piattaforma', '/contatti']);
+assert(!urls.includes(`${origin}/piattaforma`), 'Retired product must not appear in sitemap');
+const faqRoutes = new Set(['/', '/horyzon', '/metodo', '/radar-impresa', '/ai-score', '/le-tre-aree', '/contatti']);
 const titleSet = new Set();
 let schemaCount = 0;
 for (const url of urls) {
@@ -102,7 +103,7 @@ assert(!markdown.includes('https://hub.horyzon.it/radar?'));
 assert(!markdown.includes('29 domande'));
 for (const state of ['Disponibile oggi', 'Configurato nel percorso', 'Direzione evolutiva']) assert(markdown.includes(state), `Missing capability state: ${state}`);
 const radar = await get('/radar-impresa');
-assert(radar.includes('Qual è la differenza tra Horyzon Hub e Platform?'));
+assert(radar.includes('Come prosegue il lavoro dopo il Radar?'));
 assert(radar.includes('Le integrazioni sono già attive per ogni azienda?'));
 assert((await get('/')).includes('type="text/markdown"'));
 const terms = await get('/termini-condizioni');

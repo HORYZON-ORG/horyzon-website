@@ -9,6 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test:patrimonial": "node --no-warnings --experimental-strip-types scripts/verify-patrimonial-leads.mjs && node scripts/verify-patrimonial-content.mjs",
+    "test:no-platform": "node scripts/verify-no-platform.mjs",
     "test:search": "node scripts/verify-search.mjs",
     "test:radar": "node --no-warnings --experimental-strip-types scripts/verify-radar-domain.mjs && node scripts/verify-paid-radar-migration.mjs supabase/migrations/20260929101224_paid_radar_foundation.sql && node --no-warnings --experimental-strip-types scripts/verify-radar-persistence.mjs && node --no-warnings --experimental-strip-types scripts/verify-radar-api.mjs && node --no-warnings --experimental-strip-types scripts/verify-radar-client.mjs && node --no-warnings --experimental-strip-types scripts/verify-radar-report.mjs && node --no-warnings --experimental-strip-types scripts/verify-radar-stripe.mjs && node --no-warnings --experimental-strip-types scripts/verify-radar-free-crm.mjs && node scripts/verify-radar-operations.mjs",
     "test:readable": "node --no-warnings --experimental-strip-types scripts/verify-readable.mjs",
@@ -21,7 +22,7 @@
     "annunci10x:canary-openai": "node --env-file=.env.local --no-warnings --experimental-strip-types scripts/annunci10x-openai-v2-canary.mjs",
     "assets:build": "node scripts/build-landscape.mjs",
     "higgsfield:seedance": "node --env-file=.env.local --no-warnings --experimental-strip-types index.ts",
-    "test": "node scripts/verify-build.mjs && node scripts/verify-editorial.mjs && node scripts/verify-narrative.mjs && node --no-warnings --experimental-strip-types scripts/verify-scrub-controller.mjs && node scripts/verify-video-scrub.mjs && node --no-warnings --experimental-strip-types scripts/verify-mobile-controls.mjs && node --no-warnings --experimental-strip-types scripts/verify-higgsfield-seedance.mjs && npm run test:annunci-10x && npm run test:ai-score"
+    "test": "node scripts/verify-build.mjs && node scripts/verify-editorial.mjs && node scripts/verify-narrative.mjs && node scripts/verify-no-platform.mjs && node --no-warnings --experimental-strip-types scripts/verify-scrub-controller.mjs && node scripts/verify-video-scrub.mjs && node --no-warnings --experimental-strip-types scripts/verify-mobile-controls.mjs && node --no-warnings --experimental-strip-types scripts/verify-higgsfield-seedance.mjs && npm run test:annunci-10x && npm run test:ai-score"
   },
   "dependencies": {
     "@higgsfield/client": "^0.2.6",

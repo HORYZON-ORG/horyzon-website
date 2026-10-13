@@ -10,7 +10,7 @@ const knownLastModified: Record<string, string> = {
 };
 const excluded = new Set(['radar', 'privacy-policy', 'cookie-policy', 'conoscenza', 'indice-horyzon']);
 export default function sitemap(): MetadataRoute.Sitemap {
- const routes = new Set(['', ...Object.keys(archive), ...Object.keys(pages), ...Object.keys(people), 'ai-score', 'ai-score/methodology', 'le-tre-aree', 'metodo', 'persone', 'biblioteca', 'misura', 'radar-impresa', 'piattaforma']);
+ const routes = new Set(['', ...Object.keys(archive), ...Object.keys(pages), ...Object.keys(people), 'ai-score', 'ai-score/methodology', 'le-tre-aree', 'metodo', 'persone', 'biblioteca', 'misura', 'radar-impresa']);
  return [...routes].filter(route => !excluded.has(route) && !route.startsWith('v/'))
   .map(route => ({
    url: route ? `https://horyzon.it/${route}` : 'https://horyzon.it',

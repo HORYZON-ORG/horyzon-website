@@ -201,14 +201,6 @@ a.rd-row:hover .rd-row-go{background:var(--lime);border-color:var(--lime);color:
 .rd-form .rd-form-note a{color:var(--cream);border-bottom:1px solid var(--line)}
 .rd-form .rd-cta{justify-self:start}
 @media (max-width:600px){.rd-form-fields{grid-template-columns:1fr}.rd-form .rd-cta{justify-self:stretch}}
-
-/* Platform window: an illustrative screen, never real data */
-.rd-window{margin:0}
-.rd-window>div{padding:26px;border:1px solid var(--line);border-radius:16px;background:var(--ink-2);box-shadow:0 50px 90px -50px rgba(0,0,0,.9)}
-.rd-window>div>span{display:block;font:500 11px/1.4 var(--font-mono),monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
-.rd-window strong{display:block;margin:14px 0 22px;font:800 clamp(28px,2.8vw,42px)/1.02 var(--font-sans),sans-serif;letter-spacing:-.045em}
-.rd-window p{display:flex;justify-content:space-between;gap:14px;margin:0;padding:15px 0;border-top:1px solid var(--line);font-size:15px;font-weight:700}
-.rd-window p span{font:500 11px/1.6 var(--font-mono),monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--lime);text-align:right}
 .rd-figcaption{display:grid;gap:4px;margin-top:16px;font:500 12px/1.6 var(--font-mono),monospace;letter-spacing:.04em;color:var(--muted)}
 .rd-figcaption small{font-size:11px;opacity:.8}
 .rd-hero-aside .rd-scope{max-width:520px}

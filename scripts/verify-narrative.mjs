@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 
 // Public CTAs use the canonical Hub redirect; the Website assessment remains unchanged.
 const radarUrl = 'https://hub.horyzon.it/radar';
-for (const route of ['', 'radar-impresa', 'piattaforma', 'frank', 'contatti']) {
+for (const route of ['', 'radar-impresa', 'frank', 'contatti']) {
   const file = route ? `.next/server/app/${route}.html` : '.next/server/app/index.html';
   const html = await readFile(file, 'utf8');
   assert(html.includes(`href="${radarUrl}"`), `${route || 'home'}: Radar link missing`);
@@ -30,8 +30,6 @@ assert.equal((home.match(new RegExp(`href="${radarUrl}"`, 'g')) || []).length, 2
 for (const phrase of ['benessere organizzativo', 'benessere patrimoniale', 'benessere digitale', 'prima di cambiare']) {
  assert(home.toLowerCase().includes(phrase), `home: missing ${phrase}`);
 }
-const platform = await readFile('.next/server/app/piattaforma.html', 'utf8');
-for (const phrase of ['Hub', 'ChatGPT Work', 'Platform', 'KPI', 'report', 'sincronizzazione', 'attivazione']) assert(platform.includes(phrase), `piattaforma: missing ${phrase}`);
 const method = await readFile('.next/server/app/metodo.html', 'utf8');
 for (const title of ['Definire la destinazione','Leggere il presente','Disegnare l’organizzazione obiettivo','Mappare persone e responsabilità','Misurare il divario','Scegliere il reparto prioritario','Costruire il programma operativo','Attivare con prove','Verificare e continuare']) assert(method.includes(title), `metodo: missing ${title}`);
 const system = await readFile('.next/server/app/le-tre-aree.html', 'utf8');
@@ -44,9 +42,10 @@ for (const phrase of ['Inizia il Radar','Parliamo del risultato','Raccontaci che
 assert(home.includes('<title>Horyzon — Benessere per l’impresa</title>'), 'home: narrative title missing');
 for (const phrase of ['radar d’impresa', 'benessere organizzativo', 'benessere patrimoniale', 'benessere digitale']) assert(home.toLowerCase().includes(phrase), `home metadata: missing ${phrase}`);
 const sitemap = await readFile('.next/server/app/sitemap.xml.body', 'utf8');
-for (const route of ['radar-impresa','piattaforma']) assert(sitemap.includes(`https://horyzon.it/${route}`), `sitemap: missing ${route}`);
+for (const route of ['radar-impresa']) assert(sitemap.includes(`https://horyzon.it/${route}`), `sitemap: missing ${route}`);
+assert(!sitemap.includes('https://horyzon.it/piattaforma'), 'sitemap: retired product must stay excluded');
 assert(!sitemap.includes('https://horyzon.it/radar</loc>'), 'sitemap: commercial Radar landing must stay excluded');
-for (const [route,html] of [['home',home],['radar',radar],['platform',platform],['method',method],['frank',frank],['contact',contact]]) {
+for (const [route,html] of [['home',home],['radar',radar],['method',method],['frank',frank],['contact',contact]]) {
  assert.equal((html.match(/<h1\b/g)||[]).length, 1, `${route}: expected one h1`);
  assert(!html.includes('<video') || route==='home', `${route}: internal page must not contain video`);
 }

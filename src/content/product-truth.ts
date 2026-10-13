@@ -20,7 +20,6 @@ export const capabilityLabels: Record<CapabilityState, string> = {
 export const productCapabilities: readonly ProductCapability[] = [
   { state: 'available', title: 'Radar d’Impresa', description: 'Qualificazione pubblica e lettura di cinque reparti, maturità dei processi, autonomia del titolare e adozione dell’AI.' },
   { state: 'available', title: 'Discovery e Blueprint', description: 'Hub raccoglie evidenze, organizza lo studio operativo e produce un Blueprint versionato da riesaminare.' },
-  { state: 'available', title: 'Governance in Platform', description: 'Dashboard tenant, KPI, report, snapshot, stato delle sincronizzazioni ed evidenze di attivazione.' },
   { state: 'configured', title: 'Organizzazione obiettivo', description: 'Ruoli, responsabilità, reparto prioritario, procedure, indicatori e strumenti vengono definiti nello specifico percorso aziendale.' },
   { state: 'configured', title: 'Attivazione verificata', description: 'Blueprint, piano di attivazione e sincronizzazioni avanzano dopo revisione, accessi e prove.' },
   { state: 'direction', title: 'Autonomia progressiva', description: 'L’impresa può diventare meno dipendente dal titolare attraverso responsabilità condivise e processi ripetibili, senza promesse di tempi o risultati garantiti.' },

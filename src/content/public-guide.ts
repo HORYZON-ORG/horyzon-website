@@ -10,7 +10,6 @@ export const publicGuideLinks = [
  ['Metodo', '/metodo', 'Dagli obiettivi alla verifica'],
  ['Radar d’Impresa', '/radar-impresa', 'Che cosa misura e quali sono i limiti'],
  ['Sistema impresa', '/le-tre-aree', 'Cinque reparti e tre discipline'],
- ['Platform', '/piattaforma', 'Governance, indicatori ed evidenze'],
  ['Persone', '/persone', 'Profili e responsabilità'],
  ['Frank Cannoletta', '/frank', 'Persona, impresa e patrimonio'],
  ['Contatti', '/contatti', 'Radar, debrief e confronto'],

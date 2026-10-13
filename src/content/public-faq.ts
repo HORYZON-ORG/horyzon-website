@@ -28,7 +28,7 @@ export const publicFaqs: Record<string, readonly PublicFaq[]> = {
   { question: 'Il Radar è utile se so già qual è il problema?', answer: 'Può aiutare a leggere il problema insieme agli altri reparti e preparare il confronto con Horyzon. Un sintomo noto può avere cause che coinvolgono ruoli, processi o decisioni in più aree.' },
   { question: 'Che cos’è il Radar d’Impresa?', answer: 'È una prima autovalutazione guidata di Amministrazione, Produzione, Commerciale, Marketing e Persone. Rende leggibili maturità dei processi, autonomia dal titolare e adozione dell’AI.' },
   { question: 'Il risultato del Radar è già un piano operativo?', answer: 'No. Il risultato orienta un confronto: il debrief interpreta il profilo, mentre evidenze, responsabilità e priorità vengono approfondite nel percorso Horyzon.' },
-  { question: 'Qual è la differenza tra Horyzon Hub e Platform?', answer: 'Hub raccoglie evidenze della discovery e produce un Blueprint versionato da riesaminare. Platform rende leggibili KPI, snapshot, report e stato delle attivazioni.' },
+  { question: 'Come prosegue il lavoro dopo il Radar?', answer: 'Il confronto con Horyzon approfondisce il risultato attraverso evidenze, obiettivi e responsabilità. Da qui si sceglie una priorità e si definiscono i passi successivi da verificare insieme.' },
   { question: 'Le integrazioni sono già attive per ogni azienda?', answer: 'No. Accessi, autorizzazioni, configurazione e prove devono essere verificati per la singola azienda prima dell’attivazione.' },
  ],
  '/ai-score': [
@@ -44,13 +44,6 @@ export const publicFaqs: Record<string, readonly PublicFaq[]> = {
   { question: 'Le tre aree sono separate?', answer: 'No. Persone, patrimonio e strumenti si influenzano a vicenda. Horyzon parte dalla priorità concreta e considera le connessioni necessarie.' },
   { question: 'Dove trovo i servizi di ogni area?', answer: 'Ogni area raccoglie i relativi percorsi e approfondimenti. Il primo confronto serve a scegliere il punto di partenza più utile.' },
   { question: 'Posso chiedere un confronto prima di iniziare?', answer: 'Sì. Puoi raccontarci la situazione che vuoi migliorare e valutare insieme il passo più utile.' },
- ],
- '/piattaforma': [
-  { question: 'Come posso condividere con il team lo stato delle priorità?', answer: 'Nel percorso Horyzon si definiscono responsabilità e informazioni utili ai diversi ruoli. La Platform offre una vista dedicata all’azienda con indicatori e avanzamento dei flussi configurati.' },
-  { question: 'Che cos’è Horyzon Platform?', answer: 'È lo spazio dedicato alla tua azienda per leggere indicatori, report, priorità e avanzamento dei flussi configurati.' },
-  { question: 'La Platform esegue automaticamente il lavoro nei sistemi del cliente?', answer: 'No. I sistemi approvati svolgono il lavoro operativo; la Platform rende leggibili indicatori, evidenze e stato dei flussi attivati.' },
-  { question: 'Le integrazioni della Platform sono già disponibili per tutte le aziende?', answer: 'No. Ogni sincronizzazione richiede autorizzazioni, configurazione, accessi e prove verificati per la singola azienda.' },
-  { question: 'Come vengono gestiti dati e accessi nella Platform?', answer: 'La vista è tenant-isolata e ruoli, informazioni disponibili e attivazioni dipendono dalla configurazione approvata nel percorso aziendale.' },
  ],
  '/contatti': [
   { question: 'Posso chiedere aiuto anche se non so ancora quale soluzione mi serve?', answer: 'Sì. Descrivi una situazione concreta che vorresti migliorare. Il primo confronto serve a comprenderla e valutare insieme un possibile passo successivo.' },
