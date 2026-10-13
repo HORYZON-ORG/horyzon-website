@@ -47,6 +47,7 @@
   object-fit: contain;
   object-position: center;
   border: 2px solid #d8ff42;
+  filter: none;
   justify-self: center;
 }
 /* Preserve the original close portrait: a vertical frame keeps the full head and torso visible. */
