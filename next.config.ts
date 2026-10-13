@@ -15,6 +15,7 @@ const csp = [
 ].join('; ');
 const nextConfig: NextConfig = {
  allowedDevOrigins: ['terminal.local'],
+ images: { qualities: [75, 100] },
  poweredByHeader: false,
  // The Radar report PDF reads its fonts and logos from disk.
  outputFileTracingIncludes: { '/api/radar/**': ['./src/lib/radar/fonts/**', './src/lib/radar/assets/**'] },
