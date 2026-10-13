@@ -4,7 +4,7 @@ export const SITE_URL = 'https://horyzon.it';
 export const ORGANIZATION_ID = `${SITE_URL}/#organization`;
 export const WEBSITE_ID = `${SITE_URL}/#website`;
 export const HOME_TITLE = 'Horyzon — Benessere per l’impresa';
-export const HOME_DESCRIPTION = 'Aiutiamo imprenditori e aziende a costruire benessere organizzativo, patrimoniale e digitale. Inizia dal Radar d’Impresa.';
+export const HOME_DESCRIPTION = 'Horyzon Consulting: benessere patrimoniale, organizzativo e digitale. Scopri il percorso patrimoniale, l’evento in preparazione e la rete consulenti.';
 export const absoluteUrl = (path: string) => path === '/' ? SITE_URL : new URL(path, SITE_URL).href;
 export const pageLanguage = (path: string) => path.match(/^\/(en|de|fr)(?:\/|$)/)?.[1] ?? 'it';
 
@@ -28,7 +28,7 @@ const italianTitles: Record<string, string> = {
   'benessere-digitale': 'Benessere digitale, AI e processi aziendali',
   horyzon: 'Horyzon Consulting: visione e competenze', umanita: 'Umanità e sviluppo della persona',
   impresa: 'Impresa e sviluppo organizzativo', economia: 'Economia e valore condiviso',
-  'entra-in-horyzon': 'Entra nella Partner Network Horyzon', persone: 'Le persone di Horyzon',
+  'entra-in-horyzon': 'Percorso consulenti e Partner Network Horyzon', persone: 'Le persone di Horyzon',
   biblioteca: 'Biblioteca e libri', misura: 'Autovalutazione delle tre aree di benessere',
 };
 export function editorialTitle(path: string, fallback: string) {

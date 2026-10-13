@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-// The Radar journey lives in the Website: every CTA points to /radar, never to the Hub.
-const radarUrl = '/radar';
+// Public CTAs use the canonical Hub redirect; the Website assessment remains unchanged.
+const radarUrl = 'https://hub.horyzon.it/radar';
 for (const route of ['', 'radar-impresa', 'piattaforma', 'frank', 'contatti']) {
   const file = route ? `.next/server/app/${route}.html` : '.next/server/app/index.html';
   const html = await readFile(file, 'utf8');
   assert(html.includes(`href="${radarUrl}"`), `${route || 'home'}: Radar link missing`);
-  assert(!html.includes('hub.horyzon.it/radar'), `${route || 'home'}: stale Hub Radar link`);
+
   assert(!/hub\.horyzon\.it\/radar\?/.test(html), `${route || 'home'}: Radar URL must not contain query data`);
 }
 const radar = await readFile('.next/server/app/radar-impresa.html', 'utf8');
@@ -26,7 +26,7 @@ for (const phrase of ['Maturità dei processi', 'Autonomia dal titolare', 'Indic
 }
 assert(!commercialRadar.includes('29 domande'), 'radar landing: must not publish the unresolved question count');
 const home = await readFile('.next/server/app/index.html', 'utf8');
-assert.equal((home.match(new RegExp(`href="${radarUrl}"`, 'g')) || []).length, 3, 'home: expected three Radar links');
+assert.equal((home.match(new RegExp(`href="${radarUrl}"`, 'g')) || []).length, 2, 'home: expected header and Radar chapter links');
 for (const phrase of ['benessere organizzativo', 'benessere patrimoniale', 'benessere digitale', 'prima di cambiare']) {
  assert(home.toLowerCase().includes(phrase), `home: missing ${phrase}`);
 }

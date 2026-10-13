@@ -2,10 +2,13 @@ import { PageStructuredData } from '@/components/structured-data'; import { FaqS
 import { pageMetadata } from '@/content/seo';
 import type { Metadata } from 'next'; import { JourneyContactForm } from '@/components/journey/contact-form'; import { SiteFooter, SiteHeader } from '@/components/site-shell'; import { RADAR_URL } from '@/content/product-truth';
 import { PageHero, Section, Tiles } from '@/components/kit';
+import { Suspense } from 'react';
+import { PatrimonialLeadForm } from '@/components/patrimonial-lead-form';
 export const metadata: Metadata = pageMetadata({ path: '/contatti', title: 'Contatti', description: 'Inizia il Radar o raccontaci che cosa oggi rende più difficile lavorare nella tua impresa.' });
 // The form sits in the hero, next to the question; the three ways in follow on cream, the company data on the panel.
 export default function ContactPage(){return <><PageStructuredData path="/contatti" name="Contatti" description="Inizia il Radar o raccontaci che cosa oggi rende più difficile lavorare nella tua impresa." type="ContactPage" breadcrumbs={[{ name: 'Horyzon', path: '/' }, { name: 'Contatti', path: '/contatti' }]} faqs={publicFaqs['/contatti']} /><SiteHeader/><main id="content" className="rd rd-page editorial-page narrative-page" data-page="contatti">
  <PageHero crumbs={[{ name: 'Horyzon', href: '/' }, { name: 'Contatti' }]} label="Il prossimo passo" title={<>Che cosa vorresti <em>cambiare?</em></>} lead="Raccontaci ciò che oggi assorbe tempo, rallenta il lavoro o rende difficile una decisione. Il primo passo è capirlo insieme." aside={<div className="contact-form-surface"><JourneyContactForm/><p className="rd-note">Il modulo prepara un messaggio nel tuo client email: il sito non invia né conserva i dati.</p></div>}><p className="rd-note" style={{ margin: 0 }}>Il primo passo è una conversazione.</p></PageHero>
+ <Section id="richiesta-patrimoniale" tone="cream" split label="Benessere patrimoniale" title="Due percorsi. Una richiesta chiara." headingId="contatti-patrimonio" lead="Ricevi informazioni sull’evento oppure conosci il percorso consulenti. I due interessi restano distinti."><div className="contact-form-surface"><Suspense fallback={<p>Caricamento del modulo. Puoi anche scrivere a <a href="mailto:info@horyzon.it">info@horyzon.it</a>, indicando il percorso che ti interessa.</p>}><PatrimonialLeadForm /></Suspense></div></Section>
  <Section tone="cream" label="Cominciamo da qui" title="Da dove vuoi cominciare?" headingId="contatti-percorsi">
   <Tiles items={[
    { tag: '01', title: 'Inizia il Radar', text: 'Un primo sguardo per capire dove l’impresa oggi ha più bisogno di attenzione.', href: RADAR_URL, more: 'Inizia il Radar' },

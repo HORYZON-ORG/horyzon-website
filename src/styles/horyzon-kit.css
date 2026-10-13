@@ -320,3 +320,13 @@ a.rd-row:hover .rd-row-go{background:var(--lime);border-color:var(--lime);color:
   .rd-final .rd-cta{width:100%}
   .rd-footer{flex-direction:column;align-items:flex-start;padding-bottom:calc(96px + env(safe-area-inset-bottom))}
 }
+
+.patrimonial-form-fields { border:0; padding:0; margin:0; min-width:0; display:grid; gap:18px; }
+.patrimonial-form-fields legend { font-size:14px; font-weight:700; margin-bottom:14px; }
+.patrimonial-interest-options { display:grid; gap:10px; }
+.contact-form-surface .rd-form .patrimonial-interest-options label,.contact-form-surface .rd-form .patrimonial-consent { display:flex; align-items:flex-start; gap:10px; font:400 14px/1.55 var(--font-sans); letter-spacing:normal; text-transform:none; }
+.contact-form-surface .rd-form .patrimonial-interest-options input,.contact-form-surface .rd-form .patrimonial-consent input { width:18px; height:18px; min-height:18px; padding:0; flex:0 0 18px; margin:3px 0 0; accent-color:var(--lime); }
+.patrimonial-form-fields h3 { font-size:clamp(26px,3vw,38px); line-height:1.1; margin:0; }
+.patrimonial-form-fields>p { margin:0; line-height:1.6; }
+.patrimonial-form-fields[disabled] { opacity:.8; }
+.patrimonial-form-fields .rd-cta { justify-content:center; }

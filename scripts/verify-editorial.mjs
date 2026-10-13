@@ -37,7 +37,7 @@ const identity = await readFile('.next/server/app/horyzon.html', 'utf8');
 for (const anchor of ['metodo', 'persone']) assert(identity.includes(`id="${anchor}"`), `horyzon: missing ${anchor}`);
 for (const person of ['angelo', 'frank', 'gianluca', 'emanuele']) assert(identity.includes(`href="/${person}"`), `horyzon: missing person ${person}`);
 const radar = await readFile('.next/server/app/radar-impresa.html', 'utf8');
-assert(radar.includes('href="/radar"'), 'radar-impresa: Radar link missing');
+assert(radar.includes('href="https://hub.horyzon.it/radar"'), 'radar-impresa: Radar link missing');
 for (const label of ['Amministrazione', 'Produzione', 'Commerciale', 'Marketing', 'Persone', 'Come lavora l’impresa', 'Dove si concentra il peso', 'Da dove cominciare']) {
  assert(radar.includes(label), `radar-impresa: missing ${label}`);
 }

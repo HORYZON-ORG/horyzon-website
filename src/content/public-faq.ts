@@ -56,7 +56,7 @@ export const publicFaqs: Record<string, readonly PublicFaq[]> = {
   { question: 'Posso chiedere aiuto anche se non so ancora quale soluzione mi serve?', answer: 'Sì. Descrivi una situazione concreta che vorresti migliorare. Il primo confronto serve a comprenderla e valutare insieme un possibile passo successivo.' },
   { question: 'Come posso contattare Horyzon Consulting?', answer: 'Puoi iniziare dal Radar, richiedere un debrief oppure scrivere a info@horyzon.it descrivendo il reparto o il collo di bottiglia prioritario.' },
   { question: 'Che cosa conviene indicare nel primo contatto?', answer: 'È utile descrivere il contesto dell’impresa, la priorità percepita e ciò che oggi limita il lavoro: aiuta a scegliere il punto d’ingresso più utile.' },
-  { question: 'Il modulo di contatto salva i miei dati sul sito?', answer: 'No. Il modulo prepara un messaggio nel client email dell’utente: il sito non invia né conserva i dati inseriti nel modulo.' },
+  { question: 'Il modulo di contatto salva i miei dati sul sito?', answer: 'Il modulo generale prepara una bozza nel client email e non conserva i dati. I moduli patrimoniali, invece, inviano la richiesta al CRM HighLevel di Horyzon per il ricontatto richiesto; non iscrivono a campagne marketing.' },
   { question: 'Devo completare il Radar prima di chiedere un confronto?', answer: 'No. Il Radar è un possibile punto di partenza; puoi anche chiedere un confronto diretto sulla priorità aziendale.' },
  ],
 };

@@ -1,7 +1,7 @@
-// The Radar journey lives in the Website (/radar). Links inside the site use the path; text meant to be
-// read outside the site (llms.txt, public guide) uses the absolute URL.
-export const RADAR_URL = '/radar' as const;
-export const RADAR_PUBLIC_URL = 'https://horyzon.it/radar' as const;
+// Public CTAs use the canonical Hub entry, which redirects to the existing Website Radar.
+// The embedded Website assessment and its data contract remain unchanged.
+export const RADAR_URL = 'https://hub.horyzon.it/radar' as const;
+export const RADAR_PUBLIC_URL = RADAR_URL;
 
 export type CapabilityState = 'available' | 'configured' | 'direction';
 

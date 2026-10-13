@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+const get = route => readFile(`.next/server/app/${route || 'index'}.html`, 'utf8');
+const home = await get('');
+assert(home.includes('/benessere-patrimoniale#evento'));
+assert(home.includes('/entra-in-horyzon#percorso-consulenti'));
+for(const route of ['benessere-organizzativo','benessere-digitale'])assert(home.includes(`href="/${route}"`));
+const wealth = await get('benessere-patrimoniale');
+assert(wealth.includes('Quello che le banche non dicono'));
+assert(wealth.includes('evento online in preparazione'));
+assert(wealth.includes('cadenza mensile'));
+assert(wealth.includes('non prenota un posto'));
+assert(wealth.includes('/contatti?interesse=evento-patrimoniale#richiesta-patrimoniale'));
+assert(wealth.includes('valore dell’oro può diminuire'));
+const network = await get('entra-in-horyzon');
+assert(network.includes('id="percorso-consulenti"'));
+assert(network.includes('network marketing'));
+assert(network.includes('/contatti?interesse=percorso-consulenti#richiesta-patrimoniale'));
+assert(network.includes('non una qualifica abilitante'));
+for(const route of ['benessere-patrimoniale','de/benessere-patrimoniale','en/benessere-patrimoniale','fr/benessere-patrimoniale','frank','lucio-de-simone','horyzon','persone']) {
+ const html = await get(route);
+ assert(!/careis|cares.?gold|keris.?gold|charis.?gold/i.test(html), `${route}: supplier reference`);
+ assert.equal((html.match(/<h1\b/g)||[]).length,1,`${route}: one heading`);
+}
+const portrait = await get('gianluca');
+assert(portrait.includes('gianluca-original.png'));
+const crm = await readFile('src/lib/public-leads/handler.ts','utf8');
+assert(!crm.includes('syncRadarLead') && !crm.includes('/campaign') && !crm.includes('/workflow'));
+const form = await readFile('src/components/patrimonial-lead-form.tsx','utf8');
+assert(form.includes('response.ok') && form.includes('result.ok !== true'));
+assert(form.includes('name="consent"') && form.includes('type="checkbox" required'));
+assert(form.includes('useSearchParams') && form.includes('scrollIntoView'));
+console.log('Patrimonial content: two paths, planned event, risk limits, provider-free copy, consent, preserved portraits.');

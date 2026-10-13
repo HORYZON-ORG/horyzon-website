@@ -103,6 +103,9 @@ async function call<T>(config: HighLevelConfig, path: string, body: unknown): Pr
   return (text ? JSON.parse(text) : {}) as T;
 }
 
+// Reuse the authenticated transport for other website lead sources without creating Radar data.
+export { call as callHighLevel };
+
 // Upsert never sends tags: in HighLevel they would replace the contact's existing ones. Tags go through the add-tags call.
 async function upsertContact(config: HighLevelConfig, lead: RadarLead): Promise<string> {
   const payload = await call<{ contact?: { id?: string } }>(config, '/contacts/upsert', {

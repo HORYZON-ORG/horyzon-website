@@ -7,6 +7,7 @@ import { SiteFooter, SiteHeader } from '@/components/site-shell';
 import { Cta, PageFinal, PageHero, Points, Section, TextLink, Tiles } from '@/components/kit';
 import { WellbeingScene } from './wellbeing-scene';
 import styles from './wellbeing.module.css';
+import { patrimonialContact } from '@/content/patrimonial';
 
 const areas = {
   'benessere-organizzativo': {
@@ -52,8 +53,8 @@ export function WellbeingPage({ area }: { area: Area }) {
       <PageHero crumbs={[{ name: 'Horyzon', href: '/' }, { name: 'I tre benesseri', href: '/le-tre-aree' }, { name: direction.short }]}
         label={direction.label} title={content.title} lead={content.intro}
         aside={<WellbeingScene key={direction.kind} kind={direction.kind} words={direction.words} />}>
-        <Cta href="#comprendere" arrow="↓">Scopri il percorso</Cta>
-        <TextLink href="/contatti">Parliamone ↗︎</TextLink>
+        <Cta href={area === 'benessere-patrimoniale' ? '#evento' : '#comprendere'} arrow="↓">{area === 'benessere-patrimoniale' ? 'Scopri l’evento' : 'Scopri il percorso'}</Cta>
+        <TextLink href={area === 'benessere-patrimoniale' ? '/entra-in-horyzon#percorso-consulenti' : '/contatti'}>{area === 'benessere-patrimoniale' ? 'Scopri il percorso consulenti ↗︎' : 'Parliamone ↗︎'}</TextLink>
       </PageHero>
 
       <nav className={styles.navigation} aria-label="I tre benesseri">
@@ -64,6 +65,20 @@ export function WellbeingPage({ area }: { area: Area }) {
       <Section id="comprendere" tone="cream" split label="Il punto di partenza" title={direction.question} headingId="comprendere-title">
         <div className="rd-prose rd-reveal">{content.body.map(text => <p key={text}>{text}</p>)}</div>
       </Section>
+
+      {area === 'benessere-patrimoniale' && <>
+        <Section id="evento" tone="panel" label="Per persone, famiglie e imprese" title="Quello che le banche non dicono" headingId="patrimonio-evento" lead="Un evento online in preparazione, a cura di Frank Cannoletta, per fare spazio alle domande su oro fisico e diversificazione.">
+          <Tiles items={[
+            { title: 'Capire prima di scegliere', text: 'Cultura patrimoniale, obiettivi e domande utili per orientare un confronto consapevole.' },
+            { title: 'Approfondire l’oro fisico', text: 'Caratteristiche, costi, custodia e rischi: nessun investimento è privo di rischi e il valore dell’oro può diminuire.' },
+            { title: 'Un confronto personale', text: 'Dopo l’incontro, chi vuole approfondire potrà chiedere un appuntamento. Le esigenze individuali e le attività riservate si valutano con i professionisti competenti.' },
+          ]} />
+          <p className="rd-note">Stiamo preparando un ciclo di incontri online a cadenza mensile. Data, programma e modalità della prima edizione saranno comunicati quando definiti. La richiesta di informazioni non prenota un posto.</p>
+          <div className="rd-actions"><Cta href={patrimonialContact('evento-patrimoniale')}>Ricevi informazioni sull’evento</Cta><TextLink href="/frank">Conosci Frank ↗︎</TextLink></div>
+          <p className="rd-note">Per approfondire rischi e caratteristiche: <a href="https://economiapertutti.bancaditalia.it/notizie-e-rubriche/notizie/cosa-sapere-prima-di-comprare-oro/">la guida della Banca d’Italia sull’oro</a>.</p>
+        </Section>
+        <Section tone="cream" split label="Per chi vuole entrare nella rete" title="Vuoi conoscere il percorso consulenti?" headingId="patrimonio-rete" lead="Una strada distinta per chi vuole contribuire alla cultura patrimoniale e lavorare nella relazione con le persone."><div className="rd-prose"><p>Presentazione introduttiva Horyzon, colloquio e valutazione di un possibile ingresso. Formazione, affiancamento, responsabilità e condizioni si approfondiscono prima di scegliere.</p><p>Se hai esperienza nel network marketing o nella vendita, raccontaci il tuo percorso. Non sono promessi guadagni né un ingresso automatico.</p><Cta href="/entra-in-horyzon#percorso-consulenti">Scopri il percorso consulenti</Cta></div></Section>
+      </>}
 
       <Section tone="panel" split label="Che cosa osserviamo" title="Le cose che fanno la differenza." headingId="osserviamo-title"
         lead="La priorità non si indovina: si costruisce insieme, a partire da ciò che accade davvero.">
@@ -83,7 +98,7 @@ export function WellbeingPage({ area }: { area: Area }) {
 
       <Section id="primo-passo" tone="lime" label="Cominciamo da qui" title={<>Prima di cambiare, <span className="rd-lime-chip">facciamo chiarezza.</span></>}
         lead={direction.firstStep} headingId="primo-passo-title">
-        <div className="rd-actions"><Cta href={RADAR_URL}>Inizia il Radar</Cta><TextLink href="/contatti">Preferisci parlarne con noi? ↗︎</TextLink></div>
+        <div className="rd-actions"><Cta href={area === 'benessere-patrimoniale' ? patrimonialContact('evento-patrimoniale') : RADAR_URL}>{area === 'benessere-patrimoniale' ? 'Chiedi informazioni' : 'Inizia il Radar'}</Cta><TextLink href="/contatti">Preferisci parlarne con noi? ↗︎</TextLink></div>
         {area === 'benessere-patrimoniale' && <p className={styles.note}>Un orientamento da approfondire con i professionisti competenti. I contenuti non costituiscono consulenza finanziaria, fiscale o legale personalizzata né promessa di rendimento.</p>}
       </Section>
 

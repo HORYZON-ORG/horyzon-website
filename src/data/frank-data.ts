@@ -94,7 +94,7 @@ export const frankData = {
         points: [
           'Analisi degli obiettivi patrimoniali',
           'Diversificazione delle riserve',
-          'Collaborazione con Careisgold S.p.A.',
+          'Orientamento informativo sull’oro fisico',
         ],
       },
     ] as Pillar[],
@@ -201,8 +201,8 @@ export const frankData = {
       },
       {
         tag: 'PATRIMONIO',
-        title: 'Collaborazione con Careisgold S.p.A.',
-        description: 'Sviluppo di reti dedicate e orientamento all’acquisto di oro fisico puro 24k tramite Operatore Professionale in Oro.',
+        title: 'Orientamento informativo sull’oro fisico',
+        description: 'Cultura patrimoniale e conoscenza dell’oro fisico da investimento. Le attività riservate si approfondiscono con i professionisti abilitati.',
       },
     ] as ExperienceItem[],
   },
