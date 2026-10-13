@@ -102,9 +102,6 @@ export function WellbeingPage({ area }: { area: Area }) {
         {area === 'benessere-patrimoniale' && <p className={styles.note}>Un orientamento da approfondire con i professionisti competenti. I contenuti non costituiscono consulenza finanziaria, fiscale o legale personalizzata né promessa di rendimento.</p>}
       </Section>
 
-      <Section tone="ink" label="Le connessioni contano" title="Il benessere dell’impresa è un lavoro comune." headingId="connessioni-title" lead="Ogni area sostiene le altre. Continua a esplorare le dimensioni della tua impresa.">
-        <Tiles columns={2} items={Object.entries(areas).filter(([key]) => key !== area).map(([key, item]) => ({ title: item.label, text: pages[key].intro, href: `/${key}`, more: 'Scopri l’area' }))} />
-      </Section>
       <PageFinal title="Diamo forma al prossimo passo." text="Partiamo da ciò che oggi assorbe tempo, limita la crescita o rende più difficili le decisioni.">
         <Cta href="/contatti">Parliamone</Cta><TextLink href="/metodo">Scopri come lavoriamo ↗︎</TextLink>
       </PageFinal>

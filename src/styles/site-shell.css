@@ -1,8 +1,6 @@
 /* Shared header, phone menu and footer (site-shell.tsx), on the tokens of horyzon-kit.css.
    The header keeps .site-header .wordmark-logo: the home splash (hyc-splash.tsx) lands the logo there. */
 html{scroll-padding-top:96px}
-.skip-link{position:fixed;z-index:300;top:-100px;left:12px;padding:10px 14px;border-radius:6px;background:var(--lime);color:var(--ink);font-weight:800}
-.skip-link:focus{top:12px}
 
 .site-header{position:sticky;top:0;z-index:200;display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:76px;
   padding:calc(10px + env(safe-area-inset-top,0px)) max(6vw,env(safe-area-inset-right,0px)) 10px max(6vw,env(safe-area-inset-left,0px));

@@ -8,6 +8,7 @@ for (const route of routes) {
  assert.equal((html.match(/<h1\b/g) || []).length, 1, `${route}: one page heading`);
  assert(html.includes('editorial-page'), `${route}: shared design missing`);
  assert(!html.includes('<video'), `${route}: unexpected video`);
+ assert(!html.includes('Vai al contenuto'), `${route}: removed header control must stay absent`);
  if (route.endsWith('policy')) assert(!html.includes('<figure'), `${route}: legal page must stay distraction-free`);
  for (const [, href] of html.matchAll(/href="(\/[^"?#]*)"/g)) {
   if (href.startsWith('/_next/')) continue;
@@ -22,6 +23,11 @@ for (const route of routes) {
   for (const area of ['organizzativo', 'patrimoniale', 'digitale']) assert(html.includes(`href="/benessere-${area}"`), `${route}: area navigation missing ${area}`);
   for (const anchor of ['comprendere','ambiti','primo-passo']) assert(html.includes(`id="${anchor}"`), `${route}: missing ${anchor}`);
   assert.equal((html.match(/data-wellbeing-service=""/g) || []).length, 3, `${route}: three service links`);
+  assert(!html.includes('connessioni-title'), `${route}: repeated cross-area section must stay absent`);
+  const main = html.match(/<main\b[\s\S]*?<\/main>/)?.[0] ?? '';
+  for (const other of ['benessere-organizzativo','benessere-patrimoniale','benessere-digitale'].filter(item => item !== route)) {
+   assert.equal((main.match(new RegExp(`href="/${other}"`, 'g')) || []).length, 1, `${route}: link to ${other} belongs only in the top switcher`);
+  }
  }
 }
 for (const route of ['horyzon', 'impresa', 'economia', 'umanita']) {
