@@ -326,6 +326,7 @@ export class SupabaseProviderRuntimeStore implements ProviderRuntimeStore {
       method: 'POST',
       headers: this.supabaseHeaders(),
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(5000),
     });
     if (!response.ok) throw new Error(`AI Score runtime store RPC failed: ${fn}`);
     return response.json() as Promise<T>;
@@ -353,11 +354,11 @@ export function runtimeStoreDiagnostics(store: ProviderRuntimeStore) {
   return { kind: store.kind, persistent: store.persistent, enabled: isTruthyEnv(process.env.AI_SCORE_RUNTIME_STORE_ENABLED) };
 }
 
-export function readBudgetConfig(providerId: AiScoreProviderId): { providerDailyBudgetUsd: number | null; globalDailyBudgetUsd: number | null; state: 'available' | 'missing' | 'invalid' } {
+export function readBudgetConfig(providerId: AiScoreProviderId, env:Record<string,string|undefined> = process.env): { providerDailyBudgetUsd: number | null; globalDailyBudgetUsd: number | null; state: 'available' | 'missing' | 'invalid' } {
   const providerEnv = providerBudgetEnv(providerId);
-  const providerDailyBudgetUsd = parseMoney(process.env[providerEnv]);
-  const globalDailyBudgetUsd = parseMoney(process.env.AI_SCORE_DAILY_BUDGET_USD);
-  const invalid = invalidMoney(process.env[providerEnv]) || invalidMoney(process.env.AI_SCORE_DAILY_BUDGET_USD);
+  const providerDailyBudgetUsd = parseMoney(env[providerEnv]);
+  const globalDailyBudgetUsd = parseMoney(env.AI_SCORE_DAILY_BUDGET_USD);
+  const invalid = invalidMoney(env[providerEnv]) || invalidMoney(env.AI_SCORE_DAILY_BUDGET_USD);
   return {
     providerDailyBudgetUsd,
     globalDailyBudgetUsd,
@@ -365,17 +366,17 @@ export function readBudgetConfig(providerId: AiScoreProviderId): { providerDaily
   };
 }
 
-export function readRateLimitConfig() {
+export function readRateLimitConfig(env:Record<string,string|undefined> = process.env) {
   return {
     client: {
-      limit: parseInteger(process.env.AI_SCORE_RATE_LIMIT_MAX) ?? 6,
-      windowSeconds: parseInteger(process.env.AI_SCORE_RATE_LIMIT_WINDOW_SECONDS) ?? 600,
+      limit: parseInteger(env.AI_SCORE_RATE_LIMIT_MAX) ?? 6,
+      windowSeconds: parseInteger(env.AI_SCORE_RATE_LIMIT_WINDOW_SECONDS) ?? 600,
     },
     domain: {
-      limit: parseInteger(process.env.AI_SCORE_DOMAIN_LIMIT_MAX) ?? 3,
-      windowSeconds: parseInteger(process.env.AI_SCORE_DOMAIN_LIMIT_WINDOW_SECONDS) ?? 1800,
+      limit: parseInteger(env.AI_SCORE_DOMAIN_LIMIT_MAX) ?? 3,
+      windowSeconds: parseInteger(env.AI_SCORE_DOMAIN_LIMIT_WINDOW_SECONDS) ?? 1800,
     },
-    hmacConfigured: Boolean(process.env.AI_SCORE_RATE_LIMIT_HMAC_SECRET),
+    hmacConfigured: Boolean(env.AI_SCORE_RATE_LIMIT_HMAC_SECRET),
   };
 }
 

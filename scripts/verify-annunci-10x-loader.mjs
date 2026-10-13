@@ -73,7 +73,7 @@ async function assertIntegrations() {
   assert.match(analyze, /annunci10xProgressForAnalysisStage/);
   assert.match(analyze, /busy === 'source'/);
   assert.match(analyze, /busy === 'result'/);
-  assert.match(analyze, /Carichiamo l'offerta Annuncio 10x/);
+  assert.match(analyze, /Riscriviamo il tuo annuncio/);
   assert.doesNotMatch(analyze, /className=\{styles\.progressRail\}/);
 
   assert.match(identity, /Annunci10xLoader/);
@@ -83,11 +83,14 @@ async function assertIntegrations() {
 
   assert.match(client, /createLoader/);
   assert.match(client, /createStepLoaderLabels/);
-  assert.match(client, /Carichiamo l'offerta Annuncio 10x/);
-  assert.match(client, /Prepariamo il pagamento sicuro/);
+  // CREATE now ends with free generation; paid checkout belongs to ANALYZE.
+  assert.match(client, /FreeGenerationAction/);
+  assert.match(client, /Generiamo il tuo Annuncio 10x/);
+  assert.match(client, /generateAnnunci10xPremiumOutput/);
   assert.match(client, /setCreateLoader\(null\)/);
 
-  assert.match(fulfillment, /Verifichiamo il pagamento/);
+  assert.match(fulfillment, /READY_TO_GENERATE/);
+  assert.match(fulfillment, /PREPARING/);
   assert.match(fulfillment, /Riscriviamo il testo/);
   assert.match(fulfillment, /Prepariamo la generazione/);
 

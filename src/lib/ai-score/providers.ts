@@ -25,12 +25,13 @@ import {
 } from './visibility';
 
 export class RegistryAiVisibilityProvider implements AiVisibilityProvider {
-  async measure(input: { auditId: string; domain: string; entity: EntityAnalysis }): Promise<VisibilityScore> {
+  async measure(input: { auditId: string; domain: string; entity: EntityAnalysis; signal?:AbortSignal;clientKey?:string }): Promise<VisibilityScore> {
     return measureAiVisibility({
       auditId: input.auditId,
       domain: input.domain,
       entity: input.entity,
       profileId: 'FREE_QUICK_SCAN',
+      signal:input.signal,clientKey:input.clientKey,
     });
   }
 }

@@ -1,5 +1,10 @@
 # Horyzon AI Score provider activation
 
+Update 2026-10-13: the sections below retain the historical phase rollout.
+The current prepared implementation, remaining production gates, model pricing
+and local verification are documented in [Public flow verification](./2026-10-13-public-flow-verification.md).
+No configuration or publication is implied by the new adapter wiring.
+
 Phase 6A introduces the safe activation layer for future AI Visibility and External Brand Footprint providers. It does not add API keys, payment flows, live provider calls, or public provider execution.
 
 ## Runtime states

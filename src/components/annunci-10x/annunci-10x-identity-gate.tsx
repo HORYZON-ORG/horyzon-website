@@ -137,6 +137,7 @@ export function Annunci10xIdentityGate(props: IdentityGateProps) {
         </div>
       </details>
       <label className={styles.unknownToggle}><input type="checkbox" checked={contact.marketingConsent} onChange={(event) => setContact({ ...contact, marketingConsent: event.target.checked })} disabled={busy === 'contact'} /><span>Voglio ricevere anche consigli e novità da Horyzon.</span></label>
+      <p className={styles.note}>Usiamo questi dati per fornire il risultato e gestire la richiesta nel CRM HighLevel di Horyzon. Il consenso alle novità è facoltativo e distinto dalla verifica email. <a href="https://www.iubenda.com/privacy-policy/64704330">Leggi l’informativa privacy ↗︎</a></p>
       <p className={styles.formMicrocopy}>Niente spam. Ti cancelli con un clic.</p>
       <div className={styles.actions}><button type="submit" disabled={busy === 'contact'}>{busy === 'contact' ? 'Salvataggio in corso' : props.submitLabel ?? 'Salva contatto'}</button></div>
       {busy === 'contact' && <Annunci10xLoader variant="strip" indeterminate label="Salviamo i dati di contatto" />}

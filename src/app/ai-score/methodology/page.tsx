@@ -40,9 +40,9 @@ const readinessAreas = [
 ] as const;
 
 const supportedSurfaces = [
-  ['AI Visibility', 'OpenAI Web Search', 'Not configured', 'FREE_QUICK_SCAN misura prompt brand, categoria, servizio, problema e discovery solo quando un provider reale e configurato.'],
-  ['External Brand Footprint', 'Perplexity Search API', 'Not configured', 'FREE_EXTERNAL_FOOTPRINT osserva fonti esterne quando il provider e configurato; la quantita di risultati non equivale automaticamente ad autorevolezza.'],
-  ['Legacy cleanup', 'Microsoft Bing', 'Not configured', 'Bing Search APIs legacy non sono piu usate: eventuali provider futuri saranno valutati con adapter e contratti aggiornati.'],
+  ['AI Visibility', 'OpenAI Web Search', 'Dipende dalla scansione', 'FREE_QUICK_SCAN pianifica cinque prompt. Esegue solo le ricerche coperte da servizi, protezioni e budget disponibili; una copertura ridotta viene dichiarata.'],
+  ['External Brand Footprint', 'Perplexity Search API · candidato', 'Non misurato', 'FREE_EXTERNAL_FOOTPRINT non esegue ricerche esterne in questa versione. La quantita di risultati non equivale automaticamente ad autorevolezza.'],
+  ['Legacy cleanup', 'Microsoft Bing', 'Non utilizzato', 'Bing Search APIs legacy non sono piu usate: eventuali provider futuri saranno valutati con adapter e contratti aggiornati.'],
 ] as const;
 
 export const metadata: Metadata = pageMetadata({ path: '/ai-score/methodology', title: 'Come funziona Horyzon AI Score', description });
@@ -106,7 +106,7 @@ export default function AiScoreMethodologyPage() {
         <header className="rd-head">
           <p className="rd-label">AI Readiness</p>
           <h2 id="ai-method-readiness-title" className="rd-h2">Cosa analizziamo</h2>
-          <p className="rd-head-lead">AI Readiness considera diverse dimensioni del sito. Insieme descrivono quanto le informazioni siano accessibili, comprensibili e verificabili dai sistemi automatici.</p>
+          <p className="rd-head-lead">AI Readiness considera diverse dimensioni del sito. Insieme descrivono quanto le informazioni siano accessibili, comprensibili e verificabili dai sistemi automatici. La scansione legge l’HTML ricevuto, senza eseguire JavaScript: i contenuti caricati solo nel browser possono restare fuori dal campione.</p>
         </header>
         <div className="ai-method-areas">
           {readinessAreas.map(([number, title, copy]) => <article className="rd-tile" key={number}>
@@ -135,7 +135,7 @@ export default function AiScoreMethodologyPage() {
         <header className="rd-head">
           <p className="rd-label">Provider</p>
           <h2 id="ai-method-providers-title" className="rd-h2">Superfici supportate</h2>
-          <p className="rd-head-lead">Le superfici esterne restano fail-closed finche non sono presenti credenziali, budget, rate limit, circuit breaker e uno store persistente.</p>
+          <p className="rd-head-lead">Ogni risultato dichiara le ricerche effettivamente svolte. Se un servizio non è disponibile o i limiti della scansione non permettono di usarlo, la metrica resta non misurata.</p>
         </header>
         <div className="ai-method-provider-grid">
           {supportedSurfaces.map(([surface, provider, status, copy]) => <article className="rd-tile" key={`${surface}-${provider}`}>

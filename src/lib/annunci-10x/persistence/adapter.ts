@@ -752,6 +752,15 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
     return parseEventRow(first(rows, 'append event'));
   }
 
+  async getEvents(sessionId: string, sessionSecret: string, eventName: string, syncKey?: string): Promise<PersistedEvent[]> {
+    await this.requireOwnership(sessionId, sessionSecret);
+    const rows = await this.select('annunci10x_events', {
+      session_id: `eq.${sessionId}`, event_name: `eq.${eventName}`, select: '*', order: 'created_at.desc', limit: '100',
+      ...(syncKey ? { 'metadata->>syncKey': `eq.${syncKey}` } : {}),
+    });
+    return rows.map(parseEventRow);
+  }
+
   private async requireOwnership(sessionId: string, sessionSecret: string): Promise<void> {
     const verified = await this.rpc<boolean>('annunci10x_verify_session_secret', {
       p_session_id: sessionId,
@@ -1735,6 +1744,12 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
     };
     this.events.push(row);
     return parseEventRow(row);
+  }
+
+  async getEvents(sessionId: string, sessionSecret: string, eventName: string, syncKey?: string): Promise<PersistedEvent[]> {
+    this.requireMemoryOwnership(sessionId, sessionSecret);
+    return this.events.filter(row => row.session_id === sessionId && row.event_name === eventName
+      && (!syncKey || (row.metadata as Record<string, unknown>).syncKey === syncKey)).slice(-100).map(parseEventRow);
   }
 
   private requireMemoryOwnership(sessionId: string, sessionSecret: string): void {

@@ -8,6 +8,21 @@
     "status": "completed",
     "output": [
       {
+        "type": "web_search_call",
+        "id": "fixture-search-call",
+        "status": "completed",
+        "action": {
+          "type": "search",
+          "query": "mock search",
+          "sources": [
+            {
+              "type": "url",
+              "url": "https://example.org/fixture-source"
+            }
+          ]
+        }
+      },
+      {
         "type": "message",
         "content": [
           {

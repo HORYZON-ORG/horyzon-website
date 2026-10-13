@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const runtime = readFileSync(join(root, 'src/lib/ai-score/provider-runtime.ts'), 'utf8');
-const route = readFileSync(join(root, 'src/app/api/ai-score/route.ts'), 'utf8');
+const route = readFileSync(join(root, 'src/app/api/ai-score/route.ts'), 'utf8') + readFileSync(join(root, 'src/lib/ai-score/handler.ts'), 'utf8');
 const packageJson = readFileSync(join(root, 'package.json'), 'utf8');
 const script = readFileSync(join(root, 'scripts/ai-score-test-provider.mjs'), 'utf8');
 const docs = readFileSync(join(root, 'docs/ai-score-provider-activation.md'), 'utf8');
@@ -38,7 +38,7 @@ assert.match(runtime, /provider circuit is OPEN/, 'Open circuit must block execu
 assert.match(runtime, /scan profile budget exceeded/, 'Scan profile budget must block execution');
 assert.doesNotMatch(runtime, /defaultEnabled: true/, 'Providers must not be enabled by default');
 
-assert.match(route, /const url = isRecord\(payload\) && typeof payload\.url === 'string' \? payload\.url : ''/, 'Public API must read only url from the request body');
+assert.match(route, /const rawUrl=payload[\s\S]{0,100}typeof payload\.url==='string'/, 'Public API must read only url from the request body');
 assert.doesNotMatch(route, /payload\.(provider|profile|promptCount|queryCount|budget|premium|test|execute)/, 'Public API must not trust paid/test execution fields');
 
 assert.match(packageJson, /"ai-score:test-provider": "node --no-warnings --experimental-strip-types scripts\/ai-score-test-provider\.mjs"/, 'Manual provider dry-run script must be exposed');

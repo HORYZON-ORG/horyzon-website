@@ -316,7 +316,7 @@ assert.throws(() => validateEditorialCoreOutput({
   const evaluateCall = context.provider.calls.find((call) => call.operationType === 'EVALUATE');
   assert.equal(evaluateCall?.outputSchemaName, 'annunci10x_evaluate_v2', 'premium evaluates generated master through V2 schema');
   assert.equal(evaluateCall?.input?.target?.kind, 'GENERATED_MASTER', 'premium V2 evaluate target is GENERATED_MASTER');
-  assert.equal(JSON.stringify(evaluateCall?.input?.target ?? {}).includes('Addetto pulizie'), true, 'premium V2 evaluate target includes generated master text');
+  assert.ok(result.master.sections.some(section => section.body.trim().length > 15 && evaluateCall?.input?.target?.text?.includes(section.body)), 'premium V2 evaluate target includes actual generated master text');
   assert.equal(JSON.stringify(evaluateCall?.input?.target ?? {}).includes('roleCard'), false, 'premium V2 evaluate target does not embed role card as fallback evidence');
   const evaluation = await context.persistence.getLatestEvaluation(created.session.id, created.sessionSecret);
   assert.equal(evaluation?.target, 'GENERATED_MASTER');

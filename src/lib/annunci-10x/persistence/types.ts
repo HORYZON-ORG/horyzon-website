@@ -605,4 +605,5 @@ export interface Annunci10xPersistenceAdapter {
   getOutputById(outputId: string, sessionId: string, sessionSecret: string): Promise<PersistedOutput | null>;
   getEvaluationByOutputId(outputId: string, sessionId: string, sessionSecret: string): Promise<PersistedEvaluation | null>;
   appendEvent(input: AppendEventInput): Promise<PersistedEvent>;
+  getEvents(sessionId: string, sessionSecret: string, eventName: string, syncKey?: string): Promise<PersistedEvent[]>;
 }

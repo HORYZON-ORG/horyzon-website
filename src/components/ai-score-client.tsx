@@ -24,6 +24,7 @@ export function AiScoreClient() {
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const resultRef = useRef<HTMLElement | null>(null);
+  const requestRef=useRef<AbortController|null>(null);
   const reached = useMemo(() => new Set(events.filter(event => event.type === 'state').map(event => event.state)), [events]);
   const showProgress = (running || events.length > 0 || error) && !audit;
 
@@ -33,8 +34,10 @@ export function AiScoreClient() {
     resultRef.current.scrollIntoView({ block: 'start', behavior: reduceMotion ? 'auto' : 'smooth' });
   }, [audit]);
 
+  useEffect(()=>()=>requestRef.current?.abort(),[]);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if(requestRef.current)return;
     setError(null);
     setAudit(null);
     setEvents([]);
@@ -44,11 +47,15 @@ export function AiScoreClient() {
       return;
     }
     setRunning(true);
+    const controller=new AbortController();requestRef.current=controller;
+    const timeout=setTimeout(()=>controller.abort(),60000);
+    let terminal=false;
     try {
       const response = await fetch('/api/ai-score', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ url: input }),
+        signal:controller.signal,
       });
       if (!response.ok) {
         const payload = await response.json().catch(() => ({ error: 'Audit non avviato.' })) as { error?: string };
@@ -62,25 +69,30 @@ export function AiScoreClient() {
         const { value, done } = await reader.read();
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
+        if(buffer.length>1000000)throw new Error('Risposta troppo grande. Analisi interrotta.');
         const lines = buffer.split('\n');
         buffer = lines.pop() ?? '';
-        for (const line of lines) handleLine(line);
+        for (const line of lines) terminal=handleLine(line)||terminal;
       }
-      if (buffer.trim()) handleLine(buffer);
+      if (buffer.trim()) terminal=handleLine(buffer)||terminal;
+      if(!terminal)throw new Error('La risposta è stata interrotta prima del risultato. Riprova tra poco.');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Audit non riuscito.');
+      setError(controller.signal.aborted?'Analisi interrotta o tempo massimo raggiunto. Riprova tra poco.':cause instanceof Error ? cause.message : 'Audit non riuscito.');
       setActiveState('failed');
     } finally {
+      clearTimeout(timeout);requestRef.current=null;
       setRunning(false);
     }
   }
 
   function handleLine(line: string) {
-    if (!line.trim()) return;
+    if (!line.trim()) return false;
     const event = JSON.parse(line) as AuditStreamEvent;
+    if(!event||!['state','result','error'].includes(event.type))throw new Error('Risposta di analisi non valida. Riprova tra poco.');
     setEvents(previous => [...previous, event]);
     if (event.type === 'state') setActiveState(event.state);
     if (event.type === 'result') {
+      if(!event.audit||!['completed','partial','failed'].includes(event.audit.status))throw new Error('Risultato di analisi non valido.');
       setAudit(event.audit);
       setActiveState(event.audit.status);
     }
@@ -88,13 +100,14 @@ export function AiScoreClient() {
       setError(event.message);
       setActiveState('failed');
     }
+    return event.type==='result'||event.type==='error';
   }
 
   return <div id="ai-score-audit" className="ai-score-product" aria-live="polite">
     <form className={running ? 'ai-score-form is-running' : 'ai-score-form'} onSubmit={submit}>
       <label htmlFor="ai-score-url">Dominio o URL da analizzare</label>
       <div className="ai-score-input-row">
-        <input id="ai-score-url" value={url} onChange={event => setUrl(event.target.value)} placeholder="https://azienda.it" inputMode="url" autoComplete="url" disabled={running} aria-describedby="ai-score-help" />
+        <input id="ai-score-url" value={url} onChange={event => setUrl(event.target.value)} placeholder="https://azienda.it" inputMode="url" autoComplete="url" disabled={running} aria-invalid={Boolean(error)} aria-describedby={error?'ai-score-help ai-score-error':'ai-score-help'} />
         <button className="rd-cta ai-score-submit" type="submit" disabled={running}>{running ? 'Analisi in corso' : 'Analizza il sito'} <span aria-hidden="true">↗︎</span></button>
       </div>
       <div className="ai-score-form-meta" id="ai-score-help">
@@ -105,7 +118,7 @@ export function AiScoreClient() {
     </form>
 
     {showProgress && <AnalysisProgress activeState={activeState} reached={reached} error={error} />}
-    {error && <p className="ai-score-error" role="alert">{error}</p>}
+    {error && <p id="ai-score-error" className="ai-score-error" role="alert">{error}</p>}
     {audit && <AuditResult audit={audit} resultRef={resultRef} />}
   </div>;
 }
@@ -158,6 +171,7 @@ function AuditResult({ audit, resultRef }: { audit: FreeAuditResult; resultRef: 
 
     {audit.readinessCoverage && <p className="ai-score-notice">Readiness coverage {audit.readinessCoverage.value}% sui controlli applicabili misurati.</p>}
     {audit.notice && <p className="ai-score-notice">{audit.notice}</p>}
+    {audit.visibility.blocker && <p className="ai-score-notice">{audit.visibility.blocker}</p>}
     <p className="ai-score-interpretation">{audit.interpretation}</p>
     <PremiumPreview audit={audit} />
   </section>;
@@ -181,7 +195,7 @@ function VisibilityMetric({ audit }: { audit: FreeAuditResult }) {
     {measured ? <ScoreValue score={audit.visibility.score} /> : <div className="ai-score-not-measured" aria-label="Not measured">—</div>}
     <strong className="ai-score-metric-state">{measured ? visibilityStateLabel(audit) : 'Non ancora misurata'}</strong>
     <p>Analizziamo la presenza del brand su diverse superfici di ricerca AI.</p>
-    {!measured && <small>Misurazione disponibile quando i provider saranno attivati.</small>}
+    {!measured && <small>Servono osservazioni verificabili e un servizio disponibile entro i limiti della scansione.</small>}
   </article>;
 }
 

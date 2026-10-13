@@ -20,6 +20,7 @@ import {
   OpenAIWebSearchAdapter,
   mapOpenAIWebSearchFailureToRuntime,
 } from '../src/lib/ai-score/openai-web-search.ts';
+import { OPENAI_SEARCH_MODEL, openAIQueryReservation } from '../src/lib/ai-score/openai-search-cost.ts';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const args = parseArgs(process.argv.slice(2));
@@ -44,7 +45,9 @@ const generatedPrompts = generateVisibilityPrompts({ auditId: 'test-only-phase7a
 const promptFreeze = freezeVisibilityPromptSet({ prompts: generatedPrompts, entity: entityProfile });
 const prompts = promptFreeze.prompts;
 const plannedRequests = 5;
-const estimatedCostUsd = plannedRequests * definition.estimatedUnitCostUsd;
+// Mock execution uses a fictional fixture charge; real preflight includes
+// search tool and GPT-5 token allowance, never just the tool's $0.01 fee.
+const estimatedCostUsd = plannedRequests * (mockProvider ? 0.01 : provider==='openai_web_search' ? openAIQueryReservation(process.env.AI_SCORE_OPENAI_RESPONSES_MODEL ?? OPENAI_SEARCH_MODEL) : definition.estimatedUnitCostUsd);
 const store = mockProvider ? new MemoryProviderRuntimeStore({ persistent: true }) : createProviderRuntimeStore();
 const budget = readBudgetConfig(provider);
 const effectiveBudget = mockProvider
@@ -105,7 +108,7 @@ if (execute && preflight.ok && provider === 'openai_web_search') {
       providerId: provider,
       mode: 'TEST_ONLY',
       estimatedCostUsd,
-      actualCostUsd: estimateActualCost(observation.providerUsage),
+      actualCostUsd: null,
       success,
       latencyMs: Date.now() - started,
     });
@@ -368,11 +371,6 @@ function ensureMockHmac(enabled) {
   if (!enabled || process.env.AI_SCORE_RATE_LIMIT_HMAC_SECRET) return () => {};
   process.env.AI_SCORE_RATE_LIMIT_HMAC_SECRET = 'TEST_ONLY_HMAC_SECRET';
   return () => { delete process.env.AI_SCORE_RATE_LIMIT_HMAC_SECRET; };
-}
-
-function estimateActualCost(usage) {
-  if (!usage?.totalTokens) return null;
-  return Math.max(0.000001, Math.round((usage.totalTokens / 1_000_000) * 0.5 * 1_000_000) / 1_000_000);
 }
 
 function titleCase(value) {

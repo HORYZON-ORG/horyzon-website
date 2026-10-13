@@ -19,7 +19,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const openaiAdapter = readFileSync(join(root, 'src/lib/ai-score/openai-web-search.ts'), 'utf8');
 const visibility = readFileSync(join(root, 'src/lib/ai-score/visibility.ts'), 'utf8');
 const runtime = readFileSync(join(root, 'src/lib/ai-score/runtime-store.ts'), 'utf8');
-const route = readFileSync(join(root, 'src/app/api/ai-score/route.ts'), 'utf8');
+const route = readFileSync(join(root, 'src/app/api/ai-score/route.ts'), 'utf8') + readFileSync(join(root, 'src/lib/ai-score/handler.ts'), 'utf8');
 const script = readFileSync(join(root, 'scripts/ai-score-test-provider.mjs'), 'utf8');
 const packageJson = readFileSync(join(root, 'package.json'), 'utf8');
 const docs = readFileSync(join(root, 'docs/ai-score-provider-activation.md'), 'utf8');
@@ -44,7 +44,7 @@ assert.match(runtime, /reserveBudget/, 'Budget reservation must exist');
 assert.match(runtime, /reconcileBudget/, 'Budget reconciliation must exist');
 assert.match(runtime, /checkRateLimit/, 'Rate limit integration must exist');
 assert.match(runtime, /recordProviderFailure/, 'Provider failure must feed circuit breaker');
-assert.match(route, /const url = isRecord\(payload\) && typeof payload\.url === 'string' \? payload\.url : ''/, 'Public route must only accept url');
+assert.match(route, /const rawUrl=payload[\s\S]{0,100}typeof payload\.url==='string'/, 'Public route must only accept url');
 assert.doesNotMatch(route, /OpenAIWebSearchAdapter|MockOpenAIResponsesTransport|--execute|mock-provider/, 'Public API must not import test-only adapter execution');
 assert.match(script, /realNetworkCalls/, 'Provider script must report realNetworkCalls');
 assert.match(script, /mockTransportCalls/, 'Provider script must report mock transport calls');
@@ -150,7 +150,7 @@ async function testTimeout() {
 
 async function testBlocksBeforeTransport() {
   const transport = new MockOpenAIResponsesTransport({ fixture: fixture('branded-mention-horyzon-citation.json').response });
-  const missingKey = new OpenAIWebSearchAdapter({ enabled: true, transport });
+  const missingKey = new OpenAIWebSearchAdapter({ enabled: true, apiKey: '', transport });
   const observation = await missingKey.execute(freezeA.prompts[0], context());
   assert.equal(observation.status, 'NOT_CONFIGURED');
   assert.equal(transport.mockTransportCalls, 0, 'Missing key must block before transport');

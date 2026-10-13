@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { Annunci10xPublicError, saveAnnunci10xLeadContact } from '@/lib/annunci-10x';
+import { syncAnnunci10xLead } from '@/lib/annunci-10x/highlevel';
 import { createContext, getSessionCookie, readJsonBody, toErrorResponse } from '../_shared';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 export async function POST(request: Request) {
   try {
@@ -26,11 +27,13 @@ export async function POST(request: Request) {
       email: payload.email,
       marketingConsent: payload.marketingConsent,
     });
+    const crm = await syncAnnunci10xLead({ session: cookie, persistence: context.persistence });
     return NextResponse.json({
       ok: true,
       contactSaved: saved.contactSaved,
       verificationRequired: saved.verificationRequired,
       emailVerified: saved.emailVerified,
+      crmStatus: crm.status,
     }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
     return toErrorResponse(error);

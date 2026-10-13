@@ -119,6 +119,7 @@ export interface CrawledPage {
 }
 
 export interface CrawlSummary {
+  pagesAttempted?: number;
   requestedLimit: number;
   pagesFetched: number;
   pagesFailed: number;
@@ -483,6 +484,8 @@ export interface CostEstimate {
 }
 
 export interface VisibilityExecutionContext {
+  clientKey?: string;
+  signal?: AbortSignal;
   auditId: string;
   entity: EntityProfile;
   profileId: string;
@@ -501,7 +504,7 @@ export interface AiVisibilityProviderAdapter {
 }
 
 export interface AiVisibilityProvider {
-  measure(input: { auditId: string; domain: string; entity: EntityAnalysis }): Promise<VisibilityScore>;
+  measure(input: { auditId: string; domain: string; entity: EntityAnalysis; signal?: AbortSignal; clientKey?: string }): Promise<VisibilityScore>;
 }
 
 export interface ExternalFootprintExecutionContext {
@@ -523,7 +526,7 @@ export interface ExternalFootprintProviderAdapter {
 }
 
 export interface ExternalFootprintProvider {
-  measure(input: { auditId: string; domain: string; entity: EntityAnalysis }): Promise<ExternalBrandFootprintResult>;
+  measure(input: { auditId: string; domain: string; entity: EntityAnalysis; signal?: AbortSignal }): Promise<ExternalBrandFootprintResult>;
 }
 
 export interface AuditRepository {

@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import type { InternalAuditResult } from './types';
 
 export const AI_SCORE_LIMITS = {
+  auditTimeoutMs: 45000,
   maxPages: 6,
   maxConcurrency: 2,
   maxRedirects: 4,

@@ -108,7 +108,7 @@ assert.match(types, /coverage\?: number/, 'Visibility and External Footprint API
 assert.match(client, /Analizziamo la presenza del brand su diverse superfici di ricerca AI/, 'Public copy must explain AI Visibility as brand presence across AI search surfaces');
 assert.match(client, /Quick scan · \$\{executed\}\/\$\{planned\} query analizzate/, 'FREE UI must be ready to show quick scan coverage');
 assert.match(methodologyPage, /Superfici supportate/, 'Methodology page must document supported surfaces');
-assert.match(methodologyPage, /Not configured/, 'Methodology page must show providers as not configured by default');
+assert.match(methodologyPage, /Dipende dalla scansione/, 'Methodology must distinguish availability from missing credentials');
 assert.match(methodologyPage, /Bing Search APIs legacy non sono piu usate/, 'Methodology page must document Microsoft cleanup');
 assert.match(methodologyPage, /External Brand Footprint/, 'Methodology page must explain External Brand Footprint');
 assert.match(methodologyPage, /quantita di risultati non equivale automaticamente ad autorevolezza/, 'Methodology page must reject raw result-count authority');

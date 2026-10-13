@@ -7,11 +7,16 @@ import {
   calculateCategoryScores,
   calculateEvidenceConfidence,
   calculateReadinessScore,
+  calculateReadinessCoverage,
   projectFreeResult,
 } from './methodology';
 import { AI_SCORE_LIMITS } from './limits';
 import { aiVisibilityProvider, externalFootprintProvider } from './providers';
-import { normalizeAuditUrl, safeFetch } from './ssrf';
+import { normalizeAuditUrl, safeFetch, UnsafeAuditUrlError } from './ssrf';
+import { abortable, AuditDeadlineError } from './deadline';
+import { providerWithin } from './provider-deadline';
+import { measureAiVisibility } from './visibility';
+import { measureExternalBrandFootprint } from './external-footprint';
 import type {
   AuditCheck,
   AuditEvidence,
@@ -25,6 +30,8 @@ import type {
   PageClassification,
   PremiumAuditPayload,
   RemediationItem,
+  AiVisibilityProvider,
+  ExternalFootprintProvider,
 } from './types';
 
 type StateCallback = (state: AuditPipelineState, label: string) => void;
@@ -65,6 +72,8 @@ type PageFacts = CrawledPage & {
 type OptionalFetch = { status: 'measured'; url: string; body: string; headers: Headers } | { status: 'not_measured'; reason: string };
 
 type AuditContext = {
+  pagesAttempted: number;
+  pagesFailed: number;
   auditId: string;
   startedAt: string;
   inputUrl: URL;
@@ -90,21 +99,42 @@ const CHECK_COPY: Partial<Record<string, { why: string; fix: string; verificatio
   structured_dates: { why: 'Date strutturate aiutano a valutare freschezza e manutenzione.', fix: 'Aggiungi datePublished/dateModified dove pertinenti.', verification: 'Valida structured data e ripeti l’audit.', severity: 'optimization' },
 };
 
-export async function runAiScoreAudit(rawUrl: string, onState?: StateCallback): Promise<InternalAuditResult> {
+export type AuditOptions = {
+  clientKey?: string;
+  signal?: AbortSignal;
+  timeoutMs?: number;
+  fetchImpl?: typeof safeFetch;
+  visibilityProvider?: AiVisibilityProvider;
+  footprintProvider?: ExternalFootprintProvider;
+};
+export async function runAiScoreAudit(rawUrl: string, onState?: StateCallback, options: AuditOptions = {}): Promise<InternalAuditResult> {
+  const controller = new AbortController();
+  const timeoutMs=Math.min(options.timeoutMs ?? AI_SCORE_LIMITS.auditTimeoutMs,AI_SCORE_LIMITS.auditTimeoutMs);
+  const deadlineAt=Date.now()+timeoutMs;
+  const timer = setTimeout(() => controller.abort(new AuditDeadlineError()),timeoutMs);
+  const signal = AbortSignal.any([controller.signal, ...(options.signal ? [options.signal] : [])]);
+  try { return await abortable(runAuditPipeline(rawUrl, onState, { ...options, signal,deadlineAt }), signal); }
+  finally { clearTimeout(timer); }
+}
+async function runAuditPipeline(rawUrl: string, onState: StateCallback | undefined, options: AuditOptions & {deadlineAt:number}): Promise<InternalAuditResult> {
   const startedAt = new Date().toISOString();
   const auditId = randomUUID();
   onState?.('queued', 'Preparazione analisi');
 
   const inputUrl = normalizeAuditUrl(rawUrl);
+  const fetchPage = (url: string | URL, maxBytes: number) => abortable((options.fetchImpl ?? safeFetch)(url, { maxBytes, signal: options.signal }), options.signal);
   onState?.('crawling', 'Verifica accessibilità');
 
-  const homeResponse = await safeFetch(inputUrl, { maxBytes: AI_SCORE_LIMITS.maxBytesPerPage });
+  const homeResponse = await fetchPage(inputUrl, AI_SCORE_LIMITS.maxBytesPerPage);
+  if (homeResponse.status < 200 || homeResponse.status >= 300) throw new UnsafeAuditUrlError(`Il sito ha risposto HTTP ${homeResponse.status}. Non possiamo misurarne il contenuto: verifica l’indirizzo o riprova più tardi.`);
+  const contentType = homeResponse.headers.get('content-type');
+  if (contentType && !/text\/html|application\/xhtml\+xml/i.test(contentType)) throw new UnsafeAuditUrlError('Inserisci l’indirizzo di una pagina HTML pubblica. Questo formato non è supportato.');
   const home = analyzePage(homeResponse.url, homeResponse.status, homeResponse.headers, homeResponse.body, 0);
 
   const [robots, sitemap, llms] = await Promise.all([
-    fetchOptional(new URL('/robots.txt', home.finalUrl).toString()),
-    fetchOptional(new URL('/sitemap.xml', home.finalUrl).toString()),
-    fetchOptional(new URL('/llms.txt', home.finalUrl).toString()),
+    fetchOptional(new URL('/robots.txt', home.finalUrl).toString(), fetchPage),
+    fetchOptional(new URL('/sitemap.xml', home.finalUrl).toString(), fetchPage),
+    fetchOptional(new URL('/llms.txt', home.finalUrl).toString(), fetchPage),
   ]);
 
   onState?.('crawling', 'Analisi pagine rappresentative');
@@ -112,11 +142,16 @@ export async function runAiScoreAudit(rawUrl: string, onState?: StateCallback): 
   const pages = [home];
   const seen = new Set([home.finalUrl.replace(/\/$/, '')]);
   let duplicateUrlsSkipped = 0;
+  let pagesAttempted = 1;
+  let pagesFailed = 0;
 
   for (const candidate of candidates) {
     if (pages.length >= AI_SCORE_LIMITS.maxPages) break;
+    options.signal?.throwIfAborted();
+    pagesAttempted++;
     try {
-      const response = await safeFetch(candidate, { maxBytes: AI_SCORE_LIMITS.maxBytesPerPage });
+      const response = await fetchPage(candidate, AI_SCORE_LIMITS.maxBytesPerPage);
+      if (response.status < 200 || response.status >= 300 || !/html/i.test(response.headers.get('content-type') ?? 'text/html')) { pagesFailed++; continue; }
       const key = response.url.replace(/\/$/, '');
       if (seen.has(key)) {
         duplicateUrlsSkipped += 1;
@@ -125,20 +160,27 @@ export async function runAiScoreAudit(rawUrl: string, onState?: StateCallback): 
       seen.add(key);
       pages.push(analyzePage(response.url, response.status, response.headers, response.body, 1));
     } catch {
+      options.signal?.throwIfAborted();
+      pagesFailed++;
       // Candidate failures are reflected by crawl coverage/confidence, not exposed as proxy errors.
     }
   }
 
   onState?.('analyzing', 'Analisi struttura, contenuti e segnali AI');
-  const context: AuditContext = { auditId, startedAt, inputUrl, home, pages, robots, sitemap, llms, duplicateUrlsSkipped };
+  const context: AuditContext = { auditId, startedAt, inputUrl, home, pages, robots, sitemap, llms, duplicateUrlsSkipped, pagesAttempted, pagesFailed };
   const entityAnalysis = buildEntityAnalysis(context);
-  const externalBrandFootprint = await externalFootprintProvider.measure({ auditId, domain: inputUrl.hostname, entity: entityAnalysis });
+  const finalDomain = new URL(home.finalUrl).hostname;
   const checks = buildChecks(context, entityAnalysis);
   const categoryScores = calculateCategoryScores(checks);
   const readinessScore = calculateReadinessScore(categoryScores);
 
   onState?.('visibility_check', 'Verifica visibilità AI');
-  const visibility = await aiVisibilityProvider.measure({ auditId, domain: inputUrl.hostname, entity: entityAnalysis });
+  const providerInput={auditId,domain:finalDomain,entity:entityAnalysis};
+  const providerBudget=Math.min(15000,Math.max(1,options.deadlineAt-Date.now()-1000));
+  const [visibility,externalBrandFootprint]=await Promise.all([
+    providerWithin(signal=>(options.visibilityProvider??aiVisibilityProvider).measure({...providerInput,signal,clientKey:options.clientKey}),()=>measureAiVisibility({...providerInput,registry:[]}),options.signal,providerBudget),
+    providerWithin(signal=>(options.footprintProvider??externalFootprintProvider).measure({...providerInput,signal}),()=>measureExternalBrandFootprint({...providerInput,registry:[]}),options.signal,providerBudget),
+  ]);
 
   onState?.('scoring', 'Calcolo risultati');
   const crawlSummary = buildCrawlSummary(context);
@@ -146,7 +188,8 @@ export async function runAiScoreAudit(rawUrl: string, onState?: StateCallback): 
   const remediationSummary = buildRemediationSummary(checks);
   const opportunities = countOpportunities(remediationSummary);
   const status = visibility.state === 'measured' && externalBrandFootprint.state === 'measured' ? 'completed' : 'partial';
-  const readinessState = readinessScore === null ? 'not_measured' : status === 'completed' ? 'measured' : 'partial';
+  const readinessCoverage=calculateReadinessCoverage(checks);
+  const readinessState = readinessScore === null ? 'not_measured' : readinessCoverage.label === 'complete' && pagesFailed===0 ? 'measured' : 'partial';
 
   const premium: PremiumAuditPayload = {
     categoryScores,
@@ -167,11 +210,12 @@ export async function runAiScoreAudit(rawUrl: string, onState?: StateCallback): 
   const audit: InternalAuditResult = {
     auditId,
     accessLevel: 'FREE',
-    domain: inputUrl.hostname,
+    domain: finalDomain,
     finalUrl: home.finalUrl,
     analyzedAt: startedAt,
     methodologyVersion: AI_SCORE_DISPLAY_METHODOLOGY,
     readiness: { state: readinessState, score: readinessScore },
+    readinessCoverage,
     visibility,
     confidence,
     interpretation: buildInterpretation(readinessScore, visibility.state, opportunities.total),
@@ -179,7 +223,7 @@ export async function runAiScoreAudit(rawUrl: string, onState?: StateCallback): 
     signalsAnalyzed: checks.filter((check) => check.measured).length,
     pagesAnalyzed: pages.length,
     status,
-    notice: status === 'partial' ? 'Audit completato con misurazioni parziali: AI Visibility ed External Brand Footprint richiedono provider esterni configurati.' : undefined,
+    notice: status === 'partial' ? 'Audit con misurazioni parziali. Predisposizione tecnica, visibilità AI ed evidenze esterne sono misure distinte: verifica la copertura di ciascuna.' : undefined,
     locked: {
       premiumAudit: true,
       optimizationPlan: true,
@@ -197,9 +241,9 @@ export function toFreeAudit(audit: InternalAuditResult): FreeAuditResult {
   return projectFreeResult(audit);
 }
 
-async function fetchOptional(url: string): Promise<OptionalFetch> {
+async function fetchOptional(url: string, fetchPage: (url: string | URL, maxBytes: number) => Promise<Awaited<ReturnType<typeof safeFetch>>>): Promise<OptionalFetch> {
   try {
-    const response = await safeFetch(url, { maxBytes: 250_000 });
+    const response = await fetchPage(url, 250_000);
     if (response.status >= 200 && response.status < 400) {
       return { status: 'measured', url: response.url, body: response.body, headers: response.headers };
     }
@@ -486,8 +530,9 @@ function buildCrawlSummary(context: AuditContext) {
   for (const page of context.pages) classifications[page.classification] = (classifications[page.classification] ?? 0) + 1;
   return {
     requestedLimit: AI_SCORE_LIMITS.maxPages,
+    pagesAttempted: context.pagesAttempted,
     pagesFetched: context.pages.length,
-    pagesFailed: Math.max(0, AI_SCORE_LIMITS.maxPages - context.pages.length),
+    pagesFailed: context.pagesFailed,
     duplicateUrlsSkipped: context.duplicateUrlsSkipped,
     classifications,
     pages: context.pages.map(({ html: _html, text: _text, description: _description, canonical: _canonical, metaRobots: _metaRobots, xRobots: _xRobots, lang: _lang, viewport: _viewport, contentType: _contentType, headers: _headers, h2: _h2, h3: _h3, links: _links, externalLinks: _externalLinks, imageCount: _imageCount, imagesWithAlt: _imagesWithAlt, schemaTypes: _schemaTypes, sameAs: _sameAs, dates: _dates, hasMain: _hasMain, hasNav: _hasNav, hasArticle: _hasArticle, hasLists: _hasLists, hasTables: _hasTables, hasFaqSignals: _hasFaqSignals, hasDefinitionSignals: _hasDefinitionSignals, hasExampleSignals: _hasExampleSignals, hasSourceSignals: _hasSourceSignals, hasDataSignals: _hasDataSignals, mixedContent: _mixedContent, ...page }) => page),
@@ -534,7 +579,7 @@ function buildInterpretation(readinessScore: number | null, visibilityState: str
     : readinessScore >= 50
       ? 'Il sito presenta una base utilizzabile, ma diverse evidenze possono essere rese più chiare e citabili.'
       : 'Il sito mostra limiti rilevanti nella disponibilità o chiarezza delle evidenze leggibili dai sistemi AI.';
-  const visibility = visibilityState === 'measured' ? ' La visibilità AI è stata misurata separatamente.' : ' La visibilità AI non è ancora misurata perché manca un provider verificabile.';
+  const visibility = visibilityState === 'measured' ? ' La visibilità AI è stata misurata separatamente.' : visibilityState === 'partial' ? ' La visibilità AI è stata misurata su un campione parziale: leggi la copertura disponibile.' : ' La visibilità AI non è stata misurata: mancano osservazioni verificabili entro i limiti della scansione.';
   return `${base} Sono state individuate ${opportunities} opportunità basate sui controlli misurati.${visibility}`;
 }
 

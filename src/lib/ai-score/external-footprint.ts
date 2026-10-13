@@ -98,11 +98,11 @@ export class NoopExternalFootprintStore implements ExternalFootprintStore {
 
 const externalFootprintStore: ExternalFootprintStore = new NoopExternalFootprintStore();
 
-export async function measureExternalBrandFootprint(input: { auditId: string; domain: string; entity: EntityAnalysis; profileId?: ExternalFootprintProfileId; store?: ExternalFootprintStore }): Promise<ExternalBrandFootprintResult> {
+export async function measureExternalBrandFootprint(input: { auditId: string; domain: string; entity: EntityAnalysis; profileId?: ExternalFootprintProfileId; store?: ExternalFootprintStore; registry?:ExternalFootprintProviderAdapter[] }): Promise<ExternalBrandFootprintResult> {
   const profile = externalFootprintProfiles[input.profileId ?? 'FREE_EXTERNAL_FOOTPRINT'];
   const entityProfile = buildEntityProfile(input.domain, input.entity);
   const queries = generateExternalFootprintQueries({ auditId: input.auditId, entity: entityProfile, profile });
-  const registry = createExternalFootprintProviderRegistry();
+  const registry = input.registry ?? createExternalFootprintProviderRegistry();
   const providerStatuses = registry.map(providerStatus);
   const providers = registry.filter((provider) => profile.enabled && profile.providerIds.includes(provider.id) && provider.enabled && provider.isConfigured());
 

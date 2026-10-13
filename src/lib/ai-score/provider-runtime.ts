@@ -68,6 +68,7 @@ export interface ProviderRuntimeState {
 }
 
 export interface ProviderRuntimeOptions {
+  env?: Record<string, string | undefined>;
   usageStore?: ProviderUsageStore;
   estimatedCostUsd?: number;
   scanProfileBudgetUsd?: number;
@@ -82,7 +83,7 @@ export const providerRuntimeDefinitions: Record<AiScoreProviderId, ProviderRunti
     apiKeyEnv: 'OPENAI_API_KEY',
     enabledEnv: 'AI_SCORE_OPENAI_VISIBILITY_ENABLED',
     dailyBudgetEnv: 'AI_SCORE_OPENAI_DAILY_BUDGET_USD',
-    estimatedUnitCostUsd: 0.01,
+    estimatedUnitCostUsd: 0.18,
     defaultEnabled: false,
     publicPriority: 1,
   },
@@ -131,17 +132,18 @@ export function getProviderRuntimeStatus(options: ProviderRuntimeOptions = {}): 
 }
 
 export function getProviderRuntimeState(providerId: AiScoreProviderId, options: ProviderRuntimeOptions = {}): ProviderRuntimeState {
+  const env=options.env ?? process.env;
   const definition = providerRuntimeDefinitions[providerId];
   const store = options.usageStore ?? noopProviderUsageStore;
   const date = formatBudgetDate(options.at ?? new Date());
   const usage = store.getDailyUsage(providerId, date);
-  const configured = hasSecret(definition.apiKeyEnv);
-  const enabled = isTruthyEnv(process.env[definition.enabledEnv]) || definition.defaultEnabled;
-  const masterEnabled = isTruthyEnv(process.env.AI_SCORE_LIVE_PROVIDERS);
-  const testOnly = isTruthyEnv(process.env.AI_SCORE_PROVIDER_TEST_MODE);
-  const dailyBudgetUsd = readDailyBudgetUsd(definition);
+  const configured = hasSecret(definition.apiKeyEnv,env);
+  const enabled = isTruthyEnv(env[definition.enabledEnv]) || definition.defaultEnabled;
+  const masterEnabled = isTruthyEnv(env.AI_SCORE_LIVE_PROVIDERS);
+  const testOnly = isTruthyEnv(env.AI_SCORE_PROVIDER_TEST_MODE);
+  const dailyBudgetUsd = readDailyBudgetUsd(definition,env);
   const estimatedCostUsd = options.estimatedCostUsd ?? 0;
-  const circuitState = getCircuitState(providerId, usage);
+  const circuitState = getCircuitState(providerId, usage, env);
   const budgetState = getBudgetState({ configured, enabled, store, usage, dailyBudgetUsd, estimatedCostUsd });
   const blockers = runtimeBlockers({
     configured,
@@ -270,19 +272,19 @@ function providerHealth(input: {
   return 'DEGRADED';
 }
 
-function readDailyBudgetUsd(definition: ProviderRuntimeDefinition): number | null {
-  return parsePositiveNumber(process.env[definition.dailyBudgetEnv])
-    ?? parsePositiveNumber(process.env.AI_SCORE_DAILY_BUDGET_USD);
+function readDailyBudgetUsd(definition: ProviderRuntimeDefinition,env:Record<string,string|undefined>): number | null {
+  return parsePositiveNumber(env[definition.dailyBudgetEnv])
+    ?? parsePositiveNumber(env.AI_SCORE_DAILY_BUDGET_USD);
 }
 
-function getCircuitState(providerId: AiScoreProviderId, usage: ProviderUsageSnapshot): ProviderCircuitState {
+function getCircuitState(providerId: AiScoreProviderId, usage: ProviderUsageSnapshot,env:Record<string,string|undefined>): ProviderCircuitState {
   const envPrefix = providerId.toUpperCase().replace(/[^A-Z0-9]+/g, '_');
-  if (isTruthyEnv(process.env[`AI_SCORE_${envPrefix}_CIRCUIT_OPEN`])) return 'OPEN';
+  if (isTruthyEnv(env[`AI_SCORE_${envPrefix}_CIRCUIT_OPEN`])) return 'OPEN';
   return usage.consecutiveFailures >= CIRCUIT_FAILURE_THRESHOLD ? 'OPEN' : 'CLOSED';
 }
 
-function hasSecret(envName: string): boolean {
-  return Boolean(process.env[envName]?.trim());
+function hasSecret(envName: string,env:Record<string,string|undefined>): boolean {
+  return Boolean(env[envName]?.trim());
 }
 
 function parsePositiveNumber(value: string | undefined): number | null {
