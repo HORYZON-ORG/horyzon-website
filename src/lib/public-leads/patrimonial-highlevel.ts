@@ -27,6 +27,9 @@ export interface PatrimonialCrmProvider {
   addTags(contactId: string, tags: string[]): Promise<void>;
   addNote(contactId: string, body: string): Promise<{ id: string }>;
   findNoteByRequestMarker?(contactId: string, marker: string): Promise<PatrimonialCrmNote | null>;
+  searchOpportunities?(query: PatrimonialOpportunityQuery): Promise<PatrimonialRemoteOpportunity[]>;
+  createOpportunity?(input: PatrimonialOpportunityWrite): Promise<PatrimonialRemoteOpportunity>;
+  updateOpportunity?(id: string, input: PatrimonialOpportunityWrite & { expectedProviderVersion: string }): Promise<PatrimonialRemoteOpportunity>;
 }
 
 export class PatrimonialCrmError extends Error {
@@ -196,6 +199,24 @@ export class PatrimonialHighLevelProvider implements PatrimonialCrmProvider {
     if (note && (note.locationId !== this.locationId || note.contactId !== contactId || typeof note.id !== 'string' || !note.id)) throw new PatrimonialCrmError('CONFIG');
     return note ?? null;
   }
+  // Deliberate stubs: no opportunity HTTP binding or real write is installed.
+  async searchOpportunities(query: PatrimonialOpportunityQuery): Promise<PatrimonialRemoteOpportunity[]> { void query; throw new PatrimonialCrmError('CONFIG'); }
+  async createOpportunity(input: PatrimonialOpportunityWrite): Promise<PatrimonialRemoteOpportunity> { void input; throw new PatrimonialCrmError('CONFIG'); }
+  async updateOpportunity(id: string, input: PatrimonialOpportunityWrite & { expectedProviderVersion: string }): Promise<PatrimonialRemoteOpportunity> { void id; void input; throw new PatrimonialCrmError('CONFIG'); }
+}
+
+export type PatrimonialOpportunityQuery = { locationId: string; contactId: string; pipelineId: string };
+export type PatrimonialOpportunityWrite = PatrimonialOpportunityQuery & {
+  pipelineStageId: string; status: 'open' | 'won' | 'lost' | 'abandoned';
+  customFields: Record<string, string>; assignedTo?: string; closeReason?: { mode: 'NATIVE' | 'CUSTOM'; key: string; value: string } | null;
+};
+export type PatrimonialRemoteOpportunity = PatrimonialOpportunityWrite & { id: string; version: string };
+export interface PatrimonialOpportunityProvider {
+  readonly locationId: string;
+  readonly capabilities: Pick<PatrimonialCrmCapabilities, 'opportunitiesRead' | 'opportunitiesWrite'>;
+  searchOpportunities(query: PatrimonialOpportunityQuery): Promise<PatrimonialRemoteOpportunity[]>;
+  createOpportunity(input: PatrimonialOpportunityWrite): Promise<PatrimonialRemoteOpportunity>;
+  updateOpportunity(id: string, input: PatrimonialOpportunityWrite & { expectedProviderVersion: string }): Promise<PatrimonialRemoteOpportunity>;
 }
 
 export type PatrimonialIdentity = { kind: 'NEW' } | { kind: 'REUSE'; contact: PatrimonialCrmContact } | { kind: 'IDENTITY_REVIEW' };

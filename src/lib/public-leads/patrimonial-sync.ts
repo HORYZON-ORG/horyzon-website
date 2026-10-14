@@ -2,6 +2,9 @@ import { createHash, randomUUID } from 'node:crypto';
 import type { PatrimonialCrmCheckpoint, PatrimonialOutboxOperation, PatrimonialRequest } from './patrimonial-contract.ts';
 import { patrimonialFlags, PatrimonialStaleLeaseError, type PatrimonialOperationError, type PatrimonialStore } from './patrimonial-store.ts';
 import { checkedPatrimonialContact, PatrimonialCrmError, resolvePatrimonialIdentity, type PatrimonialCrmProvider } from './patrimonial-highlevel.ts';
+import type { PatrimonialOpportunityProvider, PatrimonialRemoteOpportunity, PatrimonialOpportunityWrite } from './patrimonial-highlevel.ts';
+import { patrimonialOpportunityProjection, patrimonialProviderStatuses, resolvedPatrimonialMapping, type PatrimonialOpportunityIntent, type PatrimonialPipelineMapping } from './patrimonial-routing.ts';
+import { PatrimonialConflictError, type PatrimonialOpportunityStore, type PatrimonialOpportunitySyncState } from './patrimonial-store.ts';
 
 // Explicitly invoked worker only; no route/scheduler or production store activation.
 export const PATRIMONIAL_LEASE_SECONDS = 60;
@@ -177,4 +180,94 @@ export async function recordPatrimonialFailure(store: PatrimonialStore, operatio
   if (decision.state === 'RETRY_SCHEDULED') await store.scheduleRetry({ ...claim, nextAttemptAt: decision.nextAttemptAt, errorCode: decision.errorCode });
   else await store.failOperation({ ...claim, state: decision.state, errorCode: decision.errorCode, reconcileRequired: operation.reconcileRequired || failure.outcomeUncertain === true });
   return decision;
+}
+
+// Separate, explicit opportunity sync. The contact worker/ledger above is unchanged.
+// Real HighLevel opportunity methods remain stubs; only fake providers execute writes.
+export async function syncPatrimonialOpportunity(options: {
+  store: PatrimonialOpportunityStore; provider: PatrimonialOpportunityProvider; mapping: PatrimonialPipelineMapping;
+  intentId: string; expectedRevision: number; env?: () => Record<string, string | undefined>; now?: () => Date;
+}): Promise<'HOLD' | 'SYNCED' | 'MANUAL_REVIEW' | 'RECONCILE_REQUIRED' | 'CONFLICT'> {
+  const { store, provider, mapping } = options;
+  const env = options.env ?? (() => process.env);
+  const timestamp = () => (options.now ?? (() => new Date()))().toISOString();
+  const enabled = () => { const f = patrimonialFlags(env()); return f.v2 && f.crmWrite && f.opportunityWrite; };
+  if (!enabled()) return 'HOLD';
+  const intent = await store.transaction(tx => tx.getOpportunityIntent(options.intentId));
+  if (!intent) return 'MANUAL_REVIEW';
+  if (intent.revision !== options.expectedRevision) return 'CONFLICT';
+  const entry = resolvedPatrimonialMapping(mapping, intent);
+  if (!entry || !entry.stages[intent.stage] || provider.capabilities.opportunitiesRead !== true || provider.capabilities.opportunitiesWrite !== true) return 'HOLD';
+  if (provider.locationId !== intent.locationId) return 'MANUAL_REVIEW';
+  let claimed: { intent: PatrimonialOpportunityIntent; token: string; reconcileRequired: boolean } | null;
+  try { claimed = await store.transaction(tx => tx.claimOpportunitySync(intent.id, intent.revision, timestamp())); }
+  catch (error) { if (error instanceof PatrimonialConflictError) return 'CONFLICT'; throw error; }
+  if (!claimed) return 'HOLD';
+  const query = { locationId: intent.locationId, contactId: intent.contactId, pipelineId: entry.pipelineId! };
+  const keyField = entry.fields.hz_intent_key!;
+  const projection = patrimonialOpportunityProjection(intent);
+  const input: PatrimonialOpportunityWrite = { ...query, pipelineStageId: entry.stages[intent.stage]!, status: patrimonialProviderStatuses[intent.status],
+    customFields: Object.fromEntries(Object.entries(projection).map(([key, value]) => [entry.fields[key]!, value])),
+    ...(intent.ownerId ? { assignedTo: intent.ownerId } : {}),
+    closeReason: intent.closeReason ? { mode: mapping.closeReason.mode as 'NATIVE' | 'CUSTOM', key: mapping.closeReason.key!, value: intent.closeReason } : null,
+  };
+  let writeStarted = false;
+  const finish = async (state: PatrimonialOpportunitySyncState, remote?: PatrimonialRemoteOpportunity) => {
+    await store.transaction(tx => tx.finishOpportunitySync(intent.id, intent.revision, claimed!.token, timestamp(), state, remote ? {
+      id: remote.id, syncedRevision: intent.revision, pipelineId: remote.pipelineId, stageId: remote.pipelineStageId, status: remote.status, version: remote.version, assignedTo: remote.assignedTo ?? null,
+    } : undefined));
+    return state === 'SYNC_PENDING' ? 'HOLD' as const : state;
+  };
+  const checked = (row: PatrimonialRemoteOpportunity) => {
+    if (!row || !row.id || !row.version || row.locationId !== query.locationId || row.contactId !== query.contactId || row.pipelineId !== query.pipelineId || !row.customFields || !row.pipelineStageId || !['open','won','lost','abandoned'].includes(row.status)) throw new PatrimonialCrmError('CONFIG');
+    return row;
+  };
+  const compatible = (row: PatrimonialRemoteOpportunity) => row.customFields[keyField] === intent.businessKey || (intent.remote?.id === row.id && intent.closedCycles.some(c => c.businessKey === row.customFields[keyField]));
+  const matches = (row: PatrimonialRemoteOpportunity) => row.pipelineStageId === input.pipelineStageId && row.status === input.status && (!input.assignedTo || row.assignedTo === input.assignedTo) && Object.entries(input.customFields).every(([key, value]) => row.customFields[key] === value) && (input.closeReason === null ? row.closeReason == null : !input.closeReason || (row.closeReason?.key === input.closeReason.key && row.closeReason.value === input.closeReason.value));
+  const lookup = async () => {
+    const rows = await provider.searchOpportunities(query);
+    if (!Array.isArray(rows) || rows.length > 1) throw new PatrimonialCrmError('IDENTITY');
+    return rows[0] ? checked(rows[0]) : null;
+  };
+  const authorize = async () => {
+    if (!enabled() || !resolvedPatrimonialMapping(mapping, intent) || provider.locationId !== intent.locationId) throw new PatrimonialWorkerHold();
+    await store.transaction(tx => tx.authorizeOpportunityWrite(intent.id, intent.revision, claimed!.token, timestamp()));
+    if (!enabled()) throw new PatrimonialWorkerHold();
+    writeStarted = true;
+  };
+  try {
+    const row = await lookup();
+    if (!row) {
+      if (claimed.reconcileRequired || intent.remote) return await finish('MANUAL_REVIEW');
+      await authorize();
+      try {
+        const created = checked(await provider.createOpportunity(input));
+        if (!compatible(created) || !matches(created)) return await finish('RECONCILE_REQUIRED');
+        return await finish('SYNCED', created);
+      } catch (error) {
+        // A 409 or uncertain create can mean the first create already committed.
+        // Reconcile one exact business key; an empty result never permits re-create.
+        if (error instanceof PatrimonialCrmError && (error.status === 409 || error.outcomeUncertain)) {
+          const existing = await lookup();
+          if (existing && compatible(existing) && matches(existing)) return await finish('SYNCED', existing);
+          return await finish(existing ? 'MANUAL_REVIEW' : 'RECONCILE_REQUIRED');
+        }
+        throw error;
+      }
+    }
+    if (!compatible(row)) return await finish('MANUAL_REVIEW');
+    if (matches(row)) return await finish('SYNCED', row);
+    if (!intent.remote || claimed.reconcileRequired || row.id !== intent.remote.id || row.version !== intent.remote.version || row.pipelineStageId !== intent.remote.stageId || row.status !== intent.remote.status || (row.assignedTo ?? null) !== intent.remote.assignedTo) return await finish('MANUAL_REVIEW');
+    await authorize();
+    const updated = checked(await provider.updateOpportunity(row.id, { ...input, expectedProviderVersion: row.version }));
+    if (!matches(updated)) return await finish('RECONCILE_REQUIRED');
+    return await finish('SYNCED', updated);
+  } catch (error) {
+    if (error instanceof PatrimonialConflictError || error instanceof PatrimonialStaleLeaseError) return 'CONFLICT';
+    try {
+      if (error instanceof PatrimonialWorkerHold) return await finish('SYNC_PENDING');
+      const uncertain = writeStarted && (!(error instanceof PatrimonialCrmError) || error.outcomeUncertain || (error.status !== undefined && error.status >= 500));
+      return await finish(uncertain ? 'RECONCILE_REQUIRED' : 'MANUAL_REVIEW');
+    } catch { return 'RECONCILE_REQUIRED'; } // lease + dispatch marker survive lost ACK
+  }
 }

@@ -7,13 +7,25 @@ Contratto vincolante, riletto integralmente: [contratto 2B.1](patrimonial-highle
 
 ## 1. Executive summary
 
-**REMOTE INVENTORY: PARTIALLY VERIFIED — aggiornamento fornito dall'utente per la FASE 2B.2B-2.**
+**REMOTE INVENTORY: PARTIALLY VERIFIED — aggiornamenti forniti dall'utente per le FASI 2B.2B-2 e 2B.2B-3.**
 
 La precedente classificazione BLOCKED descriveva l'accesso disponibile durante la FASE 2B.2A; non è più lo stato assoluto dell'account. L'utente comunica una verifica ChatGPT in sola lettura sulla connessione attiva del sub-account **High Level - HORYZON**, timezone `Europe/Rome`, website `https://www.horyzon.it`, con contacts, opportunities, appointments/calendars, workflows e tags abilitati. Questa evidenza è fornita dall'utente: non sono state effettuate nuove chiamate remote dall'agente per confermarla.
 
 Impostazioni comunicate: `allowDuplicateContact=false`, `contactUniqueIdentifiers=[email, phone]`, `allowDuplicateOpportunity=false`. Pipeline presente: **Marketing Pipeline**, stage nell'ordine New Lead, Contacted, Qualified, Proposal Sent, Negotiation, Closed. La location ha restituito **0 custom fields**; lo scope dell'oggetto/lettura non è ulteriormente dettagliato, quindi il mapping dei campi resta da validare prima di CREATE. Opportunity search ammette `open`, `won`, `lost`, `abandoned`; questo non certifica gli enum o i permessi di scrittura.
 
-Restano UNKNOWN: user ID, elenco completo calendari, workflow effettivi, catalogo tag, native close reason, deduplica opportunity tra pipeline, booking/write e webhook. Nessun ID location o risorsa viene inventato. L'abilitazione di una funzione nell'account non certifica endpoint, scope, paginazione o semantica create-only. L'adapter 2B.2B-2 richiede configurazioni server dichiarate verificate; non installa lookup o mapping tag presunti. Le sezioni di inventario originale sotto restano evidenza storica della baseline 2B.2A e vanno lette insieme a questo aggiornamento, che prevale per i fatti ora comunicati.
+Ulteriore verifica comunicata per 2B.2B-3: il rifiuto di opportunity duplicate riguarda **lo stesso contatto nella stessa pipeline**, non pipeline differenti. Non serve un test remoto per questa domanda. Il dominio consente A/E/C separati per lo stesso contatto; Evento usa una sola relazione E collegata a Participation distinte per contatto + edizione.
+
+Restano UNKNOWN: user ID, elenco completo calendari, workflow effettivi, catalogo tag, native close reason, booking/write e webhook. Nessun ID location o risorsa viene inventato. L'abilitazione di una funzione nell'account non certifica endpoint, scope, paginazione o semantica create-only. L'adapter 2B.2B-2 richiede configurazioni server dichiarate verificate; non installa lookup o mapping tag presunti. Le sezioni di inventario originale sotto restano evidenza storica della baseline 2B.2A e vanno lette insieme a questi aggiornamenti, che prevalgono per i fatti ora comunicati.
+
+### Implementazione locale 2B.2B-3
+
+[patrimonial-routing.ts](../../src/lib/public-leads/patrimonial-routing.ts) definisce le tre pipeline, stage, status, close reason, comandi con revisione attesa, attori e prerequisiti. Richieste successive preservano stage e first touch; chiusure richiedono un motivo, riaperture un comando owner con evidenza (A WON non riapribile). Ogni OPEN richiede next step e data; cambi di stage/prossima azione richiedono una data futura esplicita. Il no-show della presentazione torna A02 solo se è richiesta riprogrammazione, altrimenti rimane A03/REVIEW. Nessuna assenza chiude automaticamente A o crea C.
+
+Evento usa una E per contatto, indipendente dall'edizione; Participation ha revisione, snapshot edizione, registrazione, presenza ed evidenze proprie. Scelta della seconda edizione non duplica E e non azzera lo stage. Il generico PENDING_EDITION viene promosso oppure assorbito nella partecipazione esistente preservando request ID e storico. Non esistono mirror `hz_event_*` sull'opportunity, compreso slug/CURRENT/LATEST: quei dati restano nel registro e negli snapshot delle richieste. Riapertura esplicita conserva remote ID e cicli; C mantiene più origini, ma nasce solo da richiesta esplicita o azione umana autorizzata.
+
+`PatrimonialPipelineMapping` è solo server-side, con location/pipeline/stage/field ID iniziali `null`, incluso il binding close reason UNRESOLVED. Il sync esplicito richiede V2 + CRM_WRITE + OPPORTUNITY_WRITE, mapping completo per la pipeline interessata e capability read/write. Blocca pipeline ID coincidenti, revisioni obsolete e scritture su modifiche umane remote; create con esito incerto/409 richiedono riconciliazione esatta, senza retry create ciechi. Altri programmi A/finalità C già presenti nella medesima pipeline con chiave diversa vanno in revisione, senza tentare una seconda create.
+
+I tre metodi opportunity del provider reale sono stub senza trasporto anche con flag true. Il contratto di update futuro richiede una versione provider per confronto atomico: questo supporto non è certificato né attivato. Store di produzione e collegamento al form restano non configurati; lo store memory e il provider completi sono soltanto test. Nessun nuovo scheduler, endpoint, booking, messaggio o migration. La suite `npm run test:patrimonial-opportunities` copre i 30 casi richiesti e le regressioni ledger/contatti/legacy/2A/Radar. Zero chiamate HighLevel, Supabase, Composio o altri servizi e zero risorse reali create/modificate in questa fase.
 
 ### Implementazione locale 2B.2B-2
 
@@ -105,7 +117,7 @@ Inventario effettivo: **UNKNOWN**, non lista vuota. Nomi, ID, stage, ordine e st
 | Pipeline logica | Struttura richiesta dal contratto | Verifica remota necessaria | Esito |
 | --- | --- | --- | --- |
 | ARCHITECT_PATH | A01–A10, ordine contrattuale; A09 WON, A10 LOST/ABANDONED | Nome/ID, stage ID e ordine, status e motivo chiusura, compatibilità con opportunità aperta per programma/ciclo | UNKNOWN |
-| PATRIMONIAL_EVENT | E01–E05, richiesta distinta da conferma; una opportunity per contatto/edizione | Pipeline/stage e più opportunity per contatto; stati registrazione/presenza separati | UNKNOWN |
+| PATRIMONIAL_EVENT | E01–E05, una relazione E per contatto + Participation per contatto/edizione | Pipeline/stage; riuso E tra edizioni, stati registrazione/presenza locali separati | UNKNOWN |
 | PATRIMONIAL_CONSULTATION | C01–C05, richiesta esplicita e ciclo propri | Pipeline/stage, riuso C aperta tra edizioni e riferimenti a E | UNKNOWN |
 
 Lo stato dominio ABANDONED non è dimostrato come enum nativo HighLevel: nessun mapping automatico a LOST o altro senza decisione e verifica. Non duplicare una pipeline esistente soltanto perché il nome differisce. Non rinominare o riordinare pipeline condivise per adattarle al pilota. WON operativo Evento/Confronto resta separato dai ricavi.
@@ -251,7 +263,7 @@ La classificazione considera separatamente capacità locale e fattibilità **eff
 | Elemento contrattuale | Classe account/contratto complessivo | Gap locale e azione necessaria |
 | --- | --- | --- |
 | Pipeline ARCHITECT_PATH | UNKNOWN | Nessun mapping; leggere compatibilità e ottenere decisione commerciale |
-| Pipeline PATRIMONIAL_EVENT | UNKNOWN | Nessun mapping; per-edizione e interesse generico |
+| Pipeline PATRIMONIAL_EVENT | UNKNOWN | Mapping remoto unresolved; una E, Participation per edizione e generico separato |
 | Pipeline PATRIMONIAL_CONSULTATION | UNKNOWN | Nessun mapping; richiesta esplicita e C unica aperta |
 | Stage A01–A10/E01–E05/C01–C05 | UNKNOWN | Nessun ID; verificare ordine, stati e transizioni |
 | Contact fields | UNKNOWN | Nativi parzialmente scritti; custom in nota soltanto |
@@ -342,14 +354,14 @@ Tabella di preparazione, **non mapping attivabile**. Tutti i REMOTE NAME/ID sono
 | opportunity.hz_architect_interview_date | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | ISO UTC, mirror booking |
 | opportunity.hz_architect_interview_outcome | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Quattro esiti colloquio del contratto |
 | opportunity.hz_architect_eligibility | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | PENDING / ELIGIBLE / NOT_ELIGIBLE / WITHDRAWN |
-| opportunity.hz_event_slug | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Slug stabile approvato |
-| opportunity.hz_event_title | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Titolo snapshot |
-| opportunity.hz_event_edition | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | ID interno edizione, vuoto se interesse generico |
-| opportunity.hz_event_date | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | ISO UTC reale, mai data da definire |
-| opportunity.hz_event_profile | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Quattro opzioni E e vuoto |
-| opportunity.hz_event_question | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Testo lungo max 1500 |
-| opportunity.hz_event_registration_status | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Sei stati registrazione del contratto |
-| opportunity.hz_event_attendance | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Cinque stati presenza del contratto |
+| local.hz_event_slug | participation / request snapshot | N/A | N/A | LOCAL_ONLY | Dato locale; precedente mirror opportunity ritirato in 2B.2B-3 |
+| local.hz_event_title | participation / request snapshot | N/A | N/A | LOCAL_ONLY | Dato locale; precedente mirror opportunity ritirato in 2B.2B-3 |
+| local.hz_event_edition | participation / request snapshot | N/A | N/A | LOCAL_ONLY | Dato locale; precedente mirror opportunity ritirato in 2B.2B-3 |
+| local.hz_event_date | participation / request snapshot | N/A | N/A | LOCAL_ONLY | Dato locale; precedente mirror opportunity ritirato in 2B.2B-3 |
+| local.hz_event_profile | participation / request snapshot | N/A | N/A | LOCAL_ONLY | Dato locale; precedente mirror opportunity ritirato in 2B.2B-3 |
+| local.hz_event_question | participation / request snapshot | N/A | N/A | LOCAL_ONLY | Dato locale; precedente mirror opportunity ritirato in 2B.2B-3 |
+| local.hz_event_registration_status | participation / request snapshot | N/A | N/A | LOCAL_ONLY | Dato locale; precedente mirror opportunity ritirato in 2B.2B-3 |
+| local.hz_event_attendance | participation / request snapshot | N/A | N/A | LOCAL_ONLY | Dato locale; precedente mirror opportunity ritirato in 2B.2B-3 |
 | opportunity.hz_origin_event_edition | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Prima origine C; altre relazioni nel ledger |
 | opportunity.hz_consultation_outcome | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Cinque esiti confronto del contratto |
 | horyzon-patrimoniale | tag | UNKNOWN | UNKNOWN | VERIFY | Leggere catalogo e workflow |
@@ -398,7 +410,7 @@ Riutilizzare pattern e trasporto, non sessioni, ownership secret, tabelle, entit
 | Entità | Vincolo/operazione richiesta |
 | --- | --- |
 | Request ledger | UUID request unico nel namespace/location/versione definiti; hash canonico immutabile; stessa chiave/hash replay, chiave/dati diversi 409 |
-| Intent/opportunity mapping | Unica A OPEN per contatto+programma; E per contatto+edizione; interesse generico distinto; C OPEN per contatto+finalità; cicli e remote ID |
+| Intent/opportunity mapping | Unica A OPEN per contatto+programma; una E per contatto con Participation per contatto+edizione; interesse generico distinto; C OPEN per contatto+finalità; cicli e remote ID |
 | Event edition / participation | Edizione immutabile e revisioni date/accesso; UNIQUE contatto+edizione; interesse senza edizione non aggira UNIQUE tramite NULL |
 | Attendance / consent evidence | Evidenze versionate con autore/fonte, finalità e canale; UNKNOWN distinto da NO_SHOW; checkbox false non revoca grant precedente |
 | Outbox / operation state | UNIQUE effetto+intenzione+versione; request/evidenze/outbox inseriti nella stessa transazione; stato per ogni effetto e remote ID |
@@ -530,7 +542,7 @@ Tutti i percorsi sotto sono **proposte future**, non file creati in 2B.2A. Imple
 
 - Prerequisiti: tre pipeline e stati approvati, mapping reale stage/campi/utenti, limiti custom fields e status verificati, motivi chiusura decisi; blocchi 1–2.
 - File proposti: `patrimonial-routing.ts`, `patrimonial-highlevel.ts`, `patrimonial-store.ts`, configurazione server mapping e test CRM.
-- Test: A unica OPEN per programma, E per edizione e interesse generico separato, C unica aperta cross-edizione; collisioni/riuso/chiuse, nessuna regressione da job vecchio, timeout create senza duplicazione, owner distinto e status ABANDONED esplicito.
+- Test: A unica OPEN per programma, una E per contatto con Participation per edizione e interesse generico separato, C unica aperta cross-edizione; collisioni/riuso/chiuse, nessuna regressione da job vecchio, timeout create senza duplicazione, owner distinto e status ABANDONED esplicito.
 - Remote changes: eventuale riuso/creazione pipeline/stage/campi soltanto con autorizzazione separata e piano compatibile con risorse esistenti; nessuna nuova pipeline autorizzata ora. Nessuna modifica massiva legacy.
 - Rollback: OPPORTUNITY_WRITE false, mantenere ledger/read e casi incerti; nessuna cancellazione di opportunity o rollback cieco di stage umani.
 

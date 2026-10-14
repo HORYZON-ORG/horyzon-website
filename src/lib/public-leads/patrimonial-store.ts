@@ -1,4 +1,5 @@
 import type { PatrimonialConsentEvidence, PatrimonialCrmCheckpoint, PatrimonialEvent, PatrimonialIntent, PatrimonialOutboxOperation, PatrimonialRequest } from './patrimonial-contract.ts';
+import type { PatrimonialOpportunityIntent, PatrimonialRoutingParticipation } from './patrimonial-routing.ts';
 
 export type PatrimonialClaim = { operationId: string; leaseToken: string; leaseVersion: number };
 export type PatrimonialOperationError = 'NETWORK' | 'RATE_LIMIT' | 'PROVIDER' | 'SCHEMA' | 'AUTH' | 'CONFIG' | 'IDENTITY' | 'UNKNOWN';
@@ -50,6 +51,25 @@ export class PatrimonialConflictError extends Error {}
 export class PatrimonialReplayExpiredError extends Error {}
 export class PatrimonialStaleLeaseError extends Error {}
 export class PatrimonialStoreUnavailableError extends Error {}
+
+// Separate resolved business aggregates; the existing provisional lead/CRM ledger
+// remains unchanged. All saves are CAS; participation uniqueness is contact+edition,
+// or contact+eventSlug for a generic PENDING_EDITION record. Never hold DB locks
+// across provider fetches. Production implementation remains unconfigured.
+export type PatrimonialOpportunitySyncState = 'SYNC_PENDING' | 'SYNCED' | 'MANUAL_REVIEW' | 'RECONCILE_REQUIRED';
+export interface PatrimonialOpportunityTransaction {
+  findOpportunityIntent(groupKey: string): Promise<PatrimonialOpportunityIntent | null>;
+  getOpportunityIntent(id: string): Promise<PatrimonialOpportunityIntent | null>;
+  saveOpportunityIntent(intent: PatrimonialOpportunityIntent, expectedRevision: number | null): Promise<void>;
+  listParticipations(relationId: string): Promise<PatrimonialRoutingParticipation[]>;
+  saveParticipations(relationId: string, next: PatrimonialRoutingParticipation[], previous: PatrimonialRoutingParticipation[]): Promise<void>;
+  claimOpportunitySync(id: string, expectedRevision: number, now: string): Promise<{ intent: PatrimonialOpportunityIntent; token: string; reconcileRequired: boolean } | null>;
+  authorizeOpportunityWrite(id: string, expectedRevision: number, token: string, now: string): Promise<void>;
+  finishOpportunitySync(id: string, expectedRevision: number, token: string, now: string, state: PatrimonialOpportunitySyncState, remote?: NonNullable<PatrimonialOpportunityIntent['remote']>): Promise<void>;
+}
+export interface PatrimonialOpportunityStore {
+  transaction<T>(work: (tx: PatrimonialOpportunityTransaction) => Promise<T>): Promise<T>;
+}
 
 // Supabase boundary intentionally unimplemented/non-activatable in this phase.
 // No credentials are read, no fetch exists, no production memory fallback.

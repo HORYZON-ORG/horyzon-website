@@ -8,6 +8,8 @@ Baseline applicativa analizzata: `78c1d638f30db43b870b93a1242322c78b0f82cf`.
 
 Terminologia vincolante: **Horyzon Benessere Patrimoniale**, **Percorso Architetto Patrimoniale**, **Architetto Patrimoniale**, **Horyzon Architetti Patrimoniali**. Il ruolo non viene qualificato come consulente finanziario. Il titolo dell'evento è configurabile e non identifica un'edizione.
 
+**Aggiornamento Evento 2B.2B-3:** l'utente ha fornito la verifica che HighLevel rifiuta opportunity duplicate dello stesso contatto **nella stessa pipeline**, non tra pipeline differenti. Il modello Evento viene quindi adattato a una sola opportunity di relazione per contatto, con partecipazioni locali separate per edizione. Le modifiche Evento sotto prevalgono sulla proposta originale 2B.1; la verifica remota è evidenza comunicata dall'utente, senza nuove chiamate dell'agente.
+
 ## 1. Architettura CRM consigliata
 
 ### Evidenza attuale e confini
@@ -29,11 +31,11 @@ La ricerca nel codice non ha individuato altri adapter HighLevel, endpoint `/opp
 
 1. **Un contatto CRM per persona risolta**, condiviso con Radar, Annunci e gli altri funnel; nessuna copia per divisione.
 2. **Pipeline Architetto**: una opportunità aperta per contatto e programma professionale.
-3. **Pipeline Evento**: una opportunità per contatto ed edizione; prima della scelta dell'edizione, un interesse generico distinto dalle registrazioni confermate.
+3. **Pipeline Evento**: una sola opportunità di relazione evento attiva per contatto; un record Participation unico per contatto + edizione mantiene la granularità delle registrazioni. Prima della scelta, una partecipazione generica PENDING_EDITION resta distinta dalle registrazioni confermate.
 4. **Pipeline Confronti Benessere Patrimoniale**: separata dalle registrazioni, aperta solo su richiesta esplicita di confronto; una opportunità aperta per contatto e finalità di confronto, anche se proviene da più edizioni.
 5. **Registro applicativo durevole** per richieste, identità risolte, edizioni, partecipazioni, evidenze dei consensi, operazioni CRM e messaggi. Necessario per idempotenza affidabile; note e memoria di processo non lo sostituiscono.
 
-Le tre pipeline separano obiettivi diversi: attivazione professionale, partecipazione a un'edizione, confronto individuale. Il termine `WON` nelle ultime due indica il rispettivo obiettivo operativo, **non un ricavo o una vendita**; nessun valore economico è inventato. Evitare report di “vendite vinte” aggregati tra queste pipeline.
+Le tre pipeline separano obiettivi diversi: attivazione professionale, relazione evento con partecipazioni per edizione, confronto individuale. Il termine `WON` nelle ultime due indica il rispettivo obiettivo operativo, **non un ricavo o una vendita**; nessun valore economico è inventato. Evitare report di “vendite vinte” aggregati tra queste pipeline.
 
 ### Contratto dati applicativo per 2B.2
 
@@ -72,7 +74,7 @@ Entità logiche minime del registro (non schema SQL, non create in questa fase):
 | Richiesta | `request_id` unico; hash canonico immutabile del payload | Modo, snapshot, ricevuta server, stato, contatto/intenzione risolti, evidenze consenso |
 | Intenzione/opportunità | Chiavi business della sezione 8 | Ciclo, versione, owner, remote ID, stato commerciale, next step, legami alle richieste |
 | Edizione | ID interno immutabile | Slug evento stabile, titolo snapshot, inizio/fine UTC, fuso IANA `Europe/Rome`, stato, modalità di accesso e regola capienza approvati |
-| Partecipazione | Unica per contatto + edizione | Richiesta, registrazione, booking, presenza, provenienza delle evidenze, rettifiche |
+| Partecipazione | Unica per contatto + edizione; prima della scelta, una generica attiva per contatto + slug | Legame alla stessa relazione E, revisione propria, request ID, snapshot edizione, registrazione, booking, presenza, evidenze e rettifiche |
 | Operazione/outbox | Unica per intenzione + effetto + versione | Stato di ogni scrittura, lease, tentativi, remote ID, errore sanificato, prossima esecuzione |
 | Evidenza/evento | ID unico e collegamenti tipizzati | Cambi di stato, consensi per finalità/canale, webhook, messaggi; storico append-only salvo retention/rettifiche |
 
@@ -103,13 +105,15 @@ Motivi di chiusura: `NOT_ELIGIBLE`, `NOT_INTERESTED`, `WITHDRAWN`, `UNREACHABLE_
 
 ## 3. Pipeline Evento definitiva proposta
 
-### Registrazioni — `PATRIMONIAL_EVENT`
+### Relazione evento e registrazioni — `PATRIMONIAL_EVENT`
+
+E rappresenta la relazione operativa, mentre Participation è la fonte di verità per ciascuna edizione. Lo stage E sintetizza il percorso raggiunto: una nuova richiesta o seconda edizione non lo riporta indietro. E02 non conferma tutte le partecipazioni; i gate si applicano al singolo record. E05 richiede che tutte le partecipazioni collegate siano risolte; una nuova richiesta su E chiusa richiede revisione e riapertura esplicita del medesimo record CRM, conservando cicli e storico.
 
 | Stage | Label | Stato | Criterio |
 | --- | --- | --- | --- |
 | E01 | Richiesta di partecipazione | OPEN | Interesse generico o richiesta per edizione; conferma ancora assente |
-| E02 | Iscrizione confermata | OPEN | Tutte le condizioni tecniche della sezione 11 soddisfatte |
-| E03 | Esito da registrare | OPEN | Edizione conclusa; attendere evidenza di presenza |
+| E02 | Iscrizione confermata | OPEN | Almeno una partecipazione ha superato tutte le condizioni tecniche della sezione 11 |
+| E03 | Esito da registrare | OPEN | Un'edizione confermata è conclusa; attendere evidenza di presenza sulla partecipazione |
 | E04 | Follow-up | OPEN | Esito noto; gestire follow-up appropriato o richiesta di nuova edizione |
 | E05 | Conclusa | WON / LOST / ABANDONED | Attività evento concluse e motivo registrato |
 
@@ -131,7 +135,7 @@ Presenza: `UNKNOWN`, `ATTENDED`, `NO_SHOW`, `CANCELLED`, `NOT_APPLICABLE`. Non i
 
 Esiti: `PENDING`, `INFORMATION_PROVIDED`, `QUALIFIED_FOLLOW_UP`, `NOT_INTERESTED`, `OUT_OF_SCOPE`. Un no-show resta nello storico dell'appuntamento e porta a riprogrammazione o chiusura motivata; non è automaticamente `NOT_INTERESTED`.
 
-Una nuova opportunità C viene creata **solo dopo richiesta di confronto**, anche durante il webinar o da un no-show che lo richieda. Non per ogni partecipante, apertura email o click “Parliamone”. Collegare tutte le registrazioni d'origine, mantenendo una sola opportunità C aperta per persona/finalità. Più edizioni producono opportunità E distinte e non necessariamente nuove C.
+Una nuova opportunità C viene creata **solo dopo richiesta di confronto**, anche durante il webinar o da un no-show che lo richieda. Non per ogni partecipante, apertura email o click “Parliamone”. Collegare tutte le registrazioni d'origine, mantenendo una sola opportunità C aperta per persona/finalità. Più edizioni producono partecipazioni distinte collegate alla stessa E e possono riferirsi alla stessa C.
 
 ## 4. Contact fields
 
@@ -195,18 +199,14 @@ Lo storico completo UTM e le modifiche non richiedono dieci campi first/last sul
 
 Non creare `hz_architect_path_started` e `hz_architect_activated` come checkbox: stage/eventi `architect_path_started` e `architect_activated`, con timestamp e autore nel registro, evitano coppie incoerenti “false ma stage avviato”. Se serve un mirror data per un report CRM, introdurlo solo su esigenza dimostrata.
 
-### Evento e confronto
+### Evento: dati nel registro locale, senza mirror sull'opportunity
+
+Non creare alcun `hz_event_*` su E, neppure slug o presenza “CURRENT/LATEST”: una relazione può comprendere più edizioni e interessi, quindi tali mirror sarebbero ambigui. Slug, titolo/date/fuso/revisione edizione, stato registrazione e presenza vivono in Participation; profilo e domanda restano negli snapshot delle richieste collegate. Le precedenti proposte `hz_event_slug`, `hz_event_title`, `hz_event_edition`, `hz_event_date`, `hz_event_profile`, `hz_event_question`, `hz_event_registration_status`, `hz_event_attendance` sono ritirate dal mapping remoto. E conserva soltanto i campi comuni. Nessuna granularità per edizione è persa e nessuna lista di edizioni viene copiata sul contatto.
+
+### Confronto
 
 | Nome tecnico | Label | Oggetto | Tipo consigliato | Valori ammessi | Obbligatorio | Origine | Funnel | Note |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `hz_event_slug` | Evento logico | opportunity | Testo controllato | Slug stabile da configurare, indipendente dal titolo | Sì | Registro eventi | E | Non ricavare lo slug dal titolo di lavoro |
-| `hz_event_title` | Titolo edizione | opportunity | Testo | Snapshot titolo approvato | Sì | Registro edizioni | E | Cambiare il titolo pubblico non rinomina lo storico |
-| `hz_event_edition` | Edizione evento | opportunity | Testo | ID interno di edizione o vuoto | Alla conferma | Registro edizioni | E | Vuoto = interesse generico; non inventare una prima edizione |
-| `hz_event_date` | Data e ora evento | opportunity | Testo ISO UTC | Inizio reale o vuoto | Alla conferma | Registro edizioni | E | Fuso IANA nel registro; “Data da definire” non è una data operativa |
-| `hz_event_profile` | Profilo partecipante | opportunity | Select singolo | Privato / Imprenditore / Professionista / Altro / vuoto | No | Form | E | Non alterare profilo Architetto |
-| `hz_event_question` | Domanda per l'incontro | opportunity | Testo lungo | Fino a 1.500 caratteri | No | Form | E | No analytics; eventuale uso pubblico richiede valutazione distinta |
-| `hz_event_registration_status` | Stato registrazione | opportunity | Select singolo | REQUESTED / PENDING_EDITION / PENDING_CONFIRMATION / CONFIRMED / CANCELLED / DECLINED | Sì | Registro partecipazioni | E | E01 può rappresentare i primi tre; CONFIRMED solo dopo commit della conferma |
-| `hz_event_attendance` | Presenza evento | opportunity | Select singolo | UNKNOWN / ATTENDED / NO_SHOW / CANCELLED / NOT_APPLICABLE | Quando determinabile | Evidenza presenza / owner | E | Disgiunto da conferma e stage commerciale |
 | `hz_origin_event_edition` | Edizione che ha originato il confronto | opportunity | Testo | Edizione o vuoto se origine diversa | Se da evento identificato | Richiesta esplicita | C | Prima origine; ulteriori edizioni sono relazioni nello storico |
 | `hz_consultation_outcome` | Esito confronto | opportunity | Select singolo | PENDING / INFORMATION_PROVIDED / QUALIFIED_FOLLOW_UP / NOT_INTERESTED / OUT_OF_SCOPE | Dopo confronto | Owner | C | Non esito di vendita o raccomandazione finanziaria |
 
@@ -260,15 +260,16 @@ Inoltre 2A invia `source` a ogni upsert: non garantisce che la sorgente originar
 | Intenzione | Chiave business | Creazione e riuso |
 | --- | --- | --- |
 | Architetto | Contatto risolto + programma stabile + ciclo | Al primo interesse; vincolo di una sola OPEN per contatto/programma. Nuovo invio su OPEN aggiunge richiesta e aggiornamenti pertinenti, senza tornare ad A01 |
-| Interesse evento senza edizione | Contatto + slug evento + interesse generico | Una sola intenzione generica attiva. E01/PENDING_EDITION, senza meeting o prenotazione |
-| Iscrizione evento | Contatto + edizione | Una sola registrazione/opportunità per edizione, anche se più invii. Nuova edizione = nuova E; più E aperte sono ammesse per edizioni diverse |
+| Relazione evento | Contatto risolto + relazione evento patrimoniale + ciclo | Una sola E per contatto nella pipeline; massimo una OPEN. Nuove edizioni riusano E e preservano lo stage; ciclo nuovo solo per riapertura esplicita, conservando il remote ID |
+| Interesse evento senza edizione | Contatto + slug evento + interesse generico attivo | Partecipazione PENDING_EDITION sotto la stessa E, senza meeting o prenotazione; prima richiesta crea E01 |
+| Iscrizione evento | Contatto + edizione | Una sola Participation per edizione, anche con più invii. Nuova edizione = nuova Participation, stessa E; revisione e conferma indipendenti |
 | Confronto individuale | Contatto + finalità patrimoniale + ciclo | Una sola C OPEN per finalità; richieste da più webinar si collegano allo stesso caso. Un evento diverso non crea da solo un secondo appuntamento |
 
-Promuovere interesse generico a edizione soltanto dopo scelta/accettazione dell'edizione o conferma manuale documentata. Se esiste già E per quell'edizione, collegare/assorbire l'interesse generico senza duplicare E e mantenendo tutti i request ID. Usare transazione e lock nel registro; il titolo non entra nella chiave.
+Promuovere interesse generico a edizione soltanto dopo scelta/accettazione dell'edizione o conferma manuale documentata. Se esiste già Participation per quell'edizione, assorbire i request ID nella partecipazione esistente e conservare il riferimento del generico superato, senza duplicare E o Participation. Usare transazione e lock nel registro; il titolo non entra nella chiave.
 
-Una persona può avere contemporaneamente A, più E per edizioni diverse e una C. La regola “una sola opportunità aperta per contatto” globale perderebbe intenzioni e non va applicata.
+Una persona può avere contemporaneamente A, una E collegata a più Participation per edizioni diverse e una C. Il vincolo provider è per contatto nella stessa pipeline: non applicare un vincolo globale tra A/E/C.
 
-Opportunità chiuse: nessuna riapertura automatica da un form generico. Per A già attivata, registrare il nuovo contatto e avvisare l'owner; per nuova candidatura dopo chiusura, nuovo ciclo solo con revisione. Per E già confermata, invio duplicato non aumenta iscritti; per E cancellata, nuova richiesta stessa edizione aggiorna il medesimo record solo se la riprenotazione è ammessa. Edizione passata: nessuna conferma retroattiva. Per C chiusa, una nuova richiesta sostanziale può aprire un nuovo ciclo mantenendo lo storico.
+Opportunità chiuse: nessuna riapertura automatica da un form generico. Per A già attivata, registrare il nuovo contatto e avvisare l'owner; per nuova candidatura dopo chiusura, nuovo ciclo solo con revisione. Per una Participation già confermata, invio duplicato non aumenta iscritti; una partecipazione cancellata non viene riprenotata implicitamente. E chiusa riceve la richiesta con revisione owner, senza cambiare stato; solo un comando autorizzato riapre il ciclo conservando la stessa opportunity remota. Edizione passata: nessuna conferma retroattiva. Per C chiusa, una nuova richiesta sostanziale può aprire un nuovo ciclo mantenendo lo storico.
 
 Le transizioni sono comandi con revisione attesa, prerequisiti, autore, timestamp ed evidenza. Non forzare lo stage iniziale su un'opportunità preesistente; non sovrascrivere una scelta umana più recente con un job vecchio. Cancellazione o nuova edizione non cancellano gli eventi precedenti.
 
@@ -336,6 +337,8 @@ Un motore non decide idoneità/attivazione da profilo o risposta aperta. I respo
 ## 11. Flusso Evento
 
 `EE` è owner registrazione, `EC` owner confronto, `CE` coordinatore evento. Frank è il volto dell'incontro, non automaticamente owner di ogni lead/appuntamento. Tag base + Evento + pilot solo all'acquisizione.
+
+Gli stage della tabella descrivono il primo avanzamento della relazione E. Richieste/conferme di edizioni successive aggiornano la propria Participation e preservano lo stage già raggiunto. La classificazione della presenza aggiorna soltanto Participation; E04 richiede il comando owner esplicito di avvio follow-up, dopo l'evidenza.
 
 | Passaggio / trigger | Condizione | Stage / dati | Tag | Messaggio | Owner | Timeout proposto / fallback | KPI |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -420,6 +423,8 @@ Assenza del referente: delega temporanea a sostituto abilitato, conservando tito
 ## 15. KPI
 
 Definizioni: `A` = contatto+programma+ciclo Architetto; `R` = contatto+edizione Evento; `C` = contatto+finalità+ciclo confronto. Contare identità risolte uniche, escludere test/spam/retry e riportare separatamente i conflitti in revisione. Mai contare note, tag, job o visite thank-you come lead.
+
+Per Evento, R è una Participation e non una opportunity: il numero di E non misura iscrizioni o presenze per edizione. Le metriche per edizione leggono conferme ed evidenze dal registro partecipazioni, collegato alla stessa relazione E.
 
 Ogni report dichiara periodo/coorte, data di maturazione, fuso Europe/Rome, filtri e attribution model. Numeratore e denominatore devono riferirsi alla stessa coorte; non dividere attivazioni storiche per lead del mese corrente. Tasso con denominatore zero = N/D. Appuntamenti cancellati in anticipo sono esclusi dalla base attesa; cancellazioni e sconosciuti sono riportati separatamente, non nascosti nei no-show. Riprenotazioni: tassi per persona/ciclo alla prima sessione dovuta, con recupero su sessioni successive riportato a parte.
 
