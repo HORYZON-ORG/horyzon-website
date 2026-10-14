@@ -20,6 +20,8 @@ async function get(route, body = false) {
 }
 const sitemap = await get('/sitemap.xml', true);
 const urls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => decode(match[1]));
+const pilotRoots = ['/benessere-patrimoniale/percorso-architetto-patrimoniale', '/benessere-patrimoniale/evento'];
+assert(urls.every(url => !pilotRoots.some(root => new URL(url).pathname === root || new URL(url).pathname.startsWith(`${root}/`))), 'Pilot funnels must remain outside the sitemap');
 assert(urls.length > 10, 'Sitemap unexpectedly empty');
 assert.equal(new Set(urls).size, urls.length, 'Duplicate sitemap URL');
 assert.match(sitemap, /<lastmod>2026-10-02<\/lastmod>/, 'Known AI Score content updates must expose an accurate sitemap lastmod');
@@ -33,6 +35,7 @@ for (const url of urls) {
  const route = new URL(url).pathname;
  assert(!excluded.includes(route) && !route.startsWith('/v/'), `Excluded URL in sitemap: ${route}`);
  const html = await get(route);
+ for (const root of pilotRoots) assert(!html.includes(root), `Pilot funnel reference in public page ${route}`);
  assert(!/name="robots" content="[^"]*noindex/.test(html), `Noindex in sitemap: ${route}`);
  const canonical = tagValue(html, 'rel', 'canonical');
  assert.equal(canonical?.replace(/\/$/, ''), url.replace(/\/$/, ''), `Canonical mismatch: ${route}`);
@@ -96,6 +99,7 @@ assert(!robots.includes('Disallow: /'));
 assert(robots.includes(`${origin}/sitemap.xml`));
 const markdown = await get('/index.md', true);
 const llms = await get('/llms.txt', true);
+for (const text of [markdown, llms]) for (const root of pilotRoots) assert(!text.includes(root), 'Pilot reference in public guide');
 assert(markdown.startsWith('# Horyzon Consulting'));
 assert(llms.startsWith('# Horyzon Consulting'));
 assert(markdown.includes('https://hub.horyzon.it/radar'));

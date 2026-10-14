@@ -1,10 +1,14 @@
 'use client';
-import { useEffect, useState, type FormEvent } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { patrimonialInterest, patrimonialInterests, type PatrimonialInterest } from '@/content/patrimonial';
+import { pilotAvailability, pilotExperience, pilotForms, pilotGoals, pilotUtmKeys, type PilotMode, type PilotUtm } from '@/content/patrimonial-funnels';
 
-export function PatrimonialLeadForm() {
+export function PatrimonialLeadForm({ mode = 'legacy/public' }: { mode?: 'legacy/public' | PilotMode }) {
+  return mode === 'legacy/public' ? <PublicLeadForm /> : <PilotLeadForm mode={mode} />;
+}
+function PublicLeadForm() {
   const params = useSearchParams();
   const selected = patrimonialInterest(params.get('interesse')) ?? 'evento-patrimoniale';
   const requested = patrimonialInterest(params.get('interesse'));
@@ -14,6 +18,85 @@ export function PatrimonialLeadForm() {
     return () => cancelAnimationFrame(frame);
   }, [requested]);
   return <LeadForm key={selected} initialInterest={selected} />;
+}
+
+// Same per-tab attribution pattern as Radar, scoped to each pilot funnel.
+function pilotAttribution(mode: PilotMode): PilotUtm {
+  const key = `horyzon:patrimonial:${mode}:utm`;
+  const params = new URLSearchParams(window.location.search);
+  const found = Object.fromEntries(pilotUtmKeys.flatMap(name => params.get(name) ? [[name, params.get(name)!.replace(/[\r\n]/g, '').slice(0, 100)]] : [])) as PilotUtm;
+  try {
+    if (Object.keys(found).length) { sessionStorage.setItem(key, JSON.stringify(found)); return found; }
+    const stored: unknown = JSON.parse(sessionStorage.getItem(key) ?? '{}');
+    if (stored && typeof stored === 'object' && !Array.isArray(stored)) return Object.fromEntries(pilotUtmKeys.flatMap(name => {
+      const value = (stored as Record<string, unknown>)[name];
+      return typeof value === 'string' ? [[name, value.replace(/[\r\n]/g, '').slice(0, 100)]] : [];
+    })) as PilotUtm;
+  } catch { /* Attribution must never prevent a request when storage is unavailable. */ }
+  return found;
+}
+
+function PilotLeadForm({ mode }: { mode: PilotMode }) {
+  const router = useRouter();
+  const form = pilotForms[mode];
+  const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [notice, setNotice] = useState('');
+  const sending = useRef(false);
+  useEffect(() => { pilotAttribution(mode); }, [mode]);
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (sending.current) return;
+    sending.current = true;
+    const data = new FormData(event.currentTarget);
+    const payload = {
+      mode, sourcePath: form.path, firstName: data.get('firstName'), lastName: data.get('lastName'),
+      email: data.get('email'), phone: data.get('phone'), province: data.get('province'), profile: data.get('profile'),
+      message: data.get('message'), consent: data.get('consent') === 'on', marketingConsent: data.get('marketingConsent') === 'on',
+      website: data.get('website'), utm: pilotAttribution(mode),
+      ...(mode === 'architect-path' ? { experience: data.get('experience'), goal: data.get('goal'), availability: data.get('availability') } : {}),
+    };
+    setStatus('sending'); setNotice('');
+    try {
+      const response = await fetch('/api/public-leads', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(35000), body: JSON.stringify(payload) });
+      const result = await response.json();
+      if (!response.ok || result.ok !== true) {
+        setStatus('error'); setNotice(typeof result.message === 'string' ? result.message : 'Invio non confermato. Riprova oppure scrivici.');
+        sending.current = false; return;
+      }
+      setStatus('success'); setNotice(form.success);
+      router.push(`${form.path}/grazie`);
+    } catch {
+      sending.current = false; setStatus('error'); setNotice('Invio non confermato. Riprova oppure scrivici via email.');
+    }
+  }
+  return <form className="rd-form" onSubmit={submit} aria-labelledby={`${mode}-form-title`} aria-busy={status === 'sending'} data-pilot-form={mode}>
+    <fieldset disabled={status === 'sending' || status === 'success'} className="patrimonial-form-fields">
+      <legend className="sr-only">{form.title}</legend>
+      <h3 id={`${mode}-form-title`}>{form.title}</h3><p>{form.intro}</p>
+      <div className="rd-form-fields">
+        <label>Nome<input name="firstName" autoComplete="given-name" required maxLength={120} /></label>
+        <label>Cognome<input name="lastName" autoComplete="family-name" required maxLength={120} /></label>
+      </div>
+      <label>Email<input name="email" type="email" autoComplete="email" required maxLength={254} /></label>
+      <div className="rd-form-fields">
+        <label>Telefono {mode === 'patrimonial-event' && <span>(facoltativo)</span>}<input name="phone" type="tel" autoComplete="tel" required={mode === 'architect-path'} maxLength={40} /></label>
+        <label>Provincia<input name="province" autoComplete="address-level2" required minLength={2} maxLength={80} /></label>
+      </div>
+      <label>Profilo <span>(facoltativo)</span><select name="profile" defaultValue=""><option value="">Seleziona</option>{form.profiles.map(value => <option key={value}>{value}</option>)}</select></label>
+      {mode === 'architect-path' && <>
+        <label>Esperienza commerciale/relazionale <span>(facoltativo)</span><select name="experience" defaultValue=""><option value="">Seleziona</option>{pilotExperience.map(value => <option key={value}>{value}</option>)}</select></label>
+        <label>Cosa stai cercando <span>(facoltativo)</span><select name="goal" defaultValue=""><option value="">Seleziona</option>{pilotGoals.map(value => <option key={value}>{value}</option>)}</select></label>
+        <label>Disponibilità <span>(facoltativo)</span><select name="availability" defaultValue=""><option value="">Seleziona</option>{pilotAvailability.map(value => <option key={value}>{value}</option>)}</select></label>
+      </>}
+      <label>{form.question} <span>(facoltativo)</span><textarea name="message" rows={4} maxLength={1500} /></label>
+      <div hidden><label>Sito web<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
+      <label className="patrimonial-consent"><input name="consent" type="checkbox" required /> <span>Ho letto l’<Link href="/privacy-policy" target="_blank" rel="noopener">informativa privacy</Link> e chiedo di essere ricontattato per questa richiesta.</span></label>
+      <label className="patrimonial-consent"><input name="marketingConsent" type="checkbox" defaultChecked={false} /> <span>Voglio ricevere anche consigli e novità da Horyzon.</span></label>
+      <button type="submit" className="rd-cta">{status === 'sending' ? 'Invio in corso…' : status === 'success' ? form.success : form.submit}<span aria-hidden="true">↗︎</span></button>
+    </fieldset>
+    {notice && <p role={status === 'error' ? 'alert' : 'status'} className="rd-form-note">{notice}</p>}
+    <p className="rd-form-note">I dati della richiesta sono trasmessi al CRM HighLevel di Horyzon per gestire il ricontatto. {mode === 'patrimonial-event' && 'La richiesta non conferma una registrazione definitiva all’evento. '}Preferisci scriverci? <a href="mailto:info@horyzon.it">Contattaci via email ↗︎</a>.</p>
+  </form>;
 }
 function LeadForm({ initialInterest }: { initialInterest: PatrimonialInterest }) {
   const [interest, setInterest] = useState(initialInterest);

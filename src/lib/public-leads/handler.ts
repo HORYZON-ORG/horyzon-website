@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto';
 import { patrimonialInterest, patrimonialInterests, PATRIMONIAL_PRIVACY_VERSION } from '../../content/patrimonial.ts';
 import { callHighLevel, highLevelConfig, normalizePhone } from '../radar/highlevel.ts';
+import { isLegacyLeadPayload, pilotCrmDetails, pilotMode, validatePilotLead } from './patrimonial-funnels.ts';
+import { pilotForms } from '../../content/patrimonial-funnels.ts';
 
 type Options = { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch; now?: () => Date };
 const attempts = new Map<string, { count: number; until: number }>();
@@ -28,10 +30,12 @@ export async function handlePublicLead(request: Request, options: Options = {}):
     input = JSON.parse(Buffer.concat(chunks).toString('utf8'));
     if (!input || typeof input !== 'object' || Array.isArray(input)) return response(400, 'Richiesta non valida.');
   } catch { return response(400, 'Richiesta non valida.'); }
+  const pilot = pilotMode(input.mode) ? validatePilotLead(input) : null;
+  if (!isLegacyLeadPayload(input) && !pilot) return response(400, 'Controlla i dati e la richiesta di ricontatto.');
   const name = text(input.name, 120), email = text(input.email, 254), rawPhone = text(input.phone ?? '', 40), message = text(input.message ?? '', 1500);
   const interest = patrimonialInterest(input.interest);
   const phone = rawPhone === null ? null : normalizePhone(rawPhone);
-  if (!name || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !interest || message === null || phone === null || (phone && !/^\+[1-9]\d{7,14}$/.test(phone)) || input.consent !== true || input.website) {
+  if (!pilot && (!name || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !interest || message === null || phone === null || (phone && !/^\+[1-9]\d{7,14}$/.test(phone)) || input.consent !== true || input.website)) {
     return response(400, 'Controlla i dati e la richiesta di ricontatto.');
   }
   const config = highLevelConfig(env);
@@ -46,6 +50,21 @@ export async function handlePublicLead(request: Request, options: Options = {}):
     entry.count++; attempts.set(key, entry);
   }
   const crm = { ...config, fetchImpl: options.fetchImpl ?? ((url, init) => fetch(url, { ...init, signal: AbortSignal.timeout(10000) })) };
+  if (pilot) {
+    const details = pilotCrmDetails(pilot, now);
+    try {
+      const result = await callHighLevel<{ contact?: { id?: string } }>(crm, '/contacts/upsert', { locationId: config.locationId, firstName: pilot.firstName, lastName: pilot.lastName, email: pilot.email, ...(pilot.phone ? { phone: pilot.phone } : {}), source: details.source });
+      const id = result.contact?.id;
+      if (!id || typeof id !== 'string') throw new Error('Contact confirmation missing');
+      await callHighLevel(crm, `/contacts/${encodeURIComponent(id)}/tags`, { tags: details.tags });
+      await callHighLevel(crm, `/contacts/${encodeURIComponent(id)}/notes`, { body: details.note });
+      return response(200, pilotForms[pilot.mode].success);
+    } catch {
+      return response(502, 'Non possiamo confermare la ricezione completa. Riprova oppure scrivi a info@horyzon.it.');
+    }
+  }
+  // The legacy contract and mapping remain unchanged after the pilot branch.
+  if (!name || !email || !interest) return response(400, 'Controlla i dati e la richiesta di ricontatto.');
   const parts = name.split(/\s+/);
   try {
     const result = await callHighLevel<{ contact?: { id?: string } }>(crm, '/contacts/upsert', { locationId: config.locationId, firstName: parts[0], lastName: parts.slice(1).join(' '), email: email.toLowerCase(), ...(phone ? { phone } : {}), source: `Horyzon · ${patrimonialInterests[interest].label} (horyzon.it)` });
