@@ -1,13 +1,16 @@
-# Patrimonial Supabase readiness v1 — FASE 2B.2B-4B
+# Patrimonial Supabase readiness v1 — aggiornamento FASE 2B.2B-4C
 
 Data: 14 ottobre 2026, Europe/Rome. Repo canonica: `HORYZON-ORG/horyzon-website`.
 Branch: `feat/patrimonial-pilot-funnels`. Baseline: `2a2432ce26ced04a1341b13430b8ff30891b7b06`.
+Baseline aggiornamento 4C: `0c91235b2f5afa3c653e9057a1c2934b3b7dde72`.
 
-**Esito: NOT_READY per l'apply remoto.** Verifiche statiche e simulazioni locali superate; restano i gate PostgreSQL/ambiente/privilegi descritti in §15. La migration non è stata applicata e questo documento non ne autorizza l'applicazione. Zero chiamate remote, ispezioni delle configurazioni di produzione, messaggi, push, deploy o merge. Solo questo documento viene creato; codice, migration e `tmp/` restano invariati.
+**Esito corrente: APPLIED_AND_VERIFIED — 15 ottobre 2026.** L'utente comunica che nel progetto Supabase **horyzon** la migration `patrimonial_lead_v2` è stata realmente applicata: sette tabelle, dieci RPC, health `patrimonial-v2-store-1`, RLS attivo e forzato, anon/authenticated senza accesso, service_role abilitato. Lo smoke PostgreSQL reale `SYNC_PENDING → SYNCING → SYNCED`, con claim/lease/fencing/complete, è passato; nessun dato sintetico è rimasto persistito. Queste sono evidenze fornite dall'utente, non verifiche remote ripetute dall'agente.
+
+La valutazione **NOT_READY del 14 ottobre**, baseline indicata sopra, è storica ed è superata per applicazione e verifiche di base dello store. Backup/PITR e prova di restore **non sono attestati**. History completa, dettaglio dei default ACL/membership e prestazioni non sono provati dalle sole evidenze ricevute. Restano controlli operativi prima dell'attivazione; non invalidano lo stato di applicazione comunicato. Tutti i flag e `PATRIMONIAL_DURABLE_STORE_READY` rimangono false per default. La fase 4C esegue solo verifiche locali: zero chiamate remote, apply, cambi env, push, deploy o merge; migration e `tmp/` invariati.
 
 ## 1. Migration summary
 
-Candidata: [20261014225059_patrimonial_lead_v2.sql](../../supabase/migrations/20261014225059_patrimonial_lead_v2.sql), 667 righe non contando la riga vuota finale. SHA-256 del contenuto UTF-8 con terminatori normalizzati LF:
+Migration applicata secondo evidenza utente, precedentemente candidata: [20261014225059_patrimonial_lead_v2.sql](../../supabase/migrations/20261014225059_patrimonial_lead_v2.sql), 667 righe non contando la riga vuota finale. SHA-256 del contenuto locale UTF-8 con terminatori normalizzati LF:
 
 ```text
 5680a1d16f2cb0c136e5033f765b3e4242aa8ba1b11995e8fb816ff14b947cbb
@@ -83,6 +86,8 @@ Coprono legami, coda, dipendenze e marker retention. Non sono disponibili EXPLAI
 
 Il blocco finale della migration abilita e forza RLS sulle sette tabelle tramite allowlist esplicita. Non crea policy per public, anon o authenticated. Le funzioni invoker conservano i limiti del ruolo chiamante.
 
+Evidenza corrente ricevuta: RLS e FORCE RLS effettivamente attivi, accesso anon/authenticated negato e service_role operativo. Non è una nuova introspezione dell'agente.
+
 Il percorso previsto richiede un service_role effettivamente autorizzato a superare RLS, oltre ai grant sugli oggetti. Il solo nome del ruolo o la presenza della variabile non lo dimostrano. Con FORCE RLS e nessuna policy, un ruolo privo di BYPASSRLS non soddisfa questo percorso. Verificare attributi e ruolo assunto dalla Data API; non risolvere eventuali errori concedendo accesso ai browser o convertendo le RPC in definer.
 
 ## 6. Grants
@@ -94,7 +99,7 @@ Il percorso previsto richiede un service_role effettivamente autorizzato a super
 | Domain events | SELECT, INSERT | Stessa revoca |
 | Tutte le dieci funzioni | EXECUTE | REVOKE ALL a PUBLIC, anon, authenticated |
 
-Non è presente un GRANT pubblico accidentale nel testo SQL. La migration non richiede sequence grant: gli ID usano UUID. La USAGE di `public` per service_role è già prevista dalla migration `20260922130000_grant_ai_score_runtime_schema_usage.sql`; applicazione reale e privilegi effettivi restano da verificare.
+Non è presente un GRANT pubblico accidentale nel testo SQL. La migration non richiede sequence grant: gli ID usano UUID. La USAGE di `public` per service_role è già prevista dalla migration `20260922130000_grant_ai_score_runtime_schema_usage.sql`. L'utente conferma ora accesso service_role e negazione anon/authenticated; il dettaglio completo degli ACL non è allegato.
 
 **Gate ACL:** la candidata revoca public/anon/authenticated ma non azzera prima i grant già eventualmente assegnati a service_role dai default ACL del creatore. Un GRANT aggiunge privilegi, non restringe quelli esistenti. Se i default concedono UPDATE generale su consent/events o DELETE, i GRANT limitati non li rimuovono. Non è stato riscontrato questo stato remoto: è una verifica obbligatoria ancora aperta, specialmente per la promessa append-oriented. Esaminare pg_default_acl, ACL di tabelle/colonne/funzioni e membership del ruolo. Se l'effettivo set eccede quello approvato, fermare il piano e preparare una correzione separatamente autorizzata; non dichiarare least privilege solo dal sorgente.
 
@@ -118,7 +123,7 @@ REST server-side `/rest/v1/rpc/<nome>`, profili Accept/Content `public`, apikey 
 
 Sono presenti tutti i 25 command name emessi dall'adapter e le firme dei tre endpoint REST corrispondono ai payload. Snapshot cambiato produce PT409/PATRIMONIAL_SNAPSHOT_CHANGED e fino a quattro esecuzioni del callback; conflitto hash/revisione e stale lease sono distinti. Replay scaduto produce PT410. Esito commit ambiguo: unavailable/503 e riuso dello stesso request ID, senza retry automatico del commit.
 
-La factory richiede readiness esplicita e URL/chiave; non costruisce memory e non ripiega su 2A. Health attesa: versione `patrimonial-v2-store-1`. La funzione health risolve colonne e SELECT LIMIT 0 sulle sette tabelle: **non dimostra INSERT/UPDATE, correttezza dei rami PL/pgSQL o passaggio dati sotto RLS**. Serve lo smoke test §11 prima di abilitare intake.
+La factory richiede readiness esplicita e URL/chiave; non costruisce memory e non ripiega su 2A. Health attesa e comunicata come verificata: versione `patrimonial-v2-store-1`. La sola funzione health risolve colonne e SELECT LIMIT 0 sulle sette tabelle: **non dimostra INSERT/UPDATE, correttezza di tutti i rami PL/pgSQL o passaggio dati sotto RLS**. Lo smoke read/write e lease è ora comunicato come passato dall'utente; attivazione intake e copertura dei rami ulteriori restano decisioni separate.
 
 ## 8. Migration order
 
@@ -152,7 +157,7 @@ La history locale non certifica quella remota. `supabase/config.toml` non risult
 
 ## 9. Pre-flight
 
-Checklist futura, **non eseguita sul remoto in questa fase**. Registrare l'evidenza in un verbale operativo protetto, senza credenziali, PII o valori env nel repository.
+Checklist preparata nella fase 4B per l'apply allora futuro, **non eseguita sul remoto dall'agente**. L'apply è ora comunicato come completato: non ripetere la migration e non usare le voci sull'assenza degli oggetti come descrizione attuale. Conservare questa procedura per un nuovo ambiente autorizzato. Registrare history/ambiente/backup e dettagli ancora mancanti in un verbale operativo protetto, senza credenziali, PII o valori env nel repository.
 
 - [ ] Ottenere autorizzazione separata al target e all'apply; rivalutare §15 dopo chiusura blocker.
 - [ ] Confrontare organizzazione/project ref/ambiente con il target approvato, verificando che URL e service key appartengano allo stesso progetto. Il nome database da solo non identifica il progetto.
@@ -184,7 +189,9 @@ select pg_get_userbyid(defaclrole) as creator, defaclnamespace::regnamespace,
 
 ## 10. Apply checklist
 
-Nessuna istruzione di questa sezione è stata eseguita. Il futuro operatore deve prima chiudere §9 e ottenere autorizzazione.
+Procedura storica 4B per un nuovo ambiente autorizzato. Sul progetto horyzon l'apply è già completato secondo le evidenze ricevute: nessuna riapplicazione in 4C.
+
+Nessuna istruzione di questa sezione è stata eseguita dall'agente. Per un nuovo ambiente il futuro operatore deve prima chiudere §9 e ottenere autorizzazione.
 
 1. Confermare checksum §1, baseline e che il piano dello strumento di migration verificato comprenda solo `20261014225059_patrimonial_lead_v2.sql`. Non lanciare comandi generici che applichino anche le migration pendenti di altri prodotti.
 2. Applicare il file integralmente nel target approvato, tramite procedura che registri correttamente la history. Non eseguirlo come SQL ad hoc ignorando la history. Conservare esito transazionale e audit; al primo errore fermarsi, senza replay automatico.
@@ -239,6 +246,10 @@ Per la matrice §6, full_consent_update/content_update devono essere negati e li
 
 ## 11. Smoke test
 
+**Aggiornamento remoto comunicato il 15 ottobre:** smoke reale PostgreSQL `SYNC_PENDING → SYNCING → SYNCED`, claim/lease/fencing/complete passati; nessun dato sintetico persistito. L'agente non ha eseguito né ripetuto questo test. La procedura estesa sotto resta riferimento per controlli successivi autorizzati, non un verbale di copertura completa di ogni caso.
+
+**Verifica locale 4C:** `npm run test:patrimonial-remote-mapping` comprende la suite persistence con SQL statico, quindi ledger/CRM/opportunity/legacy/2A/Radar. Mapping completo e casi mancanti/duplicati/mismatch, flag false e tag assente sono verificati con soli trasporti fake; nessuna chiamata reale e nessuna migration eseguita dall'agente.
+
 **Eseguito ora, senza DB:** `npm run test:patrimonial-persistence` PASS, 27 casi obbligatori e aggiuntivi. Include controllo statico migration e regressioni ledger A–P, adapter contatti, 30 casi opportunity, legacy/2A/Radar. Un audit statico indipendente su tutti i file SQL ha confermato nomi, ordine, 13 riferimenti a PK UUID, firme e inventario indici. Nessun parser/runtime PostgreSQL è stato invocato: le fixture non eseguono i corpi PL/pgSQL.
 
 | Sequenza logica simulata | Riscontro locale |
@@ -254,7 +265,7 @@ Per la matrice §6, full_consent_update/content_update devono essere negati e li
 
 Altri controlli locali PASS: typecheck con exclude tmp aggiunto soltanto alla configurazione in memoria, incremental disattivato/noEmit; ESLint pertinente con zero warning; `git diff --check`. Non è stato alterato tsconfig e non sono stati usati file di tmp come sorgenti. Non è stato usato il comando typecheck generico che includerebbe tmp tramite i glob esistenti.
 
-**Smoke PostgreSQL futuro, da autorizzare separatamente:**
+**Procedura PostgreSQL estesa, per eventuali ulteriori test autorizzati:**
 
 1. Usare un processo server isolato con il solo adapter store, credenziale protetta e dataset sintetico riconoscibile. Nessun worker/provider CRM, messaggio, booking o webhook. Non abilitare l'endpoint pubblico per fare il test dello store.
 2. Verificare health/versione e negazione degli accessi equivalenti anon/authenticated. La prova con service role deve percorrere i rami SQL, non una fixture.
@@ -289,7 +300,7 @@ Solo nomi e regole; nessun valore reale è stato letto o riportato.
 | SUPABASE_URL | URL server preferito del progetto approvato; obbligatorio salvo fallback sotto |
 | NEXT_PUBLIC_SUPABASE_URL | Fallback già supportato se SUPABASE_URL è assente; non necessario duplicarlo se è configurato il server URL |
 | SUPABASE_SERVICE_ROLE_KEY | Credenziale server dello stesso progetto, mai browser/NEXT_PUBLIC, mai publishable key |
-| PATRIMONIAL_DURABLE_STORE_READY | Gate aggiuntivo effettivamente implementato; mantenere disabilitato fino a verifica/applicazione/smoke e autorizzazione intake |
+| PATRIMONIAL_DURABLE_STORE_READY | Gate aggiuntivo effettivamente implementato; false per default anche dopo apply/smoke, fino ad autorizzazione intake |
 | PATRIMONIAL_V2_ENABLED | Intake v2; disabilitato per default |
 | PATRIMONIAL_CRM_WRITE_ENABLED | Gate worker CRM; mantenere disabilitato |
 | PATRIMONIAL_OPPORTUNITY_WRITE_ENABLED | Gate opportunity, oltre a V2/CRM/mapping; mantenere disabilitato, provider reale ancora stub |
@@ -305,10 +316,10 @@ Non occorrono credenziali HighLevel per applicare o collaudare questo store. Eve
 
 | Rischio o limite osservato | Gestione richiesta |
 | --- | --- |
-| Fixture RPC esegue JavaScript, non PL/pgSQL | Prova PostgreSQL reale isolata prima dell'apply operativo; il PASS statico non certifica compilazione/esecuzione SQL |
+| Fixture RPC esegue JavaScript, non PL/pgSQL | Smoke reale di base comunicato dall'utente; il PASS statico resta distinto e non certifica tutti i rami SQL |
 | Default ACL/membership possono ampliare service_role | Verifica privilegi effettivi; eventuale correzione separata prima dell'abilitazione |
-| Health LIMIT 0 non è una prova di DML/RLS | Smoke read/write completo con ruolo reale e prove negative browser |
-| Target/history/collisioni manuali ignoti | Pre-flight obbligatorio; nessuna deduzione dal solo repository |
+| Health LIMIT 0 non è una prova di DML/RLS | DML/lease e negazione anon/authenticated ora comunicati come verificati; non dedurre ulteriori test dalla sola health |
+| History completa, backup/PITR e restore non attestati | Completare verbale operativo; progetto horyzon/apply verificati secondo evidenza utente |
 | Namespace advisory globale e preview che riesegue journal | Misurare latenza/contesa su DB; limite 128 comandi e callback solo-store, senza side effect esterni |
 | Lease basata su scadenza app, verificata con clock DB | Verificare sincronizzazione orologi e margini sotto latenza reale; nessun bypass dei controlli di scadenza |
 | JSONB e colonne duplicate per indicizzazione | Usare RPC approvate; verificare proiezioni e invarianti, senza patch REST indipendenti |
@@ -320,14 +331,14 @@ Non sono state riscontrate collisioni locali o incompatibilità certa nelle firm
 
 ## 15. Readiness result
 
-**NOT_READY.** È il gate per applicare al progetto target, distinto dall'esito positivo dell'audit locale.
+**APPLIED_AND_VERIFIED.** Stato Supabase aggiornato sulla base delle evidenze remote fornite dall'utente il 15 ottobre 2026. Non equivale ad attivazione intake, CRM o opportunity e non attesta backup/PITR.
 
-| Blocker aperto | Evidenza disponibile | Condizione di chiusura |
+| Gate della valutazione precedente | Stato corrente / evidenza | Limite residuo |
 | --- | --- | --- |
-| B1 — Corpi SQL non eseguiti su PostgreSQL compatibile | Test statici/fake PASS, nessuna esecuzione DB | Validazione in ambiente PostgreSQL isolato autorizzato, incluse transazioni preview/commit, FK differite e concorrenza |
-| B2 — Target, ambiente, backup e history non verificati | Soltanto sequenza locale di 17 precedenti e candidata | Verbale protetto §9, progetto/ambiente approvati, backup ripristinabile, history/drift risolti e piano solo-candidata |
-| B3 — Prerequisiti/privilegi effettivi/RLS/Data API ignoti | SQL di revoca/grant presente; default ACL service_role non azzerati; health limitata | Verifica del target §5–§10: UUID/schema/USAGE/BYPASSRLS, ACL effettivi conformi, accessi browser negati e RPC esposte correttamente; correzione autorizzata se necessaria |
+| B1 — Esecuzione PostgreSQL | Smoke reale passato: SYNC_PENDING → SYNCING → SYNCED, claim/lease/fencing/complete | Copertura completa di tutti i rami/concorrenza/carico non attestata |
+| B2 — Target/apply e garanzie operative | Progetto horyzon, migration patrimonial_lead_v2 realmente applicata, sette tabelle e dieci RPC | Backup/PITR/restore, ambiente dettagliato e history completa non allegati: mantenere aperto il verbale operativo |
+| B3 — RLS/ACL e servizio | RLS/FORCE attivi, anon/authenticated senza accesso, service_role abilitato, health corretta | Default ACL/membership e dettaglio privilegi append-only da documentare; non dichiarati verificati oltre l'evidenza fornita |
 
-Lo smoke successivo all'apply è un gate ulteriore per l'abilitazione della feature, non una verifica già eseguita né un motivo per accendere oggi i flag. La successiva decisione READY_TO_APPLY richiede chiusura documentata dei tre blocker; non autorizza automaticamente CRM, intake pubblico, deploy o merge.
+Non ci sono blocker residui alla registrazione dello stato applicato e verificato comunicato dall'utente. Per l'attivazione restano autorizzazione separata, configurazione server/location, binding HTTP verificati, controlli operativi e gate di scrittura. Il mapping HighLevel ora è completo come configurazione, ma non abilita trasporto opportunity, lost reason, booking o messaggi.
 
-Consegna di questa fase: soltanto questo file; migration invariata e non applicata, codice invariato, staging con esclusione esplicita di tmp prima del commit, commit locale `docs: verify patrimonial Supabase readiness`. Nessun servizio remoto contattato e nessun dato reale acquisito.
+Consegna storica 4B: solo questo documento, commit `docs: verify patrimonial Supabase readiness`, senza apply dell'agente. Aggiornamento 4C: mapping server e documentazione, test locali e commit `feat: add patrimonial remote CRM mapping`; nessuna nuova applicazione della migration, nessun servizio remoto contattato o dato reale acquisito, `tmp/` fuori scope.

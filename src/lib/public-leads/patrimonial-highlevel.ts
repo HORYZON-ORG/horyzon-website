@@ -1,14 +1,16 @@
 import { normalizePhone } from '../radar/highlevel.ts';
 import type { PatrimonialV2Lead } from './patrimonial-contract.ts';
 import { patrimonialFlags, type PatrimonialOperationError } from './patrimonial-store.ts';
+import { createPatrimonialRemotePipelineMapping, getPatrimonialRemoteMapping, patrimonialContactCustomFieldIds, validatePatrimonialRemoteMapping, type PatrimonialRemoteMapping } from './patrimonial-highlevel-config.ts';
 
 const BASE_URL = 'https://services.leadconnectorhq.com';
 const API_VERSION = '2021-07-28';
 export type PatrimonialCapability = boolean | 'UNKNOWN';
-export type PatrimonialCrmCapabilities = Record<'contactsRead' | 'contactsWrite' | 'tagsWrite' | 'notesWrite' | 'notesRead' | 'opportunitiesRead' | 'opportunitiesWrite' | 'calendarsRead' | 'workflowsRead', PatrimonialCapability>;
+export type PatrimonialCrmCapabilities = Record<'contactsRead' | 'contactsWrite' | 'tagsWrite' | 'notesWrite' | 'notesRead' | 'opportunitiesRead' | 'opportunitiesWrite' | 'calendarsRead' | 'workflowsRead' | 'usersRead' | 'bookingWrite' | 'webhookRead' | 'lostReasonsRead' | 'messagingWrite', PatrimonialCapability>;
 export const unverifiedPatrimonialCapabilities: PatrimonialCrmCapabilities = {
   contactsRead: 'UNKNOWN', contactsWrite: 'UNKNOWN', tagsWrite: 'UNKNOWN', notesWrite: 'UNKNOWN', notesRead: 'UNKNOWN',
   opportunitiesRead: 'UNKNOWN', opportunitiesWrite: 'UNKNOWN', calendarsRead: 'UNKNOWN', workflowsRead: 'UNKNOWN',
+  usersRead: 'UNKNOWN', bookingWrite: 'UNKNOWN', webhookRead: 'UNKNOWN', lostReasonsRead: 'UNKNOWN', messagingWrite: 'UNKNOWN',
 };
 export type PatrimonialCrmContact = { id: string; locationId: string; email: string | null; phone: string | null; source?: string; assignedTo?: string; tags?: string[] };
 export type PatrimonialCrmNote = { id: string; locationId: string; contactId: string; marker: string };
@@ -217,6 +219,52 @@ export interface PatrimonialOpportunityProvider {
   searchOpportunities(query: PatrimonialOpportunityQuery): Promise<PatrimonialRemoteOpportunity[]>;
   createOpportunity(input: PatrimonialOpportunityWrite): Promise<PatrimonialRemoteOpportunity>;
   updateOpportunity(id: string, input: PatrimonialOpportunityWrite & { expectedProviderVersion: string }): Promise<PatrimonialRemoteOpportunity>;
+}
+
+export type PatrimonialConfiguredHighLevelOptions = Omit<PatrimonialHighLevelOptions, 'verifiedTags'> & {
+  // A future verified, complete inventory reader. No guessed tags endpoint is
+  // installed. Missing/deleted/mismatched tags block POST instead of provisioning.
+  verifiedTagInventory?: { verified: true; read: (locationId: string) => Promise<{ complete: true; tags: { id: string; name: string; locationId: string }[] }> };
+};
+export class PatrimonialConfiguredHighLevelProvider extends PatrimonialHighLevelProvider {
+  private readonly mappingOptions: PatrimonialConfiguredHighLevelOptions;
+  private readonly mappingSnapshot: PatrimonialRemoteMapping;
+  constructor(options: PatrimonialConfiguredHighLevelOptions) {
+    let resources: PatrimonialRemoteMapping;
+    try { resources = getPatrimonialRemoteMapping((options.env ?? (() => process.env))()); } catch { throw new PatrimonialCrmError('CONFIG'); }
+    super({ ...options, verifiedTags: Object.keys(resources.tags), capabilities: {
+      ...options.capabilities, calendarsRead: 'UNKNOWN', workflowsRead: 'UNKNOWN', usersRead: 'UNKNOWN', bookingWrite: 'UNKNOWN', webhookRead: 'UNKNOWN', lostReasonsRead: 'UNKNOWN', messagingWrite: 'UNKNOWN',
+    } });
+    this.mappingOptions = options; this.mappingSnapshot = resources;
+  }
+  get remoteResources() { return structuredClone(this.mappingSnapshot); }
+  get remoteMappingReady() { return validatePatrimonialRemoteMapping(this.mappingSnapshot).remoteMappingReady; }
+  get pipelineMapping() {
+    try {
+      // Preserve one coherent snapshot even if process env changes later.
+      const env = (this.mappingOptions.env ?? (() => process.env))();
+      const latest = getPatrimonialRemoteMapping(env);
+      if (JSON.stringify(latest) !== JSON.stringify(this.mappingSnapshot)) throw new PatrimonialCrmError('CONFIG');
+      return createPatrimonialRemotePipelineMapping(this.mappingOptions.verifiedLocationId, env);
+    } catch { throw new PatrimonialCrmError('CONFIG'); }
+  }
+  contactCustomFieldIds(values: Record<string, string>) { return patrimonialContactCustomFieldIds(values, this.mappingSnapshot); }
+  override async addTags(contactId: string, tags: string[]) {
+    this.assertReady(true); // flags/location/capabilities first; no network if off
+    const binding = this.mappingOptions.verifiedTagInventory;
+    if (!binding?.verified || !tags.length || tags.some(name => !Object.hasOwn(this.mappingSnapshot.tags, name))) throw new PatrimonialCrmError('CONFIG');
+    let inventory: Awaited<ReturnType<NonNullable<PatrimonialConfiguredHighLevelOptions['verifiedTagInventory']>['read']>>;
+    try { inventory = await binding.read(this.locationId); } catch { throw new PatrimonialCrmError('CONFIG'); }
+    if (!inventory || inventory.complete !== true || !Array.isArray(inventory.tags) || tags.some(name => {
+      const matches = inventory.tags.filter(tag => tag && tag.name === name);
+      return matches.length !== 1 || matches[0].id !== this.mappingSnapshot.tags[name].id || matches[0].locationId !== this.locationId;
+    })) throw new PatrimonialCrmError('CONFIG');
+    await super.addTags(contactId, tags); // contact scope and flags rechecked
+  }
+}
+
+export function createConfiguredPatrimonialHighLevelProvider(options: PatrimonialConfiguredHighLevelOptions) {
+  return new PatrimonialConfiguredHighLevelProvider(options);
 }
 
 export type PatrimonialIdentity = { kind: 'NEW' } | { kind: 'REUSE'; contact: PatrimonialCrmContact } | { kind: 'IDENTITY_REVIEW' };

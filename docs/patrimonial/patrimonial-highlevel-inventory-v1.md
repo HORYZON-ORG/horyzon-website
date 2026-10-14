@@ -1,13 +1,36 @@
-# Inventario patrimoniale HighLevel v1 — FASE 2B.2A
+# Inventario patrimoniale HighLevel v1 — aggiornamento FASE 2B.2B-4C
 
 Data: 14 ottobre 2026. Repo canonica: `HORYZON-ORG/horyzon-website`.
 Branch: `feat/patrimonial-pilot-funnels`.
 Baseline: `d3b7b6de1b886c21542653f39c869cd548c4d385`.
+Baseline aggiornamento 4C: `0c91235b2f5afa3c653e9057a1c2934b3b7dde72`.
 Contratto vincolante, riletto integralmente: [contratto 2B.1](patrimonial-highlevel-contract-v1.md).
 
 ## 1. Executive summary
 
-**REMOTE INVENTORY: PARTIALLY VERIFIED — aggiornamenti forniti dall'utente per le FASI 2B.2B-2 e 2B.2B-3.**
+**REMOTE INVENTORY: REMOTE CORE CONFIG VERIFIED — 15 ottobre 2026, evidenze fornite dall'utente.**
+
+Connessione e sub-account Horyzon verificati; risorse create e rilette con successo secondo la richiesta e il report `Horyzon_HighLevel_Patrimoniale_Remote_Mapping_2026-10-15.md`. L'agente non ha effettuato chiamate HighLevel, Supabase, Composio o web in 4C. Questo aggiornamento prevale sulla fotografia storica riportata sotto e sulle sue celle UNKNOWN/VERIFY relative alle risorse ora censite.
+
+| Area verificata | Evidenza corrente | Configurazione locale |
+| --- | --- | --- |
+| Location | Connessione/sub-account confermati; ID non allegato | Solo configurazione server `HIGHLEVEL_LOCATION_ID`, con confronto `verifiedLocationId`; nessun ID inventato |
+| Pipeline | Percorso Architetto Patrimoniale; Evento Benessere Patrimoniale; Confronti Benessere Patrimoniale | Tre ID reali nella config centrale |
+| Stage | A01–A10, E01–E05, C01–C05 | Venti ID reali, ordine e funnel logici verificati |
+| Contact custom field | Quattro ID e fieldKey reali | Provincia e tre snapshot marketing |
+| Opportunity custom field | Ventinove ID e fieldKey reali | 14 comuni + 10 A + 3 E + 2 C; i tre E solo inventario |
+| Tag | Quattro nomi e ID reali | horyzon-patrimoniale, percorso-architetto-patrimoniale, evento-patrimoniale, pilot |
+| Status | open, won, lost, abandoned nella ricerca | Mapping dominio esplicito; trasporto write ancora da certificare |
+| Deduplica | Contatti: email/phone, allowDuplicateContact=false; opportunity: stesso contatto/stessa pipeline | A/E/C separati ammessi; una E con Participation distinte per edizione |
+| Lost reasons | Catalogo letto: **0 presenti** | Nessuna creazione; capability API UNKNOWN e gate chiusura unresolved |
+
+Una sola fonte degli ID: [patrimonial-highlevel-config.ts](../../src/lib/public-leads/patrimonial-highlevel-config.ts). `remoteMappingReady=true` dopo verifica di 60 ID unici e completezza 3/20/4/4/29. Override opzionale solo server `PATRIMONIAL_HIGHLEVEL_REMOTE_IDS_JSON`, validato senza fallback su errori; formato e limiti nel [contratto aggiornato](patrimonial-highlevel-contract-v1.md). Nessun ID in pagine/browser o business logic. I fieldKey sono metadata esatti; le proiezioni preparate usano ID, senza introdurre nuove write contatto/opportunity. L'assegnazione tag esistente usa nomi, dopo controllo nome/ID/location tramite binding di lettura esplicitamente verificato; tag mancante → CONFIG/MANUAL_REVIEW, mai auto-create.
+
+Ancora UNKNOWN: calendari, workflow, utenti, booking, webhook e messaging. La lettura del catalogo lost reasons vuoto non certifica un adapter per tale API. Mancano inoltre binding HTTP verificati, audit dei side effect e autorizzazione alle write. Il factory configurato `createConfiguredPatrimonialHighLevelProvider` espone il catalogo reale; trasporto opportunity e gate close reason restano chiusi. I campi Evento esistenti restano inutilizzati dalle proiezioni per preservare Participation come fonte autorevole. Il precedente valore 0 custom fields descrive solo la lettura storica antecedente alla creazione delle risorse.
+
+Supabase: **APPLIED_AND_VERIFIED** secondo evidenza utente; [readiness](patrimonial-supabase-readiness-v1.md) aggiornata senza attestare backup/PITR. Tutti e sei i flag funzionali e il gate store restano false per default; env reale intatto. Nuova suite `test:patrimonial-remote-mapping`: test locali mapping/negativi/provider/flag, SQL statico e regressioni persistence/CRM/opportunities/legacy/2A/Radar, senza remoto.
+
+### Evidenze storiche 2B.2B-2 / 2B.2B-3
 
 La precedente classificazione BLOCKED descriveva l'accesso disponibile durante la FASE 2B.2A; non è più lo stato assoluto dell'account. L'utente comunica una verifica ChatGPT in sola lettura sulla connessione attiva del sub-account **High Level - HORYZON**, timezone `Europe/Rome`, website `https://www.horyzon.it`, con contacts, opportunities, appointments/calendars, workflows e tags abilitati. Questa evidenza è fornita dall'utente: non sono state effettuate nuove chiamate remote dall'agente per confermarla.
 
@@ -112,7 +135,7 @@ Per gli utenti usare alias funzionali/ID e soltanto ruoli/stato necessari; omett
 
 ## 4. Pipeline esistenti
 
-Inventario effettivo: **UNKNOWN**, non lista vuota. Nomi, ID, stage, ordine e status remoti non sono stati letti. Nessuna pipeline candidata al riuso è verificata.
+Inventario corrente: **VERIFIED** per le tre pipeline patrimoniali, dieci stage A, cinque E e cinque C, secondo le evidenze utente del 15 ottobre. Nomi logici/remoti in §1 e §15; ID reali unicamente nella configurazione server. La tabella seguente conserva i requisiti di verifica della baseline 2B.2A: il precedente UNKNOWN sull'identità delle risorse è superato, mentre motivi di chiusura, binding write e side effect restano gate.
 
 | Pipeline logica | Struttura richiesta dal contratto | Verifica remota necessaria | Esito |
 | --- | --- | --- | --- |
@@ -124,7 +147,7 @@ Lo stato dominio ABANDONED non è dimostrato come enum nativo HighLevel: nessun 
 
 ## 5. Custom fields
 
-Inventario remoto contact/opportunity: **UNKNOWN**. Nessun campo `hz_*` remoto verificato. Il codice 2A invia qualificazioni e consensi in nota, non in custom field: presenza in nota e presenza dello schema CRM sono cose diverse.
+Inventario corrente contact/opportunity: **VERIFIED**, quattro contact field e ventinove opportunity field con ID/fieldKey comunicati dall'utente. Il codice 2A continua a inviare qualificazioni e consensi in nota; il mapping 4C prepara i riferimenti per ID senza alterare quel percorso. Tipi/opzioni e payload HTTP completi non sono attestati dai soli ID. Le classificazioni seguenti restano utili per risorse ulteriori o conflitti, senza autorizzare creazioni in questa fase.
 
 Classificazione da usare dopo lettura completa:
 
@@ -135,11 +158,13 @@ Classificazione da usare dopo lettura completa:
 | CONFLICT | Nome/key simili ma oggetto, tipo, opzioni o significato incompatibili | Fermare mapping e concordare adattamento, senza sovrascritture |
 | VERIFY | Schema non letto o evidenza incompleta | Mantenere UNKNOWN, nessuna creazione dedotta |
 
-Tutti i campi del mapping §15 sono ora **VERIFY**. Alla futura lettura registrare per ciascuno nome reale, ID, object contact/opportunity, tipo effettivo, key/name e opzioni complete con relativi identificativi se esistenti. Le definizioni e gli enum vincolanti restano nelle sezioni 1, 4 e 5 del contratto: nessuna opzione accorciata o convertita arbitrariamente.
+I 33 custom field ricevuti sono **VERIFIED** per ID, oggetto e fieldKey nel mapping §15; i tre Evento sono solo inventario. Gli elementi non ricevuti, quali close reason condizionale, restano VERIFY. Prima delle write documentare tipi/opzioni/payload completi senza dedurli dai nomi. Le definizioni e gli enum vincolanti restano nelle sezioni 1, 4 e 5 del contratto: nessuna opzione accorciata o convertita arbitrariamente.
 
 Verifiche particolari: timestamp ISO UTC non ridotti a data senza ora; testo lungo fino a 1.500 caratteri; enum distinti tra profili A/E; owner/stage/status nativi; motivo chiusura nativo prima del custom condizionale `hz_close_reason`. `hz_assigned_owner` è alias del nativo, non un custom field da creare. Non creare checkbox path_started/activated o mirror del confronto sul contatto/Evento.
 
 ## 6. Tag
+
+Stato corrente: i primi quattro tag sotto sono **VERIFIED**, con ID nella config centrale; le tre voci legacy restano fuori dalla nuova attestazione. Le celle UNKNOWN della tabella storica per i primi quattro sono superate da §1/§15. Nessun tag viene creato automaticamente; il provider configurato richiede catalogo completo, nome/ID/location corrispondenti prima dell'assegnazione. L'audit dei workflow eventualmente collegati resta aperto.
 
 | Nome esatto richiesto | Uso locale/contrattuale | Esistenza e ID remoti | Azione successiva |
 | --- | --- | --- | --- |
@@ -256,7 +281,7 @@ Test sintetico futuro, solo dopo autorizzazione distinta e audit workflow: ambie
 
 Prima di questo test verificare schema/impostazioni in sola lettura. La regola di dominio resta: email come ricerca primaria; telefono come segnale, conflitti in IDENTITY_REVIEW, mai fusione cieca. Non confondere mancata ricerca con “nessun match”. Nessun test sintetico è stato eseguito ora.
 
-## 14. Gap analysis vs contratto
+## 14. Gap analysis vs contratto — baseline storica
 
 La classificazione considera separatamente capacità locale e fattibilità **effettiva nell'account**. `SUPPORTED` richiede evidenza sufficiente nel perimetro indicato; `SUPPORTED WITH CHANGE` identifica un percorso locale concreto da estendere; `NOT SUPPORTED` vale solo per un limite dimostrato; `UNKNOWN` significa gate remoto aperto. Nessuna capacità remota è dichiarata NOT SUPPORTED soltanto per mancata lettura.
 
@@ -288,72 +313,75 @@ La classificazione considera separatamente capacità locale e fattibilità **eff
 
 ## 15. Mapping logico → remoto
 
-Tabella di preparazione, **non mapping attivabile**. Tutti i REMOTE NAME/ID sono UNKNOWN perché non letti. Le label nelle ACTION NEXT sono nomi desiderati del contratto, non nomi esistenti. `VERIFY` significa leggere prima di REUSE/CREATE/CONFLICT. `MISSING` sarà usato solo per assenza accertata con autorizzazioni e paginazione complete. I nomi delle tre chiavi calendario sono proposte locali esplicite, non ID provider.
+Mapping corrente delle risorse ricevute, **non autorizzazione alle write**. Le celle `config: ...` rinviano agli ID reali nella sola fonte server [patrimonial-highlevel-config.ts](../../src/lib/public-leads/patrimonial-highlevel-config.ts), evitando copie divergenti. VERIFIED attesta ID/oggetto/fieldKey forniti dall'utente; non certifica payload, tipi/opzioni o side effect. UNKNOWN/VERIFY rimangono solo per elementi non ricevuti. I nomi delle tre chiavi calendario sono ancora proposte locali, non ID provider. Le ACTION NEXT originarie descrivono vincoli di dominio o verifiche future, senza autorizzare creazioni.
 
 | LOGICAL KEY | REMOTE TYPE | REMOTE NAME | REMOTE ID | STATUS | ACTION NEXT |
 | --- | --- | --- | --- | --- | --- |
-| ARCHITECT_PATH | pipeline | UNKNOWN | UNKNOWN | VERIFY | Confrontare Percorso Architetto Patrimoniale e 10 stage |
-| PATRIMONIAL_EVENT | pipeline | UNKNOWN | UNKNOWN | VERIFY | Confrontare registrazioni Evento e 5 stage |
-| PATRIMONIAL_CONSULTATION | pipeline | UNKNOWN | UNKNOWN | VERIFY | Confrontare Confronti Benessere Patrimoniale e 5 stage |
-| A01 | stage | UNKNOWN | UNKNOWN | VERIFY | Nuovo interesse, ordine 1 |
-| A02 | stage | UNKNOWN | UNKNOWN | VERIFY | Presentazione da prenotare, ordine 2 |
-| A03 | stage | UNKNOWN | UNKNOWN | VERIFY | Presentazione prenotata, ordine 3 |
-| A04 | stage | UNKNOWN | UNKNOWN | VERIFY | Da qualificare, ordine 4 |
-| A05 | stage | UNKNOWN | UNKNOWN | VERIFY | Colloquio da fissare, ordine 5 |
-| A06 | stage | UNKNOWN | UNKNOWN | VERIFY | Colloquio fissato, ordine 6 |
-| A07 | stage | UNKNOWN | UNKNOWN | VERIFY | Valutazione e prossimo passo, ordine 7 |
-| A08 | stage | UNKNOWN | UNKNOWN | VERIFY | Percorso avviato, ordine 8 |
-| A09 | stage | UNKNOWN | UNKNOWN | VERIFY | Architetto Patrimoniale attivato, ordine 9/WON |
-| A10 | stage | UNKNOWN | UNKNOWN | VERIFY | Chiuso senza attivazione, ordine 10; motivo e mapping status |
-| E01 | stage | UNKNOWN | UNKNOWN | VERIFY | Richiesta di partecipazione, ordine 1 |
-| E02 | stage | UNKNOWN | UNKNOWN | VERIFY | Iscrizione confermata, ordine 2 |
-| E03 | stage | UNKNOWN | UNKNOWN | VERIFY | Esito da registrare, ordine 3 |
-| E04 | stage | UNKNOWN | UNKNOWN | VERIFY | Follow-up, ordine 4 |
-| E05 | stage | UNKNOWN | UNKNOWN | VERIFY | Conclusa, ordine 5; chiusure motivate |
-| C01 | stage | UNKNOWN | UNKNOWN | VERIFY | Appuntamento richiesto, ordine 1 |
-| C02 | stage | UNKNOWN | UNKNOWN | VERIFY | Appuntamento fissato, ordine 2 |
-| C03 | stage | UNKNOWN | UNKNOWN | VERIFY | Esito da registrare, ordine 3 |
-| C04 | stage | UNKNOWN | UNKNOWN | VERIFY | Approfondimento concordato, ordine 4 |
-| C05 | stage | UNKNOWN | UNKNOWN | VERIFY | Concluso, ordine 5; chiusure motivate |
+| ARCHITECT_PATH | pipeline | Percorso Architetto Patrimoniale | config: pipelines.ARCHITECT_PATH | VERIFIED | Confrontare Percorso Architetto Patrimoniale e 10 stage |
+| PATRIMONIAL_EVENT | pipeline | Evento Benessere Patrimoniale | config: pipelines.PATRIMONIAL_EVENT | VERIFIED | Confrontare registrazioni Evento e 5 stage |
+| PATRIMONIAL_CONSULTATION | pipeline | Confronti Benessere Patrimoniale | config: pipelines.PATRIMONIAL_CONSULTATION | VERIFIED | Confrontare Confronti Benessere Patrimoniale e 5 stage |
+| A01 | stage | Nuovo interesse | config: pipelines.ARCHITECT_PATH.stages.A01 | VERIFIED | Nuovo interesse, ordine 1 |
+| A02 | stage | Presentazione da prenotare | config: pipelines.ARCHITECT_PATH.stages.A02 | VERIFIED | Presentazione da prenotare, ordine 2 |
+| A03 | stage | Presentazione prenotata | config: pipelines.ARCHITECT_PATH.stages.A03 | VERIFIED | Presentazione prenotata, ordine 3 |
+| A04 | stage | Da qualificare | config: pipelines.ARCHITECT_PATH.stages.A04 | VERIFIED | Da qualificare, ordine 4 |
+| A05 | stage | Colloquio da fissare | config: pipelines.ARCHITECT_PATH.stages.A05 | VERIFIED | Colloquio da fissare, ordine 5 |
+| A06 | stage | Colloquio fissato | config: pipelines.ARCHITECT_PATH.stages.A06 | VERIFIED | Colloquio fissato, ordine 6 |
+| A07 | stage | Valutazione e prossimo passo | config: pipelines.ARCHITECT_PATH.stages.A07 | VERIFIED | Valutazione e prossimo passo, ordine 7 |
+| A08 | stage | Percorso avviato | config: pipelines.ARCHITECT_PATH.stages.A08 | VERIFIED | Percorso avviato, ordine 8 |
+| A09 | stage | Architetto Patrimoniale attivato | config: pipelines.ARCHITECT_PATH.stages.A09 | VERIFIED | Architetto Patrimoniale attivato, ordine 9/WON |
+| A10 | stage | Chiuso senza attivazione | config: pipelines.ARCHITECT_PATH.stages.A10 | VERIFIED | Chiuso senza attivazione, ordine 10; motivo e mapping status |
+| E01 | stage | Richiesta di partecipazione | config: pipelines.PATRIMONIAL_EVENT.stages.E01 | VERIFIED | Richiesta di partecipazione, ordine 1 |
+| E02 | stage | Iscrizione confermata | config: pipelines.PATRIMONIAL_EVENT.stages.E02 | VERIFIED | Iscrizione confermata, ordine 2 |
+| E03 | stage | Esito da registrare | config: pipelines.PATRIMONIAL_EVENT.stages.E03 | VERIFIED | Esito da registrare, ordine 3 |
+| E04 | stage | Follow-up | config: pipelines.PATRIMONIAL_EVENT.stages.E04 | VERIFIED | Follow-up, ordine 4 |
+| E05 | stage | Conclusa | config: pipelines.PATRIMONIAL_EVENT.stages.E05 | VERIFIED | Conclusa, ordine 5; chiusure motivate |
+| C01 | stage | Appuntamento richiesto | config: pipelines.PATRIMONIAL_CONSULTATION.stages.C01 | VERIFIED | Appuntamento richiesto, ordine 1 |
+| C02 | stage | Appuntamento fissato | config: pipelines.PATRIMONIAL_CONSULTATION.stages.C02 | VERIFIED | Appuntamento fissato, ordine 2 |
+| C03 | stage | Esito da registrare | config: pipelines.PATRIMONIAL_CONSULTATION.stages.C03 | VERIFIED | Esito da registrare, ordine 3 |
+| C04 | stage | Approfondimento concordato | config: pipelines.PATRIMONIAL_CONSULTATION.stages.C04 | VERIFIED | Approfondimento concordato, ordine 4 |
+| C05 | stage | Concluso | config: pipelines.PATRIMONIAL_CONSULTATION.stages.C05 | VERIFIED | Concluso, ordine 5; chiusure motivate |
 | contact.firstName | native contact field | UNKNOWN | UNKNOWN | VERIFY | Verificare nativo, nessuna copia hz_ |
 | contact.lastName | native contact field | UNKNOWN | UNKNOWN | VERIFY | Verificare nativo |
 | contact.email | native contact field | UNKNOWN | UNKNOWN | VERIFY | Verificare lookup/precedenza |
 | contact.phone | native contact field | UNKNOWN | UNKNOWN | VERIFY | Verificare E.164 e omissione |
-| contact.hz_province | contact custom field | UNKNOWN | UNKNOWN | VERIFY | Testo; vocabolario select solo se approvato |
-| contact.hz_marketing_consent | contact custom field | UNKNOWN | UNKNOWN | VERIFY | Select 5 stati del contratto |
-| contact.hz_marketing_consent_version | contact custom field | UNKNOWN | UNKNOWN | VERIFY | Testo, evidenza efficace |
-| contact.hz_marketing_consent_at | contact custom field | UNKNOWN | UNKNOWN | VERIFY | ISO UTC con ora |
+| contact.hz_province | contact custom field | contact.hz__provincia_dichiarata | config: contactFields.hz_province | VERIFIED | Testo; vocabolario select solo se approvato |
+| contact.hz_marketing_consent | contact custom field | contact.hz__stato_marketing_horyzon | config: contactFields.hz_marketing_consent | VERIFIED | Select 5 stati del contratto |
+| contact.hz_marketing_consent_version | contact custom field | contact.hz__versione_consenso_marketing | config: contactFields.hz_marketing_consent_version | VERIFIED | Testo, evidenza efficace |
+| contact.hz_marketing_consent_at | contact custom field | contact.hz__data_consenso_marketing | config: contactFields.hz_marketing_consent_at | VERIFIED | ISO UTC con ora |
 | contact.hz_assigned_owner | native contact owner alias | UNKNOWN | UNKNOWN | VERIFY | assignedTo nativo, nessun custom |
-| opportunity.hz_intent_key | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Testo opaco; cercabilità non presunta |
-| opportunity.hz_funnel | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Select 3 funnel |
-| opportunity.hz_source | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Testo controllato; first touch intenzione |
-| opportunity.hz_source_path | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Testo allowlist |
-| opportunity.hz_utm_source | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Testo max 100 |
-| opportunity.hz_utm_medium | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Testo max 100 |
-| opportunity.hz_utm_campaign | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Testo max 100 |
-| opportunity.hz_utm_content | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Testo max 100 |
-| opportunity.hz_utm_term | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Testo max 100 |
-| opportunity.hz_requested_at | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | ISO UTC prima richiesta |
-| opportunity.hz_privacy_version | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Snapshot server |
-| opportunity.hz_marketing_consent_snapshot | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Select GRANTED_THIS_REQUEST / NOT_GRANTED_THIS_REQUEST |
-| opportunity.hz_next_step | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Select completo contratto §5 |
-| opportunity.hz_next_step_at | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | ISO UTC, obbligatorio se OPEN |
+| opportunity.hz_intent_key | opportunity custom field | opportunity.hz__chiave_intenzione | config: opportunityFields.hz_intent_key | VERIFIED | Testo opaco; cercabilità non presunta |
+| opportunity.hz_funnel | opportunity custom field | opportunity.hz__funnel | config: opportunityFields.hz_funnel | VERIFIED | Select 3 funnel |
+| opportunity.hz_source | opportunity custom field | opportunity.hz__sorgente | config: opportunityFields.hz_source | VERIFIED | Testo controllato; first touch intenzione |
+| opportunity.hz_source_path | opportunity custom field | opportunity.hz__pagina_origine | config: opportunityFields.hz_source_path | VERIFIED | Testo allowlist |
+| opportunity.hz_utm_source | opportunity custom field | opportunity.hz__utm_source | config: opportunityFields.hz_utm_source | VERIFIED | Testo max 100 |
+| opportunity.hz_utm_medium | opportunity custom field | opportunity.hz__utm_medium | config: opportunityFields.hz_utm_medium | VERIFIED | Testo max 100 |
+| opportunity.hz_utm_campaign | opportunity custom field | opportunity.hz__utm_campaign | config: opportunityFields.hz_utm_campaign | VERIFIED | Testo max 100 |
+| opportunity.hz_utm_content | opportunity custom field | opportunity.hz__utm_content | config: opportunityFields.hz_utm_content | VERIFIED | Testo max 100 |
+| opportunity.hz_utm_term | opportunity custom field | opportunity.hz__utm_term | config: opportunityFields.hz_utm_term | VERIFIED | Testo max 100 |
+| opportunity.hz_requested_at | opportunity custom field | opportunity.hz__prima_richiesta | config: opportunityFields.hz_requested_at | VERIFIED | ISO UTC prima richiesta |
+| opportunity.hz_privacy_version | opportunity custom field | opportunity.hz__versione_privacy | config: opportunityFields.hz_privacy_version | VERIFIED | Snapshot server |
+| opportunity.hz_marketing_consent_snapshot | opportunity custom field | opportunity.hz__marketing_richiesta_iniziale | config: opportunityFields.hz_marketing_consent_snapshot | VERIFIED | Select GRANTED_THIS_REQUEST / NOT_GRANTED_THIS_REQUEST |
+| opportunity.hz_next_step | opportunity custom field | opportunity.hz__prossimo_passo | config: opportunityFields.hz_next_step | VERIFIED | Select completo contratto §5 |
+| opportunity.hz_next_step_at | opportunity custom field | opportunity.hz__scadenza_prossimo_passo | config: opportunityFields.hz_next_step_at | VERIFIED | ISO UTC, obbligatorio se OPEN |
 | opportunity.hz_assigned_owner | native opportunity owner alias | UNKNOWN | UNKNOWN | VERIFY | assignedTo nativo, nessun custom |
 | opportunity.pipelineId | native opportunity field | UNKNOWN | UNKNOWN | VERIFY | Pipeline ID del mapping validato |
 | opportunity.pipelineStageId | native opportunity field | UNKNOWN | UNKNOWN | VERIFY | Stage ID e appartenenza pipeline |
 | opportunity.status | native opportunity field | UNKNOWN | UNKNOWN | VERIFY | Enum reali e mapping ABANDONED |
 | opportunity.close_reason | native opportunity field candidate | UNKNOWN | UNKNOWN | VERIFY | Verificare nome/API reali; logical key, non payload certificato |
 | opportunity.hz_close_reason | conditional opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Solo se nativo insufficiente e dopo decisione |
-| opportunity.hz_architect_profile | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Sei opzioni A e vuoto |
-| opportunity.hz_architect_sales_experience | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Sì / No / vuoto |
-| opportunity.hz_architect_goal | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Quattro obiettivi A |
-| opportunity.hz_architect_availability | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Da definire / Part-time / Full-time / vuoto |
-| opportunity.hz_architect_open_answer | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Testo lungo max 1500 |
-| opportunity.hz_architect_presentation_date | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | ISO UTC booking verificato |
-| opportunity.hz_architect_presentation_attended | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | UNKNOWN / ATTENDED / NO_SHOW / CANCELLED |
-| opportunity.hz_architect_interview_date | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | ISO UTC, mirror booking |
-| opportunity.hz_architect_interview_outcome | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Quattro esiti colloquio del contratto |
-| opportunity.hz_architect_eligibility | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | PENDING / ELIGIBLE / NOT_ELIGIBLE / WITHDRAWN |
+| opportunity.hz_architect_profile | opportunity custom field | opportunity.hz__profilo_professionale | config: opportunityFields.hz_architect_profile | VERIFIED | Sei opzioni A e vuoto |
+| opportunity.hz_architect_sales_experience | opportunity custom field | opportunity.hz__esperienza_commerciale_relazionale | config: opportunityFields.hz_architect_sales_experience | VERIFIED | Sì / No / vuoto |
+| opportunity.hz_architect_goal | opportunity custom field | opportunity.hz__obiettivo_professionale | config: opportunityFields.hz_architect_goal | VERIFIED | Quattro obiettivi A |
+| opportunity.hz_architect_availability | opportunity custom field | opportunity.hz__disponibilit | config: opportunityFields.hz_architect_availability | VERIFIED | Da definire / Part-time / Full-time / vuoto |
+| opportunity.hz_architect_open_answer | opportunity custom field | opportunity.hz__motivazione_dichiarata | config: opportunityFields.hz_architect_open_answer | VERIFIED | Testo lungo max 1500 |
+| opportunity.hz_architect_presentation_date | opportunity custom field | opportunity.hz__data_presentazione | config: opportunityFields.hz_architect_presentation_date | VERIFIED | ISO UTC booking verificato |
+| opportunity.hz_architect_presentation_attended | opportunity custom field | opportunity.hz__presenza_presentazione | config: opportunityFields.hz_architect_presentation_attended | VERIFIED | UNKNOWN / ATTENDED / NO_SHOW / CANCELLED |
+| opportunity.hz_architect_interview_date | opportunity custom field | opportunity.hz__data_colloquio | config: opportunityFields.hz_architect_interview_date | VERIFIED | ISO UTC, mirror booking |
+| opportunity.hz_architect_interview_outcome | opportunity custom field | opportunity.hz__esito_colloquio | config: opportunityFields.hz_architect_interview_outcome | VERIFIED | Quattro esiti colloquio del contratto |
+| opportunity.hz_architect_eligibility | opportunity custom field | opportunity.hz__idoneit | config: opportunityFields.hz_architect_eligibility | VERIFIED | PENDING / ELIGIBLE / NOT_ELIGIBLE / WITHDRAWN |
+| opportunity.hz_event_slug | opportunity custom field | opportunity.hz__evento_logico | config: opportunityFields.hz_event_slug | VERIFIED / INVENTORY_ONLY | Esiste remoto; escluso dalle proiezioni E; verità in Participation |
+| opportunity.hz_event_registration_status | opportunity custom field | opportunity.hz__stato_registrazione_evento | config: opportunityFields.hz_event_registration_status | VERIFIED / INVENTORY_ONLY | Esiste remoto; escluso dalle proiezioni E; verità in Participation |
+| opportunity.hz_event_attendance | opportunity custom field | opportunity.hz__presenza_evento | config: opportunityFields.hz_event_attendance | VERIFIED / INVENTORY_ONLY | Esiste remoto; escluso dalle proiezioni E; verità in Participation |
 | local.hz_event_slug | participation / request snapshot | N/A | N/A | LOCAL_ONLY | Dato locale; precedente mirror opportunity ritirato in 2B.2B-3 |
 | local.hz_event_title | participation / request snapshot | N/A | N/A | LOCAL_ONLY | Dato locale; precedente mirror opportunity ritirato in 2B.2B-3 |
 | local.hz_event_edition | participation / request snapshot | N/A | N/A | LOCAL_ONLY | Dato locale; precedente mirror opportunity ritirato in 2B.2B-3 |
@@ -362,12 +390,12 @@ Tabella di preparazione, **non mapping attivabile**. Tutti i REMOTE NAME/ID sono
 | local.hz_event_question | participation / request snapshot | N/A | N/A | LOCAL_ONLY | Dato locale; precedente mirror opportunity ritirato in 2B.2B-3 |
 | local.hz_event_registration_status | participation / request snapshot | N/A | N/A | LOCAL_ONLY | Dato locale; precedente mirror opportunity ritirato in 2B.2B-3 |
 | local.hz_event_attendance | participation / request snapshot | N/A | N/A | LOCAL_ONLY | Dato locale; precedente mirror opportunity ritirato in 2B.2B-3 |
-| opportunity.hz_origin_event_edition | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Prima origine C; altre relazioni nel ledger |
-| opportunity.hz_consultation_outcome | opportunity custom field | UNKNOWN | UNKNOWN | VERIFY | Cinque esiti confronto del contratto |
-| horyzon-patrimoniale | tag | UNKNOWN | UNKNOWN | VERIFY | Leggere catalogo e workflow |
-| percorso-architetto-patrimoniale | tag | UNKNOWN | UNKNOWN | VERIFY | Leggere catalogo e workflow |
-| evento-patrimoniale | tag | UNKNOWN | UNKNOWN | VERIFY | Leggere catalogo e workflow |
-| pilot | tag | UNKNOWN | UNKNOWN | VERIFY | Leggere; policy coorte separata |
+| opportunity.hz_origin_event_edition | opportunity custom field | opportunity.hz__edizione_evento_origine | config: opportunityFields.hz_origin_event_edition | VERIFIED | Prima origine C; altre relazioni nel ledger |
+| opportunity.hz_consultation_outcome | opportunity custom field | opportunity.hz__esito_confronto | config: opportunityFields.hz_consultation_outcome | VERIFIED | Cinque esiti confronto del contratto |
+| horyzon-patrimoniale | tag | horyzon-patrimoniale | config: tags.horyzon-patrimoniale | VERIFIED | Leggere catalogo e workflow |
+| percorso-architetto-patrimoniale | tag | percorso-architetto-patrimoniale | config: tags.percorso-architetto-patrimoniale | VERIFIED | Leggere catalogo e workflow |
+| evento-patrimoniale | tag | evento-patrimoniale | config: tags.evento-patrimoniale | VERIFIED | Leggere catalogo e workflow |
+| pilot | tag | pilot | config: tags.pilot | VERIFIED | Leggere; policy coorte separata |
 | horyzon-benessere-patrimoniale | tag | UNKNOWN | UNKNOWN | VERIFY | Preservare legacy |
 | horyzon-evento-patrimoniale | tag | UNKNOWN | UNKNOWN | VERIFY | Preservare legacy |
 | horyzon-percorso-consulenti | tag | UNKNOWN | UNKNOWN | VERIFY | Preservare legacy |
@@ -594,7 +622,7 @@ Ordine consigliato: 1 con fixture e flag false → 2 in read verificata e mock w
 
 ## 22. Stop conditions
 
-Stop remoto storico 2B.2A: location e accesso read non erano verificabili dall'agente. In 2B.2B-2 lo stato è PARTIALLY VERIFIED per le evidenze comunicate dall'utente (§1), ma le chiamate reali restano espressamente vietate in questa fase. Nessuna richiesta di token o credenziale in chat. Identificativi e binding verificati rimangono gate di una futura configurazione server autorizzata.
+Stop remoto storico 2B.2A: location e accesso read non erano verificabili dall'agente; 2B.2B-2 era PARTIALLY VERIFIED. Ora lo stato è **REMOTE CORE CONFIG VERIFIED** per le evidenze comunicate dall'utente (§1). Le chiamate reali restano espressamente vietate in 4C. Nessuna richiesta di token o credenziale in chat. Gli identificativi core sono configurati; binding HTTP, location runtime corrispondente, side effect e autorizzazione sono gate per l'attivazione successiva.
 
 Ulteriori condizioni vincolanti per il seguito:
 
@@ -606,7 +634,7 @@ Ulteriori condizioni vincolanti per il seguito:
 6. Nuove modifiche non correlate fuori da `tmp/` → fermarsi prima di procedere con staging/commit; `tmp/` preesistente non è un impedimento né un contenuto da ripulire.
 7. Qualsiasi push, deploy, merge, modifica main, applicazione migration, nuova pipeline/campo/calendario/workflow/subscription o invio → fuori dall'autorizzazione 2B.2A; nessuno eseguito.
 
-### Verifica della consegna locale
+### Verifica della consegna locale storica 2B.2A
 
 Unico file ammesso: `docs/patrimonial/patrimonial-highlevel-inventory-v1.md`. Prima del commit: verifica Git di branch, modifiche estranee, file staged e assenza assoluta di path `tmp/` nello staging; `git diff --cached --check`; controllo delle 22 sezioni, mapping delle chiavi, link locali e assenza di pattern di credenziali. Nessun test applicativo/live necessario per un solo documento; nessuna build avviata. Il riepilogo di consegna riporta SHA e stato effettivi dopo il commit locale `docs: inventory patrimonial HighLevel setup`.
 
