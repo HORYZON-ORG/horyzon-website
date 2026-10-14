@@ -4,7 +4,7 @@ export const SITE_URL = 'https://horyzon.it';
 export const ORGANIZATION_ID = `${SITE_URL}/#organization`;
 export const WEBSITE_ID = `${SITE_URL}/#website`;
 export const HOME_TITLE = 'Horyzon — Benessere per l’impresa';
-export const HOME_DESCRIPTION = 'Horyzon Consulting: benessere patrimoniale, organizzativo e digitale. Scopri il percorso patrimoniale, l’evento in preparazione e la rete consulenti.';
+export const HOME_DESCRIPTION = 'Aiutiamo imprenditori e aziende a costruire benessere organizzativo, patrimoniale e digitale. Inizia dal Radar d’Impresa.';
 export const absoluteUrl = (path: string) => path === '/' ? SITE_URL : new URL(path, SITE_URL).href;
 export const pageLanguage = (path: string) => path.match(/^\/(en|de|fr)(?:\/|$)/)?.[1] ?? 'it';
 

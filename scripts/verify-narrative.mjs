@@ -26,7 +26,7 @@ for (const phrase of ['Maturità dei processi', 'Autonomia dal titolare', 'Indic
 }
 assert(!commercialRadar.includes('29 domande'), 'radar landing: must not publish the unresolved question count');
 const home = await readFile('.next/server/app/index.html', 'utf8');
-assert.equal((home.match(new RegExp(`href="${radarUrl}"`, 'g')) || []).length, 2, 'home: expected header and Radar chapter links');
+assert.equal((home.match(new RegExp(`href="${radarUrl}"`, 'g')) || []).length, 3, 'home: expected header, hero and Radar chapter links');
 for (const phrase of ['benessere organizzativo', 'benessere patrimoniale', 'benessere digitale', 'prima di cambiare']) {
  assert(home.toLowerCase().includes(phrase), `home: missing ${phrase}`);
 }
