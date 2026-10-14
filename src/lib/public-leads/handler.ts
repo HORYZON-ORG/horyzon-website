@@ -106,9 +106,9 @@ async function handlePatrimonialV2(request: Request, input: Record<string, unkno
   if (!lead || !isPatrimonialRequestId(input.requestId) || !isPatrimonialRequestId(headerId) || input.requestId.toLowerCase() !== headerId.toLowerCase()) return response(400, 'Controlla i dati e il riferimento della richiesta.');
   const requestId = input.requestId.toLowerCase();
   try {
-    // The only production factory is a non-networking stub. Test memory is accepted
-    // exclusively through explicit server-side injection with NODE_ENV=test.
-    const store = options.store ?? createProductionPatrimonialStore();
+    // Production requires configured, healthy Supabase and explicit readiness.
+    // Memory is accepted only through server-side injection with NODE_ENV=test.
+    const store = options.store ?? createProductionPatrimonialStore(env);
     if (store.kind !== 'durable' && env.NODE_ENV !== 'test') return response(503, 'Il modulo è temporaneamente non disponibile.');
     const receivedAt = now.toISOString();
     const candidate: PatrimonialRequest = {

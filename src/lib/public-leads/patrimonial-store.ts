@@ -1,5 +1,6 @@
 import type { PatrimonialConsentEvidence, PatrimonialCrmCheckpoint, PatrimonialEvent, PatrimonialIntent, PatrimonialOutboxOperation, PatrimonialRequest } from './patrimonial-contract.ts';
 import type { PatrimonialOpportunityIntent, PatrimonialRoutingParticipation } from './patrimonial-routing.ts';
+import { SupabasePatrimonialStore } from './patrimonial-supabase.ts';
 
 export type PatrimonialClaim = { operationId: string; leaseToken: string; leaseVersion: number };
 export type PatrimonialOperationError = 'NETWORK' | 'RATE_LIMIT' | 'PROVIDER' | 'SCHEMA' | 'AUTH' | 'CONFIG' | 'IDENTITY' | 'UNKNOWN';
@@ -13,8 +14,9 @@ export type PatrimonialCrmCompletion = PatrimonialMutation & {
   followUps?: PatrimonialOutboxOperation[]; reconciliationConfirmed?: boolean;
 };
 
-// All methods on a transaction operate against the same snapshot. Production
-// implementations MUST use DB transactions/unique constraints, not successive fetches.
+// Callbacks contain only store/domain work and may rerun on a snapshot conflict.
+// Production validates their observed values and commits all effects in one DB
+// transaction; a series of independently committed REST writes is not sufficient.
 export interface PatrimonialTransaction {
   createOrReplayRequest(input: PatrimonialRequest, now: string): Promise<{ request: PatrimonialRequest; replay: boolean }>;
   getRequest(requestId: string): Promise<PatrimonialRequest | null>;
@@ -55,7 +57,7 @@ export class PatrimonialStoreUnavailableError extends Error {}
 // Separate resolved business aggregates; the existing provisional lead/CRM ledger
 // remains unchanged. All saves are CAS; participation uniqueness is contact+edition,
 // or contact+eventSlug for a generic PENDING_EDITION record. Never hold DB locks
-// across provider fetches. Production implementation remains unconfigured.
+// across provider fetches. Deployment/readiness is not enabled by this interface.
 export type PatrimonialOpportunitySyncState = 'SYNC_PENDING' | 'SYNCED' | 'MANUAL_REVIEW' | 'RECONCILE_REQUIRED';
 export interface PatrimonialOpportunityTransaction {
   findOpportunityIntent(groupKey: string): Promise<PatrimonialOpportunityIntent | null>;
@@ -71,10 +73,13 @@ export interface PatrimonialOpportunityStore {
   transaction<T>(work: (tx: PatrimonialOpportunityTransaction) => Promise<T>): Promise<T>;
 }
 
-// Supabase boundary intentionally unimplemented/non-activatable in this phase.
-// No credentials are read, no fetch exists, no production memory fallback.
-export function createProductionPatrimonialStore(): PatrimonialStore {
-  throw new PatrimonialStoreUnavailableError('A verified durable patrimonial adapter is not installed.');
+// Readiness must be explicitly approved AFTER the local migration is applied and
+// verified in a future phase. Missing config never falls back to memory or 2A.
+export function createProductionPatrimonialStore(env: Record<string, string | undefined> = process.env): SupabasePatrimonialStore {
+  const url = (env.SUPABASE_URL ?? env.NEXT_PUBLIC_SUPABASE_URL)?.trim();
+  const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  if (env.PATRIMONIAL_DURABLE_STORE_READY !== 'true' || !url || !serviceRoleKey) throw new PatrimonialStoreUnavailableError('Patrimonial durable store is not ready.');
+  return new SupabasePatrimonialStore({ url, serviceRoleKey });
 }
 
 export function patrimonialFlags(env: Record<string, string | undefined> = process.env) {

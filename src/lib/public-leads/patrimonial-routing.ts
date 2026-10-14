@@ -316,10 +316,12 @@ export async function receivePatrimonialOpportunity(store: PatrimonialOpportunit
     };
     requireDomain(current || (iso(intent.nextStepAt) && Date.parse(intent.nextStepAt) > Date.parse(command.at)));
     const participation = await tx.listParticipations(intent.id);
+    let updatedParticipations: PatrimonialRoutingParticipation[] | undefined;
     if (seed.pipeline === 'ARCHITECT_PATH') intent = transitionArchitect(intent, command);
     else if (seed.pipeline === 'PATRIMONIAL_CONSULTATION') intent = transitionConsultation(intent, command);
-    else { const result = transitionEvent(intent, participation, command); intent = result.intent; await tx.saveParticipations(intent.id, result.participations, participation); }
+    else { const result = transitionEvent(intent, participation, command); intent = result.intent; updatedParticipations = result.participations; }
     if (!current || intent.revision !== current.revision) await tx.saveOpportunityIntent(intent, current?.revision ?? null);
+    if (updatedParticipations) await tx.saveParticipations(intent.id, updatedParticipations, participation);
     return intent;
   });
 }
