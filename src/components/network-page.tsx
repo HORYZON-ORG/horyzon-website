@@ -1,6 +1,7 @@
 import { PageStructuredData } from './structured-data';
 import { SiteFooter, SiteHeader } from './site-shell';
-import { Cta, PageHero, PageFinal, Section, Tiles, HeroIndex, TextLink } from './kit';
+import { Cta, PageHero, PageFinal, Section, Tiles, TextLink } from './kit';
+import { PatrimonialBrandLogo } from './patrimonial-brand-logo';
 import { pages } from '@/data/pages';
 import { patrimonialContact } from '@/content/patrimonial';
 
@@ -8,8 +9,8 @@ export function NetworkPage() {
   const content = pages['entra-in-horyzon'];
   return <><PageStructuredData path="/entra-in-horyzon" name={content.title} description={content.intro} breadcrumbs={[{ name: 'Horyzon', path: '/' }, { name: 'Entra in Horyzon', path: '/entra-in-horyzon' }]} /><SiteHeader />
     <main id="content" className="rd rd-page editorial-page site-frame" data-page="entra-in-horyzon">
-      <PageHero crumbs={[{ name: 'Horyzon', href: '/' }, { name: 'Entra in Horyzon' }]} label="La rete Horyzon" title={content.title} lead={content.intro} aside={<HeroIndex caption="Un percorso da conoscere" words={['Conoscersi', 'Valutare', 'Costruire']} note="Responsabilità, competenze e relazione con le persone." />}>
-        <Cta href="#percorso-consulenti" arrow="↓">Scopri il percorso consulenti</Cta><TextLink href={patrimonialContact('percorso-consulenti')}>Chiedi un primo confronto ↗︎</TextLink>
+      <PageHero crumbs={[{ name: 'Horyzon', href: '/' }, { name: 'Entra in Horyzon' }]} label="La rete Horyzon" title={content.title} lead={content.intro} aside={<PatrimonialBrandLogo />}>
+        <Cta href="#percorso-consulenti" arrow="↓">Scopri il percorso</Cta><TextLink href={patrimonialContact('percorso-consulenti')}>Chiedi un primo confronto ↗︎</TextLink>
       </PageHero>
       <Section tone="cream" split label="A chi è rivolto" title="La relazione è un punto di partenza. La competenza è un percorso." headingId="rete-pubblico">
         <div className="rd-prose"><p>Per chi vuole conoscere il lavoro nella rete Horyzon e contribuire alla cultura patrimoniale. Se hai esperienza nel network marketing, nella vendita o nell’affiancamento alle persone, possiamo confrontarci su ciò che porti e su ciò che vuoi imparare.</p><p>Formazione, affiancamento e confronto sono le basi del percorso che stiamo costruendo. Modalità, contenuti, responsabilità e condizioni vengono chiariti prima di valutare l’ingresso.</p><p>Horyzon tiene insieme benessere patrimoniale, organizzativo e digitale: resta aperta anche la collaborazione con specialisti delle altre aree.</p></div>

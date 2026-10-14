@@ -26,6 +26,10 @@ for (const interest of ['evento-patrimoniale', 'percorso-consulenti']) {
   assert(!JSON.stringify(calls).includes('radar'), 'no Radar scores, tags or sources');
   assert.match(calls[2].body.body, /privacy.*v1/i);
   assert.match(calls[2].body.body, /Ricontatto richiesto: sì/);
+  if (interest === 'percorso-consulenti') {
+    assert.match(calls[0].body.source, /Architetti Patrimoniali Horyzon/);
+    assert.match(calls[2].body.body, /Architetti Patrimoniali Horyzon/);
+  }
 }
 for (const change of [{ consent: false }, { email: 'bad' }, { interest: 'radar' }, { phone: 'no phone' }, { message: 'x'.repeat(1501) }, { website: 'bot' }]) {
   calls = [];

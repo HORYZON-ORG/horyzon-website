@@ -8,6 +8,7 @@ import { Cta, PageFinal, PageHero, Points, Section, TextLink, Tiles } from '@/co
 import { WellbeingScene } from './wellbeing-scene';
 import styles from './wellbeing.module.css';
 import { patrimonialContact } from '@/content/patrimonial';
+import { PatrimonialBrandLogo } from './patrimonial-brand-logo';
 
 const areas = {
   'benessere-organizzativo': {
@@ -54,7 +55,7 @@ export function WellbeingPage({ area }: { area: Area }) {
         label={direction.label} title={content.title} lead={content.intro}
         aside={<WellbeingScene key={direction.kind} kind={direction.kind} words={direction.words} />}>
         <Cta href={area === 'benessere-patrimoniale' ? '#evento' : '#comprendere'} arrow="↓">{area === 'benessere-patrimoniale' ? 'Scopri l’evento' : 'Scopri il percorso'}</Cta>
-        <TextLink href={area === 'benessere-patrimoniale' ? '/entra-in-horyzon#percorso-consulenti' : '/contatti'}>{area === 'benessere-patrimoniale' ? 'Scopri il percorso consulenti ↗︎' : 'Parliamone ↗︎'}</TextLink>
+        <TextLink href={area === 'benessere-patrimoniale' ? '/entra-in-horyzon#percorso-consulenti' : '/contatti'}>{area === 'benessere-patrimoniale' ? 'Scopri gli Architetti Patrimoniali ↗︎' : 'Parliamone ↗︎'}</TextLink>
       </PageHero>
 
       <nav className={styles.navigation} aria-label="I tre benesseri">
@@ -77,7 +78,7 @@ export function WellbeingPage({ area }: { area: Area }) {
           <div className="rd-actions"><Cta href={patrimonialContact('evento-patrimoniale')}>Ricevi informazioni sull’evento</Cta><TextLink href="/frank">Conosci Frank ↗︎</TextLink></div>
           <p className="rd-note">Per approfondire rischi e caratteristiche: <a href="https://economiapertutti.bancaditalia.it/notizie-e-rubriche/notizie/cosa-sapere-prima-di-comprare-oro/">la guida della Banca d’Italia sull’oro</a>.</p>
         </Section>
-        <Section tone="cream" split label="Per chi vuole entrare nella rete" title="Vuoi conoscere il percorso consulenti?" headingId="patrimonio-rete" lead="Una strada distinta per chi vuole contribuire alla cultura patrimoniale e lavorare nella relazione con le persone."><div className="rd-prose"><p>Presentazione introduttiva Horyzon, colloquio e valutazione di un possibile ingresso. Formazione, affiancamento, responsabilità e condizioni si approfondiscono prima di scegliere.</p><p>Se hai esperienza nel network marketing o nella vendita, raccontaci il tuo percorso. Non sono promessi guadagni né un ingresso automatico.</p><Cta href="/entra-in-horyzon#percorso-consulenti">Scopri il percorso consulenti</Cta></div></Section>
+        <Section tone="cream" split label="Per chi vuole entrare nella rete" title="Vuoi conoscere gli Architetti Patrimoniali?" headingId="patrimonio-rete" lead="Una strada distinta per chi vuole contribuire alla cultura patrimoniale e lavorare nella relazione con le persone."><div className="rd-prose"><PatrimonialBrandLogo /><p>Presentazione introduttiva Horyzon, colloquio e valutazione di un possibile ingresso. Formazione, affiancamento, responsabilità e condizioni si approfondiscono prima di scegliere.</p><p>Se hai esperienza nel network marketing o nella vendita, raccontaci il tuo percorso. Non sono promessi guadagni né un ingresso automatico.</p><Cta href="/entra-in-horyzon#percorso-consulenti">Conosci il percorso</Cta></div></Section>
       </>}
 
       <Section tone="panel" split label="Che cosa osserviamo" title="Le cose che fanno la differenza." headingId="osserviamo-title"

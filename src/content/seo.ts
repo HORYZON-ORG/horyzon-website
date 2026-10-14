@@ -28,7 +28,7 @@ const italianTitles: Record<string, string> = {
   'benessere-digitale': 'Benessere digitale, AI e processi aziendali',
   horyzon: 'Horyzon Consulting: visione e competenze', umanita: 'Umanità e sviluppo della persona',
   impresa: 'Impresa e sviluppo organizzativo', economia: 'Economia e valore condiviso',
-  'entra-in-horyzon': 'Percorso consulenti e Partner Network Horyzon', persone: 'Le persone di Horyzon',
+  'entra-in-horyzon': 'Architetti Patrimoniali e Partner Network Horyzon', persone: 'Le persone di Horyzon',
   biblioteca: 'Biblioteca e libri', misura: 'Autovalutazione delle tre aree di benessere',
 };
 export function editorialTitle(path: string, fallback: string) {

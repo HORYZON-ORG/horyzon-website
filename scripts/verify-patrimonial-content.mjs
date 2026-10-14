@@ -15,6 +15,11 @@ assert(wealth.includes('non prenota un posto'));
 assert(wealth.includes('/contatti?interesse=evento-patrimoniale#richiesta-patrimoniale'));
 assert(wealth.includes('valore dell’oro può diminuire'));
 const network = await get('entra-in-horyzon');
+for (const [route, html] of [['benessere-patrimoniale', wealth], ['entra-in-horyzon', network], ['contatti', await get('contatti')]]) {
+ assert(!/percorso consulenti|consulenti patrimoniali/i.test(html), `${route}: old patrimonial role wording`);
+ assert(html.includes('Architetti Patrimoniali'), `${route}: patrimonial role must use its approved name`);
+}
+for (const html of [wealth, network]) assert(html.includes('/horyzon-architetti-patrimoniali.png'), 'Approved patrimonial logo must be present');
 assert(network.includes('id="percorso-consulenti"'));
 assert(network.includes('network marketing'));
 assert(network.includes('/contatti?interesse=percorso-consulenti#richiesta-patrimoniale'));

@@ -49,7 +49,7 @@ export const serviceEditorial: Record<ServiceRoute, ServiceEditorial> = {
   parent: 'benessere-patrimoniale', nextLabel: 'Torna al benessere patrimoniale',
   urgency: ['Il valore dell’impresa e le esigenze personali si influenzano senza una lettura comune.', 'La continuità familiare dipende da decisioni rimandate.', 'Il titolare porta da solo rischi che coinvolgono più sistemi.'],
   interventions: ['Mettiamo a fuoco le connessioni tra impresa, persona e famiglia.', 'Ordiniamo le priorità di continuità senza sostituire le professioni regolamentate.', 'Prepariamo un linguaggio condiviso per i tavoli di decisione.'],
-  evidence: ['Priorità di continuità dichiarate e comprensibili.', 'Un quadro di domande condiviso con consulenti qualificati.', 'Scelte che distinguono gli obiettivi senza ignorare le connessioni.'],
+  evidence: ['Priorità di continuità dichiarate e comprensibili.', 'Un quadro di domande condiviso con professionisti competenti.', 'Scelte che distinguono gli obiettivi senza ignorare le connessioni.'],
  },
  'benessere-patrimoniale/professionisti': {
   parent: 'benessere-patrimoniale', nextLabel: 'Torna al benessere patrimoniale',
