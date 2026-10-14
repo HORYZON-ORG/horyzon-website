@@ -464,8 +464,10 @@ export interface FreeAuditResult {
   pagesAnalyzed: number;
   status: Extract<AuditPipelineState, 'completed' | 'partial' | 'failed'>;
   notice?: string;
+  /** Details from this scan, without activating an additional provider/profile. */
+  details?: PremiumAuditPayload;
   locked: {
-    premiumAudit: true;
+    premiumAudit: boolean;
     optimizationPlan: true;
     availableLevels: AuditAccessLevel[];
     priceConfigured: false;

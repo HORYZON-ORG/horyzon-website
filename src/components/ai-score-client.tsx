@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import type { FormEvent, RefObject } from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { AiScoreReport } from './ai-score-report';
+import { exportReport, importReport, isReport, MAX_REPORTS, REPORT_ARCHIVE_KEY, readReports, saveReport, writeReports } from '@/lib/ai-score/report-archive';
 import type { AuditPipelineState, AuditStreamEvent, FreeAuditResult, ReadinessCoverage } from '@/lib/ai-score/types';
 
 const pipeline: { state: AuditPipelineState; label: string; shortLabel: string }[] = [
@@ -15,14 +17,39 @@ const pipeline: { state: AuditPipelineState; label: string; shortLabel: string }
 ];
 
 const dateFormatter = new Intl.DateTimeFormat('it-IT', { dateStyle: 'medium', timeStyle: 'short' });
+const archiveEvent = 'ai-score-archive-change';
+function subscribeArchive(callback: () => void) {
+  window.addEventListener('storage', callback); window.addEventListener(archiveEvent, callback);
+  return () => { window.removeEventListener('storage', callback); window.removeEventListener(archiveEvent, callback); };
+}
+function archiveSnapshot() {
+  try { return window.localStorage.getItem(REPORT_ARCHIVE_KEY) ?? ''; }
+  catch { return 'unavailable'; }
+}
+function subscribeHash(callback: () => void) {
+  window.addEventListener('hashchange', callback);
+  return () => window.removeEventListener('hashchange', callback);
+}
+const emptySnapshot = () => '';
+const hashSnapshot = () => window.location.search;
 
 export function AiScoreClient() {
   const [url, setUrl] = useState('');
   const [events, setEvents] = useState<AuditStreamEvent[]>([]);
   const [activeState, setActiveState] = useState<AuditPipelineState | null>(null);
-  const [audit, setAudit] = useState<FreeAuditResult | null>(null);
+  const [currentAudit, setAudit] = useState<FreeAuditResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
+  const storedJson = useSyncExternalStore(subscribeArchive, archiveSnapshot, emptySnapshot);
+  const { reports, error: archiveError } = useMemo(() => readReports({ getItem: () => storedJson, setItem: () => {} }), [storedJson]);
+  const hash = useSyncExternalStore(subscribeHash, hashSnapshot, emptySnapshot);
+  const requestedReportId = new URLSearchParams(hash).get('report');
+  const archivedReport = reports.find(item => item.auditId === requestedReportId);
+  const audit = currentAudit ?? archivedReport ?? null;
+  const [archiveMessage, setArchiveMessage] = useState('');
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const showDetails = detailsOpen || Boolean(!currentAudit && archivedReport);
+  const detailRef = useRef<HTMLDivElement | null>(null);
   const resultRef = useRef<HTMLElement | null>(null);
   const requestRef=useRef<AbortController|null>(null);
   const reached = useMemo(() => new Set(events.filter(event => event.type === 'state').map(event => event.state)), [events]);
@@ -35,11 +62,43 @@ export function AiScoreClient() {
   }, [audit]);
 
   useEffect(()=>()=>requestRef.current?.abort(),[]);
+  useEffect(() => {
+    if (showDetails && detailRef.current) {
+      detailRef.current.focus({ preventScroll: true });
+      detailRef.current.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    }
+  }, [showDetails]);
+
+  function preserveReport(report: FreeAuditResult) {
+    try {
+      const saved = saveReport(window.localStorage, report);
+      window.dispatchEvent(new Event(archiveEvent));
+      setArchiveMessage(saved.error ?? 'Report salvato in questo browser.');
+    } catch { setArchiveMessage('Salvataggio nel browser non disponibile. Esporta il report per conservarlo.'); }
+  }
+  function reopenReport(report: FreeAuditResult) {
+    setAudit(report); setDetailsOpen(true); setError(null); setEvents([]);
+    const address = new URL(window.location.href); address.searchParams.set('report', report.auditId); address.hash = '';
+    window.history.replaceState(null, '', address);
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+  }
+  function downloadReport() {
+    if (!audit) return;
+    const blob = new Blob([exportReport(audit)], { type: 'application/json' });
+    const href = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = href; anchor.download = `ai-score-${audit.domain.replace(/[^a-zA-Z0-9.-]/g, '-')}-${audit.auditId}.json`;
+    anchor.click(); setTimeout(() => URL.revokeObjectURL(href), 1000);
+  }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if(requestRef.current)return;
     setError(null);
     setAudit(null);
+    setDetailsOpen(false);
+    const address = new URL(window.location.href); address.searchParams.delete('report'); address.hash = '';
+    window.history.replaceState(null, '', address);
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
     setEvents([]);
     const input = url.trim();
     if (!input) {
@@ -92,8 +151,12 @@ export function AiScoreClient() {
     setEvents(previous => [...previous, event]);
     if (event.type === 'state') setActiveState(event.state);
     if (event.type === 'result') {
-      if(!event.audit||!['completed','partial','failed'].includes(event.audit.status))throw new Error('Risultato di analisi non valido.');
+      if(!isReport(event.audit))throw new Error('Risultato di analisi non valido.');
       setAudit(event.audit);
+      preserveReport(event.audit);
+      const address = new URL(window.location.href); address.searchParams.set('report', event.audit.auditId); address.hash = '';
+      window.history.replaceState(null, '', address);
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
       setActiveState(event.audit.status);
     }
     if (event.type === 'error') {
@@ -119,7 +182,27 @@ export function AiScoreClient() {
 
     {showProgress && <AnalysisProgress activeState={activeState} reached={reached} error={error} />}
     {error && <p id="ai-score-error" className="ai-score-error" role="alert">{error}</p>}
-    {audit && <AuditResult audit={audit} resultRef={resultRef} />}
+    <section className="ai-report-archive" aria-labelledby="ai-report-archive-title">
+      <header><h2 id="ai-report-archive-title">I tuoi report salvati</h2><p>Conserviamo fino a {MAX_REPORTS} report recenti in questo browser, nei limiti dello spazio disponibile. Per portarli su un altro dispositivo, esporta e importa il file. Cancellando i dati del browser si perde l’archivio locale.</p></header>
+      <label className="ai-report-import">Importa un report<input type="file" accept=".json,application/json" disabled={running} onChange={async event => {
+        const input = event.currentTarget; const file = input.files?.[0]; if (!file) return;
+        try { if (file.size > 1_500_000) throw new Error('File troppo grande. Il limite è 1,5 MB.'); const report = importReport(await file.text()); preserveReport(report); reopenReport(report); }
+        catch (cause) { setArchiveMessage(cause instanceof Error ? cause.message : 'Importazione non riuscita.'); }
+        finally { input.value = ''; }
+      }} /></label>
+      {archiveMessage && <p role="status">{archiveMessage}</p>}
+      {archiveError && <p role="status">{archiveError}</p>}
+      {requestedReportId && !archivedReport && <p role="status">Questo report non è presente in questo browser. Puoi importare il file esportato; non avviamo una nuova scansione.</p>}
+      {!reports.length && <p>Le nuove analisi saranno salvate qui. Nessuna ricerca viene avviata aprendo un report.</p>}
+      <ul>{reports.map(report => <li key={report.auditId}><button type="button" disabled={running} onClick={() => reopenReport(report)}><strong>{report.domain}</strong><span>{dateFormatter.format(new Date(report.analyzedAt))}{!report.details && ' · Solo riepilogo'}</span></button><button className="ai-report-remove" type="button" disabled={running} aria-label={`Elimina il report di ${report.domain} del ${dateFormatter.format(new Date(report.analyzedAt))}`} onClick={() => {
+        try { const saved = writeReports(window.localStorage, reports.filter(item => item.auditId !== report.auditId)); if (saved.error) setArchiveMessage(saved.error); else { window.dispatchEvent(new Event(archiveEvent)); setArchiveMessage('Report eliminato dall’archivio locale.'); } }
+        catch { setArchiveMessage('Impossibile aggiornare l’archivio del browser.'); }
+      }}>Elimina</button></li>)}</ul>
+    </section>
+    {audit && <>
+      <AuditResult audit={audit} resultRef={resultRef} detailsOpen={showDetails} onDetails={() => { setAudit(audit); setDetailsOpen(!showDetails); }} onExport={downloadReport} />
+      {showDetails && <div id="ai-score-details" ref={detailRef} tabIndex={-1}><AiScoreReport key={audit.auditId} audit={audit} /></div>}
+    </>}
   </div>;
 }
 
@@ -145,7 +228,7 @@ function AnalysisProgress({ activeState, reached, error }: { activeState: AuditP
   </section>;
 }
 
-function AuditResult({ audit, resultRef }: { audit: FreeAuditResult; resultRef: RefObject<HTMLElement | null> }) {
+function AuditResult({ audit, resultRef, detailsOpen, onDetails, onExport }: { audit: FreeAuditResult; resultRef: RefObject<HTMLElement | null>; detailsOpen: boolean; onDetails: () => void; onExport: () => void }) {
   const isPartial = audit.status === 'partial';
 
   return <section ref={resultRef} className="ai-score-results" aria-labelledby="ai-score-risultato">
@@ -156,7 +239,7 @@ function AuditResult({ audit, resultRef }: { audit: FreeAuditResult; resultRef: 
       </div>
       <div className="ai-score-result-meta" aria-label="Dettagli analisi">
         <span>{dateFormatter.format(new Date(audit.analyzedAt))}</span>
-        <span>{audit.pagesAnalyzed} pagine</span>
+        <span>{audit.pagesAnalyzed} {audit.pagesAnalyzed === 1 ? 'pagina' : 'pagine'}</span>
         <span>{audit.signalsAnalyzed} segnali</span>
         <span>{audit.methodologyVersion}</span>
       </div>
@@ -173,7 +256,7 @@ function AuditResult({ audit, resultRef }: { audit: FreeAuditResult; resultRef: 
     {audit.notice && <p className="ai-score-notice">{audit.notice}</p>}
     {audit.visibility.blocker && <p className="ai-score-notice">{audit.visibility.blocker}</p>}
     <p className="ai-score-interpretation">{audit.interpretation}</p>
-    <PremiumPreview audit={audit} />
+    <DetailEntry audit={audit} open={detailsOpen} onDetails={onDetails} onExport={onExport} />
   </section>;
 }
 
@@ -208,10 +291,10 @@ function EvidenceConfidence({ audit }: { audit: FreeAuditResult }) {
   </article>;
 }
 
-function PremiumPreview({ audit }: { audit: FreeAuditResult }) {
-  return <div className="ai-score-premium">
+function DetailEntry({ audit, open, onDetails, onExport }: { audit: FreeAuditResult; open: boolean; onDetails: () => void; onExport: () => void }) {
+  return <div className="ai-score-detail-entry">
     <div className="ai-score-opportunities">
-      <p className="section-kicker">Analisi completa</p>
+      <p className="section-kicker">Dalle evidenze agli interventi</p>
       <h3>{audit.opportunities.total} {audit.opportunities.total === 1 ? 'opportunità individuata' : 'opportunità individuate'}</h3>
       <div className="ai-score-severity" aria-label="Conteggio opportunità per severità">
         <span>{audit.opportunities.critical} critiche</span>
@@ -219,17 +302,10 @@ function PremiumPreview({ audit }: { audit: FreeAuditResult }) {
         <span>{audit.opportunities.optimization} ottimizzazioni</span>
       </div>
     </div>
-    <div className="ai-score-locked-preview" aria-hidden="true">
-      {['Critical', 'High', 'High'].map((severity, index) => <div key={`${severity}-${index}`}>
-        <span>{severity}</span>
-        <i />
-        <i />
-      </div>)}
-    </div>
     <div className="ai-score-premium-copy">
       <h3>Scopri cosa limita il tuo AI Score</h3>
-      <p>Accedi all’analisi completa per vedere controlli, evidenze, priorità e interventi collegati ai problemi rilevati.</p>
-      <button className="button ghost-dark" type="button" disabled>Analisi completa in arrivo</button>
+      <p>Leggi controlli, evidenze e priorità già raccolti. Il report indica anche le parti non misurate, senza avviare altre scansioni.</p>
+      <div className="ai-report-actions"><button className="button ghost-dark" type="button" aria-expanded={open} aria-controls="ai-score-details" onClick={onDetails}>{open ? 'Chiudi analisi dettagliata' : 'Vedi analisi dettagliata'}</button><button className="button ghost-dark" type="button" onClick={onExport}>Esporta report</button></div>
     </div>
   </div>;
 }

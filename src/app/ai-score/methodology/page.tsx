@@ -165,12 +165,12 @@ export default function AiScoreMethodologyPage() {
           </article>
           <article className="ai-method-product-card">
             <span className="ai-method-product-number">02</span>
-            <span className="rd-label">Piano personalizzato</span>
-            <h3>Horyzon AI Optimization Plan</h3>
-            <p>Un piano costruito sui risultati reali dell&apos;audit del tuo sito, con problemi individuati, priorità e interventi specifici.</p>
-            <p>Non contiene indicazioni generiche: parte dalle evidenze raccolte durante l&apos;analisi del dominio.</p>
-            <strong>Come migliorare il tuo sito sulla base dell&apos;audit.</strong>
-            <Link className="rd-link" href="/ai-score">Analizza il tuo sito ↗︎</Link>
+            <span className="rd-label">Disponibile nell’analisi gratuita</span>
+            <h3>Report dettagliato del tuo sito</h3>
+            <p>Controlli, evidenze e priorità di intervento collegati ai risultati reali della scansione, con indicazione delle misure mancanti.</p>
+            <p>Puoi riaprire il report salvato nello stesso browser oppure esportarlo e importarlo su un altro dispositivo. La riapertura non esegue nuove ricerche AI.</p>
+            <strong>Le indicazioni non sostituiscono un piano di intervento validato e non promettono un punteggio futuro.</strong>
+            <Link className="rd-link" href="/ai-score">Ottieni il report del tuo sito ↗︎</Link>
           </article>
         </div>
       </section>

@@ -1,6 +1,6 @@
 import { auditCacheKey, checkRateLimit, readDuplicateCache, withAuditSlot, writeDuplicateCache } from './limits';
 import { auditRepository } from './storage';
-import { runAiScoreAudit, toFreeAudit, type AuditOptions } from './audit';
+import { runAiScoreAudit, toDetailedAudit, type AuditOptions } from './audit';
 import { normalizeAuditUrl, UnsafeAuditUrlError } from './ssrf';
 import { AuditDeadlineError, abortable } from './deadline';
 import type { AuditStreamEvent } from './types';
@@ -38,12 +38,12 @@ export async function handleAiScoreRequest(request: Request, options: Options = 
       void (async()=>{
       const send=(event:AuditStreamEvent)=>{if(open&&!signal.aborted)output.enqueue(encoder.encode(JSON.stringify(event)+'\n'));};
       try {
-        if(cached){ send({type:'state',state:'scoring',label:'Preparazione risultato recente'});send({type:'result',audit:toFreeAudit(cached)});return; }
+        if(cached){ send({type:'state',state:'scoring',label:'Preparazione risultato recente'});send({type:'result',audit:toDetailedAudit(cached)});return; }
         const audit=await withAuditSlot(()=>(options.runAudit??runAiScoreAudit)(url,(state,label)=>send({type:'state',state,label}),{...options.auditOptions,signal,clientKey}));
         if(signal.aborted)return;
         writeDuplicateCache(cacheKey,audit);
         await auditRepository.save(cacheKey,audit);
-        send({type:'result',audit:toFreeAudit(audit)});
+        send({type:'result',audit:toDetailedAudit(audit)});
       } catch(error) {
         const message=error instanceof UnsafeAuditUrlError||error instanceof AuditDeadlineError?error.message:'Analisi non completata. Il sito o un servizio non ha risposto: riprova tra poco.';
         send({type:'error',state:'failed',message});

@@ -241,6 +241,10 @@ export function toFreeAudit(audit: InternalAuditResult): FreeAuditResult {
   return projectFreeResult(audit);
 }
 
+export function toDetailedAudit(audit: InternalAuditResult): FreeAuditResult {
+  return { ...toFreeAudit(audit), details: audit.premium, locked: { ...audit.locked, premiumAudit: false } };
+}
+
 async function fetchOptional(url: string, fetchPage: (url: string | URL, maxBytes: number) => Promise<Awaited<ReturnType<typeof safeFetch>>>): Promise<OptionalFetch> {
   try {
     const response = await fetchPage(url, 250_000);
