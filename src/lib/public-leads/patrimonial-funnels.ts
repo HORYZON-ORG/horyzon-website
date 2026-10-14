@@ -4,6 +4,7 @@ import {
   type PilotMode, type PilotUtm,
 } from '../../content/patrimonial-funnels.ts';
 import { normalizePhone } from '../radar/highlevel.ts';
+import { PATRIMONIAL_V2, type PatrimonialV2Lead } from './patrimonial-contract.ts';
 
 type CommonLead = {
   firstName: string; lastName: string; email: string; phone: string; province: string;
@@ -72,3 +73,29 @@ export function pilotCrmDetails(lead: PilotLead, now: Date) {
 }
 
 export const pilotMode = (value: unknown): value is PilotMode => value === 'architect-path' || value === 'patrimonial-event';
+
+// V2 normalizes optional null/blank values consistently without changing 2A.
+// Non-authoritative clientTimestamp is permitted but never stored or hashed.
+export function validatePatrimonialV2(input: Record<string, unknown>): PatrimonialV2Lead | null {
+  if (input.contractVersion !== PATRIMONIAL_V2 || !pilotMode(input.mode)) return null;
+  const { eventEditionId, clientTimestamp } = input;
+  if (clientTimestamp !== undefined && !(typeof clientTimestamp === 'string' && clientTimestamp.length <= 64) && !(typeof clientTimestamp === 'number' && Number.isFinite(clientTimestamp))) return null;
+  if (input.mode === 'architect-path' && Object.hasOwn(input, 'eventEditionId')) return null;
+  if (eventEditionId != null && typeof eventEditionId !== 'string') return null;
+  const requestedEditionId = typeof eventEditionId === 'string' ? eventEditionId.trim() || null : null;
+  if (requestedEditionId && !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,99}$/.test(requestedEditionId)) return null;
+  const optional = ['phone', 'profile', 'message', ...(input.mode === 'architect-path' ? ['experience', 'goal', 'availability'] : [])];
+  const normalized: Record<string, unknown> = { ...input };
+  for (const key of ['contractVersion', 'requestId', 'eventEditionId', 'clientTimestamp']) delete normalized[key];
+  for (const key of [...optional, 'firstName', 'lastName', 'email', 'province', 'sourcePath']) {
+    if (typeof normalized[key] === 'string') normalized[key] = normalized[key].trim();
+    else if (optional.includes(key) && normalized[key] == null) normalized[key] = '';
+  }
+  if (normalized.utm == null) normalized.utm = {};
+  if (normalized.utm && typeof normalized.utm === 'object' && !Array.isArray(normalized.utm)) {
+    normalized.utm = Object.fromEntries(Object.entries(normalized.utm).map(([key, value]) => [key, value == null ? '' : value]));
+  }
+  const lead = validatePilotLead(normalized);
+  if (!lead) return null;
+  return { ...lead, contractVersion: PATRIMONIAL_V2, sourcePath: pilotForms[lead.mode].path, eventEditionId: requestedEditionId };
+}

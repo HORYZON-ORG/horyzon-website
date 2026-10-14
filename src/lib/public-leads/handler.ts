@@ -1,10 +1,13 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { patrimonialInterest, patrimonialInterests, PATRIMONIAL_PRIVACY_VERSION } from '../../content/patrimonial.ts';
 import { callHighLevel, highLevelConfig, normalizePhone } from '../radar/highlevel.ts';
-import { isLegacyLeadPayload, pilotCrmDetails, pilotMode, validatePilotLead } from './patrimonial-funnels.ts';
+import { isLegacyLeadPayload, pilotCrmDetails, pilotMode, validatePilotLead, validatePatrimonialV2 } from './patrimonial-funnels.ts';
 import { pilotForms } from '../../content/patrimonial-funnels.ts';
+import { canonicalPatrimonialPayload, isPatrimonialRequestId, PATRIMONIAL_V2, type PatrimonialRequest } from './patrimonial-contract.ts';
+import { patrimonialConsentEvidence } from './patrimonial-consents.ts';
+import { createProductionPatrimonialStore, patrimonialFlags, PatrimonialConflictError, PatrimonialReplayExpiredError, type PatrimonialStore } from './patrimonial-store.ts';
 
-type Options = { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch; now?: () => Date };
+type Options = { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch; now?: () => Date; store?: PatrimonialStore };
 const attempts = new Map<string, { count: number; until: number }>();
 const response = (status: number, message: string) => Response.json({ ok: status === 200, message }, { status, headers: { 'Cache-Control': 'no-store' } });
 const text = (value: unknown, max: number) => typeof value === 'string' && value.length <= max ? value.trim() : null;
@@ -30,6 +33,12 @@ export async function handlePublicLead(request: Request, options: Options = {}):
     input = JSON.parse(Buffer.concat(chunks).toString('utf8'));
     if (!input || typeof input !== 'object' || Array.isArray(input)) return response(400, 'Richiesta non valida.');
   } catch { return response(400, 'Richiesta non valida.'); }
+  // Explicit dispatch prevents a malformed/disabled v2 request falling into 2A or legacy.
+  if (Object.hasOwn(input, 'contractVersion')) {
+    if (input.contractVersion !== PATRIMONIAL_V2) return response(400, 'Versione della richiesta non valida.');
+    return handlePatrimonialV2(request, input, options);
+  }
+  if (Object.hasOwn(input, 'requestId') || request.headers.has('idempotency-key')) return response(400, 'Versione della richiesta mancante.');
   const pilot = pilotMode(input.mode) ? validatePilotLead(input) : null;
   if (!isLegacyLeadPayload(input) && !pilot) return response(400, 'Controlla i dati e la richiesta di ricontatto.');
   const name = text(input.name, 120), email = text(input.email, 254), rawPhone = text(input.phone ?? '', 40), message = text(input.message ?? '', 1500);
@@ -76,5 +85,63 @@ export async function handlePublicLead(request: Request, options: Options = {}):
   } catch {
     // Never expose or log provider response bodies, credentials or contact data.
     return response(502, 'Non possiamo confermare la ricezione completa. Riprova oppure scrivi a info@horyzon.it.');
+  }
+}
+
+const v2Attempts = new Map<string, { count: number; until: number }>();
+async function handlePatrimonialV2(request: Request, input: Record<string, unknown>, options: Options): Promise<Response> {
+  const env = options.env ?? process.env;
+  if (!patrimonialFlags(env).v2) return response(503, 'Questo modulo non è ancora disponibile.');
+  if (input.website) return response(400, 'Richiesta non valida.');
+  const now = (options.now ?? (() => new Date()))();
+  if (env.NODE_ENV !== 'test') {
+    const key = createHash('sha256').update(request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown').digest('hex');
+    for (const [id, entry] of v2Attempts) if (entry.until < now.getTime()) v2Attempts.delete(id);
+    const entry = v2Attempts.get(key) ?? { count: 0, until: now.getTime() + 60000 };
+    if (entry.count >= 5 || v2Attempts.size >= 5000) return response(429, 'Attendi un minuto prima di riprovare.');
+    entry.count++; v2Attempts.set(key, entry);
+  }
+  const lead = validatePatrimonialV2(input);
+  const headerId = request.headers.get('idempotency-key');
+  if (!lead || !isPatrimonialRequestId(input.requestId) || !isPatrimonialRequestId(headerId) || input.requestId.toLowerCase() !== headerId.toLowerCase()) return response(400, 'Controlla i dati e il riferimento della richiesta.');
+  const requestId = input.requestId.toLowerCase();
+  try {
+    // The only production factory is a non-networking stub. Test memory is accepted
+    // exclusively through explicit server-side injection with NODE_ENV=test.
+    const store = options.store ?? createProductionPatrimonialStore();
+    if (store.kind !== 'durable' && env.NODE_ENV !== 'test') return response(503, 'Il modulo è temporaneamente non disponibile.');
+    const receivedAt = now.toISOString();
+    const candidate: PatrimonialRequest = {
+      id: requestId, contractVersion: PATRIMONIAL_V2, payload: lead,
+      payloadHash: createHash('sha256').update(canonicalPatrimonialPayload(lead)).digest('hex'),
+      receivedAt, replayExpiresAt: new Date(now.getTime() + 90 * 86400000).toISOString(),
+      technicalState: 'RECEIVED', intentId: null,
+      receipt: { ok: true, requestId, receiptStatus: 'received', crmStatus: 'pending' },
+    };
+    const receipt = await store.transaction(async tx => {
+      const acquired = await tx.createOrReplayRequest(candidate, receivedAt);
+      if (acquired.replay) return acquired.request.receipt;
+      for (const evidence of patrimonialConsentEvidence(candidate)) await tx.appendConsentEvidence(evidence);
+      const provisionalKey = createHash('sha256').update(JSON.stringify([lead.mode, lead.email, lead.eventEditionId])).digest('hex');
+      const intent = await tx.createOrReuseIntent({
+        id: randomUUID(), provisionalKey, mode: lead.mode, requestedEditionId: lead.eventEditionId,
+        contactId: null, opportunityId: null, identityResolved: false, technicalState: 'IDENTITY_REVIEW', createdAt: receivedAt,
+      });
+      await tx.attachIntent(requestId, intent.id);
+      await tx.enqueueOperation({
+        id: randomUUID(), operationKey: `${requestId}:SYNC_REQUEST:v1`, kind: 'SYNC_REQUEST', requestId, intentId: intent.id,
+        technicalState: 'SYNC_PENDING', createdAt: receivedAt, nextAttemptAt: receivedAt,
+        attemptCount: 0, leaseToken: null, leaseVersion: 0, leaseExpiresAt: null, reconcileRequired: false, lastErrorCode: null,
+      });
+      await tx.appendEvent({ id: `${requestId}:received`, name: 'request_received', requestId, intentId: intent.id, occurredAt: receivedAt, contractVersion: PATRIMONIAL_V2 });
+      return candidate.receipt;
+    });
+    // No CRM transport, provider credentials, messages or remote effects on v2.
+    return Response.json(receipt, { status: 202, headers: { 'Cache-Control': 'no-store' } });
+  } catch (error) {
+    if (error instanceof PatrimonialConflictError) return response(409, 'Questo riferimento è già associato a una richiesta con dati diversi. Verifica il precedente invio prima di crearne uno nuovo.');
+    if (error instanceof PatrimonialReplayExpiredError) return response(410, 'Il riferimento è scaduto. Contattaci per verificare il precedente invio.');
+    // A commit may already exist: keep the same ID on retry. No compensation or fallback.
+    return response(503, 'Ricezione non confermata. Riprova con lo stesso riferimento oppure scrivici per verificare l’invio.');
   }
 }

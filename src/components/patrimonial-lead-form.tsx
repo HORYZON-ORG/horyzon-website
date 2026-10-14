@@ -4,9 +4,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { patrimonialInterest, patrimonialInterests, type PatrimonialInterest } from '@/content/patrimonial';
 import { pilotAvailability, pilotExperience, pilotForms, pilotGoals, pilotUtmKeys, type PilotMode, type PilotUtm } from '@/content/patrimonial-funnels';
+import { PATRIMONIAL_V2, PatrimonialClientAttempt, PatrimonialRevisionRequiredError } from '@/lib/public-leads/patrimonial-contract';
 
-export function PatrimonialLeadForm({ mode = 'legacy/public' }: { mode?: 'legacy/public' | PilotMode }) {
-  return mode === 'legacy/public' ? <PublicLeadForm /> : <PilotLeadForm mode={mode} />;
+export function PatrimonialLeadForm({ mode = 'legacy/public', contractVersion }: { mode?: 'legacy/public' | PilotMode; contractVersion?: typeof PATRIMONIAL_V2 }) {
+  return mode === 'legacy/public' ? <PublicLeadForm /> : <PilotLeadForm mode={mode} contractVersion={contractVersion} />;
 }
 function PublicLeadForm() {
   const params = useSearchParams();
@@ -21,10 +22,12 @@ function PublicLeadForm() {
 }
 
 // Same per-tab attribution pattern as Radar, scoped to each pilot funnel.
-function pilotAttribution(mode: PilotMode): PilotUtm {
+function pilotAttribution(mode: PilotMode, persist = true): PilotUtm {
   const key = `horyzon:patrimonial:${mode}:utm`;
   const params = new URLSearchParams(window.location.search);
   const found = Object.fromEntries(pilotUtmKeys.flatMap(name => params.get(name) ? [[name, params.get(name)!.replace(/[\r\n]/g, '').slice(0, 100)]] : [])) as PilotUtm;
+  // V2 persists only the opaque request reference, never attribution/form data.
+  if (!persist) return found;
   try {
     if (Object.keys(found).length) { sessionStorage.setItem(key, JSON.stringify(found)); return found; }
     const stored: unknown = JSON.parse(sessionStorage.getItem(key) ?? '{}');
@@ -36,13 +39,16 @@ function pilotAttribution(mode: PilotMode): PilotUtm {
   return found;
 }
 
-function PilotLeadForm({ mode }: { mode: PilotMode }) {
+function PilotLeadForm({ mode, contractVersion }: { mode: PilotMode; contractVersion?: typeof PATRIMONIAL_V2 }) {
   const router = useRouter();
   const form = pilotForms[mode];
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [notice, setNotice] = useState('');
   const sending = useRef(false);
-  useEffect(() => { pilotAttribution(mode); }, [mode]);
+  const v2 = contractVersion === PATRIMONIAL_V2;
+  const v2Attempt = useRef<PatrimonialClientAttempt | null>(null);
+  const [revisionRequired, setRevisionRequired] = useState(false);
+  useEffect(() => { if (!v2) pilotAttribution(mode); }, [mode, v2]);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (sending.current) return;
@@ -52,21 +58,34 @@ function PilotLeadForm({ mode }: { mode: PilotMode }) {
       mode, sourcePath: form.path, firstName: data.get('firstName'), lastName: data.get('lastName'),
       email: data.get('email'), phone: data.get('phone'), province: data.get('province'), profile: data.get('profile'),
       message: data.get('message'), consent: data.get('consent') === 'on', marketingConsent: data.get('marketingConsent') === 'on',
-      website: data.get('website'), utm: pilotAttribution(mode),
+      website: data.get('website'), utm: pilotAttribution(mode, !v2),
       ...(mode === 'architect-path' ? { experience: data.get('experience'), goal: data.get('goal'), availability: data.get('availability') } : {}),
     };
     setStatus('sending'); setNotice('');
     try {
-      const response = await fetch('/api/public-leads', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(35000), body: JSON.stringify(payload) });
+      let requestId: string | undefined;
+      if (v2) {
+        if (!v2Attempt.current) {
+          let storage: Storage | undefined;
+          try { storage = window.sessionStorage; } catch { /* Keep the reference in memory. */ }
+          v2Attempt.current = new PatrimonialClientAttempt(mode, storage);
+        }
+        requestId = v2Attempt.current.prepare({ ...payload, contractVersion: PATRIMONIAL_V2 });
+      }
+      const response = await fetch('/api/public-leads', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(requestId ? { 'Idempotency-Key': requestId } : {}) }, signal: AbortSignal.timeout(35000), body: JSON.stringify(v2 ? { ...payload, contractVersion: PATRIMONIAL_V2, requestId } : payload) });
       const result = await response.json();
-      if (!response.ok || result.ok !== true) {
+      if (!response.ok || result.ok !== true || (v2 && !v2Attempt.current?.acceptReceipt(response.status, result))) {
+        if (v2 && response.status === 409) setRevisionRequired(true);
         setStatus('error'); setNotice(typeof result.message === 'string' ? result.message : 'Invio non confermato. Riprova oppure scrivici.');
         sending.current = false; return;
       }
       setStatus('success'); setNotice(form.success);
       router.push(`${form.path}/grazie`);
-    } catch {
-      sending.current = false; setStatus('error'); setNotice('Invio non confermato. Riprova oppure scrivici via email.');
+    } catch (error) {
+      sending.current = false; setStatus('error');
+      if (v2 && error instanceof PatrimonialRevisionRequiredError) {
+        setRevisionRequired(true); setNotice('I dati sono cambiati. Il precedente invio potrebbe essere già arrivato: verificalo prima di inviare una nuova richiesta.');
+      } else setNotice(v2 ? 'Invio non confermato. Riprova mantenendo gli stessi dati oppure scrivici per verificare la ricezione.' : 'Invio non confermato. Riprova oppure scrivici via email.');
     }
   }
   return <form className="rd-form" onSubmit={submit} aria-labelledby={`${mode}-form-title`} aria-busy={status === 'sending'} data-pilot-form={mode}>
@@ -95,7 +114,11 @@ function PilotLeadForm({ mode }: { mode: PilotMode }) {
       <button type="submit" className="rd-cta">{status === 'sending' ? 'Invio in corso…' : status === 'success' ? form.success : form.submit}<span aria-hidden="true">↗︎</span></button>
     </fieldset>
     {notice && <p role={status === 'error' ? 'alert' : 'status'} className="rd-form-note">{notice}</p>}
-    <p className="rd-form-note">I dati della richiesta sono trasmessi al CRM HighLevel di Horyzon per gestire il ricontatto. {mode === 'patrimonial-event' && 'La richiesta non conferma una registrazione definitiva all’evento. '}Preferisci scriverci? <a href="mailto:info@horyzon.it">Contattaci via email ↗︎</a>.</p>
+    {v2 && revisionRequired && <button type="button" className="rd-cta" disabled={status === 'sending'} onClick={() => {
+      v2Attempt.current?.beginNewAttempt(); setRevisionRequired(false); setStatus('idle');
+      setNotice('Nuova richiesta pronta. Premi il pulsante di invio per trasmettere i dati aggiornati.');
+    }}>Ho verificato il precedente invio: avvia una nuova richiesta</button>}
+    <p className="rd-form-note">{v2 ? 'La ricevuta conferma solo la registrazione della richiesta, in attesa della gestione da parte di Horyzon. ' : 'I dati della richiesta sono trasmessi al CRM HighLevel di Horyzon per gestire il ricontatto. '}{mode === 'patrimonial-event' && 'La richiesta non conferma una registrazione definitiva all’evento. '}Preferisci scriverci? <a href="mailto:info@horyzon.it">Contattaci via email ↗︎</a>.</p>
   </form>;
 }
 function LeadForm({ initialInterest }: { initialInterest: PatrimonialInterest }) {
