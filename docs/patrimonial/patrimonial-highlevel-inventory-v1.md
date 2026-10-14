@@ -7,11 +7,25 @@ Contratto vincolante, riletto integralmente: [contratto 2B.1](patrimonial-highle
 
 ## 1. Executive summary
 
-**REMOTE INVENTORY: BLOCKED**
+**REMOTE INVENTORY: PARTIALLY VERIFIED — aggiornamento fornito dall'utente per la FASE 2B.2B-2.**
 
-La parte locale è completata. Nessun accesso remoto è stato usato: zero chiamate HighLevel, Composio, Supabase o altri servizi; zero risorse remote lette; zero scritture remote e zero messaggi. Non sono stati avviati browser, server, canary, migrazioni o test live.
+La precedente classificazione BLOCKED descriveva l'accesso disponibile durante la FASE 2B.2A; non è più lo stato assoluto dell'account. L'utente comunica una verifica ChatGPT in sola lettura sulla connessione attiva del sub-account **High Level - HORYZON**, timezone `Europe/Rome`, website `https://www.horyzon.it`, con contacts, opportunities, appointments/calendars, workflows e tags abilitati. Questa evidenza è fornita dall'utente: non sono state effettuate nuove chiamate remote dall'agente per confermarla.
 
-Il blocco scatta **prima** delle chiamate: manca un'associazione verificabile tra una connessione di lettura autorizzata e la location Horyzon corretta. L'adapter del repository è solo POST; questo non prova che il token remoto sia write-only, né che HighLevel non supporti letture. Il catalogo locale espone l'orchestratore Composio, ma nessun tool HighLevel diretto con schema/location già verificati. La discovery Composio non è stata chiamata, rispettando lo stop prima dei servizi remoti. Non si afferma che un collegamento HighLevel non possa esistere: connessione, scope e location restano da verificare.
+Impostazioni comunicate: `allowDuplicateContact=false`, `contactUniqueIdentifiers=[email, phone]`, `allowDuplicateOpportunity=false`. Pipeline presente: **Marketing Pipeline**, stage nell'ordine New Lead, Contacted, Qualified, Proposal Sent, Negotiation, Closed. La location ha restituito **0 custom fields**; lo scope dell'oggetto/lettura non è ulteriormente dettagliato, quindi il mapping dei campi resta da validare prima di CREATE. Opportunity search ammette `open`, `won`, `lost`, `abandoned`; questo non certifica gli enum o i permessi di scrittura.
+
+Restano UNKNOWN: user ID, elenco completo calendari, workflow effettivi, catalogo tag, native close reason, deduplica opportunity tra pipeline, booking/write e webhook. Nessun ID location o risorsa viene inventato. L'abilitazione di una funzione nell'account non certifica endpoint, scope, paginazione o semantica create-only. L'adapter 2B.2B-2 richiede configurazioni server dichiarate verificate; non installa lookup o mapping tag presunti. Le sezioni di inventario originale sotto restano evidenza storica della baseline 2B.2A e vanno lette insieme a questo aggiornamento, che prevale per i fatti ora comunicati.
+
+### Implementazione locale 2B.2B-2
+
+L'[adapter patrimoniale](../../src/lib/public-leads/patrimonial-highlevel.ts) e il worker esplicito in [patrimonial-sync.ts](../../src/lib/public-leads/patrimonial-sync.ts) separano RESOLVE_CONTACT, UPSERT_CONTACT, ADD_TAGS e ADD_NOTE, con checkpoint, dipendenze e lease/fencing nello store. Il contatto esistente non viene aggiornato con dichiarazioni anonime: source, owner e telefono restano preservati. Per NEW è richiesto un binding create-only verificato, così un contatto comparso nel frattempo non viene sovrascritto tramite upsert. Lookup e decodifica/paginazione restano binding server da verificare, non endpoint inventati. I quattro tag pilota richiedono una allowlist verificata; notesRead resta UNKNOWN per default e impedisce il blind retry della nota. Nessuna configurazione reale o flag è stato attivato.
+
+Il worker si invoca esplicitamente: nessun cron, endpoint worker, messaggio o attivazione automatica dal form. Lo store durevole di produzione resta uno stub non attivabile della fase precedente; le verifiche locali usano esclusivamente fixture memory/provider fake. Non sono state introdotte opportunity, calendari, booking, workflow, webhook o custom field. Lo stato PARTIALLY VERIFIED descrive le evidenze dell'account fornite dall'utente, non un collaudo live dell'adapter.
+
+### Baseline storica FASE 2B.2A
+
+In quella fase la parte locale era completata. Nessun accesso remoto era stato usato: zero chiamate HighLevel, Composio, Supabase o altri servizi; zero risorse remote lette; zero scritture remote e zero messaggi. Non erano stati avviati browser, server, canary, migrazioni o test live. Il resto del documento conserva quella fotografia della baseline, con l'aggiornamento corrente sopra.
+
+Nella baseline 2B.2A il blocco scattava prima delle chiamate perché l'agente non poteva verificare connessione e location; il solo adapter allora presente era POST. Questo non provava che il token fosse write-only o che HighLevel non supportasse letture. La discovery Composio non era stata chiamata. Le evidenze di location ora comunicate dall'utente sono registrate sopra, mentre scope specifici e binding mancanti restano gate futuri.
 
 L'ispezione delle configurazioni ha estratto esclusivamente **nomi**, senza stampare valori: `.env.example` dichiara `SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`; nessun nome pertinente HighLevel/Supabase/patrimoniale/Redis/Postgres è risultato in `.env.local` o nelle variabili del processo. I nomi `HIGHLEVEL_PRIVATE_TOKEN` e `HIGHLEVEL_LOCATION_ID` esistono nel codice. Ciò non descrive le env di produzione, che non sono state lette, e non verifica se i valori del template siano configurati.
 
@@ -69,7 +83,7 @@ Il trasporto condiviso include una porzione di body remoto negli errori; l'handl
 
 ## 3. Inventario remoto, se autorizzato
 
-**REMOTE INVENTORY: BLOCKED.** Nessuna richiesta è stata inviata, neppure per testare un token, elencare connessioni o scoprire tool remoti. L'autorizzazione dell'utente è condizionata alla verifica della location; non è un'autorizzazione a scritture di prova.
+**REMOTE INVENTORY: PARTIALLY VERIFIED**, secondo l'aggiornamento dell'utente in §1. La tabella seguente conserva i risultati storici della FASE 2B.2A; nome, timezone, website e impostazioni ora comunicati sono aggiornati in §1. Nessuna nuova richiesta è stata inviata dall'agente, neppure per testare token o capacità. L'implementazione 2B.2B-2 usa soltanto provider fake: zero scritture e zero letture remote in questa fase.
 
 | Elemento richiesto | Risultato | Evidenza necessaria per sbloccare |
 | --- | --- | --- |
@@ -568,7 +582,7 @@ Ordine consigliato: 1 con fixture e flag false → 2 in read verificata e mock w
 
 ## 22. Stop conditions
 
-Stop remoto **già applicato**: location Horyzon e accesso read non verificabili dalle evidenze disponibili. Per questo nessuna chiamata remota è stata tentata e la parte locale è stata comunque completata, come richiesto dall'utente. Nessuna richiesta di token o credenziale in chat.
+Stop remoto storico 2B.2A: location e accesso read non erano verificabili dall'agente. In 2B.2B-2 lo stato è PARTIALLY VERIFIED per le evidenze comunicate dall'utente (§1), ma le chiamate reali restano espressamente vietate in questa fase. Nessuna richiesta di token o credenziale in chat. Identificativi e binding verificati rimangono gate di una futura configurazione server autorizzata.
 
 Ulteriori condizioni vincolanti per il seguito:
 

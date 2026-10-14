@@ -11,6 +11,7 @@
     "test:patrimonial": "node --no-warnings --experimental-strip-types scripts/verify-patrimonial-leads.mjs && node scripts/verify-patrimonial-content.mjs",
     "test:patrimonial-funnels": "node --no-warnings --experimental-strip-types scripts/verify-patrimonial-funnels.mjs",
     "test:patrimonial-ledger": "node --no-warnings --experimental-strip-types scripts/verify-patrimonial-ledger.mjs",
+    "test:patrimonial-crm": "node --no-warnings --experimental-strip-types scripts/verify-patrimonial-crm.mjs",
     "test:no-platform": "node scripts/verify-no-platform.mjs",
     "test:search": "node scripts/verify-search.mjs",
     "test:radar": "node --no-warnings --experimental-strip-types scripts/verify-radar-domain.mjs && node scripts/verify-paid-radar-migration.mjs supabase/migrations/20260929101224_paid_radar_foundation.sql && node --no-warnings --experimental-strip-types scripts/verify-radar-persistence.mjs && node --no-warnings --experimental-strip-types scripts/verify-radar-api.mjs && node --no-warnings --experimental-strip-types scripts/verify-radar-client.mjs && node --no-warnings --experimental-strip-types scripts/verify-radar-report.mjs && node --no-warnings --experimental-strip-types scripts/verify-radar-stripe.mjs && node --no-warnings --experimental-strip-types scripts/verify-radar-free-crm.mjs && node scripts/verify-radar-operations.mjs",

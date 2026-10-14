@@ -11,6 +11,10 @@ export type PatrimonialRequest = {
   id: string; contractVersion: typeof PATRIMONIAL_V2; payloadHash: string; payload: PatrimonialV2Lead;
   receivedAt: string; replayExpiresAt: string; intentId: string | null;
   technicalState: PatrimonialTechnicalState; receipt: PatrimonialReceipt;
+  crm?: PatrimonialCrmCheckpoint;
+};
+export type PatrimonialCrmCheckpoint = {
+  locationId: string; resolution: 'NEW' | 'REUSE'; contactId: string | null; noteId: string | null;
 };
 export type PatrimonialIntent = {
   id: string; provisionalKey: string; mode: PilotMode; requestedEditionId: string | null;
@@ -24,10 +28,13 @@ export type PatrimonialConsentEvidence = {
   channel: 'form'; receivedAt: string; mode: PilotMode;
 };
 export type PatrimonialOutboxOperation = {
-  id: string; operationKey: string; requestId: string; intentId: string; kind: 'SYNC_REQUEST';
+  id: string; operationKey: string; requestId: string; intentId: string;
+  kind: 'SYNC_REQUEST' | 'RESOLVE_CONTACT' | 'UPSERT_CONTACT' | 'ADD_TAGS' | 'ADD_NOTE';
   technicalState: PatrimonialTechnicalState; createdAt: string; nextAttemptAt: string;
   attemptCount: number; leaseToken: string | null; leaseVersion: number; leaseExpiresAt: string | null;
   reconcileRequired: boolean; lastErrorCode: string | null;
+  dependsOn?: string; remoteId?: string;
+  identityLockKey?: string;
 };
 export type PatrimonialEvent = {
   id: string; name: 'request_received'; requestId: string; intentId: string;

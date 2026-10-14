@@ -1,11 +1,15 @@
-import type { PatrimonialConsentEvidence, PatrimonialEvent, PatrimonialIntent, PatrimonialOutboxOperation, PatrimonialRequest } from './patrimonial-contract.ts';
+import type { PatrimonialConsentEvidence, PatrimonialCrmCheckpoint, PatrimonialEvent, PatrimonialIntent, PatrimonialOutboxOperation, PatrimonialRequest } from './patrimonial-contract.ts';
 
 export type PatrimonialClaim = { operationId: string; leaseToken: string; leaseVersion: number };
-export type PatrimonialOperationError = 'NETWORK' | 'RATE_LIMIT' | 'PROVIDER' | 'SCHEMA' | 'AUTH' | 'CONFIG' | 'UNKNOWN';
-export type PatrimonialClaimInput = { now: string; limit: number; leaseSeconds?: number };
+export type PatrimonialOperationError = 'NETWORK' | 'RATE_LIMIT' | 'PROVIDER' | 'SCHEMA' | 'AUTH' | 'CONFIG' | 'IDENTITY' | 'UNKNOWN';
+export type PatrimonialClaimInput = { now: string; limit: number; leaseSeconds?: number; reconciliationOnly?: boolean };
 export type PatrimonialMutation = PatrimonialClaim & { now: string };
 export type PatrimonialFailureMutation = PatrimonialMutation & {
-  errorCode: PatrimonialOperationError; state: 'RECONCILE_REQUIRED' | 'MANUAL_REVIEW' | 'REJECTED'; reconcileRequired?: boolean;
+  errorCode: PatrimonialOperationError; state: 'IDENTITY_REVIEW' | 'RECONCILE_REQUIRED' | 'MANUAL_REVIEW' | 'REJECTED'; reconcileRequired?: boolean;
+};
+export type PatrimonialCrmCompletion = PatrimonialMutation & {
+  checkpoint?: PatrimonialCrmCheckpoint; remoteId?: string;
+  followUps?: PatrimonialOutboxOperation[]; reconciliationConfirmed?: boolean;
 };
 
 // All methods on a transaction operate against the same snapshot. Production
@@ -13,6 +17,8 @@ export type PatrimonialFailureMutation = PatrimonialMutation & {
 export interface PatrimonialTransaction {
   createOrReplayRequest(input: PatrimonialRequest, now: string): Promise<{ request: PatrimonialRequest; replay: boolean }>;
   getRequest(requestId: string): Promise<PatrimonialRequest | null>;
+  getOperation(operationId: string): Promise<PatrimonialOutboxOperation | null>;
+  getConsentEvidence(requestId: string): Promise<PatrimonialConsentEvidence[]>;
   createOrReuseIntent(input: PatrimonialIntent): Promise<PatrimonialIntent>;
   attachIntent(requestId: string, intentId: string): Promise<void>;
   appendConsentEvidence(input: PatrimonialConsentEvidence): Promise<void>;
@@ -24,6 +30,10 @@ export interface PatrimonialTransaction {
   // Every worker mutation must check token, version AND unexpired lease.
   renewLease(input: PatrimonialMutation & { leaseSeconds?: number }): Promise<void>;
   completeOperation(input: PatrimonialMutation): Promise<void>;
+  // Checkpoint + remote ID + completion + dependent effects are one commit.
+  // A stale claim cannot save a remote ID or release dependent work.
+  completeCrmOperation(input: PatrimonialCrmCompletion): Promise<void>;
+  holdOperation(input: PatrimonialMutation): Promise<void>;
   failOperation(input: PatrimonialFailureMutation): Promise<void>;
   scheduleRetry(input: PatrimonialMutation & { nextAttemptAt: string; errorCode: PatrimonialOperationError }): Promise<void>;
   markManualReview(input: PatrimonialMutation & { errorCode: PatrimonialOperationError }): Promise<void>;

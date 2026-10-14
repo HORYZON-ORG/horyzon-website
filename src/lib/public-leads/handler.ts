@@ -130,6 +130,7 @@ async function handlePatrimonialV2(request: Request, input: Record<string, unkno
       await tx.attachIntent(requestId, intent.id);
       await tx.enqueueOperation({
         id: randomUUID(), operationKey: `${requestId}:SYNC_REQUEST:v1`, kind: 'SYNC_REQUEST', requestId, intentId: intent.id,
+        identityLockKey: createHash('sha256').update(lead.email).digest('hex'),
         technicalState: 'SYNC_PENDING', createdAt: receivedAt, nextAttemptAt: receivedAt,
         attemptCount: 0, leaseToken: null, leaseVersion: 0, leaseExpiresAt: null, reconcileRequired: false, lastErrorCode: null,
       });
