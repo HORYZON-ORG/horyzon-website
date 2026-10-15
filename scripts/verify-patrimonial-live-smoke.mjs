@@ -12,6 +12,8 @@ import { createSmokeRun, parseSmokeArgs, publicSmokeReport, runPatrimonialSmoke,
 import { parseSmokeBindingsMetadata, validSmokeReportPaths } from './lib/patrimonial-live-smoke-preflight.mjs';
 import { createRealPatrimonialBindings, validateRealPatrimonialReadiness, realReadLabels } from './lib/patrimonial-live-smoke-bindings.mjs';
 import { smokeEnvPresence } from './lib/patrimonial-live-smoke-env.mjs';
+import { smokeContactUpsert, SmokeContactWriteError } from './lib/patrimonial-live-smoke-contact.mjs';
+import { highLevelUpsertFixture } from './fixtures/highlevel-contact-upsert.mjs';
 
 // Never import or invoke the live CLI. All reports are captured in memory; no
 // files under tmp/ are created, read, modified, enumerated or cleaned by tests.
@@ -304,9 +306,11 @@ const realHttp = async (value, init) => {
     const contacts = [...real.people.values()].filter(c => c.email === url.searchParams.get('query'));
     return Response.json({ contacts, count: contacts.length });
   }
-  if (url.pathname === '/contacts/' && init.method === 'POST') {
-    assert.equal(body.dnd, true); assert(!Object.hasOwn(body, 'phone'));
-    return Response.json({ contact: await real.crm.upsertContact(body) });
+  if (url.pathname === '/contacts/upsert' && init.method === 'POST') {
+    assert.deepEqual(Object.keys(body).sort(), ['locationId', 'firstName', 'lastName', 'email'].sort());
+    assert(!Object.hasOwn(body, 'phone'));
+    const contact = await real.crm.upsertContact(body);
+    return Response.json({ new: true, contact, traceId: 'fixture-trace' });
   }
   if (url.pathname === '/contacts/fixture-contact') {
     if (init.method === 'DELETE') { await real.runtime.deleteContact('fixture-contact'); return new Response(null, { status: 204 }); }
@@ -340,6 +344,83 @@ assert.equal((await throughReal(mode('verify'))).result, 'PASS'); assert.equal(r
 assert.equal((await throughReal(mode('cleanup'))).result, 'PASS'); assert.equal(real.run.cleanup.contact, 'DELETED'); assert.equal(real.run.cleanup.opportunity, 'DELETED');
 assert.equal(real.db.inspect().requests.size, 1, 'cleanup preserves durable audit');
 passed.push('real wire bindings complete local execute/replay/verify/notes/12 custom fields/controlled cleanup through existing durable store and CRM adapters');
+
+// Upsert contract and error boundaries, entirely in-memory. No live CLI retry.
+const upsertInput = syntheticLead(fresh()), upsert = createRealPatrimonialBindings(httpEnv).contacts.upsert;
+assert.equal(upsertInput.email.split('@')[0].length, 53);
+const legacyRun = { ...fresh(), version: 'patrimonial-live-smoke-1' };
+assertSmokeReport(legacyRun); assert.equal(syntheticLead(legacyRun).email.split('@')[0].length, 67, 'old report identity preserved');
+assert.throws(() => upsert.request(syntheticLead(legacyRun), 'fixture-location'), 'legacy overlong input refused before write');
+const spec = upsert.request({ ...upsertInput, phone: '', tags: ['foreign'], source: 'foreign', customFields: { bad: 'bad' } }, 'fixture-location');
+assert.deepEqual(spec, { method: 'POST', path: '/contacts/upsert', body: { locationId: 'fixture-location', firstName: 'Horyzon', lastName: 'Synthetic Test', email: upsertInput.email } });
+let upsertCalls = 0;
+const contactCall = (fetchImpl, input = upsertInput, getContact = async () => highLevelUpsertFixture(input).contact) => smokeContactUpsert({ input, env: httpEnv, binding: upsert, guard() {}, getContact,
+  fetchImpl: async (url, init) => {
+    upsertCalls++; assert.equal(url, 'https://services.leadconnectorhq.com/contacts/upsert');
+    assert.equal(init.method, 'POST'); assert.equal(init.headers.Version, '2021-07-28'); assert.equal(init.headers.Authorization, 'Bearer fixture-token');
+    assert.equal(init.headers['Content-Type'], 'application/json'); assert.equal(init.redirect, 'error'); assert.equal(init.cache, 'no-store'); assert(init.signal);
+    assert(!Object.hasOwn(JSON.parse(init.body), 'phone')); return fetchImpl(url, init);
+  } });
+for (const created of [true, false]) {
+  const result = await contactCall(() => Response.json(highLevelUpsertFixture(upsertInput, created)));
+  assert.equal(result.id, 'fixture-contact'); assert.equal(result.disposition, created ? 'CREATED' : 'REUSED_UPDATED');
+  assert.equal(result.contactDiagnostic.phase, 'CONFIRMED'); assert.equal(result.contactDiagnostic.outcomeUncertain, false);
+}
+let hydrateCalls = 0;
+assert.equal((await contactCall(() => Response.json({ new: true, contact: { id: 'fixture-contact' } }), upsertInput,
+  async id => { hydrateCalls++; assert.equal(id, 'fixture-contact'); return highLevelUpsertFixture(upsertInput).contact; })).id, 'fixture-contact');
+assert.equal(hydrateCalls, 1, '2xx minimal response is read back, not rejected because fake/full shape differs');
+for (const [status, code, uncertain] of [[400, 'SCHEMA', false], [401, 'AUTH', false], [403, 'AUTH', false], [422, 'SCHEMA', false], [429, 'RATE_LIMIT', false], [500, 'PROVIDER', true]]) {
+  const callsBefore = upsertCalls;
+  await assert.rejects(contactCall(() => Response.json({ message: 'fixture-secret raw validation body' }, { status, headers: { 'retry-after': '60' } })), error => {
+    assert(error instanceof SmokeContactWriteError); assert.equal(error.code, code); assert.equal(error.status, status); assert.equal(error.outcomeUncertain, uncertain);
+    assert.equal(error.contactDiagnostic.phase, 'HTTP_RESPONSE'); assert(!JSON.stringify(error).includes('raw validation body')); return true;
+  });
+  assert.equal(upsertCalls, callsBefore + 1, 'transport never retries');
+}
+await assert.rejects(contactCall(async () => { throw new DOMException('fixture-secret', 'TimeoutError'); }), error => error.code === 'NETWORK' && error.outcomeUncertain);
+await assert.rejects(contactCall(() => new Response('{broken', { status: 200 })), error => error.code === 'SCHEMA' && error.outcomeUncertain);
+const callsBeforeInvalid = upsertCalls;
+await assert.rejects(contactCall(() => { throw new Error('must not dispatch'); }, { ...upsertInput, email: 'real@example.com' }), error => error.code === 'SCHEMA' && !error.outcomeUncertain && !error.contactDiagnostic.writeDispatched);
+assert.equal(upsertCalls, callsBeforeInvalid);
+const timeoutRun = fixture();
+timeoutRun.crm.upsertContact = input => contactCall(async () => { throw new DOMException('fixture-secret', 'TimeoutError'); }, input);
+await timeoutRun.invoke(); assert.equal(timeoutRun.run.effects.UPSERT_CONTACT, 'RECONCILE_REQUIRED');
+assert.equal(timeoutRun.run.contactDiagnostic.phase, 'DISPATCH'); assert.equal(timeoutRun.run.contactDiagnostic.httpStatus, null);
+assert.equal(timeoutRun.db.inspect().operations.get(timeoutRun.run.operations.UPSERT_CONTACT).lastErrorCode, 'NETWORK');
+let guardedSends = 0, guardCalls = 0;
+await assert.rejects(smokeContactUpsert({ input: upsertInput, env: httpEnv, binding: upsert, getContact() {},
+  guard() { if (++guardCalls === 2) throw new Error('local guard stopped'); }, fetchImpl: () => { guardedSends++; } }),
+error => error.code === 'CONFIG' && !error.outcomeUncertain && !error.contactDiagnostic.writeDispatched);
+assert.equal(guardedSends, 0);
+const checkpointLost = fixture(), completeBefore = checkpointLost.store.completeCrmOperation.bind(checkpointLost.store);
+checkpointLost.store.completeCrmOperation = async input => {
+  if (input.operationId === checkpointLost.run.operations.UPSERT_CONTACT) throw new Error('checkpoint unavailable');
+  return completeBefore(input);
+};
+checkpointLost.store.failOperation = async () => { throw new Error('checkpoint still unavailable'); };
+await checkpointLost.invoke(); assert.equal(checkpointLost.run.effects.UPSERT_CONTACT, 'RECONCILE_REQUIRED');
+assert.equal(checkpointLost.people.size, 1); assert.equal(checkpointLost.run.contactId, 'fixture-contact');
+await checkpointLost.invoke(); assert.equal(checkpointLost.people.size, 1, 'lost checkpoint never repeats contact write');
+for (const [status, state, code] of [[400, 'MANUAL_REVIEW', 'SCHEMA'], [401, 'MANUAL_REVIEW', 'AUTH'], [403, 'MANUAL_REVIEW', 'AUTH'], [429, 'RETRY_SCHEDULED', 'RATE_LIMIT'], [500, 'RECONCILE_REQUIRED', 'PROVIDER']]) {
+  const ctx = fixture();
+  ctx.crm.upsertContact = input => contactCall(() => Response.json({ ignored: 'fixture-secret' }, { status }), input);
+  const result = await ctx.invoke(); assert.equal(result.result, 'FAIL'); assert.equal(result.effects.UPSERT_CONTACT, state);
+  const operation = ctx.db.inspect().operations.get(ctx.run.operations.UPSERT_CONTACT);
+  assert.equal(operation.lastErrorCode, code); assert.equal(operation.reconcileRequired, state === 'RECONCILE_REQUIRED');
+  assert.equal(publicSmokeReport(result, httpEnv).effects.UPSERT_CONTACT, state); assert.equal(result.error, `CRM_${code}`);
+}
+const localSchema = fixture();
+localSchema.crm.upsertContact = input => contactCall(() => { throw new Error('never'); }, { ...input, email: 'real@example.com' });
+await localSchema.invoke(); assert.equal(localSchema.run.effects.UPSERT_CONTACT, 'MANUAL_REVIEW'); assert.equal(localSchema.db.inspect().operations.get(localSchema.run.operations.UPSERT_CONTACT).lastErrorCode, 'SCHEMA');
+const reuse = fixture();
+reuse.crm.upsertContact = input => contactCall(() => Response.json(highLevelUpsertFixture(input, false)), input);
+await reuse.invoke(); assert.equal(reuse.run.contactId, 'fixture-contact'); assert.equal(reuse.run.contactCreatedByRun, false);
+assert.equal(reuse.run.contactDisposition, 'REUSED_UPDATED'); assert.equal(reuse.run.effects.UPSERT_CONTACT, 'MANUAL_REVIEW'); assert(!reuse.calls.some(c => c.name.startsWith('delete')));
+const diagnosticReport = publicSmokeReport({ ...reuse.run, contactDiagnostic: { phase: 'HTTP_RESPONSE', httpStatus: 400, code: 'SCHEMA', elapsedMs: 10,
+  writeDispatched: true, outcomeUncertain: false, rawBody: 'must-not-appear', headers: 'fixture-token' } }, httpEnv);
+assert(!JSON.stringify(diagnosticReport).includes('must-not-appear')); assert(!JSON.stringify(diagnosticReport).includes('fixture-token'));
+passed.push('upsert documented 2xx new/reuse/minimal responses; 400/401/403 deterministic; 429 scheduled only; 500/timeout ambiguous; local schema zero send; safe diagnostics; no source/tag/custom-field overwrite');
 
 // Isolated process tests @next/env precedence using an injected in-memory file.
 // The actual secret file is never opened, changed or echoed by tests.

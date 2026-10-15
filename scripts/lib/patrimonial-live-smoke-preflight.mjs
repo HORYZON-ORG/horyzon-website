@@ -68,6 +68,7 @@ function bindingBlockers(bindings, env) {
   check(id(bindings.locationId) && bindings.locationId === env.HIGHLEVEL_LOCATION_ID, 'bindings.locationId / HIGHLEVEL_LOCATION_ID');
   for (const key of ['email', 'phone', 'contact', 'create']) check(http(bindings.contacts?.bindings?.[key]), `bindings.contacts.bindings.${key}`);
   check(bindings.contacts?.bindings?.create?.createOnly === true, 'bindings.contacts.bindings.create.createOnly');
+  if (bindings.contacts?.upsert) check(http(bindings.contacts.upsert), 'bindings.contacts.upsert');
   for (const key of ['contactsRead', 'contactsWrite', 'tagsWrite', 'notesWrite']) check(bindings.contacts?.capabilities?.[key] === true, `bindings.contacts.capabilities.${key}`);
   if (bindings.contacts?.capabilities?.notesRead === true) check(http(bindings.contacts?.bindings?.noteLookup), 'bindings.contacts.bindings.noteLookup');
   check(http(bindings.tags), 'bindings.tags'); check(bindings.opportunities?.verified === true, 'bindings.opportunities.verified');

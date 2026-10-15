@@ -40,7 +40,8 @@ Un modulo server attendibile passato con `--bindings` deve esportare `bindings` 
 | --- | --- |
 | `verified`, `sideEffectsReviewed` | Entrambi `true`; audit delle automazioni esterne e degli invii impliciti completato dall'operatore |
 | `locationId` | ID reale della location autorizzata, uguale a HIGHLEVEL_LOCATION_ID; non inventato né derivato dai nomi |
-| `contacts.bindings` | Stesso tipo `PatrimonialHighLevelBindings` del provider esistente: email/phone search complete e paginate, contact get, create verificato con `createOnly=true`; niente upsert che possa modificare un match |
+| `contacts.bindings` | Tipo `PatrimonialHighLevelBindings` del provider esistente: email/phone search complete e paginate, contact get, create verificato con `createOnly=true`; il provider applicativo resta create-only |
+| `contacts.upsert` | Solo CLI, opt-in ufficiale `real`: HTTP binding verificato per POST `/contacts/upsert`; esito CREATED oppure REUSED_UPDATED, senza attribuire ownership al riuso |
 | `contacts.capabilities` | contactsRead/contactsWrite/tagsWrite/notesWrite verificati; notesRead solo se esiste noteLookup verificato, altrimenti UNKNOWN/false |
 | `tags` | `{verified:true, request(locationId), decode(body)}`: GET catalogo completo sotto `/locations/`; risultato `{complete:true,tags:[{id,name,locationId}]}` |
 | `opportunities.verified` | `true` solo dopo verifica di schema, scope, ricerca completa e create |
@@ -59,11 +60,11 @@ Nel dry-run il percorso `--bindings` viene letto come testo e analizzato statica
 
 ## 4. Dati e acquisizione
 
-Una nuova run genera UUID v4 distinti per run/request/effetti; email `patrimonial-test+<timestamp>-<runId>@example.invalid`, nome Horyzon, cognome Synthetic Test, provincia TEST, nessun telefono. Solo ARCHITECT_PATH/A01/open; marketing false. Profilo, esperienza, obiettivo e disponibilità sono selezionati dalle enum locali esistenti.
+Una nuova run v2 genera UUID v4 distinti per run/request/effetti; email `patrimonial-test+<runId>@example.invalid` (local-part di 53 byte), nome Horyzon, cognome Synthetic Test, provincia TEST, nessun telefono. I report v1 conservano esattamente l'identità precedente con timestamp (67 byte), leggibile per audit ma rifiutata da nuove write. Nessun report o dato esistente viene migrato. Solo ARCHITECT_PATH/A01/open; marketing false. Profilo, esperienza, obiettivo e disponibilità sono selezionati dalle enum locali esistenti.
 
 Il parser del form pubblico Architetto richiede un telefono e resta invariato. Il test è quindi **CLI → acquisizione v2 nello store → CRM → rilettura**, con ingresso sintetico server dedicato e guardia esatta sui dati, non un collaudo browser o del parser HTTP. Usa canonicalizzazione, consent evidence e RPC di acquisizione esistenti. Nessun numero finto viene usato per aggirare la validazione pubblica.
 
-Prima di ogni write si controllano dati e location; una ricerca email completa deve trovare zero contatti prima dell'acquisizione e della create. Qualsiasi contatto preesistente, anche con nome sintetico, blocca la run: non viene aggiornato o preso in proprietà. Il contatto creato è poi riutilizzato dai singoli effetti e dal replay della stessa richiesta.
+Prima di ogni write si controllano dati e location; una ricerca email completa deve trovare zero contatti prima dell'acquisizione e dell'upsert. Qualsiasi contatto preesistente osservato blocca la run. Se un contatto compare tra ricerca e upsert, il provider può restituire `new=false`: il runtime estrae l'ID ma arresta il test con IDENTITY/MANUAL_REVIEW e `contactCreatedByRun=false`, senza cleanup. L'upsert può aggiornare i soli campi minimi inviati, secondo il contratto remoto; non promette atomicamente create-only. Il provider applicativo mantiene il precedente comportamento create-only.
 
 ## 5. Outbox e isolamento
 
@@ -121,7 +122,7 @@ Test del fix: dry-run completo anche con flag spenti, env assenti o invalidi con
 
 Il dry-run ufficiale esegue in sequenza: RPC `patrimonial_store_health` (POST con corpo vuoto, funzione SQL di sola lettura), GET location, pipeline/stage, catalogo tag, custom field contatto/opportunity, ricerca dell'email sintetica. La prima anomalia interrompe le read successive. Si confrontano tutti gli ID della config centrale, appartenenza allo schema/modello/location e fieldKey effettivi; la location deve impedire contatti duplicati. Nessuna RPC transazionale o di acquisizione viene chiamata. I flag spenti rimangono spenti.
 
-Le ricerche sono limitate a 100 righe e richiedono un totale esatto uguale alle righe ricevute, senza pagina successiva. Un inventario parziale o ambiguo blocca il test; nessuna assenza viene dedotta da una pagina incompleta. Il provider filtra inoltre l'identità normalizzata. La create contatto è esclusivamente POST `/contacts/`, con nome sintetico, dominio `.invalid`, telefono omesso e DND true; mai upsert. L'opportunity è A01/open, con nome SYNTHETIC TEST e dodici campi inviati come `{id,field_value}`; le risposte vengono normalizzate per la verifica del dominio. Le note sono rilette tramite marker. Cleanup richiede le prove di proprietà preesistenti nel harness e inventario completo su tutte le pipeline.
+Le ricerche sono limitate a 100 righe e richiedono un totale esatto uguale alle righe ricevute, senza pagina successiva. Un inventario parziale o ambiguo blocca il test; nessuna assenza viene dedotta da una pagina incompleta. Il provider filtra inoltre l'identità normalizzata. Dal fix upsert il binding `real` usa il trasporto CLI descritto nella sezione 13, separato dal create-only applicativo. L'opportunity è A01/open, con nome SYNTHETIC TEST e dodici campi inviati come `{id,field_value}`; le risposte vengono normalizzate per la verifica del dominio. Le note sono rilette tramite marker. Cleanup richiede le prove di proprietà preesistenti nel harness e inventario completo su tutte le pipeline.
 
 ```sh
 npm run smoke:patrimonial -- --dry-run --bindings real
@@ -132,6 +133,35 @@ npm run smoke:patrimonial -- --verify --bindings real --report tmp/patrimonial-l
 npm run smoke:patrimonial -- --cleanup --bindings real --report tmp/patrimonial-live-smoke-<verify>.json --confirm-live-write
 ```
 
-Per i tre comandi live sono necessari i gate temporanei V2/CRM/opportunity/synthetic/durable-store; il gate durable-store si abilita soltanto dopo health remota positiva. Booking/messages/webhook restano false. Nessuna abilitazione viene salvata in `.env.local`. `sideEffectsReviewed` certifica il perimetro del codice CLI: nessun endpoint messaggi/workflow è collegato; non afferma di aver disabilitato automazioni preesistenti nel CRM. DND, indirizzo non recapitabile e telefono assente proteggono il record sintetico senza modificare configurazioni globali.
+Per i tre comandi live sono necessari i gate temporanei V2/CRM/opportunity/synthetic/durable-store; il gate durable-store si abilita soltanto dopo health remota positiva. Booking/messages/webhook restano false. Nessuna abilitazione viene salvata in `.env.local`. `sideEffectsReviewed` certifica il perimetro del codice CLI: nessun endpoint messaggi/workflow è collegato; non afferma di aver disabilitato automazioni preesistenti nel CRM. L'upsert minimo omette anche DND per preservarlo in caso di riuso; indirizzo non recapitabile e telefono assente restano obbligatori.
 
 I test aggiunti coprono il binding ufficiale sul trasporto HTTP fittizio per execute/replay/verify/cleanup e preservazione audit, arresto su health/location/mapping/identità, risposta incompleta, DND e dati sintetici, redazione delle read e precedenza env in un processo isolato con file fittizio in memoria. Nessun test locale legge il file secret o i report tmp preesistenti.
+
+## 13. Diagnosi e fix UPSERT_CONTACT, senza retry live
+
+Evidenza della run `cd3f023e-98b8-43ab-913b-4059554aa2ab`: report JSON e Markdown concordanti; SYNC_REQUEST e RESOLVE_CONTACT SYNCED, UPSERT_CONTACT RECONCILE_REQUIRED, effetti successivi PLANNED. Due sole GET Supabase limitate alla request e all'operazione confermano payload sintetico senza telefono, checkpoint NEW/contactId=null/noteId=null, attemptCount=1, leaseVersion=1, lease rilasciata, remote_id=null, last_error_code=UNKNOWN. Operazione creata alle 09:05:17.318Z e aggiornata alle 09:05:19.355648Z: circa 2,04 secondi; il timeout configurato era 10 secondi. La ricerca HighLevel esterna con risultato contact=null è evidenza fornita dall'utente, non una read ripetuta in questa fase.
+
+**Root cause certa della classificazione:** il harness impostava `writeStarted=true` prima di invocare il provider e nel catch usava `writeStarted || error.outcomeUncertain`. Anche una validazione locale, 400, 401, 403 o 429 diventava quindi RECONCILE_REQUIRED. Il report riduceva tutto a SMOKE_FAILED/UNKNOWN, perdendo status, fase e timing del trasporto. Non si può ricostruire con certezza la risposta HTTP della vecchia run: body, classe originale e status non sono stati conservati. Nessun body storico viene inventato.
+
+**Errore certo del payload:** l'email v1 aveva local-part ASCII di 67 byte, oltre i 64 di [RFC 5321, §4.5.3.1.1](https://www.rfc-editor.org/rfc/rfc5321#section-4.5.3.1.1). È una causa plausibile di rifiuto di validazione, non prova di un HTTP 400 effettivamente osservato. Il formato v2 mantiene l'UUID e scende a 53 byte; il binding rifiuta input legacy prima della fetch.
+
+Trace precedente: orchestrator → real binding create → `PatrimonialConfiguredHighLevelProvider.upsertContact` ereditato (create-only) → transport provider → POST `https://services.leadconnectorhq.com/contacts/`. Corpo: locationId, firstName, lastName, email, dnd=true; niente phone, source, tag o custom field. Headers: Authorization Bearer (valore omesso), Version=2021-07-28, Content-Type/Accept=application/json. Redirect vietati, no-store, timeout 10 s, nessun retry. Parser: body.contact, ID/location e identità; una risposta 2xx indecodificabile era incerta. Il nome del metodo upsertContact non implicava l'endpoint upsert.
+
+Trace corretto, soltanto nel runtime CLI: orchestrator → binding `contacts.upsert` → `smokeContactUpsert` → POST `/contacts/upsert`, stessa origine/versione/header/timeout. Prima della fetch si completano validazione, guardie e serializzazione. Corpo minimo `{locationId,firstName,lastName,email}`: nomi camelCase e locationId obbligatoria secondo la [documentazione HighLevel](https://marketplace.gohighlevel.com/docs/2021-07-28/ghl/contacts/upsert-contact/); non inviare first_name/last_name. Nessun phone vuoto, source, tag, custom field, assegnatario o DND; nessun ID campo inventato. ADD_TAGS resta un effetto separato.
+
+Successo documentato: `{new:true|false,contact:{id,...},traceId?}`. `new=true` → CREATED; `new=false` → REUSED_UPDATED. Risposta minimale con ID e new validi → GET del contatto per identità/location mancanti, senza inventare valori o scartare subito un 2xx valido. Reuse è noto, non ambiguo: ID estratto, nessuna ownership e arresto MANUAL_REVIEW. ID/identità mancanti anche dopo rilettura oppure JSON indecodificabile dopo write restano ambigui.
+
+| Evidenza | Classificazione | Stato effetto |
+|---|---|---|
+| Schema/guardia locale, zero dispatch | SCHEMA/CONFIG | MANUAL_REVIEW |
+| HTTP 400/422 | SCHEMA, deterministic | MANUAL_REVIEW |
+| HTTP 401/403 | AUTH | MANUAL_REVIEW |
+| HTTP 429 | RATE_LIMIT, rispetta Retry-After | RETRY_SCHEDULED, nessuna riesecuzione automatica del comando |
+| HTTP 5xx dopo invio, nessuna prova di mancato commit | PROVIDER, uncertain | RECONCILE_REQUIRED |
+| Timeout/disconnect dopo possibile invio | NETWORK, uncertain | RECONCILE_REQUIRED |
+| 2xx irrimediabilmente ambiguo | SCHEMA/IDENTITY, uncertain | RECONCILE_REQUIRED |
+| Risposta confermata, checkpoint DB successivo incerto | Nessuna nuova create automatica | RECONCILE_REQUIRED |
+
+Il report ora conserva solo diagnostica allowlisted: endpoint fisso, metodo, fase PREPARE/DISPATCH/HTTP_RESPONSE/DECODE/READ_BACK/CONFIRMED, HTTP status se presente, classe codice, elapsedMs, writeDispatched e outcomeUncertain; mai body, headers, token, stack o payload provider. La sanitizzazione scarta completamente i body d'errore invece di copiarne messaggi potenzialmente sensibili. Fixture costruite dal formato ufficiale, non spacciate per risposte catturate della run fallita.
+
+Consegna esclusivamente locale: nessuna write remota, retry live o cleanup, nessun aggiornamento della vecchia riga RECONCILE_REQUIRED e nessuna modifica ai report tmp o agli env. La correzione del codice non riconcilia automaticamente la run precedente.

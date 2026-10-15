@@ -4,6 +4,7 @@
 import { SupabasePatrimonialStore } from '../../src/lib/public-leads/patrimonial-supabase.ts';
 import { createConfiguredPatrimonialHighLevelProvider, PatrimonialCrmError } from '../../src/lib/public-leads/patrimonial-highlevel.ts';
 import { SmokeError } from './patrimonial-live-smoke.mjs';
+import { smokeContactUpsert } from './patrimonial-live-smoke-contact.mjs';
 
 const base = 'https://services.leadconnectorhq.com';
 const requireBinding = condition => { if (!condition) throw new SmokeError('VERIFIED_BINDINGS_REQUIRED'); };
@@ -35,6 +36,9 @@ export function createSmokeRuntime({ env, bindings, guard, fetchImpl = globalThi
   };
   const crm = createConfiguredPatrimonialHighLevelProvider({ ...bindings.contacts, env: () => env, verifiedLocationId: bindings.locationId, fetchImpl: guardedFetch,
     verifiedTagInventory: { verified: true, read: location => request(bindings.tags, [location], ['GET'], '/locations/') } });
+  // Explicit CLI opt-in only; no prototype or application provider mutation.
+  if (bindings.contacts.upsert) crm.upsertContact = input => smokeContactUpsert({ input, env, binding: bindings.contacts.upsert,
+    guard: () => { guard(); crm.assertReady(true); }, getContact: id => crm.getContact(id), fetchImpl });
   // Resolve nullable reads only for cleanup. The existing contact provider still
   // requires a real, scoped contact for all contact/tag/note effects.
   const readContact = id => request(bindings.contacts.bindings.contact, [id], ['GET'], '/contacts/', true);

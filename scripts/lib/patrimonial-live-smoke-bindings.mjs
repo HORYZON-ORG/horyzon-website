@@ -1,6 +1,6 @@
 // CLI-only, fixed-origin HighLevel API 2021-07-28 bindings. No top-level I/O.
 // HTTP contracts: https://marketplace.gohighlevel.com/docs/2021-07-28/ghl/
-// contacts/{get-contacts,create-contact,get-contact,get-all-notes,delete-contact}/
+// contacts/{get-contacts,create-contact,upsert-contact,get-contact,get-all-notes,delete-contact}/
 // opportunities/{search-opportunity,get-opportunity,create-opportunity,delete-opportunity}/
 // locations/{get-location,get-location-tags,get-custom-fields}/
 import { SupabasePatrimonialStore } from '../../src/lib/public-leads/patrimonial-supabase.ts';
@@ -59,12 +59,22 @@ export function createRealPatrimonialBindings(env) {
     // Review covers the CLI's effects only, never claims that remote workflows
     // have been disabled. No workflow/message endpoint is bound or invoked.
     verified: true, sideEffectsReviewed: true, locationId,
-    contacts: { capabilities: { contactsRead: true, contactsWrite: true, tagsWrite: true, notesWrite: true, notesRead: true }, bindings: {
+    contacts: { upsert: binding((input, location) => {
+      requireSchema(location === locationId && input.firstName === 'Horyzon' && input.lastName === 'Synthetic Test'
+        && /^patrimonial-test\+[a-f0-9-]{36}@example\.invalid$/.test(input.email) && !input.phone
+        && Buffer.byteLength(input.email.split('@')[0]) <= 64);
+      // HighLevel v2021-07-28 requires camelCase and locationId (not first_name).
+      // Omit source/tags/customFields/DND so reuse cannot overwrite those fields.
+      return { method: 'POST', path: '/contacts/upsert', body: { locationId, firstName: input.firstName, lastName: input.lastName, email: input.email } };
+    }, body => {
+      requireSchema(body && typeof body.new === 'boolean' && opaque(body.contact?.id));
+      return { contact: body.contact, disposition: body.new ? 'CREATED' : 'REUSED_UPDATED' };
+    }), capabilities: { contactsRead: true, contactsWrite: true, tagsWrite: true, notesWrite: true, notesRead: true }, bindings: {
       email: lookup, phone: lookup,
       contact: binding(id => ({ method: 'GET', path: `/contacts/${encodeId(id)}` }), body => contact(body.contact)),
       create: { ...binding((input, location) => {
         requireSchema(location === locationId && input.firstName === 'Horyzon' && input.lastName === 'Synthetic Test'
-          && /^patrimonial-test\+\d+-[a-f0-9-]{36}@example\.invalid$/.test(input.email) && !input.phone);
+          && /^patrimonial-test\+[a-f0-9-]{36}@example\.invalid$/.test(input.email) && !input.phone);
         return { method: 'POST', path: '/contacts/', body: { locationId, firstName: input.firstName, lastName: input.lastName, email: input.email, dnd: true } };
       }, body => contact(body.contact)), createOnly: true },
       noteLookup: binding(id => ({ method: 'GET', path: `/contacts/${encodeId(id)}/notes` }), body => {

@@ -5,10 +5,12 @@ import { patrimonialConsentEvidence } from '../../src/lib/public-leads/patrimoni
 import { patrimonialFlags } from '../../src/lib/public-leads/patrimonial-store.ts';
 import { getPatrimonialRemoteMapping, validatePatrimonialRemoteMapping } from '../../src/lib/public-leads/patrimonial-highlevel-config.ts';
 import { receivePatrimonialOpportunity, patrimonialOpportunityProjection } from '../../src/lib/public-leads/patrimonial-routing.ts';
-import { patrimonialNoteMarker, recordPatrimonialFailure } from '../../src/lib/public-leads/patrimonial-sync.ts';
+import { patrimonialNoteMarker, recordPatrimonialFailure, patrimonialRetryDecision } from '../../src/lib/public-leads/patrimonial-sync.ts';
 import { pilotForms, pilotExperience, pilotGoals, pilotAvailability } from '../../src/content/patrimonial-funnels.ts';
 import { preflightPatrimonialSmoke } from './patrimonial-live-smoke-preflight.mjs';
 import { realReadLabels } from './patrimonial-live-smoke-bindings.mjs';
+import { SmokeContactWriteError } from './patrimonial-live-smoke-contact.mjs';
+import { PatrimonialCrmError } from '../../src/lib/public-leads/patrimonial-highlevel.ts';
 
 const kinds = ['SYNC_REQUEST', 'RESOLVE_CONTACT', 'UPSERT_CONTACT', 'ADD_TAGS', 'ADD_NOTE'];
 const fieldKeys = ['hz_intent_key', 'hz_funnel', 'hz_source', 'hz_source_path', 'hz_requested_at', 'hz_privacy_version', 'hz_marketing_consent_snapshot', 'hz_next_step', 'hz_architect_profile', 'hz_architect_sales_experience', 'hz_architect_goal', 'hz_architect_availability'];
@@ -37,7 +39,7 @@ export function parseSmokeArgs(argv) {
 
 export function createSmokeRun(now = new Date()) {
   const runId = randomUUID(), requestId = randomUUID(), timestamp = now.toISOString();
-  return { version: 'patrimonial-live-smoke-1', runId, requestId, timestamp, mode: 'dry-run', result: 'NOT_RUN',
+  return { version: 'patrimonial-live-smoke-2', runId, requestId, timestamp, mode: 'dry-run', result: 'NOT_RUN',
     contactId: null, opportunityId: null, provisionalId: null, intentId: null, locationId: null,
     initialContactCount: null, contactCreatedByRun: false, executed: false, replay: false,
     operations: Object.fromEntries(kinds.map(kind => [kind, randomUUID()])),
@@ -46,7 +48,7 @@ export function createSmokeRun(now = new Date()) {
 }
 export function syntheticLead(run) {
   return { contractVersion: PATRIMONIAL_V2, mode: 'architect-path', sourcePath: pilotForms['architect-path'].path,
-    firstName: 'Horyzon', lastName: 'Synthetic Test', email: `patrimonial-test+${Date.parse(run.timestamp)}-${run.runId}@example.invalid`, phone: '',
+    firstName: 'Horyzon', lastName: 'Synthetic Test', email: `patrimonial-test+${run.version === 'patrimonial-live-smoke-1' ? `${Date.parse(run.timestamp)}-` : ''}${run.runId}@example.invalid`, phone: '',
     province: 'TEST', profile: pilotForms['architect-path'].profiles[0], experience: 'No', goal: 'Sto esplorando', availability: 'Part-time',
     message: `SYNTHETIC TEST ${run.runId}; requestId=${run.requestId}; ARCHITECT_PATH; ${run.timestamp}; NO PRODUCTION LEAD`,
     consent: true, marketingConsent: false, utm: {}, eventEditionId: null };
@@ -59,7 +61,7 @@ export function assertSyntheticData(lead, run) {
     && pilotGoals.includes(lead.goal) && pilotAvailability.includes(lead.availability), 'INVALID_TEST_DATA');
 }
 export function assertSmokeReport(run) {
-  requireSmoke(run?.version === 'patrimonial-live-smoke-1', 'INVALID_REPORT');
+  requireSmoke(['patrimonial-live-smoke-1', 'patrimonial-live-smoke-2'].includes(run?.version), 'INVALID_REPORT');
   assertSyntheticData(syntheticLead(run), run);
   requireSmoke(new Date(run.timestamp).toISOString() === run.timestamp && ['dry-run', 'DRY_RUN', 'execute', 'verify', 'cleanup'].includes(run.mode)
     && ['PASS', 'FAIL', 'NOT_RUN', 'DRY_RUN_PASS', 'BLOCKED'].includes(run.result) && [run.executed, run.replay, run.contactCreatedByRun].every(v => typeof v === 'boolean')
@@ -81,7 +83,7 @@ export function publicSmokeReport(run, env = {}) {
   const keys = ['version', 'runId', 'requestId', 'timestamp', 'mode', 'result', 'contactId', 'opportunityId', 'provisionalId', 'intentId', 'locationId', 'initialContactCount', 'contactCreatedByRun', 'executed', 'replay', 'operations', 'effects', 'verification', 'cleanup', 'warnings', 'error'];
   const value = Object.fromEntries(keys.filter(k => Object.hasOwn(run, k)).map(k => [k, run[k]]));
   value.operations = Object.fromEntries(kinds.map(k => [k, run.operations?.[k] ?? null]));
-  const states = new Set(['PLANNED', 'SYNCED', 'RECONCILE_REQUIRED', 'MANUAL_REVIEW']);
+  const states = new Set(['PLANNED', 'SYNCED', 'RECONCILE_REQUIRED', 'MANUAL_REVIEW', 'RETRY_SCHEDULED']);
   value.effects = Object.fromEntries(kinds.map(k => [k, states.has(run.effects?.[k]) ? run.effects[k] : 'PLANNED']));
   const checks = ['request', 'intent', 'consentEvidence', 'outboxSynced', 'remoteIds', 'domainEvents', 'contact', 'opportunity', 'noDuplicateContact', 'noDuplicateOpportunity', 'replay', 'localOnly', 'retrySchedule', 'noDuplicateEffect', 'reconcileRequired'];
   value.verification = Object.fromEntries(checks.filter(k => typeof run.verification?.[k] === 'boolean').map(k => [k, run.verification[k]]));
@@ -90,6 +92,18 @@ export function publicSmokeReport(run, env = {}) {
   value.cleanup = { opportunity: cleanupStates.has(run.cleanup?.opportunity) ? run.cleanup.opportunity : 'NOT_REQUESTED',
     contact: cleanupStates.has(run.cleanup?.contact) ? run.cleanup.contact : 'NOT_REQUESTED', audit: 'PRESERVED' };
   value.warnings = (run.warnings ?? []).filter(w => ['LIVE_NOT_EXECUTED', 'VERIFIED_BINDINGS_REQUIRED', 'NOTE_READ_SKIPPED', 'MANUAL_CLEANUP_REQUIRED'].includes(w));
+  if (['CREATED', 'REUSED_UPDATED'].includes(run.contactDisposition)) value.contactDisposition = run.contactDisposition;
+  if (run.contactDiagnostic) {
+    const d = run.contactDiagnostic;
+    value.contactDiagnostic = {
+      endpoint: '/contacts/upsert', method: 'POST',
+      phase: ['PREPARE', 'DISPATCH', 'HTTP_RESPONSE', 'DECODE', 'READ_BACK', 'CONFIRMED'].includes(d.phase) ? d.phase : 'UNKNOWN',
+      httpStatus: Number.isInteger(d.httpStatus) && d.httpStatus >= 100 && d.httpStatus <= 599 ? d.httpStatus : null,
+      code: ['SCHEMA', 'AUTH', 'CONFIG', 'NETWORK', 'PROVIDER', 'RATE_LIMIT', 'IDENTITY'].includes(d.code) ? d.code : null,
+      elapsedMs: Number.isInteger(d.elapsedMs) && d.elapsedMs >= 0 ? d.elapsedMs : null,
+      writeDispatched: d.writeDispatched === true, outcomeUncertain: d.outcomeUncertain === true,
+    };
+  }
   if (run.result === 'DRY_RUN_PASS' || run.result === 'BLOCKED') {
     value.mode = 'DRY_RUN'; value.status = run.result === 'DRY_RUN_PASS' ? 'PASS' : 'BLOCKED';
     for (const key of ['configReady', 'mappingReady', 'storeReady', 'providerBindingReady', 'syntheticGuardReady', 'reportPathReady', 'liveGuardsEnabled']) value[key] = run[key] === true;
@@ -233,8 +247,15 @@ export async function runPatrimonialSmoke({ options, env = {}, run = createSmoke
           if (kind === 'UPSERT_CONTACT') {
             requireSmoke((await runtime.crm.findContactsByEmail(lead.email)).length === 0, 'EXISTING_CONTACT_REFUSED');
             guard(); writeStarted = true;
-            const contact = checkedContact(await runtime.crm.upsertContact({ firstName: lead.firstName, lastName: lead.lastName, email: lead.email }), run, lead);
-            run.contactId = contact.id; run.contactCreatedByRun = true; remoteId = contact.id; checkpoint = { ...checkpoint, contactId: contact.id }; await save();
+            const response = await runtime.crm.upsertContact({ firstName: lead.firstName, lastName: lead.lastName, email: lead.email });
+            if (opaque(response?.id)) run.contactId = response.id;
+            run.contactDisposition = response?.disposition ?? 'CREATED'; run.contactDiagnostic = response?.contactDiagnostic;
+            run.contactCreatedByRun = run.contactDisposition === 'CREATED'; await save();
+            // An upsert racing an existing identity is a known reuse, never
+            // ownership of a newly created record and never eligible for cleanup.
+            if (!run.contactCreatedByRun) throw new PatrimonialCrmError('IDENTITY');
+            const contact = checkedContact(response, run, lead);
+            remoteId = contact.id; checkpoint = { ...checkpoint, contactId: contact.id };
           }
           if (kind === 'ADD_TAGS' || kind === 'ADD_NOTE') {
             checkedContact(await runtime.crm.getContact(run.contactId), run, lead); guard();
@@ -249,6 +270,21 @@ export async function runPatrimonialSmoke({ options, env = {}, run = createSmoke
             ...(index + 1 < kinds.length ? { followUps: [freshOperation(run, kinds[index + 1], now().toISOString(), run.provisionalId)] } : {}) });
           run.effects[kind] = 'SYNCED'; await save();
         } catch (error) {
+          if (kind === 'UPSERT_CONTACT') {
+            if (error instanceof SmokeContactWriteError) run.contactDiagnostic = error.contactDiagnostic;
+            const uncertain = error instanceof PatrimonialCrmError ? error.outcomeUncertain : writeStarted;
+            const localFailure = error instanceof PatrimonialCrmError && !error.status && !uncertain && error.code !== 'NETWORK';
+            const failure = { kind: error?.code === 'NETWORK' ? 'network' : error?.status ? 'http' : 'unknown',
+              status: error?.status, retryAfterSeconds: error?.retryAfterSeconds, outcomeUncertain: uncertain };
+            const decision = localFailure ? { state: 'MANUAL_REVIEW', errorCode: error.code } : patrimonialRetryDecision(op.attemptCount, failure, now().toISOString(), 0);
+            run.effects[kind] = decision.state;
+            try {
+              if (localFailure) await runtime.store.failOperation({ ...claim(), ...decision, reconcileRequired: false });
+              else await recordPatrimonialFailure(runtime.store, op, failure, now().toISOString(), 0);
+            } catch { /* Preserve original diagnostic and report state if the DB checkpoint is also unavailable. */ }
+            // Scheduling is a checkpoint only; this invocation stops, no retry.
+            throw error;
+          }
           const uncertain = writeStarted || error?.outcomeUncertain === true;
           try { await runtime.store.failOperation({ ...claim(), state: uncertain ? 'RECONCILE_REQUIRED' : 'MANUAL_REVIEW', errorCode: 'UNKNOWN', reconcileRequired: uncertain }); } catch { /* A lost checkpoint is never retried blindly. */ }
           run.effects[kind] = uncertain ? 'RECONCILE_REQUIRED' : 'MANUAL_REVIEW'; throw error;
@@ -311,7 +347,7 @@ export async function runPatrimonialSmoke({ options, env = {}, run = createSmoke
     run.result = 'PASS';
   } catch (error) {
     run.result = options.mode === 'dry-run' && !options.simulate ? 'BLOCKED' : 'FAIL';
-    run.error = error instanceof SmokeError ? error.code : 'SMOKE_FAILED';
+    run.error = error instanceof SmokeError ? error.code : error instanceof PatrimonialCrmError ? `CRM_${error.code}` : 'SMOKE_FAILED';
     if (run.result === 'BLOCKED') run.blockers = ['dry-run pre-flight or report generation failed'];
   }
   await save(); return run;
