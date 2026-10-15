@@ -7,6 +7,7 @@ import { SupabasePatrimonialStore } from '../../src/lib/public-leads/patrimonial
 import { getPatrimonialRemoteMapping } from '../../src/lib/public-leads/patrimonial-highlevel-config.ts';
 
 const base = 'https://services.leadconnectorhq.com';
+const searchLimit = 100;
 const opaque = value => typeof value === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(value);
 const requireSchema = condition => { if (!condition) throw new Error('BINDING_RESPONSE_SCHEMA_INVALID'); };
 const binding = (request, decode) => ({ verified: true, request, decode });
@@ -14,10 +15,13 @@ const route = (pathname, params) => `${pathname}?${new URLSearchParams(params)}`
 const encodeId = id => { requireSchema(opaque(id)); return encodeURIComponent(id); };
 
 // Bounded complete searches suffice for one new synthetic identity. Never treat
-// an incomplete page, unknown total or additional cursor as an empty inventory.
+// an incomplete page or unknown total as an empty inventory. HighLevel may
+// include navigation cursors even when the exact total is already exhausted.
 function completePage(body, rows, total) {
-  requireSchema(Array.isArray(rows) && Number.isInteger(total) && total >= 0 && total === rows.length && rows.length <= 100
-    && !body.meta?.nextPageUrl && !body.meta?.nextPage && !body.nextPageUrl);
+  const totals = [body.meta?.total, body.count].filter(value => value !== undefined);
+  const additionalRecords = [body.hasMore, body.meta?.hasMore, body.hasNextPage, body.meta?.hasNextPage].some(value => value === true);
+  requireSchema(Array.isArray(rows) && Number.isInteger(total) && total >= 0 && total === rows.length && rows.length <= searchLimit
+    && totals.every(value => Number.isInteger(value) && value === total) && !additionalRecords);
 }
 
 export function createRealPatrimonialBindings(env) {
@@ -29,7 +33,7 @@ export function createRealPatrimonialBindings(env) {
   };
   const lookup = binding((value, location) => {
     requireSchema(location === locationId);
-    return { method: 'GET', path: route('/contacts/', { locationId, query: value, limit: '100' }) };
+    return { method: 'GET', path: route('/contacts/', { locationId, query: value, limit: String(searchLimit) }) };
   }, body => {
     completePage(body, body.contacts, body.meta?.total ?? body.count);
     return { complete: true, contacts: body.contacts.map(contact) };
@@ -50,7 +54,7 @@ export function createRealPatrimonialBindings(env) {
   const search = binding(query => {
     requireSchema(query.locationId === locationId && opaque(query.contactId) && (!query.pipelineId || opaque(query.pipelineId)));
     return { method: 'GET', path: route('/opportunities/search', { location_id: locationId, contact_id: query.contactId,
-      ...(query.pipelineId ? { pipeline_id: query.pipelineId } : {}), status: 'all', limit: '100', page: '1' }) };
+      ...(query.pipelineId ? { pipeline_id: query.pipelineId } : {}), status: 'all', limit: String(searchLimit), page: '1' }) };
   }, body => {
     completePage(body, body.opportunities, body.meta?.total);
     return { complete: true, opportunities: body.opportunities.map(opportunity) };

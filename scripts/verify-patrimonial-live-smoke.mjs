@@ -281,8 +281,34 @@ failReadiness = null; readinessCalls.length = 0;
 const noRealEnv = await runPatrimonialSmoke({ options: parseSmokeArgs([]), env: {}, reportPaths, preflightBindings: realBindings,
   validateRemote: () => { throw new Error('Missing local configuration must not reach network'); } });
 assert.equal(noRealEnv.result, 'BLOCKED'); assert.equal(readinessCalls.length, 0);
-for (const body of [{ contacts: [], count: 1 }, { contacts: [] }, { contacts: [], count: 0, meta: { nextPageUrl: 'more' } }]) assert.throws(() => realBindings.contacts.bindings.email.decode(body));
+for (const body of [{ contacts: [], count: 1 }, { contacts: [] }]) assert.throws(() => realBindings.contacts.bindings.email.decode(body));
 assert.throws(() => realBindings.opportunities.search.decode({ opportunities: [], meta: { total: 1 } }));
+const pageContact = { id: 'fixture-contact', locationId: 'fixture-location', firstName: 'Horyzon', lastName: 'Synthetic Test', email: 'page@example.invalid', phone: null };
+const navigation = { nextPageUrl: 'https://services.leadconnectorhq.com/contacts/?next=2', nextPage: '2' };
+const contactPage = (rows, total, meta = {}) => ({ contacts: rows, meta: { total, ...navigation, ...meta } });
+const decodeContactPage = body => realBindings.contacts.bindings.email.decode(body);
+assert.equal(decodeContactPage(contactPage([pageContact], 1)).complete, true, 'A exact total 1 with navigation is complete');
+assert.equal(decodeContactPage(contactPage([], 0)).complete, true, 'B exact total 0 with navigation is complete');
+assert.throws(() => decodeContactPage(contactPage([pageContact], 2)), 'C missing row rejected');
+assert.throws(() => decodeContactPage(contactPage(Array(100).fill(pageContact), 101)), 'D 100/101 rejected');
+assert.throws(() => decodeContactPage({ contacts: [], meta: navigation }), 'E unknown total with navigation rejected');
+assert.throws(() => decodeContactPage(contactPage([pageContact], 0)), 'F rows exceeding total rejected');
+const pageOpportunity = { id: 'fixture-opportunity', locationId: 'fixture-location', contactId: pageContact.id,
+  pipelineId: resources.pipelines.ARCHITECT_PATH.id, pipelineStageId: resources.pipelines.ARCHITECT_PATH.stages.A01.id,
+  status: 'open', updatedAt: '2026-10-15T10:20:55.564Z', customFields: [] };
+assert.equal(realBindings.opportunities.search.decode({ opportunities: [pageOpportunity], meta: { total: 1, ...navigation } }).complete, true, 'G exact opportunity total with navigation is complete');
+for (const total of [undefined, null, -1, 1.5, '1', NaN, Infinity]) assert.throws(() => decodeContactPage(contactPage([pageContact], total)));
+assert.throws(() => decodeContactPage(contactPage(Array(101).fill(pageContact), 101)), 'rows over requested limit rejected');
+assert.throws(() => decodeContactPage({ ...contactPage([pageContact], 1), count: 2 }), 'conflicting totals rejected');
+for (const evidence of [{ meta: { total: 1, hasMore: true } }, { hasMore: true }, { meta: { total: 1, hasNextPage: true } }, { hasNextPage: true }]) {
+  assert.throws(() => decodeContactPage({ ...contactPage([pageContact], 1), ...evidence }), 'explicit evidence of additional records rejected');
+}
+for (const [rows, total] of [[[], 1], [[pageOpportunity], 2], [Array(100).fill(pageOpportunity), 101], [[pageOpportunity], 0], [Array(101).fill(pageOpportunity), 101]]) {
+  assert.throws(() => realBindings.opportunities.search.decode({ opportunities: rows, meta: { total, ...navigation } }));
+}
+assert.throws(() => realBindings.opportunities.search.decode({ opportunities: [], meta: navigation }));
+assert.equal(decodeContactPage({ contacts: [pageContact], count: 1, nextPageUrl: navigation.nextPageUrl }).complete, true, 'documented count fallback remains valid');
+passed.push('complete search pages A–G: trustworthy totals override navigation hints; partial/unknown/invalid/conflicting totals, overflow and explicit more-record evidence stay rejected for contacts/opportunities');
 assert.throws(() => realBindings.contactDelete.request('../foreign'));
 assert.equal(realBindings.contacts.bindings.create.request(syntheticLead(data), 'fixture-location').body.dnd, true);
 assert.throws(() => realBindings.contacts.bindings.create.request({ ...syntheticLead(data), email: 'real@example.com' }, 'fixture-location'));
@@ -306,7 +332,7 @@ const realHttp = async (value, init) => {
   if (url.pathname.endsWith('/tags') && init.method === 'GET') return remoteReadFixture(value, init);
   if (url.pathname === '/contacts/' && init.method === 'GET') {
     const contacts = [...real.people.values()].filter(c => c.email === url.searchParams.get('query'));
-    return Response.json({ contacts, count: contacts.length });
+    return Response.json({ contacts, meta: { total: contacts.length, ...navigation } });
   }
   if (url.pathname === '/contacts/upsert' && init.method === 'POST') {
     assert.deepEqual(Object.keys(body).sort(), ['locationId', 'firstName', 'lastName', 'email'].sort());
@@ -325,7 +351,7 @@ const realHttp = async (value, init) => {
   }
   if (url.pathname === '/opportunities/search') {
     const rows = [...real.opportunities.values()].filter(o => o.contactId === url.searchParams.get('contact_id') && (!url.searchParams.has('pipeline_id') || o.pipelineId === url.searchParams.get('pipeline_id')));
-    return Response.json({ opportunities: rows.map(wireOpportunity), meta: { total: rows.length } });
+    return Response.json({ opportunities: rows.map(wireOpportunity), meta: { total: rows.length, ...navigation } });
   }
   if (url.pathname === '/opportunities/' && init.method === 'POST') {
     assert(body.name.startsWith('SYNTHETIC TEST ')); assert.equal(body.customFields.length, 12);
@@ -343,6 +369,18 @@ assert.equal((await throughReal(mode('execute'))).result, 'PASS');
 assert.equal(real.run.verification.note, 'PASS'); assert.equal(real.notes.length, 1); assert.equal(real.people.size, 1); assert.equal(real.opportunities.size, 1);
 const writesBeforeVerify = realHttpCalls.filter(c => c.method !== 'GET' && !c.path.includes('/rpc/')).length;
 assert.equal((await throughReal(mode('verify'))).result, 'PASS'); assert.equal(realHttpCalls.filter(c => c.method !== 'GET' && !c.path.includes('/rpc/')).length, writesBeforeVerify);
+// Resume an execute report that failed only at the final readonly search. The
+// source report is immutable, no source file is loaded, and no live CLI is run.
+const failedSource = { ...structuredClone(real.run), mode: 'execute', result: 'FAIL', error: 'CRM_SCHEMA', verification: {} };
+const originalSource = structuredClone(failedSource), beforeResume = real.db.inspect(), beforeResumeCalls = realHttpCalls.length, beforeResumeRpc = real.db.calls.length;
+const resumed = await runPatrimonialSmoke({ options: parseSmokeArgs(['--verify', '--bindings', 'real', '--report', 'tmp/patrimonial-live-smoke-fixture.json']),
+  env: httpEnv, run: structuredClone(failedSource), now: () => new Date(real.db.now), persist: async () => {},
+  runtimeFactory: ({ guard }) => createSmokeRuntime({ env: httpEnv, bindings: createRealPatrimonialBindings(httpEnv), guard, fetchImpl: realHttp }) });
+assert.equal(resumed.result, 'PASS'); assert.equal(resumed.requestId, failedSource.requestId); assert.equal(resumed.runId, failedSource.runId);
+assert.deepEqual(failedSource, originalSource); assert.deepEqual(real.db.inspect(), beforeResume);
+assert(realHttpCalls.slice(beforeResumeCalls).filter(c => !c.path.includes('/rpc/')).every(c => c.method === 'GET'));
+assert(real.db.calls.slice(beforeResumeRpc).every(c => !c.body.p_commands || c.body.p_commands.every(command => ['getRequest', 'getConsentEvidence', 'getOperation', 'getOpportunityIntent'].includes(command.method))));
+passed.push('failed execute report with executed/replay/IDs resumes verify using same identity, no report edits, only read RPC commands/GETs and unchanged durable state');
 assert.equal((await throughReal(mode('cleanup'))).result, 'PASS'); assert.equal(real.run.cleanup.contact, 'DELETED'); assert.equal(real.run.cleanup.opportunity, 'DELETED');
 assert.equal(real.db.inspect().requests.size, 1, 'cleanup preserves durable audit');
 passed.push('real wire bindings complete local execute/replay/verify/notes/12 custom fields/controlled cleanup through existing durable store and CRM adapters');
