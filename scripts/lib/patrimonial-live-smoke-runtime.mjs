@@ -8,6 +8,16 @@ import { smokeContactUpsert } from './patrimonial-live-smoke-contact.mjs';
 
 const base = 'https://services.leadconnectorhq.com';
 const requireBinding = condition => { if (!condition) throw new SmokeError('VERIFIED_BINDINGS_REQUIRED'); };
+// Only the cleanup's nullable contact GET uses this provider-specific absence
+// response. Do not infer absence from arbitrary 400 messages or other APIs.
+function contactNotFound(body, id) {
+  if (!body || typeof body !== 'object' || Array.isArray(body) || typeof body.message !== 'string'
+    || (body.statusCode !== undefined && body.statusCode !== 400)) return false;
+  const message = body.message.trim();
+  if (/^(?:contact (?:not found|does not exist)|resource not found)\.?$/i.test(message)) return true;
+  const match = /^contact with id (?:"([A-Za-z0-9_-]+)"|'([A-Za-z0-9_-]+)'|([A-Za-z0-9_-]+)) (?:not found|does not exist)\.?$/i.exec(message);
+  return !!match && (match[1] ?? match[2] ?? match[3]) === id;
+}
 export function createSmokeRuntime({ env, bindings, guard, fetchImpl = globalThis.fetch }) {
   guard();
   requireBinding(bindings?.verified === true && bindings.sideEffectsReviewed === true && bindings.locationId === env.HIGHLEVEL_LOCATION_ID
@@ -30,6 +40,14 @@ export function createSmokeRuntime({ env, bindings, guard, fetchImpl = globalThi
       ...(spec.body === undefined ? {} : { body: JSON.stringify(spec.body) }) }); }
     catch { throw new PatrimonialCrmError('NETWORK', { outcomeUncertain: !['GET'].includes(spec.method) }); }
     if (missing && response.status === 404) { await response.body?.cancel(); return null; }
+    if (missing === true && response.status === 400 && spec.method === 'GET' && prefix === '/contacts/'
+      && typeof args[0] === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(args[0])
+      && url.pathname === `/contacts/${encodeURIComponent(args[0])}` && !url.search) {
+      let body;
+      try { body = await response.json(); } catch { /* Unknown or malformed errors remain failures. */ }
+      if (contactNotFound(body, args[0])) return null;
+      throw new PatrimonialCrmError('PROVIDER', { status: 400, outcomeUncertain: false });
+    }
     if (!response.ok) { const status = response.status; await response.body?.cancel(); throw new PatrimonialCrmError(status === 429 ? 'RATE_LIMIT' : status === 401 || status === 403 ? 'AUTH' : 'PROVIDER', { status, outcomeUncertain: spec.method !== 'GET' }); }
     if (spec.method === 'DELETE') { await response.body?.cancel(); return null; }
     try { return binding.decode(await response.json()); } catch { throw new SmokeError('INVALID_PROVIDER_RESPONSE'); }

@@ -316,6 +316,43 @@ const bindingText = JSON.stringify(publicSmokeReport({ ...realPass, remoteReads:
 assert(!bindingText.includes('fixture-token')); assert(!bindingText.includes('fixture-secret'));
 passed.push('real alias readonly preflight: actual health, location, all mapping resources and fresh synthetic identity; immediate fail-closed blockers; zero mutation');
 
+// Provider-error fixtures, not captured live bodies. Only cleanup's nullable
+// GET of this exact contact may normalize a clearly identified 400 absence.
+const contactAbsent400 = (id = 'fixture-contact') => ({ message: `Contact with id ${id} not found`, error: 'Bad Request', statusCode: 400 });
+const nullableCalls = [];
+const nullableRuntime = (response, bound = createRealPatrimonialBindings(httpEnv)) => createSmokeRuntime({ env: httpEnv, bindings: bound, guard() {},
+  fetchImpl: async (url, init) => { nullableCalls.push({ path: new URL(url).pathname, method: init.method }); return response(); } });
+assert.equal(await nullableRuntime(() => new Response(null, { status: 404 })).readContact('fixture-contact'), null, 'A nullable contact 404 is absent');
+for (const body of [contactAbsent400(), { message: 'Contact not found' }, { message: 'Resource not found', statusCode: 400 },
+  { message: 'Contact does not exist.' }, { message: 'Contact with id "fixture-contact" not found' }]) {
+  assert.equal(await nullableRuntime(() => Response.json(body, { status: 400 })).readContact('fixture-contact'), null, 'B explicit contact/resource-not-found 400 is absent');
+}
+for (const body of [{}, null, [], { message: 'Bad Request' }, { message: 'Contact field not found' },
+  { message: 'Contact not found; invalid location' }, contactAbsent400('other-contact'), contactAbsent400('FIXTURE-CONTACT'),
+  { message: ['Contact not found'] }, { message: 'Contact not found', statusCode: 500 }]) {
+  await assert.rejects(nullableRuntime(() => Response.json(body, { status: 400 })).readContact('fixture-contact'),
+    error => error.code === 'PROVIDER' && error.status === 400 && !error.outcomeUncertain, 'C generic/ambiguous/inconsistent/foreign-ID 400 remains an error');
+}
+await assert.rejects(nullableRuntime(() => new Response('{broken', { status: 400 })).readContact('fixture-contact'), error => error.code === 'PROVIDER' && error.status === 400);
+for (const [status, code] of [[401, 'AUTH'], [500, 'PROVIDER']]) {
+  await assert.rejects(nullableRuntime(() => Response.json(contactAbsent400(), { status })).readContact('fixture-contact'),
+    error => error.code === code && error.status === status, 'D/E auth/server errors remain errors');
+}
+await assert.rejects(nullableRuntime(() => Response.json({ message: 'Resource not found' }, { status: 400 })).opportunities.getOpportunity('fixture-opportunity'),
+  error => error.code === 'PROVIDER' && error.status === 400, 'F opportunity 400 is never normalized');
+await assert.rejects(nullableRuntime(() => Response.json(contactAbsent400(), { status: 400 })).crm.getContact('fixture-contact'),
+  error => error.code === 'SCHEMA' && error.status === 400, 'application/non-nullable contact read unchanged');
+await assert.rejects(nullableRuntime(() => Response.json(contactAbsent400(), { status: 400 })).deleteContact('fixture-contact'),
+  error => error.code === 'PROVIDER' && error.status === 400 && error.outcomeUncertain, 'DELETE 400 is not normalized');
+for (const suffix of ['/notes', '?invalid=true']) {
+  const bound = createRealPatrimonialBindings(httpEnv);
+  bound.contacts.bindings.contact.request = id => ({ method: 'GET', path: `/contacts/${id}${suffix}` });
+  await assert.rejects(nullableRuntime(() => Response.json(contactAbsent400(), { status: 400 }), bound).readContact('fixture-contact'),
+    error => error.code === 'PROVIDER' && error.status === 400, 'only exact contact detail endpoint is eligible');
+}
+assert(nullableCalls.every(call => ['GET', 'DELETE'].includes(call.method))); // All transports above are injected fakes.
+passed.push('nullable contact A–F: 404/explicit 400 absence only for exact cleanup GET; generic/malformed/foreign-ID 400, auth/server, opportunities, non-nullable reads and deletes fail closed');
+
 const real = fixture(), realHttpCalls = [];
 const wireOpportunity = row => row && ({ ...row, updatedAt: '2026-10-15T00:00:00.000Z', customFields: Object.entries(row.customFields).map(([id, fieldValue]) => ({ id, fieldValue })) });
 const realHttp = async (value, init) => {
@@ -342,7 +379,7 @@ const realHttp = async (value, init) => {
   }
   if (url.pathname === '/contacts/fixture-contact') {
     if (init.method === 'DELETE') { await real.runtime.deleteContact('fixture-contact'); return new Response(null, { status: 204 }); }
-    const contact = await real.crm.getContact('fixture-contact'); return contact ? Response.json({ contact }) : new Response(null, { status: 404 });
+    const contact = await real.crm.getContact('fixture-contact'); return contact ? Response.json({ contact }) : Response.json(contactAbsent400(), { status: 400 });
   }
   if (url.pathname === '/contacts/fixture-contact/tags') { await real.crm.addTags('fixture-contact', body.tags); return Response.json({}); }
   if (url.pathname === '/contacts/fixture-contact/notes') {
@@ -381,9 +418,24 @@ assert.deepEqual(failedSource, originalSource); assert.deepEqual(real.db.inspect
 assert(realHttpCalls.slice(beforeResumeCalls).filter(c => !c.path.includes('/rpc/')).every(c => c.method === 'GET'));
 assert(real.db.calls.slice(beforeResumeRpc).every(c => !c.body.p_commands || c.body.p_commands.every(command => ['getRequest', 'getConsentEvidence', 'getOperation', 'getOpportunityIntent'].includes(command.method))));
 passed.push('failed execute report with executed/replay/IDs resumes verify using same identity, no report edits, only read RPC commands/GETs and unchanged durable state');
+const auditBeforeCleanup = real.db.inspect(), beforeCleanupCalls = realHttpCalls.length;
 assert.equal((await throughReal(mode('cleanup'))).result, 'PASS'); assert.equal(real.run.cleanup.contact, 'DELETED'); assert.equal(real.run.cleanup.opportunity, 'DELETED');
-assert.equal(real.db.inspect().requests.size, 1, 'cleanup preserves durable audit');
+assert.deepEqual(real.db.inspect(), auditBeforeCleanup, 'cleanup preserves all durable audit and historical remote IDs');
+assert.deepEqual(realHttpCalls.slice(beforeCleanupCalls).filter(call => call.method === 'DELETE').map(call => call.path), ['/opportunities/fixture-opportunity', '/contacts/fixture-contact']);
 passed.push('real wire bindings complete local execute/replay/verify/notes/12 custom fields/controlled cleanup through existing durable store and CRM adapters');
+// Historical cleanup failure equivalent: both assets already absent, opportunity
+// confirmed deleted, contact checkpoint not saved after the old 400 read-back.
+const cleanupSource = { ...structuredClone(failedSource), mode: 'cleanup', result: 'FAIL', error: 'CRM_PROVIDER',
+  cleanup: { opportunity: 'DELETED', contact: 'NOT_REQUESTED', audit: 'PRESERVED' } };
+const originalCleanupSource = structuredClone(cleanupSource), beforeAbsentCalls = realHttpCalls.length;
+const absentCleanup = await runPatrimonialSmoke({ options: mode('cleanup'), env: httpEnv, run: structuredClone(cleanupSource),
+  now: () => new Date(real.db.now), persist: async () => {},
+  runtimeFactory: ({ guard }) => createSmokeRuntime({ env: httpEnv, bindings: createRealPatrimonialBindings(httpEnv), guard, fetchImpl: realHttp }) });
+assert.equal(absentCleanup.result, 'PASS'); assert.equal(absentCleanup.cleanup.contact, 'ALREADY_ABSENT'); assert.equal(absentCleanup.cleanup.opportunity, 'ALREADY_ABSENT');
+assert.equal(absentCleanup.requestId, cleanupSource.requestId); assert.equal(absentCleanup.runId, cleanupSource.runId);
+assert.deepEqual(cleanupSource, originalCleanupSource); assert.deepEqual(real.db.inspect(), auditBeforeCleanup);
+assert(realHttpCalls.slice(beforeAbsentCalls).filter(call => !call.path.includes('/rpc/')).every(call => call.method === 'GET'));
+passed.push('deleted-contact 400 read-back yields DELETED/PASS; historical cleanup checkpoint equivalent yields ALREADY_ABSENT/PASS without new deletes, source report edits or audit changes');
 
 // Upsert contract and error boundaries, entirely in-memory. No live CLI retry.
 const upsertInput = syntheticLead(fresh()), upsert = createRealPatrimonialBindings(httpEnv).contacts.upsert;
