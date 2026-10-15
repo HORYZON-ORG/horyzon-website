@@ -20,7 +20,7 @@ export function ArchitectApplicationForm({ step, setStep, selectedProfile, onPro
     <h3 id="architect-path-form-title" className="sr-only" ref={heading} tabIndex={-1}>Raccontaci da dove parti. Passo {step} di 2</h3>
     <div className={styles.formProgress}><span>PASSO {step} DI 2</span><span>{step === 1 ? '30 secondi' : 'Il tuo percorso'}</span></div>
     <div className={styles.formTrack}><div className={step === 1 ? styles.formHalf : styles.formFull} /></div>
-    {selected && <div className={styles.profileNote} id="profileNote"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7A5A22" strokeWidth="2" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg><span>Profilo: <strong>{selected.label}</strong> — prepariamo la sessione anche per te</span></div>}
+    {selected && <div className={styles.profileNote} id="profileNote"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--olive)" strokeWidth="2" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg><span>Profilo: <strong>{selected.label}</strong> — prepariamo la sessione anche per te</span></div>}
     <fieldset className={styles.formFields} hidden={step !== 1} disabled={disabled}>
       <legend className="sr-only">I tuoi recapiti</legend>
       <div className={styles.formGrid}>

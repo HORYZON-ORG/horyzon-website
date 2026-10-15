@@ -1,0 +1,26 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+await import('./verify-patrimonial-form-presentation.mjs');
+
+const baseline = '03209c3861517c993ac5028cdb1e0c7c9ccbc87c';
+const read = file => readFileSync(file, 'utf8').replaceAll('\r\n', '\n');
+const original = file => execFileSync('git', ['show', `${baseline}:${file}`], { encoding: 'utf8' }).replaceAll('\r\n', '\n');
+const landingFile = 'src/components/patrimonial-architect-landing.tsx';
+const landing = read(landingFile), before = original(landingFile);
+const prefix = source => source.slice(0, source.indexOf('  return <SessionProvider>'));
+assert.equal(prefix(landing), prefix(before), 'Profile state, mapping, session clock and observers unchanged');
+const formFile = 'src/components/patrimonial-architect-form.tsx';
+assert.equal(read(formFile).replace('stroke="var(--olive)"', 'stroke="#7A5A22"'), original(formFile), 'Architect form only changes SVG presentation color');
+for (const file of ['src/components/patrimonial-lead-form.tsx', 'src/content/patrimonial-architect-session.ts', 'src/content/patrimonial-funnels.ts', 'src/components/patrimonial-pilot-shell.tsx']) assert.equal(read(file), original(file), `No behavioral change: ${file}`);
+const css = read('src/components/patrimonial-architect.module.css');
+for (const rule of ['.m-topbar', '.m-sec', '.m-hero', '.m-cta-full', '.m-ticket', '.m-stats', '.m-swipe', '.m-col', '.m-vline', '.m-fig', '.m-build', '.m-annot', '.m-track', '.m-prog', '.m-steps', '.m-1col', '.m-form', '.m-sticky']) assert(css.includes(rule));
+assert(css.includes('@media (max-width: 700px)')); assert(css.includes('@supports (animation-timeline: view())'));
+assert(css.includes('prefers-reduced-motion')); assert(css.includes('env(safe-area-inset-bottom, 0px)'));
+assert(css.includes('scroll-snap-type:x mandatory')); assert(css.includes('flex:0 0 84%'));
+assert(!/#(?:C9A15A|E2C17F|7A5A22|F3EFE6|EDE8DD)|rgba\(201,161,90/i.test(css + landing));
+assert.equal((landing.match(/SCORRI LE SCHEDE →/g) ?? []).length, 2);
+assert.equal((landing.match(/<section\b/g) ?? []).length, 15);
+const assetPaths = execFileSync('git', ['ls-tree', '-r', '--name-only', baseline, '--', 'public/benessere-patrimoniale/percorso-architetto'], { encoding: 'utf8' }).trim().split(/\r?\n/);
+for (const file of assetPaths) assert(readFileSync(file).equals(execFileSync('git', ['show', `${baseline}:${file}`], { maxBuffer: 10 * 1024 * 1024 })), 'Supplied updated assets are byte-identical to baseline');
+console.log('PASS architect mobile presentation: existing logic/form/transport/config preserved; 15 sections, lime palette, complete 700px rules, guarded view animation, reduced motion, safe area, two carousels; all 12 supplied images identical. No remote calls.');

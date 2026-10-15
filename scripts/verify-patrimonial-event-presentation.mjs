@@ -7,12 +7,12 @@ import { pilotForms } from '../src/content/patrimonial-funnels.ts';
 await import('./verify-patrimonial-form-presentation.mjs');
 
 const read = file => readFileSync(file, 'utf8').replaceAll('\r\n', '\n');
-const show = file => execFileSync('git', ['show', `2d2426dfb5cacee8c1dc9de212f663107328e629:${file}`], { encoding: 'utf8' }).replaceAll('\r\n', '\n');
-// Stable architect presentation, configuration and all backend boundaries.
-const paths = execFileSync('git', ['ls-tree', '-r', '--name-only', '2d2426dfb5cacee8c1dc9de212f663107328e629', '--', 'src/lib/public-leads', 'src/app/api/public-leads', 'supabase/migrations', 'src/components/patrimonial-architect-landing.tsx', 'src/components/patrimonial-architect-form.tsx', 'src/components/patrimonial-architect.module.css', 'src/content/patrimonial-architect-session.ts', 'src/content/patrimonial-funnels.ts', 'src/app/(patrimonial-pilot)/benessere-patrimoniale/percorso-architetto-patrimoniale', 'src/app/(patrimonial-pilot)/benessere-patrimoniale/evento/grazie'], { encoding: 'utf8' }).trim().split(/\r?\n/);
+const show = file => execFileSync('git', ['show', `03209c3861517c993ac5028cdb1e0c7c9ccbc87c:${file}`], { encoding: 'utf8' }).replaceAll('\r\n', '\n');
+// Event presentation and backend stay pinned; architect visual revision is checked separately.
+const paths = execFileSync('git', ['ls-tree', '-r', '--name-only', '03209c3861517c993ac5028cdb1e0c7c9ccbc87c', '--', 'src/lib/public-leads', 'src/app/api/public-leads', 'supabase/migrations', 'src/content/patrimonial-architect-session.ts', 'src/content/patrimonial-funnels.ts', 'src/components/patrimonial-event-landing.tsx', 'src/components/patrimonial-event-form.tsx', 'src/components/patrimonial-event-clock.tsx', 'src/components/patrimonial-event.module.css', 'src/content/patrimonial-event-content.ts', 'src/content/patrimonial-event-session.ts', 'src/app/(patrimonial-pilot)/benessere-patrimoniale/percorso-architetto-patrimoniale', 'src/app/(patrimonial-pilot)/benessere-patrimoniale/evento/grazie'], { encoding: 'utf8' }).trim().split(/\r?\n/);
 for (const file of paths) assert.equal(read(file), show(file), `Protected baseline changed: ${file}`);
-const assets = execFileSync('git', ['ls-tree', '-r', '--name-only', '2d2426dfb5cacee8c1dc9de212f663107328e629', '--', 'public/benessere-patrimoniale/percorso-architetto'], { encoding: 'utf8' }).trim().split(/\r?\n/);
-for (const file of assets) assert(readFileSync(file).equals(execFileSync('git', ['show', `2d2426dfb5cacee8c1dc9de212f663107328e629:${file}`], { maxBuffer: 10 * 1024 * 1024 })), `Architect asset changed: ${file}`);
+const assets = execFileSync('git', ['ls-tree', '-r', '--name-only', '03209c3861517c993ac5028cdb1e0c7c9ccbc87c', '--', 'public/benessere-patrimoniale/evento'], { encoding: 'utf8' }).trim().split(/\r?\n/);
+for (const file of assets) assert(readFileSync(file).equals(execFileSync('git', ['show', `03209c3861517c993ac5028cdb1e0c7c9ccbc87c:${file}`], { maxBuffer: 10 * 1024 * 1024 })), `Event asset changed: ${file}`);
 const form = read('src/components/patrimonial-event-form.tsx');
 assert(!form.includes('fetch(')); assert(!form.includes('marketingConsent'));
 for (const name of ['firstName', 'lastName', 'province', 'email', 'phone', 'consent', 'profile', 'website']) assert(form.includes(`name="${name}"`));
@@ -42,4 +42,4 @@ for (const amount of [10000, 50000, 250000, 500000, 1000000]) {
 const css = read('src/components/patrimonial-event.module.css');
 assert(css.includes('position:sticky;bottom:0')); assert(css.includes('@media (max-width:820px)'));
 assert(css.includes('prefers-reduced-motion')); assert(css.includes('--event-serif') && css.includes('--event-sans'));
-console.log(`PASS event presentation: 18 sections, placeholders, demo clock, exact calculator, explicit profile mapping, two-step form, original transport; ${paths.length} protected architect/backend files and ${assets.length} architect assets unchanged. No remote calls.`);
+console.log(`PASS event presentation: 18 sections, placeholders, demo clock, exact calculator, explicit profile mapping, two-step form, original transport; ${paths.length} protected event/backend files and ${assets.length} event assets unchanged. No remote calls.`);

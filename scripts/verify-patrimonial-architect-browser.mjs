@@ -17,7 +17,7 @@ const { chromium } = await import(pathToFileURL(path.resolve(arg('playwright-mod
 const browser = await chromium.launch({ headless: true, ...(arg('executable') ? { executablePath: arg('executable') } : {}) });
 const routePath = '/benessere-patrimoniale/percorso-architetto-patrimoniale';
 try {
-  for (const width of [390, 768, 1440]) {
+  for (const width of [360, 390, 768, 1440]) {
     const context = await browser.newContext({ viewport: { width, height: 1000 }, reducedMotion: 'reduce' });
     const sent = [], errors = []; let fail = width === 1440;
     await context.route('**/*', async route => {
@@ -39,7 +39,7 @@ try {
     assert.equal(await page.locator('[data-profile]').count(), 5); assert.equal(await page.locator('[data-scene]').count(), 3); assert.equal(await page.locator('[data-story]').count(), 3);
     assert.equal(await page.locator('#stickyBar').getAttribute('aria-hidden'), 'true');
     const floating = await page.locator('[class*=s027]').boundingBox(); assert(floating.x >= 0 && floating.x + floating.width <= width);
-    await page.screenshot({ path: path.join(directory, `architect-${width}-hero.png`) });
+    await page.screenshot({ path: path.join(directory, `architect-mobile-${width}-hero.png`) });
     for (const [key, profile] of Object.entries(architectProfiles)) {
       await page.locator(`[data-profile=${key}]`).click();
       assert.equal(await page.locator(`[data-profile=${key}]`).getAttribute('aria-pressed'), 'true');
@@ -54,10 +54,36 @@ try {
       const overflow = await section.evaluate(element => [...element.querySelectorAll('*')].filter(child => {
         const r = child.getBoundingClientRect(), style = getComputedStyle(child);
         return r.width > 0 && (r.right > innerWidth + 1 || r.left < -1) && !['absolute', 'fixed'].includes(style.position)
-          && !['svg', 'path'].includes(child.tagName.toLowerCase());
+          && !['svg', 'path'].includes(child.tagName.toLowerCase()) && !child.closest('[data-carousel]');
       }).map(child => child.tagName + ':' + child.textContent.slice(0, 50)));
       assert.deepEqual(overflow, [], `Overflow width ${width}, section ${index}`);
-      if ([0, 4, 5, 8, 11].includes(index)) await section.screenshot({ path: path.join(directory, `architect-${width}-section-${index}.png`) });
+      if ([0, 4, 5, 8, 11].includes(index)) await section.screenshot({ path: path.join(directory, `architect-mobile-${width}-section-${index}.png`) });
+    }
+    for (const name of ['scenes', 'stories']) {
+      const carousel = page.locator(`[data-carousel=${name}]`);
+      const geometry = await carousel.evaluate(element => ({ display: getComputedStyle(element).display, snap: getComputedStyle(element).scrollSnapType, scroll: element.scrollWidth > element.clientWidth, x: element.getBoundingClientRect().x, right: element.getBoundingClientRect().right }));
+      assert.equal(geometry.display, width <= 700 ? 'flex' : 'grid'); assert.equal(geometry.scroll, width <= 700);
+      assert(geometry.x >= -1 && geometry.right <= width + 1);
+      if (width <= 700) {
+        assert.equal(geometry.snap, 'x mandatory');
+        await carousel.focus(); await page.keyboard.press('ArrowRight');
+        await page.waitForFunction(name => document.querySelector(`[data-carousel=${name}]`).scrollLeft > 0, name);
+        await carousel.evaluate(element => element.scrollTo({ left: 0, behavior: 'instant' }));
+      }
+    }
+    assert.equal(await page.locator('[class*=m-only]:visible').count(), width <= 700 ? 2 : 0);
+    assert.equal(await page.locator('[class*=m-col]').evaluate(element => getComputedStyle(element).flexDirection), width <= 700 ? 'column' : 'row');
+    const flow = await page.locator('[class*=m-vline]').first().boundingBox(); assert(width <= 700 ? flow.height === 44 && flow.width === 2 : flow.width > flow.height);
+    assert.equal(await page.locator('[class*=m-vline]').first().evaluate(element => getComputedStyle(element).animationName), 'none', 'Reduced motion disables flow animation');
+    const timeline = await page.locator('[class*=m-track]').boundingBox(); assert(width <= 700 ? timeline.height > timeline.width : timeline.width > timeline.height);
+    assert.equal(await page.locator('[class*=formGrid]').first().evaluate(element => getComputedStyle(element).gridTemplateColumns.split(' ').length), width <= 700 ? 1 : 2);
+    assert.equal(await page.locator('[class*=m-stats]').evaluate(element => getComputedStyle(element).gridTemplateColumns.split(' ').filter(track => parseFloat(track) > 0).length), width <= 700 ? 2 : width === 768 ? 3 : 4);
+    if (width <= 700) {
+      const photo = await page.locator('[class*=s026]').boundingBox();
+      const ticket = await page.locator('[class*=s027]').boundingBox();
+      assert(ticket.x >= photo.x && ticket.x + ticket.width <= photo.x + photo.width && ticket.y >= photo.y && ticket.y + ticket.height <= photo.y + photo.height);
+      const stickyStyle = await page.locator('[class*=m-sticky]').evaluate(element => ({ wrap: getComputedStyle(element).flexWrap, radius: getComputedStyle(element).borderRadius }));
+      assert.deepEqual(stickyStyle, { wrap: 'nowrap', radius: '14px' });
     }
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
     await page.waitForFunction(() => [...document.querySelectorAll('img')].every(image => image.complete && image.naturalWidth > 0));
@@ -79,7 +105,7 @@ try {
     await form.locator('[name=province]').focus(); await page.keyboard.type('Milano'); await form.locator('[name=experience]').selectOption('Sì');
     await form.locator('[name=goal]').selectOption('Sto esplorando'); await form.locator('[name=availability]').selectOption('Part-time');
     await form.locator('[name=message]').fill('Solo verifica UI locale, nessun invio remoto.');
-    await form.screenshot({ path: path.join(directory, `architect-${width}-step-2.png`) });
+    await form.screenshot({ path: path.join(directory, `architect-mobile-${width}-step-2.png`) });
     await form.evaluate(element => { element.requestSubmit(); element.requestSubmit(); });
     if (fail) {
       await form.getByRole('alert').waitFor(); assert.equal(sent.length, 1); assert.equal(await form.locator('[name=province]').inputValue(), 'Milano');
@@ -93,7 +119,7 @@ try {
       assert.deepEqual(payload.utm, { utm_source: 'qa-local', utm_campaign: 'architect-redesign' });
     }
     assert.deepEqual(errors, []); await context.close();
-    console.log(`PASS ${width}px: sections/crops/overflow, profiles, sticky, metadata, required fields, no step-1 POST, complete mapped payload, double-submit, ${width === 1440 ? 'error/retry, ' : ''}thank-you; all POSTs intercepted locally`);
+    console.log(`PASS ${width}px: mobile carousels/snap/keyboard, role/roadmap/form/stats/ticket, sections/crops/overflow, profiles, sticky, metadata, required fields, no step-1 POST, complete mapped payload, double-submit, ${width === 1440 ? 'error/retry, ' : ''}thank-you; all POSTs intercepted locally`);
   }
   const page = await browser.newPage();
   await page.route('**/*', route => new URL(route.request().url()).origin === base.origin && route.request().method() === 'GET' ? route.continue() : route.abort());
@@ -102,5 +128,17 @@ try {
   assert.equal(await eventShell.locator(':scope > header').count(), 0); assert.equal(await eventShell.locator(':scope > footer').count(), 0);
   assert.equal(await page.locator('[data-event-section=hero]').count(), 1); assert.equal(await page.locator('[data-event-section=footer]').count(), 1);
   assert.equal(await page.locator('[data-profile]').count(), 0); assert.equal(await page.locator('[data-pilot-form=patrimonial-event]').count(), 1);
-  await page.close(); console.log('PASS event uses its own full-page shell and one event form. Architect checks unchanged. Zero CRM/Supabase calls; no live smoke.');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto(`${base.origin}${routePath}`, { waitUntil: 'networkidle' });
+  await page.locator('[data-profile=dipendente]').click();
+  for (const name of ['scenes', 'stories']) {
+    await page.locator(`[data-carousel=${name}]`).scrollIntoViewIfNeeded();
+    await page.waitForFunction(name => [...document.querySelectorAll(`[data-carousel=${name}] > figure`)].every(element => Number(getComputedStyle(element).opacity) === 1), name);
+    await page.locator(`[data-carousel=${name}]`).screenshot({ path: path.join(directory, `architect-mobile-390-motion-${name}.png`) });
+  }
+  for (const [name, selector] of [['hero', 'section:first-of-type'], ['role', '[class*=m-col]'], ['form', '[data-pilot-form=architect-path]']]) {
+    await page.locator(selector).screenshot({ path: path.join(directory, `architect-mobile-390-reference-${name}.png`) });
+  }
+  await page.close(); console.log('PASS event shell regression; normal-motion carousel cards visible; reference screenshots captured. Zero CRM/Supabase calls; no live smoke.');
 } finally { await browser.close(); }
