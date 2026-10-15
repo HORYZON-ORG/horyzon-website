@@ -5,9 +5,11 @@ import Link from 'next/link';
 import { patrimonialInterest, patrimonialInterests, type PatrimonialInterest } from '@/content/patrimonial';
 import { pilotAvailability, pilotExperience, pilotForms, pilotGoals, pilotUtmKeys, type PilotMode, type PilotUtm } from '@/content/patrimonial-funnels';
 import { PATRIMONIAL_V2, PatrimonialClientAttempt, PatrimonialRevisionRequiredError } from '@/lib/public-leads/patrimonial-contract';
+import { ArchitectApplicationForm } from './patrimonial-architect-form';
 
-export function PatrimonialLeadForm({ mode = 'legacy/public', contractVersion }: { mode?: 'legacy/public' | PilotMode; contractVersion?: typeof PATRIMONIAL_V2 }) {
-  return mode === 'legacy/public' ? <PublicLeadForm /> : <PilotLeadForm mode={mode} contractVersion={contractVersion} />;
+type ArchitectPresentation = { presentation?: 'architect'; selectedProfile?: string; onProfileChange?: (value: string) => void };
+export function PatrimonialLeadForm({ mode = 'legacy/public', contractVersion, ...presentation }: { mode?: 'legacy/public' | PilotMode; contractVersion?: typeof PATRIMONIAL_V2 } & ArchitectPresentation) {
+  return mode === 'legacy/public' ? <PublicLeadForm /> : <PilotLeadForm mode={mode} contractVersion={contractVersion} {...presentation} />;
 }
 function PublicLeadForm() {
   const params = useSearchParams();
@@ -39,7 +41,7 @@ function pilotAttribution(mode: PilotMode, persist = true): PilotUtm {
   return found;
 }
 
-function PilotLeadForm({ mode, contractVersion }: { mode: PilotMode; contractVersion?: typeof PATRIMONIAL_V2 }) {
+function PilotLeadForm({ mode, contractVersion, presentation, selectedProfile = '', onProfileChange }: { mode: PilotMode; contractVersion?: typeof PATRIMONIAL_V2 } & ArchitectPresentation) {
   const router = useRouter();
   const form = pilotForms[mode];
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
@@ -48,10 +50,15 @@ function PilotLeadForm({ mode, contractVersion }: { mode: PilotMode; contractVer
   const v2 = contractVersion === PATRIMONIAL_V2;
   const v2Attempt = useRef<PatrimonialClientAttempt | null>(null);
   const [revisionRequired, setRevisionRequired] = useState(false);
+  const [step, setStep] = useState<1 | 2>(1);
   useEffect(() => { if (!v2) pilotAttribution(mode); }, [mode, v2]);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (sending.current) return;
+    if (presentation === 'architect' && mode === 'architect-path' && step === 1) {
+      if (event.currentTarget.reportValidity()) setStep(2);
+      return;
+    }
     sending.current = true;
     const data = new FormData(event.currentTarget);
     const payload = {
@@ -88,6 +95,11 @@ function PilotLeadForm({ mode, contractVersion }: { mode: PilotMode; contractVer
       } else setNotice(v2 ? 'Invio non confermato. Riprova mantenendo gli stessi dati oppure scrivici per verificare la ricezione.' : 'Invio non confermato. Riprova oppure scrivici via email.');
     }
   }
+  if (presentation === 'architect' && mode === 'architect-path') return <ArchitectApplicationForm step={step} setStep={setStep} selectedProfile={selectedProfile} onProfileChange={onProfileChange}
+    onSubmit={submit} status={status} notice={notice} revisionRequired={revisionRequired} v2={v2} onNewAttempt={() => {
+      v2Attempt.current?.beginNewAttempt(); setRevisionRequired(false); setStatus('idle');
+      setNotice('Nuova richiesta pronta. Premi il pulsante di invio per trasmettere i dati aggiornati.');
+    }} />;
   return <form className="rd-form" onSubmit={submit} aria-labelledby={`${mode}-form-title`} aria-busy={status === 'sending'} data-pilot-form={mode}>
     <fieldset disabled={status === 'sending' || status === 'success'} className="patrimonial-form-fields">
       <legend className="sr-only">{form.title}</legend>

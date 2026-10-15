@@ -341,8 +341,9 @@ assert.equal((await validNotes.findNoteByRequestMarker('existing',marker)).id,'n
 passed.push('HTTP: GET/POST, timeout signal, sanitized errors, Retry-After, config gates, pagination, redirect/URL safety');
 
 // 18/19/20: baseline source identity plus existing fake-based regression suites.
-const protectedPaths=['src/lib/radar/highlevel.ts','src/components/patrimonial-lead-form.tsx','src/lib/public-leads/patrimonial-funnels.ts','src/app/contatti/page.tsx','src/components/wellbeing-page.tsx'];
+const protectedPaths=['src/lib/radar/highlevel.ts','src/lib/public-leads/patrimonial-funnels.ts','src/app/contatti/page.tsx','src/components/wellbeing-page.tsx'];
 execFileSync('git',['diff','--exit-code','4a569bca65ee218c30e58e378f24f9c6cb2578d0','--',...protectedPaths],{stdio:'pipe'});
+await import('./verify-patrimonial-form-presentation.mjs');
 const baseline=execFileSync('git',['show','4a569bca:src/lib/public-leads/handler.ts'],{encoding:'utf8'}).replaceAll('\r\n','\n');
 const current=(await readFile('src/lib/public-leads/handler.ts','utf8')).replaceAll('\r\n','\n');
 const legacySection=text=>text.slice(text.indexOf('  const pilot = pilotMode'),text.indexOf('\nconst v2Attempts'));
