@@ -1,9 +1,11 @@
 import { open, mkdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { assertLiveSmoke, assertSmokeReport, createSmokeRun, parseSmokeArgs, publicSmokeReport, runPatrimonialSmoke, SmokeError, smokeMarkdown } from './lib/patrimonial-live-smoke.mjs';
+import { assertLiveSmoke, assertSmokeReport, createSmokeRun, parseSmokeArgs, publicSmokeReport, runPatrimonialSmoke, SmokeError, smokeMarkdown, syntheticLead } from './lib/patrimonial-live-smoke.mjs';
 import { createSmokeRuntime } from './lib/patrimonial-live-smoke-runtime.mjs';
 import { readSmokeBindingsMetadata, validSmokeReportPaths } from './lib/patrimonial-live-smoke-preflight.mjs';
+import { loadSmokeEnv, smokeEnvPresence } from './lib/patrimonial-live-smoke-env.mjs';
+import { createRealPatrimonialBindings, validateRealPatrimonialReadiness } from './lib/patrimonial-live-smoke-bindings.mjs';
 
 async function main() {
   const env = process.env, args = process.argv.slice(2), stamp = `${new Date().toISOString().replaceAll(/[:.]/g, '-')}-${crypto.randomUUID()}`;
@@ -15,6 +17,8 @@ async function main() {
   };
   try {
     options = parseSmokeArgs(args);
+    await loadSmokeEnv();
+    for (const [name, status] of Object.entries(smokeEnvPresence(env))) console.log(`${name}: ${status}`);
     // Exclusive handles touch only files created by this invocation; no directory
     // enumeration, wildcard deletion, existing report overwrite or tmp cleanup.
     const directory = path.resolve('tmp'); await mkdir(directory, { recursive: true });
@@ -29,9 +33,12 @@ async function main() {
       assertSmokeReport(sourceReport); run = sourceReport;
     }
     const result = await runPatrimonialSmoke({ options, env, run, persist, reportPaths,
-      loadPreflightBindings: () => readSmokeBindingsMetadata(options.bindings, env), runtimeFactory: async ({ guard }) => {
+      loadPreflightBindings: () => options.bindings === 'real' ? { bindings: createRealPatrimonialBindings(env) } : readSmokeBindingsMetadata(options.bindings, env),
+      ...(options.bindings === 'real' ? { validateRemote: () => validateRealPatrimonialReadiness({ env, lead: syntheticLead(run) }) } : {}),
+      runtimeFactory: async ({ guard }) => {
       assertLiveSmoke(options, env);
       if (!options.bindings) throw new SmokeError('VERIFIED_BINDINGS_REQUIRED');
+      if (options.bindings === 'real') return createSmokeRuntime({ env, bindings: createRealPatrimonialBindings(env), guard });
       const modulePath = path.resolve(options.bindings);
       // Reports under tmp are data, never executable binding modules.
       if (path.relative(directory, modulePath).split(path.sep)[0] !== '..' || !modulePath.endsWith('.mjs')) throw new Error('Invalid bindings module');

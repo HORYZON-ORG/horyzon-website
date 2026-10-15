@@ -1,5 +1,5 @@
-// Offline readiness only. Never import a binding module or construct a live
-// runtime: binding functions are inspected as metadata and are never invoked.
+// Local gates never construct a live runtime or execute custom binding code.
+// The reviewed built-in alias can additionally supply a read-only validator.
 import path from 'node:path';
 import { readFile } from 'node:fs/promises';
 import ts from 'typescript';
@@ -75,7 +75,7 @@ function bindingBlockers(bindings, env) {
   return blockers;
 }
 
-export async function preflightPatrimonialSmoke({ env, reportPaths, bindings, loadBindings, syntheticGuard }) {
+export async function preflightPatrimonialSmoke({ env, reportPaths, bindings, loadBindings, syntheticGuard, validateRemote }) {
   const blockers = [], configBlockers = [], storeBlockers = [];
   for (const name of ['HIGHLEVEL_LOCATION_ID', 'HIGHLEVEL_PRIVATE_TOKEN']) if (!present(env[name])) configBlockers.push(`${name} missing`);
   if (present(env.HIGHLEVEL_LOCATION_ID) && !id(env.HIGHLEVEL_LOCATION_ID)) configBlockers.push('HIGHLEVEL_LOCATION_ID invalid');
@@ -120,7 +120,11 @@ export async function preflightPatrimonialSmoke({ env, reportPaths, bindings, lo
   }
   if (!metadataBlockers.length) metadataBlockers = bindingBlockers(bindings, env);
   blockers.push(...metadataBlockers);
-  return { configReady: configBlockers.length === 0, mappingReady, mappingChecks, storeReady, providerBindingReady: metadataBlockers.length === 0,
+  const result = { configReady: configBlockers.length === 0, mappingReady, mappingChecks, storeReady, providerBindingReady: metadataBlockers.length === 0,
     syntheticGuardReady, reportPathReady, liveGuardsEnabled: flagNames.slice(0, 5).every(name => env[name] === 'true'),
     storeReadinessScope: 'LOCAL_CONFIG_ONLY', storeHealthChecked: false, remoteReads: [], writesAttempted: false, blockers };
+  // Only the built-in real alias supplies this reviewed read-only validator.
+  // Missing local config never causes a network request or enables a flag.
+  if (validateRemote && blockers.length === 0) Object.assign(result, await validateRemote());
+  return result;
 }

@@ -10,6 +10,8 @@ import { validatePatrimonialV2 } from '../src/lib/public-leads/patrimonial-funne
 import { createSmokeRuntime } from './lib/patrimonial-live-smoke-runtime.mjs';
 import { createSmokeRun, parseSmokeArgs, publicSmokeReport, runPatrimonialSmoke, syntheticLead, assertSyntheticData, assertSmokeReport, simulateSmokeFailure, smokeMarkdown } from './lib/patrimonial-live-smoke.mjs';
 import { parseSmokeBindingsMetadata, validSmokeReportPaths } from './lib/patrimonial-live-smoke-preflight.mjs';
+import { createRealPatrimonialBindings, validateRealPatrimonialReadiness, realReadLabels } from './lib/patrimonial-live-smoke-bindings.mjs';
+import { smokeEnvPresence } from './lib/patrimonial-live-smoke-env.mjs';
 
 // Never import or invoke the live CLI. All reports are captured in memory; no
 // files under tmp/ are created, read, modified, enumerated or cleaned by tests.
@@ -236,6 +238,124 @@ assert.equal((await throughHttp(mode('cleanup'))).result, 'PASS');
 assert.equal(http.run.cleanup.contact, 'DELETED'); assert.equal(http.run.cleanup.opportunity, 'DELETED');
 assert(httpCalls.some(c => c.method === 'DELETE')); assert(httpCalls.some(c => c.path.endsWith('/patrimonial_domain_events')));
 passed.push('real runtime adapter exercised with verified fixture bindings and HTTP emulator; scoped audit reads and delete 404 handling');
+
+// Official real alias, with documented wire responses and a fake transport.
+// Fixtures never load the workstation's secret file or send native fetches.
+const realBindings = createRealPatrimonialBindings(dryEnv), readinessCalls = [];
+let failReadiness = null;
+const remoteReadFixture = async (value, init) => {
+  const url = new URL(value); readinessCalls.push({ pathname: url.pathname, method: init.method });
+  assert.equal(init.redirect, 'error'); assert.equal(init.cache, 'no-store');
+  if (url.hostname === 'patrimonial.invalid') {
+    assert.equal(url.pathname, '/rest/v1/rpc/patrimonial_store_health'); assert.equal(init.body, '{}');
+    return Response.json({ version: failReadiness === 'health' ? 'wrong' : 'patrimonial-v2-store-1' });
+  }
+  assert.equal(init.method, 'GET', 'dry-run HighLevel transport cannot write');
+  assert.equal(url.origin, 'https://services.leadconnectorhq.com'); assert.equal(init.headers.Version, '2021-07-28');
+  if (url.pathname === '/locations/fixture-location') return Response.json({ location: { id: failReadiness === 'location' ? 'foreign' : 'fixture-location', settings: { allowDuplicateContact: false } } });
+  if (url.pathname === '/opportunities/pipelines') return Response.json({ pipelines: Object.values(resources.pipelines).map(p => ({ id: p.id, stages: Object.values(p.stages) })) });
+  if (url.pathname.endsWith('/tags')) return Response.json({ tags: Object.values(resources.tags).map(t => ({ ...t, locationId: 'fixture-location', ...(failReadiness === 'mapping' ? { name: 'wrong' } : {}) })) });
+  if (url.pathname.endsWith('/customFields')) {
+    const model = url.searchParams.get('model');
+    return Response.json({ customFields: Object.values(resources[model === 'contact' ? 'contactFields' : 'opportunityFields']).map(f => ({ ...f, model, locationId: 'fixture-location' })) });
+  }
+  if (url.pathname === '/contacts/') return Response.json(failReadiness === 'identity' ? { contacts: [{ id: 'existing', locationId: 'fixture-location', email: syntheticLead(data).email }], count: 1 } : { contacts: [], count: 0 });
+  throw new Error('Unexpected readonly endpoint');
+};
+const realDry = () => runPatrimonialSmoke({ options: parseSmokeArgs(['--dry-run', '--bindings', 'real']), env: dryEnv, run: fresh(), reportPaths,
+  preflightBindings: realBindings, validateRemote: () => validateRealPatrimonialReadiness({ env: dryEnv, lead: syntheticLead(data), fetchImpl: remoteReadFixture }) });
+const realPass = await realDry(); assert.equal(realPass.result, 'DRY_RUN_PASS');
+for (const key of ['storeReady', 'mappingReady', 'providerBindingReady', 'storeHealthChecked']) assert.equal(realPass[key], true);
+assert.equal(realPass.writesAttempted, false); assert.equal(realPass.storeReadinessScope, 'REMOTE_HEALTH');
+assert.deepEqual(publicSmokeReport(realPass, dryEnv).remoteReads, realReadLabels);
+for (const [fail, blocker, callCount] of [['health', 'SUPABASE_STORE_HEALTH_FAILED', 1], ['location', 'HIGHLEVEL_LOCATION_MISMATCH', 2],
+  ['mapping', 'HIGHLEVEL_TAG_MAPPING_MISMATCH', 4], ['identity', 'UNEXPECTED_EXISTING_SYNTHETIC_IDENTITY', 7]]) {
+  failReadiness = fail; readinessCalls.length = 0;
+  const blocked = await realDry(); assert.equal(blocked.result, 'BLOCKED'); assert.deepEqual(blocked.blockers, [blocker]); assert.equal(readinessCalls.length, callCount);
+}
+failReadiness = null; readinessCalls.length = 0;
+const noRealEnv = await runPatrimonialSmoke({ options: parseSmokeArgs([]), env: {}, reportPaths, preflightBindings: realBindings,
+  validateRemote: () => { throw new Error('Missing local configuration must not reach network'); } });
+assert.equal(noRealEnv.result, 'BLOCKED'); assert.equal(readinessCalls.length, 0);
+for (const body of [{ contacts: [], count: 1 }, { contacts: [] }, { contacts: [], count: 0, meta: { nextPageUrl: 'more' } }]) assert.throws(() => realBindings.contacts.bindings.email.decode(body));
+assert.throws(() => realBindings.opportunities.search.decode({ opportunities: [], meta: { total: 1 } }));
+assert.throws(() => realBindings.contactDelete.request('../foreign'));
+assert.equal(realBindings.contacts.bindings.create.request(syntheticLead(data), 'fixture-location').body.dnd, true);
+assert.throws(() => realBindings.contacts.bindings.create.request({ ...syntheticLead(data), email: 'real@example.com' }, 'fixture-location'));
+const bindingText = JSON.stringify(publicSmokeReport({ ...realPass, remoteReads: [...realReadLabels, 'fixture-token'], blockers: ['fixture-secret'] }, dryEnv));
+assert(!bindingText.includes('fixture-token')); assert(!bindingText.includes('fixture-secret'));
+passed.push('real alias readonly preflight: actual health, location, all mapping resources and fresh synthetic identity; immediate fail-closed blockers; zero mutation');
+
+const real = fixture(), realHttpCalls = [];
+const wireOpportunity = row => row && ({ ...row, updatedAt: '2026-10-15T00:00:00.000Z', customFields: Object.entries(row.customFields).map(([id, fieldValue]) => ({ id, fieldValue })) });
+const realHttp = async (value, init) => {
+  const url = new URL(value), body = init.body ? JSON.parse(init.body) : {};
+  realHttpCalls.push({ method: init.method, path: url.pathname });
+  if (url.hostname === 'patrimonial.invalid') {
+    if (url.pathname.includes('/rpc/')) return real.db.fetch(value, init);
+    const r = real.run;
+    if (url.pathname.endsWith('/patrimonial_intents')) return Response.json(url.searchParams.get('id') === `eq.${r.provisionalId}`
+      ? [{ id: r.provisionalId, kind: 'PROVISIONAL', remote_contact_id: r.contactId }]
+      : [{ id: r.intentId, kind: 'OPPORTUNITY', remote_opportunity_id: r.opportunityId, sync_state: 'SYNCED' }]);
+    if (url.pathname.endsWith('/patrimonial_domain_events')) return Response.json([{ event_key: 'fixture-event' }]);
+  }
+  if (url.pathname.endsWith('/tags') && init.method === 'GET') return remoteReadFixture(value, init);
+  if (url.pathname === '/contacts/' && init.method === 'GET') {
+    const contacts = [...real.people.values()].filter(c => c.email === url.searchParams.get('query'));
+    return Response.json({ contacts, count: contacts.length });
+  }
+  if (url.pathname === '/contacts/' && init.method === 'POST') {
+    assert.equal(body.dnd, true); assert(!Object.hasOwn(body, 'phone'));
+    return Response.json({ contact: await real.crm.upsertContact(body) });
+  }
+  if (url.pathname === '/contacts/fixture-contact') {
+    if (init.method === 'DELETE') { await real.runtime.deleteContact('fixture-contact'); return new Response(null, { status: 204 }); }
+    const contact = await real.crm.getContact('fixture-contact'); return contact ? Response.json({ contact }) : new Response(null, { status: 404 });
+  }
+  if (url.pathname === '/contacts/fixture-contact/tags') { await real.crm.addTags('fixture-contact', body.tags); return Response.json({}); }
+  if (url.pathname === '/contacts/fixture-contact/notes') {
+    if (init.method === 'GET') return Response.json({ notes: real.notes });
+    return Response.json({ note: await real.crm.addNote('fixture-contact', body.body) });
+  }
+  if (url.pathname === '/opportunities/search') {
+    const rows = [...real.opportunities.values()].filter(o => o.contactId === url.searchParams.get('contact_id') && (!url.searchParams.has('pipeline_id') || o.pipelineId === url.searchParams.get('pipeline_id')));
+    return Response.json({ opportunities: rows.map(wireOpportunity), meta: { total: rows.length } });
+  }
+  if (url.pathname === '/opportunities/' && init.method === 'POST') {
+    assert(body.name.startsWith('SYNTHETIC TEST ')); assert.equal(body.customFields.length, 12);
+    return Response.json({ opportunity: wireOpportunity(await real.runtime.opportunities.createOpportunity({ ...body, customFields: Object.fromEntries(body.customFields.map(f => [f.id, f.field_value])) })) });
+  }
+  if (url.pathname === '/opportunities/fixture-opportunity') {
+    if (init.method === 'DELETE') { await real.runtime.opportunities.deleteOpportunity('fixture-opportunity'); return new Response(null, { status: 204 }); }
+    const row = await real.runtime.opportunities.getOpportunity('fixture-opportunity'); return row ? Response.json({ opportunity: wireOpportunity(row) }) : new Response(null, { status: 404 });
+  }
+  throw new Error('Unexpected real binding endpoint');
+};
+const throughReal = options => runPatrimonialSmoke({ options, env: httpEnv, run: real.run, now: () => new Date(real.db.now),
+  persist: async report => real.reports.push(report), runtimeFactory: ({ guard }) => createSmokeRuntime({ env: httpEnv, bindings: createRealPatrimonialBindings(httpEnv), guard, fetchImpl: realHttp }) });
+assert.equal((await throughReal(mode('execute'))).result, 'PASS');
+assert.equal(real.run.verification.note, 'PASS'); assert.equal(real.notes.length, 1); assert.equal(real.people.size, 1); assert.equal(real.opportunities.size, 1);
+const writesBeforeVerify = realHttpCalls.filter(c => c.method !== 'GET' && !c.path.includes('/rpc/')).length;
+assert.equal((await throughReal(mode('verify'))).result, 'PASS'); assert.equal(realHttpCalls.filter(c => c.method !== 'GET' && !c.path.includes('/rpc/')).length, writesBeforeVerify);
+assert.equal((await throughReal(mode('cleanup'))).result, 'PASS'); assert.equal(real.run.cleanup.contact, 'DELETED'); assert.equal(real.run.cleanup.opportunity, 'DELETED');
+assert.equal(real.db.inspect().requests.size, 1, 'cleanup preserves durable audit');
+passed.push('real wire bindings complete local execute/replay/verify/notes/12 custom fields/controlled cleanup through existing durable store and CRM adapters');
+
+// Isolated process tests @next/env precedence using an injected in-memory file.
+// The actual secret file is never opened, changed or echoed by tests.
+execFileSync(process.execPath, ['--input-type=module', '-e', `
+  import assert from 'node:assert/strict';
+  import { loadSmokeEnv, smokeEnvPresence } from './scripts/lib/patrimonial-live-smoke-env.mjs';
+  process.env.SMOKE_FIXTURE_PRECEDENCE = 'process';
+  process.env.SMOKE_FIXTURE_EMPTY = '';
+  await loadSmokeEnv({ read: async () => 'SMOKE_FIXTURE_PRECEDENCE=file\\nSMOKE_FIXTURE_EMPTY=file\\nSMOKE_FIXTURE_NEW=file' });
+  assert.equal(process.env.SMOKE_FIXTURE_PRECEDENCE, 'process');
+  assert.equal(process.env.SMOKE_FIXTURE_EMPTY, '');
+  assert.equal(process.env.SMOKE_FIXTURE_NEW, 'file');
+  assert(Object.values(smokeEnvPresence({})).every(v => v === 'MISSING'));
+`], { stdio: 'pipe' });
+assert.equal(smokeEnvPresence({ SUPABASE_URL: '', NEXT_PUBLIC_SUPABASE_URL: 'https://fallback.invalid' })['SUPABASE_URL / NEXT_PUBLIC_SUPABASE_URL'], 'MISSING');
+passed.push('Next env loader uses only injected local file; process values including empty win; presence diagnostics reveal no values');
 const cli = readFileSync('scripts/run-patrimonial-live-smoke.mjs', 'utf8');
 assert(cli.includes("'wx'")); assert(cli.includes('assertLiveSmoke(options, env)')); assert(cli.includes('import.meta.url ===')); assert(!/unlink|rmSync|readdir|\.env\.local/.test(cli));
 assert.equal(getPatrimonialRemoteMapping({}).pipelines.ARCHITECT_PATH.stages.A01.funnel, 'ARCHITECT_PATH');

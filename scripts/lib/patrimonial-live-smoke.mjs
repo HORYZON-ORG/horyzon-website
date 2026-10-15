@@ -8,6 +8,7 @@ import { receivePatrimonialOpportunity, patrimonialOpportunityProjection } from 
 import { patrimonialNoteMarker, recordPatrimonialFailure } from '../../src/lib/public-leads/patrimonial-sync.ts';
 import { pilotForms, pilotExperience, pilotGoals, pilotAvailability } from '../../src/content/patrimonial-funnels.ts';
 import { preflightPatrimonialSmoke } from './patrimonial-live-smoke-preflight.mjs';
+import { realReadLabels } from './patrimonial-live-smoke-bindings.mjs';
 
 const kinds = ['SYNC_REQUEST', 'RESOLVE_CONTACT', 'UPSERT_CONTACT', 'ADD_TAGS', 'ADD_NOTE'];
 const fieldKeys = ['hz_intent_key', 'hz_funnel', 'hz_source', 'hz_source_path', 'hz_requested_at', 'hz_privacy_version', 'hz_marketing_consent_snapshot', 'hz_next_step', 'hz_architect_profile', 'hz_architect_sales_experience', 'hz_architect_goal', 'hz_architect_availability'];
@@ -93,7 +94,9 @@ export function publicSmokeReport(run, env = {}) {
     value.mode = 'DRY_RUN'; value.status = run.result === 'DRY_RUN_PASS' ? 'PASS' : 'BLOCKED';
     for (const key of ['configReady', 'mappingReady', 'storeReady', 'providerBindingReady', 'syntheticGuardReady', 'reportPathReady', 'liveGuardsEnabled']) value[key] = run[key] === true;
     value.mappingChecks = Object.fromEntries(['architectPath', 'a01', 'tags', 'customFields'].map(k => [k, run.mappingChecks?.[k] === true]));
-    value.storeReadinessScope = 'LOCAL_CONFIG_ONLY'; value.storeHealthChecked = false; value.remoteReads = []; value.writesAttempted = false;
+    value.storeReadinessScope = run.storeReadinessScope === 'REMOTE_HEALTH' ? 'REMOTE_HEALTH' : 'LOCAL_CONFIG_ONLY';
+    value.storeHealthChecked = run.storeHealthChecked === true;
+    value.remoteReads = (run.remoteReads ?? []).filter(label => realReadLabels.includes(label)); value.writesAttempted = false;
     value.blockers = Array.isArray(run.blockers) ? run.blockers.filter(b => typeof b === 'string') : ['dry-run pre-flight failed'];
   }
   let text = JSON.stringify(value);
@@ -186,7 +189,7 @@ async function verify(runtime, run, lead, resources) {
   run.verification = { request: true, intent: true, consentEvidence: true, outboxSynced: true, remoteIds: true, domainEvents: true, contact: true, opportunity: true, noDuplicateContact: true, noDuplicateOpportunity: true, note, replay: run.replay };
 }
 
-export async function runPatrimonialSmoke({ options, env = {}, run = createSmokeRun(), runtimeFactory, persist = async () => {}, now = () => new Date(), reportPaths, preflightBindings, loadPreflightBindings }) {
+export async function runPatrimonialSmoke({ options, env = {}, run = createSmokeRun(), runtimeFactory, persist = async () => {}, now = () => new Date(), reportPaths, preflightBindings, loadPreflightBindings, validateRemote }) {
   assertSmokeReport(run); run.mode = options.mode; run.error = null;
   const save = async () => persist(publicSmokeReport(run, env));
   try {
@@ -194,7 +197,7 @@ export async function runPatrimonialSmoke({ options, env = {}, run = createSmoke
     if (options.simulate) { requireSmoke(options.mode === 'dry-run', 'INVALID_ARGUMENTS'); run.verification = await simulateSmokeFailure(); run.result = 'PASS'; await save(); return run; }
     if (options.mode === 'dry-run') {
       const readiness = await preflightPatrimonialSmoke({ env, reportPaths, bindings: preflightBindings, loadBindings: loadPreflightBindings,
-        syntheticGuard: () => assertSyntheticData(syntheticLead(run), run) });
+        syntheticGuard: () => assertSyntheticData(syntheticLead(run), run), validateRemote });
       Object.assign(run, readiness); run.result = readiness.blockers.length ? 'BLOCKED' : 'DRY_RUN_PASS';
       run.warnings = ['LIVE_NOT_EXECUTED']; await save(); return run;
     }
