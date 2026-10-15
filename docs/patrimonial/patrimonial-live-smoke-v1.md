@@ -2,9 +2,11 @@
 
 Preparato il 15 ottobre 2026 sulla baseline `c61ed43d1a1811069cbf0ecc6c21498bea76c03d`, branch `feat/patrimonial-pilot-funnels`. **LIVE_NOT_EXECUTED**: questa consegna prepara l'harness e verifica solo moduli importabili con trasporti fake. Nessuna esecuzione di `run-patrimonial-live-smoke.mjs`, neppure dry-run; nessuna chiamata remota, modifica env reale, migration, push, deploy o merge. `tmp/` preesistente completamente intatta.
 
+**Fix dry-run sulla baseline `74557d400d109b7c67144ea3b5d1a85e68a9f299`:** il precedente ritorno anticipato NOT_RUN è sostituito da un pre-flight locale reale. L'affermazione sopra sulla mancata esecuzione descrive la consegna 4D originaria; il fix prevede una successiva invocazione esclusivamente `--dry-run`, con report nuovi e senza toccare quelli preesistenti. Nessuna attivazione live o nuova validazione remota.
+
 ## 1. Entry point e modalità
 
-[run-patrimonial-live-smoke.mjs](../../scripts/run-patrimonial-live-smoke.mjs) è un comando CLI separato dal sito. Senza argomenti seleziona `--dry-run`: prepara il piano/report senza costruire store o provider e senza leggere il modulo di binding. Il risultato è `NOT_RUN`, mai PASS di un test live.
+[run-patrimonial-live-smoke.mjs](../../scripts/run-patrimonial-live-smoke.mjs) è un comando CLI separato dal sito. Senza argomenti seleziona `--dry-run`: verifica configurazioni, mapping, guardie sintetiche, binding e percorso report. Esito `DRY_RUN_PASS` oppure `BLOCKED` con nomi esatti mancanti/non validi; mai PASS di un test live. Non costruisce il runtime live e non chiama health/RPC/HTTP. L'oggetto store viene soltanto costruito localmente con un trasporto vietato, per validare URL e service key.
 
 Le seguenti sono istruzioni per una **futura esecuzione autorizzata**, non comandi eseguiti in 4D:
 
@@ -23,6 +25,8 @@ Scegliere una sola modalità. Verify richiede un report di esecuzione completata
 Prima di costruire i trasporti live devono essere letteralmente `true`: `PATRIMONIAL_SYNTHETIC_TEST_ENABLED`, `PATRIMONIAL_V2_ENABLED`, `PATRIMONIAL_CRM_WRITE_ENABLED`, `PATRIMONIAL_OPPORTUNITY_WRITE_ENABLED`. Execute e cleanup richiedono inoltre `--confirm-live-write`. Questi gate valgono anche per le letture remote di verify, esclusa la conferma di write. Booking/messages/webhook devono restare disabilitati.
 
 Il mapping centrale deve validarsi; `PATRIMONIAL_DURABLE_STORE_READY=true`, URL Supabase e service role dello stesso progetto sono prerequisiti server. La health dello store viene chiamata prima dell'acquisizione o di qualsiasi lettura/write HighLevel; errore/versione incompatibile impediscono il test. I gate vengono ricontrollati prima di ogni trasporto e mutazione. Credenziali, valori env, risposte grezze ed errori provider non vengono stampati.
+
+Questi requisiti di abilitazione e health riguardano i percorsi live. In dry-run i flag assenti/vuoti restano false per default, e false è una configurazione valida: non vengono accesi per superare il pre-flight. Sono rifiutati valori diversi da true/false e l'abilitazione di booking/messages/webhook. Il report indica separatamente `liveGuardsEnabled`; `storeReady` riguarda soltanto la configurazione locale costruibile (`storeReadinessScope=LOCAL_CONFIG_ONLY`, `storeHealthChecked=false`). Non attesta credenziali funzionanti, progetto raggiungibile o schema installato.
 
 Default di tutti e sette i flag funzionali: **false**. È aggiunta solo la voce `PATRIMONIAL_SYNTHETIC_TEST_ENABLED=false` a `.env.example`; i sei flag precedenti e il gate store non sono modificati. La configurazione produzione non è stata letta né cambiata.
 
@@ -50,6 +54,8 @@ Un modulo server attendibile passato con `--bindings` deve esportare `bindings` 
 I nuovi binding HTTP condividono `{verified:true, request(...args):{method,path,body?}, decode(body)}`. L'origine HighLevel è quella esistente, redirect vietati, timeout 10 secondi, no-store, nessun retry automatico. Opportunity read/search/create sono confinati a `/opportunities/`; i DELETE devono puntare all'ID specifico. Tag/contact rispettano i confini del provider precedente. Le ricerche devono restituire una pagina finale completa; non certificare una pagina parziale come completa. Una opportunity normalizzata contiene `id`, `version` effettiva, `locationId`, `contactId`, `pipelineId`, `pipelineStageId`, `status`, `customFields` come record ID → valore. Un contatto normalizzato conserva anche firstName/lastName/email/phone/tags/locationId. Le note usano il binding e marker già esistenti.
 
 Il modulo non va collocato in `tmp/`: i report sono dati, mai sorgenti eseguibili. Dry-run non importa il modulo. Nessun binding di esempio viene marcato verificato senza evidenza. **Gate live ancora aperto:** tali binding/location e audit dei side effect non sono stati forniti o verificati in 4D; l'esecuzione deve rifiutarsi di partire senza di essi. Questa consegna certifica l'harness locale, non l'operatività dei binding remoti.
+
+Nel dry-run il percorso `--bindings` viene letto come testo e analizzato staticamente dal [pre-flight](../../scripts/lib/patrimonial-live-smoke-preflight.mjs). È ammesso un solo `export const bindings = {...}` dichiarativo, con oggetti annidati, stringhe/booleani, arrow/function expression e riferimento `process.env.HIGHLEVEL_LOCATION_ID`. Si verificano marker verified, audit dichiarato, corrispondenza location, capability e presenza delle funzioni request/decode richieste. Le funzioni non sono chiamate. Import, helper, getter, spread e codice top-level non analizzabile producono un blocker specifico; nessun fallback a import/eval. L'esistenza o la forma dei binding non certifica endpoint o risposte reali. Modulo assente → `--bindings missing`.
 
 ## 4. Dati e acquisizione
 
@@ -99,6 +105,10 @@ Ogni futura invocazione CLI crea esclusivamente `tmp/patrimonial-live-smoke-<tim
 
 Campi: run ID, request ID, ID contatto/opportunity/intents, effetti, verifiche, replay, cleanup, PASS/FAIL/NOT_RUN e warning. Allowlist di campi, credenziali redatte anche se compaiono in un valore, niente token lease, env, body provider o stack. Verify/cleanup creano un nuovo report mantenendo l'identità della run originale; non sovrascrivono il report sorgente.
 
+Report dry-run aggiornato: `mode=DRY_RUN`, `status=PASS/BLOCKED`, `result=DRY_RUN_PASS/BLOCKED`, `configReady`, `mappingReady`, `storeReady`, `providerBindingReady`, `syntheticGuardReady`, `reportPathReady`, `mappingChecks`, blocker e `writesAttempted=false`. `remoteReads=[]`: il fix non aggiunge read remote. Percorsi JSON/MD validati nella sola directory tmp e scrittura esclusiva confermata prima di restituire l'esito.
+
 ## 11. Test locali della consegna
 
 `npm run test:patrimonial-live-smoke` importa solo i moduli libreria, con report in memoria e fetch globale vietata. Copre i dieci casi richiesti, flusso completo fake RPC/CRM, assenza di modifiche a righe outbox estranee, replay, nota opzionale, cleanup ripetuto, failure injection locale e redazione JSON/Markdown. La suite mapping/persistence/CRM/opportunity/legacy/2A/Radar resta verifica regressiva separata. Nessuna esecuzione PostgreSQL o test live viene attestato dai fake.
+
+Test del fix: dry-run completo anche con flag spenti, env assenti o invalidi con diagnostica specifica, fallback URL coerente con il runtime, mapping incompleto, binding mancanti/incompleti/non analizzabili, percorso report non valido, guardie sintetiche, redazione, zero runtime live/provider write/mutazioni Supabase. Le regressioni live del verificatore usano esclusivamente fixture; l'unico comando reale autorizzato per il fix è `npm run smoke:patrimonial -- --dry-run`.

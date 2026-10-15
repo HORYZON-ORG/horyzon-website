@@ -7,6 +7,7 @@ import { getPatrimonialRemoteMapping, validatePatrimonialRemoteMapping } from '.
 import { receivePatrimonialOpportunity, patrimonialOpportunityProjection } from '../../src/lib/public-leads/patrimonial-routing.ts';
 import { patrimonialNoteMarker, recordPatrimonialFailure } from '../../src/lib/public-leads/patrimonial-sync.ts';
 import { pilotForms, pilotExperience, pilotGoals, pilotAvailability } from '../../src/content/patrimonial-funnels.ts';
+import { preflightPatrimonialSmoke } from './patrimonial-live-smoke-preflight.mjs';
 
 const kinds = ['SYNC_REQUEST', 'RESOLVE_CONTACT', 'UPSERT_CONTACT', 'ADD_TAGS', 'ADD_NOTE'];
 const fieldKeys = ['hz_intent_key', 'hz_funnel', 'hz_source', 'hz_source_path', 'hz_requested_at', 'hz_privacy_version', 'hz_marketing_consent_snapshot', 'hz_next_step', 'hz_architect_profile', 'hz_architect_sales_experience', 'hz_architect_goal', 'hz_architect_availability'];
@@ -59,8 +60,8 @@ export function assertSyntheticData(lead, run) {
 export function assertSmokeReport(run) {
   requireSmoke(run?.version === 'patrimonial-live-smoke-1', 'INVALID_REPORT');
   assertSyntheticData(syntheticLead(run), run);
-  requireSmoke(new Date(run.timestamp).toISOString() === run.timestamp && ['dry-run', 'execute', 'verify', 'cleanup'].includes(run.mode)
-    && ['PASS', 'FAIL', 'NOT_RUN'].includes(run.result) && [run.executed, run.replay, run.contactCreatedByRun].every(v => typeof v === 'boolean')
+  requireSmoke(new Date(run.timestamp).toISOString() === run.timestamp && ['dry-run', 'DRY_RUN', 'execute', 'verify', 'cleanup'].includes(run.mode)
+    && ['PASS', 'FAIL', 'NOT_RUN', 'DRY_RUN_PASS', 'BLOCKED'].includes(run.result) && [run.executed, run.replay, run.contactCreatedByRun].every(v => typeof v === 'boolean')
     && (run.initialContactCount === null || (Number.isInteger(run.initialContactCount) && run.initialContactCount >= 0)), 'INVALID_REPORT');
   requireSmoke(kinds.every(k => isPatrimonialRequestId(run.operations?.[k])) && new Set(Object.values(run.operations)).size === kinds.length, 'INVALID_REPORT');
   requireSmoke([run.contactId, run.opportunityId, run.provisionalId, run.intentId, run.locationId].every(v => v === null || opaque(v)), 'INVALID_REPORT');
@@ -88,6 +89,13 @@ export function publicSmokeReport(run, env = {}) {
   value.cleanup = { opportunity: cleanupStates.has(run.cleanup?.opportunity) ? run.cleanup.opportunity : 'NOT_REQUESTED',
     contact: cleanupStates.has(run.cleanup?.contact) ? run.cleanup.contact : 'NOT_REQUESTED', audit: 'PRESERVED' };
   value.warnings = (run.warnings ?? []).filter(w => ['LIVE_NOT_EXECUTED', 'VERIFIED_BINDINGS_REQUIRED', 'NOTE_READ_SKIPPED', 'MANUAL_CLEANUP_REQUIRED'].includes(w));
+  if (run.result === 'DRY_RUN_PASS' || run.result === 'BLOCKED') {
+    value.mode = 'DRY_RUN'; value.status = run.result === 'DRY_RUN_PASS' ? 'PASS' : 'BLOCKED';
+    for (const key of ['configReady', 'mappingReady', 'storeReady', 'providerBindingReady', 'syntheticGuardReady', 'reportPathReady', 'liveGuardsEnabled']) value[key] = run[key] === true;
+    value.mappingChecks = Object.fromEntries(['architectPath', 'a01', 'tags', 'customFields'].map(k => [k, run.mappingChecks?.[k] === true]));
+    value.storeReadinessScope = 'LOCAL_CONFIG_ONLY'; value.storeHealthChecked = false; value.remoteReads = []; value.writesAttempted = false;
+    value.blockers = Array.isArray(run.blockers) ? run.blockers.filter(b => typeof b === 'string') : ['dry-run pre-flight failed'];
+  }
   let text = JSON.stringify(value);
   for (const [key, secret] of Object.entries(env)) if (/(?:TOKEN|SECRET|KEY|PASSWORD|AUTHORIZATION)/i.test(key) && typeof secret === 'string' && secret.length) {
     for (const variant of new Set([secret, encodeURIComponent(secret), Buffer.from(secret).toString('base64')])) text = text.replaceAll(JSON.stringify(variant).slice(1, -1), '[REDACTED]');
@@ -178,13 +186,18 @@ async function verify(runtime, run, lead, resources) {
   run.verification = { request: true, intent: true, consentEvidence: true, outboxSynced: true, remoteIds: true, domainEvents: true, contact: true, opportunity: true, noDuplicateContact: true, noDuplicateOpportunity: true, note, replay: run.replay };
 }
 
-export async function runPatrimonialSmoke({ options, env = {}, run = createSmokeRun(), runtimeFactory, persist = async () => {}, now = () => new Date() }) {
+export async function runPatrimonialSmoke({ options, env = {}, run = createSmokeRun(), runtimeFactory, persist = async () => {}, now = () => new Date(), reportPaths, preflightBindings, loadPreflightBindings }) {
   assertSmokeReport(run); run.mode = options.mode; run.error = null;
   const save = async () => persist(publicSmokeReport(run, env));
   try {
     await save();
     if (options.simulate) { requireSmoke(options.mode === 'dry-run', 'INVALID_ARGUMENTS'); run.verification = await simulateSmokeFailure(); run.result = 'PASS'; await save(); return run; }
-    if (options.mode === 'dry-run') { run.result = 'NOT_RUN'; run.warnings = ['LIVE_NOT_EXECUTED', 'VERIFIED_BINDINGS_REQUIRED']; await save(); return run; }
+    if (options.mode === 'dry-run') {
+      const readiness = await preflightPatrimonialSmoke({ env, reportPaths, bindings: preflightBindings, loadBindings: loadPreflightBindings,
+        syntheticGuard: () => assertSyntheticData(syntheticLead(run), run) });
+      Object.assign(run, readiness); run.result = readiness.blockers.length ? 'BLOCKED' : 'DRY_RUN_PASS';
+      run.warnings = ['LIVE_NOT_EXECUTED']; await save(); return run;
+    }
     assertLiveSmoke(options, env);
     let resources;
     try { resources = getPatrimonialRemoteMapping(env); } catch { throw new SmokeError('MAPPING_NOT_READY'); }
@@ -293,7 +306,11 @@ export async function runPatrimonialSmoke({ options, env = {}, run = createSmoke
       } else throw new SmokeError('INVALID_ARGUMENTS');
     }
     run.result = 'PASS';
-  } catch (error) { run.result = 'FAIL'; run.error = error instanceof SmokeError ? error.code : 'SMOKE_FAILED'; }
+  } catch (error) {
+    run.result = options.mode === 'dry-run' && !options.simulate ? 'BLOCKED' : 'FAIL';
+    run.error = error instanceof SmokeError ? error.code : 'SMOKE_FAILED';
+    if (run.result === 'BLOCKED') run.blockers = ['dry-run pre-flight or report generation failed'];
+  }
   await save(); return run;
 }
 

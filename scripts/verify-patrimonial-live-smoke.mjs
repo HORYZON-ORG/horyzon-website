@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import path from 'node:path';
 import { FakePatrimonialSupabase } from './fixtures/patrimonial-supabase-transport.mjs';
 import { SupabasePatrimonialStore } from '../src/lib/public-leads/patrimonial-supabase.ts';
 import { patrimonialFlags } from '../src/lib/public-leads/patrimonial-store.ts';
@@ -8,6 +9,7 @@ import { getPatrimonialRemoteMapping } from '../src/lib/public-leads/patrimonial
 import { validatePatrimonialV2 } from '../src/lib/public-leads/patrimonial-funnels.ts';
 import { createSmokeRuntime } from './lib/patrimonial-live-smoke-runtime.mjs';
 import { createSmokeRun, parseSmokeArgs, publicSmokeReport, runPatrimonialSmoke, syntheticLead, assertSyntheticData, assertSmokeReport, simulateSmokeFailure, smokeMarkdown } from './lib/patrimonial-live-smoke.mjs';
+import { parseSmokeBindingsMetadata, validSmokeReportPaths } from './lib/patrimonial-live-smoke-preflight.mjs';
 
 // Never import or invoke the live CLI. All reports are captured in memory; no
 // files under tmp/ are created, read, modified, enumerated or cleaned by tests.
@@ -51,9 +53,10 @@ function fixture() {
 
 assert.equal(parseSmokeArgs([]).mode, 'dry-run');
 for (const argv of [['--execute', '--verify'], ['--execute', '--simulate-provider-failure'], ['--cleanup'], ['--unexpected'], ['--report', 'x']]) assert.throws(() => parseSmokeArgs(argv));
-const dry = fixture(); assert.equal((await dry.invoke(parseSmokeArgs([]))).result, 'NOT_RUN');
+const dry = fixture(); assert.equal((await dry.invoke(parseSmokeArgs([]))).result, 'BLOCKED');
+assert(dry.run.blockers.includes('HIGHLEVEL_PRIVATE_TOKEN missing')); assert.equal(dry.run.mappingReady, true);
 assert.equal(dry.factories, 0); assert.equal(dry.db.calls.length, 0); assert.equal(dry.calls.length, 0); assert(dry.reports.length);
-passed.push('1 dry-run default: zero runtime construction, DB or CRM calls; in-memory report only');
+passed.push('1 dry-run checks readiness instead of returning NOT_RUN; missing config blocks with exact names; zero network');
 for (const key of Object.keys(flags)) {
   const off = fixture(); off.env[key] = 'false'; assert.equal((await off.invoke()).error, 'LIVE_FLAGS_REQUIRED'); assert.equal(off.factories, 0);
 }
@@ -156,6 +159,44 @@ const bindings = { verified: true, sideEffectsReviewed: true, locationId: 'fixtu
   }, contactDelete: binding(id => ({ method: 'DELETE', path: `/contacts/${id}` })),
   contactOpportunities: binding(id => ({ method: 'POST', path: '/opportunities/fixture-search', body: { contactId: id } })),
 };
+const reportPaths = { directory: path.resolve('tmp'), json: path.resolve('tmp/patrimonial-live-smoke-fixture.json'), markdown: path.resolve('tmp/patrimonial-live-smoke-fixture.md') };
+assert(validSmokeReportPaths(reportPaths));
+let dryRuntimeCalls = 0, dryPersistCalls = 0;
+const dryReports = [], dryEnv = { ...httpEnv, ...Object.fromEntries(Object.keys(flags).map(k => [k, 'false'])), PATRIMONIAL_DURABLE_STORE_READY: 'false' };
+const dryCheck = (env = dryEnv, bindingMetadata = bindings, paths = reportPaths) => runPatrimonialSmoke({ options: parseSmokeArgs([]), env, run: fresh(),
+  reportPaths: paths, preflightBindings: bindingMetadata, persist: async report => { dryPersistCalls++; dryReports.push(report); },
+  runtimeFactory: () => { dryRuntimeCalls++; throw new Error('Dry-run cannot construct live runtime'); } });
+const dryPass = await dryCheck();
+assert.equal(dryPass.result, 'DRY_RUN_PASS');
+for (const key of ['configReady', 'mappingReady', 'storeReady', 'providerBindingReady', 'syntheticGuardReady', 'reportPathReady']) assert.equal(dryPass[key], true, key);
+assert.equal(dryPass.liveGuardsEnabled, false, 'Disabled flags are valid for dry-run; never enable them to validate configuration');
+assert.equal(dryPass.storeHealthChecked, false); assert.equal(dryPass.writesAttempted, false); assert.deepEqual(dryPass.remoteReads, []);
+assert.equal(dryReports.at(-1).mode, 'DRY_RUN'); assert.equal(dryReports.at(-1).status, 'PASS'); assert.equal(dryRuntimeCalls, 0);
+for (const name of ['HIGHLEVEL_LOCATION_ID', 'HIGHLEVEL_PRIVATE_TOKEN', 'SUPABASE_SERVICE_ROLE_KEY']) {
+  const env = { ...dryEnv }; delete env[name]; const report = await dryCheck(env);
+  assert.equal(report.result, 'BLOCKED'); assert(report.blockers.includes(`${name} missing`));
+}
+const noUrl = { ...dryEnv }; delete noUrl.SUPABASE_URL;
+assert((await dryCheck(noUrl)).blockers.includes('SUPABASE_URL / NEXT_PUBLIC_SUPABASE_URL missing'));
+assert.equal((await dryCheck({ ...noUrl, NEXT_PUBLIC_SUPABASE_URL: 'https://patrimonial.invalid' })).storeReady, true);
+assert.equal((await dryCheck({ ...dryEnv, SUPABASE_URL: '', NEXT_PUBLIC_SUPABASE_URL: 'https://patrimonial.invalid' })).storeReady, false, 'Present empty server URL does not use fallback');
+for (const changes of [{ SUPABASE_URL: 'https://invalid.example/path' }, { SUPABASE_SERVICE_ROLE_KEY: 'sb_publishable_fixture' }, { HIGHLEVEL_LOCATION_ID: 'bad/location' }, { HIGHLEVEL_PRIVATE_TOKEN: 'bad\ntoken' }, { PATRIMONIAL_SYNTHETIC_TEST_ENABLED: 'yes' }]) assert.equal((await dryCheck({ ...dryEnv, ...changes })).result, 'BLOCKED');
+const dryMapping = await dryCheck({ ...dryEnv, PATRIMONIAL_HIGHLEVEL_REMOTE_IDS_JSON: '{"stages":{"A01":""}}' });
+assert.equal(dryMapping.result, 'BLOCKED'); assert.equal(dryMapping.mappingReady, false);
+const dryNoBindings = await dryCheck(dryEnv, null); assert.equal(dryNoBindings.providerBindingReady, false); assert(dryNoBindings.blockers.includes('--bindings missing'));
+const incompleteBindings = { ...bindings, opportunities: { ...bindings.opportunities, create: null } };
+assert((await dryCheck(dryEnv, incompleteBindings)).blockers.includes('bindings.opportunities.create missing or invalid'));
+const invalidPath = await dryCheck(dryEnv, bindings, { ...reportPaths, markdown: path.resolve('outside.md') });
+assert.equal(invalidPath.reportPathReady, false); assert.equal(invalidPath.result, 'BLOCKED');
+const pureMetadata = parseSmokeBindingsMetadata('export const bindings = { verified: true, locationId: process.env.HIGHLEVEL_LOCATION_ID, request: () => { throw new Error("never execute"); } };', dryEnv);
+assert.equal(pureMetadata.locationId, 'fixture-location'); assert.equal(typeof pureMetadata.request, 'function');
+for (const source of ['globalThis.fetch("https://invalid.example"); export const bindings = {};', 'import x from "./unreviewed.mjs"; export const bindings = x;', 'export const bindings = makeBindings();', 'export const bindings = { get verified() { throw new Error(); } };']) assert.throws(() => parseSmokeBindingsMetadata(source, dryEnv));
+const dryRedacted = publicSmokeReport({ ...dryPass, error: 'fixture-secret', blockers: ['fixture-token'] }, dryEnv);
+const dryText = JSON.stringify(dryRedacted) + smokeMarkdown(dryRedacted);
+assert(!dryText.includes('fixture-secret')); assert(!dryText.includes('fixture-token'));
+assert.equal(dryRuntimeCalls, 0); assert(dryPersistCalls > 0); assert.equal(httpCalls.length, 0); assert.equal(http.db.calls.length, 0);
+passed.push('dry-run complete config → DRY_RUN_PASS; specific env/mapping/binding/path blockers; report redacted; zero provider writes or Supabase mutations');
+passed.push('binding metadata parsed without import/eval or function invocation; disabled flags remain unchanged; store readiness is configuration only');
 const fakeHttp = async (value, init) => {
   const url = new URL(value); httpCalls.push({ path: url.pathname, method: init.method });
   assert.equal(init.redirect, 'error'); assert.equal(init.cache, 'no-store'); assert(init.signal);
