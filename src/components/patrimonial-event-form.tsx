@@ -29,7 +29,7 @@ export function PatrimonialEventForm({ step, setStep, selectedProfile, onProfile
         <label>Nome<input ref={firstName} name="firstName" type="text" autoComplete="given-name" required maxLength={120} /></label>
         <label>Email<input name="email" type="email" autoComplete="email" required maxLength={254} /></label>
       </div>
-      <label>Cellulare <span className={styles.optional}>(facoltativo)</span><input name="phone" type="tel" autoComplete="tel" maxLength={40} /></label>
+      <label><span className={styles["phone-label"]}>Cellulare <span className={styles.optional}>(facoltativo)</span></span><input name="phone" type="tel" autoComplete="tel" maxLength={40} /></label>
       <label className={styles.formConsent}><input name="consent" type="checkbox" required /><span>Ho letto l&apos;<Link href="/privacy-policy" target="_blank" rel="noopener">informativa privacy</Link> e accetto di essere ricontattato per questo evento.</span></label>
     </fieldset>
     <fieldset className={styles.formFields} hidden={step !== 2} disabled={disabled || step === 1}>
@@ -43,7 +43,7 @@ export function PatrimonialEventForm({ step, setStep, selectedProfile, onProfile
     <input name="profile" type="hidden" value={eventProfileValue(selectedProfile)} />
     <input name="message" type="hidden" value="" />
     <div hidden><label>Sito web<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
-    <button type="submit" className={`${styles['btn-gold']} ${styles.formSubmit}`} disabled={disabled || revisionRequired}>
+    <button type="submit" className={`${styles.cta} ${styles.formSubmit}`} disabled={disabled || revisionRequired}>
       <span>{status === 'sending' ? 'Invio in corso…' : status === 'success' ? 'Richiesta ricevuta.' : step === 1 ? 'Riserva il mio posto gratuito' : 'Conferma la richiesta'}</span>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
     </button>

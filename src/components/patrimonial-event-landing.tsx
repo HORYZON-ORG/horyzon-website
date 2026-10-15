@@ -8,7 +8,7 @@ import { eventSession } from '@/content/patrimonial-event-session';
 import { eventScenes, eventFormTitle, eventCalculator } from '@/content/patrimonial-event-content';
 import styles from './patrimonial-event.module.css';
 
-// Literal structure, copy and inline declarations transferred from the supplied HTML.
+// Existing event interactions with route-scoped presentation from the mobile reference.
 // The clock has its own provider so second ticks only rerender session consumers.
 export function PatrimonialEventLanding() {
   const [scene, setScene] = useState<string | null>(null);
@@ -20,7 +20,7 @@ export function PatrimonialEventLanding() {
   return <EventSessionProvider><div data-session-status={eventSession.status} data-availability={eventSession.status === 'PLACEHOLDER' ? 'demo' : 'confirmed'} className={[styles.s000, styles.page].join(' ')}>
 
 <div data-event-section="urgency" className={[styles.s001].join(' ')}>
-<span className={[styles.s002].join(' ')}>Iscrizioni aperte fino a esaurimento posti</span> · restano <strong className={[styles.s003].join(' ')}><EventSessionValue name="seatsLeft" /> posti su <EventSessionValue name="seatsTotal" /></strong> · evento del <strong className={[styles.s003].join(' ')}><EventSessionValue name="eventLabel" /></strong>
+<span className={styles.s002}><span className={styles["live-dot"]} aria-hidden="true" />Iscrizioni aperte · restano <strong><EventSessionValue name="seatsLeft" /> posti su <EventSessionValue name="seatsTotal" /></strong> · <EventSessionValue name="eventLabel" /></span>
 </div>
 
 <div data-event-section="hero" className={[styles["hero"], styles.s004].join(' ')}>
@@ -29,24 +29,24 @@ export function PatrimonialEventLanding() {
 <span className={[styles.s007].join(' ')}>HORYZON</span>
 <span className={[styles.s008].join(' ')}>Benessere Patrimoniale</span>
 </div>
-<a href="#richiesta" className={[styles.s009].join(' ')}>Riserva il posto</a>
+<a href="#richiesta" className={[styles["cta"], styles["cta-ghost"], styles.s009].join(' ')}>Riserva il posto</a>
 </div>
-<div className={[styles.s010].join(' ')}>
+<div className={[styles["hero-inner"], styles.s010].join(' ')}>
 <div className={[styles.s011].join(' ')}>
-<div className={[styles.s012].join(' ')}>PER CHI HA RISPARMI, UN&apos;IMPRESA O UNA FAMIGLIA DA PROTEGGERE</div>
-<h1 className={[styles.s013].join(' ')}>Quello che le banche <em className={[styles["goldtxt"], styles.s014].join(' ')}>non</em> dicono.</h1>
-<p className={[styles.s015].join(' ')}>Hai lavorato anni per mettere da parte qualcosa. In 90 minuti scopri <strong className={[styles.s003].join(' ')}>le 6 domande da fare prima di affidarlo a chiunque</strong>, e che ruolo può avere l&apos;oro fisico in un patrimonio davvero diversificato.</p>
-<div className={[styles.s016].join(' ')}>
+<div className={[styles["label"], styles["load-1"], styles.s012].join(' ')}>Evento online gratuito · Per chi ha risparmi, un&apos;impresa o una famiglia da proteggere</div>
+<h1 className={[styles["load-2"], styles.s013].join(' ')}>Quello che le banche <span className={[styles["chip-lime"], styles.s014].join(' ')}>non</span> dicono.</h1>
+<p className={[styles["load-3"], styles.s015].join(' ')}>Hai lavorato anni per mettere da parte qualcosa. In 90 minuti scopri <strong className={[styles.s003].join(' ')}>le 6 domande da fare prima di affidarlo a chiunque</strong>, e che ruolo può avere l&apos;oro fisico in un patrimonio davvero diversificato.</p>
+<div className={[styles["load-4"], styles.s016].join(' ')}>
 <div className={[styles.s017].join(' ')}>L&apos;INCONTRO INIZIA TRA</div>
-<div className={[styles.s018].join(' ')}>
-<div className={[styles["glass"], styles.s019].join(' ')}><div className={[styles.s020].join(' ')}><EventSessionValue name="cd.d" /></div><div className={[styles.s021].join(' ')}>GIORNI</div></div>
-<div className={[styles["glass"], styles.s019].join(' ')}><div className={[styles.s020].join(' ')}><EventSessionValue name="cd.h" /></div><div className={[styles.s021].join(' ')}>ORE</div></div>
-<div className={[styles["glass"], styles.s019].join(' ')}><div className={[styles.s020].join(' ')}><EventSessionValue name="cd.m" /></div><div className={[styles.s021].join(' ')}>MINUTI</div></div>
-<div className={[styles["glass"], styles.s019].join(' ')}><div className={[styles["goldtxt"], styles.s020].join(' ')}><EventSessionValue name="cd.s" /></div><div className={[styles.s021].join(' ')}>SECONDI</div></div>
+<div className={[styles["cd-row"], styles.s018].join(' ')}>
+<div className={[styles["tile-d"], styles.s019].join(' ')}><div className={[styles.s020].join(' ')}><EventSessionValue name="cd.d" /></div><div className={[styles.s021].join(' ')}>GIORNI</div></div>
+<div className={[styles["tile-d"], styles.s019].join(' ')}><div className={[styles.s020].join(' ')}><EventSessionValue name="cd.h" /></div><div className={[styles.s021].join(' ')}>ORE</div></div>
+<div className={[styles["tile-d"], styles.s019].join(' ')}><div className={[styles.s020].join(' ')}><EventSessionValue name="cd.m" /></div><div className={[styles.s021].join(' ')}>MINUTI</div></div>
+<div className={[styles["tile-d"], styles.s019].join(' ')}><div className={[styles.accent, styles["sec-box"], styles.s020].join(' ')}><EventSessionValue name="cd.s" /></div><div className={[styles.s021].join(' ')}>SECONDI</div></div>
 </div>
 </div>
-<div className={[styles.s022].join(' ')}>
-<a href="#richiesta" className={[styles["btn-gold"], styles.s023].join(' ')}>Sì, riservo il mio posto gratuito
+<div className={[styles["stack-m"], styles["load-4"], styles.s022].join(' ')}>
+<a href="#richiesta" className={[styles.cta, styles.s023].join(' ')}>Sì, riservo il mio posto gratuito
 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
 <div className={[styles.s024].join(' ')}>
 <div className={[styles.s025].join(' ')}>
@@ -59,7 +59,7 @@ export function PatrimonialEventLanding() {
 </div>
 <div className={[styles.s030].join(' ')}>Gratuito · Online · Nessuna vendita durante l&apos;incontro</div>
 </div>
-<div className={[styles["glass"], styles["hero-chip"], styles.s031].join(' ')}>
+<div className={[styles["tile-d"], styles["hero-chip"], styles.s031].join(' ')}>
 <div className={[styles.s032].join(' ')}><span>Posti occupati</span><strong className={[styles.s003].join(' ')}><EventSessionValue name="seatsTaken" /> / <EventSessionValue name="seatsTotal" /></strong></div>
 <div className={[styles.s033].join(' ')}><div style={ { width: `${eventSession.seatsTaken / eventSession.seatsTotal * 100}%` }} className={[styles.s034].join(' ')}></div></div>
 <div className={[styles.s035].join(' ')}>Limitati per rispondere a tutte le domande dal vivo.</div>
@@ -79,10 +79,11 @@ export function PatrimonialEventLanding() {
 <div data-event-section="scenes" className={[styles.s039].join(' ')}>
 <div className={[styles.s040].join(' ')}>
 <div className={[styles.s041].join(' ')}>PRIMA DI TUTTO, PARLIAMO DI TE</div>
-<h2 className={[styles.s042].join(' ')}>In quale di queste scene ti rivedi?</h2>
+<h2 className={[styles.reveal, styles.s042].join(' ')}>In quale di queste scene <span className={styles["chip-ink"]}>ti rivedi?</span></h2>
 <p className={[styles.s043].join(' ')}>Tocca quella che ti somiglia di più: ti diciamo cosa troverai, per te, nell&apos;incontro.</p>
+<p className={`${styles["swipe-hint"]} ${styles.label}`}>Scorri le 4 scene →</p>
 </div>
-<div className={[styles.s044].join(' ')}>
+<div data-carousel="s044" role="region" aria-label="Le quattro scene" tabIndex={0} className={[styles["snap"], styles.s044].join(' ')}>
 {eventScenes.map(item => (<button type="button" aria-pressed={scene === item.id} key={item.id} data-scene={item.id} onClick={() => { setScene(item.id); setSelectedProfile(item.profile); }} className={[styles.scene, scene === item.id ? styles.on : ''].join(' ')}>
 <div className={[styles.s045].join(' ')}>
 <Image src={item.img} alt={item.alt} width={1000} height={720} sizes="(max-width: 820px) 100vw, 50vw" className={[styles.s046].join(' ')} />
@@ -98,11 +99,11 @@ export function PatrimonialEventLanding() {
 {cur && (<div className={[styles.s052].join(' ')}>
 <div className={[styles.s053].join(' ')}>
 <div className={[styles.s054].join(' ')}>
-<div className={[styles.s012].join(' ')}><span data-bind="cur.kicker">{cur.kicker}</span></div>
+<div className={[styles["label"], styles.s012].join(' ')}><span data-bind="cur.kicker">{cur.kicker}</span></div>
 <div className={[styles.s055].join(' ')}><span data-bind="cur.answer">{cur.answer}</span></div>
 <div className={[styles.s056].join(' ')}><span data-bind="cur.detail">{cur.detail}</span></div>
 </div>
-<a href="#richiesta" className={[styles["btn-gold"], styles.s057].join(' ')}><span data-bind="cur.cta">{cur.cta}</span>
+<a href="#richiesta" className={[styles.cta, styles.s057].join(' ')}><span data-bind="cur.cta">{cur.cta}</span>
 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
 </div>
 </div>)}
@@ -117,15 +118,15 @@ export function PatrimonialEventLanding() {
 <div data-event-section="calculator" className={[styles.s061].join(' ')}>
 <div className={[styles.s062].join(' ')}>
 <div className={[styles.s063].join(' ')}>
-<div className={[styles.s012].join(' ')}>CAPITOLO 01 · IL NEMICO SILENZIOSO</div>
-<h2 className={[styles.s064].join(' ')}>Nessuno ti ha tolto un euro. <span className={[styles["goldtxt"]].join(' ')}>Eppure ne hai di meno.</span></h2>
+<div className={[styles["label"], styles.s012].join(' ')}>CAPITOLO 01 · IL NEMICO SILENZIOSO</div>
+<h2 className={[styles.reveal, styles.s064].join(' ')}>Nessuno ti ha tolto un euro. <span className={[styles.accent].join(' ')}>Eppure ne hai di meno.</span></h2>
 <p className={[styles.s065].join(' ')}>Tra il 2021 e il 2025 i prezzi in Italia sono saliti in media del 17,1%. Il saldo sul conto è rimasto lo stesso, ma quello che ci compri no. Prova con la tua cifra.</p>
 </div>
 <div className={[styles.s066].join(' ')}>
 
 <div className={[styles.s067].join(' ')}>
-<label htmlFor="capitale" className={[styles.s068].join(' ')}>Quanto hai messo da parte nel 2021?</label>
-<div className={[styles["goldtxt"], styles.s069].join(' ')}><span data-bind="calc.amount">{calc.amount}</span> €</div>
+<label htmlFor="capitale" className={[styles.s068].join(' ')}>Quanto avevi messo da parte nel 2021?</label>
+<div className={[styles.accent, styles.s069].join(' ')}><span data-bind="calc.amount">{calc.amount}</span> €</div>
 <input id="capitale" type="range" min="10000" max="1000000" step="10000" value={amount} onChange={event => setAmount(Number(event.target.value))} />
 <div className={[styles.s070].join(' ')}>
 {[50000, 100000, 250000, 500000].map(pr => (<button type="button" key={pr} data-preset={pr} onClick={() => setAmount(pr)} aria-pressed={amount === pr} className={[styles['chip-d'], amount === pr ? styles.on : ''].join(' ')}>{pr / 1000}k €</button>))}
@@ -142,13 +143,13 @@ export function PatrimonialEventLanding() {
 <div className={[styles.s080].join(' ')}>
 <Image src="/benessere-patrimoniale/evento/coins.jpg" alt="Due colonne di monete d'oro: la seconda è più bassa e la parte mancante è un contorno luminoso" width={1400} height={1100} sizes="(max-width: 820px) 100vw, 50vw" className={[styles.s081].join(' ')} />
 <div className={[styles.s082].join(' ')}>
-<div className={[styles["glass"], styles.s083].join(' ')}><div className={[styles.s084].join(' ')}>2021</div><div className={[styles.s085].join(' ')}>{calc.amount} €</div></div>
+<div className={[styles["tile-d"], styles["coin-tag"], styles.s083].join(' ')}><div className={[styles.s084].join(' ')}>2021</div><div className={[styles.s085].join(' ')}>{calc.amount} €</div></div>
 </div>
 <div className={[styles.s086].join(' ')}>
-<div className={[styles.s087].join(' ')}><div className={[styles.s088].join(' ')}>EVAPORATO</div><div className={[styles.s089].join(' ')}>−{calc.lost} €</div></div>
+<div className={[styles["coin-tag"], styles.s087].join(' ')}><div className={[styles.s088].join(' ')}>EVAPORATO</div><div className={[styles.s089].join(' ')}>−{calc.lost} €</div></div>
 </div>
-<div className={[styles.s090].join(' ')}>
-<div className={[styles["glass"], styles.s083].join(' ')}><div className={[styles.s084].join(' ')}>2025</div><div className={[styles.s085].join(' ')}>≈ {calc.real} €</div></div>
+<div className={[styles["coin-2025"], styles.s090].join(' ')}>
+<div className={[styles["tile-d"], styles["coin-tag"], styles.s083].join(' ')}><div className={[styles.s084].join(' ')}>2025</div><div className={[styles.s085].join(' ')}>≈ {calc.real} €</div></div>
 </div>
 </div>
 </div>
@@ -159,7 +160,7 @@ export function PatrimonialEventLanding() {
 <div data-event-section="pyramid" className={[styles.s091].join(' ')}>
 <div className={[styles.s092].join(' ')}>
 <div className={[styles.s041].join(' ')}>CAPITOLO 02 · IL VERO PROBLEMA</div>
-<h2 className={[styles.s093].join(' ')}>Mettere da parte soldi <em className={[styles.s094].join(' ')}>non è</em> proteggere valore.</h2>
+<h2 className={[styles.reveal, styles.s093].join(' ')}>Mettere da parte soldi <span className={[styles.s094].join(' ')}>non è</span> proteggere valore.</h2>
 <p className={[styles.s043].join(' ')}>Quasi tutti i patrimoni che vediamo poggiano su un solo piano: il conto corrente, o i prodotti della banca di fiducia. Funziona finché va tutto bene.</p>
 <p className={[styles.s043].join(' ')}>Nell&apos;incontro ti mostriamo come ragionare <strong className={[styles.s038].join(' ')}>per livelli</strong>, così capisci da solo dove il tuo patrimonio è scoperto.</p>
 <div className={[styles["pyr-list"], styles.s095].join(' ')}>
@@ -170,9 +171,9 @@ export function PatrimonialEventLanding() {
 </div>
 <div className={[styles.s100].join(' ')}>
 <Image src="/benessere-patrimoniale/evento/pyramid.jpg" alt="Tre livelli sovrapposti: una base scura, un livello color petrolio e in cima un lingotto d'oro" width={1400} height={1050} sizes="(max-width: 820px) 100vw, 50vw" className={[styles.s081].join(' ')} />
-<div className={[styles["pyr-label"], styles.s101].join(' ')}><span className={[styles.s102].join(' ')}></span><span className={[styles.s103].join(' ')}></span><span className={[styles["glass"], styles.s104].join(' ')}><strong className={[styles.s105].join(' ')}>03 · Riserva di valore</strong><br />protegge quando il resto oscilla</span></div>
-<div className={[styles["pyr-label"], styles.s106].join(' ')}><span className={[styles.s107].join(' ')}></span><span className={[styles.s108].join(' ')}></span><span className={[styles["glass"], styles.s104].join(' ')}><strong className={[styles.s109].join(' ')}>02 · Crescita</strong><br />lavora per te nel tempo</span></div>
-<div className={[styles["pyr-label"], styles.s110].join(' ')}><span className={[styles.s111].join(' ')}></span><span className={[styles.s112].join(' ')}></span><span className={[styles["glass"], styles.s104].join(' ')}><strong>01 · Liquidità e sicurezza</strong><br />ciò che ti serve domani</span></div>
+<div className={[styles["pyr-label"], styles.s101].join(' ')}><span className={[styles.s102].join(' ')}></span><span className={[styles.s103].join(' ')}></span><span className={[styles["tile-d"], styles.s104].join(' ')}><strong className={[styles.s105].join(' ')}>03 · Riserva di valore</strong><br />protegge quando il resto oscilla</span></div>
+<div className={[styles["pyr-label"], styles.s106].join(' ')}><span className={[styles.s107].join(' ')}></span><span className={[styles.s108].join(' ')}></span><span className={[styles["tile-d"], styles.s104].join(' ')}><strong className={[styles.s109].join(' ')}>02 · Crescita</strong><br />lavora per te nel tempo</span></div>
+<div className={[styles["pyr-label"], styles.s110].join(' ')}><span className={[styles.s111].join(' ')}></span><span className={[styles.s112].join(' ')}></span><span className={[styles["tile-d"], styles.s104].join(' ')}><strong>01 · Liquidità e sicurezza</strong><br />ciò che ti serve domani</span></div>
 </div>
 </div>
 
@@ -180,19 +181,20 @@ export function PatrimonialEventLanding() {
 <div className={[styles.s114].join(' ')}>
 <div className={[styles.s115].join(' ')}>
 <div className={[styles.s041].join(' ')}>CAPITOLO 03 · COSA SCOPRIRAI</div>
-<h2 className={[styles.s093].join(' ')}>6 domande che quasi nessuno fa prima di firmare.</h2>
+<h2 className={[styles.reveal, styles.s093].join(' ')}>6 domande che quasi nessuno fa prima di firmare.</h2>
 <p className={[styles.s043].join(' ')}>Le risposte le diamo dal vivo. Qui ti lasciamo solo le domande: prova a vedere a quante sapresti rispondere oggi.</p>
+<p className={`${styles["swipe-hint"]} ${styles.label}`}>Scorri le 6 domande →</p>
 </div>
-<div className={[styles.s116].join(' ')}>
-<div className={[styles["qcard"]].join(' ')}><span className={[styles["goldtxt"], styles.s117].join(' ')}>01</span><strong className={[styles.s118].join(' ')}>Qual è la differenza tra &quot;ho risparmiato&quot; e &quot;sono protetto&quot;?</strong><span className={[styles.s119].join(' ')}>Molti se ne accorgono solo quando è troppo tardi.</span></div>
-<div className={[styles["qcard"]].join(' ')}><span className={[styles["goldtxt"], styles.s117].join(' ')}>02</span><strong className={[styles.s118].join(' ')}>Cosa significa davvero diversificare?</strong><span className={[styles.s119].join(' ')}>E perché 5 fondi della stessa banca spesso non lo sono.</span></div>
-<div className={[styles["qcard"]].join(' ')}><span className={[styles["goldtxt"], styles.s117].join(' ')}>03</span><strong className={[styles.s118].join(' ')}>Quali rischi non compaiono in nessun estratto conto?</strong><span className={[styles.s119].join(' ')}>Ne vediamo tre, e come riconoscerli nel tuo patrimonio.</span></div>
-<div className={[styles["qcard"]].join(' ')}><span className={[styles["goldtxt"], styles.s117].join(' ')}>04</span><strong className={[styles.s118].join(' ')}>Perché l&apos;oro fisico torna al centro della diversificazione?</strong><span className={[styles.s119].join(' ')}>Cosa fa bene, cosa non fa, e per chi non ha senso.</span></div>
-<div className={[styles["qcard"]].join(' ')}><span className={[styles["goldtxt"], styles.s117].join(' ')}>05</span><strong className={[styles.s118].join(' ')}>Oro fisico od &quot;oro di carta&quot;: cosa possiedi davvero?</strong><span className={[styles.s119].join(' ')}>La distinzione che pochi spiegano con chiarezza.</span></div>
-<div className={[styles["qcard"], styles.s120].join(' ')}><span className={[styles["goldtxt"], styles.s117].join(' ')}>06</span><strong className={[styles.s118].join(' ')}>Qual è la domanda da fare a qualunque consulente?</strong><span className={[styles.s121].join(' ')}>Prima di firmare qualsiasi cosa. La risposta ti dice quasi tutto.</span></div>
+<div data-carousel="s116" role="region" aria-label="Le sei domande" tabIndex={0} className={[styles["snap"], styles.s116].join(' ')}>
+<div className={[styles["qcard"]].join(' ')}><span className={[styles.accent, styles.s117].join(' ')}>01</span><strong className={[styles.s118].join(' ')}>Qual è la differenza tra &quot;ho risparmiato&quot; e &quot;sono protetto&quot;?</strong><span className={[styles.s119].join(' ')}>Molti se ne accorgono solo quando è troppo tardi.</span></div>
+<div className={[styles["qcard"]].join(' ')}><span className={[styles.accent, styles.s117].join(' ')}>02</span><strong className={[styles.s118].join(' ')}>Cosa significa davvero diversificare?</strong><span className={[styles.s119].join(' ')}>E perché 5 fondi della stessa banca spesso non lo sono.</span></div>
+<div className={[styles["qcard"]].join(' ')}><span className={[styles.accent, styles.s117].join(' ')}>03</span><strong className={[styles.s118].join(' ')}>Quali rischi non compaiono in nessun estratto conto?</strong><span className={[styles.s119].join(' ')}>Ne vediamo tre, e come riconoscerli nel tuo patrimonio.</span></div>
+<div className={[styles["qcard"]].join(' ')}><span className={[styles.accent, styles.s117].join(' ')}>04</span><strong className={[styles.s118].join(' ')}>Perché l&apos;oro fisico torna al centro della diversificazione?</strong><span className={[styles.s119].join(' ')}>Cosa fa bene, cosa non fa, e per chi non ha senso.</span></div>
+<div className={[styles["qcard"]].join(' ')}><span className={[styles.accent, styles.s117].join(' ')}>05</span><strong className={[styles.s118].join(' ')}>Oro fisico od &quot;oro di carta&quot;: cosa possiedi davvero?</strong><span className={[styles.s119].join(' ')}>La distinzione che pochi spiegano con chiarezza.</span></div>
+<div className={[styles["qcard"], styles.s120].join(' ')}><span className={[styles.accent, styles.s117].join(' ')}>06</span><strong className={[styles.s118].join(' ')}>Qual è la domanda da fare a qualunque consulente?</strong><span className={[styles.s121].join(' ')}>Prima di firmare qualsiasi cosa. La risposta ti dice quasi tutto.</span></div>
 </div>
 <div className={[styles.s122].join(' ')}>
-<a href="#richiesta" className={[styles["btn-gold"], styles.s123].join(' ')}>Voglio le risposte: riservo il posto
+<a href="#richiesta" className={[styles.cta, styles["cta-ink"], styles.s123].join(' ')}>Voglio le risposte: riservo il posto
 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
 </div>
 </div>
@@ -201,11 +203,12 @@ export function PatrimonialEventLanding() {
 <div data-event-section="gold-comparison" className={[styles.s120].join(' ')}>
 <div className={[styles.s039].join(' ')}>
 <div className={[styles.s115].join(' ')}>
-<div className={[styles.s012].join(' ')}>CAPITOLO 04 · UN&apos;ANTEPRIMA</div>
-<h2 className={[styles.s093].join(' ')}>&quot;Ho già l&apos;oro in portafoglio.&quot; <span className={[styles["goldtxt"]].join(' ')}>Sicuro?</span></h2>
+<div className={[styles["label"], styles.s012].join(' ')}>CAPITOLO 04 · UN&apos;ANTEPRIMA</div>
+<h2 className={[styles.reveal, styles.s093].join(' ')}>&quot;Ho già l&apos;oro in portafoglio.&quot; <span className={styles["chip-lime"]}>Sicuro?</span></h2>
 <p className={[styles.s065].join(' ')}>Possedere un lingotto e possedere un titolo che ne segue il prezzo sono due cose molto diverse.</p>
+<p className={`${styles["swipe-hint"]} ${styles.label}`}>Scorri per confrontare →</p>
 </div>
-<div className={[styles.s124].join(' ')}>
+<div data-carousel="s124" role="region" aria-label="Confronto oro fisico e oro di carta" tabIndex={0} className={[styles["snap"], styles.s124].join(' ')}>
 <div className={[styles.s125].join(' ')}>
 <div className={[styles.s126].join(' ')}><Image src="/benessere-patrimoniale/evento/single.jpg" alt="Lingotto d'oro con punzonatura 999.9" width={1400} height={900} sizes="(max-width: 820px) 100vw, 50vw" className={[styles.s046].join(' ')} /><span className={[styles.s127].join(' ')}>ORO FISICO</span></div>
 <div className={[styles.s128].join(' ')}>
@@ -243,18 +246,18 @@ export function PatrimonialEventLanding() {
 <div className={[styles.s144].join(' ')}>
 <div className={[styles.s145].join(' ')}>
 <div className={[styles.s041].join(' ')}>COME SI SVOLGE</div>
-<h2 className={[styles.s093].join(' ')}>90 minuti, minuto per minuto.</h2>
+<h2 className={[styles.reveal, styles.s093].join(' ')}>90 minuti, minuto per minuto.</h2>
 </div>
 <div className={[styles.s146].join(' ')}>Niente slide infinite, niente gergo. Quattro tappe e uno spazio finale per le tue domande, dal vivo.</div>
 </div>
 <div className={[styles.s147].join(' ')}>
-<div aria-hidden="true" className={[styles.s148].join(' ')}></div>
-<div className={[styles.s149].join(' ')}>
-<div className={[styles.s150].join(' ')}><span className={[styles.s151].join(' ')}>1</span><div className={[styles.s152].join(' ')}>00 — 15&apos;</div><div className={[styles.s153].join(' ')}>Cosa sta succedendo al valore del denaro</div></div>
-<div className={[styles.s150].join(' ')}><span className={[styles.s151].join(' ')}>2</span><div className={[styles.s152].join(' ')}>15 — 35&apos;</div><div className={[styles.s153].join(' ')}>I rischi invisibili di un patrimonio &quot;fermo&quot;</div></div>
-<div className={[styles.s150].join(' ')}><span className={[styles.s151].join(' ')}>3</span><div className={[styles.s152].join(' ')}>35 — 60&apos;</div><div className={[styles.s153].join(' ')}>Diversificare per livelli e il ruolo dell&apos;oro fisico</div></div>
-<div className={[styles.s150].join(' ')}><span className={[styles.s151].join(' ')}>4</span><div className={[styles.s152].join(' ')}>60 — 75&apos;</div><div className={[styles.s153].join(' ')}>Le 6 domande, applicate a casi reali</div></div>
-<div className={[styles.s150].join(' ')}><span className={[styles.s154].join(' ')}>?</span><div className={[styles.s152].join(' ')}>75 — 90&apos;</div><div className={[styles.s153].join(' ')}>Le tue domande, dal vivo</div></div>
+<div aria-hidden="true" className={[styles["tl-line"], styles.s148].join(' ')}></div>
+<div className={[styles["tl-grid"], styles.s149].join(' ')}>
+<div className={[styles["tl-item"], styles.s150].join(' ')}><span className={[styles.s151].join(' ')}>1</span><div className={[styles.s152].join(' ')}>00 — 15&apos;</div><div className={[styles.s153].join(' ')}>Cosa sta succedendo al valore del denaro</div></div>
+<div className={[styles["tl-item"], styles.s150].join(' ')}><span className={[styles.s151].join(' ')}>2</span><div className={[styles.s152].join(' ')}>15 — 35&apos;</div><div className={[styles.s153].join(' ')}>I rischi invisibili di un patrimonio &quot;fermo&quot;</div></div>
+<div className={[styles["tl-item"], styles.s150].join(' ')}><span className={[styles.s151].join(' ')}>3</span><div className={[styles.s152].join(' ')}>35 — 60&apos;</div><div className={[styles.s153].join(' ')}>Diversificare per livelli e il ruolo dell&apos;oro fisico</div></div>
+<div className={[styles["tl-item"], styles.s150].join(' ')}><span className={[styles.s151].join(' ')}>4</span><div className={[styles.s152].join(' ')}>60 — 75&apos;</div><div className={[styles.s153].join(' ')}>Le 6 domande, applicate a casi reali</div></div>
+<div className={[styles["tl-item"], styles.s150].join(' ')}><span className={[styles.s154].join(' ')}>?</span><div className={[styles.s152].join(' ')}>75 — 90&apos;</div><div className={[styles.s153].join(' ')}>Le tue domande, dal vivo</div></div>
 </div>
 </div>
 </div>
@@ -282,32 +285,34 @@ export function PatrimonialEventLanding() {
 
 <div data-event-section="speaker" className={[styles.s120].join(' ')}>
 <div className={[styles.s162].join(' ')}>
-<div className={[styles.s163].join(' ')}>
-<div className={[styles["goldtxt"], styles.s164].join(' ')}>FC</div>
+<div className={[styles["portrait"], styles.s163].join(' ')}>
+<div className={[styles.accent, styles.s164].join(' ')}>FC</div>
 <div className={[styles.s165].join(' ')}></div>
 <div className={[styles.s166].join(' ')}>RITRATTO IN ARRIVO</div>
 </div>
 <div className={[styles.s167].join(' ')}>
-<div className={[styles.s012].join(' ')}>CHI TI ACCOMPAGNA</div>
-<h2 className={[styles.s168].join(' ')}>Frank Cannoletta</h2>
+<div className={[styles["label"], styles.s012].join(' ')}>CHI TI ACCOMPAGNA</div>
+<h2 className={[styles.reveal, styles.s168].join(' ')}>Frank Cannoletta</h2>
 <div className={[styles.s130].join(' ')}>Imprenditore &amp; Strategista Horyzon</div>
 <blockquote className={[styles.s169].join(' ')}>&quot;Il mio compito non è dirti cosa devi fare. È aiutarti a vedere il quadro che nessuno ti ha mai mostrato per intero.&quot;</blockquote>
 <p className={[styles.s065].join(' ')}>Frank lavora sull&apos;intersezione tra persona, impresa e patrimonio. [Una frase sulla sua storia: l&apos;episodio che l&apos;ha portato a occuparsi di protezione patrimoniale.]</p>
 <div className={[styles.s170].join(' ')}>
-<div><div className={[styles["goldtxt"], styles.s171].join(' ')}>[00]</div><div className={[styles.s073].join(' ')}>anni da imprenditore</div></div>
-<div><div className={[styles["goldtxt"], styles.s171].join(' ')}>[000]</div><div className={[styles.s073].join(' ')}>famiglie e imprese incontrate</div></div>
-<div><div className={[styles["goldtxt"], styles.s171].join(' ')}>[00]</div><div className={[styles.s073].join(' ')}>incontri pubblici</div></div>
+<div><div className={[styles.accent, styles.s171].join(' ')}>[00]</div><div className={[styles.s073].join(' ')}>anni da imprenditore</div></div>
+<div><div className={[styles.accent, styles.s171].join(' ')}>[000]</div><div className={[styles.s073].join(' ')}>famiglie e imprese incontrate</div></div>
+<div><div className={[styles.accent, styles.s171].join(' ')}>[00]</div><div className={[styles.s073].join(' ')}>incontri pubblici</div></div>
 </div>
 </div>
 </div>
 </div>
 
 <div data-event-section="testimonials" className={[styles.s039].join(' ')}>
-<h2 className={[styles.s172].join(' ')}>Cosa dice chi c&apos;era.</h2>
-<div className={[styles.s173].join(' ')}>
-<div className={[styles["qcard"], styles.s174].join(' ')}><div aria-label="5 stelle su 5" className={[styles.s175].join(' ')}>★★★★★</div><p className={[styles.s176].join(' ')}>&quot;[Testimonianza reale: cosa ha capito che prima non sapeva.]&quot;</p><div className={[styles.s177].join(' ')}><span className={[styles.s178].join(' ')}></span><span className={[styles.s179].join(' ')}><strong>[Nome C.]</strong><br /><span className={[styles.s180].join(' ')}>[Imprenditore, Bari]</span></span></div></div>
-<div className={[styles["qcard"], styles.s174].join(' ')}><div aria-label="5 stelle su 5" className={[styles.s175].join(' ')}>★★★★★</div><p className={[styles.s176].join(' ')}>&quot;[Testimonianza reale: temeva una vendita, ha trovato chiarezza.]&quot;</p><div className={[styles.s177].join(' ')}><span className={[styles.s178].join(' ')}></span><span className={[styles.s179].join(' ')}><strong>[Nome C.]</strong><br /><span className={[styles.s180].join(' ')}>[Professionista, Milano]</span></span></div></div>
-<div className={[styles["qcard"], styles.s174].join(' ')}><div aria-label="5 stelle su 5" className={[styles.s175].join(' ')}>★★★★★</div><p className={[styles.s176].join(' ')}>&quot;[Testimonianza reale: la domanda che poi ha fatto alla sua banca.]&quot;</p><div className={[styles.s177].join(' ')}><span className={[styles.s178].join(' ')}></span><span className={[styles.s179].join(' ')}><strong>[Nome C.]</strong><br /><span className={[styles.s180].join(' ')}>[Privato, Roma]</span></span></div></div>
+<div className={styles.s040}><p className={styles.s041}>Testimonianze</p>
+<h2 className={[styles.reveal, styles.s172].join(' ')}>Cosa dice chi c&apos;era.</h2>
+<p className={`${styles["swipe-hint"]} ${styles.s041}`}>Scorri →</p></div>
+<div data-carousel="s173" role="region" aria-label="Testimonianze" tabIndex={0} className={[styles["snap"], styles.s173].join(' ')}>
+<div className={[styles.s174].join(' ')}><div aria-label="5 stelle su 5" className={[styles.s175].join(' ')}>★★★★★</div><p className={[styles.s176].join(' ')}>&quot;[Testimonianza reale: cosa ha capito che prima non sapeva.]&quot;</p><div className={[styles.s177].join(' ')}><span className={[styles.s178].join(' ')}></span><span className={[styles.s179].join(' ')}><strong>[Nome C.]</strong><br /><span className={[styles.s180].join(' ')}>[Imprenditore, Bari]</span></span></div></div>
+<div className={[styles.s174].join(' ')}><div aria-label="5 stelle su 5" className={[styles.s175].join(' ')}>★★★★★</div><p className={[styles.s176].join(' ')}>&quot;[Testimonianza reale: temeva una vendita, ha trovato chiarezza.]&quot;</p><div className={[styles.s177].join(' ')}><span className={[styles.s178].join(' ')}></span><span className={[styles.s179].join(' ')}><strong>[Nome C.]</strong><br /><span className={[styles.s180].join(' ')}>[Professionista, Milano]</span></span></div></div>
+<div className={[styles.s174].join(' ')}><div aria-label="5 stelle su 5" className={[styles.s175].join(' ')}>★★★★★</div><p className={[styles.s176].join(' ')}>&quot;[Testimonianza reale: la domanda che poi ha fatto alla sua banca.]&quot;</p><div className={[styles.s177].join(' ')}><span className={[styles.s178].join(' ')}></span><span className={[styles.s179].join(' ')}><strong>[Nome C.]</strong><br /><span className={[styles.s180].join(' ')}>[Privato, Roma]</span></span></div></div>
 </div>
 </div>
 
@@ -315,14 +320,14 @@ export function PatrimonialEventLanding() {
 <div className={[styles.s181].join(' ')}>
 <div className={[styles.s182].join(' ')}>
 <div className={[styles.s041].join(' ')}>COSA RICEVI REGISTRANDOTI OGGI</div>
-<h2 className={[styles.s093].join(' ')}>Non solo l&apos;incontro.</h2>
+<h2 className={[styles.reveal, styles.s093].join(' ')}>Non solo l&apos;incontro.</h2>
 </div>
 <div className={[styles.s183].join(' ')}>
 <div className={[styles.s184].join(' ')}><div><strong className={[styles.s185].join(' ')}>Evento live di 90 minuti</strong><div className={[styles.s119].join(' ')}>Con domande e risposte dal vivo</div></div><span className={[styles.s186].join(' ')}>Incluso</span></div>
 <div className={[styles.s184].join(' ')}><div><span className={[styles.s187].join(' ')}>BONUS 1</span><br /><strong className={[styles.s185].join(' ')}>Checklist: &quot;Le 12 domande da fare prima di firmare&quot;</strong><div className={[styles.s119].join(' ')}>La ricevi subito, da portare al prossimo appuntamento in banca</div></div><span className={[styles.s186].join(' ')}>Valore [__] €</span></div>
 <div className={[styles.s184].join(' ')}><div><span className={[styles.s187].join(' ')}>BONUS 2</span><br /><strong className={[styles.s185].join(' ')}>Replay disponibile per 48 ore</strong><div className={[styles.s119].join(' ')}>Solo per chi si registra prima dell&apos;evento</div></div><span className={[styles.s186].join(' ')}>Valore [__] €</span></div>
 <div className={[styles.s188].join(' ')}><div><span className={[styles.s189].join(' ')}>BONUS 3 · SOLO [10] POSTI</span><br /><strong className={[styles.s185].join(' ')}>Confronto individuale di 20 minuti</strong><div className={[styles.s121].join(' ')}>Per chi lo richiede dopo l&apos;evento. Senza impegno.</div></div><span className={[styles.s190].join(' ')}>Valore [__] €</span></div>
-<div className={[styles.s191].join(' ')}><div className={[styles.s192].join(' ')}>Per te, oggi: <strong>gratis</strong>.</div><a href="#richiesta" className={[styles["btn-gold"], styles.s193].join(' ')}>Riserva il posto</a></div>
+<div className={[styles.s191].join(' ')}><div className={[styles.s192].join(' ')}>Per te, oggi: <strong>gratis</strong>.</div><a href="#richiesta" className={[styles.cta, styles["cta-ink"], styles.s193].join(' ')}>Riserva il posto</a></div>
 </div>
 </div>
 </div>
@@ -330,10 +335,10 @@ export function PatrimonialEventLanding() {
 <div id="richiesta" data-event-section="request" className={[styles.s194].join(' ')}>
 <div className={[styles.s195].join(' ')}>
 <div className={[styles.s196].join(' ')}>
-<div className={[styles.s012].join(' ')}>ULTIMO PASSO</div>
-<h2 className={[styles.s197].join(' ')}><span data-bind="formTitle">{formTitle}</span></h2>
+<div className={[styles["label"], styles.s012].join(' ')}>ULTIMO PASSO</div>
+<h2 className={[styles.reveal, styles.s197].join(' ')}><span data-bind="formTitle">{formTitle}</span></h2>
 <p className={[styles.s065].join(' ')}>Ci vogliono 30 secondi. Teniamo i posti limitati perché rispondiamo a tutte le domande dal vivo: quando finiscono, chiudiamo le iscrizioni.</p>
-<div className={[styles["glass"], styles.s198].join(' ')}>
+<div className={[styles["tile-d"], styles.s198].join(' ')}>
 <div className={[styles.s199].join(' ')}><span className={[styles.s056].join(' ')}>Posti rimasti</span><strong><EventSessionValue name="seatsLeft" /> su <EventSessionValue name="seatsTotal" /></strong></div>
 <div className={[styles.s200].join(' ')}><div style={ { width: `${eventSession.seatsTaken / eventSession.seatsTotal * 100}%` }} className={[styles.s034].join(' ')}></div></div>
 <div className={[styles.s073].join(' ')}>Inizio tra <EventSessionValue name="cd.d" /> giorni e <EventSessionValue name="cd.h" /> ore</div>
@@ -348,7 +353,8 @@ export function PatrimonialEventLanding() {
 </div>
 
 <div data-event-section="faq" className={[styles.s203].join(' ')}>
-<h2 className={[styles.s093].join(' ')}>Domande frequenti</h2>
+<p className={styles.s041}>FAQ</p>
+<h2 className={[styles.reveal, styles.s093].join(' ')}>Domande frequenti</h2>
 <div className={[styles.s204].join(' ')}>
 <details className={[styles.s205].join(' ')}><summary className={[styles.s206].join(' ')}>È davvero gratuito? Qual è la fregatura?<span className={[styles["faq-plus"], styles.s207].join(' ')}>+</span></summary><p className={[styles.s208].join(' ')}>È gratuito. Chi lo desidera, dopo l&apos;evento, può chiedere un confronto individuale. Se non lo chiedi, nessuno ti contatterà per proporti qualcosa.</p></details>
 <details className={[styles.s205].join(' ')}><summary className={[styles.s206].join(' ')}>Devo già avere investimenti o oro?<span className={[styles["faq-plus"], styles.s207].join(' ')}>+</span></summary><p className={[styles.s208].join(' ')}>No. Basta avere dei risparmi, o un patrimonio aziendale, e voler capire meglio come ragionarci.</p></details>
@@ -360,30 +366,33 @@ export function PatrimonialEventLanding() {
 
 <div data-event-section="closing" className={[styles.s209].join(' ')}>
 <div className={[styles.s210].join(' ')}>
-<p className={[styles.s211].join(' ')}>Tra un anno ripenserai a questo momento. Potrai dire &quot;avrei dovuto capirci di più&quot;. Oppure &quot;per fortuna l&apos;ho fatto&quot;. La differenza sono 90 minuti.</p>
-<p className={[styles.s043].join(' ')}><strong className={[styles.s038].join(' ')}>P.S.</strong> Se sei arrivato fin qui senza registrarti, probabilmente una delle 6 domande ti riguarda già. La checklist te la mandiamo subito, anche se poi non riuscirai a collegarti.</p>
-<a href="#richiesta" className={[styles["btn-gold"], styles.s212].join(' ')}>Riserva il mio posto gratuito
+<p className={styles.s012}>Il prossimo passo</p>
+<h2 className={`${styles.reveal} ${styles.s211}`}>Tra un anno potrai dire &quot;avrei dovuto&quot;. Oppure <span className={styles["chip-lime"]}>&quot;per fortuna&quot;</span>.</h2>
+<p className={styles.s043}>La differenza sono 90 minuti. <strong className={styles.s038}>P.S.</strong> Se sei arrivato fin qui senza registrarti, una delle 6 domande probabilmente ti riguarda già. La checklist te la mandiamo subito, anche se poi non riuscirai a collegarti.</p>
+<a href="#richiesta" className={[styles.cta, styles.s212].join(' ')}>Riserva il mio posto gratuito
 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
 </div>
 </div>
 
 <footer data-event-section="footer" className={[styles.s213].join(' ')}>
 <div className={[styles.s214].join(' ')}>
-<div className={[styles.s215].join(' ')}>Horyzon Benessere Patrimoniale</div>
-<div>FELICITÀ srl · Viale Papiniano 28, 20123 Milano · P. IVA 05120660757 · SDI SU9YNJA · <a href="mailto:info@horyzon.it" className={[styles.s216].join(' ')}>info@horyzon.it</a></div>
+<div className={styles["footer-copy"]}>
+<strong className={styles.s215}>Horyzon Benessere Patrimoniale</strong>
+<div>FELICITÀ srl · Viale Papiniano 28, 20123 Milano · P. IVA 05120660757 · SDI SU9YNJA</div>
 <div>Contenuti a scopo esclusivamente informativo. Non costituiscono consulenza finanziaria, sollecitazione all&apos;investimento né raccomandazione personalizzata. I rendimenti passati non sono indicativi di quelli futuri. Fonte dati inflazione: ISTAT.</div>
-<div className={[styles.s217].join(' ')}><Link href="/privacy-policy" className={[styles.s216].join(' ')}>Privacy</Link><Link href="/cookie-policy" className={[styles.s216].join(' ')}>Cookie</Link></div>
+</div>
+<div className={styles.s217}><Link href="/privacy-policy" className={styles.s216}>Privacy</Link><Link href="/cookie-policy" className={styles.s216}>Cookie</Link><a href="mailto:info@horyzon.it" className={styles.s216}>info@horyzon.it</a></div>
 </div>
 </footer>
 
 <aside data-event-section="sticky" aria-label="Riserva il posto" className={[styles["sticky-cta"]].join(' ')}>
-<div className={[styles["glass"], styles.s218].join(' ')}>
+<div className={[styles["tile-d"], styles.s218].join(' ')}>
 <div className={[styles.s219].join(' ')}>
 <div className={[styles["sticky-hide-m"], styles.s220].join(' ')}>
 <strong className={[styles.s221].join(' ')}>Quello che le banche non dicono</strong>
 <span className={[styles.s130].join(' ')}><EventSessionValue name="eventLabel" /> · inizia tra <EventSessionValue name="cd.d" />g <EventSessionValue name="cd.h" />h <EventSessionValue name="cd.m" />m · restano <EventSessionValue name="seatsLeft" /> posti</span>
 </div>
-<a href="#richiesta" className={[styles["btn-gold"], styles.s222].join(' ')}>Riserva il posto gratuito</a>
+<a href="#richiesta" className={[styles.cta, styles.s222].join(' ')}>Riserva il posto gratuito <span aria-hidden="true">→</span></a>
 </div>
 </div>
 </aside>
