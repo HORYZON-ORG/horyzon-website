@@ -1,12 +1,12 @@
 'use client';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { architectPath } from '@/content/patrimonial-funnels';
+import { architectPath, patrimonialEvent } from '@/content/patrimonial-funnels';
 import styles from '@/app/(patrimonial-pilot)/funnel.module.css';
 
 export function PatrimonialPilotShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  if (pathname === architectPath.path) return <><a className="skip-link" href="#content">Vai al contenuto</a><main id="content">{children}</main></>;
+  if (pathname === architectPath.path || pathname === patrimonialEvent.path) return <><a className="skip-link" href="#content">Vai al contenuto</a><main id="content">{children}</main></>;
   return <div className={`rd ${styles.shell}`}>
     <a className="skip-link" href="#content">Vai al contenuto</a>
     <header className={styles.header}>

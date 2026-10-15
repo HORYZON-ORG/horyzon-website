@@ -99,7 +99,8 @@ try {
   await page.route('**/*', route => new URL(route.request().url()).origin === base.origin && route.request().method() === 'GET' ? route.continue() : route.abort());
   await page.goto(`${base.origin}/benessere-patrimoniale/evento`, { waitUntil: 'networkidle' });
   const eventShell = page.locator('main#content').locator('..');
-  assert.equal(await eventShell.locator(':scope > header').count(), 1); assert.equal(await eventShell.locator(':scope > footer').count(), 1);
+  assert.equal(await eventShell.locator(':scope > header').count(), 0); assert.equal(await eventShell.locator(':scope > footer').count(), 0);
+  assert.equal(await page.locator('[data-event-section=hero]').count(), 1); assert.equal(await page.locator('[data-event-section=footer]').count(), 1);
   assert.equal(await page.locator('[data-profile]').count(), 0); assert.equal(await page.locator('[data-pilot-form=patrimonial-event]').count(), 1);
-  await page.close(); console.log('PASS event retains shared header/footer and standard form. Zero CRM/Supabase calls; no live smoke.');
+  await page.close(); console.log('PASS event uses its own full-page shell and one event form. Architect checks unchanged. Zero CRM/Supabase calls; no live smoke.');
 } finally { await browser.close(); }
