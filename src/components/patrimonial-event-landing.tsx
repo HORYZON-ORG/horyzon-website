@@ -286,9 +286,7 @@ export function PatrimonialEventLanding() {
 <div data-event-section="speaker" className={[styles.s120].join(' ')}>
 <div className={[styles.s162].join(' ')}>
 <div className={[styles["portrait"], styles.s163].join(' ')}>
-<div className={[styles.accent, styles.s164].join(' ')}>FC</div>
-<div className={[styles.s165].join(' ')}></div>
-<div className={[styles.s166].join(' ')}>RITRATTO IN ARRIVO</div>
+<Image src="/people/frank-no-badge.png" alt="Frank Cannoletta, Imprenditore e Strategista Horyzon" fill sizes="(max-width: 820px) calc(100vw - 48px), 420px" className={styles['speaker-photo']} />
 </div>
 <div className={[styles.s167].join(' ')}>
 <div className={[styles["label"], styles.s012].join(' ')}>CHI TI ACCOMPAGNA</div>

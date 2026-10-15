@@ -23,7 +23,14 @@ assert(shared.includes("if (presentation === 'event' && mode === 'patrimonial-ev
 const landing = read('src/components/patrimonial-event-landing.tsx');
 const sectionNames = [...landing.matchAll(/data-event-section="([^"]+)"/g)].map(match => match[1]);
 assert.deepEqual(sectionNames, ['urgency', 'hero', 'social-proof', 'scenes', 'calculator', 'pyramid', 'questions', 'gold-comparison', 'agenda', 'audience', 'speaker', 'testimonials', 'bonuses', 'request', 'faq', 'closing', 'footer', 'sticky']);
-for (const placeholder of ['[000]+', '[4,9/5]', '[00]', '[000]', '[Nome C.]', '[Imprenditore, Bari]', '[Professionista, Milano]', '[Privato, Roma]', 'Valore [__] €', '[10]', 'RITRATTO IN ARRIVO', '[Una frase sulla sua storia:']) assert(landing.includes(placeholder));
+for (const placeholder of ['[000]+', '[4,9/5]', '[00]', '[000]', '[Nome C.]', '[Imprenditore, Bari]', '[Professionista, Milano]', '[Privato, Roma]', 'Valore [__] €', '[10]', '[Una frase sulla sua storia:']) assert(landing.includes(placeholder));
+// This revision may replace only the speaker placeholder and add image crop rules.
+const portraitBaseline = file => execFileSync('git', ['show', `fa7761c80eb4d0e823e51ec7e28de251c3da9616:${file}`], { encoding: 'utf8' }).replaceAll('\r\n', '\n');
+const originalPlaceholder = '<div className={[styles.accent, styles.s164].join(\' \')}>FC</div>\n<div className={[styles.s165].join(\' \')}></div>\n<div className={[styles.s166].join(\' \')}>RITRATTO IN ARRIVO</div>';
+assert.equal(landing.replace(/<Image src="\/people\/frank-no-badge\.png"[^\n]+\/>/, originalPlaceholder), portraitBaseline('src/components/patrimonial-event-landing.tsx'));
+assert(landing.includes('alt="Frank Cannoletta, Imprenditore e Strategista Horyzon" fill'));
+for (const file of ['src/components/patrimonial-event-form.tsx', 'src/app/(patrimonial-pilot)/benessere-patrimoniale/evento/page.tsx']) assert.equal(read(file), portraitBaseline(file));
+assert(readFileSync('public/people/frank-no-badge.png').equals(execFileSync('git', ['show', 'fa7761c80eb4d0e823e51ec7e28de251c3da9616:public/people/frank-no-badge.png'], { maxBuffer: 4 * 1024 * 1024 })));
 for (const profile of eventProfiles) assert(pilotForms['patrimonial-event'].profiles.includes(profile.value));
 assert.equal(eventProfileValue('Genitore / famiglia'), 'Altro'); assert.equal(eventProfileValue(''), '');
 assert.deepEqual(eventScenes.map(scene => scene.profile), ['Privato', 'Imprenditore', 'Privato', 'Genitore / famiglia']);
@@ -40,6 +47,7 @@ for (const amount of [10000, 50000, 250000, 500000, 1000000]) {
   assert.equal(eventCalculator(amount).perDay, (raw / 1826).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 }
 const css = read('src/components/patrimonial-event.module.css');
+assert.equal(css.replace(/^ ?\.page \.speaker-photo\{[^\n]+\}\n/gm, ''), portraitBaseline('src/components/patrimonial-event.module.css'));
 assert(css.includes('position:sticky;bottom:0')); assert(css.includes('@media (max-width:820px)'));
 assert(css.includes('prefers-reduced-motion')); assert(css.includes('--event-mono') && css.includes('--event-sans'));
 console.log(`PASS event presentation: 18 sections, placeholders, demo clock, exact calculator, explicit profile mapping, two-step form, original transport; ${paths.length} protected Architect/shared/Event logic/backend files and ${assets.length} Event and Architect assets unchanged. No remote calls.`);

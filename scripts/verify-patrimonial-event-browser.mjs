@@ -36,6 +36,25 @@ try {
     await page.evaluate(() => document.fonts.ready);
     assert.match(await page.locator('h1').evaluate(element => getComputedStyle(element).fontFamily), /Manrope/);
     assert.match(await page.locator('[data-session-status]').evaluate(element => getComputedStyle(element).fontFamily), /Manrope/);
+    const portrait = page.getByRole('img', { name: 'Frank Cannoletta, Imprenditore e Strategista Horyzon', exact: true });
+    const portraitGeometry = () => portrait.evaluate(image => {
+      const frame = image.parentElement, copy = frame.nextElementSibling, section = frame.closest('[data-event-section=speaker]');
+      const rect = element => { const r = element.getBoundingClientRect(); return { x:r.x, y:r.y + scrollY, width:r.width, height:r.height }; };
+      return { frame:rect(frame), copy:rect(copy), section:rect(section), image:rect(image) };
+    });
+    const beforePortraitLoad = await portraitGeometry();
+    await portrait.scrollIntoViewIfNeeded();
+    await portrait.evaluate(image => image.complete && image.naturalWidth > 0 ? undefined : new Promise((resolve, reject) => {
+      image.addEventListener('load', resolve, {once:true}); image.addEventListener('error', reject, {once:true});
+    }));
+    const afterPortraitLoad = await portraitGeometry();
+    for (const part of ['frame','copy','section']) for (const key of ['x','y','width','height']) assert(Math.abs(afterPortraitLoad[part][key] - beforePortraitLoad[part][key]) < .5, `Portrait layout shifted ${part}.${key} at ${width}px`);
+    for (const key of ['x','y','width','height']) assert(Math.abs(afterPortraitLoad.image[key] - afterPortraitLoad.frame[key]) <= 2, `Portrait does not fill frame ${key}`);
+    const portraitStyle = await portrait.evaluate(image => ({ fit:getComputedStyle(image).objectFit, position:getComputedStyle(image).objectPosition, source:new URL(image.currentSrc).searchParams.get('url') }));
+    assert.equal(portraitStyle.source, '/people/frank-no-badge.png');
+    assert.equal(portraitStyle.fit, 'cover'); assert.equal(portraitStyle.position, width <= 820 ? '50% 0%' : '50% 20%');
+    assert.equal(width <= 820 ? afterPortraitLoad.copy.y > afterPortraitLoad.frame.y + afterPortraitLoad.frame.height : afterPortraitLoad.copy.x > afterPortraitLoad.frame.x + afterPortraitLoad.frame.width, true);
+    await portrait.screenshot({path:path.join(directory, `event-frank-${width}-portrait.png`)});
     assert.equal(await page.locator('h1').count(), 1); assert.equal(await page.locator('footer').count(), 1);
     assert.equal(await page.locator('[data-event-section]').count(), 18);
     assert.equal(await page.locator('[data-session-status]').getAttribute('data-session-status'), 'PLACEHOLDER');
@@ -170,7 +189,7 @@ try {
     const shell = page.locator('main#content').locator('..');
     assert.equal(await shell.locator(':scope > header').count(), 1); assert.equal(await shell.locator(':scope > footer').count(), 1);
     assert.deepEqual(errors, []); await context.close();
-    console.log(`PASS event ${width}px: four snap carousels/keyboard, timeline, mobile hero, palette,  18 sections, fonts/assets, scenes/profiles/title, calculator, clock, FAQ/keyboard, sticky, no overflow, micro-step/no early POST, retained fields, complete payload, double-submit, ${width === 1440 ? 'error/retry, ' : ''}thank-you. All POSTs intercepted; zero service writes.`);
+    console.log(`PASS event ${width}px: canonical Frank portrait/crop, stable frame/copy geometry, four snap carousels/keyboard, timeline, mobile hero, palette, 18 sections, fonts/assets, scenes/profiles/title, calculator, clock, FAQ/keyboard, sticky, no overflow, micro-step/no early POST, retained fields, complete payload, double-submit, ${width === 1440 ? 'error/retry, ' : ''}thank-you. All POSTs intercepted; zero service writes.`);
   }
 
   const touch = await browser.newContext({viewport:{width:390,height:900},isMobile:true,hasTouch:true,reducedMotion:'no-preference'});

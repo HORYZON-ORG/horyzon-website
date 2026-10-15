@@ -312,6 +312,7 @@
 .page :where(img){max-width:100%;height:auto;}
 .page :where([data-event-section]){min-width:0;}
 .page .accent{color:#D8FF42;}
+.page .speaker-photo{object-fit:cover;object-position:center 20%;}
 .page .label{font:500 12px/1.4 var(--event-mono),ui-monospace,monospace;letter-spacing:.18em;text-transform:uppercase;}
 .page .swipe-hint{font-size:11px;}
 .page .cta{color:#07171D;font-family:var(--event-sans),system-ui,sans-serif;text-decoration:none;}
@@ -373,6 +374,7 @@
 .page .microTitle{margin:0;font-family:var(--event-sans),sans-serif;font-size:30px;font-weight:800;letter-spacing:-.045em;line-height:1.2;}
 .page .formBack{font:inherit;font-size:14px;min-height:44px;padding:4px 0;border:0;background:transparent;color:#D8FF42;text-align:left;cursor:pointer;}
 @media (max-width:820px){
+ .page .speaker-photo{object-position:center top;}
  .page .hero-inner{padding-top:250px!important;padding-bottom:56px!important;}
  .page .hero-chip{position:static;width:100%!important;}
  .page .sticky-hide-m{display:none!important;}
