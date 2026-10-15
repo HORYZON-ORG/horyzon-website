@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { calculateRadarScores, radarSteps } from '../src/lib/radar/domain.ts';
 import { lockedRadarProjection, unlockedRadarProjection } from '../src/lib/radar/public-projection.ts';
 
-assert.equal(radarSteps().length, 33, 'Radar v3: seasonal step out (asked in the form), salary and partners in');
+assert.equal(radarSteps().length, 34, 'Radar v4 adds positioning within Marketing');
 assert.equal(radarSteps().some((step) => step.id === 'qualificazione#stagionale'), false);
 assert.deepEqual(radarSteps().slice(-4).map((step) => step.id), ['economia#ore', 'economia#utile', 'economia#stipendio', 'economia#soci']);
 assert.equal(radarSteps('radar-v2').length, 32, 'v2 assessments keep their 32 steps');

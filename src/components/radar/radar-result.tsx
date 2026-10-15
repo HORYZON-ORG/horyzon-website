@@ -27,7 +27,6 @@ function Index({ label, index, children }: { label: string; index: ReportIndex; 
     <p className={styles.indexLabel}>{label}<span data-band={index.band}>{index.bandLabel}</span></p>
     <p className={styles.indexScore}>{index.score}<small>/100</small></p>
     <h4>{index.reading.title}</h4><p>{index.reading.body}</p>{children}
-    <p className={styles.todo}><b>Da fare</b>{index.reading.action}</p>
   </article>;
 }
 
@@ -53,10 +52,17 @@ export function RadarResult({ report, onRestart }: { report: RadarReport; onRest
       <dl className={styles.profileList}>{report.profile.map((line) => <div key={line.label}><dt>{line.label}</dt><dd>{line.value}</dd></div>)}</dl>
     </> : null}
 
-    <h3 className={styles.reportH3}>Le tre priorità dei prossimi 90 giorni</h3>
+    <h3 className={styles.reportH3}>Le criticità principali</h3>
     {report.priorities.length ? <ol className={styles.priorities}>{report.priorities.map((priority) => <li key={priority.question}>
-      <p className={styles.indexLabel}>{priority.area}</p><h4>{priority.advice.title}</h4><p>{priority.advice.action}</p>
-    </li>)}</ol> : <p>Nessuna risposta sotto “Molto”: lavora sulla crescita del reparto prioritario.</p>}
+      <p className={styles.indexLabel}>{priority.area}</p><h4>{priority.advice.title}</h4><p>{priority.advice.body}</p>
+    </li>)}</ol> : <p>Non emergono criticità dalle risposte ai reparti.</p>}
+
+    {report.positioning ? <>
+      <h3 className={styles.reportH3}>Il posizionamento secondo te</h3>
+      <p>Posizionamento percepito: <b>{report.positioning.rating}/5</b> · da poco a molto posizionata.</p>
+      <p className={styles.positioningDescription}>{report.positioning.description}</p>
+      <p className={styles.gapNote}>È la tua percezione dichiarata, non una verifica del riconoscimento da parte del mercato.</p>
+    </> : null}
 
     <h3 className={styles.reportH3}>Gli indici</h3>
     <div className={styles.indexGrid}>
@@ -76,7 +82,6 @@ export function RadarResult({ report, onRestart }: { report: RadarReport; onRest
       </dl>
       {economics.monthlySalary === 0 ? <p className={styles.hourlyNote}><b>Non ti prendi uno stipendio.</b> Il costo della tua presenza in azienda non compare nei conti: l’utile sembra più alto di quello che è, e se un giorno dovessi pagare qualcuno per fare il tuo lavoro, quanto resterebbe?</p> : null}
       <h4>{economics.reading.title}</h4><p>{economics.reading.body}</p>
-      <p className={styles.todo}><b>Da fare</b>{economics.reading.action}</p>
       <p className={styles.hourlyNote}>Calcolo: {economics.ownerShare < 1 ? 'la tua quota dell’utile mensile' : 'utile mensile'} ÷ ore mensili. Convertiamo l’utile annuale dividendo per 12 e le ore settimanali moltiplicando per 52 ÷ 12. È una stima basata sui dati dichiarati: non è il tuo reddito personale netto.</p>
     </article> : <p className={styles.gapNote}>Utile per ora non disponibile: questo Radar non contiene i dati su ore lavorate e utile.</p>}
 
@@ -90,16 +95,15 @@ export function RadarResult({ report, onRestart }: { report: RadarReport; onRest
           <p className={styles.indexLabel}><span data-band={item.band}>Hai risposto: {item.answerLabel}</span>{item.autonomy ? <span>Autonomia dal titolare</span> : null}</p>
           <p className={styles.question}>“{item.question}”</p>
           <h4>{item.advice.title}</h4><p>{item.advice.body}</p>
-          <p className={styles.todo}><b>Da fare</b>{item.advice.action}</p>
         </article>)}
       </div>
     </details>)}</div>
-    {report.seasonal ? <p className={styles.gapNote}>La tua attività è stagionale: leggi cassa, persone e vendite pensando ai mesi di picco e a quelli di calo.</p> : null}
+    {report.seasonal ? <p className={styles.gapNote}>La tua attività è stagionale: cassa, persone e vendite risentono dei mesi di picco e di calo.</p> : null}
 
     <aside className={styles.debriefing}>
       <p className={styles.indexLabel}>Il passo successivo</p>
       <h3>Leggiamo insieme il tuo Radar.</h3>
-      <p>Nel debriefing con uno dei nostri consulenti colleghiamo questi risultati agli obiettivi della tua impresa e scegliamo da dove partire, con un piano per i prossimi 90 giorni.</p>
+      <p>Nel debriefing con uno dei nostri consulenti approfondiamo le criticità emerse e il loro significato nel contesto della tua impresa.</p>
       <a href={DEBRIEFING_MAILTO(report.company.aziendaNome)}>Prenota il debriefing</a>
     </aside>
     <p className={styles.gapNote}>Una fotografia guidata basata sulle tue risposte: non è una diagnosi completa né una valutazione finanziaria, fiscale o legale.</p>

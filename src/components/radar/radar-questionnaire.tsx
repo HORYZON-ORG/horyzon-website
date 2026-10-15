@@ -2,11 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { RADAR_AREAS, radarSteps } from '@/lib/radar/domain';
+import { POSITIONING_DESCRIPTION_TITLE, POSITIONING_HINT, POSITIONING_LABELS, POSITIONING_MAX_LENGTH, isPositioningAnswer } from '@/lib/radar/positioning';
 import type { RadarAnswer, RadarStep } from '@/lib/radar/types';
 import styles from './radar.module.css';
 
 const LIKERT = ['Per nulla', 'Poco', 'Abbastanza', 'Molto', 'Completamente'];
 const HINTS: Record<RadarStep['kind'], string> = {
+  POSITIONING: 'Da 1 (poco posizionata) a 5 (molto posizionata).',
   LIKERT: 'Quanto è vera questa frase per la tua impresa, oggi?',
   SEASONAL: 'Scegli la risposta che descrive la tua attività.',
   AI_MULTI: 'Puoi scegliere più risposte, poi premi Continua.',
@@ -82,7 +84,9 @@ export function RadarQuestionnaire({ questionnaireVersion, stepIndex, value, sav
         if (index !== stepIndex) return <div key={item.id} className={`${styles.question} ${styles.phantom}`} aria-hidden="true" inert><QuestionBody step={item} index={index} steps={steps} groups={all} /></div>;
         return <div key={`${item.id}-live`} className={styles.question}>
           <QuestionBody step={item} index={index} steps={steps} groups={all} live />
-          {item.kind === 'OWNER_HOURS' || item.kind === 'COMPANY_PROFIT'
+          {item.kind === 'POSITIONING'
+            ? <PositioningAnswerForm key={item.id} value={value} saving={saving} onAnswer={onAnswer} />
+            : item.kind === 'OWNER_HOURS' || item.kind === 'COMPANY_PROFIT'
             ? <EconomicAnswerForm key={item.id} kind={item.kind} value={value} saving={saving} onAnswer={onAnswer} />
             : item.kind === 'OWNER_SALARY' || item.kind === 'PARTNERS'
             ? <OwnerAnswerForm key={item.id} kind={item.kind} value={value} saving={saving} onAnswer={onAnswer} />
@@ -122,12 +126,35 @@ function QuestionBody({ step, index, steps, groups: all, live = false }: { step:
     <h2 id={live ? 'radar-question-title' : undefined}>{step.title}</h2>
     {step.autonomy ? <p className={styles.tag}>Misura quanto il reparto va avanti senza di te</p> : null}
     <p className={styles.hint} id={live ? 'radar-question-hint' : undefined}>{HINTS[step.kind]}</p>
-    {live ? null : step.kind === 'OWNER_HOURS' || step.kind === 'COMPANY_PROFIT'
+    {live ? null : step.kind === 'POSITIONING'
+      ? <PositioningAnswerForm saving onAnswer={() => {}} phantom />
+      : step.kind === 'OWNER_HOURS' || step.kind === 'COMPANY_PROFIT'
       ? <EconomicAnswerForm kind={step.kind} saving onAnswer={() => {}} />
       : step.kind === 'OWNER_SALARY' || step.kind === 'PARTNERS'
       ? <OwnerAnswerForm kind={step.kind} saving onAnswer={() => {}} phantom />
       : <div className={step.kind === 'LIKERT' ? styles.scale : styles.choices}>{choicesFor(step).map((label, choice) => <button key={label} type="button" tabIndex={-1}><span className={styles.key}>{choice + 1}</span><span>{label}</span></button>)}</div>}
   </>;
+}
+
+function PositioningAnswerForm({ value, saving, onAnswer, phantom = false }: { value?: RadarAnswer; saving: boolean; onAnswer: (value: RadarAnswer, advance?: boolean) => void; phantom?: boolean }) {
+  const saved = isPositioningAnswer(value) ? value : null;
+  const [rating, setRating] = useState(saved?.rating ?? 0);
+  const [description, setDescription] = useState(saved?.description ?? '');
+  const valid = isPositioningAnswer({ rating, description });
+  return <form className={styles.form} onSubmit={(event) => { event.preventDefault(); if (!saving && valid) onAnswer({ rating, description: description.trim() }, true); }} aria-labelledby={phantom ? undefined : 'radar-question-title'}>
+    <fieldset className={styles.positioningScale} disabled={saving}>
+      <legend className={styles.srOnly}>Posizionamento da 1 a 5</legend>
+      {POSITIONING_LABELS.map((label, index) => <label key={index}>
+        <input type="radio" name={phantom ? 'positioning-phantom' : 'positioning'} value={index + 1} checked={rating === index + 1} onChange={() => setRating(index + 1)} required />
+        <span>{index + 1}</span>{index === 0 || index === 4 ? <small>{label}</small> : null}
+      </label>)}
+    </fieldset>
+    <label className={styles.formWide}>{POSITIONING_DESCRIPTION_TITLE}
+      <span className={styles.hint} id={phantom ? undefined : 'radar-positioning-hint'}>{POSITIONING_HINT}</span>
+      <textarea rows={4} required maxLength={POSITIONING_MAX_LENGTH} disabled={saving} value={description} onChange={(event) => setDescription(event.target.value)} aria-describedby={phantom ? undefined : 'radar-positioning-hint'} />
+    </label>
+    <button type="submit" disabled={saving || !valid}>Continua</button>
+  </form>;
 }
 
 function EconomicAnswerForm({ kind, value, saving, onAnswer }: { kind: 'OWNER_HOURS' | 'COMPANY_PROFIT'; value?: RadarAnswer; saving: boolean; onAnswer: (value: RadarAnswer) => void }) {

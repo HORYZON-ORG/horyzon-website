@@ -15,7 +15,7 @@ let revision = 0;
 let currentStep = 0;
 for (const step of radarSteps().filter((item) => item.id !== 'qualificazione#stagionale')) {
   currentStep += 1;
-  const saved = await free.saveAnswer({ assessmentId: owner.id, ownerSecret: owner.ownerSecret, answerKey: step.id, value: step.kind === 'OWNER_HOURS' ? [0, 60, 0] : step.kind === 'COMPANY_PROFIT' ? [0, 30000] : step.kind === 'OWNER_SALARY' ? [1, 1, 2000] : step.kind === 'PARTNERS' ? [1, 50] : step.kind === 'AI_MULTI' ? [0] : 2, expectedRevision: revision, currentStep });
+  const saved = await free.saveAnswer({ assessmentId: owner.id, ownerSecret: owner.ownerSecret, answerKey: step.id, value: step.kind === 'POSITIONING' ? { rating: 2, description: 'Ci riconoscono per le consegne puntuali.' } : step.kind === 'OWNER_HOURS' ? [0, 60, 0] : step.kind === 'COMPANY_PROFIT' ? [0, 30000] : step.kind === 'OWNER_SALARY' ? [1, 1, 2000] : step.kind === 'PARTNERS' ? [1, 50] : step.kind === 'AI_MULTI' ? [0] : 2, expectedRevision: revision, currentStep });
   revision = saved.revision;
 }
 const completed = await free.completeAssessment(owner.id, owner.ownerSecret);

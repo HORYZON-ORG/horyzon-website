@@ -80,7 +80,7 @@ export function RadarClient() {
   }
 
   async function resume() {
-    const local = loadActiveRecovery(localStorage, RADAR_QUESTIONNAIRE_VERSION) ?? loadActiveRecovery(localStorage, 'radar-v1');
+    const local = loadActiveRecovery(localStorage, RADAR_QUESTIONNAIRE_VERSION) ?? loadActiveRecovery(localStorage, 'radar-v3') ?? loadActiveRecovery(localStorage, 'radar-v2') ?? loadActiveRecovery(localStorage, 'radar-v1');
     if (local) {
       sync.current = { ...sync.current, revision: local.revision, assessmentId: local.assessmentId, version: local.questionnaireVersion, answers: local.answers, step: local.currentStep };
       setQuestionnaireVersion(local.questionnaireVersion);

@@ -30,7 +30,6 @@ const s = StyleSheet.create({
   body: { fontSize: 10, color: '#23363C' },
   chip: { alignSelf: 'flex-start', backgroundColor: C.ink, color: C.lime, fontFamily: 'Mono', fontSize: 7.5, letterSpacing: 1, textTransform: 'uppercase', paddingVertical: 3, paddingHorizontal: 6, borderRadius: 3, marginBottom: 6 },
   card: { borderWidth: 1, borderColor: C.line, borderRadius: 8, padding: 12, marginBottom: 8, backgroundColor: '#FFFDF5' },
-  action: { marginTop: 5, paddingTop: 5, borderTopWidth: 1, borderTopColor: C.line, fontSize: 9.5 },
   runningHeader: { flexDirection: 'row', justifyContent: 'space-between', marginTop: -24, marginBottom: 14, fontFamily: 'Mono', fontSize: 7, color: C.muted },
 });
 
@@ -66,7 +65,6 @@ function Gap({ item }: { item: ReportQuestion }) {
     <Text style={{ fontSize: 9, color: C.muted, marginBottom: 4 }}>“{item.question}”</Text>
     <Text style={s.h3}>{item.advice.title}</Text>
     <Text style={s.body}>{item.advice.body}</Text>
-    <Text style={s.action}><Text style={{ fontWeight: 800 }}>Da fare: </Text>{item.advice.action}</Text>
   </View>;
 }
 
@@ -110,31 +108,34 @@ function ReportDocument({ report }: { report: RadarReport }) {
           <Text style={{ fontSize: 9.5, fontWeight: 800, marginTop: 2 }}>{line.value}</Text>
         </View>)}
       </View> : null}
-      <Text style={[s.label, { marginTop: 4 }]}>Prossimi 90 giorni</Text>
-      <Text style={s.h2}>Le tre priorità</Text>
+      <Text style={[s.label, { marginTop: 4 }]}>Criticità</Text>
+      <Text style={s.h2}>Le criticità principali</Text>
       {report.priorities.length ? report.priorities.map((priority, i) => <View key={priority.question} style={[s.card, { flexDirection: 'row' }]} wrap={false}>
         <Text style={{ fontSize: 22, fontWeight: 800, width: 28 }}>{i + 1}</Text>
-        <View style={{ flex: 1 }}><Text style={s.label}>{priority.area}</Text><Text style={s.h3}>{priority.advice.title}</Text><Text style={s.body}>{priority.advice.action}</Text></View>
-      </View>) : <Text style={s.body}>Nessuna risposta sotto “Molto”: lavora sulla crescita del reparto prioritario.</Text>}
+        <View style={{ flex: 1 }}><Text style={s.label}>{priority.area}</Text><Text style={s.h3}>{priority.advice.title}</Text><Text style={s.body}>{priority.advice.body}</Text></View>
+      </View>) : <Text style={s.body}>Non emergono criticità dalle risposte ai reparti.</Text>}
+      {report.positioning ? <View style={s.card}>
+        <Text style={s.h3}>Il posizionamento secondo te</Text>
+        <Text style={s.body}>Posizionamento percepito: {report.positioning.rating}/5 · da poco a molto posizionata.</Text>
+        <Text style={[s.body, { marginTop: 6 }]}>{report.positioning.description}</Text>
+        <Text style={[s.body, { marginTop: 6, fontSize: 8, color: C.muted }]}>È la tua percezione dichiarata, non una verifica del riconoscimento da parte del mercato.</Text>
+      </View> : null}
       <Text style={[s.label, { marginTop: 10 }]}>Gli indici</Text>
       <View style={s.card} wrap={false}>
         <Text style={s.chip}>Autonomia dal titolare · {report.autonomy.score}/100</Text>
         <Text style={s.h3}>{report.autonomy.reading.title}</Text><Text style={s.body}>{report.autonomy.reading.body}</Text>
         <Text style={[s.body, { marginTop: 5 }]}>{report.autonomy.gapReading}</Text>
-        <Text style={s.action}><Text style={{ fontWeight: 800 }}>Da fare: </Text>{report.autonomy.reading.action}</Text>
       </View>
       {report.economics ? <View style={s.card} wrap={false}>
         <Text style={s.chip}>Utile per ora lavorata · {euro(report.economics.hourlyProfit)}</Text>
         <Text style={s.h3}>{report.economics.reading.title}</Text><Text style={s.body}>{report.economics.reading.body}</Text>
         <Text style={[s.body, { marginTop: 4, color: C.muted, fontSize: 8.5 }]}>Utile medio mensile {euro(report.economics.monthlyProfit)}{report.economics.ownerShare < 1 ? ` · la tua quota (${Math.round(report.economics.ownerShare * 100)}%) ${euro(report.economics.ownerMonthlyProfit)}` : ''} · {Math.round(report.economics.monthlyHours)} ore al mese{report.economics.monthlySalary ? ` · stipendio ${euro(report.economics.monthlySalary)} al mese: stipendio + quota di utile rendono ${euro(report.economics.hourlyEarnings ?? 0)} l’ora` : ''}. Stima sui dati dichiarati, non è il tuo reddito personale netto.</Text>
         <Text style={[s.body, { marginTop: 3, fontSize: 8.5 }]}>Sotto {report.hourlyBenchmark.critical} € l’ora sei imprenditore solo sulla carta; un’impresa sana restituisce a chi la guida almeno {report.hourlyBenchmark.target} € l’ora.{report.economics.monthlySalary === 0 ? ' Non ti prendi uno stipendio: il costo della tua presenza non compare nei conti, e l’utile sembra più alto di quello che è.' : ''}</Text>
-        <Text style={s.action}><Text style={{ fontWeight: 800 }}>Da fare: </Text>{report.economics.reading.action}</Text>
       </View> : null}
       <View style={s.card} wrap={false}>
         <Text style={s.chip}>Intelligenza artificiale · {report.ai.score}/100</Text>
         <Text style={s.h3}>{report.ai.reading.title}</Text><Text style={s.body}>{report.ai.reading.body}</Text>
         {report.ai.uses.length ? <Text style={[s.body, { marginTop: 4, fontSize: 8.5, color: C.muted }]}>Usi indicati: {report.ai.uses.join(', ')}.</Text> : null}
-        <Text style={s.action}><Text style={{ fontWeight: 800 }}>Da fare: </Text>{report.ai.reading.action}</Text>
       </View>
       <Text style={[s.label, { marginTop: 14 }]} break>Reparto per reparto</Text>
       <Text style={s.h2}>Cosa funziona, cosa manca</Text>
@@ -151,13 +152,13 @@ function ReportDocument({ report }: { report: RadarReport }) {
         </View>
         {area.gaps.map((item) => <Gap key={item.key} item={item} />)}
       </View>)}
-      {report.seasonal ? <Text style={[s.body, { fontSize: 9, color: C.muted }]}>La tua attività è stagionale: leggi cassa, persone e vendite pensando ai mesi di picco e a quelli di calo.</Text> : null}
+      {report.seasonal ? <Text style={[s.body, { fontSize: 9, color: C.muted }]}>La tua attività è stagionale: cassa, persone e vendite risentono dei mesi di picco e di calo.</Text> : null}
     </Page>
 
     <Page size="A4" style={[s.cover, { justifyContent: 'center' }]}>
       <Text style={s.labelLime}>Il passo successivo</Text>
       <Text style={[s.h1, { marginTop: 14 }]}>Leggiamo insieme il tuo Radar.</Text>
-      <Text style={{ marginTop: 14, fontSize: 12, color: '#CFD7D5', lineHeight: 1.5 }}>Nel debriefing con uno dei nostri consulenti colleghiamo questi risultati agli obiettivi della tua impresa e scegliamo da dove partire, con un piano per i prossimi 90 giorni.</Text>
+      <Text style={{ marginTop: 14, fontSize: 12, color: '#CFD7D5', lineHeight: 1.5 }}>Nel debriefing con uno dei nostri consulenti approfondiamo le criticità emerse e il loro significato nel contesto della tua impresa.</Text>
       <View style={{ marginTop: 26, alignSelf: 'flex-start', backgroundColor: C.lime, borderRadius: 6, paddingVertical: 10, paddingHorizontal: 16 }}>
         <Link src={`mailto:info@horyzon.it?subject=${encodeURIComponent(`Debriefing Radar d’Impresa — ${report.company.aziendaNome}`)}`} style={{ color: C.ink, fontWeight: 800, fontSize: 12, textDecoration: 'none' }}>Prenota il debriefing: scrivi a info@horyzon.it</Link>
       </View>

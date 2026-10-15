@@ -2,7 +2,8 @@
 import { ADVICE_BAND_LABELS, adviceKey, answerBand, HOURLY_PROFIT_CRITICAL, HOURLY_PROFIT_TARGET, hourlyProfitBand, scoreBand, type AdviceBand, type RadarAdvice } from './advice.ts';
 import { OWNER_SALARY_KEY, PARTNERS_KEY } from './owner-economics.ts';
 import { RADAR_AREAS } from './domain.ts';
-import type { RadarAnswers, RadarAreaId, RadarOwnerEconomics, RadarScores } from './types.ts';
+import { POSITIONING_KEY, isPositioningAnswer } from './positioning.ts';
+import type { RadarAnswers, RadarAreaId, RadarOwnerEconomics, RadarScores, RadarPositioningAnswer } from './types.ts';
 
 export const LIKERT_LABELS = ['Per nulla', 'Poco', 'Abbastanza', 'Molto', 'Completamente'] as const;
 
@@ -17,7 +18,7 @@ export interface RadarReportContext {
   completedAt: string | null;
 }
 
-export interface ReportAdvice { title: string; body: string; action: string }
+export interface ReportAdvice { title: string; body: string }
 export interface ReportQuestion { key: string; question: string; answer: number; answerLabel: string; band: AdviceBand; autonomy: boolean; advice: ReportAdvice }
 export interface ReportArea { id: RadarAreaId; label: string; score: number; band: AdviceBand; bandLabel: string; reading: ReportAdvice; strengths: ReportQuestion[]; gaps: ReportQuestion[] }
 export interface ReportPriority { area: string; question: string; answerLabel: string; advice: ReportAdvice }
@@ -36,6 +37,7 @@ export interface RadarReport {
   weakest: { label: string; score: number };
   priorities: ReportPriority[];
   seasonal: boolean;
+  positioning: RadarPositioningAnswer | null;
   /** The data given at the start and in the economic questions, as label/value lines for page, PDF and CRM. */
   profile: { label: string; value: string }[];
   /** Reference values for the hourly figure, so every surface quotes the same thresholds. */
@@ -46,7 +48,8 @@ const AI_USES = ['Contenuti e marketing', 'Amministrazione e reportistica', 'Ser
 
 function pick(advice: Map<string, RadarAdvice>, kind: RadarAdvice['kind'], subject: string, band: AdviceBand): ReportAdvice {
   const found = advice.get(adviceKey(kind, subject, band));
-  return found ? { title: found.title, body: found.body, action: found.action } : { title: '', body: '', action: '' };
+  // Remove the advisory sentence also from existing database copy, without rewriting stored texts.
+  return found ? { title: found.title, body: found.body.replace(' Si può partire da piccoli passi.', '') } : { title: '', body: '' };
 }
 
 function index(score: number, advice: Map<string, RadarAdvice>, kind: RadarAdvice['kind'], subject: string): ReportIndex {
@@ -60,9 +63,9 @@ function likert(answers: RadarAnswers, key: string): number {
 }
 
 function gapReading(gap: number): string {
-  if (gap >= 15) return 'I reparti sono più organizzati di quanto siano autonomi da te: i metodi ci sono, ma le decisioni passano ancora dalla tua scrivania. È il punto in cui la delega rende di più.';
+  if (gap >= 15) return 'I reparti sono più organizzati di quanto siano autonomi da te: i metodi ci sono, ma le decisioni passano ancora dalla tua scrivania.';
   if (gap <= -15) return 'L’impresa va avanti anche senza di te più di quanto i reparti siano organizzati: le persone compensano con l’esperienza, ma senza metodi scritti questa autonomia è fragile.';
-  return 'Organizzazione e autonomia dal titolare crescono di pari passo: lavorare sull’una rafforza anche l’altra.';
+  return 'Organizzazione e autonomia dal titolare risultano allineate nelle tue risposte.';
 }
 
 export function buildRadarReport(input: { scores: RadarScores; answers: RadarAnswers; advice: Map<string, RadarAdvice>; context: RadarReportContext; now?: Date }): RadarReport {
@@ -108,6 +111,7 @@ export function buildRadarReport(input: { scores: RadarScores; answers: RadarAns
     weakest: { label: scores.weakestArea.label, score: scores.weakestArea.score },
     priorities: chosen.map(({ area, gap }) => ({ area: area.label, question: gap.question, answerLabel: gap.answerLabel, advice: gap.advice })),
     seasonal: scores.seasonal,
+    positioning: isPositioningAnswer(answers[POSITIONING_KEY]) ? { ...answers[POSITIONING_KEY] } : null,
     profile: companyProfile(context, answers, scores.seasonal),
     hourlyBenchmark: { critical: HOURLY_PROFIT_CRITICAL, target: HOURLY_PROFIT_TARGET },
   };

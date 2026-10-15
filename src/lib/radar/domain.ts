@@ -1,5 +1,6 @@
 import type { RadarAnswers, RadarAreaId, RadarAreaScore, RadarScores, RadarStep } from './types.ts';
 import { RADAR_QUESTIONNAIRE_VERSION } from './types.ts';
+import { POSITIONING_KEY, POSITIONING_TITLE, isPositioningAnswer } from './positioning.ts';
 import { calculateOwnerEconomics, COMPANY_PROFIT_KEY, OWNER_HOURS_KEY, OWNER_SALARY_KEY, PARTNERS_KEY, validOwnerEconomicsAnswer } from './owner-economics.ts';
 
 type AreaDefinition = { id: RadarAreaId; label: string; questions: readonly string[] };
@@ -50,19 +51,19 @@ const AI_STEPS: readonly RadarStep[] = [
 ] as const;
 
 export function radarSteps(version: string = RADAR_QUESTIONNAIRE_VERSION): RadarStep[] {
-  const areaSteps = RADAR_AREAS.flatMap((area) => area.questions.map((title, index) => ({
+  const areaSteps = RADAR_AREAS.flatMap((area): RadarStep[] => [...area.questions.map((title, index) => ({
     id: `${area.id}#${index}`,
     kind: 'LIKERT' as const,
     title,
     areaId: area.id,
     autonomy: index === 4,
-  })));
+  })), ...(version === 'radar-v4' && area.id === 'marketing' ? [{ id: POSITIONING_KEY, kind: 'POSITIONING' as const, title: POSITIONING_TITLE, areaId: area.id }] : [])]);
   const economics: RadarStep[] = [
     { id: OWNER_HOURS_KEY, kind: 'OWNER_HOURS', title: 'Quante ore lavori davvero nella tua impresa?' },
     { id: COMPANY_PROFIT_KEY, kind: 'COMPANY_PROFIT', title: 'Quanto resta alla tua azienda prima delle tasse?' },
   ];
   // v3: the seasonal question is answered once, in the qualification form; salary and partners follow the profit.
-  if (version === 'radar-v3') return [...areaSteps, ...AI_STEPS, ...economics,
+  if (version === 'radar-v3' || version === 'radar-v4') return [...areaSteps, ...AI_STEPS, ...economics,
     { id: OWNER_SALARY_KEY, kind: 'OWNER_SALARY', title: 'Ti prendi uno stipendio da imprenditore?' },
     { id: PARTNERS_KEY, kind: 'PARTNERS', title: 'Hai dei soci?' },
   ];
@@ -71,7 +72,7 @@ export function radarSteps(version: string = RADAR_QUESTIONNAIRE_VERSION): Radar
 }
 
 export function isRadarComplete(answers: RadarAnswers, version: string = RADAR_QUESTIONNAIRE_VERSION): boolean {
-  return radarSteps(version).every((step) => Object.hasOwn(answers, step.id) && (!step.id.startsWith('economia#') || validOwnerEconomicsAnswer(step.id, answers[step.id])));
+  return radarSteps(version).every((step) => Object.hasOwn(answers, step.id) && (step.kind !== 'POSITIONING' || isPositioningAnswer(answers[step.id])) && (!step.id.startsWith('economia#') || validOwnerEconomicsAnswer(step.id, answers[step.id])));
 }
 function score100(mean: number): number {
   return Math.round(((mean - 1) / 4) * 100);

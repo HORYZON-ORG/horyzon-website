@@ -170,3 +170,10 @@
 }
 @media print{.cardFoot,.reportActions,.debriefing a{display:none}}
 .reportAxis{font:500 12px var(--font-mono),monospace;letter-spacing:.1em;fill:#b9c4c2}
+
+.positioningScale{grid-column:1/-1;display:flex;justify-content:space-between;gap:8px;padding:0;border:0;min-width:0}
+.positioningScale label{flex:1;justify-items:center;text-align:center;gap:5px;font-size:13px;cursor:pointer}
+.positioningScale input{min-height:24px;width:24px;height:24px;accent-color:#d8ff42}
+.positioningScale small{font-size:11px;line-height:1.3}
+.positioningDescription{white-space:pre-wrap;overflow-wrap:anywhere}
+.srOnly{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}

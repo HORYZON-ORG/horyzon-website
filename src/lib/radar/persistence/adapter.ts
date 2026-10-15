@@ -1,12 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import { isRadarComplete, radarSteps } from '../domain.ts';
 import { validOwnerEconomicsAnswer } from '../owner-economics.ts';
+import { POSITIONING_KEY, isPositioningAnswer } from '../positioning.ts';
 import { RADAR_QUESTIONNAIRE_VERSION, type RadarAnswers, type RadarJourneyStatus } from '../types.ts';
 import { createOwnerSecret } from './security.ts';
 import type { RadarAccessEventInput, RadarAdviceRow, RadarReportOwnerContext, RadarOwnedSession, RadarOwnership, RadarPersistence, RadarProgressProjection, RadarQualificationInput, RadarResumeProjection, RadarStaffRecord, SaveRadarAnswerInput } from './types.ts';
 
 function validateAnswer(input: SaveRadarAnswerInput): void {
   if (!radarSteps().some((step) => step.id === input.answerKey)) throw new Error('Invalid Radar answer key.');
+  if (input.answerKey === POSITIONING_KEY && !isPositioningAnswer(input.value)) throw new Error('Invalid Radar positioning answer.');
   if (input.answerKey.startsWith('economia#') && !validOwnerEconomicsAnswer(input.answerKey, input.value)) throw new Error('Invalid Radar economic answer.');
 }
 

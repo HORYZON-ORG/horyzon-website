@@ -1,9 +1,10 @@
-// v3 (call 5 Oct 2026): no seasonal step (the qualification form asks it), owner salary and partners added.
-export const RADAR_QUESTIONNAIRE_VERSION = 'radar-v3' as const;
+// v4 adds the owner's positioning assessment and description in Marketing.
+export const RADAR_QUESTIONNAIRE_VERSION = 'radar-v4' as const;
 
 export type RadarAreaId = 'amministrazione' | 'produzione' | 'commerciale' | 'marketing' | 'risorse-umane';
 export type RadarJourneyStatus = 'STARTED' | 'IN_PROGRESS' | 'PAYMENT_REQUIRED' | 'PAID' | 'COMPLETED' | 'ABANDONED' | 'EXPIRED';
-export type RadarAnswer = number | number[];
+export interface RadarPositioningAnswer { rating: number; description: string }
+export type RadarAnswer = number | number[] | RadarPositioningAnswer;
 export type RadarAnswers = Record<string, RadarAnswer>;
 
 export interface RadarAreaScore {
@@ -41,7 +42,7 @@ export interface RadarOwnerEconomics {
 
 export interface RadarStep {
   id: string;
-  kind: 'LIKERT' | 'SEASONAL' | 'AI_MULTI' | 'OWNER_HOURS' | 'COMPANY_PROFIT' | 'OWNER_SALARY' | 'PARTNERS';
+  kind: 'LIKERT' | 'SEASONAL' | 'AI_MULTI' | 'OWNER_HOURS' | 'COMPANY_PROFIT' | 'OWNER_SALARY' | 'PARTNERS' | 'POSITIONING';
   title: string;
   areaId?: RadarAreaId;
   autonomy?: boolean;

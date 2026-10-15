@@ -41,3 +41,15 @@ Variabili server del Website: `HIGHLEVEL_PRIVATE_TOKEN` (Private Integration tok
 ## PDF dall’Hub
 
 `GET /api/radar/staff/report/pdf?id=<assessment>` restituisce il report PDF di qualsiasi Radar completo. Richiede l’header `Authorization: Bearer <sessione Supabase dell’Hub>` di un utente con ruolo `superadmin` in `hub.user_roles` (stessa regola della RLS). CORS consentito a `https://hub.horyzon.it`, configurabile con `RADAR_STAFF_ORIGINS` (lista separata da virgole).
+
+## Radar v4 — posizionamento e report diagnostico (15 ottobre 2026)
+
+Il nuovo Radar ha 34 schermate e salva 35 risposte contando la stagionalità del form iniziale. Nell’ultima schermata Marketing chiede voto 1–5 e descrizione del posizionamento insieme (`marketing#posizionamento`, oggetto `{ rating, description }`, testo obbligatorio fino a 2000 caratteri). La risposta è una percezione dichiarata: non viene valutata automaticamente e non modifica la formula canonica degli indici. I Radar v1–v3 conservano domande e regole originali.
+
+Il report condiviso espone titolo e identificazione delle criticità; il campo interno `action` non viene più serializzato né mostrato in pagina, PDF o email. I contenuti della tabella dei consigli non vengono modificati. La risposta sul posizionamento è leggibile nel report e nella scheda Marketing dell’Hub.
+
+Prerequisito di rilascio: applicare, solo con autorizzazione esplicita, `20261015114309_radar_v4_positioning.sql` al progetto condiviso prima del deployment Website. La migration aggiorna le due RPC esistenti, conserva controllo di ownership/revisione/scadenza e privilegi solo server, aggiunge la validazione del posizionamento e il completamento v4. Nessuna tabella nuova o modifica alle risposte esistenti. Distribuire anche l’Hub per la visualizzazione e il conteggio. Push, migration e deploy sono passaggi distinti; il codice da solo non prova il funzionamento in produzione.
+
+Verifica locale: `npm run test:radar`, `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`; collaudo delle RPC con PostgreSQL locale e fixture sintetiche v1–v4, inclusi testo vuoto/lungo, voto fuori scala e accesso non autorizzato. In produzione verificare READY, SHA, dominio e runtime senza creare assessment reali senza autorizzazione.
+
+Rollback: fermare prima la creazione dei v4 ripristinando il codice Website precedente, poi eventualmente ripristinare le definizioni delle due RPC dalla migration v3. Non cancellare assessment o risposte v4. Lasciare le RPC v4 in sede è compatibile con il codice precedente.

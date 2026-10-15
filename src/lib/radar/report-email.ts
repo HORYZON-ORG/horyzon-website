@@ -14,7 +14,7 @@ export function buildRadarReportEmail(input: RadarReportEmailInput, from: string
 <p style="font-family:monospace;letter-spacing:2px;font-size:11px;text-transform:uppercase;color:#5A6868;margin:0 0 12px">Radar d’Impresa</p>
 <h1 style="font-size:24px;margin:0 0 16px">${first ? `Ciao ${escape(first)}, ` : ''}ecco il report di ${escape(report.company.aziendaNome)}.</h1>
 <p style="font-size:15px;line-height:1.55">Indice globale <b>${report.global.score}/100</b> · ${escape(report.global.reading.title)}.<br>Reparto più solido: <b>${escape(report.strongest.label)}</b>. Reparto prioritario: <b>${escape(report.weakest.label)}</b>.</p>
-${priorities ? `<p style="font-size:15px;margin:20px 0 8px"><b>Le tre priorità dei prossimi 90 giorni</b></p><ol style="padding:0;list-style:none;font-size:14px">${priorities}</ol>` : ''}
+${priorities ? `<p style="font-size:15px;margin:20px 0 8px"><b>Le criticità principali</b></p><ol style="padding:0;list-style:none;font-size:14px">${priorities}</ol>` : ''}
 <p style="font-size:15px;line-height:1.55">Trovi il report completo, reparto per reparto, nel PDF allegato.</p>
 <p style="margin:24px 0"><a href="mailto:info@horyzon.it?subject=${encodeURIComponent(`Debriefing Radar d’Impresa — ${report.company.aziendaNome}`)}" style="background:#D8FF42;color:#07171D;text-decoration:none;font-weight:800;padding:12px 18px;border-radius:6px;display:inline-block">Prenota il debriefing con un nostro consulente</a></p>
 <p style="font-size:12px;color:#5A6868">Una fotografia guidata basata sulle tue risposte: non è una diagnosi completa né una valutazione finanziaria, fiscale o legale.</p>
