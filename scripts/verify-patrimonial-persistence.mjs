@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { verifyPatrimonialOpportunityMigration } from './verify-patrimonial-opportunity-sql.mjs';
 import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
@@ -8,6 +9,7 @@ import { createProductionPatrimonialStore, PatrimonialConflictError, Patrimonial
 import { receivePatrimonialOpportunity, applyPatrimonialCommand } from '../src/lib/public-leads/patrimonial-routing.ts';
 import { handlePublicLead } from '../src/lib/public-leads/handler.ts';
 import { pilotForms } from '../src/content/patrimonial-funnels.ts';
+await verifyPatrimonialOpportunityMigration();
 
 // This script cannot apply SQL, start a service, or reach any network.
 let unexpectedNetwork=0,crmCalls=0;

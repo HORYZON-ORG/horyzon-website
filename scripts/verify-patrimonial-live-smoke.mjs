@@ -14,6 +14,8 @@ import { createRealPatrimonialBindings, validateRealPatrimonialReadiness, realRe
 import { smokeEnvPresence } from './lib/patrimonial-live-smoke-env.mjs';
 import { smokeContactUpsert, SmokeContactWriteError } from './lib/patrimonial-live-smoke-contact.mjs';
 import { highLevelUpsertFixture } from './fixtures/highlevel-contact-upsert.mjs';
+import { verifyPatrimonialOpportunityMigration } from './verify-patrimonial-opportunity-sql.mjs';
+await verifyPatrimonialOpportunityMigration();
 
 // Never import or invoke the live CLI. All reports are captured in memory; no
 // files under tmp/ are created, read, modified, enumerated or cleaned by tests.
@@ -440,7 +442,9 @@ passed.push('Next env loader uses only injected local file; process values inclu
 const cli = readFileSync('scripts/run-patrimonial-live-smoke.mjs', 'utf8');
 assert(cli.includes("'wx'")); assert(cli.includes('assertLiveSmoke(options, env)')); assert(cli.includes('import.meta.url ===')); assert(!/unlink|rmSync|readdir|\.env\.local/.test(cli));
 assert.equal(getPatrimonialRemoteMapping({}).pipelines.ARCHITECT_PATH.stages.A01.funnel, 'ARCHITECT_PATH');
-execFileSync('git', ['diff', '--exit-code', 'c61ed43d1a1811069cbf0ecc6c21498bea76c03d', '--', 'src', 'supabase', '.gitignore'], { stdio: 'pipe' });
+execFileSync('git', ['diff', '--exit-code', 'c61ed43d1a1811069cbf0ecc6c21498bea76c03d', '--', 'src', '.gitignore'], { stdio: 'pipe' });
+const changedSqlPaths = execFileSync('git', ['diff', '--name-only', 'c61ed43d1a1811069cbf0ecc6c21498bea76c03d', '--', 'supabase'], { encoding: 'utf8' }).trim().split(/\r?\n/).filter(Boolean);
+assert(changedSqlPaths.every(p => p === 'supabase/migrations/20261015100912_patrimonial_opportunity_jsonb_precedence.sql'), 'historical migrations and Supabase config remain unchanged');
 assert.equal(externalCalls, 0);
 console.log(passed.map(message => `PASS ${message}`).join('\n'));
 console.log('Live smoke harness prepared and verified locally. Live CLI NOT executed; zero actual remote calls and zero tmp writes.');

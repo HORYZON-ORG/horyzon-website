@@ -165,3 +165,33 @@ Successo documentato: `{new:true|false,contact:{id,...},traceId?}`. `new=true` �
 Il report ora conserva solo diagnostica allowlisted: endpoint fisso, metodo, fase PREPARE/DISPATCH/HTTP_RESPONSE/DECODE/READ_BACK/CONFIRMED, HTTP status se presente, classe codice, elapsedMs, writeDispatched e outcomeUncertain; mai body, headers, token, stack o payload provider. La sanitizzazione scarta completamente i body d'errore invece di copiarne messaggi potenzialmente sensibili. Fixture costruite dal formato ufficiale, non spacciate per risposte catturate della run fallita.
 
 Consegna esclusivamente locale: nessuna write remota, retry live o cleanup, nessun aggiornamento della vecchia riga RECONCILE_REQUIRED e nessuna modifica ai report tmp o agli env. La correzione del codice non riconcilia automaticamente la run precedente.
+
+## 14. Persistenza opportunity: diagnosi SQL e correzione separata
+
+Run di riferimento: request `309eda48-e7d7-44a6-9e21-4dc21758aded`, contact `I2b3PgshYo5zYHK1qg8w`. JSON e Markdown letti e concordanti: cinque effetti CRM SYNCED, contact CREATED/HTTP 201, nessun intent opportunity salvato nel report. Le verifiche esterne fornite dall'utente confermano solo PROVISIONAL e zero opportunity HighLevel; non sono state ripetute. La run live, il suo contatto, i tag, la nota e l'audit non sono stati modificati.
+
+Il vecchio adapter scarta la risposta SQL originale e solleva `PatrimonialStoreUnavailableError`; il harness la riduce a SMOKE_FAILED. Non esiste un body storico nel report da recuperare. La riproduzione su PostgreSQL locale in memoria, con la migration originale invariata e il ruolo service_role, espone l'errore effettivo della stessa istruzione:
+
+```text
+SQLSTATE 42883: operator does not exist: boolean -> unknown
+PL/pgSQL function patrimonial_execute_command(jsonb) line 97 at IF
+PL/pgSQL function patrimonial_store_transaction(jsonb,jsonb,boolean) line 11 at assignment
+```
+
+Trace verificata: `runPatrimonialSmoke` → `receivePatrimonialOpportunity` → health → `tx.findOpportunityIntent(groupKey)` → `tx.listParticipations(newIntentId)` → `transitionArchitect` → `tx.saveOpportunityIntent(intent,null)` → commit del journal `[findOpportunityIntent,listParticipations,saveOpportunityIntent]` → IF del branch SQL saveOpportunityIntent. Le due read e la transizione di dominio passano; fallisce la risoluzione degli operatori SQL nell'IF, prima dell'INSERT. La funzione PL/pgSQL risolve l'espressione anche quando expectedRevision=null e il ramo update non dovrebbe scattare.
+
+Root cause: `->` e `@>` hanno la stessa precedenza e associano a sinistra, secondo la [documentazione PostgreSQL](https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-PRECEDENCE). L'espressione `v_input->'requestIds' @> v_parent.record->'requestIds'` tenta infine di applicare `->` al booleano prodotto da `@>`. Identico difetto nel confronto events e nel controllo requestIds di saveParticipations. Correzione: `(v_input->'requestIds') @> (v_parent.record->'requestIds')`, con parentesi su entrambi gli operandi dei tre confronti. Non viene allentata la regola di immutabilità di requestIds/events.
+
+La migration storica `20261014225059_patrimonial_lead_v2.sql` resta intatta. Il CLI Supabase 2.121.0 ha creato `20261015100912_patrimonial_opportunity_jsonb_precedence.sql`: CREATE OR REPLACE della sola patrimonial_execute_command, identica alla precedente salvo le tre parentesizzazioni. Nessuna modifica a tabelle, indici, CHECK, FK, grant o RLS; ACL, SECURITY INVOKER e search_path restano identici. Nessun backfill, cleanup, reset o modifica della run. **Migration correttiva NON applicata al remoto: il fix SQL diventa operativo soltanto dopo un apply autorizzato separatamente.**
+
+La fixture `scripts/fixtures/patrimonial-post-crm.mjs` ricostruisce request acquisita, intent provvisorio identityResolved con remote contact ID, noteId, due consensi, cinque operazioni SYNCED e request_received. Location sostituita da fixture-location; nessun env o dato tmp usato come codice. Input dominio: ARCHITECT_PATH, Imprenditore/No/Sto esplorando/Part-time; requestContext con policy reale e marketing false; actor SYSTEM con ID sintetico, scope sintetico, nextStepAt a +24h. groupKey=SHA256([locationId,contactId,pipeline,scopeKey]), businessKey=SHA256([groupKey,1]), firstRequest invariata, requestIds con la sola request iniziale, evento ARCHITECT_INTEREST_RECEIVED/revision 1. Nessun campo obbligatorio o prerequisito era mancante.
+
+Test aggiunto `scripts/verify-patrimonial-opportunity-sql.mjs`: PostgreSQL WASM PGlite 0.5.10, senza server o porta, DB esclusivamente in memoria. Prima del fix verifica 42883 nel punto esatto e rollback senza OPPORTUNITY; dopo verifica righe SQL/record coerenti per kind, group_key, business_key, location_ref, remote_contact_id, scope_key, revision=1, status=OPEN, stage=A01, next_step=ASSIGN, next_step_at e remote=null. Verifica poi replay, revisione 2, rifiuto della cancellazione della cronologia, ACL e preservazione delle righe request/provisional/consent/outbox originali. Nessuna chiamata HighLevel. Il contratto statico della correzione viene eseguito anche dai test harness e persistence ordinari.
+
+Riproduzione SQL opzionale, senza nuove dipendenze del repository: installare separatamente `@electric-sql/pglite@0.5.10` in una directory temporanea del sistema con `npm install --prefix <directory> --no-save --ignore-scripts --no-audit --no-fund @electric-sql/pglite@0.5.10`, poi:
+
+```text
+node --no-warnings --experimental-strip-types scripts/verify-patrimonial-opportunity-sql.mjs --pglite-module <directory>/node_modules/@electric-sql/pglite/dist/index.js
+```
+
+Il test richiede un percorso esplicito fuori da tmp/, non installa nulla da solo e chiude il database in memoria al termine. La fixture rappresenta la situazione live ma non legge o modifica la run. Il package e il CLI sono strumenti locali temporanei; package.json e lockfile del progetto restano invariati.
