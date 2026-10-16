@@ -339,7 +339,7 @@ export function PatrimonialEventLanding() {
 <h2 className={[styles.reveal, styles.s168].join(' ')}>Frank Cannoletta</h2>
 <div className={[styles.s130].join(' ')}>Imprenditore &amp; Strategista Horyzon</div>
 <blockquote className={[styles.s169].join(' ')}>&quot;Mi occupo di patrimonio e finanza da quando ho perso un anno di lavoro della mia vita nelle mani di un consulente.&quot;</blockquote>
-<p className={[styles.s065].join(' ')}>Mi ero affidato ai consigli di un consulente che non ha saputo leggere il mercato, e a me mancavano le competenze per accorgermene in tempo. Un anno intero del mio lavoro, andato. Da quel giorno ho deciso che non avrei più firmato nulla senza capirlo: ho investito oltre 10.000 euro in corsi e formazione sulla finanza, ho studiato come ragionano i grandi patrimoni e ho iniziato ad applicarlo.</p>
+<p className={[styles.s065].join(' ')}>Mi ero affidato ai consigli di un consulente che non ha saputo leggere il mercato e a me mancavano le competenze per accorgermene in tempo. Anni interi di guadagni derivanti dal mio lavoro sono andati perduti. Da quel giorno ho deciso che non avrei più firmato nulla senza capirlo: ho investito oltre 10.000 euro in corsi e formazione sulla finanza, ho studiato come ragionano i grandi patrimoni e ho iniziato ad applicarlo.</p>
 <p className={[styles.s065].join(' ')}>In queste due serate ti do quello che a me è mancato: <strong className={styles.s003}>le domande giuste, prima di firmare.</strong></p>
 <div className={[styles.s170].join(' ')}>
 <div><div className={[styles.accent, styles.s171].join(' ')}>11 anni</div><div className={[styles.s073].join(' ')}>al fianco di imprese e imprenditori per farli crescere</div></div>
