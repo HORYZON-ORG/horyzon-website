@@ -1,15 +1,19 @@
 'use client';
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { eventProfiles, eventProfileValue } from '@/content/patrimonial-event-content';
 import styles from './patrimonial-event.module.css';
 
+// Page answers (profile, quiz) reach the CRM notes through the existing message field; the shared form stays untouched.
+export const EventNotesContext = createContext('');
+
 // Presentation only: transport, attempts, attribution and receipts belong to PilotLeadForm.
-export function PatrimonialEventForm({ step, setStep, selectedProfile, onProfileChange, onSubmit, status, notice, revisionRequired, onNewAttempt, v2, notes = '' }: {
-  notes?: string; step: 1 | 2; setStep: (step: 1 | 2) => void; selectedProfile: string; onProfileChange?: (value: string) => void;
+export function PatrimonialEventForm({ step, setStep, selectedProfile, onProfileChange, onSubmit, status, notice, revisionRequired, onNewAttempt, v2 }: {
+  step: 1 | 2; setStep: (step: 1 | 2) => void; selectedProfile: string; onProfileChange?: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void; status: 'idle' | 'sending' | 'success' | 'error'; notice: string;
   revisionRequired: boolean; onNewAttempt: () => void; v2: boolean;
 }) {
+  const notes = useContext(EventNotesContext);
   const [architectCall, setArchitectCall] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const firstName = useRef<HTMLInputElement>(null);

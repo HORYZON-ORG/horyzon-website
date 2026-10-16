@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import { PatrimonialLeadForm } from './patrimonial-lead-form';
+import { EventNotesContext } from './patrimonial-event-form';
 import { EventSessionProvider, EventSessionValue } from './patrimonial-event-clock';
 import { eventSession } from '@/content/patrimonial-event-session';
 import { eventScenes, eventFormTitle, eventCalculator, eventHorizons, type EventHorizon, eventAllocation, eventInstruments, eventKnowledgeLevels, eventNotes } from '@/content/patrimonial-event-content';
@@ -421,7 +422,7 @@ export function PatrimonialEventLanding() {
 <div><strong>La nostra promessa</strong><div className={[styles.s121].join(' ')}>Nessuna vendita durante le serate. Se senti che non fa per te, esci: nessuno ti richiamerà per insistere.</div></div>
 </div>
 </div>
-<PatrimonialLeadForm mode="patrimonial-event" presentation="event" selectedProfile={selectedProfile} onProfileChange={setSelectedProfile} notes={eventNotes(scene, selectedProfile, known)} />
+<EventNotesContext.Provider value={eventNotes(scene, selectedProfile, known)}><PatrimonialLeadForm mode="patrimonial-event" presentation="event" selectedProfile={selectedProfile} onProfileChange={setSelectedProfile} /></EventNotesContext.Provider>
 </div>
 </div>
 

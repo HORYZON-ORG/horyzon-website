@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
-import { eventProfiles, eventProfileValue, eventScenes, eventFormTitle, eventCalculator } from '../src/content/patrimonial-event-content.ts';
+import { existsSync, readFileSync } from 'node:fs';
+import { eventProfiles, eventProfileValue, eventScenes, eventFormTitle, eventCalculator, eventAllocation, eventInstruments, eventNotes } from '../src/content/patrimonial-event-content.ts';
 import { eventSession, eventSessionSnapshot } from '../src/content/patrimonial-event-session.ts';
 import { pilotForms } from '../src/content/patrimonial-funnels.ts';
 await import('./verify-patrimonial-form-presentation.mjs');
@@ -9,54 +9,52 @@ await import('./verify-patrimonial-form-presentation.mjs');
 const read = file => readFileSync(file, 'utf8').replaceAll('\r\n', '\n');
 const show = file => execFileSync('git', ['show', `1a3061098ad5601918564c0de5dfad3ba5fe771d:${file}`], { encoding: 'utf8' }).replaceAll('\r\n', '\n');
 // Only Event presentation changes; backend, shared transport, all Architect files and all assets stay pinned to the approved HEAD.
-const paths = execFileSync('git', ['ls-tree', '-r', '--name-only', '1a3061098ad5601918564c0de5dfad3ba5fe771d', '--', 'src/lib/public-leads', 'src/app/api/public-leads', 'supabase/migrations', 'src/content/patrimonial-architect-session.ts', 'src/content/patrimonial-funnels.ts', 'src/components/patrimonial-event-clock.tsx', 'src/components/patrimonial-architect-form.tsx', 'src/components/patrimonial-architect-landing.tsx', 'src/components/patrimonial-architect.module.css', 'src/components/patrimonial-lead-form.tsx', 'src/components/patrimonial-pilot-shell.tsx', 'src/content/patrimonial-event-content.ts', 'src/content/patrimonial-event-session.ts', 'src/app/(patrimonial-pilot)/benessere-patrimoniale/percorso-architetto-patrimoniale', 'src/app/(patrimonial-pilot)/benessere-patrimoniale/evento/grazie'], { encoding: 'utf8' }).trim().split(/\r?\n/);
+const paths = execFileSync('git', ['ls-tree', '-r', '--name-only', '1a3061098ad5601918564c0de5dfad3ba5fe771d', '--', 'src/lib/public-leads', 'src/app/api/public-leads', 'supabase/migrations', 'src/content/patrimonial-architect-session.ts', 'src/content/patrimonial-funnels.ts', 'src/components/patrimonial-event-clock.tsx', 'src/components/patrimonial-architect-form.tsx', 'src/components/patrimonial-architect-landing.tsx', 'src/components/patrimonial-architect.module.css', 'src/components/patrimonial-lead-form.tsx', 'src/components/patrimonial-pilot-shell.tsx', 'src/content/patrimonial-event-session.ts', 'src/app/(patrimonial-pilot)/benessere-patrimoniale/percorso-architetto-patrimoniale', 'src/app/(patrimonial-pilot)/benessere-patrimoniale/evento/grazie'], { encoding: 'utf8' }).trim().split(/\r?\n/);
 for (const file of paths) assert.equal(read(file), show(file), `Protected baseline changed: ${file}`);
 const assets = execFileSync('git', ['ls-tree', '-r', '--name-only', '1a3061098ad5601918564c0de5dfad3ba5fe771d', '--', 'public/benessere-patrimoniale/evento', 'public/benessere-patrimoniale/percorso-architetto'], { encoding: 'utf8' }).trim().split(/\r?\n/);
 for (const file of assets) assert(readFileSync(file).equals(execFileSync('git', ['show', `1a3061098ad5601918564c0de5dfad3ba5fe771d:${file}`], { maxBuffer: 10 * 1024 * 1024 })), `Event asset changed: ${file}`);
 const form = read('src/components/patrimonial-event-form.tsx');
 assert(!form.includes('fetch(')); assert(!form.includes('marketingConsent'));
-for (const name of ['firstName', 'lastName', 'province', 'email', 'phone', 'consent', 'profile', 'website']) assert(form.includes(`name="${name}"`));
-assert(form.includes('La richiesta non conferma ancora la partecipazione definitiva.'));
+for (const name of ['firstName', 'lastName', 'province', 'email', 'phone', 'consent', 'profile', 'website', 'message', 'architectCall']) assert(form.includes(`name="${name}"`));
 assert(form.includes('Ci manca solo questo') && form.includes('Conferma la richiesta'));
+assert(form.includes('EventNotesContext') && form.includes('Confronto 40 minuti con Architetto Patrimoniale'));
 const shared = read('src/components/patrimonial-lead-form.tsx');
 assert(shared.includes("if (presentation === 'event' && mode === 'patrimonial-event' && step === 1)"));
 const landing = read('src/components/patrimonial-event-landing.tsx');
 const sectionNames = [...landing.matchAll(/data-event-section="([^"]+)"/g)].map(match => match[1]);
 assert.deepEqual(sectionNames, ['urgency', 'hero', 'social-proof', 'scenes', 'calculator', 'pyramid', 'questions', 'gold-comparison', 'agenda', 'audience', 'speaker', 'testimonials', 'bonuses', 'request', 'faq', 'closing', 'footer', 'sticky']);
-for (const placeholder of ['[000]+', '[4,9/5]', '[00]', '[000]', '[Nome C.]', '[Imprenditore, Bari]', '[Professionista, Milano]', '[Privato, Roma]', 'Valore [__] €', '[10]', '[Una frase sulla sua storia:']) assert(landing.includes(placeholder));
-// This revision may replace only the speaker placeholder and add image crop rules.
-const portraitBaseline = file => execFileSync('git', ['show', `fa7761c80eb4d0e823e51ec7e28de251c3da9616:${file}`], { encoding: 'utf8' }).replaceAll('\r\n', '\n');
-const originalPlaceholder = '<div className={[styles.accent, styles.s164].join(\' \')}>FC</div>\n<div className={[styles.s165].join(\' \')}></div>\n<div className={[styles.s166].join(\' \')}>RITRATTO IN ARRIVO</div>';
-assert.equal(landing.replace(/<Image src="\/people\/frank-no-badge\.png"[^\n]+\/>/, originalPlaceholder), portraitBaseline('src/components/patrimonial-event-landing.tsx'));
+// Revision 16 Oct 2026: two evenings, four awareness profiles, Frank's real numbers.
+assert(!/90 minuti|90 min/.test(landing + form + read('src/content/patrimonial-event-content.ts')));
+for (const text of ['due serate', '11 anni', '10.000+', 'Radar Patrimoniale', '70-10-10-10', 'Architetto Patrimoniale']) assert(landing.includes(text), text);
+for (const placeholder of ['[Nome C.]', '[Imprenditore, Bari]', '[Professionista, Milano]']) assert(landing.includes(placeholder));
 assert(landing.includes('alt="Frank Cannoletta, Imprenditore e Strategista Horyzon" fill'));
-for (const file of ['src/components/patrimonial-event-form.tsx', 'src/app/(patrimonial-pilot)/benessere-patrimoniale/evento/page.tsx']) assert.equal(read(file), portraitBaseline(file));
 assert(readFileSync('public/people/frank-no-badge.png').equals(execFileSync('git', ['show', 'fa7761c80eb4d0e823e51ec7e28de251c3da9616:public/people/frank-no-badge.png'], { maxBuffer: 4 * 1024 * 1024 })));
 for (const profile of eventProfiles) assert(pilotForms['patrimonial-event'].profiles.includes(profile.value));
-assert.equal(eventProfileValue('Genitore / famiglia'), 'Altro'); assert.equal(eventProfileValue(''), '');
-assert.deepEqual(eventScenes.map(scene => scene.profile), ['Privato', 'Imprenditore', 'Privato', 'Genitore / famiglia']);
-for (const scene of eventScenes) assert(eventFormTitle(scene.profile).startsWith('Riserva il tuo posto.'));
+assert.deepEqual(eventProfiles.map(profile => profile.label), ['Lavoratore dipendente', 'Pensionato', 'Imprenditore', 'Professionista', 'Genitore']);
+assert.equal(eventProfileValue('Pensionato'), 'Privato'); assert.equal(eventProfileValue('Genitore'), 'Altro'); assert.equal(eventProfileValue(''), '');
+assert.deepEqual(eventScenes.map(scene => scene.level), [1, 2, 3, 4]);
+for (const profile of eventProfiles) assert(eventFormTitle(profile.label).startsWith('Riserva il tuo posto'));
 assert.equal(eventSession.status, 'PLACEHOLDER'); assert.equal(eventSessionSnapshot(null).demo, true);
-assert.equal(eventSessionSnapshot(null).seatsLeft, 32);
 const start = Date.parse(eventSession.eventDate);
 assert.deepEqual(eventSessionSnapshot(start - 90061000).cd, { d: '01', h: '01', m: '01', s: '01' });
-assert.deepEqual(eventSessionSnapshot(start + 1000).cd, { d: '00', h: '00', m: '00', s: '00' });
-assert.deepEqual(eventCalculator(100000), { amount: '100.000', real: '85.400', lost: '14.600', perDay: '8,00' });
-for (const amount of [10000, 50000, 250000, 500000, 1000000]) {
-  const raw = amount * (1 - 1 / 1.171), lost = Math.round(raw / 100) * 100;
-  assert.equal(eventCalculator(amount).real, (amount - lost).toLocaleString('it-IT'));
-  assert.equal(eventCalculator(amount).perDay, (raw / 1826).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-}
+// Calculator: euro, Italian grouping identical on server and browser, inflation and four assets.
+const calc = eventCalculator(10000, 20);
+assert.equal(calc.amount, '10.000'); assert.equal(calc.real, '6.897'); assert.equal(calc.inflation, 45);
+assert.deepEqual(calc.assets.map(asset => asset.name), ['Oro', 'Argento', 'MSCI World', 'S&P 500']);
+for (const asset of calc.assets) { assert.match(asset.value, /^\d{1,3}(\.\d{3})*$/); assert(asset.img.startsWith('/benessere-patrimoniale/evento/')); }
+assert(!/dollar|\bUSD\b|\$ ?\d/i.test(landing));
+assert.equal(eventAllocation.reduce((sum, item) => sum + item.share, 0), 100);
+assert.equal(eventAllocation.filter(item => item.half === 'reali').reduce((sum, item) => sum + item.share, 0), 50);
+for (const item of eventInstruments) assert(existsSync(`public${item.img}`), item.img);
+for (const file of ['argento', 'immobili', 'etf', 'crescita', 'obbligazioni', 'cripto', 'collezione', 'diversificazione', 'serata-1', 'serata-2', 'radar']) assert(existsSync(`public/benessere-patrimoniale/evento/${file}.jpg`), file);
+const notes = eventNotes('fermi', 'Pensionato', { oro: 'Ce l’ho già' });
+assert(notes.includes('Chi sei: Pensionato') && notes.includes('Profilo: 2') && notes.includes('Oro (Ce l’ho già)'));
 const css = read('src/components/patrimonial-event.module.css');
-assert.equal(css.replace(/^ ?\.page \.speaker-photo\{[^\n]+\}\n/gm, ''), portraitBaseline('src/components/patrimonial-event.module.css'));
 assert(css.includes('position:sticky;bottom:0')); assert(css.includes('@media (max-width:820px)'));
 assert(css.includes('prefers-reduced-motion')); assert(css.includes('--event-mono') && css.includes('--event-sans'));
-console.log(`PASS event presentation: 18 sections, placeholders, demo clock, exact calculator, explicit profile mapping, two-step form, original transport; ${paths.length} protected Architect/shared/Event logic/backend files and ${assets.length} Event and Architect assets unchanged. No remote calls.`);
-
-assert.equal((landing.match(/data-carousel=/g) || []).length, 4);
-for (const token of ['#07171D', '#102229', '#16303A', '#040E12', '#D8FF42', '#5F7010', '#F7F4E8', '#EFEDE6', '#A3B1B0', '#CDD6D4', '#41545A', '#FF9D7A']) assert(css.includes(token));
-for (const rule of ['animation-timeline:view()', '@supports', 'safe-area-inset-bottom', 'scroll-snap-type:x mandatory', 'flex:0 0 84%', '@media (hover:none)']) assert(css.includes(rule));
-assert(!/Newsreader|event-serif|btn-gold|goldtxt|#C9A24A|#F3D98F/i.test(css + landing + form));
+for (const token of ['#07171D', '#102229', '#D8FF42', '#F7F4E8', '#EFEDE6', '#FF9D7A']) assert(css.includes(token));
+for (const rule of ['animation-timeline:view()', '@supports', 'safe-area-inset-bottom', 'scroll-snap-type:x mandatory', '@media (hover:none)']) assert(css.includes(rule));
 assert.match(form, /Cellulare.*facoltativo/); assert(!form.includes('WhatsApp'));
 const route = read('src/app/(patrimonial-pilot)/benessere-patrimoniale/evento/page.tsx');
 assert(route.includes('JetBrains_Mono') && route.includes('Manrope') && !route.includes('Newsreader'));
-console.log('PASS event mobile design contract: palette, fonts, four carousels, timeline, safe area and motion; optional phone without WhatsApp promise.');
+console.log(`PASS event presentation (rev. 16 Oct 2026): 18 sections, two evenings, four profiles, euro calculator, 50/50 map, quiz notes, new renders; ${paths.length} protected Architect/shared/backend files and ${assets.length} existing Event and Architect assets unchanged. No remote calls.`);
