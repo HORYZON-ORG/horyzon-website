@@ -564,3 +564,6 @@
 .page .vFamilyImg{min-height:280px}
 .page .vQcard{flex:0 0 84%}
 }
+.page .s045::after{content:"";position:absolute;inset:auto 0 0 0;height:55%;background:linear-gradient(180deg,rgba(7,23,29,0),rgba(7,23,29,.85));pointer-events:none}
+.page .s048{z-index:1}
+.page .s047{z-index:1}
