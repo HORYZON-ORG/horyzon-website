@@ -98,7 +98,7 @@ export function ArchitectLanding() {
         </div>
 
         <div className={[styles.s025].filter(Boolean).join(" ")}>
-          <div className={[styles.s026].filter(Boolean).join(" ")}><Image width={1400} height={1750} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" preload className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/hero.jpg" alt="Immagine AI provvisoria: Un&#x27;Architetta Horyzon ascolta una coppia e prende appunti al tavolo" /></div>
+          <div className={[styles.s026].filter(Boolean).join(" ")}><Image width={1400} height={1750} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" preload className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/hero.jpg" alt="Una professionista studia con attenzione un progetto stampato, alla luce del sole" /></div>
           <div className={[styles['m-ticket'], styles.s027].filter(Boolean).join(" ")}>
             <div className={[styles.s028].filter(Boolean).join(" ")}><span className={[styles.s029, styles['pulse']].filter(Boolean).join(" ")}></span>PRESENTAZIONE LIVE</div>
             <div className={[styles.s030].filter(Boolean).join(" ")}><span data-bind="sessionLabel"><SessionValue name="sessionLabel" /></span></div>
@@ -513,7 +513,7 @@ export function ArchitectLanding() {
 
   <footer className={[styles.s189].filter(Boolean).join(" ")}>
     <div className={[styles.s190].filter(Boolean).join(" ")}>
-      <div><strong className={[styles.s191].filter(Boolean).join(" ")}>Horyzon Benessere Patrimoniale</strong><p className={styles.pilotNotice}>PILOT · Data, disponibilità e testimonianze da confermare. Immagini provvisorie generate con AI; non ritraggono il team reale.</p><br />FELICITÀ srl · Viale Papiniano 28, 20123 Milano · P. IVA 05120660757</div>
+      <div><strong className={[styles.s191].filter(Boolean).join(" ")}>Horyzon Benessere Patrimoniale</strong><p className={styles.pilotNotice}>PILOT · Data, disponibilità e testimonianze da confermare. Alcune immagini sono provvisorie e generate con AI; le foto non ritraggono il team reale.</p><br />FELICITÀ srl · Viale Papiniano 28, 20123 Milano · P. IVA 05120660757</div>
       <div className={[styles.s192].filter(Boolean).join(" ")}><a href="https://www.iubenda.com/privacy-policy/64704330">Privacy</a><a href="https://www.iubenda.com/privacy-policy/64704330/cookie-policy">Cookie</a><a href="mailto:info@horyzon.it">info@horyzon.it</a></div>
     </div>
   </footer>
