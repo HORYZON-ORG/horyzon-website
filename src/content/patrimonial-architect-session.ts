@@ -16,11 +16,11 @@ export const architectProfiles = {
   professionista: { label: 'Professionista', value: 'Professionista', scene: 'caffe', story: 1,
     sub: 'I tuoi clienti si fidano già di te. Il percorso ti dà un metodo in più per accompagnarli anche sulle scelte patrimoniali.', cta: 'Voglio aggiungere questa competenza' },
   altro: { label: 'Sto esplorando', value: 'Altro', scene: 'domenica', story: 2,
-    sub: 'Non serve sapere già cosa vuoi. In 40 minuti capisci cosa fa questo ruolo e se ti somiglia. Poi decidi tu.', cta: 'Voglio scoprirlo in 40 minuti' },
+    sub: 'Non serve sapere già cosa vuoi. In 30 minuti capisci cosa fa questo ruolo e se ti somiglia. Poi decidi tu.', cta: 'Voglio scoprirlo in 30 minuti' },
 } as const;
 export type ArchitectProfileKey = keyof typeof architectProfiles;
 export const architectDefaultCopy = {
-  sub: 'In una presentazione live di 40 minuti scopri cosa fa questo ruolo, come ti formiamo e se fa per te. Prima capisci. Poi, se vuoi, ne parliamo a tu per tu.', cta: 'Riserva il mio posto',
+  sub: 'In una presentazione live di 30 minuti scopri cosa fa questo ruolo, come ti formiamo e se fa per te. Prima capisci. Poi, se vuoi, ne parliamo a tu per tu.', cta: 'Riserva il mio posto',
 };
 export function architectSessionSnapshot(now: number | null) {
   const confirmed = architectSession.status === 'CONFIRMED';
