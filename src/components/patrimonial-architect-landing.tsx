@@ -451,7 +451,7 @@ export function ArchitectLanding() {
           </div>
         </div>
         <div className={[styles.s159].filter(Boolean).join(" ")}>
-          <div className={[styles.s154].filter(Boolean).join(" ")}><Image width={1400} height={930} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/new.jpg" alt="Immagine AI provvisoria: Una donna segue sorridendo una presentazione online e prende appunti" /></div>
+          <div className={[styles.s154].filter(Boolean).join(" ")}><Image width={1400} height={935} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/conversazione.jpg" alt="Una professionista al portatile spiega un progetto a un cliente seduto di fronte a lei" /></div>
           <div className={[styles.s156].filter(Boolean).join(" ")}>
             <div className={[styles.s160].filter(Boolean).join(" ")}>SE DEDICHI 30 MINUTI</div>
             <p className={[styles.s161].filter(Boolean).join(" ")}>Scopri un mestiere che ti somiglia e le persone pronte a insegnartelo. <strong className={[styles.s016].filter(Boolean).join(" ")}>In ogni caso, avrai scelto tu.</strong></p>
