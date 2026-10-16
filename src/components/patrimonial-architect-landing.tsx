@@ -59,9 +59,9 @@ export function ArchitectLanding() {
 
   <section ref={heroRef} className={[styles.s004, styles['bp']].filter(Boolean).join(" ")}>
     <svg className={[styles.s005].filter(Boolean).join(" ")} aria-hidden="true" viewBox="0 0 1440 900" preserveAspectRatio="none">
-      <path d="M-40 905 C 360 815, 1080 815, 1480 905" fill="none" stroke="rgba(216,255,66,.18)" strokeWidth="14"></path>
-      <path className={[styles['horizon']].filter(Boolean).join(" ")} d="M-40 905 C 360 815, 1080 815, 1480 905" fill="none" stroke="#D8FF42" strokeWidth="1.6"></path>
-      <path d="M-40 935 C 360 860, 1080 860, 1480 935" fill="none" stroke="rgba(216,255,66,.25)" strokeWidth="1" strokeDasharray="4 8"></path>
+      <path d="M-40 905 C 360 815, 1080 815, 1480 905" fill="none" style={{ stroke: 'var(--accent-stroke-18)' }} strokeWidth="14"></path>
+      <path className={[styles['horizon']].filter(Boolean).join(" ")} d="M-40 905 C 360 815, 1080 815, 1480 905" fill="none" style={{ stroke: 'var(--accent-stroke)' }} strokeWidth="1.6"></path>
+      <path d="M-40 935 C 360 860, 1080 860, 1480 935" fill="none" style={{ stroke: 'var(--accent-stroke-25)' }} strokeWidth="1" strokeDasharray="4 8"></path>
     </svg>
     <div className={[styles.s006].filter(Boolean).join(" ")}>
       <nav className={[styles.s007].filter(Boolean).join(" ")}>
@@ -214,7 +214,7 @@ export function ArchitectLanding() {
       <div className={[styles['m-col'], styles.s068].filter(Boolean).join(" ")}>
         <div className={[styles.s069].filter(Boolean).join(" ")}>
           <div className={[styles.s070].filter(Boolean).join(" ")}>
-            <svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="#D8FF42" strokeWidth="1.2" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20c1.2-3.6 3.8-5.4 7-5.4s5.8 1.8 7 5.4"></path><path d="M17.5 4.5l1.5-1.5M19 7h2" strokeLinecap="round"></path></svg>
+            <svg width="54" height="54" viewBox="0 0 24 24" fill="none" style={{ stroke: 'var(--accent-stroke)' }} strokeWidth="1.2" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20c1.2-3.6 3.8-5.4 7-5.4s5.8 1.8 7 5.4"></path><path d="M17.5 4.5l1.5-1.5M19 7h2" strokeLinecap="round"></path></svg>
           </div>
           <div className={[styles.s071].filter(Boolean).join(" ")}>PUNTO DI PARTENZA</div>
           <div className={[styles.s072].filter(Boolean).join(" ")}>Persona o imprenditore</div>
@@ -235,7 +235,7 @@ export function ArchitectLanding() {
         <div className={[styles['m-vline'], styles.s074, styles['flowline']].filter(Boolean).join(" ")} aria-hidden="true"></div>
         <div className={[styles.s069].filter(Boolean).join(" ")}>
           <div className={[styles.s081].filter(Boolean).join(" ")}>
-            <svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="#D8FF42" strokeWidth="1.2" aria-hidden="true"><path d="M3 20h18M5 20V10l7-6 7 6v10"></path><path d="M9 20v-6h6v6"></path></svg>
+            <svg width="54" height="54" viewBox="0 0 24 24" fill="none" style={{ stroke: 'var(--accent-stroke)' }} strokeWidth="1.2" aria-hidden="true"><path d="M3 20h18M5 20V10l7-6 7 6v10"></path><path d="M9 20v-6h6v6"></path></svg>
           </div>
           <div className={[styles.s071].filter(Boolean).join(" ")}>PUNTO DI ARRIVO</div>
           <div className={[styles.s072].filter(Boolean).join(" ")}>Scelte consapevoli</div>
@@ -396,11 +396,11 @@ export function ArchitectLanding() {
         <div className={[styles.s136].filter(Boolean).join(" ")}>
           <h3 className={[styles.s137].filter(Boolean).join(" ")}>È il tuo percorso se…</h3>
           <ul className={[styles.s138].filter(Boolean).join(" ")}>
-            <li className={[styles.s139].filter(Boolean).join(" ")}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D8FF42" strokeWidth="2.2" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg><span>Ti piace lavorare con le persone e sai costruire relazioni</span></li>
-            <li className={[styles.s139].filter(Boolean).join(" ")}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D8FF42" strokeWidth="2.2" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg><span>Hai esperienza commerciale, imprenditoriale o consulenziale</span></li>
-            <li className={[styles.s139].filter(Boolean).join(" ")}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D8FF42" strokeWidth="2.2" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg><span>Vuoi imparare prima di proporre</span></li>
-            <li className={[styles.s139].filter(Boolean).join(" ")}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D8FF42" strokeWidth="2.2" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg><span>Cerchi crescita personale e professionale</span></li>
-            <li className={[styles.s139].filter(Boolean).join(" ")}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D8FF42" strokeWidth="2.2" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg><span>Sei disposto a dedicare tempo alla formazione</span></li>
+            <li className={[styles.s139].filter(Boolean).join(" ")}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ stroke: 'var(--accent-stroke)' }} strokeWidth="2.2" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg><span>Ti piace lavorare con le persone e sai costruire relazioni</span></li>
+            <li className={[styles.s139].filter(Boolean).join(" ")}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ stroke: 'var(--accent-stroke)' }} strokeWidth="2.2" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg><span>Hai esperienza commerciale, imprenditoriale o consulenziale</span></li>
+            <li className={[styles.s139].filter(Boolean).join(" ")}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ stroke: 'var(--accent-stroke)' }} strokeWidth="2.2" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg><span>Vuoi imparare prima di proporre</span></li>
+            <li className={[styles.s139].filter(Boolean).join(" ")}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ stroke: 'var(--accent-stroke)' }} strokeWidth="2.2" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg><span>Cerchi crescita personale e professionale</span></li>
+            <li className={[styles.s139].filter(Boolean).join(" ")}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ stroke: 'var(--accent-stroke)' }} strokeWidth="2.2" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg><span>Sei disposto a dedicare tempo alla formazione</span></li>
           </ul>
         </div>
         <div className={[styles.s140].filter(Boolean).join(" ")}>
