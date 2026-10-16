@@ -22,7 +22,7 @@ const shared = read('src/components/patrimonial-lead-form.tsx');
 assert(shared.includes("if (presentation === 'event' && mode === 'patrimonial-event' && step === 1)"));
 const landing = read('src/components/patrimonial-event-landing.tsx');
 const sectionNames = [...landing.matchAll(/data-event-section="([^"]+)"/g)].map(match => match[1]);
-assert.deepEqual(sectionNames, ['urgency', 'hero', 'social-proof', 'scenes', 'calculator', 'pyramid', 'questions', 'gold-comparison', 'agenda', 'audience', 'speaker', 'testimonials', 'bonuses', 'request', 'faq', 'closing', 'footer', 'sticky']);
+assert.deepEqual(sectionNames, ['urgency', 'hero', 'social-proof', 'scenes', 'calculator', 'pyramid', 'questions', 'agenda', 'audience', 'speaker', 'testimonials', 'bonuses', 'request', 'faq', 'closing', 'footer', 'sticky']);
 // Revision 16 Oct 2026: two evenings, four awareness profiles, Frank's real numbers.
 assert(!/90 minuti|90 min/.test(landing + form + read('src/content/patrimonial-event-content.ts')));
 for (const text of ['due serate', '11 anni', '10.000+', 'Radar Patrimoniale', '70-10-10-10', 'Architetto Patrimoniale']) assert(landing.includes(text), text);
@@ -42,6 +42,7 @@ const calc = eventCalculator(10000, 20);
 assert.equal(calc.amount, '10.000'); assert.equal(calc.real, '6.897'); assert.equal(calc.inflation, 45);
 assert.deepEqual(calc.assets.map(asset => asset.name), ['Oro', 'Argento', 'MSCI World', 'S&P 500']);
 for (const asset of calc.assets) { assert.match(asset.value, /^\d{1,3}(\.\d{3})*$/); assert(asset.img.startsWith('/benessere-patrimoniale/evento/')); }
+assert(!/fregatura|tassat|te lo consigliamo|CAPITOLO 04/.test(landing)); assert(landing.includes('D.Lgs. 58/1998'));
 assert(!/dollar|\bUSD\b|\$ ?\d/i.test(landing));
 assert.equal(eventAllocation.reduce((sum, item) => sum + item.share, 0), 100);
 assert.equal(eventAllocation.filter(item => item.half === 'reali').reduce((sum, item) => sum + item.share, 0), 50);
@@ -57,4 +58,4 @@ for (const rule of ['animation-timeline:view()', '@supports', 'safe-area-inset-b
 assert.match(form, /Cellulare.*facoltativo/); assert(!form.includes('WhatsApp'));
 const route = read('src/app/(patrimonial-pilot)/benessere-patrimoniale/evento/page.tsx');
 assert(route.includes('JetBrains_Mono') && route.includes('Manrope') && !route.includes('Newsreader'));
-console.log(`PASS event presentation (rev. 16 Oct 2026): 18 sections, two evenings, four profiles, euro calculator, 50/50 map, quiz notes, new renders; ${paths.length} protected Architect/shared/backend files and ${assets.length} existing Event and Architect assets unchanged. No remote calls.`);
+console.log(`PASS event presentation (rev. 16 Oct 2026): 17 sections (no preview chapter), two evenings, four profiles, euro calculator, 50/50 map, quiz notes, new renders; ${paths.length} protected Architect/shared/backend files and ${assets.length} existing Event and Architect assets unchanged. No remote calls.`);

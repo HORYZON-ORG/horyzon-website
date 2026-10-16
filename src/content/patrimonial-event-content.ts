@@ -97,7 +97,13 @@ export const eventAllocation = [
 export const eventInstruments = [
   { id: 'oro', img: '/benessere-patrimoniale/evento/single.jpg', name: 'Oro', best: 'Oro fisico, in euro', ten: '+11,5% l’anno', result: '10.000 € → circa 29.800 €', role: 'Riserva di valore che non dipende da nessuna banca né da nessun emittente.' },
   { id: 'argento', img: '/benessere-patrimoniale/evento/argento.jpg', name: 'Argento', best: 'Argento fisico, in euro', ten: '+16% l’anno', result: '10.000 € → circa 44.000 €', role: 'Più dinamico dell’oro, spinto anche dalla domanda industriale.' },
-  { id: 'immobili', img: '/benessere-patrimoniale/evento/immobili.jpg', name: 'Immobili a reddito', best: 'Bilocale di 60 m² a Milano', ten: '+8,8% l’anno (valore + affitti lordi)', result: '+114.000 € di valore e circa 137.000 € di affitti', role: 'Il valore cresce e intanto l’affitto entra ogni mese.' },
+  { id: 'immobili', img: '/benessere-patrimoniale/evento/immobili.jpg', name: 'Immobili a reddito', best: 'Bilocale di 60 m² messo a reddito', tenLabel: 'Resa lorda oggi, da Nord a Sud', ten: 'tra 7,7% e 8,4% l’anno', resultLabel: 'Affitti in un anno', result: 'da circa 6.600 € a 11.300 €', role: 'Il valore segue il mercato e intanto l’affitto entra ogni mese.',
+    areas: [
+      { name: 'Nord', price: '2.270 €/m²', rent: '14,5 €/m²', home: 'circa 136.000 €', month: 'circa 870 €', yield: '7,7%', trend: 'prezzi +6%, affitti +1%' },
+      { name: 'Centro', price: '2.260 €/m²', rent: '15,8 €/m²', home: 'circa 136.000 €', month: 'circa 950 €', yield: '8,4%', trend: 'prezzi +3,6%, affitti +7,5%' },
+      { name: 'Sud e isole', price: '1.410 €/m²', rent: '9,2 €/m²', home: 'circa 85.000 €', month: 'circa 550 €', yield: '7,8%', trend: 'prezzi +1,4%, affitti +6,6%' },
+    ],
+    highlight: 'Il caso più alto degli ultimi 10 anni: un bilocale a Milano comprato nel 2015 ha guadagnato circa 114.000 € di valore e circa 137.000 € di affitti lordi.' },
   { id: 'etf', img: '/benessere-patrimoniale/evento/etf.jpg', name: 'ETF', best: 'ETF S&P 500, in euro', ten: '+13,6% l’anno', result: '10.000 € → circa 35.700 €', role: 'Le 500 maggiori aziende americane in un solo strumento.' },
   { id: 'azioni', img: '/benessere-patrimoniale/evento/crescita.jpg', name: 'Azioni', best: 'Azioni globali (MSCI World)', ten: '+9,4% l’anno', result: '10.000 € → circa 24.600 €', role: 'Un pezzo delle aziende migliori del mondo, che crescono nel tempo.' },
   { id: 'obbligazioni', img: '/benessere-patrimoniale/evento/obbligazioni.jpg', name: 'Obbligazioni', best: 'Obbligazioni dei mercati emergenti', ten: '+5,5% l’anno', result: '10.000 € → circa 17.100 €', role: 'Interessi regolari: è la parte del patrimonio che paga una rendita.' },

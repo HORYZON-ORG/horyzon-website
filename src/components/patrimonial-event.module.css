@@ -567,3 +567,36 @@
 .page .s045::after{content:"";position:absolute;inset:auto 0 0 0;height:55%;background:linear-gradient(180deg,rgba(7,23,29,0),rgba(7,23,29,.85));pointer-events:none}
 .page .s048{z-index:1}
 .page .s047{z-index:1}
+
+/* Revision 16 Oct 2026 evening: 50/50 list without percentages, Nord/Centro/Sud homes, legal note. */
+.page .vMapList{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.page .vMapHalf{display:flex;flex-direction:column;gap:8px;min-width:0}
+.page .vMapHalfName{font-family:var(--event-mono),monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#E6C98A;margin-bottom:4px}
+.page .vMapHalf:last-child .vMapHalfName{text-align:right}
+.page .vMapItem{border:1px solid rgba(247,244,232,.12);border-radius:12px;background:rgba(247,244,232,.02);transition:border-color .25s,background .25s}
+.page .vMapItem.on{border-color:rgba(212,175,99,.7);background:rgba(212,175,99,.08)}
+.page .vMapBtn{display:flex;align-items:center;gap:12px;width:100%;font:inherit;font-size:16px;font-weight:600;color:#F7F4E8;background:none;border:0;padding:14px 16px;cursor:pointer;text-align:left;min-height:52px}
+.page .vMapName{flex:1}
+.page .vMapChevron{font-size:20px;line-height:1;color:#E6C98A;transition:transform .25s}
+.page .vMapItem.on .vMapChevron{transform:rotate(45deg)}
+.page .vMapWhy{margin:0;padding:0 16px 16px 40px;font-size:15px;line-height:1.55;color:#C9D3D1}
+.page .vDisclaimer{margin-top:22px;padding:16px 18px;border-radius:12px;border:1px solid rgba(247,244,232,.14);background:rgba(7,23,29,.35);font-size:12.5px;line-height:1.55;color:#A3B1B0}
+.page .vDisclaimer strong{display:block;font-family:var(--event-mono),monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#E6C98A;margin-bottom:6px}
+.page .vDisclaimer p{margin:0}
+.page .vDisclaimer .vSources{margin-top:8px;color:#8FA3A1}
+.page .vAreas{margin-top:18px;border-top:1px solid rgba(247,244,232,.12);padding-top:16px}
+.page .vAreasHead{font-family:var(--event-mono),monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#E6C98A;margin-bottom:12px}
+.page .vAreasGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.page .vArea{border:1px solid rgba(247,244,232,.12);border-radius:12px;padding:14px;background:rgba(7,23,29,.4);display:flex;flex-direction:column;gap:6px;min-width:0}
+.page .vAreaName{font-size:17px;color:#F7F4E8;margin-bottom:2px}
+.page .vAreaRow{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:#A3B1B0}
+.page .vAreaRow b{color:#F7F4E8;font-weight:700;text-align:right;white-space:nowrap}
+.page .vAreaYield{border-top:1px solid rgba(247,244,232,.1);padding-top:6px;margin-top:2px}
+.page .vAreaYield b{color:#E6C98A}
+.page .vAreaTrend{font-size:12px;color:#8FA3A1}
+.page .vAreasNote{margin:12px 0 0;font-size:14px;line-height:1.5;color:#C9D3D1}
+@media (max-width:820px){
+.page .vMapList{grid-template-columns:1fr;gap:18px}
+.page .vMapHalf:last-child .vMapHalfName{text-align:left}
+.page .vAreasGrid{grid-template-columns:1fr}
+}

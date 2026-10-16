@@ -21,21 +21,10 @@ const questions = [
   { q: 'Metallo fisico o metallo “di carta”: cosa possiedi davvero?', sub: 'La differenza tra un lingotto e un titolo che ne segue il prezzo.' },
   { q: 'Quanto può rendere la diversificazione?', sub: 'E come si misura se sta funzionando. Prima di scoprirlo, dicci da dove parti qui sotto.' },
 ];
-// The best informed choice in each family and what it returned. Indicative, in euro, before tax and costs.
-const families = [
-  { id: 'metalli', name: 'Metalli preziosi', img: '/benessere-patrimoniale/evento/single.jpg', alt: "Lingotto d'oro con punzonatura 999.9", what: 'Oro e argento, il bene rifugio più antico del mondo.',
-    rows: [['Oro fisico', 'In 10 anni ha quasi triplicato il suo valore in euro: 10.000 € sono diventati circa 29.800 €.'], ['Argento', 'Ancora più dinamico: circa +16% l’anno negli ultimi 10 anni, spinto anche dalla domanda industriale.'], ['Fisico o di carta', 'Il lingotto lo possiedi davvero; l’oro di carta segue il prezzo. Nella seconda serata vediamo quando conviene l’uno o l’altro.']],
-    stat: '+198%', statLabel: 'l’oro in euro negli ultimi 10 anni (giugno 2026)' },
-  { id: 'immobili', name: 'Immobili a reddito', img: '/benessere-patrimoniale/evento/immobili.jpg', alt: "Modellino di un palazzo color avorio con finestre d'oro e una chiave d'oro", what: 'Un esempio concreto: un bilocale di 60 m² a Milano comprato nel 2015 e messo a reddito.',
-    rows: [['Acquisto, 2015', 'Circa 190.000 €.'], ['Valore oggi', 'Circa 304.000 €: +114.000 € (prezzi a Milano +58% dal 2015).'], ['Affitti incassati', 'Circa 137.000 € lordi in 10 anni, con un canone medio di 19 € al m² al mese.']],
-    stat: '+251.000 €', statLabel: 'valore + affitti lordi in 10 anni, su circa 190.000 € investiti' },
-  { id: 'etf', name: 'ETF', img: '/benessere-patrimoniale/evento/etf.jpg', alt: "Globo composto da tessere d'oro su un piedistallo", what: 'Un solo strumento che ti fa possedere un pezzo di centinaia di grandi aziende.',
-    rows: [['S&P 500', 'Le 500 maggiori aziende americane: +13,6% l’anno in euro negli ultimi 10 anni. 10.000 € sono diventati circa 35.700 €.'], ['MSCI World', 'Circa 1.400 aziende di 23 Paesi: +9,4% l’anno in euro in 10 anni.'], ['Cosa possiedi', 'Quote di un fondo quotato in borsa che replica l’indice, con costi molto bassi.']],
-    stat: '+13,6%', statLabel: 'l’anno, l’S&P 500 in euro negli ultimi 10 anni, dividendi inclusi' },
-  { id: 'obbligazioni', name: 'Obbligazioni', img: '/benessere-patrimoniale/evento/obbligazioni.jpg', alt: "Certificato arrotolato con sigillo d'oro accanto a monete", what: 'Presti denaro a uno Stato o a un’azienda e ricevi interessi regolari.',
-    rows: [['Mercati emergenti', 'Le obbligazioni dei Paesi emergenti: circa +5,5% l’anno negli ultimi 10 anni.'], ['High yield USA', 'Obbligazioni societarie americane ad alto rendimento: circa +5,3% l’anno dal 2007.'], ['BTP 2011–2012', 'Chi ha comprato BTP decennali in quegli anni si è assicurato cedole fino al 6–7% l’anno per dieci anni.']],
-    stat: '+5,5%', statLabel: 'l’anno, le obbligazioni dei mercati emergenti negli ultimi 10 anni' },
-];
+const disclaimer = 'Contenuti a scopo esclusivamente informativo ed educativo. Non costituiscono consulenza in materia di investimenti, raccomandazione personalizzata, sollecitazione al pubblico risparmio né offerta di acquisto o vendita di strumenti finanziari ai sensi del D.Lgs. 58/1998 (TUF). I rendimenti passati non sono indicativi di quelli futuri: il valore di ogni investimento può diminuire, fino alla perdita del capitale investito. Dati storici e indicativi, in euro, al lordo di costi e oneri fiscali. Per decisioni di investimento rivolgiti a un consulente abilitato.';
+function Disclaimer({ sources }: { sources?: string }) {
+  return <div className={styles.vDisclaimer} role="note"><strong>Avvertenza</strong><p>{disclaimer}</p>{sources && <p className={styles.vSources}>{sources}</p>}</div>;
+}
 
 const evenings = [
   { n: '1', img: '/benessere-patrimoniale/evento/serata-1.jpg', alt: "Lampada d'oro che illumina un taccuino aperto e una penna", title: 'Pensare come chi un patrimonio ce l’ha', items: [['Il denaro non sta mai fermo', 'Perché tenere i soldi sul conto è già una scelta, e quanto ti costa ogni anno.'], ['I quattro profili', 'Da chi rincorre il mese a chi costruisce: dove sei oggi e qual è il tuo prossimo passo.'], ['La regola 70-10-10-10', '70% per vivere, 10% per il fondo di sicurezza, 10% da investire, 10% per eliminare i debiti o per crescere.'], ['Come ragionano i milionari', 'Non cercano il prodotto migliore: costruiscono un sistema in cui ogni pezzo ha un compito.'], ['Le tue domande, dal vivo', '']] },
@@ -49,15 +38,12 @@ export function PatrimonialEventLanding() {
   const [selectedProfile, setSelectedProfile] = useState('');
   const [amount, setAmount] = useState(10000);
   const [years, setYears] = useState<EventHorizon>(20);
-  const [slice, setSlice] = useState<string>('metalli');
+  const [slice, setSlice] = useState<string | null>('metalli');
   const [known, setKnown] = useState<Record<string, string>>({});
   const [open, setOpen] = useState<string | null>(null);
-  const [family, setFamily] = useState('metalli');
   const cur = eventScenes.find(item => item.id === scene);
   const calc = eventCalculator(amount, years);
   const formTitle = eventFormTitle(selectedProfile);
-  const curSlice = eventAllocation.find(item => item.id === slice) ?? eventAllocation[0];
-  const curFamily = families.find(item => item.id === family) ?? families[0];
   const openInst = eventInstruments.find(item => item.id === open);
   const toggle = (id: string) => {
     if (known[id]) { setKnown(prev => { const next = { ...prev }; delete next[id]; return next; }); setOpen(cur => (cur === id ? null : cur)); return; }
@@ -217,8 +203,8 @@ export function PatrimonialEventLanding() {
 </div>
 </article>))}
 </div>
-<div className={styles.vGap}><span>Fermi sul conto: <strong className={styles.vLoss}>{calc.real} €</strong> di potere d&apos;acquisto.</span><span>La differenza con la scelta migliore: <strong>{calc.gap} €</strong>. Non per fortuna: per metodo.</span></div>
-<div className={[styles.s078].join(' ')}>Simulazione su dati storici in euro, prima di tasse e costi. Dati illustrativi in revisione. I rendimenti passati non sono indicativi di quelli futuri: negli stessi anni tutti questi strumenti hanno avuto anche cali forti.</div>
+<div className={styles.vGap}><span>Fermi sul conto: <strong className={styles.vLoss}>{calc.real} €</strong> di potere d&apos;acquisto.</span><span>La differenza con lo strumento che ha reso di più: <strong>{calc.gap} €</strong>.</span></div>
+<Disclaimer sources="Simulazione su dati storici in euro. Negli stessi anni tutti questi strumenti hanno avuto anche cali forti. Fonti: S&P Dow Jones e MSCI via EU Personal Finance, prezzi dell’oro e dell’argento in euro, inflazione ISTAT." />
 </div>
 </div>
 </div>
@@ -235,25 +221,16 @@ export function PatrimonialEventLanding() {
 <div className={[styles.vHalfTag, styles.vHalfRight].join(' ')}><strong>50%</strong><span>Beni finanziari · lavorano sui mercati</span></div>
 </div>
 <div className={styles.vSplitBody}>
-<div className={styles.vAlloc} role="group" aria-label="Come può essere diviso un patrimonio: tocca una parte">
-{(['reali', 'finanziari'] as const).map(half => (<div key={half} className={styles.vAllocHalf}>
-{eventAllocation.filter(item => item.half === half).map(item => (<button type="button" key={item.id} aria-pressed={slice === item.id} aria-label={`${item.name} ${item.share}%`} onClick={() => setSlice(item.id)} className={[styles.vAllocSeg, slice === item.id ? styles.on : ''].join(' ')} style={{ width: `${item.share * 2}%` }}><span className={styles.vAllocFill} style={{ background: item.color }} /><span className={styles.vAllocPct}>{item.share}%</span></button>))}
+<div className={styles.vMapList} role="list" aria-label="Le parti di un patrimonio diviso 50/50: tocca per saperne di più">
+{(['reali', 'finanziari'] as const).map(half => (<div key={half} className={styles.vMapHalf} role="listitem">
+<div className={styles.vMapHalfName}>{half === 'reali' ? 'Beni reali · cose che tocchi' : 'Beni finanziari · lavorano sui mercati'}</div>
+{eventAllocation.filter(item => item.half === half).map(item => (<div key={item.id} className={[styles.vMapItem, slice === item.id ? styles.on : ''].join(' ')}>
+<button type="button" aria-expanded={slice === item.id} onClick={() => setSlice(cur => (cur === item.id ? null : item.id))} className={styles.vMapBtn}><span className={styles.vSwatch} style={{ background: item.color }} /><span className={styles.vMapName}>{item.name}</span><span className={styles.vMapChevron} aria-hidden="true">+</span></button>
+{slice === item.id && <p className={styles.vMapWhy}>{item.why}</p>}
+</div>))}
 </div>))}
 </div>
-<div className={styles.vAllocScale}><span>Beni reali</span><span>Beni finanziari</span></div>
-<div className={styles.vAllocGrid}>
-<div className={styles.vAllocList}>
-{eventAllocation.map(item => (<button type="button" key={item.id} aria-pressed={slice === item.id} onClick={() => setSlice(item.id)} className={[styles.vLegendItem, slice === item.id ? styles.on : ''].join(' ')}>
-<span className={styles.vSwatch} style={{ background: item.color }} /><span className={styles.vLegendName}>{item.name}</span><strong>{item.share}%</strong>
-</button>))}
-</div>
-<div className={styles.vWhy} style={{ borderColor: curSlice.color }}>
-<div className={styles.vWhyShare} style={{ color: curSlice.color }}>{curSlice.share}%</div>
-<strong className={styles.vWhyName}>{curSlice.name}</strong>
-<span>{curSlice.why}</span>
-<span className={styles.vWhyNote}>Le percentuali giuste per te dipendono da età, obiettivi e da quanto hai già. Questa è la mappa da cui partire per ragionare.</span>
-</div>
-</div>
+<Disclaimer sources="Ogni patrimonio è diverso: questa mappa è un modo per ragionare sulla diversificazione, non un’indicazione su come investire." />
 </div>
 </div>
 
@@ -273,7 +250,7 @@ export function PatrimonialEventLanding() {
 <div className={styles.vQuizHead}>
 <div className={[styles["label"], styles.s012].join(' ')}>DOMANDA 06 · PRIMA DI SCOPRIRLO</div>
 <h3 className={styles.vQuizTitle}>Quali di questi strumenti conosci?</h3>
-<p className={[styles.s065].join(' ')}>Tocca quelli che conosci: per ognuno vedi quanto ha reso la scelta migliore negli ultimi 10 anni. Hai sbagliato? Tocca di nuovo per toglierlo.</p>
+<p className={[styles.s065].join(' ')}>Tocca quelli che conosci: per ognuno vedi quanto ha reso negli ultimi 10 anni l’esempio con il risultato più alto. Hai sbagliato? Tocca di nuovo per toglierlo.</p>
 </div>
 <div className={styles.vTiles}>
 {eventInstruments.map(item => (<button type="button" key={item.id} aria-pressed={!!known[item.id]} onClick={() => toggle(item.id)} className={[styles.vTile, known[item.id] ? styles.on : '', open === item.id ? styles.vTileOpen : ''].join(' ')}>
@@ -288,42 +265,32 @@ export function PatrimonialEventLanding() {
 <div className={styles.vInstTop}><strong className={styles.vInstName}>{openInst.name}</strong><button type="button" className={styles.vInstRemove} onClick={() => { setKnown(prev => { const next = { ...prev }; delete next[openInst.id]; return next; }); setOpen(null); }}>Non lo conosco</button></div>
 <div className={styles.vInstBest}>Il migliore: <strong>{openInst.best}</strong></div>
 <div className={styles.vInstStats}>
-<div><span className={styles.s073}>Media negli ultimi 10 anni</span><strong>{openInst.ten}</strong></div>
-<div><span className={styles.s073}>In 10 anni</span><strong>{openInst.result}</strong></div>
+<div><span className={styles.s073}>{'tenLabel' in openInst ? openInst.tenLabel : 'Media negli ultimi 10 anni'}</span><strong>{openInst.ten}</strong></div>
+<div><span className={styles.s073}>{'resultLabel' in openInst ? openInst.resultLabel : 'In 10 anni'}</span><strong>{openInst.result}</strong></div>
 </div>
 <p className={styles.vInstRole}>{openInst.role}</p>
+{'areas' in openInst && (<div className={styles.vAreas}>
+<div className={styles.vAreasHead}>Lo stesso bilocale di 60 m², oggi, da Nord a Sud</div>
+<div className={styles.vAreasGrid}>
+{openInst.areas.map(area => (<div key={area.name} className={styles.vArea}>
+<strong className={styles.vAreaName}>{area.name}</strong>
+<div className={styles.vAreaRow}><span>Prezzo medio</span><b>{area.price}</b></div>
+<div className={styles.vAreaRow}><span>Affitto medio</span><b>{area.rent} al mese</b></div>
+<div className={styles.vAreaRow}><span>Bilocale</span><b>{area.home}</b></div>
+<div className={styles.vAreaRow}><span>Affitto</span><b>{area.month} al mese</b></div>
+<div className={[styles.vAreaRow, styles.vAreaYield].join(' ')}><span>Resa lorda</span><b>{area.yield} l’anno</b></div>
+<div className={styles.vAreaTrend}>Ultimo anno: {area.trend}</div>
+</div>))}
+</div>
+<p className={styles.vAreasNote}>{openInst.highlight}</p>
+</div>)}
 <div className={styles.vLevels}>{eventKnowledgeLevels.map(level => (<button type="button" key={level} aria-pressed={known[openInst.id] === level} onClick={() => setKnown(prev => ({ ...prev, [openInst.id]: level }))} className={[styles.vLevel, known[openInst.id] === level ? styles.on : ''].join(' ')}>{level}</button>))}</div>
 </div>
 </div>)}
 <div className={styles.vQuizFoot}><span>Conosci <strong>{Object.keys(known).length}</strong> strumenti su {eventInstruments.length}. Nelle due serate vedrai come si incastrano tra loro, compresi quelli che non hai toccato.</span>
 <a href="#richiesta" className={[styles.cta, styles.s057].join(' ')}>Voglio le risposte <Arrow /></a></div>
-<div className={[styles.s078].join(' ')}>Valori indicativi in euro, prima di tasse e costi. Immobili: bilocale di 60 m² a Milano 2015–2025, prezzi +58% e affitti lordi (Osservatorio Casa Abbordabile, Idealista). Obbligazioni: VanEck, 10 anni al 31/12/2025. I rendimenti passati non garantiscono quelli futuri.</div>
+<Disclaimer sources="Fonti: immobili, prezzi e affitti medi richiesti a settembre 2026 per regione (idealista), medie per area pesate sulla popolazione; variazioni dell’ultimo anno: Immobiliare.it Insights, primo trimestre 2026; resa lorda = affitto annuo diviso prezzo, prima di spese e periodi sfitti; Milano 2015–2025: Osservatorio Casa Abbordabile e idealista. Obbligazioni: VanEck, 10 anni al 31/12/2025. ETF e azioni: S&P Dow Jones e MSCI via EU Personal Finance." />
 </div>
-</div>
-</div>
-
-<div data-event-section="gold-comparison" className={[styles.s113].join(' ')}>
-<div className={[styles.s039].join(' ')}>
-<div className={[styles.s040].join(' ')}>
-<div className={[styles.s041].join(' ')}>CAPITOLO 04 · UN&apos;ANTEPRIMA</div>
-<h2 className={[styles.reveal, styles.s093].join(' ')}>Quattro famiglie, un solo patrimonio.</h2>
-<p className={[styles.s043].join(' ')}>Ognuna fa un lavoro diverso. Insieme si proteggono a vicenda.</p>
-</div>
-<div className={[styles.vTabs, styles.vTabsLight].join(' ')} role="tablist" aria-label="Le quattro famiglie di strumenti">
-{families.map(item => (<button type="button" role="tab" key={item.id} aria-selected={family === item.id} onClick={() => setFamily(item.id)} className={[styles.vTab, family === item.id ? styles.on : ''].join(' ')}>{item.name}</button>))}
-</div>
-<div className={styles.vFamily} role="tabpanel" key={curFamily.id}>
-<div className={styles.vFamilyImg}>
-<Image src={curFamily.img} alt={curFamily.alt} width={1400} height={1050} sizes="(max-width: 820px) 100vw, 55vw" />
-<div className={styles.vFamilyStat}><strong>{curFamily.stat}</strong><span>{curFamily.statLabel}</span></div>
-</div>
-<div className={styles.vFamilyMain}>
-<h3 className={styles.vFamilyName}>{curFamily.name}</h3>
-<p className={styles.vFamilyWhat}>{curFamily.what}</p>
-<div>{curFamily.rows.map(([title, body]) => (<div key={title} className={styles.vFamilyRow}><strong>{title}</strong><span>{body}</span></div>))}</div>
-</div>
-</div>
-<p className={[styles.s143, styles.vInk].join(' ')}>Nessuna di queste famiglie, da sola, basta: nelle due serate vedrai come si combinano. Valori indicativi in euro, prima di tasse e costi; fonti: S&P Dow Jones e MSCI via EU Personal Finance, VanEck, iShares, Idealista, Osservatorio Casa Abbordabile. I rendimenti passati non garantiscono quelli futuri.</p>
 </div>
 </div>
 
@@ -438,17 +405,16 @@ export function PatrimonialEventLanding() {
 <h2 className={[styles.reveal, styles.s093].join(' ')}>Domande frequenti</h2>
 <div className={[styles.s204].join(' ')}>
 {[
-  ['È davvero gratuito? Qual è la fregatura?', 'Le due serate sono gratuite. Ti chiediamo solo di esserci a entrambe. Dopo, se lo chiedi tu, un Architetto Patrimoniale ti dedica 40 minuti gratuiti. Se non lo chiedi, nessuno ti contatterà per proporti qualcosa.'],
+  ['È davvero gratuito?', 'Le due serate sono gratuite. Ti chiediamo solo di esserci a entrambe. Dopo, se lo chiedi tu, un Architetto Patrimoniale ti dedica 40 minuti gratuiti. Se non lo chiedi, nessuno ti contatterà per proporti qualcosa.'],
   ['Dove si svolge e cosa mi serve per collegarmi?', 'Online. Ti serve un computer, un tablet o uno smartphone con connessione. Ti mandiamo il link via email e un promemoria prima di ogni serata.'],
   ['E se perdo una delle due serate?', 'Registrati comunque: chi si iscrive prima dell’evento riceve le registrazioni di entrambe le serate, disponibili per 48 ore.'],
   ['Devo accendere la videocamera o parlare?', 'No. Puoi seguire in tranquillità e fare domande in chat quando vuoi.'],
-  ['Posso partecipare con un familiare?', 'Sì, e te lo consigliamo: le scelte sul patrimonio si fanno meglio insieme.'],
+  ['Posso partecipare con un familiare?', 'Sì. Le scelte sul patrimonio si fanno meglio insieme.'],
   ['Serve già sapere di finanza?', 'No. Partiamo dalle basi e arriviamo a come ragionano i grandi patrimoni. Ognuno dei quattro profili trova qualcosa per sé.'],
   ['Ho pochi risparmi. Ha senso per me?', 'Sì. La prima serata è pensata proprio per chi oggi non riesce a mettere da parte: la regola 70-10-10-10 si applica anche con uno stipendio normale.'],
-  ['Mi direte in cosa investire?', 'No. Durante le serate non diamo consigli personalizzati. Ti diamo gli strumenti per capire e le domande da fare a chi ti segue.'],
-  ['I rendimenti mostrati sulla pagina sono garantiti?', 'No. Sono dati storici, prima di tasse e costi. Il passato non garantisce il futuro e ogni strumento può perdere valore.'],
+  ['Mi direte in cosa investire?', 'No. Le serate hanno uno scopo informativo ed educativo: ti diamo gli strumenti per capire e le domande da fare a chi ti segue.'],
+  ['I rendimenti mostrati sulla pagina sono garantiti?', 'No. Sono dati storici e indicativi. I rendimenti passati non sono indicativi di quelli futuri e ogni strumento può perdere valore.'],
   ['Perché parlate di metalli preziosi?', 'Perché sono la parte del patrimonio che non dipende da una banca o da un’azienda. Nella seconda serata vediamo pro e contro, costi compresi.'],
-  ['Come è tassato l’oro da investimento in Italia?', 'Se comprato da operatori autorizzati è esente IVA; quando lo vendi, la plusvalenza è tassata al 26%. L’argento invece si paga con IVA al 22%.'],
   ['Cos’è il Radar Patrimoniale?', 'Uno strumento che ti regaliamo, utile per i tuoi investimenti: ti mostra come è diviso oggi quello che hai e dove sei scoperto o troppo concentrato.'],
   ['Chi organizza l’evento?', 'Horyzon Benessere Patrimoniale, divisione di FELICITÀ srl, Viale Papiniano 28, Milano.'],
 ].map(([q, a]) => (<details key={q} className={[styles.s205].join(' ')}><summary className={[styles.s206].join(' ')}>{q}<span className={[styles["faq-plus"], styles.s207].join(' ')}>+</span></summary><p className={[styles.s208].join(' ')}>{a}</p></details>))}
