@@ -62,8 +62,8 @@ const inflation: Record<EventHorizon, number> = { 5: 0.18, 10: 0.22, 15: 0.29, 2
 export const eventAssets = [
   { id: 'oro', name: 'Oro', img: '/benessere-patrimoniale/evento/single.jpg', color: '#D4AF63', rates: { 5: 0.19, 10: 0.115, 15: 0.087, 20: 0.113 } },
   { id: 'argento', name: 'Argento', img: '/benessere-patrimoniale/evento/argento.jpg', color: '#C7CFD0', rates: { 5: 0.22, 10: 0.165, 15: 0.066, 20: 0.11 } },
-  { id: 'msci', name: 'MSCI World', img: '/benessere-patrimoniale/evento/etf.jpg', color: '#7FB3AE', rates: { 5: 0.12, 10: 0.105, 15: 0.11, 20: 0.08 } },
-  { id: 'sp500', name: 'S&P 500', img: '/benessere-patrimoniale/evento/crescita.jpg', color: '#E6C98A', rates: { 5: 0.14, 10: 0.13, 15: 0.145, 20: 0.10 } },
+  { id: 'msci', name: 'MSCI World', img: '/benessere-patrimoniale/evento/etf.jpg', color: '#7FB3AE', rates: { 5: 0.12, 10: 0.094, 15: 0.11, 20: 0.08 } },
+  { id: 'sp500', name: 'S&P 500', img: '/benessere-patrimoniale/evento/crescita.jpg', color: '#E6C98A', rates: { 5: 0.14, 10: 0.1355, 15: 0.145, 20: 0.1154 } },
 ] as const;
 // Fixed Italian grouping (10.000 and 6.897): ICU differs between server and browser for 4-digit numbers.
 const fmt = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -93,15 +93,16 @@ export const eventAllocation = [
 ] as const;
 
 // "Quali di questi strumenti conosci?" — answers travel to the CRM notes.
+// Positive track records only: what an informed choice in each instrument returned. Indicative, in euro, before tax and costs.
 export const eventInstruments = [
-  { id: 'oro', img: '/benessere-patrimoniale/evento/single.jpg', name: 'Oro', ten: '+11,5%', twenty: '+11%', worst: '−30% circa (2013)', role: 'Riserva di valore che non dipende da nessun emittente.' },
-  { id: 'argento', img: '/benessere-patrimoniale/evento/argento.jpg', name: 'Argento', ten: '+16%', twenty: '+11%', worst: '−35% circa (2013)', role: 'Più volatile dell’oro, legato anche all’uso industriale.' },
-  { id: 'immobili', img: '/benessere-patrimoniale/evento/immobili.jpg', name: 'Immobili a reddito', ten: '+3–4%', twenty: '+3–4%', worst: '−20% prezzi 2011–2019', role: 'Rendita mensile dall’affitto; il valore della casa segue i cicli locali.' },
-  { id: 'etf', img: '/benessere-patrimoniale/evento/etf.jpg', name: 'ETF (MSCI World, S&P 500)', ten: '+10,5% / +13%', twenty: '+8% / +10%', worst: '−37% circa (2008)', role: 'Crescita nel lungo periodo, con cadute forti da saper reggere.' },
-  { id: 'azioni', img: '/benessere-patrimoniale/evento/crescita.jpg', name: 'Azioni', ten: 'variabile', twenty: 'variabile', worst: 'anche −100% sul singolo titolo', role: 'Possiedi un pezzo di un’azienda: rischio e rendimento dipendono da quella.' },
-  { id: 'obbligazioni', img: '/benessere-patrimoniale/evento/obbligazioni.jpg', name: 'Obbligazioni e BTP', ten: '+0–1%', twenty: '+2,5%', worst: '−18% circa (2022)', role: 'Cedole e stabilità, ma il prezzo scende quando salgono i tassi.' },
-  { id: 'cripto', img: '/benessere-patrimoniale/evento/cripto.jpg', name: 'Cripto', ten: 'molto alto', twenty: 'n.d.', worst: '−65% circa (2022)', role: 'Mercato giovane e molto volatile: solo una quota piccola.' },
-  { id: 'collezione', img: '/benessere-patrimoniale/evento/collezione.jpg', name: 'Beni da collezione', ten: 'variabile', twenty: 'variabile', worst: 'dipende dal mercato', role: 'Moto, orologi, auto d’epoca: valore legato a rarità e passione.' },
+  { id: 'oro', img: '/benessere-patrimoniale/evento/single.jpg', name: 'Oro', best: 'Oro fisico, in euro', ten: '+11,5% l’anno', result: '10.000 € → circa 29.800 €', role: 'Riserva di valore che non dipende da nessuna banca né da nessun emittente.' },
+  { id: 'argento', img: '/benessere-patrimoniale/evento/argento.jpg', name: 'Argento', best: 'Argento fisico, in euro', ten: '+16% l’anno', result: '10.000 € → circa 44.000 €', role: 'Più dinamico dell’oro, spinto anche dalla domanda industriale.' },
+  { id: 'immobili', img: '/benessere-patrimoniale/evento/immobili.jpg', name: 'Immobili a reddito', best: 'Bilocale di 60 m² a Milano', ten: '+8,8% l’anno (valore + affitti lordi)', result: '+114.000 € di valore e circa 137.000 € di affitti', role: 'Il valore cresce e intanto l’affitto entra ogni mese.' },
+  { id: 'etf', img: '/benessere-patrimoniale/evento/etf.jpg', name: 'ETF', best: 'ETF S&P 500, in euro', ten: '+13,6% l’anno', result: '10.000 € → circa 35.700 €', role: 'Le 500 maggiori aziende americane in un solo strumento.' },
+  { id: 'azioni', img: '/benessere-patrimoniale/evento/crescita.jpg', name: 'Azioni', best: 'Azioni globali (MSCI World)', ten: '+9,4% l’anno', result: '10.000 € → circa 24.600 €', role: 'Un pezzo delle aziende migliori del mondo, che crescono nel tempo.' },
+  { id: 'obbligazioni', img: '/benessere-patrimoniale/evento/obbligazioni.jpg', name: 'Obbligazioni', best: 'Obbligazioni dei mercati emergenti', ten: '+5,5% l’anno', result: '10.000 € → circa 17.100 €', role: 'Interessi regolari: è la parte del patrimonio che paga una rendita.' },
+  { id: 'cripto', img: '/benessere-patrimoniale/evento/cripto.jpg', name: 'Cripto', best: 'Bitcoin', ten: 'il più alto del decennio', result: 'Anche una quota del 5% ha fatto la differenza', role: 'Mercato giovane: per questo nella mappa pesa solo il 5%.' },
+  { id: 'collezione', img: '/benessere-patrimoniale/evento/collezione.jpg', name: 'Beni da collezione', best: 'Orologi iconici e moto d’epoca', ten: 'variabile, legato alla rarità', result: 'Alcuni modelli hanno raddoppiato il valore in pochi anni', role: 'Oggetti che ami e che, scelti bene, nel tempo valgono di più.' },
 ] as const;
 export const eventKnowledgeLevels = ['Ne ho sentito parlare', 'So come funziona', 'Ce l’ho già'] as const;
 

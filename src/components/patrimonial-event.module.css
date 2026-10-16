@@ -447,12 +447,20 @@
 .page .vHalfLeft{left:clamp(18px,3%,40px)}
 .page .vHalfRight{right:clamp(18px,3%,40px);align-items:flex-end}
 .page .vSplitBody{max-width:1280px;margin:0 auto;padding:36px 24px clamp(80px,9vw,130px);display:flex;flex-direction:column;gap:14px}
-.page .vAlloc{display:flex;gap:4px;height:64px}
-.page .vAllocSeg{position:relative;min-width:0;border:0;border-radius:6px;cursor:pointer;opacity:.62;transition:opacity .25s,transform .25s;display:flex;align-items:flex-end;padding:8px 10px;font:800 15px/1 var(--event-sans),sans-serif;color:#07171D}
-.page .vAllocSeg.on{opacity:1;transform:translateY(-4px);box-shadow:0 18px 30px -18px rgba(0,0,0,.8),inset 0 0 0 2px rgba(247,244,232,.85)}
-.page .vAllocSeg span{white-space:nowrap}
-.page .vAllocScale{display:grid;grid-template-columns:1fr 1fr;font-size:13px;color:#A3B1B0;border-top:1px solid rgba(247,244,232,.14);padding-top:10px}
-.page .vAllocScale span:last-child{border-left:1px solid rgba(212,175,99,.6);padding-left:10px}
+.page .vAlloc{position:relative;display:grid;grid-template-columns:1fr 1fr}
+.page .vAlloc::after{content:"";position:absolute;left:50%;top:-36px;height:62px;width:2px;transform:translateX(-50%);background:linear-gradient(180deg,rgba(230,201,138,.9),#E6C98A 60%,rgba(230,201,138,0));box-shadow:0 0 12px rgba(230,201,138,.7);pointer-events:none}
+.page .vAllocHalf{display:flex;min-width:0}
+.page .vAllocSeg{flex:none;min-width:0;border:0;background:none;padding:6px 3px 0;cursor:pointer;display:flex;flex-direction:column;gap:10px;text-align:left}
+.page .vAllocHalf:first-child .vAllocSeg:first-child{padding-left:0}
+.page .vAllocHalf:last-child .vAllocSeg:last-child{padding-right:0}
+.page .vAllocHalf:first-child .vAllocSeg:last-child{padding-right:5px}
+.page .vAllocHalf:last-child .vAllocSeg:first-child{padding-left:5px}
+.page .vAllocFill{display:block;height:12px;border-radius:99px;opacity:.5;transition:opacity .25s,transform .25s,box-shadow .25s}
+.page .vAllocPct{font:800 15px/1 var(--event-sans),sans-serif;color:#A3B1B0;letter-spacing:-.01em;white-space:nowrap;transition:color .25s}
+.page .vAllocSeg.on .vAllocPct{color:#F7F4E8}
+.page .vAllocSeg.on .vAllocFill{opacity:1;transform:scaleY(1.35);box-shadow:0 0 18px rgba(230,201,138,.35)}
+.page .vAllocScale{display:grid;grid-template-columns:1fr 1fr;font-size:13px;color:#A3B1B0;padding-top:4px}
+.page .vAllocScale span:last-child{text-align:right}
 .page .vAllocGrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:24px;margin-top:22px}
 .page .vAllocList{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-content:start}
 .page .vLegendItem{display:flex;align-items:center;gap:12px;width:100%;font:inherit;color:#CDD6D4;background:transparent;border:1px solid rgba(247,244,232,.12);border-radius:10px;padding:12px 14px;cursor:pointer;text-align:left;min-height:50px}
@@ -486,7 +494,10 @@
 .page .vInstTop{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .page .vInstName{font-size:24px;letter-spacing:-.03em}
 .page .vInstRemove{font:500 13px/1 var(--event-sans),sans-serif;background:none;border:0;color:#A3B1B0;text-decoration:underline;cursor:pointer;padding:8px 0}
-.page .vInstStats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.page .vInstBest{font-size:15px;color:#CDD6D4}
+.page .vInstBest strong{color:#F7F4E8}
+.page .vInstStats{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:16px}
+.page .vTileHint{position:absolute;top:12px;left:12px;font-size:11px;font-weight:700;color:#07171D;background:rgba(230,201,138,.92);border-radius:99px;padding:4px 8px}
 .page .vInstStats>div{display:flex;flex-direction:column;gap:4px}
 .page .vInstStats strong{font-size:22px;letter-spacing:-.03em;color:var(--gold-soft)}
 .page .vInstRole{margin:0;color:#CDD6D4}
@@ -540,9 +551,7 @@
 .page .vHalfTag strong{font-size:34px}
 .page .vHalfTag span{font-size:12px;max-width:120px}
 .page .vHalfRight span{text-align:right}
-.page .vAlloc{height:52px}
-.page .vAllocSeg{padding:6px;font-size:12px}
-.page .vAllocSeg:nth-child(n+5) span{display:none}
+.page .vAllocPct{font-size:12px}
 .page .vAllocGrid{grid-template-columns:1fr}
 .page .vAllocList{grid-template-columns:1fr 1fr}
 .page .vLegendItem{font-size:14px;padding:10px 12px;gap:8px}
@@ -550,7 +559,7 @@
 .page .vTiles{grid-template-columns:repeat(2,minmax(0,1fr))}
 .page .vInst{grid-template-columns:1fr}
 .page .vInstImg{aspect-ratio:16/9;overflow:hidden}
-.page .vInstStats{grid-template-columns:1fr 1fr}
+.page .vInstStats{grid-template-columns:1fr}
 .page .vFamily{grid-template-columns:1fr}
 .page .vFamilyImg{min-height:280px}
 .page .vQcard{flex:0 0 84%}

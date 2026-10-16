@@ -21,19 +21,20 @@ const questions = [
   { q: 'Metallo fisico o metallo “di carta”: cosa possiedi davvero?', sub: 'La differenza tra un lingotto e un titolo che ne segue il prezzo.' },
   { q: 'Quanto può rendere la diversificazione?', sub: 'E come si misura se sta funzionando. Prima di scoprirlo, dicci da dove parti qui sotto.' },
 ];
+// The best informed choice in each family and what it returned. Indicative, in euro, before tax and costs.
 const families = [
   { id: 'metalli', name: 'Metalli preziosi', img: '/benessere-patrimoniale/evento/single.jpg', alt: "Lingotto d'oro con punzonatura 999.9", what: 'Oro e argento, il bene rifugio più antico del mondo.',
-    rows: [['Oro fisico', 'Lingotti e monete che possiedi davvero. Esente IVA se comprato da operatori autorizzati; plusvalenza tassata al 26%. Va custodito.'], ['Oro di carta', 'ETC, fondi e certificati che seguono il prezzo. Comodi da comprare e vendere, ma possiedi un titolo, non il metallo.'], ['Argento', 'Più volatile dell’oro e, a differenza dell’oro, si paga con IVA al 22%.']],
+    rows: [['Oro fisico', 'In 10 anni ha quasi triplicato il suo valore in euro: 10.000 € sono diventati circa 29.800 €.'], ['Argento', 'Ancora più dinamico: circa +16% l’anno negli ultimi 10 anni, spinto anche dalla domanda industriale.'], ['Fisico o di carta', 'Il lingotto lo possiedi davvero; l’oro di carta segue il prezzo. Nella seconda serata vediamo quando conviene l’uno o l’altro.']],
     stat: '+198%', statLabel: 'l’oro in euro negli ultimi 10 anni (giugno 2026)' },
-  { id: 'immobili', name: 'Immobili a reddito', img: '/benessere-patrimoniale/evento/immobili.jpg', alt: "Modellino di un palazzo color avorio con finestre d'oro e una chiave d'oro", what: 'Case, negozi, uffici che producono un affitto ogni mese.',
-    rows: [['Il valore', 'Quanto è cresciuto il prezzo dell’immobile dal giorno dell’acquisto.'], ['La rendita', 'Gli affitti incassati anno dopo anno, al netto di tasse, IMU e spese.'], ['Il totale', 'Valore più affitti: è così che si misura davvero un immobile a reddito.']],
-    stat: 'Valore + affitti', statLabel: 'nella seconda serata un caso reale: cosa ha reso in 10 anni un bilocale messo a reddito' },
-  { id: 'etf', name: 'ETF', img: '/benessere-patrimoniale/evento/etf.jpg', alt: "Globo composto da tessere d'oro su un piedistallo", what: 'Un solo strumento che ti fa possedere un pezzo di migliaia di aziende.',
-    rows: [['MSCI World', 'Circa 1.400 grandi aziende di 23 Paesi sviluppati, in un unico ETF.'], ['S&P 500', 'Le 500 maggiori aziende americane.'], ['Cosa possiedi', 'Quote di un fondo quotato in borsa che replica l’indice.']],
-    stat: '+9,4%', statLabel: 'l’anno, in media, l’MSCI World in euro nei 10 anni a marzo 2025' },
-  { id: 'obbligazioni', name: 'Obbligazioni', img: '/benessere-patrimoniale/evento/obbligazioni.jpg', alt: "Certificato arrotolato con sigillo d'oro accanto a monete", what: 'Presti denaro a uno Stato o a un’azienda e ricevi interessi.',
-    rows: [['BTP italiani', 'Titoli di Stato con cedola periodica.'], ['Bund tedeschi', 'Il riferimento “sicuro” dell’area euro.'], ['Il 2022', 'Quando i tassi sono saliti, anche i titoli più sicuri hanno perso valore. Saperlo leggere fa la differenza.']],
-    stat: '−18%', statLabel: 'circa, i titoli di Stato dell’area euro nel 2022' },
+  { id: 'immobili', name: 'Immobili a reddito', img: '/benessere-patrimoniale/evento/immobili.jpg', alt: "Modellino di un palazzo color avorio con finestre d'oro e una chiave d'oro", what: 'Un esempio concreto: un bilocale di 60 m² a Milano comprato nel 2015 e messo a reddito.',
+    rows: [['Acquisto, 2015', 'Circa 190.000 €.'], ['Valore oggi', 'Circa 304.000 €: +114.000 € (prezzi a Milano +58% dal 2015).'], ['Affitti incassati', 'Circa 137.000 € lordi in 10 anni, con un canone medio di 19 € al m² al mese.']],
+    stat: '+251.000 €', statLabel: 'valore + affitti lordi in 10 anni, su circa 190.000 € investiti' },
+  { id: 'etf', name: 'ETF', img: '/benessere-patrimoniale/evento/etf.jpg', alt: "Globo composto da tessere d'oro su un piedistallo", what: 'Un solo strumento che ti fa possedere un pezzo di centinaia di grandi aziende.',
+    rows: [['S&P 500', 'Le 500 maggiori aziende americane: +13,6% l’anno in euro negli ultimi 10 anni. 10.000 € sono diventati circa 35.700 €.'], ['MSCI World', 'Circa 1.400 aziende di 23 Paesi: +9,4% l’anno in euro in 10 anni.'], ['Cosa possiedi', 'Quote di un fondo quotato in borsa che replica l’indice, con costi molto bassi.']],
+    stat: '+13,6%', statLabel: 'l’anno, l’S&P 500 in euro negli ultimi 10 anni, dividendi inclusi' },
+  { id: 'obbligazioni', name: 'Obbligazioni', img: '/benessere-patrimoniale/evento/obbligazioni.jpg', alt: "Certificato arrotolato con sigillo d'oro accanto a monete", what: 'Presti denaro a uno Stato o a un’azienda e ricevi interessi regolari.',
+    rows: [['Mercati emergenti', 'Le obbligazioni dei Paesi emergenti: circa +5,5% l’anno negli ultimi 10 anni.'], ['High yield USA', 'Obbligazioni societarie americane ad alto rendimento: circa +5,3% l’anno dal 2007.'], ['BTP 2011–2012', 'Chi ha comprato BTP decennali in quegli anni si è assicurato cedole fino al 6–7% l’anno per dieci anni.']],
+    stat: '+5,5%', statLabel: 'l’anno, le obbligazioni dei mercati emergenti negli ultimi 10 anni' },
 ];
 
 const evenings = [
@@ -58,7 +59,10 @@ export function PatrimonialEventLanding() {
   const curSlice = eventAllocation.find(item => item.id === slice) ?? eventAllocation[0];
   const curFamily = families.find(item => item.id === family) ?? families[0];
   const openInst = eventInstruments.find(item => item.id === open);
-  const toggle = (id: string) => { setOpen(id); setKnown(prev => (prev[id] ? prev : { ...prev, [id]: eventKnowledgeLevels[0] })); };
+  const toggle = (id: string) => {
+    if (known[id]) { setKnown(prev => { const next = { ...prev }; delete next[id]; return next; }); setOpen(cur => (cur === id ? null : cur)); return; }
+    setKnown(prev => ({ ...prev, [id]: eventKnowledgeLevels[0] })); setOpen(id);
+  };
   return <EventSessionProvider><div data-session-status={eventSession.status} data-availability={eventSession.status === 'PLACEHOLDER' ? 'demo' : 'confirmed'} className={[styles.s000, styles.page].join(' ')}>
 
 <div data-event-section="urgency" className={[styles.s001].join(' ')}>
@@ -232,7 +236,9 @@ export function PatrimonialEventLanding() {
 </div>
 <div className={styles.vSplitBody}>
 <div className={styles.vAlloc} role="group" aria-label="Come può essere diviso un patrimonio: tocca una parte">
-{eventAllocation.map(item => (<button type="button" key={item.id} aria-pressed={slice === item.id} onClick={() => setSlice(item.id)} className={[styles.vAllocSeg, slice === item.id ? styles.on : ''].join(' ')} style={{ flexGrow: item.share, background: item.color }}><span>{item.share}%</span></button>))}
+{(['reali', 'finanziari'] as const).map(half => (<div key={half} className={styles.vAllocHalf}>
+{eventAllocation.filter(item => item.half === half).map(item => (<button type="button" key={item.id} aria-pressed={slice === item.id} aria-label={`${item.name} ${item.share}%`} onClick={() => setSlice(item.id)} className={[styles.vAllocSeg, slice === item.id ? styles.on : ''].join(' ')} style={{ width: `${item.share * 2}%` }}><span className={styles.vAllocFill} style={{ background: item.color }} /><span className={styles.vAllocPct}>{item.share}%</span></button>))}
+</div>))}
 </div>
 <div className={styles.vAllocScale}><span>Beni reali</span><span>Beni finanziari</span></div>
 <div className={styles.vAllocGrid}>
@@ -267,23 +273,23 @@ export function PatrimonialEventLanding() {
 <div className={styles.vQuizHead}>
 <div className={[styles["label"], styles.s012].join(' ')}>DOMANDA 06 · PRIMA DI SCOPRIRLO</div>
 <h3 className={styles.vQuizTitle}>Quali di questi strumenti conosci?</h3>
-<p className={[styles.s065].join(' ')}>Tocca quelli che conosci: per ognuno vedi come è andato negli ultimi 10 e 20 anni.</p>
+<p className={[styles.s065].join(' ')}>Tocca quelli che conosci: per ognuno vedi quanto ha reso la scelta migliore negli ultimi 10 anni. Hai sbagliato? Tocca di nuovo per toglierlo.</p>
 </div>
 <div className={styles.vTiles}>
 {eventInstruments.map(item => (<button type="button" key={item.id} aria-pressed={!!known[item.id]} onClick={() => toggle(item.id)} className={[styles.vTile, known[item.id] ? styles.on : '', open === item.id ? styles.vTileOpen : ''].join(' ')}>
 <span className={styles.vTileImg}><Image src={item.img} alt="" width={320} height={240} sizes="160px" /></span>
 <span className={styles.vTileName}>{item.name}</span>
-<span className={styles.vTileCheck} aria-hidden="true">{known[item.id] ? '✓' : '+'}</span>
+<span className={styles.vTileCheck} aria-hidden="true">{known[item.id] ? '✓' : '+'}</span>{known[item.id] && <span className={styles.vTileHint}>Tocca per togliere</span>}
 </button>))}
 </div>
 {openInst && (<div className={styles.vInst}>
 <div className={styles.vInstImg}><Image src={openInst.img} alt="" width={640} height={480} sizes="(max-width: 820px) 100vw, 320px" /></div>
 <div className={styles.vInstBody}>
 <div className={styles.vInstTop}><strong className={styles.vInstName}>{openInst.name}</strong><button type="button" className={styles.vInstRemove} onClick={() => { setKnown(prev => { const next = { ...prev }; delete next[openInst.id]; return next; }); setOpen(null); }}>Non lo conosco</button></div>
+<div className={styles.vInstBest}>Il migliore: <strong>{openInst.best}</strong></div>
 <div className={styles.vInstStats}>
-<div><span className={styles.s073}>Media annua 10 anni</span><strong>{openInst.ten}</strong></div>
-<div><span className={styles.s073}>Media annua 20 anni</span><strong>{openInst.twenty}</strong></div>
-<div><span className={styles.s073}>Calo peggiore</span><strong className={styles.vLoss}>{openInst.worst}</strong></div>
+<div><span className={styles.s073}>Media negli ultimi 10 anni</span><strong>{openInst.ten}</strong></div>
+<div><span className={styles.s073}>In 10 anni</span><strong>{openInst.result}</strong></div>
 </div>
 <p className={styles.vInstRole}>{openInst.role}</p>
 <div className={styles.vLevels}>{eventKnowledgeLevels.map(level => (<button type="button" key={level} aria-pressed={known[openInst.id] === level} onClick={() => setKnown(prev => ({ ...prev, [openInst.id]: level }))} className={[styles.vLevel, known[openInst.id] === level ? styles.on : ''].join(' ')}>{level}</button>))}</div>
@@ -291,7 +297,7 @@ export function PatrimonialEventLanding() {
 </div>)}
 <div className={styles.vQuizFoot}><span>Conosci <strong>{Object.keys(known).length}</strong> strumenti su {eventInstruments.length}. Nelle due serate vedrai come si incastrano tra loro, compresi quelli che non hai toccato.</span>
 <a href="#richiesta" className={[styles.cta, styles.s057].join(' ')}>Voglio le risposte <Arrow /></a></div>
-<div className={[styles.s078].join(' ')}>Medie annue indicative in euro, prima di tasse e costi; dati in revisione. Le tue risposte ci aiutano a preparare le serate.</div>
+<div className={[styles.s078].join(' ')}>Valori indicativi in euro, prima di tasse e costi. Immobili: bilocale di 60 m² a Milano 2015–2025, prezzi +58% e affitti lordi (Osservatorio Casa Abbordabile, Idealista). Obbligazioni: VanEck, 10 anni al 31/12/2025. I rendimenti passati non garantiscono quelli futuri.</div>
 </div>
 </div>
 </div>
@@ -317,7 +323,7 @@ export function PatrimonialEventLanding() {
 <div>{curFamily.rows.map(([title, body]) => (<div key={title} className={styles.vFamilyRow}><strong>{title}</strong><span>{body}</span></div>))}</div>
 </div>
 </div>
-<p className={[styles.s143, styles.vInk].join(' ')}>Nessuna di queste famiglie, da sola, basta. Nelle due serate vedrai come si combinano. Rendimenti passati, non indicativi di quelli futuri.</p>
+<p className={[styles.s143, styles.vInk].join(' ')}>Nessuna di queste famiglie, da sola, basta: nelle due serate vedrai come si combinano. Valori indicativi in euro, prima di tasse e costi; fonti: S&P Dow Jones e MSCI via EU Personal Finance, VanEck, iShares, Idealista, Osservatorio Casa Abbordabile. I rendimenti passati non garantiscono quelli futuri.</p>
 </div>
 </div>
 
@@ -367,7 +373,7 @@ export function PatrimonialEventLanding() {
 <h2 className={[styles.reveal, styles.s168].join(' ')}>Frank Cannoletta</h2>
 <div className={[styles.s130].join(' ')}>Imprenditore &amp; Strategista Horyzon</div>
 <blockquote className={[styles.s169].join(' ')}>&quot;Mi occupo di patrimonio e finanza da quando ho perso un anno di lavoro della mia vita nelle mani di un consulente.&quot;</blockquote>
-<p className={[styles.s065].join(' ')}>40.000 euro, spariti in prodotti che non capivo e che nessuno mi aveva spiegato davvero. Quel giorno ho deciso che non avrei più firmato nulla senza capirlo. Ho investito oltre 10.000 euro in corsi e formazione sulla finanza, ho studiato come ragionano i grandi patrimoni e ho iniziato ad applicarlo.</p>
+<p className={[styles.s065].join(' ')}>Mi ero affidato ai consigli di un consulente che non ha saputo leggere il mercato, e a me mancavano le competenze per accorgermene in tempo. Un anno intero del mio lavoro, andato. Da quel giorno ho deciso che non avrei più firmato nulla senza capirlo: ho investito oltre 10.000 euro in corsi e formazione sulla finanza, ho studiato come ragionano i grandi patrimoni e ho iniziato ad applicarlo.</p>
 <p className={[styles.s065].join(' ')}>In queste due serate ti do quello che a me è mancato: <strong className={styles.s003}>le domande giuste, prima di firmare.</strong></p>
 <div className={[styles.s170].join(' ')}>
 <div><div className={[styles.accent, styles.s171].join(' ')}>11 anni</div><div className={[styles.s073].join(' ')}>al fianco di imprese e imprenditori per farli crescere</div></div>
@@ -399,8 +405,9 @@ export function PatrimonialEventLanding() {
 <div className={[styles.s183].join(' ')}>
 <div className={[styles.s184].join(' ')}><div><strong className={[styles.s185].join(' ')}>Evento live in due serate</strong><div className={[styles.s119].join(' ')}>Con domande e risposte dal vivo, e la regola 70-10-10-10 pronta da applicare</div></div><span className={[styles.s186].join(' ')}>Incluso</span></div>
 <div className={styles.vRadar}><div className={styles.vRadarImg}><Image src="/benessere-patrimoniale/evento/radar.jpg" alt="Quadrante d'oro con anelli concentrici e una lancetta" width={800} height={800} sizes="160px" /></div><div><span className={[styles.s187].join(' ')}>BONUS 1 · IN REGALO</span><br /><strong className={[styles.s185].join(' ')}>Il tuo Radar Patrimoniale</strong><div className={[styles.s119].join(' ')}>Uno strumento utile per i tuoi investimenti: ti mostra in un colpo d&apos;occhio dove il tuo patrimonio è scoperto e dove è troppo concentrato.</div></div><span className={[styles.s186].join(' ')}>Gratuito</span></div>
-<div className={[styles.s184].join(' ')}><div><span className={[styles.s187].join(' ')}>BONUS 2</span><br /><strong className={[styles.s185].join(' ')}>La lista delle domande da fare prima di firmare</strong><div className={[styles.s119].join(' ')}>Da portare al prossimo appuntamento in banca</div></div><span className={[styles.s186].join(' ')}>Incluso</span></div>
-<div className={[styles.s188].join(' ')}><div><span className={[styles.s189].join(' ')}>BONUS 3 · SE LO DESIDERI</span><br /><strong className={[styles.s185].join(' ')}>40 minuti solo per te, con un Architetto Patrimoniale</strong><div className={[styles.s121].join(' ')}>Dopo l&apos;evento partite da quello che ti ha colpito nelle due serate: cosa ti interessa davvero, cosa ti preoccupa, quali strumenti vuoi approfondire. Esci con le idee chiare sul tuo prossimo passo. Nessun costo, nessun obbligo, e non ti chiameremo se non sei tu a chiederlo.</div></div><span className={[styles.s190].join(' ')}>Gratuito</span></div>
+<div className={[styles.s184].join(' ')}><div><span className={[styles.s187].join(' ')}>BONUS 2</span><br /><strong className={[styles.s185].join(' ')}>Le registrazioni delle due serate per 48 ore</strong><div className={[styles.s119].join(' ')}>Per rivederle con calma, o recuperare quella che hai perso. Solo per chi si registra prima dell&apos;evento</div></div><span className={[styles.s186].join(' ')}>Incluso</span></div>
+<div className={[styles.s184].join(' ')}><div><span className={[styles.s187].join(' ')}>BONUS 3</span><br /><strong className={[styles.s185].join(' ')}>La lista delle domande da fare prima di firmare</strong><div className={[styles.s119].join(' ')}>Da portare al prossimo appuntamento in banca</div></div><span className={[styles.s186].join(' ')}>Incluso</span></div>
+<div className={[styles.s188].join(' ')}><div><span className={[styles.s189].join(' ')}>BONUS 4 · SE LO DESIDERI</span><br /><strong className={[styles.s185].join(' ')}>40 minuti solo per te, con un Architetto Patrimoniale</strong><div className={[styles.s121].join(' ')}>Dopo l&apos;evento partite da quello che ti ha colpito nelle due serate: cosa ti interessa davvero, cosa ti preoccupa, quali strumenti vuoi approfondire. Esci con le idee chiare sul tuo prossimo passo. Nessun costo, nessun obbligo, e non ti chiameremo se non sei tu a chiederlo.</div></div><span className={[styles.s190].join(' ')}>Gratuito</span></div>
 <div className={[styles.s191].join(' ')}><div className={[styles.s192].join(' ')}>Per te, oggi: <strong>gratis</strong>.</div><a href="#richiesta" className={[styles.cta, styles["cta-ink"], styles.s193].join(' ')}>Riserva il posto e il Radar</a></div>
 </div>
 </div>
@@ -433,7 +440,7 @@ export function PatrimonialEventLanding() {
 {[
   ['È davvero gratuito? Qual è la fregatura?', 'Le due serate sono gratuite. Ti chiediamo solo di esserci a entrambe. Dopo, se lo chiedi tu, un Architetto Patrimoniale ti dedica 40 minuti gratuiti. Se non lo chiedi, nessuno ti contatterà per proporti qualcosa.'],
   ['Dove si svolge e cosa mi serve per collegarmi?', 'Online. Ti serve un computer, un tablet o uno smartphone con connessione. Ti mandiamo il link via email e un promemoria prima di ogni serata.'],
-  ['E se perdo una delle due serate?', 'Registrati comunque e prova a esserci a entrambe: sono costruite una sull’altra. Il Radar Patrimoniale è pensato per chi le segue tutte e due.'],
+  ['E se perdo una delle due serate?', 'Registrati comunque: chi si iscrive prima dell’evento riceve le registrazioni di entrambe le serate, disponibili per 48 ore.'],
   ['Devo accendere la videocamera o parlare?', 'No. Puoi seguire in tranquillità e fare domande in chat quando vuoi.'],
   ['Posso partecipare con un familiare?', 'Sì, e te lo consigliamo: le scelte sul patrimonio si fanno meglio insieme.'],
   ['Serve già sapere di finanza?', 'No. Partiamo dalle basi e arriviamo a come ragionano i grandi patrimoni. Ognuno dei quattro profili trova qualcosa per sé.'],
