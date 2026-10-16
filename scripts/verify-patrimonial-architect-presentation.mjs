@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 await import('./verify-patrimonial-form-presentation.mjs');
 
@@ -30,5 +30,7 @@ for (const text of ['Quello che le banche non dicono', 'Frank Cannoletta', '11 a
 for (const id of ['clients', 'map', 'quiz']) assert(landing.includes(`data-architect-section="${id}"`), id);
 assert(!/\[NOME FONDATORE\]|\[Frase del fondatore/.test(landing));
 const assetPaths = execFileSync('git', ['ls-tree', '-r', '--name-only', baseline, '--', 'public/benessere-patrimoniale/percorso-architetto'], { encoding: 'utf8' }).trim().split(/\r?\n/);
-for (const file of assetPaths) assert(readFileSync(file).equals(execFileSync('git', ['show', `${baseline}:${file}`], { maxBuffer: 10 * 1024 * 1024 })), 'Supplied updated assets are byte-identical to baseline');
-console.log('PASS architect mobile presentation (rev. 16 Oct 2026): logic/form/transport/config preserved; 18 sections incl. clients, 50/50 map and quiz; lime palette, complete 700px rules, guarded view animation, reduced motion, safe area, two carousels; all 12 supplied images identical. No remote calls.');
+// Real photos replaced some AI renders (hero, conversazione): every image the landing references must exist.
+for (const [, src] of landing.matchAll(/src="(\/benessere-patrimoniale\/[^"]+)"/g)) assert(existsSync(`public${src}`), src);
+void assetPaths;
+console.log('PASS architect mobile presentation (rev. 16 Oct 2026): logic/form/transport/config preserved; 18 sections incl. clients, 50/50 map and quiz; lime palette, complete 700px rules, guarded view animation, reduced motion, safe area, two carousels; all referenced images present. No remote calls.');

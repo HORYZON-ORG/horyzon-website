@@ -94,12 +94,12 @@ export function ArchitectLanding() {
           <div className={[styles.s022].filter(Boolean).join(" ")}>
             <a className={[styles['m-cta-full'], styles.s023].filter(Boolean).join(" ")} href="#richiesta"><span data-bind="cta">{selected?.cta ?? architectDefaultCopy.cta}</span>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
-            <div className={[styles.s024].filter(Boolean).join(" ")}>Gratuita · online · 40 minuti<br /><span className={[styles.s016].filter(Boolean).join(" ")}><span data-bind="seatsLeft"><SessionValue name="seatsLeft" /></span> posti liberi su <span data-bind="seatsTotal"><SessionValue name="seatsTotal" /></span></span></div>
+            <div className={[styles.s024].filter(Boolean).join(" ")}>Gratuita · online · 30 minuti<br /><span className={[styles.s016].filter(Boolean).join(" ")}><span data-bind="seatsLeft"><SessionValue name="seatsLeft" /></span> posti liberi su <span data-bind="seatsTotal"><SessionValue name="seatsTotal" /></span></span></div>
           </div>
         </div>
 
         <div className={[styles.s025].filter(Boolean).join(" ")}>
-          <div className={[styles.s026].filter(Boolean).join(" ")}><Image width={1400} height={1750} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" preload className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/hero.jpg" alt="Immagine AI provvisoria: Un&#x27;Architetta Horyzon ascolta una coppia e prende appunti al tavolo" /></div>
+          <div className={[styles.s026].filter(Boolean).join(" ")}><Image width={1400} height={1750} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" preload className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/hero.jpg" alt="Una professionista studia con attenzione un progetto stampato, alla luce del sole" /></div>
           <div className={[styles['m-ticket'], styles.s027].filter(Boolean).join(" ")}>
             <div className={[styles.s028].filter(Boolean).join(" ")}><span className={[styles.s029, styles['pulse']].filter(Boolean).join(" ")}></span>PRESENTAZIONE LIVE</div>
             <div className={[styles.s030].filter(Boolean).join(" ")}><span data-bind="sessionLabel"><SessionValue name="sessionLabel" /></span></div>
@@ -378,7 +378,7 @@ export function ArchitectLanding() {
             <div className={[styles.s107, styles['pulse']].filter(Boolean).join(" ")}></div>
             <div className={[styles.s108].filter(Boolean).join(" ")}>SEI QUI</div>
             <h3 className={[styles.s109].filter(Boolean).join(" ")}>Conosci il progetto</h3>
-            <p className={[styles.s110].filter(Boolean).join(" ")}>Presentazione live, 40 minuti. <span data-bind="sessionLabel"><SessionValue name="sessionLabel" /></span>.</p>
+            <p className={[styles.s110].filter(Boolean).join(" ")}>Presentazione live, 30 minuti. <span data-bind="sessionLabel"><SessionValue name="sessionLabel" /></span>.</p>
           </li>
           <li>
             <div className={[styles.s111].filter(Boolean).join(" ")}></div>
@@ -506,17 +506,17 @@ export function ArchitectLanding() {
     <div className={[styles.s143].filter(Boolean).join(" ")}>
       <div className={[styles.s144].filter(Boolean).join(" ")}>
         <div className={[styles.s043].filter(Boolean).join(" ")}>12 · LA PRESENTAZIONE</div>
-        <h2 className={[styles['m-reveal'], styles.s088].filter(Boolean).join(" ")}>40 minuti che ti risparmiano mesi di dubbi.</h2>
+        <h2 className={[styles['m-reveal'], styles.s088].filter(Boolean).join(" ")}>30 minuti che ti risparmiano mesi di dubbi.</h2>
         <p className={[styles.s145].filter(Boolean).join(" ")}>Live, con spazio per le tue domande. Alla fine sai cosa fa un Architetto Patrimoniale, come ti formiamo e se vale la pena fare il passo successivo.</p>
         <a className={[styles.s146].filter(Boolean).join(" ")} href="#richiesta">Riserva il mio posto</a>
       </div>
       <ol className={[styles.s147].filter(Boolean).join(" ")}>
-        <li className={[styles.s148].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>00–05&#x27;</span><span>Frank: perché Horyzon cerca Architetti, non venditori</span></li>
-        <li className={[styles.s148].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>05–12&#x27;</span><span>Quello che le banche non dicono: la metà della mappa che manca</span></li>
-        <li className={[styles.s150].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>12–20&#x27;</span><span><strong>Le quattro persone che incontrerai</strong> e cosa porti a ognuna</span></li>
-        <li className={[styles.s148].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>20–28&#x27;</span><span>La formazione: regola 70-10-10-10, mappa 50/50, Radar Patrimoniale</span></li>
-        <li className={[styles.s148].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>28–32&#x27;</span><span>Da dove arrivano le persone: le serate e i 40 minuti di confronto</span></li>
-        <li className={[styles.s151].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>32–40&#x27;</span><span>Le tue domande, dal vivo</span></li>
+        <li className={[styles.s148].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>00–04&#x27;</span><span>Frank: perché Horyzon cerca Architetti, non venditori</span></li>
+        <li className={[styles.s148].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>04–09&#x27;</span><span>Quello che le banche non dicono: la metà della mappa che manca</span></li>
+        <li className={[styles.s150].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>09–15&#x27;</span><span><strong>Le quattro persone che incontrerai</strong> e cosa porti a ognuna</span></li>
+        <li className={[styles.s148].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>15–19&#x27;</span><span>La formazione: regola 70-10-10-10, mappa 50/50, Radar Patrimoniale</span></li>
+        <li className={[styles.s148].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>19–25&#x27;</span><span>Da dove arrivano le persone: le serate e i 40 minuti di confronto</span></li>
+        <li className={[styles.s151].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>25–30&#x27;</span><span>Le tue domande, dal vivo</span></li>
       </ol>
     </div>
     <div className={styles.s042}>
@@ -545,10 +545,10 @@ export function ArchitectLanding() {
           </div>
         </div>
         <div className={[styles.s159].filter(Boolean).join(" ")}>
-          <div className={[styles.s154].filter(Boolean).join(" ")}><Image width={1400} height={930} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/new.jpg" alt="Immagine AI provvisoria: Una donna segue sorridendo una presentazione online e prende appunti" /></div>
+          <div className={[styles.s154].filter(Boolean).join(" ")}><Image width={1400} height={935} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/conversazione.jpg" alt="Una professionista al portatile spiega un progetto a un cliente seduto di fronte a lei" /></div>
           <div className={[styles.s156].filter(Boolean).join(" ")}>
-            <div className={[styles.s160].filter(Boolean).join(" ")}>SE DEDICHI 40 MINUTI</div>
-            <p className={[styles.s161].filter(Boolean).join(" ")}>Forse scopri che non fa per te, e avrai chiuso un dubbio. Oppure scopri un mestiere che usa tutto quello che sai, e le persone pronte a insegnarti il resto. <strong className={[styles.s016].filter(Boolean).join(" ")}>In entrambi i casi, avrai scelto tu.</strong></p>
+            <div className={[styles.s160].filter(Boolean).join(" ")}>SE DEDICHI 30 MINUTI</div>
+            <p className={[styles.s161].filter(Boolean).join(" ")}>Scopri un mestiere che ti somiglia e le persone pronte a insegnartelo. <strong className={[styles.s016].filter(Boolean).join(" ")}>In ogni caso, avrai scelto tu.</strong></p>
           </div>
         </div>
       </div>
@@ -587,12 +587,11 @@ export function ArchitectLanding() {
         <details className={[styles.s176].filter(Boolean).join(" ")}><summary className={[styles.s177].filter(Boolean).join(" ")}>Lavoro in banca: devo lasciare subito il mio lavoro?<span className={[styles.s178, styles['plus']].filter(Boolean).join(" ")}>+</span></summary><p className={[styles.s179].filter(Boolean).join(" ")}>No. Alla presentazione capisci come funziona il percorso. Tempi e modi di un eventuale passaggio si valutano insieme nel colloquio individuale.</p></details>
         <details className={[styles.s176].filter(Boolean).join(" ")}><summary className={[styles.s177].filter(Boolean).join(" ")}>Non vengo dal settore. Posso candidarmi?<span className={[styles.s178, styles['plus']].filter(Boolean).join(" ")}>+</span></summary><p className={[styles.s179].filter(Boolean).join(" ")}>Sì. La formazione parte dalle basi: la regola 70-10-10-10, la mappa 50/50, le otto famiglie di strumenti. Contano di più ascolto, costanza e voglia di imparare.</p></details>
         <details className={[styles.s176].filter(Boolean).join(" ")}><summary className={[styles.s177].filter(Boolean).join(" ")}>Devo portare un mio portafoglio clienti?<span className={[styles.s178, styles['plus']].filter(Boolean).join(" ")}>+</span></summary><p className={[styles.s179].filter(Boolean).join(" ")}>Non è un requisito. Chi partecipa alle serate Horyzon può chiedere 40 minuti di confronto con un Architetto: è da lì che partono molti incontri. [DETTAGLI DA CONFERMARE.]</p></details>
-        <details className={[styles.s176].filter(Boolean).join(" ")}><summary className={[styles.s177].filter(Boolean).join(" ")}>Devo investire dei soldi per entrare nel percorso?<span className={[styles.s178, styles['plus']].filter(Boolean).join(" ")}>+</span></summary><p className={[styles.s179].filter(Boolean).join(" ")}>[RISPOSTA CHIARA: costi, se presenti, e cosa includono.]</p></details>
-        <details className={[styles.s176].filter(Boolean).join(" ")}><summary className={[styles.s177].filter(Boolean).join(" ")}>È un network marketing?<span className={[styles.s178, styles['plus']].filter(Boolean).join(" ")}>+</span></summary><p className={[styles.s179].filter(Boolean).join(" ")}>[RISPOSTA: in cosa il modello Horyzon è diverso — selezione, formazione, nessun prodotto da piazzare.]</p></details>
-        <details className={[styles.s176].filter(Boolean).join(" ")}><summary className={[styles.s177].filter(Boolean).join(" ")}>Serve un&#x27;abilitazione o un&#x27;iscrizione a un albo?<span className={[styles.s178, styles['plus']].filter(Boolean).join(" ")}>+</span></summary><p className={[styles.s179].filter(Boolean).join(" ")}>[RISPOSTA VERIFICATA CON COMPLIANCE.]</p></details>
-        <details className={[styles.s176].filter(Boolean).join(" ")}><summary className={[styles.s177].filter(Boolean).join(" ")}>Quanto tempo devo dedicare?<span className={[styles.s178, styles['plus']].filter(Boolean).join(" ")}>+</span></summary><p className={[styles.s179].filter(Boolean).join(" ")}>Si può iniziare part-time o full-time. [ORE SETTIMANALI INDICATIVE.]</p></details>
-        <details className={[styles.s176].filter(Boolean).join(" ")}><summary className={[styles.s177].filter(Boolean).join(" ")}>Come viene riconosciuto economicamente il ruolo?<span className={[styles.s178, styles['plus']].filter(Boolean).join(" ")}>+</span></summary><p className={[styles.s179].filter(Boolean).join(" ")}>Non promettiamo guadagni. [COME FUNZIONA IL MODELLO, IN TERMINI GENERALI.]</p></details>
-        <details className={[styles.s176].filter(Boolean).join(" ")}><summary className={[styles.s177].filter(Boolean).join(" ")}>E se non posso esserci live?<span className={[styles.s178, styles['plus']].filter(Boolean).join(" ")}>+</span></summary><p className={[styles.s179].filter(Boolean).join(" ")}>Puoi scegliere la sessione successiva ([DATA SUCCESSIVA]). La presentazione non viene registrata: è pensata per il confronto dal vivo.</p></details>
+        <details className={[styles.s176].filter(Boolean).join(" ")}><summary className={[styles.s177].filter(Boolean).join(" ")}>Devo investire dei soldi per entrare nel percorso?<span className={[styles.s178, styles['plus']].filter(Boolean).join(" ")}>+</span></summary><p className={[styles.s179].filter(Boolean).join(" ")}>No. Entrare nel percorso non costa nulla: nessuna quota d&#x27;ingresso, nessun acquisto obbligatorio, nessun vincolo.</p></details>
+        <details className={[styles.s176].filter(Boolean).join(" ")}><summary className={[styles.s177].filter(Boolean).join(" ")}>Serve un&#x27;abilitazione o un&#x27;iscrizione a un albo?<span className={[styles.s178, styles['plus']].filter(Boolean).join(" ")}>+</span></summary><p className={[styles.s179].filter(Boolean).join(" ")}>No. Non serve alcuna abilitazione né iscrizione a un albo: l&#x27;Architetto lavora in partnership con fornitori regolamentati dalla legge.</p></details>
+        <details className={[styles.s176].filter(Boolean).join(" ")}><summary className={[styles.s177].filter(Boolean).join(" ")}>Quanto tempo devo dedicare?<span className={[styles.s178, styles['plus']].filter(Boolean).join(" ")}>+</span></summary><p className={[styles.s179].filter(Boolean).join(" ")}>Puoi iniziare part-time o full-time: decidi tu quanto tempo dedicare, in base ai tuoi obiettivi.</p></details>
+        <details className={[styles.s176].filter(Boolean).join(" ")}><summary className={[styles.s177].filter(Boolean).join(" ")}>Come viene riconosciuto economicamente il ruolo?<span className={[styles.s178, styles['plus']].filter(Boolean).join(" ")}>+</span></summary><p className={[styles.s179].filter(Boolean).join(" ")}>Con provvigioni sull&#x27;attività di divulgazione che svolgi: la meritocrazia fa la differenza. Non promettiamo guadagni.</p></details>
+        <details className={[styles.s176].filter(Boolean).join(" ")}><summary className={[styles.s177].filter(Boolean).join(" ")}>E se non posso esserci live?<span className={[styles.s178, styles['plus']].filter(Boolean).join(" ")}>+</span></summary><p className={[styles.s179].filter(Boolean).join(" ")}>Nessun problema: la presentazione viene registrata e dopo la diretta hai 48 ore per rivederla online, gratuitamente.</p></details>
       </div>
     </div>
   </section>
@@ -603,7 +602,7 @@ export function ArchitectLanding() {
     <div className={[styles.s182].filter(Boolean).join(" ")} aria-hidden="true"></div>
     <div className={[styles.s183].filter(Boolean).join(" ")}>
       <h2 className={[styles['m-reveal'], styles.s184].filter(Boolean).join(" ")}>Ogni orizzonte comincia da una conversazione.</h2>
-      <p className={[styles.s185].filter(Boolean).join(" ")}>40 minuti, online. Restano <span data-bind="seatsLeft"><SessionValue name="seatsLeft" /></span> posti per <span data-bind="sessionLabel"><SessionValue name="sessionLabel" /></span>.</p>
+      <p className={[styles.s185].filter(Boolean).join(" ")}>30 minuti, online. Restano <span data-bind="seatsLeft"><SessionValue name="seatsLeft" /></span> posti per <span data-bind="sessionLabel"><SessionValue name="sessionLabel" /></span>.</p>
       <a className={[styles.s186].filter(Boolean).join(" ")} href="#richiesta">Riserva il mio posto</a>
       <p className={[styles.s187].filter(Boolean).join(" ")}><strong className={[styles.s188].filter(Boolean).join(" ")}>P.S.</strong> Se sei arrivato fin qui, qualcosa ti ha incuriosito. Non decidere niente adesso: riserva solo il posto. Nel peggiore dei casi avrai visto la mappa intera, e capito un mestiere nuovo. Le iscrizioni a questa sessione chiudono tra <span data-bind="cd.d"><SessionValue name="cd.d" /></span> giorni.</p>
     </div>
@@ -611,7 +610,7 @@ export function ArchitectLanding() {
 
   <footer className={[styles.s189].filter(Boolean).join(" ")}>
     <div className={[styles.s190].filter(Boolean).join(" ")}>
-      <div><strong className={[styles.s191].filter(Boolean).join(" ")}>Horyzon Benessere Patrimoniale</strong><p className={styles.pilotNotice}>PILOT · Data, disponibilità e testimonianze da confermare. Immagini provvisorie generate con AI; non ritraggono il team reale.</p><br />FELICITÀ srl · Viale Papiniano 28, 20123 Milano · P. IVA 05120660757</div>
+      <div><strong className={[styles.s191].filter(Boolean).join(" ")}>Horyzon Benessere Patrimoniale</strong><p className={styles.pilotNotice}>PILOT · Data, disponibilità e testimonianze da confermare. Alcune immagini sono provvisorie e generate con AI; le foto non ritraggono il team reale.</p><br />FELICITÀ srl · Viale Papiniano 28, 20123 Milano · P. IVA 05120660757</div>
       <div className={[styles.s192].filter(Boolean).join(" ")}><a href="https://www.iubenda.com/privacy-policy/64704330">Privacy</a><a href="https://www.iubenda.com/privacy-policy/64704330/cookie-policy">Cookie</a><a href="mailto:info@horyzon.it">info@horyzon.it</a></div>
     </div>
   </footer>

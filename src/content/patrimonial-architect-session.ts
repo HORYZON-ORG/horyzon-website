@@ -20,7 +20,7 @@ export const architectProfiles = {
 } as const;
 export type ArchitectProfileKey = keyof typeof architectProfiles;
 export const architectDefaultCopy = {
-  sub: 'Horyzon cerca e forma Architetti Patrimoniali: persone che aiutano famiglie e imprenditori a far lavorare i propri risparmi su tutta la mappa, non solo su metà. In 40 minuti live scopri cosa fa questo ruolo, come ti formiamo e se fa per te.', cta: 'Riserva il mio posto',
+  sub: 'Horyzon cerca e forma Architetti Patrimoniali: persone che aiutano famiglie e imprenditori a far lavorare i propri risparmi su tutta la mappa, non solo su metà. In 30 minuti live scopri cosa fa questo ruolo, come ti formiamo e se fa per te.', cta: 'Riserva il mio posto',
 };
 export function architectSessionSnapshot(now: number | null) {
   const confirmed = architectSession.status === 'CONFIRMED';
