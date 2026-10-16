@@ -60,17 +60,18 @@ export const eventHorizons = [5, 10, 15, 20] as const;
 export type EventHorizon = typeof eventHorizons[number];
 const inflation: Record<EventHorizon, number> = { 5: 0.18, 10: 0.22, 15: 0.29, 20: 0.45 };
 export const eventAssets = [
-  { id: 'oro', name: 'Oro', color: '#D9B45A', rates: { 5: 0.19, 10: 0.115, 15: 0.087, 20: 0.113 } },
-  { id: 'argento', name: 'Argento', color: '#C9CED6', rates: { 5: 0.22, 10: 0.165, 15: 0.066, 20: 0.11 } },
-  { id: 'msci', name: 'MSCI World', color: '#6FA8DC', rates: { 5: 0.12, 10: 0.105, 15: 0.11, 20: 0.08 } },
-  { id: 'sp500', name: 'S&P 500', color: '#A99BE0', rates: { 5: 0.14, 10: 0.13, 15: 0.145, 20: 0.10 } },
+  { id: 'oro', name: 'Oro', img: '/benessere-patrimoniale/evento/single.jpg', color: '#D4AF63', rates: { 5: 0.19, 10: 0.115, 15: 0.087, 20: 0.113 } },
+  { id: 'argento', name: 'Argento', img: '/benessere-patrimoniale/evento/argento.jpg', color: '#C7CFD0', rates: { 5: 0.22, 10: 0.165, 15: 0.066, 20: 0.11 } },
+  { id: 'msci', name: 'MSCI World', img: '/benessere-patrimoniale/evento/etf.jpg', color: '#7FB3AE', rates: { 5: 0.12, 10: 0.105, 15: 0.11, 20: 0.08 } },
+  { id: 'sp500', name: 'S&P 500', img: '/benessere-patrimoniale/evento/crescita.jpg', color: '#E6C98A', rates: { 5: 0.14, 10: 0.13, 15: 0.145, 20: 0.10 } },
 ] as const;
-const fmt = (n: number) => Math.round(n).toLocaleString('it-IT');
+// Fixed Italian grouping (10.000 and 6.897): ICU differs between server and browser for 4-digit numbers.
+const fmt = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 export function eventCalculator(amount: number, years: EventHorizon = 20) {
   const real = amount / (1 + inflation[years]);
   const assets = eventAssets.map(asset => {
     const value = amount * Math.pow(1 + asset.rates[years], years);
-    return { id: asset.id, name: asset.name, color: asset.color, raw: value, value: fmt(value), gain: fmt(value - amount) };
+    return { id: asset.id, name: asset.name, img: asset.img, color: asset.color, multiple: (Math.round(value / amount * 10) / 10).toString().replace('.', ','), raw: value, value: fmt(value), gain: fmt(value - amount) };
   });
   const best = assets.reduce((a, b) => (b.raw > a.raw ? b : a));
   const max = Math.max(...assets.map(a => a.raw), amount);
@@ -83,24 +84,24 @@ export function eventCalculator(amount: number, years: EventHorizon = 20) {
 
 // The 50/50 map: 100 squares, one per cent.
 export const eventAllocation = [
-  { id: 'metalli', half: 'reali', share: 20, name: 'Oro e argento', color: '#D9B45A', why: 'Non dipendono da una banca né da un’azienda. Sono la parte che regge quando tutto il resto trema.' },
-  { id: 'immobili', half: 'reali', share: 30, name: 'Immobili a reddito', color: '#E08A6A', why: 'Producono un affitto ogni mese e nel tempo tendono a seguire l’inflazione.' },
-  { id: 'etf', half: 'finanziari', share: 20, name: 'ETF', color: '#6FA8DC', why: 'Ti fanno possedere un pezzo di migliaia di aziende nel mondo con un solo strumento.' },
-  { id: 'azioni', half: 'finanziari', share: 20, name: 'Azioni e obbligazioni', color: '#8FB9AE', why: 'Crescita dalle singole aziende, stabilità e cedole dalle obbligazioni.' },
-  { id: 'cripto', half: 'finanziari', share: 5, name: 'Cripto', color: '#A99BE0', why: 'Una quota piccola e consapevole su un mercato giovane e molto volatile.' },
-  { id: 'passione', half: 'finanziari', share: 5, name: 'Beni da passione', color: '#EFD9B4', why: 'Una Harley, una Vespa d’epoca, un Rolex, una collezione: oggetti che ami e che nel tempo possono valere di più.' },
+  { id: 'metalli', half: 'reali', share: 20, name: 'Oro e argento', color: '#D4AF63', why: 'Non dipendono da una banca né da un’azienda. Sono la parte che regge quando tutto il resto trema.' },
+  { id: 'immobili', half: 'reali', share: 30, name: 'Immobili a reddito', color: '#A8875C', why: 'Producono un affitto ogni mese e nel tempo tendono a seguire l’inflazione.' },
+  { id: 'etf', half: 'finanziari', share: 20, name: 'ETF', color: '#7FB3AE', why: 'Ti fanno possedere un pezzo di migliaia di aziende nel mondo con un solo strumento.' },
+  { id: 'azioni', half: 'finanziari', share: 20, name: 'Azioni e obbligazioni', color: '#4E8F8C', why: 'Crescita dalle singole aziende, stabilità e cedole dalle obbligazioni.' },
+  { id: 'cripto', half: 'finanziari', share: 5, name: 'Cripto', color: '#B9C7C4', why: 'Una quota piccola e consapevole su un mercato giovane e molto volatile.' },
+  { id: 'passione', half: 'finanziari', share: 5, name: 'Beni da passione', color: '#EADBB8', why: 'Una Harley, una Vespa d’epoca, un Rolex, una collezione: oggetti che ami e che nel tempo possono valere di più.' },
 ] as const;
 
 // "Quali di questi strumenti conosci?" — answers travel to the CRM notes.
 export const eventInstruments = [
-  { id: 'oro', name: 'Oro', ten: '+11,5%', twenty: '+11%', worst: '−30% circa (2013)', role: 'Riserva di valore che non dipende da nessun emittente.' },
-  { id: 'argento', name: 'Argento', ten: '+16%', twenty: '+11%', worst: '−35% circa (2013)', role: 'Più volatile dell’oro, legato anche all’uso industriale.' },
-  { id: 'immobili', name: 'Immobili a reddito', ten: '+3–4%', twenty: '+3–4%', worst: '−20% prezzi 2011–2019', role: 'Rendita mensile dall’affitto; il valore della casa segue i cicli locali.' },
-  { id: 'etf', name: 'ETF (MSCI World, S&P 500)', ten: '+10,5% / +13%', twenty: '+8% / +10%', worst: '−37% circa (2008)', role: 'Crescita nel lungo periodo, con cadute forti da saper reggere.' },
-  { id: 'azioni', name: 'Azioni', ten: 'variabile', twenty: 'variabile', worst: 'anche −100% sul singolo titolo', role: 'Possiedi un pezzo di un’azienda: rischio e rendimento dipendono da quella.' },
-  { id: 'obbligazioni', name: 'Obbligazioni e BTP', ten: '+0–1%', twenty: '+2,5%', worst: '−18% circa (2022)', role: 'Cedole e stabilità, ma il prezzo scende quando salgono i tassi.' },
-  { id: 'cripto', name: 'Cripto', ten: 'molto alto', twenty: 'n.d.', worst: '−65% circa (2022)', role: 'Mercato giovane e molto volatile: solo una quota piccola.' },
-  { id: 'collezione', name: 'Beni da collezione', ten: 'variabile', twenty: 'variabile', worst: 'dipende dal mercato', role: 'Moto, orologi, auto d’epoca: valore legato a rarità e passione.' },
+  { id: 'oro', img: '/benessere-patrimoniale/evento/single.jpg', name: 'Oro', ten: '+11,5%', twenty: '+11%', worst: '−30% circa (2013)', role: 'Riserva di valore che non dipende da nessun emittente.' },
+  { id: 'argento', img: '/benessere-patrimoniale/evento/argento.jpg', name: 'Argento', ten: '+16%', twenty: '+11%', worst: '−35% circa (2013)', role: 'Più volatile dell’oro, legato anche all’uso industriale.' },
+  { id: 'immobili', img: '/benessere-patrimoniale/evento/immobili.jpg', name: 'Immobili a reddito', ten: '+3–4%', twenty: '+3–4%', worst: '−20% prezzi 2011–2019', role: 'Rendita mensile dall’affitto; il valore della casa segue i cicli locali.' },
+  { id: 'etf', img: '/benessere-patrimoniale/evento/etf.jpg', name: 'ETF (MSCI World, S&P 500)', ten: '+10,5% / +13%', twenty: '+8% / +10%', worst: '−37% circa (2008)', role: 'Crescita nel lungo periodo, con cadute forti da saper reggere.' },
+  { id: 'azioni', img: '/benessere-patrimoniale/evento/crescita.jpg', name: 'Azioni', ten: 'variabile', twenty: 'variabile', worst: 'anche −100% sul singolo titolo', role: 'Possiedi un pezzo di un’azienda: rischio e rendimento dipendono da quella.' },
+  { id: 'obbligazioni', img: '/benessere-patrimoniale/evento/obbligazioni.jpg', name: 'Obbligazioni e BTP', ten: '+0–1%', twenty: '+2,5%', worst: '−18% circa (2022)', role: 'Cedole e stabilità, ma il prezzo scende quando salgono i tassi.' },
+  { id: 'cripto', img: '/benessere-patrimoniale/evento/cripto.jpg', name: 'Cripto', ten: 'molto alto', twenty: 'n.d.', worst: '−65% circa (2022)', role: 'Mercato giovane e molto volatile: solo una quota piccola.' },
+  { id: 'collezione', img: '/benessere-patrimoniale/evento/collezione.jpg', name: 'Beni da collezione', ten: 'variabile', twenty: 'variabile', worst: 'dipende dal mercato', role: 'Moto, orologi, auto d’epoca: valore legato a rarità e passione.' },
 ] as const;
 export const eventKnowledgeLevels = ['Ne ho sentito parlare', 'So come funziona', 'Ce l’ho già'] as const;
 

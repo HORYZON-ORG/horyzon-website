@@ -20,21 +20,24 @@ const questions = [
   { q: 'Metallo fisico o metallo “di carta”: cosa possiedi davvero?', sub: 'La differenza tra un lingotto e un titolo che ne segue il prezzo.' },
   { q: 'Quanto può rendere la diversificazione?', sub: 'E come si misura se sta funzionando. Prima di scoprirlo, dicci da dove parti qui sotto.' },
 ];
-const qColors = ['#D9B45A', '#E08A6A', '#6FA8DC', '#D9B45A', '#C9CED6', '#8FB9AE'];
-
 const families = [
-  { id: 'metalli', name: 'Metalli preziosi', color: '#D9B45A', what: 'Oro e argento, il bene rifugio più antico del mondo.',
+  { id: 'metalli', name: 'Metalli preziosi', img: '/benessere-patrimoniale/evento/single.jpg', alt: "Lingotto d'oro con punzonatura 999.9", what: 'Oro e argento, il bene rifugio più antico del mondo.',
     rows: [['Oro fisico', 'Lingotti e monete che possiedi davvero. Esente IVA se comprato da operatori autorizzati; plusvalenza tassata al 26%. Va custodito.'], ['Oro di carta', 'ETC, fondi e certificati che seguono il prezzo. Comodi da comprare e vendere, ma possiedi un titolo, non il metallo.'], ['Argento', 'Più volatile dell’oro e, a differenza dell’oro, si paga con IVA al 22%.']],
     stat: '+198%', statLabel: 'l’oro in euro negli ultimi 10 anni (giugno 2026)' },
-  { id: 'immobili', name: 'Immobili a reddito', color: '#E08A6A', what: 'Case, negozi, uffici che producono un affitto ogni mese.',
-    rows: [['Il valore', 'Quanto è cresciuto il prezzo dell’immobile dal giorno dell’acquisto.'], ['La rendita', 'Gli affitti incassati anno dopo anno, al netto di tasse, IMU e spese.'], ['Il totale', 'Valore + affitti: è così che si misura davvero un immobile a reddito.']],
-    stat: '[esempio]', statLabel: 'un bilocale comprato 10 anni fa: valore e affitti incassati' },
-  { id: 'etf', name: 'ETF', color: '#6FA8DC', what: 'Un solo strumento che ti fa possedere un pezzo di migliaia di aziende.',
+  { id: 'immobili', name: 'Immobili a reddito', img: '/benessere-patrimoniale/evento/immobili.jpg', alt: "Modellino di un palazzo color avorio con finestre d'oro e una chiave d'oro", what: 'Case, negozi, uffici che producono un affitto ogni mese.',
+    rows: [['Il valore', 'Quanto è cresciuto il prezzo dell’immobile dal giorno dell’acquisto.'], ['La rendita', 'Gli affitti incassati anno dopo anno, al netto di tasse, IMU e spese.'], ['Il totale', 'Valore più affitti: è così che si misura davvero un immobile a reddito.']],
+    stat: 'Valore + affitti', statLabel: 'nella seconda serata un caso reale: cosa ha reso in 10 anni un bilocale messo a reddito' },
+  { id: 'etf', name: 'ETF', img: '/benessere-patrimoniale/evento/etf.jpg', alt: "Globo composto da tessere d'oro su un piedistallo", what: 'Un solo strumento che ti fa possedere un pezzo di migliaia di aziende.',
     rows: [['MSCI World', 'Circa 1.400 grandi aziende di 23 Paesi sviluppati, in un unico ETF.'], ['S&P 500', 'Le 500 maggiori aziende americane.'], ['Cosa possiedi', 'Quote di un fondo quotato in borsa che replica l’indice.']],
     stat: '+9,4%', statLabel: 'l’anno, in media, l’MSCI World in euro nei 10 anni a marzo 2025' },
-  { id: 'obbligazioni', name: 'Obbligazioni', color: '#8FB9AE', what: 'Presti denaro a uno Stato o a un’azienda e ricevi interessi.',
+  { id: 'obbligazioni', name: 'Obbligazioni', img: '/benessere-patrimoniale/evento/obbligazioni.jpg', alt: "Certificato arrotolato con sigillo d'oro accanto a monete", what: 'Presti denaro a uno Stato o a un’azienda e ricevi interessi.',
     rows: [['BTP italiani', 'Titoli di Stato con cedola periodica.'], ['Bund tedeschi', 'Il riferimento “sicuro” dell’area euro.'], ['Il 2022', 'Quando i tassi sono saliti, anche i titoli più sicuri hanno perso valore. Saperlo leggere fa la differenza.']],
     stat: '−18%', statLabel: 'circa, i titoli di Stato dell’area euro nel 2022' },
+];
+
+const evenings = [
+  { n: '1', img: '/benessere-patrimoniale/evento/serata-1.jpg', alt: "Lampada d'oro che illumina un taccuino aperto e una penna", title: 'Pensare come chi un patrimonio ce l’ha', items: [['Il denaro non sta mai fermo', 'Perché tenere i soldi sul conto è già una scelta, e quanto ti costa ogni anno.'], ['I quattro profili', 'Da chi rincorre il mese a chi costruisce: dove sei oggi e qual è il tuo prossimo passo.'], ['La regola 70-10-10-10', '70% per vivere, 10% per il fondo di sicurezza, 10% da investire, 10% per eliminare i debiti o per crescere.'], ['Come ragionano i milionari', 'Non cercano il prodotto migliore: costruiscono un sistema in cui ogni pezzo ha un compito.'], ['Le tue domande, dal vivo', '']] },
+  { n: '2', img: '/benessere-patrimoniale/evento/serata-2.jpg', alt: "Porta di un caveau d'oro socchiusa con luce calda", title: 'Come si costruisce e si protegge un patrimonio', items: [['La mappa 50/50', 'Beni reali e beni finanziari: perché servono entrambi.'], ['Metalli preziosi e immobili', 'Oro e argento, fisico o di carta; quando una casa è un investimento e quando è solo una spesa.'], ['ETF, azioni e obbligazioni', 'Cosa possiedi davvero quando compri un ETF, e cosa è successo ai BTP nel 2022.'], ['Le domande da fare al tuo consulente', 'La lista da portare al prossimo appuntamento in banca.'], ['Il tuo Radar Patrimoniale e le tue domande', '']] },
 ];
 
 // Existing event interactions with route-scoped presentation from the mobile reference.
@@ -52,7 +55,6 @@ export function PatrimonialEventLanding() {
   const calc = eventCalculator(amount, years);
   const formTitle = eventFormTitle(selectedProfile);
   const curSlice = eventAllocation.find(item => item.id === slice) ?? eventAllocation[0];
-  const cells = eventAllocation.flatMap(item => Array.from({ length: item.share }, () => item));
   const curFamily = families.find(item => item.id === family) ?? families[0];
   const openInst = eventInstruments.find(item => item.id === open);
   const toggle = (id: string) => { setOpen(id); setKnown(prev => (prev[id] ? prev : { ...prev, [id]: eventKnowledgeLevels[0] })); };
@@ -159,7 +161,7 @@ export function PatrimonialEventLanding() {
 <div className={[styles.s063].join(' ')}>
 <div className={[styles["label"], styles.s012].join(' ')}>CAPITOLO 01 · IL NEMICO SILENZIOSO</div>
 <h2 className={[styles.reveal, styles.s064].join(' ')}>Nessuno ti ha tolto un euro. <span className={[styles.accent].join(' ')}>Eppure ne hai di meno.</span></h2>
-<p className={[styles.s065].join(' ')}>L&apos;inflazione non fa rumore e non ti manda un estratto conto. Tra il 2005 e il 2025 i prezzi in Italia sono saliti di circa il 45%. E se quegli stessi soldi non fossero rimasti fermi? Prova con la tua cifra.</p>
+<p className={[styles.s065].join(' ')}>L&apos;inflazione non fa rumore e non ti manda un estratto conto. Tra il 2005 e il 2025 i prezzi in Italia sono saliti di circa il 45%. Scegli la tua cifra e quanti anni fa: guarda cosa è successo ai soldi fermi, e a quelli che hanno lavorato.</p>
 </div>
 <div className={[styles.s066].join(' ')}>
 
@@ -168,8 +170,8 @@ export function PatrimonialEventLanding() {
 <div className={[styles.vAmount, styles.s069].join(' ')}><span data-bind="calc.amount">{calc.amount}</span> €</div>
 <input id="capitale" type="range" min="1000" max="200000" step="1000" value={amount} onChange={event => setAmount(Number(event.target.value))} />
 <div className={[styles.s068].join(' ')}>Quanti anni fa?</div>
-<div className={[styles.s070].join(' ')}>
-{eventHorizons.map(y => (<button type="button" key={y} data-years={y} onClick={() => setYears(y)} aria-pressed={years === y} className={[styles['chip-d'], years === y ? styles.on : ''].join(' ')}>{y} anni</button>))}
+<div className={styles.vYears} role="group" aria-label="Quanti anni fa">
+{eventHorizons.map(y => (<button type="button" key={y} data-years={y} onClick={() => setYears(y)} aria-pressed={years === y} className={[styles.vYear, years === y ? styles.on : ''].join(' ')}><strong>{y}</strong><span>anni</span></button>))}
 </div>
 <div className={[styles.s071].join(' ')}>
 <div className={[styles.s072].join(' ')}><span className={[styles.s073].join(' ')}>Fermi sul conto, oggi valgono come</span><span className={[styles.s074].join(' ')}><span data-bind="calc.real">{calc.real}</span> €</span></div>
@@ -178,45 +180,77 @@ export function PatrimonialEventLanding() {
 <div className={[styles.s076].join(' ')}>In {years} anni i prezzi sono saliti di circa il <strong className={[styles.s077].join(' ')}>{calc.inflation}%</strong>. Il saldo è rimasto uguale, quello che ci compri no.</div>
 </div>
 
-<div className={[styles.vCompare].join(' ')}>
-<div className={[styles.s068].join(' ')}>E se li avessi messi lì? Valore oggi di {calc.amount} € investiti {years} anni fa</div>
-<div className={styles.vBars}>
-<div className={styles.vBarRow}><div className={styles.vBarHead}><span>Conto corrente (potere d&apos;acquisto)</span><strong className={styles.vLoss}>{calc.real} €</strong></div><div className={styles.vBarTrack}><div className={styles.vBarFill} style={{ width: `${calc.cashWidth}%`, background: '#FF9D7A' }} /></div></div>
-{calc.assets.map(asset => (<div key={asset.id} className={styles.vBarRow} data-asset={asset.id}><div className={styles.vBarHead}><span>{asset.name}</span><strong>{asset.value} €</strong></div><div className={styles.vBarTrack}><div className={styles.vBarFill} style={{ width: `${asset.width}%`, background: asset.color }} /></div></div>))}
+<div className={[styles.s079].join(' ')}>
+<div className={[styles.s080].join(' ')}>
+<Image src="/benessere-patrimoniale/evento/coins.jpg" alt="Due colonne di monete d'oro: la seconda è più bassa e la parte mancante è un contorno luminoso" width={1400} height={1100} sizes="(max-width: 820px) 100vw, 50vw" className={[styles.s081].join(' ')} />
+<div className={[styles.s082].join(' ')}>
+<div className={[styles["tile-d"], styles["coin-tag"], styles.s083].join(' ')}><div className={[styles.s084].join(' ')}>{2025 - years}</div><div className={[styles.s085].join(' ')}>{calc.amount} €</div></div>
 </div>
-<div className={styles.vGap}>Tra lasciarli fermi e la scelta migliore degli ultimi {years} anni ({calc.best}) ci sono <strong>{calc.gap} €</strong>. Non per fortuna: per metodo.</div>
+<div className={[styles.s086].join(' ')}>
+<div className={[styles["coin-tag"], styles.s087].join(' ')}><div className={[styles.s088].join(' ')}>EVAPORATO</div><div className={[styles.s089].join(' ')}>−{calc.lost} €</div></div>
+</div>
+<div className={[styles["coin-2025"], styles.s090].join(' ')}>
+<div className={[styles["tile-d"], styles["coin-tag"], styles.s083].join(' ')}><div className={[styles.s084].join(' ')}>OGGI</div><div className={[styles.s085].join(' ')}>≈ {calc.real} €</div></div>
+</div>
+</div>
+</div>
+</div>
+
+<div className={styles.vWhatIf}>
+<div className={styles.vWhatIfHead}>
+<h3 className={styles.vWhatIfTitle}>E se quei {calc.amount} € non fossero rimasti fermi?</h3>
+<p className={[styles.s065].join(' ')}>Lo stesso importo, investito {years} anni fa. Valore indicativo oggi, in euro.</p>
+</div>
+<div className={styles.vAssets}>
+{calc.assets.map(asset => (<article key={asset.id} data-asset={asset.id} className={[styles.vAsset, asset.name === calc.best ? styles.vAssetBest : ''].join(' ')}>
+<div className={styles.vAssetImg}><Image src={asset.img} alt="" width={640} height={480} sizes="(max-width: 820px) 84vw, 25vw" /></div>
+<div className={styles.vAssetBody}>
+<div className={styles.vAssetName}>{asset.name}{asset.name === calc.best && <span className={styles.vBestTag}>il migliore in {years} anni</span>}</div>
+<div className={styles.vAssetValue}>{asset.value} €</div>
+<div className={styles.vAssetMeta}><span>×{asset.multiple}</span><span>+{asset.gain} €</span></div>
+<div className={styles.vAssetTrack}><div style={{ width: `${asset.width}%`, background: asset.color }} /></div>
+</div>
+</article>))}
+</div>
+<div className={styles.vGap}><span>Fermi sul conto: <strong className={styles.vLoss}>{calc.real} €</strong> di potere d&apos;acquisto.</span><span>La differenza con la scelta migliore: <strong>{calc.gap} €</strong>. Non per fortuna: per metodo.</span></div>
 <div className={[styles.s078].join(' ')}>Simulazione su dati storici in euro, prima di tasse e costi. Dati illustrativi in revisione. I rendimenti passati non sono indicativi di quelli futuri: negli stessi anni tutti questi strumenti hanno avuto anche cali forti.</div>
 </div>
 </div>
 </div>
-</div>
 
-<div data-event-section="pyramid" className={[styles.s039].join(' ')}>
-<div className={[styles.s040].join(' ')}>
-<div className={[styles.s041].join(' ')}>CAPITOLO 02 · IL VERO PROBLEMA</div>
-<h2 className={[styles.reveal, styles.s093].join(' ')}>Mettere da parte soldi <span className={[styles.s094].join(' ')}>non è</span> proteggere valore.</h2>
-<p className={[styles.s043].join(' ')}>Chi protegge un patrimonio non si chiede &quot;dove li metto?&quot;. Si chiede &quot;come li divido?&quot;. Ecco un esempio di come può essere diviso un patrimonio pensato per durare: metà in cose che puoi toccare, metà in strumenti che lavorano sui mercati. Tocca un colore.</p>
+<div data-event-section="pyramid" className={styles.vSplitSection}>
+<div className={styles.vSplitCopy}>
+<div className={[styles["label"], styles.s012].join(' ')}>CAPITOLO 02 · IL VERO PROBLEMA</div>
+<h2 className={[styles.reveal, styles.s064].join(' ')}>Mettere da parte soldi non è proteggere valore.</h2>
+<p className={[styles.s065].join(' ')}>Chi protegge un patrimonio non si chiede &quot;dove li metto?&quot;. Si chiede &quot;come li divido?&quot;. Metà in cose che puoi toccare, metà in strumenti che lavorano sui mercati.</p>
 </div>
-<div className={styles.vMap}>
-<div className={styles.vWaffleWrap}>
-<div className={styles.vHalves}><span>Beni reali · 50%</span><span>Beni finanziari · 50%</span></div>
-<div className={styles.vWaffle} role="img" aria-label="Griglia di 100 quadrati: 20 oro e argento, 30 immobili, 20 ETF, 20 azioni e obbligazioni, 5 cripto, 5 beni da passione">
-{[0, 1].map(half => (<div key={half} className={styles.vWaffleHalf} data-label={half === 0 ? 'Beni reali · 50% · cose che tocchi' : 'Beni finanziari · 50% · lavorano sui mercati'}>
-{cells.slice(half * 50, half * 50 + 50).map((cell, i) => (<span key={i} className={[styles.vCell, slice === cell.id ? styles.vCellOn : ''].join(' ')} style={{ background: cell.color, animationDelay: `${(half * 50 + i) * 12}ms` }} onClick={() => setSlice(cell.id)} />))}
-</div>))}
+<div className={styles.vSplitHero}>
+<Image src="/benessere-patrimoniale/evento/diversificazione.jpg" alt="Composizione divisa a metà da una linea di luce: a sinistra lingotti e una piccola casa, a destra un globo d'oro e colonne crescenti" fill sizes="(max-width: 1280px) 100vw, 1232px" className={styles.vSplitImg} />
+<div className={[styles.vHalfTag, styles.vHalfLeft].join(' ')}><strong>50%</strong><span>Beni reali · cose che tocchi</span></div>
+<div className={[styles.vHalfTag, styles.vHalfRight].join(' ')}><strong>50%</strong><span>Beni finanziari · lavorano sui mercati</span></div>
 </div>
+<div className={styles.vSplitBody}>
+<div className={styles.vAlloc} role="group" aria-label="Come può essere diviso un patrimonio: tocca una parte">
+{eventAllocation.map(item => (<button type="button" key={item.id} aria-pressed={slice === item.id} onClick={() => setSlice(item.id)} className={[styles.vAllocSeg, slice === item.id ? styles.on : ''].join(' ')} style={{ flexGrow: item.share, background: item.color }}><span>{item.share}%</span></button>))}
 </div>
-<div className={styles.vLegend}>
+<div className={styles.vAllocScale}><span>Beni reali</span><span>Beni finanziari</span></div>
+<div className={styles.vAllocGrid}>
+<div className={styles.vAllocList}>
 {eventAllocation.map(item => (<button type="button" key={item.id} aria-pressed={slice === item.id} onClick={() => setSlice(item.id)} className={[styles.vLegendItem, slice === item.id ? styles.on : ''].join(' ')}>
 <span className={styles.vSwatch} style={{ background: item.color }} /><span className={styles.vLegendName}>{item.name}</span><strong>{item.share}%</strong>
 </button>))}
-<div className={styles.vWhy}><strong style={{ color: curSlice.color }}>{curSlice.name} · {curSlice.share}%</strong><span>{curSlice.why}</span></div>
-<p className={[styles.s143, styles.vDark].join(' ')}>Le percentuali giuste per te dipendono da età, obiettivi e da quanto hai già. Questa è la mappa da cui partire per ragionare.</p>
+</div>
+<div className={styles.vWhy} style={{ borderColor: curSlice.color }}>
+<div className={styles.vWhyShare} style={{ color: curSlice.color }}>{curSlice.share}%</div>
+<strong className={styles.vWhyName}>{curSlice.name}</strong>
+<span>{curSlice.why}</span>
+<span className={styles.vWhyNote}>Le percentuali giuste per te dipendono da età, obiettivi e da quanto hai già. Questa è la mappa da cui partire per ragionare.</span>
+</div>
 </div>
 </div>
 </div>
 
-<div data-event-section="questions" className={[styles.s120].join(' ')}>
+<div data-event-section="questions" className={[styles.s120, styles.vQuestions].join(' ')}>
 <div className={[styles.s114].join(' ')}>
 <div className={[styles.s115].join(' ')}>
 <div className={[styles["label"], styles.s012].join(' ')}>CAPITOLO 03 · COSA SCOPRIRAI</div>
@@ -225,7 +259,7 @@ export function PatrimonialEventLanding() {
 <p className={`${styles["swipe-hint"]} ${styles.label} ${styles.vMuted}`}>Scorri le 6 domande →</p>
 </div>
 <div data-carousel="s116" role="region" aria-label="Le sei domande" tabIndex={0} className={[styles["snap"], styles.s116].join(' ')}>
-{questions.map((item, i) => (<div key={item.q} className={styles.vQcard} style={{ borderLeftColor: qColors[i] }}><span className={styles.vQnum} style={{ color: qColors[i] }}>0{i + 1}</span><strong className={[styles.s118].join(' ')}>{item.q}</strong><span className={[styles.s121].join(' ')}>{item.sub}</span></div>))}
+{questions.map((item, i) => (<div key={item.q} className={styles.vQcard}><span className={styles.vQnum}>0{i + 1}</span><strong className={[styles.s118].join(' ')}>{item.q}</strong><span className={[styles.s121].join(' ')}>{item.sub}</span></div>))}
 </div>
 
 <div className={styles.vQuiz} id="strumenti">
@@ -234,10 +268,16 @@ export function PatrimonialEventLanding() {
 <h3 className={styles.vQuizTitle}>Quali di questi strumenti conosci?</h3>
 <p className={[styles.s065].join(' ')}>Tocca quelli che conosci: per ognuno vedi come è andato negli ultimi 10 e 20 anni.</p>
 </div>
-<div className={styles.vChips}>
-{eventInstruments.map(item => (<button type="button" key={item.id} aria-pressed={!!known[item.id]} onClick={() => toggle(item.id)} className={[styles.vChip, known[item.id] ? styles.on : '', open === item.id ? styles.vChipOpen : ''].join(' ')}>{known[item.id] ? '✓ ' : ''}{item.name}</button>))}
+<div className={styles.vTiles}>
+{eventInstruments.map(item => (<button type="button" key={item.id} aria-pressed={!!known[item.id]} onClick={() => toggle(item.id)} className={[styles.vTile, known[item.id] ? styles.on : '', open === item.id ? styles.vTileOpen : ''].join(' ')}>
+<span className={styles.vTileImg}><Image src={item.img} alt="" width={320} height={240} sizes="160px" /></span>
+<span className={styles.vTileName}>{item.name}</span>
+<span className={styles.vTileCheck} aria-hidden="true">{known[item.id] ? '✓' : '+'}</span>
+</button>))}
 </div>
 {openInst && (<div className={styles.vInst}>
+<div className={styles.vInstImg}><Image src={openInst.img} alt="" width={640} height={480} sizes="(max-width: 820px) 100vw, 320px" /></div>
+<div className={styles.vInstBody}>
 <div className={styles.vInstTop}><strong className={styles.vInstName}>{openInst.name}</strong><button type="button" className={styles.vInstRemove} onClick={() => { setKnown(prev => { const next = { ...prev }; delete next[openInst.id]; return next; }); setOpen(null); }}>Non lo conosco</button></div>
 <div className={styles.vInstStats}>
 <div><span className={styles.s073}>Media annua 10 anni</span><strong>{openInst.ten}</strong></div>
@@ -245,7 +285,8 @@ export function PatrimonialEventLanding() {
 <div><span className={styles.s073}>Calo peggiore</span><strong className={styles.vLoss}>{openInst.worst}</strong></div>
 </div>
 <p className={styles.vInstRole}>{openInst.role}</p>
-<div className={styles.vLevels}>{eventKnowledgeLevels.map(level => (<button type="button" key={level} aria-pressed={known[openInst.id] === level} onClick={() => setKnown(prev => ({ ...prev, [openInst.id]: level }))} className={[styles['chip-d'], known[openInst.id] === level ? styles.on : ''].join(' ')}>{level}</button>))}</div>
+<div className={styles.vLevels}>{eventKnowledgeLevels.map(level => (<button type="button" key={level} aria-pressed={known[openInst.id] === level} onClick={() => setKnown(prev => ({ ...prev, [openInst.id]: level }))} className={[styles.vLevel, known[openInst.id] === level ? styles.on : ''].join(' ')}>{level}</button>))}</div>
+</div>
 </div>)}
 <div className={styles.vQuizFoot}><span>Conosci <strong>{Object.keys(known).length}</strong> strumenti su {eventInstruments.length}. Nelle due serate vedrai come si incastrano tra loro, compresi quelli che non hai toccato.</span>
 <a href="#richiesta" className={[styles.cta, styles.s057].join(' ')}>Voglio le risposte <Arrow /></a></div>
@@ -258,19 +299,22 @@ export function PatrimonialEventLanding() {
 <div className={[styles.s039].join(' ')}>
 <div className={[styles.s040].join(' ')}>
 <div className={[styles.s041].join(' ')}>CAPITOLO 04 · UN&apos;ANTEPRIMA</div>
-<h2 className={[styles.reveal, styles.s093].join(' ')}>Quattro famiglie, <span className={styles["chip-ink"]}>un solo patrimonio.</span></h2>
+<h2 className={[styles.reveal, styles.s093].join(' ')}>Quattro famiglie, un solo patrimonio.</h2>
 <p className={[styles.s043].join(' ')}>Ognuna fa un lavoro diverso. Insieme si proteggono a vicenda.</p>
 </div>
-<div className={styles.vTabs} role="tablist" aria-label="Le quattro famiglie di strumenti">
-{families.map(item => (<button type="button" role="tab" key={item.id} aria-selected={family === item.id} onClick={() => setFamily(item.id)} className={[styles.vTab, family === item.id ? styles.on : ''].join(' ')}><span className={styles.vSwatch} style={{ background: item.color }} />{item.name}</button>))}
+<div className={[styles.vTabs, styles.vTabsLight].join(' ')} role="tablist" aria-label="Le quattro famiglie di strumenti">
+{families.map(item => (<button type="button" role="tab" key={item.id} aria-selected={family === item.id} onClick={() => setFamily(item.id)} className={[styles.vTab, family === item.id ? styles.on : ''].join(' ')}>{item.name}</button>))}
 </div>
-<div className={styles.vFamily} role="tabpanel">
+<div className={styles.vFamily} role="tabpanel" key={curFamily.id}>
+<div className={styles.vFamilyImg}>
+<Image src={curFamily.img} alt={curFamily.alt} width={1400} height={1050} sizes="(max-width: 820px) 100vw, 55vw" />
+<div className={styles.vFamilyStat}><strong>{curFamily.stat}</strong><span>{curFamily.statLabel}</span></div>
+</div>
 <div className={styles.vFamilyMain}>
-<h3 className={styles.vFamilyName}><span className={styles.vSwatch} style={{ background: curFamily.color }} />{curFamily.name}</h3>
+<h3 className={styles.vFamilyName}>{curFamily.name}</h3>
 <p className={styles.vFamilyWhat}>{curFamily.what}</p>
 <div>{curFamily.rows.map(([title, body]) => (<div key={title} className={styles.vFamilyRow}><strong>{title}</strong><span>{body}</span></div>))}</div>
 </div>
-<div className={styles.vFamilyStat} style={{ borderColor: curFamily.color }}><strong style={{ color: curFamily.color }}>{curFamily.stat}</strong><span>{curFamily.statLabel}</span></div>
 </div>
 <p className={[styles.s143, styles.vInk].join(' ')}>Nessuna di queste famiglie, da sola, basta. Nelle due serate vedrai come si combinano. Rendimenti passati, non indicativi di quelli futuri.</p>
 </div>
@@ -285,13 +329,14 @@ export function PatrimonialEventLanding() {
 <div className={[styles.s146].join(' ')}>La prima serata cambia il modo in cui guardi i tuoi soldi. La seconda ti mostra come si costruisce e si protegge un patrimonio.</div>
 </div>
 <div className={styles.vEvenings}>
-{[
-  { n: '1', title: 'Pensare come chi un patrimonio ce l’ha', items: [['Il denaro non sta mai fermo', 'Perché tenere i soldi sul conto è già una scelta, e quanto ti costa ogni anno.'], ['I quattro profili', 'Da chi rincorre il mese a chi costruisce: dove sei oggi e qual è il tuo prossimo passo.'], ['La regola 70-10-10-10', '70% per vivere, 10% per il fondo di sicurezza, 10% da investire, 10% per eliminare i debiti o per crescere.'], ['Come ragionano i milionari', 'Non cercano il prodotto migliore: costruiscono un sistema in cui ogni pezzo ha un compito.'], ['Le tue domande, dal vivo', '']] },
-  { n: '2', title: 'Come si costruisce e si protegge un patrimonio', items: [['La mappa 50/50', 'Beni reali e beni finanziari: perché servono entrambi.'], ['Metalli preziosi e immobili', 'Oro e argento, fisico o di carta; quando una casa è un investimento e quando è solo una spesa.'], ['ETF, azioni e obbligazioni', 'Cosa possiedi davvero quando compri un ETF, e cosa è successo ai BTP nel 2022.'], ['Le domande da fare al tuo consulente', 'La lista da portare al prossimo appuntamento in banca.'], ['Radar Patrimoniale e le tue domande', '']] },
-].map(evening => (<div key={evening.n} className={styles.vEvening}>
-<div className={styles.vEveningHead}><span className={[styles.s151].join(' ')}>{evening.n}</span><div><div className={[styles.s152].join(' ')}>Serata {evening.n}</div><div className={styles.vEveningTitle}>{evening.title}</div></div></div>
+{evenings.map(evening => (<article key={evening.n} className={styles.vEvening}>
+<div className={styles.vEveningImg}><Image src={evening.img} alt={evening.alt} width={1400} height={1050} sizes="(max-width: 820px) 100vw, 50vw" />
+<div className={styles.vEveningBadge}><span>Serata</span><strong>{evening.n}</strong></div></div>
+<div className={styles.vEveningBody}>
+<div className={styles.vEveningTitle}>{evening.title}</div>
 <ol className={styles.vSteps}>{evening.items.map(([title, body]) => (<li key={title}><strong>{title}</strong>{body && <span>{body}</span>}</li>))}</ol>
-</div>))}
+</div>
+</article>))}
 </div>
 <p className={[styles.s043, styles.vCenter].join(' ')}>Due serate, una domanda di fondo: <strong>i tuoi soldi stanno lavorando per te o contro di te?</strong></p>
 </div>
@@ -352,7 +397,7 @@ export function PatrimonialEventLanding() {
 </div>
 <div className={[styles.s183].join(' ')}>
 <div className={[styles.s184].join(' ')}><div><strong className={[styles.s185].join(' ')}>Evento live in due serate</strong><div className={[styles.s119].join(' ')}>Con domande e risposte dal vivo, e la regola 70-10-10-10 pronta da applicare</div></div><span className={[styles.s186].join(' ')}>Incluso</span></div>
-<div className={[styles.s184].join(' ')}><div><span className={[styles.s187].join(' ')}>BONUS 1 · IN REGALO</span><br /><strong className={[styles.s185].join(' ')}>Il tuo Radar Patrimoniale</strong><div className={[styles.s119].join(' ')}>Uno strumento utile per i tuoi investimenti: ti mostra in un colpo d&apos;occhio dove il tuo patrimonio è scoperto e dove è troppo concentrato</div></div><span className={[styles.s186].join(' ')}>Gratuito</span></div>
+<div className={styles.vRadar}><div className={styles.vRadarImg}><Image src="/benessere-patrimoniale/evento/radar.jpg" alt="Quadrante d'oro con anelli concentrici e una lancetta" width={800} height={800} sizes="160px" /></div><div><span className={[styles.s187].join(' ')}>BONUS 1 · IN REGALO</span><br /><strong className={[styles.s185].join(' ')}>Il tuo Radar Patrimoniale</strong><div className={[styles.s119].join(' ')}>Uno strumento utile per i tuoi investimenti: ti mostra in un colpo d&apos;occhio dove il tuo patrimonio è scoperto e dove è troppo concentrato.</div></div><span className={[styles.s186].join(' ')}>Gratuito</span></div>
 <div className={[styles.s184].join(' ')}><div><span className={[styles.s187].join(' ')}>BONUS 2</span><br /><strong className={[styles.s185].join(' ')}>La lista delle domande da fare prima di firmare</strong><div className={[styles.s119].join(' ')}>Da portare al prossimo appuntamento in banca</div></div><span className={[styles.s186].join(' ')}>Incluso</span></div>
 <div className={[styles.s188].join(' ')}><div><span className={[styles.s189].join(' ')}>BONUS 3 · SE LO DESIDERI</span><br /><strong className={[styles.s185].join(' ')}>40 minuti solo per te, con un Architetto Patrimoniale</strong><div className={[styles.s121].join(' ')}>Dopo l&apos;evento partite da quello che ti ha colpito nelle due serate: cosa ti interessa davvero, cosa ti preoccupa, quali strumenti vuoi approfondire. Esci con le idee chiare sul tuo prossimo passo. Nessun costo, nessun obbligo, e non ti chiameremo se non sei tu a chiederlo.</div></div><span className={[styles.s190].join(' ')}>Gratuito</span></div>
 <div className={[styles.s191].join(' ')}><div className={[styles.s192].join(' ')}>Per te, oggi: <strong>gratis</strong>.</div><a href="#richiesta" className={[styles.cta, styles["cta-ink"], styles.s193].join(' ')}>Riserva il posto e il Radar</a></div>
