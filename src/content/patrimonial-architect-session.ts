@@ -7,20 +7,20 @@ export const architectSession: {
   closeHoursBefore: 2, seatsTotal: null, seatsTaken: null,
 };
 export const architectProfiles = {
-  commerciale: { label: 'Commerciale', value: 'Commerciale', scene: 'opportunita', story: 0,
-    sub: 'Sai già creare fiducia in pochi minuti. Qui impari a usarla per qualcosa che scegli tu, non per chiudere il prossimo contratto.', cta: 'Voglio usare il mio talento diversamente' },
+  banca: { label: 'Consulente in banca', value: 'Dipendente', scene: 'opportunita', story: 0,
+    sub: 'Conosci i prodotti, i clienti e anche quello che in filiale non si può dire. Qui lo usi per costruire piani su tutta la mappa, non per chiudere il budget del trimestre.', cta: 'Voglio lavorare su tutta la mappa' },
+  finanziario: { label: 'Consulente finanziario o assicurativo', value: 'Professionista', scene: 'caffe', story: 0,
+    sub: 'Hai già clienti che si fidano di te. Ti mancano metà degli strumenti: oro fisico, immobili a reddito, beni reali. Il percorso te li mette in mano, con un metodo.', cta: 'Voglio completare la mia mappa' },
+  commerciale: { label: 'Commerciale o agente', value: 'Commerciale', scene: 'opportunita', story: 1,
+    sub: 'Sai creare fiducia in pochi minuti. Qui impari a usarla per qualcosa che cambia davvero la vita delle persone, non per il prodotto del mese.', cta: 'Voglio usare il mio talento diversamente' },
   imprenditore: { label: 'Imprenditore', value: 'Imprenditore', scene: 'caffe', story: 1,
-    sub: 'Hai costruito qualcosa da zero e sai cosa vuol dire rischiare. Ora puoi mettere quell’esperienza al servizio di chi ci sta passando adesso.', cta: 'Voglio capire se fa per me' },
-  dipendente: { label: 'Dipendente', value: 'Dipendente', scene: 'domenica', story: 2,
-    sub: 'Non devi lasciare tutto domani. Puoi iniziare part-time, formarti e capire passo dopo passo se è la tua strada.', cta: 'Voglio iniziare senza salti nel vuoto' },
-  professionista: { label: 'Professionista', value: 'Professionista', scene: 'caffe', story: 1,
-    sub: 'I tuoi clienti si fidano già di te. Il percorso ti dà un metodo in più per accompagnarli anche sulle scelte patrimoniali.', cta: 'Voglio aggiungere questa competenza' },
-  altro: { label: 'Sto esplorando', value: 'Altro', scene: 'domenica', story: 2,
-    sub: 'Non serve sapere già cosa vuoi. In 40 minuti capisci cosa fa questo ruolo e se ti somiglia. Poi decidi tu.', cta: 'Voglio scoprirlo in 40 minuti' },
+    sub: 'Hai costruito qualcosa da zero e sai cosa vuol dire rischiare. Ora puoi mettere quell’esperienza al servizio di chi deve proteggere quello che ha costruito.', cta: 'Voglio capire se fa per me' },
+  nuovo: { label: 'Cerco un nuovo lavoro', value: 'Altro', scene: 'domenica', story: 2,
+    sub: 'Non serve venire dal settore. Cerchiamo persone che sanno ascoltare e hanno voglia di imparare: la formazione parte dalle basi e un Architetto senior ti affianca sul campo.', cta: 'Voglio un lavoro che mi stimoli' },
 } as const;
 export type ArchitectProfileKey = keyof typeof architectProfiles;
 export const architectDefaultCopy = {
-  sub: 'In una presentazione live di 40 minuti scopri cosa fa questo ruolo, come ti formiamo e se fa per te. Prima capisci. Poi, se vuoi, ne parliamo a tu per tu.', cta: 'Riserva il mio posto',
+  sub: 'Horyzon cerca e forma Architetti Patrimoniali: persone che aiutano famiglie e imprenditori a far lavorare i propri risparmi su tutta la mappa, non solo su metà. In 40 minuti live scopri cosa fa questo ruolo, come ti formiamo e se fa per te.', cta: 'Riserva il mio posto',
 };
 export function architectSessionSnapshot(now: number | null) {
   const confirmed = architectSession.status === 'CONFIRMED';
