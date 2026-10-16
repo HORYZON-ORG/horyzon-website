@@ -1,15 +1,16 @@
 'use client';
-import { useEffect, useRef, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { eventProfiles, eventProfileValue } from '@/content/patrimonial-event-content';
 import styles from './patrimonial-event.module.css';
 
 // Presentation only: transport, attempts, attribution and receipts belong to PilotLeadForm.
-export function PatrimonialEventForm({ step, setStep, selectedProfile, onProfileChange, onSubmit, status, notice, revisionRequired, onNewAttempt, v2 }: {
-  step: 1 | 2; setStep: (step: 1 | 2) => void; selectedProfile: string; onProfileChange?: (value: string) => void;
+export function PatrimonialEventForm({ step, setStep, selectedProfile, onProfileChange, onSubmit, status, notice, revisionRequired, onNewAttempt, v2, notes = '' }: {
+  notes?: string; step: 1 | 2; setStep: (step: 1 | 2) => void; selectedProfile: string; onProfileChange?: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void; status: 'idle' | 'sending' | 'success' | 'error'; notice: string;
   revisionRequired: boolean; onNewAttempt: () => void; v2: boolean;
 }) {
+  const [architectCall, setArchitectCall] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const firstName = useRef<HTMLInputElement>(null);
   const previousStep = useRef(step);
@@ -31,6 +32,7 @@ export function PatrimonialEventForm({ step, setStep, selectedProfile, onProfile
       </div>
       <label><span className={styles["phone-label"]}>Cellulare <span className={styles.optional}>(facoltativo)</span></span><input name="phone" type="tel" autoComplete="tel" maxLength={40} /></label>
       <label className={styles.formConsent}><input name="consent" type="checkbox" required /><span>Ho letto l&apos;<Link href="/privacy-policy" target="_blank" rel="noopener">informativa privacy</Link> e accetto di essere ricontattato per questo evento.</span></label>
+      <label className={styles.formConsent}><input name="architectCall" type="checkbox" onChange={event => setArchitectCall(event.target.checked)} /><span>Sì, dopo l&apos;evento voglio il confronto gratuito di 40 minuti con un Architetto Patrimoniale.</span></label>
     </fieldset>
     <fieldset className={styles.formFields} hidden={step !== 2} disabled={disabled || step === 1}>
       <legend className="sr-only">Completa la richiesta con cognome e provincia</legend>
@@ -41,15 +43,15 @@ export function PatrimonialEventForm({ step, setStep, selectedProfile, onProfile
       <button type="button" className={styles.formBack} onClick={() => setStep(1)}>← Torna ai recapiti</button>
     </fieldset>
     <input name="profile" type="hidden" value={eventProfileValue(selectedProfile)} />
-    <input name="message" type="hidden" value="" />
+    <input name="message" type="hidden" value={[notes, architectCall ? 'Confronto 40 minuti con Architetto Patrimoniale: sì' : ''].filter(Boolean).join(' | ')} />
     <div hidden><label>Sito web<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
     <button type="submit" className={`${styles.cta} ${styles.formSubmit}`} disabled={disabled || revisionRequired}>
-      <span>{status === 'sending' ? 'Invio in corso…' : status === 'success' ? 'Richiesta ricevuta.' : step === 1 ? 'Riserva il mio posto gratuito' : 'Conferma la richiesta'}</span>
+      <span>{status === 'sending' ? 'Invio in corso…' : status === 'success' ? 'Richiesta ricevuta.' : step === 1 ? 'Riserva il mio posto' : 'Conferma la richiesta'}</span>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
     </button>
     {notice && <p role={status === 'error' ? 'alert' : 'status'} className={styles.formNotice}>{notice}</p>}
     {v2 && revisionRequired && <button type="button" className={styles.formBack} disabled={status === 'sending'} onClick={onNewAttempt}>Ho verificato il precedente invio: avvia una nuova richiesta</button>}
-    <div className={styles.formFine}>Ricevi subito la checklist e il link all&apos;evento via email.</div>
-    <p className={styles.formFine}>La richiesta non conferma ancora la partecipazione definitiva.</p>
+    <div className={styles.formFine}>Ti mandiamo subito una conferma con data, orario e link delle due serate.</div>
+    
   </form>;
 }

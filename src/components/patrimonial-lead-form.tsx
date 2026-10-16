@@ -8,7 +8,7 @@ import { PATRIMONIAL_V2, PatrimonialClientAttempt, PatrimonialRevisionRequiredEr
 import { ArchitectApplicationForm } from './patrimonial-architect-form';
 import { PatrimonialEventForm } from './patrimonial-event-form';
 
-type ArchitectPresentation = { presentation?: 'architect' | 'event'; selectedProfile?: string; onProfileChange?: (value: string) => void };
+type ArchitectPresentation = { presentation?: 'architect' | 'event'; selectedProfile?: string; onProfileChange?: (value: string) => void; notes?: string };
 export function PatrimonialLeadForm({ mode = 'legacy/public', contractVersion, ...presentation }: { mode?: 'legacy/public' | PilotMode; contractVersion?: typeof PATRIMONIAL_V2 } & ArchitectPresentation) {
   return mode === 'legacy/public' ? <PublicLeadForm /> : <PilotLeadForm mode={mode} contractVersion={contractVersion} {...presentation} />;
 }
@@ -42,7 +42,7 @@ function pilotAttribution(mode: PilotMode, persist = true): PilotUtm {
   return found;
 }
 
-function PilotLeadForm({ mode, contractVersion, presentation, selectedProfile = '', onProfileChange }: { mode: PilotMode; contractVersion?: typeof PATRIMONIAL_V2 } & ArchitectPresentation) {
+function PilotLeadForm({ mode, contractVersion, presentation, selectedProfile = '', onProfileChange, notes = '' }: { mode: PilotMode; contractVersion?: typeof PATRIMONIAL_V2 } & ArchitectPresentation) {
   const router = useRouter();
   const form = pilotForms[mode];
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
@@ -105,7 +105,7 @@ function PilotLeadForm({ mode, contractVersion, presentation, selectedProfile = 
       v2Attempt.current?.beginNewAttempt(); setRevisionRequired(false); setStatus('idle');
       setNotice('Nuova richiesta pronta. Premi il pulsante di invio per trasmettere i dati aggiornati.');
     }} />;
-  if (presentation === 'event' && mode === 'patrimonial-event') return <PatrimonialEventForm step={step} setStep={setStep} selectedProfile={selectedProfile} onProfileChange={onProfileChange}
+  if (presentation === 'event' && mode === 'patrimonial-event') return <PatrimonialEventForm step={step} setStep={setStep} selectedProfile={selectedProfile} onProfileChange={onProfileChange} notes={notes}
     onSubmit={submit} status={status} notice={notice} revisionRequired={revisionRequired} v2={v2} onNewAttempt={() => {
       v2Attempt.current?.beginNewAttempt(); setRevisionRequired(false); setStatus('idle');
       setNotice('Nuova richiesta pronta. Premi il pulsante di invio per trasmettere i dati aggiornati.');
