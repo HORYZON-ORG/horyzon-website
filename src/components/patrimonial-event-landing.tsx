@@ -104,7 +104,6 @@ export function PatrimonialEventLanding() {
 <span><strong className={[styles.s038].join(' ')}>11 anni</strong> al fianco di imprese e imprenditori</span>
 <span><strong className={[styles.s038].join(' ')}>10.000+</strong> consulenze erogate</span>
 <span><strong className={[styles.s038].join(' ')}>Centinaia</strong> di seminari pubblici</span>
-<span><strong className={[styles.s038].join(' ')}>0</strong> prodotti venduti durante l&apos;evento</span>
 </div>
 </div>
 
