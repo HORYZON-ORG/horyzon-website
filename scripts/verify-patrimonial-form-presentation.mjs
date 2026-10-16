@@ -19,7 +19,7 @@ assert.equal(between(current, '    sending.current = true;', '\n  if (presentati
 assert.equal(current.slice(current.indexOf('  return <form className="rd-form" onSubmit={submit}')), baseline.slice(baseline.indexOf('  return <form className="rd-form" onSubmit={submit}')));
 assert(current.includes("if (presentation === 'architect' && mode === 'architect-path' && step === 1)"));
 for (const profile of Object.values(architectProfiles)) assert(pilotForms['architect-path'].profiles.includes(profile.value));
-assert.equal(architectProfiles.nuovo.value, 'Altro'); assert.equal(architectSession.status, 'PLACEHOLDER');
+assert.equal(architectProfiles.altro.value, 'Altro'); assert.equal(architectSession.status, 'PLACEHOLDER');
 const placeholder = architectSessionSnapshot(Date.now());
 assert.equal(placeholder.seatsTotal, '[N]'); assert.equal(placeholder.seatsLeft, '[N]'); assert.equal(placeholder.seatPercent, 0);
 assert(Object.values(placeholder.cd).every(value => value === '—'));

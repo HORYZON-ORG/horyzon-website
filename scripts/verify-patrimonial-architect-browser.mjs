@@ -131,7 +131,7 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.goto(`${base.origin}${routePath}`, { waitUntil: 'networkidle' });
-  await page.locator('[data-profile=banca]').click();
+  await page.locator('[data-profile=dipendente]').click();
   for (const name of ['scenes', 'stories']) {
     await page.locator(`[data-carousel=${name}]`).scrollIntoViewIfNeeded();
     await page.waitForFunction(name => [...document.querySelectorAll(`[data-carousel=${name}] > figure`)].every(element => Number(getComputedStyle(element).opacity) === 1), name);
