@@ -110,5 +110,6 @@ export function patrimonialFlags(env: Record<string, string | undefined> = proce
     assignments: enabled('PATRIMONIAL_ASSIGNMENTS_ENABLED'),
     ownerSync: enabled('PATRIMONIAL_OWNER_SYNC_ENABLED'),
     performanceTracking: enabled('PATRIMONIAL_PERFORMANCE_TRACKING_ENABLED'),
+    performanceWebhook: enabled('PATRIMONIAL_HIGHLEVEL_PERFORMANCE_WEBHOOK_ENABLED'),
   };
 }
