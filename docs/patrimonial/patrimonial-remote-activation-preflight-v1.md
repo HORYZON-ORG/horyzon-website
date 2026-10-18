@@ -119,3 +119,18 @@ Lineage offline: nomi/version divergence attesi, dieci hash, schema evidence, as
 Esiti finali PASS: lineage, runtime capabilities A–J, activation preflight, owner-sync A–AE, owner-readiness, assignment management, persistence, CRM, opportunities, remote mapping; typecheck no-emit con tmp esclusa in memoria; ESLint zero warning e git diff --check. Presentation: PRE-EXISTING BASELINE FAILURE, firme identiche prima/dopo (Evento: Protected baseline changed: src/app/(patrimonial-pilot)/benessere-patrimoniale/percorso-architetto-patrimoniale/page.tsx; Architetto: No behavioral change: src/content/patrimonial-architect-session.ts). Nessuna modifica UI. tmp/ e documento Radar preesistenti esclusi dal commit.
 
 **READY_FOR_REMOTE_MIGRATION_APPROVAL significa soltanto che i blocker locali di lineage/readiness sono rimossi. Non è autorizzazione a eseguire SQL e non abilita HighLevel. Attendere approvazione separata per ciascuna fase remota.**
+
+
+## Post-approval execution — 18 ottobre 2026
+
+L'autorizzazione remota è stata concessa e la sequenza targeted è stata eseguita con successo sul progetto Horyzon:
+
+1. `patrimonial_assignment_management`
+2. `patrimonial_owner_sync`
+3. `patrimonial_runtime_capabilities`
+
+Dopo ogni apply sono stati verificati schema, contatori legacy, RLS/privilegi e invarianti. Il probe finale remoto restituisce `base=patrimonial-v2-store-1`, `assignmentManagement=p1-v1`, `ownerSync=p2b-v1`. I dati legacy osservati nel preflight sono rimasti invariati e nessun owner effect è stato creato automaticamente.
+
+La credenziale HighLevel runtime è stata poi configurata esclusivamente sul Preview branch e verificata dal runtime Vercel con users/location/opportunity GET. Un synthetic provider smoke autorizzato ha inoltre verificato una sola owner write `assignedTo` e read-back. HighLevel v3 omette il campo `assignedTo` quando l'opportunity è unassigned; questa shape live ha richiesto una correzione fail-closed del decoder prima della write. Gli oggetti HighLevel sintetici sono stati eliminati per ID esatti e la route temporanea è stata rimossa.
+
+Lo stato non è ancora `READY_FOR_PRODUCTION`: restano inattivi i feature flag e non è ancora stato eseguito live il percorso completo assignment → outbox → worker → checkpoint Supabase. La race remota senza CAS e owner clear restano limiti dichiarati.
