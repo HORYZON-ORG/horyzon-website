@@ -95,3 +95,39 @@ Copre capability P3, RLS/grants, create operator + assignment, replay event_key,
 Prima di applicare P3 al remoto: eseguire test locali/build, verificare lineage e preflight schema remoto, autorizzare separatamente la migration P3, applicare targeted e mai supabase db push, verificare capability/ACL/RLS e zero backfill. Solo dopo va progettato P3B HighLevel ingestion con verifica X-GHL-Signature Ed25519 e mapping prudente dei soli eventi attribuibili.
 
 P3 v1 non modifica Production né main.
+
+
+## Remote rollout — 18 ottobre 2026
+
+Autorizzazione esplicita ricevuta e migration P3 applicata al progetto Supabase Horyzon con managed targeted apply, senza `supabase db push` e senza history repair.
+
+- file locale: `20261018224500_patrimonial_performance_tracking.sql`
+- migration name: `patrimonial_performance_tracking`
+- versione remota effettiva: `20261018205124`
+- esito apply: SUCCESS
+
+Preflight remoto prima dell'apply:
+
+- P1/P2B health e capability sane;
+- oggetti P3 assenti;
+- `PATRIMONIAL_PERFORMANCE_TRACKING_ENABLED`, assignments e owner-sync non attivi nel Preview branch;
+- counts legacy/assignment acquisiti senza PII.
+
+Post-apply:
+
+- `patrimonial_performance_events`, vista analitica e RPC P3 presenti;
+- `performanceTracking=p3-v1`;
+- base health, `assignmentManagement=p1-v1` e `ownerSync=p2b-v1` invariati;
+- zero performance events creati automaticamente;
+- counts preesistenti invariati;
+- FORCE RLS attivo;
+- service_role: SELECT/INSERT soltanto sulla tabella performance;
+- anon/authenticated: nessun accesso diretto;
+- funzioni P3 SECURITY INVOKER con search_path fissato;
+- trigger attribution e immutabilità attivi;
+- tutti i FK P3 hanno covering index;
+- vista `security_invoker=true`.
+
+Gli advisor Supabase segnalano `RLS enabled no policy` sulla tabella P3: è intenzionale perché il ledger è service-role only. Gli altri warning di sicurezza/performance rilevati sono preesistenti o attesi su indici appena creati e vuoti.
+
+Stato: **P3 REMOTE INSTALLED / TRACKING NOT ACTIVATED**. Nessun webhook HighLevel, endpoint ingestion o feature flag è stato attivato.
