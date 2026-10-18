@@ -16,6 +16,7 @@
     "test:patrimonial-persistence": "node --no-warnings --experimental-strip-types scripts/verify-patrimonial-persistence.mjs",
     "test:patrimonial-remote-mapping": "node --no-warnings --experimental-strip-types scripts/verify-patrimonial-remote-mapping.mjs",
     "test:patrimonial-assignment": "node --no-warnings --experimental-strip-types scripts/verify-patrimonial-assignment-management.mjs",
+    "test:patrimonial-owner-readiness": "node --no-warnings --experimental-strip-types scripts/verify-patrimonial-owner-readiness.mjs",
     "test:patrimonial-live-smoke": "node --no-warnings --experimental-strip-types scripts/verify-patrimonial-live-smoke.mjs",
     "smoke:patrimonial": "node --no-warnings --experimental-strip-types scripts/run-patrimonial-live-smoke.mjs",
     "test:no-platform": "node scripts/verify-no-platform.mjs",

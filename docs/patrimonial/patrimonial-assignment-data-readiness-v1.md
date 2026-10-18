@@ -4,6 +4,8 @@ Data: 18 ottobre 2026. Baseline effettiva: `88fafcba8811e4a02b3575e2e2cd36368b81
 
 **P1 locale implementata con la separazione approvata fra owner remoto e responsabile interno.** Questo documento non prova che lo store v2 o i flag siano attivi in preview/produzione. Nessuna introspezione di dati, credenziali o configurazioni remote; nessuna migration remota applicata.
 
+P2A: [owner-sync readiness](./patrimonial-owner-sync-readiness-v1.md) incorpora l'audit HighLevel esterno riportato dall'utente, senza ripeterlo o leggere env. Schema assignedTo/body_assignedTo disponibile, opportunity live 0, users inventory BLOCKED da 401 e scope locations.readonly/users.readonly. remote_user_ref rimane candidato: UNMAPPED/MAPPED_UNVERIFIED sono validi per P1; MAPPED_VERIFIED richiederà evidenza server user/location, non la sola sintassi. Nessuna write P2B o nuova persistenza.
+
 ## Readiness dei segnali
 
 «Strutturato» significa un campo separato validato dal contratto server. Non significa identità verificata, dichiarazione certificata o autorizzazione per finalità ulteriori. UTM e risposte pubbliche sono dichiarazioni del browser. In particolare, non usare il profilo o la provincia per dedurre disponibilità economica, idoneità o competenza.

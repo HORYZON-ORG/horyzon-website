@@ -2,6 +2,8 @@
 
 18 ottobre 2026. Baseline effettiva `88fafcba8811e4a02b3575e2e2cd36368b818be8`, branch `feat/patrimonial-pilot-funnels`. La decisione canonica approvata sostituisce lo STOP del precedente audit. P1 implementata e verificata localmente; **non attivata e non applicata a Supabase remoto**.
 
+Aggiornamento P2A al HEAD iniziale `e781f8dd3bafbd2fca7b3d85c077559811936f61`: l'audit esterno fornito dall'utente conferma connessione/letture pipeline, ricerca opportunity vuota e schema assignedTo/body_assignedTo. Non prova response live, round-trip o write permission; inventario utenti BLOCKED per scope, usersRead runtime UNKNOWN. La [matrice owner-sync P2A](./patrimonial-owner-sync-readiness-v1.md) distingue le evidenze e sostituisce le sole valutazioni di readiness futura, senza cambiare P1 o attivare P2B.
+
 ## Identità canoniche
 
 | Campo | Significato | P1 |
