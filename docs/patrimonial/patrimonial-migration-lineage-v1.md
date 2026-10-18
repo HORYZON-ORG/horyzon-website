@@ -101,3 +101,18 @@ Preflight minimo:
 8. verificare zero backfill: la migration non crea eventi performance da storico, note, messaggi o domain events esistenti.
 
 ACK incerto, oggetto P3 preesistente, drift inatteso o invariant failure => STOP. Nessun retry automatico e nessuna correzione dati/history.
+
+
+### P3 remote apply — eseguito
+
+Il 18 ottobre 2026 la migration `patrimonial_performance_tracking` è stata applicata con managed targeted apply.
+
+- filename locale: `20261018224500_patrimonial_performance_tracking.sql`
+- versione remota effettiva registrata: `20261018205124`
+- nessuna history repair
+- nessun generic db push
+- zero backfill performance
+- counts legacy/assignment invariati
+- capability P3 finale: `patrimonial-performance-capabilities-v1 / p3-v1`
+
+Il drift timestamp locale/remoto è trattato come per P1/P2B: la versione managed effettiva è la lineage remota vera e non va “riparata” per farla coincidere con il filename locale.
