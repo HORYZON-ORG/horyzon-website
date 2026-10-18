@@ -10,7 +10,7 @@ import { getPatrimonialRemoteMapping } from '../src/lib/public-leads/patrimonial
 import { contactEffectKinds } from '../src/lib/public-leads/patrimonial-owner-operations.ts';
 import { PatrimonialConflictError,PatrimonialStaleLeaseError,PatrimonialStoreUnavailableError,patrimonialFlags } from '../src/lib/public-leads/patrimonial-store.ts';
 const passed=[];
-const proof={runtimeTokenVerified:true,verifiedLocationId:'fixture-location',version:'v3',usersRead:true,opportunityOwnerRead:true,opportunityOwnerWrite:true,ownerOnlyUpdate:true,nullableAssignedTo:true};
+const proof={runtimeTokenVerified:true,verifiedLocationId:'fixture-location',version:'v3',usersRead:true,opportunityOwnerRead:true,opportunityOwnerWrite:true,ownerOnlyUpdate:true,nullableAssignedTo:true,omittedAssignedToMeansUnassigned:true};
 const stamp=()=>new Date().toISOString();
 let n=0;
 const pipelineId=getPatrimonialRemoteMapping({}).pipelines.ARCHITECT_PATH.id;
@@ -99,6 +99,10 @@ try {
   for(const patch of [{assignedTo:''},{assignedTo:undefined},{locationId:'other-location'},{contactId:'other-contact'},{pipelineId:'other-pipeline'}]) {
     const f=await fixture();Object.assign(f.state.row,patch);assert.equal((await f.work()).state,'HOLD');assert.equal(f.state.updates,0);
   }
+  const omitted=await fixture();delete omitted.state.row.assignedTo;assert.equal((await omitted.work()).state,'CONFIRMED');assert.equal(omitted.state.updates,1);
+  const missingContract=await fixture();delete missingContract.state.row.assignedTo;
+  const noOmissionProof=new PatrimonialHighLevelOwnerProvider({env:missingContract.selectedEnv,proof:{...proof,omittedAssignedToMeansUnassigned:false},fetchImpl:async()=>Response.json({opportunity:missingContract.state.row})});
+  await assert.rejects(noOmissionProof.getOpportunity(missingContract.state.row.id),e=>e.code==='SCHEMA');
   const missing=await fixture({remote:false});assert.equal((await missing.work()).reason,'OPPORTUNITY_NOT_READY');assert.equal(missing.state.requests.length,0);
   const unknown=await fixture();delete unknown.state.user.deleted;assert.equal((await unknown.work()).state,'HOLD');assert.equal(unknown.state.updates,0);
   const recovered=await fixture();recovered.state.user.deleted=true;assert.equal((await recovered.work()).state,'HOLD');recovered.state.user.deleted=false;
