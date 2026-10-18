@@ -65,3 +65,39 @@ Scelta confermata dall'utente in P2C-B: la RPC è installabile a scopo diagnosti
 MIGRATION_HISTORY_DRIFT come impedimento al metodo di applicazione: RESOLVED_BY_MANAGED_TARGETED_STRATEGY. Lo storico non è stato alterato e il drift globale non è dichiarato risolto. STORE_HEALTH_CAPABILITY_GAP: risolto dal controllo additivo, verificato separatamente. Il massimo stato è READY_FOR_REMOTE_MIGRATION_APPROVAL, mai READY_FOR_LIVE.
 
 Restano necessarie autorizzazioni remote specifiche e smoke separato; RUNTIME_TOKEN_NOT_VERIFIED, OPPORTUNITY_NONEMPTY_READ_UNVERIFIED, ASSIGNEDTO_LIVE_SHAPE_UNVERIFIED, OWNER_ROUNDTRIP_UNVERIFIED, OWNER_CLEAR_UNSUPPORTED e REMOTE_CAS_UNVERIFIED non sono risolti da questa lineage. PG17_NATIVE_DRY_RUN è READY_WITH_CONDITION: locale PGlite 18.6, remoto 17.6, nessun PG17 nativo utilizzabile senza avviare/installare servizi. SQL usa cataloghi/funzioni documentati PG17; nessun contype=n PG18 richiesto.
+
+
+## Addendum corrente — post P2D / P3
+
+Il testo precedente conserva la diagnosi P2C-B al momento in cui fu scritto. Stato effettivo successivo, verificato il 18 ottobre 2026:
+
+- P1 patrimonial_assignment_management: installata remoto via managed targeted apply; versione remota effettiva 20261018184007.
+- P2B patrimonial_owner_sync: installata remoto via managed targeted apply; versione remota effettiva 20261018184045.
+- runtime capabilities: installata remoto via managed targeted apply; versione remota effettiva 20261018184114.
+- P2D owner worker/checkpoint: synthetic smoke end-to-end PASS.
+- Nessuna history repair, nessun generic db push, nessuna riesecuzione delle baseline con timestamp divergenti.
+
+Nuova migration P3 locale:
+
+20261018224500_patrimonial_performance_tracking.sql
+
+Stato: LOCAL_ONLY / NOT_APPLIED_REMOTE.
+
+P3 dipende dalla fondazione P1 già installata e aggiunge esclusivamente ledger performance, vista analitica e RPC/capability dedicate. Non modifica P1/P2B/capability migration storiche e non richiede rinomina o repair di quelle versioni.
+
+### Rollout P3 autorizzabile separatamente
+
+La futura sequenza remota per P3 è un solo targeted apply del file 20261018224500_patrimonial_performance_tracking.sql, dopo nuovo preflight. Non usare supabase db push.
+
+Preflight minimo:
+
+1. rileggere project identity e migration history;
+2. verificare presenti e sane le capability P1/P2B già installate;
+3. verificare assenza di patrimonial_performance_events, patrimonial_assignment_performance_v1 e delle quattro RPC P3;
+4. catturare counts legacy e counts assignment/operator senza PII;
+5. verificare che PATRIMONIAL_PERFORMANCE_TRACKING_ENABLED non sia attivo negli ambienti target;
+6. applicare soltanto P3 con autorizzazione esplicita;
+7. verificare RLS/FORCE RLS, grants service-role only, trigger immutabilità/attribution e performanceTracking=p3-v1;
+8. verificare zero backfill: la migration non crea eventi performance da storico, note, messaggi o domain events esistenti.
+
+ACK incerto, oggetto P3 preesistente, drift inatteso o invariant failure => STOP. Nessun retry automatico e nessuna correzione dati/history.
