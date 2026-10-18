@@ -16,7 +16,7 @@ export interface PatrimonialOwnerProvider {
 export type OwnerBindingProof = {
   runtimeTokenVerified:true; verifiedLocationId:string; version:'v3';
   usersRead:true; opportunityOwnerRead:true; opportunityOwnerWrite:true;
-  ownerOnlyUpdate:true; nullableAssignedTo:boolean;
+  ownerOnlyUpdate:true; nullableAssignedTo:boolean; omittedAssignedToMeansUnassigned:boolean;
 };
 export const ownerGates = (env:Record<string,string|undefined>) => {
   const f=patrimonialFlags(env); return f.v2 && f.assignments && f.crmWrite && f.ownerSync;
@@ -74,8 +74,12 @@ export class PatrimonialHighLevelOwnerProvider implements PatrimonialOwnerProvid
     if(!idValid(id)) return schema();
     const body=await this.request(`/opportunities/${encodeURIComponent(id)}`) as {opportunity?:Record<string,unknown>};
     const raw=body?.opportunity;
+    const hasAssignedTo=!!raw && Object.hasOwn(raw,'assignedTo');
+    const assignedTo=hasAssignedTo ? raw!.assignedTo
+      : this.proof?.omittedAssignedToMeansUnassigned===true ? null
+        : undefined;
     if(!raw || raw.id!==id || raw.locationId!==this.locationId || !idValid(raw.contactId) || !idValid(raw.pipelineId)
-      || !(idValid(raw.assignedTo) || raw.assignedTo===null&&this.proof?.nullableAssignedTo===true)) return schema();
+      || !(idValid(assignedTo) || assignedTo===null&&(this.proof?.nullableAssignedTo===true || this.proof?.omittedAssignedToMeansUnassigned===true))) return schema();
     let businessKey:string|null=null;
     if(raw.customFields!==undefined) {
       if(!Array.isArray(raw.customFields)) return schema();
@@ -86,7 +90,7 @@ export class PatrimonialHighLevelOwnerProvider implements PatrimonialOwnerProvid
     }
     const marker=raw.version??raw.updatedAt??raw.dateUpdated;
     if(marker!==undefined && (typeof marker!=='string'||!marker)) return schema();
-    const result:OwnerObservation={id,locationId:this.locationId,contactId:raw.contactId,pipelineId:raw.pipelineId,assignedTo:raw.assignedTo as string|null,businessKey,versionMarker:typeof marker==='string'?marker:null};
+    const result:OwnerObservation={id,locationId:this.locationId,contactId:raw.contactId,pipelineId:raw.pipelineId,assignedTo:assignedTo as string|null,businessKey,versionMarker:typeof marker==='string'?marker:null};
     Object.freeze(result); this.opportunities.add(result); return result;
   }
   async updateOpportunityOwner(opportunity:OwnerObservation,user:RemoteOwnerUser):Promise<void> {
