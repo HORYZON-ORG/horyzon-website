@@ -55,8 +55,14 @@ export async function GET(request: NextRequest) {
     }, { status:503, headers:{'Cache-Control':'no-store'} });
   }
 
+  const keyKind = supabaseSecret.startsWith('sb_secret_') ? 'secret'
+    : supabaseSecret.startsWith('sb_publishable_') ? 'publishable'
+      : supabaseSecret.startsWith('eyJ') ? 'legacy-jwt' : 'unknown';
+  if (keyKind === 'publishable' || keyKind === 'unknown') {
+    return NextResponse.json({ ok:false, reason:'smoke_supabase_key_not_server_secret', keyKind }, { status:503, headers:{'Cache-Control':'no-store'} });
+  }
+
   const env = smokeEnv;
-  const store = new SupabasePatrimonialStore({ url: SUPABASE_URL, serviceRoleKey: supabaseSecret });
   const now = new Date();
   const receivedAt = now.toISOString();
   const nextStepAt = new Date(now.getTime() + 86_400_000).toISOString();
@@ -124,6 +130,7 @@ export async function GET(request: NextRequest) {
   const actor = { type: 'ADMIN' as const, ref: 'p2d_smoke' };
 
   try {
+    const store = new SupabasePatrimonialStore({ url: SUPABASE_URL, serviceRoleKey: supabaseSecret });
     await store.ownerSyncHealth();
 
     const persisted = await store.transaction(async tx => {
