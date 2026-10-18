@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import type { PatrimonialConsentEvidence, PatrimonialEvent, PatrimonialIntent, PatrimonialOutboxOperation, PatrimonialRequest } from './patrimonial-contract.ts';
 import type { PatrimonialOpportunityIntent, PatrimonialRoutingParticipation } from './patrimonial-routing.ts';
 import type { AssignmentContext, AssignmentPlan } from './patrimonial-assignments.ts';
+import type { PatrimonialPerformanceEvent, PatrimonialPerformanceEventWrite, PatrimonialPerformanceContext, PatrimonialPerformanceStore } from './patrimonial-performance.ts';
 import {
   PatrimonialConflictError, PatrimonialReplayExpiredError, PatrimonialStaleLeaseError, PatrimonialStoreUnavailableError, PatrimonialCapabilityUnavailableError,
   type PatrimonialStore, type PatrimonialTransaction, type PatrimonialOpportunityStore, type PatrimonialOpportunityTransaction,
@@ -13,6 +14,7 @@ import {
 
 export const PATRIMONIAL_STORE_VERSION = 'patrimonial-v2-store-1';
 export const PATRIMONIAL_CAPABILITY_CONTRACT = 'patrimonial-runtime-capabilities-v1';
+export const PATRIMONIAL_PERFORMANCE_CAPABILITY_CONTRACT = 'patrimonial-performance-capabilities-v1';
 type Capability = 'assignmentManagement' | 'ownerSync';
 export { PatrimonialCapabilityUnavailableError } from './patrimonial-store.ts';
 const requiredCapabilities = (commands: Command[]): Capability[] => {
@@ -90,7 +92,7 @@ class RpcTransaction implements PatrimonialTransaction, PatrimonialOpportunityTr
   finishOpportunitySync(id: string, revision: number, token: string, now: string, state: PatrimonialOpportunitySyncState, remote?: NonNullable<PatrimonialOpportunityIntent['remote']>) { return this.mutation('finishOpportunitySync', [id, revision, token, now, state, remote ?? null]); }
 }
 
-export class SupabasePatrimonialStore implements PatrimonialStore, PatrimonialOpportunityStore, PatrimonialAssignmentStore, PatrimonialOwnerStore {
+export class SupabasePatrimonialStore implements PatrimonialStore, PatrimonialOpportunityStore, PatrimonialAssignmentStore, PatrimonialOwnerStore, PatrimonialPerformanceStore {
   readonly kind = 'durable' as const;
   private readonly url: string;
   private readonly key: string;
@@ -138,6 +140,23 @@ export class SupabasePatrimonialStore implements PatrimonialStore, PatrimonialOp
   }
   async assignmentHealth(): Promise<void> { await this.health(); await this.checkCapabilities(['assignmentManagement']); }
   async ownerSyncHealth(): Promise<void> { await this.health(); await this.checkCapabilities(['assignmentManagement','ownerSync']); }
+  async performanceHealth(): Promise<void> {
+    await this.health();
+    let value: {contract?:string;performanceTracking?:string|null};
+    try { value=await this.rpc('patrimonial_performance_capabilities',{}); }
+    catch { throw new PatrimonialCapabilityUnavailableError('performanceTracking'); }
+    if(!value || value.contract!==PATRIMONIAL_PERFORMANCE_CAPABILITY_CONTRACT || value.performanceTracking!=='p3-v1') {
+      throw new PatrimonialCapabilityUnavailableError('performanceTracking');
+    }
+  }
+  async recordPerformanceEvent(input: PatrimonialPerformanceEventWrite): Promise<PatrimonialPerformanceEvent> {
+    await this.performanceHealth();
+    return this.rpc('patrimonial_record_performance_event',{p_event:input});
+  }
+  async resolvePerformanceContext(remoteOpportunityId: string, occurredAt: string): Promise<PatrimonialPerformanceContext|null> {
+    await this.performanceHealth();
+    return this.rpc('patrimonial_performance_resolve',{p_remote_opportunity_id:remoteOpportunityId,p_occurred_at:occurredAt});
+  }
   async transaction<T>(work: (tx: PatrimonialTransaction & PatrimonialOpportunityTransaction & PatrimonialAssignmentTransaction & PatrimonialOwnerTransaction) => Promise<T>): Promise<T> {
     await this.health();
     for (let attempt = 0; attempt < 4; attempt++) {
