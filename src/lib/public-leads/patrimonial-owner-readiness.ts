@@ -61,9 +61,10 @@ function requireRead(value: unknown, code: PatrimonialOwnerReadinessError['code'
 }
 function record(v: unknown): v is Record<string, unknown> { return v !== null && typeof v === 'object' && !Array.isArray(v); }
 
-// assignedTo null is accepted ONLY under an explicit nullable read contract.
-// There is no verified live nullable contract in P2A, hence the false default.
-export function checkedPatrimonialOwnerRead(page: unknown, scope: PatrimonialOwnerReadScope, contract: Readonly<{ nullableAssignedTo: boolean }> = { nullableAssignedTo: false }): PatrimonialOwnerObservation | null {
+// Explicit null and omitted assignedTo remain distinct wire shapes. HighLevel v3
+// has been observed omitting assignedTo on an unassigned synthetic opportunity;
+// that omission is normalized to null only under an explicit verified contract.
+export function checkedPatrimonialOwnerRead(page: unknown, scope: PatrimonialOwnerReadScope, contract: Readonly<{ nullableAssignedTo: boolean; omittedAssignedToMeansUnassigned?: boolean }> = { nullableAssignedTo: false, omittedAssignedToMeansUnassigned: false }): PatrimonialOwnerObservation | null {
   requireRead([scope.locationId,scope.contactId,scope.pipelineId,scope.opportunityId].every(opaque), 'IDENTITY');
   requireRead(record(page) && Array.isArray(page.opportunities));
   requireRead(page.complete === true && (page.nextCursor === undefined || page.nextCursor === null), 'INCOMPLETE');
@@ -73,11 +74,13 @@ export function checkedPatrimonialOwnerRead(page: unknown, scope: PatrimonialOwn
   requireRead(record(row));
   requireRead(row.locationId === scope.locationId && row.contactId === scope.contactId
     && row.pipelineId === scope.pipelineId && row.opportunityId === scope.opportunityId, 'IDENTITY');
-  requireRead(Object.hasOwn(row, 'assignedTo') && (opaque(row.assignedTo) || (contract.nullableAssignedTo === true && row.assignedTo === null)));
+  const hasAssignedTo = Object.hasOwn(row, 'assignedTo');
+  if (hasAssignedTo) requireRead(opaque(row.assignedTo) || (contract.nullableAssignedTo === true && row.assignedTo === null));
+  else requireRead(contract.omittedAssignedToMeansUnassigned === true);
   requireRead(Object.hasOwn(row, 'version') && (row.version === null || opaque(row.version)));
   // Strict projection: no remote profiles, contacts or raw response retained.
   return { locationId:scope.locationId, contactId:scope.contactId, pipelineId:scope.pipelineId, opportunityId:scope.opportunityId,
-    assignedTo:row.assignedTo as string | null, version:row.version as string | null };
+    assignedTo:(hasAssignedTo ? row.assignedTo : null) as string | null, version:row.version as string | null };
 }
 
 // Future intent-specific plan, not an outbox union member or enqueueable effect.
@@ -94,7 +97,7 @@ export type PatrimonialOwnerSyncPlan = Readonly<{
 type OwnerRead =
   | { kind: 'NOT_READ' }
   | { kind: 'UNCERTAIN_TIMEOUT' }
-  | { kind: 'COMPLETE'; page: unknown; contract?: { nullableAssignedTo: boolean } };
+  | { kind: 'COMPLETE'; page: unknown; contract?: { nullableAssignedTo: boolean; omittedAssignedToMeansUnassigned?: boolean } };
 export type PatrimonialOwnerReadinessInput = Readonly<{
   intentId: string;
   currentOperatorId: string | null;
