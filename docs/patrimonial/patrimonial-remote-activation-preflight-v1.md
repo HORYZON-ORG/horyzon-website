@@ -134,3 +134,24 @@ Dopo ogni apply sono stati verificati schema, contatori legacy, RLS/privilegi e 
 La credenziale HighLevel runtime è stata poi configurata esclusivamente sul Preview branch e verificata dal runtime Vercel con users/location/opportunity GET. Un synthetic provider smoke autorizzato ha inoltre verificato una sola owner write `assignedTo` e read-back. HighLevel v3 omette il campo `assignedTo` quando l'opportunity è unassigned; questa shape live ha richiesto una correzione fail-closed del decoder prima della write. Gli oggetti HighLevel sintetici sono stati eliminati per ID esatti e la route temporanea è stata rimossa.
 
 Lo stato non è ancora `READY_FOR_PRODUCTION`: restano inattivi i feature flag e non è ancora stato eseguito live il percorso completo assignment → outbox → worker → checkpoint Supabase. La race remota senza CAS e owner clear restano limiti dichiarati.
+
+
+## P2D — worker/checkpoint live verified
+
+Successivamente al provider smoke è stato eseguito il test end-to-end del percorso P2B usando Preview e una chiave Supabase server temporanea dedicata.
+
+PASS:
+
+- capability health Supabase remoto;
+- synthetic intent/opportunity identity;
+- createOperator e assignProspect;
+- enqueue e claim di una sola ASSIGN_OPPORTUNITY_OWNER;
+- authorizeOwnerWrite persistito prima della dispatch;
+- una sola PUT HighLevel assignedTo;
+- GET read-back indipendente;
+- finishOwnerOperation e checkpoint Supabase;
+- seconda esecuzione idempotente senza nuova write;
+- cleanup locale audit-preserving;
+- cleanup HighLevel per ID esatti.
+
+Il checkpoint finale ha owner_ref/ownerId/remote.assignedTo coerenti e owner_checkpoint_revision=1. Prima del cleanup la business revision è rimasta invariata. Production e feature flag restano non attivati; nessun CAS remoto né owner-clear è stato introdotto o assunto.
