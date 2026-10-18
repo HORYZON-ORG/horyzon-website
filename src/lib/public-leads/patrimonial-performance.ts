@@ -166,7 +166,8 @@ export function makePatrimonialPerformanceEvent(input: PatrimonialPerformanceEve
     channel: valid.channel ?? null,
     recordedByRef: valid.recordedByRef ?? null,
   };
-  const payloadHash = createHash('sha256').update(canonical(normalized)).digest('hex');
+  const { eventKey: _eventKey, ...semanticPayload } = normalized;
+  const payloadHash = createHash('sha256').update(canonical(semanticPayload)).digest('hex');
   return Object.freeze({ ...normalized, payloadHash, schemaVersion: 1 as const });
 }
 
