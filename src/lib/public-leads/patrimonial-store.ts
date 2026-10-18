@@ -56,8 +56,8 @@ export class PatrimonialStaleLeaseError extends Error {}
 export class PatrimonialStoreUnavailableError extends Error {}
 export class PatrimonialCapabilityUnavailableError extends PatrimonialStoreUnavailableError {
   readonly code = 'PATRIMONIAL_CAPABILITY_UNAVAILABLE';
-  readonly capability: 'assignmentManagement' | 'ownerSync';
-  constructor(capability: 'assignmentManagement' | 'ownerSync') { super(`Patrimonial capability unavailable: ${capability}`); this.capability=capability; }
+  readonly capability: 'assignmentManagement' | 'ownerSync' | 'performanceTracking';
+  constructor(capability: 'assignmentManagement' | 'ownerSync' | 'performanceTracking') { super(`Patrimonial capability unavailable: ${capability}`); this.capability=capability; }
 }
 
 // Separate resolved business aggregates; the existing provisional lead/CRM ledger
@@ -109,5 +109,6 @@ export function patrimonialFlags(env: Record<string, string | undefined> = proce
     webhook: enabled('PATRIMONIAL_WEBHOOK_ENABLED'),
     assignments: enabled('PATRIMONIAL_ASSIGNMENTS_ENABLED'),
     ownerSync: enabled('PATRIMONIAL_OWNER_SYNC_ENABLED'),
+    performanceTracking: enabled('PATRIMONIAL_PERFORMANCE_TRACKING_ENABLED'),
   };
 }
