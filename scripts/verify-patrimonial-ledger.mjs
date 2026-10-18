@@ -229,7 +229,7 @@ passed.push('K post-commit failure recovered by replay, expired key not reacquir
 
 // O and production guard: no memory fallback, even if all reserved flags are true.
 assert.throws(() => createProductionPatrimonialStore(), PatrimonialStoreUnavailableError);
-const flagNames = ['V2', 'CRM_WRITE', 'OPPORTUNITY_WRITE', 'BOOKING', 'MESSAGES', 'WEBHOOK'].map(n => `PATRIMONIAL_${n}_ENABLED`);
+const flagNames = ['V2', 'CRM_WRITE', 'OPPORTUNITY_WRITE', 'BOOKING', 'MESSAGES', 'WEBHOOK', 'ASSIGNMENTS', 'OWNER_SYNC'].map(n => `PATRIMONIAL_${n}_ENABLED`);
 assert(Object.values(patrimonialFlags({})).every(v => v === false));
 for(const value of ['false', '1', 'TRUE', ' true ', '', 'yes']) assert(Object.values(patrimonialFlags(Object.fromEntries(flagNames.map(n=>[n,value])))).every(v => v === false));
 const allTrue = Object.fromEntries(flagNames.map(n => [n, 'true']));

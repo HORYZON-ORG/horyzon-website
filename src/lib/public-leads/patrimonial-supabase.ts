@@ -1,11 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import type { PatrimonialConsentEvidence, PatrimonialEvent, PatrimonialIntent, PatrimonialOutboxOperation, PatrimonialRequest } from './patrimonial-contract.ts';
 import type { PatrimonialOpportunityIntent, PatrimonialRoutingParticipation } from './patrimonial-routing.ts';
+import type { AssignmentContext, AssignmentPlan } from './patrimonial-assignments.ts';
 import {
   PatrimonialConflictError, PatrimonialReplayExpiredError, PatrimonialStaleLeaseError, PatrimonialStoreUnavailableError,
   type PatrimonialStore, type PatrimonialTransaction, type PatrimonialOpportunityStore, type PatrimonialOpportunityTransaction,
   type PatrimonialClaimInput, type PatrimonialCrmCompletion, type PatrimonialFailureMutation, type PatrimonialMutation,
   type PatrimonialOperationError, type PatrimonialOpportunitySyncState,
+  type PatrimonialAssignmentStore, type PatrimonialAssignmentTransaction,
 } from './patrimonial-store.ts';
 
 export const PATRIMONIAL_STORE_VERSION = 'patrimonial-v2-store-1';
@@ -19,7 +21,7 @@ const unavailable = () => new PatrimonialStoreUnavailableError('Patrimonial dura
 // The final RPC executes it once, checks previously returned values, and commits
 // atomically. Callbacks must contain only store/domain work: a serialization retry
 // can rerun them. No transaction/lock survives an RPC or covers a provider fetch.
-class RpcTransaction implements PatrimonialTransaction, PatrimonialOpportunityTransaction {
+class RpcTransaction implements PatrimonialTransaction, PatrimonialOpportunityTransaction, PatrimonialAssignmentTransaction {
   readonly commands: Command[] = [];
   readonly expected: Expected = {};
   private active = true;
@@ -40,6 +42,8 @@ class RpcTransaction implements PatrimonialTransaction, PatrimonialOpportunityTr
     return structuredClone(results[index]) as T;
   }
   private async mutation(method: string, args: unknown[]) { this.add(method, args); }
+  getAssignmentContext(commandKey: string, intentIds: string[], experimentId: string | null) { return this.value<AssignmentContext>('getAssignmentContext', [commandKey, intentIds, experimentId]); }
+  commitAssignmentPlan(plan: AssignmentPlan, expectedRevision: number) { return this.mutation('commitAssignmentPlan', [plan, expectedRevision]); }
   createOrReplayRequest(input: PatrimonialRequest, now: string) { return this.value<{ request: PatrimonialRequest; replay: boolean }>('createOrReplayRequest', [input, now]); }
   getRequest(id: string) { return this.value<PatrimonialRequest | null>('getRequest', [id]); }
   getOperation(id: string) { return this.value<PatrimonialOutboxOperation | null>('getOperation', [id]); }
@@ -70,7 +74,7 @@ class RpcTransaction implements PatrimonialTransaction, PatrimonialOpportunityTr
   finishOpportunitySync(id: string, revision: number, token: string, now: string, state: PatrimonialOpportunitySyncState, remote?: NonNullable<PatrimonialOpportunityIntent['remote']>) { return this.mutation('finishOpportunitySync', [id, revision, token, now, state, remote ?? null]); }
 }
 
-export class SupabasePatrimonialStore implements PatrimonialStore, PatrimonialOpportunityStore {
+export class SupabasePatrimonialStore implements PatrimonialStore, PatrimonialOpportunityStore, PatrimonialAssignmentStore {
   readonly kind = 'durable' as const;
   private readonly url: string;
   private readonly key: string;
@@ -108,7 +112,7 @@ export class SupabasePatrimonialStore implements PatrimonialStore, PatrimonialOp
     const value = await this.rpc<{ version?: string }>('patrimonial_store_health', {});
     if (value?.version !== PATRIMONIAL_STORE_VERSION) throw unavailable();
   }
-  async transaction<T>(work: (tx: PatrimonialTransaction & PatrimonialOpportunityTransaction) => Promise<T>): Promise<T> {
+  async transaction<T>(work: (tx: PatrimonialTransaction & PatrimonialOpportunityTransaction & PatrimonialAssignmentTransaction) => Promise<T>): Promise<T> {
     await this.health();
     for (let attempt = 0; attempt < 4; attempt++) {
       const run = async (commands: Command[], expected: Expected, preview: boolean) => {

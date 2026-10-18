@@ -33,7 +33,10 @@ const references=[...sql.matchAll(/references\s+([\w.]+)/g)].map(m=>m[1]);
 assert(references.every(name=>tables.some(t=>name===`public.${t}`)),'no cross-product FKs');
 assert(!/(?:from|update|into|table)\s+(?:hub\.|public\.(?:radar_|annunci|ai_score))/.test(sql));
 assert(!/insert into public\.patrimonial_event_editions[^;]*values\s*\(\s*'/.test(sql),'no invented edition seed');
-for(const method of [...adapter.matchAll(/this\.(?:value(?:<[^;]*?>)?|mutation)\('([A-Za-z]+)'/g)].map(m=>m[1]))assert(source.includes(`'${method}'`),`missing SQL command: ${method}`);
+// New service methods are additive in the forward P1 migration; retain every
+// original migration assertion above and inspect the whole dispatcher chain.
+const assignmentSql=await readFile('supabase/migrations/20261018094926_patrimonial_assignment_management.sql','utf8');
+for(const method of [...adapter.matchAll(/this\.(?:value(?:<[^;]*?>)?|mutation)\('([A-Za-z]+)'/g)].map(m=>m[1]))assert((source+assignmentSql).includes(`'${method}'`),`missing SQL command: ${method}`);
 assert(!/Memory|Map\s*\(/.test(adapter+storeSource));assert(!adapter.includes('console.'));assert(!storeSource.includes('fixtures/'));
 assert(adapter.includes("redirect: 'error'"));assert(adapter.includes("cache: 'no-store'"));assert(adapter.includes('AbortSignal.timeout'));
 console.log('PASS SQL static contract: 7 dedicated tables, partial uniqueness, 10 invoker RPC/helpers, leases/fencing, atomic acquisition, service-role-only privileges, no seeds/purge/cross-product references. SQL not executed.');

@@ -1,6 +1,7 @@
 import type { PatrimonialConsentEvidence, PatrimonialCrmCheckpoint, PatrimonialEvent, PatrimonialIntent, PatrimonialOutboxOperation, PatrimonialRequest } from './patrimonial-contract.ts';
 import type { PatrimonialOpportunityIntent, PatrimonialRoutingParticipation } from './patrimonial-routing.ts';
 import { SupabasePatrimonialStore } from './patrimonial-supabase.ts';
+import type { AssignmentContext, AssignmentPlan } from './patrimonial-assignments.ts';
 
 export type PatrimonialClaim = { operationId: string; leaseToken: string; leaseVersion: number };
 export type PatrimonialOperationError = 'NETWORK' | 'RATE_LIMIT' | 'PROVIDER' | 'SCHEMA' | 'AUTH' | 'CONFIG' | 'IDENTITY' | 'UNKNOWN';
@@ -73,6 +74,16 @@ export interface PatrimonialOpportunityStore {
   transaction<T>(work: (tx: PatrimonialOpportunityTransaction) => Promise<T>): Promise<T>;
 }
 
+// Uses the same durable journal, preview/CAS and commit boundary as lead-v2.
+// Assignment revision is independent of the CRM/lifecycle aggregate revision.
+export interface PatrimonialAssignmentTransaction {
+  getAssignmentContext(commandKey: string, intentIds: string[], experimentId: string | null): Promise<AssignmentContext>;
+  commitAssignmentPlan(plan: AssignmentPlan, expectedRevision: number): Promise<void>;
+}
+export interface PatrimonialAssignmentStore {
+  transaction<T>(work: (tx: PatrimonialAssignmentTransaction) => Promise<T>): Promise<T>;
+}
+
 // Readiness must be explicitly approved AFTER the local migration is applied and
 // verified in a future phase. Missing config never falls back to memory or 2A.
 export function createProductionPatrimonialStore(env: Record<string, string | undefined> = process.env): SupabasePatrimonialStore {
@@ -91,5 +102,7 @@ export function patrimonialFlags(env: Record<string, string | undefined> = proce
     booking: enabled('PATRIMONIAL_BOOKING_ENABLED'),
     messages: enabled('PATRIMONIAL_MESSAGES_ENABLED'),
     webhook: enabled('PATRIMONIAL_WEBHOOK_ENABLED'),
+    assignments: enabled('PATRIMONIAL_ASSIGNMENTS_ENABLED'),
+    ownerSync: enabled('PATRIMONIAL_OWNER_SYNC_ENABLED'),
   };
 }
