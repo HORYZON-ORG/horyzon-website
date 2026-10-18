@@ -21,6 +21,7 @@
     "test:patrimonial-activation-preflight": "node --no-warnings --experimental-strip-types scripts/verify-patrimonial-activation-preflight.mjs",
     "test:patrimonial-owner-sync": "node --no-warnings --experimental-strip-types scripts/verify-patrimonial-owner-sync.mjs",
     "test:patrimonial-owner-readiness": "node --no-warnings --experimental-strip-types scripts/verify-patrimonial-owner-readiness.mjs",
+    "test:patrimonial-performance": "node --no-warnings --experimental-strip-types scripts/verify-patrimonial-performance-tracking.mjs",
     "test:patrimonial-live-smoke": "node --no-warnings --experimental-strip-types scripts/verify-patrimonial-live-smoke.mjs",
     "smoke:patrimonial": "node --no-warnings --experimental-strip-types scripts/run-patrimonial-live-smoke.mjs",
     "test:no-platform": "node scripts/verify-no-platform.mjs",
