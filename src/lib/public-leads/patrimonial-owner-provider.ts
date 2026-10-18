@@ -74,12 +74,16 @@ export class PatrimonialHighLevelOwnerProvider implements PatrimonialOwnerProvid
     if(!idValid(id)) return schema();
     const body=await this.request(`/opportunities/${encodeURIComponent(id)}`) as {opportunity?:Record<string,unknown>};
     const raw=body?.opportunity;
-    const hasAssignedTo=!!raw && Object.hasOwn(raw,'assignedTo');
-    const assignedTo=hasAssignedTo ? raw!.assignedTo
-      : this.proof?.omittedAssignedToMeansUnassigned===true ? null
-        : undefined;
-    if(!raw || raw.id!==id || raw.locationId!==this.locationId || !idValid(raw.contactId) || !idValid(raw.pipelineId)
-      || !(idValid(assignedTo) || assignedTo===null&&(this.proof?.nullableAssignedTo===true || this.proof?.omittedAssignedToMeansUnassigned===true))) return schema();
+    if(!raw || raw.id!==id || raw.locationId!==this.locationId || !idValid(raw.contactId) || !idValid(raw.pipelineId)) return schema();
+    const hasAssignedTo=Object.hasOwn(raw,'assignedTo');
+    let assignedTo: unknown;
+    if(hasAssignedTo) {
+      assignedTo=raw.assignedTo;
+      if(!(idValid(assignedTo) || assignedTo===null&&this.proof?.nullableAssignedTo===true)) return schema();
+    } else {
+      if(this.proof?.omittedAssignedToMeansUnassigned!==true) return schema();
+      assignedTo=null;
+    }
     let businessKey:string|null=null;
     if(raw.customFields!==undefined) {
       if(!Array.isArray(raw.customFields)) return schema();
