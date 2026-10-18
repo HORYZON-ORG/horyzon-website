@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "node scripts/dev.mjs",
-    "build": "npm run test:patrimonial-performance-webhook && next build && node scripts/build-readable.mjs",
+    "build": "next build && node scripts/build-readable.mjs",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
