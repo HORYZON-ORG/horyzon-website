@@ -1,6 +1,6 @@
 # Patrimonial owner sync — P2B v1
 
-18 ottobre 2026. HEAD iniziale dfd2e7b7b7d4af301c0429bd2ba75fa4c12b4739, branch feat/patrimonial-pilot-funnels. **Code-complete locale/mock; non attivato live.** Nessun contatto/opportunity creato o aggiornato, nessuna migrazione/SQL remota, env o scope modificato. Nessun deploy manuale o produzione, merge/main push. P1 resta non applicata al remoto.
+18 ottobre 2026. HEAD iniziale dfd2e7b7b7d4af301c0429bd2ba75fa4c12b4739, branch feat/patrimonial-pilot-funnels. **Code-complete, fondazione remota installata e smoke provider sintetico verificato; produzione non attivata.** P1, P2B e runtime capabilities risultano applicate sul Supabase Horyzon. Il solo Preview branch dispone della credenziale HighLevel runtime; i feature flag restano inattivi. È stata eseguita una sola owner write sintetica autorizzata, verificata con GET indipendente e poi completamente pulita.
 
 ## Architettura e gate
 
@@ -31,7 +31,7 @@ UNMAPPED quando il ref manca; MAPPED_UNVERIFIED finché il runtime non restituis
 
 GET /users/:id e GET /opportunities/:id usano il token runtime canonico. Il contratto GET user pubblico non mostra deleted; il decoder richiede comunque disponibilità esplicita: prima del live deve essere dimostrata con quel token/endpoint. Nessun default permissivo.
 
-Opportunity senza intent.remote.id → HOLD OPPORTUNITY_NOT_READY, nessuna search/create. Si confrontano ID, Location, contatto, pipeline canonica e cache, business identity hz_intent_key se presente. Marker version/updatedAt/dateUpdated stringa eventualmente normalizzato, senza fingere CAS. assignedTo deve essere stringa non vuota oppure null solo con proof nullable esplicita; omissione/empty/malformed falliscono. Due letture limitano drift prima della dispatch; PUT contiene ESCLUSIVAMENTE assignedTo=remote_user_ref verificato. Risposta PUT mai usata come read-back.
+Opportunity senza intent.remote.id → HOLD OPPORTUNITY_NOT_READY, nessuna search/create. Si confrontano ID, Location, contatto, pipeline canonica e cache, business identity hz_intent_key se presente. Marker version/updatedAt/dateUpdated stringa eventualmente normalizzato, senza fingere CAS. assignedTo deve essere stringa non vuota oppure null solo con proof nullable esplicita. Dopo evidenza live v3, l'omissione del campo su opportunity unassigned è accettata e normalizzata a null **solo** con proof separata `omittedAssignedToMeansUnassigned=true`; empty/malformed continuano a fallire. Omissione e explicit null restano semantiche wire distinte. Due letture limitano drift prima della dispatch; PUT contiene ESCLUSIVAMENTE assignedTo=remote_user_ref verificato. Risposta PUT mai usata come read-back.
 
 ## Stale, drift e concorrenza
 
@@ -57,7 +57,7 @@ OWNER CLEAR = UNSUPPORTED / UNVERIFIED. Nessun assignedTo:null, stringa vuota o 
 
 ## Migration e verifica locale
 
-Nuova migration CLI: 20261018163245_patrimonial_owner_sync.sql. Estende CHECK effect_type, aggiunge indice owner, filtro claim, checkpoint revision/evidence e helper/dispatcher INVOKER con execute solo service_role. Nessun seed. FORCE RLS/grant service-role delle tabelle ereditati e verificati; migration precedenti immutate. **Non applicata remoto.** Anche 20261018094926_patrimonial_assignment_management.sql NON applicata remoto.
+Migration P2B: 20261018163245_patrimonial_owner_sync.sql. Estende CHECK effect_type, aggiunge indice owner, filtro claim, checkpoint revision/evidence e helper/dispatcher INVOKER con execute solo service_role. Nessun seed. FORCE RLS/grant service-role delle tabelle ereditati e verificati; migration precedenti immutate. **Non applicata remoto.** Anche 20261018094926_patrimonial_assignment_management.sql NON applicata remoto.
 
 npm run test:patrimonial-owner-sync copre A–AE (31 casi richiesti), SQL reale in PostgreSQL WASM effimero con quattro migration, adapter produzione, HTTP mock, claim isolation, concorrenza di due worker, lease scaduta/fence, read-back separata, stale X→Y, PII e privilegi. Extra: mapping states, missing/empty/null decoder, identity mismatch, utente non interpretabile, mancanza opportunity, riassegnazione tra read e dispatch, recovery esplicito. PGlite verifica interleaving e funzioni native; non è uno stress test di cluster distribuito. Zero chiamate esterne.
 
@@ -78,3 +78,14 @@ Futuro smoke, con autorizzazione separata e soli dati sintetici:
 7. Pulire solo contatto/opportunity sintetici HighLevel; preservare audit locale.
 
 Riferimenti provider e nuova evidenza esterna: [readiness](patrimonial-owner-sync-readiness-v1.md). Nessuna connessione live o credenziale necessaria per le verifiche locali.
+
+
+## Aggiornamento post-smoke live — 18 ottobre 2026
+
+La fondazione Supabase è stata installata con targeted apply P1 → P2B → runtime capabilities; nessun `db push` generico e nessuna repair della history. Il capability probe remoto restituisce le capability P1/P2B attese.
+
+Il runtime Vercel Preview ha confermato il token reale e le letture users/opportunity. Il primo synthetic pre-write ha rilevato che HighLevel v3 omette `assignedTo` quando l'opportunity non ha owner; il sistema ha fermato la write, ripulito gli oggetti test e corretto il decoder con una proof esplicita per questa shape.
+
+Dopo la correzione, un secondo synthetic smoke ha eseguito una sola PUT owner-only e un GET indipendente: `assignedTo` è tornato come user ID string e il read-back è risultato coerente. Il payload applicativo non conteneva pipeline, stage, status, value, custom fields, name o close reason. È stata osservata anche una side-effect provider: il medesimo user è comparso tra i follower del contatto embedded dopo l'owner assignment, senza che il nostro payload inviasse follower.
+
+Opportunity e contatto sintetici sono stati eliminati per ID esatti; una verifica successiva ha confermato not-found. Nessuna seconda owner write è stata eseguita. Rimane da provare live, in una fase separata, il path completo outbox/worker/checkpoint Supabase; i test locali A–AE continuano a coprire quel percorso in mock/DB effimero.
