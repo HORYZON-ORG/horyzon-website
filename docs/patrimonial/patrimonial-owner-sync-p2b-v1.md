@@ -89,3 +89,12 @@ Il runtime Vercel Preview ha confermato il token reale e le letture users/opport
 Dopo la correzione, un secondo synthetic smoke ha eseguito una sola PUT owner-only e un GET indipendente: `assignedTo` è tornato come user ID string e il read-back è risultato coerente. Il payload applicativo non conteneva pipeline, stage, status, value, custom fields, name o close reason. È stata osservata anche una side-effect provider: il medesimo user è comparso tra i follower del contatto embedded dopo l'owner assignment, senza che il nostro payload inviasse follower.
 
 Opportunity e contatto sintetici sono stati eliminati per ID esatti; una verifica successiva ha confermato not-found. Nessuna seconda owner write è stata eseguita. Rimane da provare live, in una fase separata, il path completo outbox/worker/checkpoint Supabase; i test locali A–AE continuano a coprire quel percorso in mock/DB effimero.
+
+
+## P2D end-to-end live — esito
+
+Dopo il provider smoke, è stato eseguito anche il worker completo contro Supabase remoto e HighLevel reale in ambiente Preview. Un intent/opportunità sintetici hanno attraversato createOperator → assignProspect → owner outbox → claim → authorizeOwnerWrite → una sola PUT `assignedTo` → GET indipendente → checkpoint.
+
+Il journal remoto ha chiuso una sola `ASSIGN_OPPORTUNITY_OWNER` come SYNCED/CONFIRMED con attemptCount 1. Il checkpoint ha scritto lo stesso owner in `owner_ref`, `record.ownerId` e `record.remote.assignedTo`, incrementando esclusivamente `owner_checkpoint_revision` nello spazio owner. Una seconda esecuzione non ha prodotto altra operation/write.
+
+Il cleanup ha preservato l'audit locale chiudendo l'intent sintetico, rilasciando l'assignment e disattivando l'operatore sintetico. Gli oggetti HighLevel sintetici sono stati eliminati per ID esatti. Nessun owner-clear remoto è stato tentato.
