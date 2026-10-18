@@ -5,7 +5,7 @@ import type { AssignmentContext, AssignmentPlan } from './patrimonial-assignment
 
 export type PatrimonialClaim = { operationId: string; leaseToken: string; leaseVersion: number };
 export type PatrimonialOperationError = 'NETWORK' | 'RATE_LIMIT' | 'PROVIDER' | 'SCHEMA' | 'AUTH' | 'CONFIG' | 'IDENTITY' | 'UNKNOWN';
-export type PatrimonialClaimInput = { now: string; limit: number; leaseSeconds?: number; reconciliationOnly?: boolean };
+export type PatrimonialClaimInput = { now: string; limit: number; leaseSeconds?: number; reconciliationOnly?: boolean; kinds?: readonly PatrimonialOutboxOperation['kind'][] };
 export type PatrimonialMutation = PatrimonialClaim & { now: string };
 export type PatrimonialFailureMutation = PatrimonialMutation & {
   errorCode: PatrimonialOperationError; state: 'IDENTITY_REVIEW' | 'RECONCILE_REQUIRED' | 'MANUAL_REVIEW' | 'REJECTED'; reconcileRequired?: boolean;

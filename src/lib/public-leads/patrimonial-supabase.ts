@@ -1,3 +1,4 @@
+import { ownerEffectKind, type OwnerOperation, type OwnerContext, type OwnerFinish, type PatrimonialOwnerTransaction, type PatrimonialOwnerStore } from './patrimonial-owner-operations.ts';
 import { randomUUID } from 'node:crypto';
 import type { PatrimonialConsentEvidence, PatrimonialEvent, PatrimonialIntent, PatrimonialOutboxOperation, PatrimonialRequest } from './patrimonial-contract.ts';
 import type { PatrimonialOpportunityIntent, PatrimonialRoutingParticipation } from './patrimonial-routing.ts';
@@ -21,7 +22,7 @@ const unavailable = () => new PatrimonialStoreUnavailableError('Patrimonial dura
 // The final RPC executes it once, checks previously returned values, and commits
 // atomically. Callbacks must contain only store/domain work: a serialization retry
 // can rerun them. No transaction/lock survives an RPC or covers a provider fetch.
-class RpcTransaction implements PatrimonialTransaction, PatrimonialOpportunityTransaction, PatrimonialAssignmentTransaction {
+class RpcTransaction implements PatrimonialTransaction, PatrimonialOpportunityTransaction, PatrimonialAssignmentTransaction, PatrimonialOwnerTransaction {
   readonly commands: Command[] = [];
   readonly expected: Expected = {};
   private active = true;
@@ -42,6 +43,12 @@ class RpcTransaction implements PatrimonialTransaction, PatrimonialOpportunityTr
     return structuredClone(results[index]) as T;
   }
   private async mutation(method: string, args: unknown[]) { this.add(method, args); }
+  // A distinct journal command also fails closed against pre-P2B SQL, whose
+  // legacy claim helper would ignore an unknown kinds field.
+  claimOwnerOperations(input: PatrimonialClaimInput) { return this.value<OwnerOperation[]>('claimOwnerOperations', [{...input,kinds:[ownerEffectKind]}], input.limit); }
+  getOwnerContext(input: PatrimonialMutation) { return this.value<OwnerContext>('getOwnerContext', [input]); }
+  authorizeOwnerWrite(input: PatrimonialMutation) { return this.value<OwnerContext>('authorizeOwnerWrite', [input]); }
+  finishOwnerOperation(input: OwnerFinish) { return this.mutation('finishOwnerOperation', [input]); }
   getAssignmentContext(commandKey: string, intentIds: string[], experimentId: string | null) { return this.value<AssignmentContext>('getAssignmentContext', [commandKey, intentIds, experimentId]); }
   commitAssignmentPlan(plan: AssignmentPlan, expectedRevision: number) { return this.mutation('commitAssignmentPlan', [plan, expectedRevision]); }
   createOrReplayRequest(input: PatrimonialRequest, now: string) { return this.value<{ request: PatrimonialRequest; replay: boolean }>('createOrReplayRequest', [input, now]); }
@@ -74,7 +81,7 @@ class RpcTransaction implements PatrimonialTransaction, PatrimonialOpportunityTr
   finishOpportunitySync(id: string, revision: number, token: string, now: string, state: PatrimonialOpportunitySyncState, remote?: NonNullable<PatrimonialOpportunityIntent['remote']>) { return this.mutation('finishOpportunitySync', [id, revision, token, now, state, remote ?? null]); }
 }
 
-export class SupabasePatrimonialStore implements PatrimonialStore, PatrimonialOpportunityStore, PatrimonialAssignmentStore {
+export class SupabasePatrimonialStore implements PatrimonialStore, PatrimonialOpportunityStore, PatrimonialAssignmentStore, PatrimonialOwnerStore {
   readonly kind = 'durable' as const;
   private readonly url: string;
   private readonly key: string;
@@ -112,7 +119,7 @@ export class SupabasePatrimonialStore implements PatrimonialStore, PatrimonialOp
     const value = await this.rpc<{ version?: string }>('patrimonial_store_health', {});
     if (value?.version !== PATRIMONIAL_STORE_VERSION) throw unavailable();
   }
-  async transaction<T>(work: (tx: PatrimonialTransaction & PatrimonialOpportunityTransaction & PatrimonialAssignmentTransaction) => Promise<T>): Promise<T> {
+  async transaction<T>(work: (tx: PatrimonialTransaction & PatrimonialOpportunityTransaction & PatrimonialAssignmentTransaction & PatrimonialOwnerTransaction) => Promise<T>): Promise<T> {
     await this.health();
     for (let attempt = 0; attempt < 4; attempt++) {
       const run = async (commands: Command[], expected: Expected, preview: boolean) => {
@@ -133,6 +140,10 @@ export class SupabasePatrimonialStore implements PatrimonialStore, PatrimonialOp
     }
     throw unavailable();
   }
+  claimOwnerOperations(input: PatrimonialClaimInput) { return this.transaction(tx => tx.claimOwnerOperations(input)); }
+  getOwnerContext(input: PatrimonialMutation) { return this.transaction(tx => tx.getOwnerContext(input)); }
+  authorizeOwnerWrite(input: PatrimonialMutation) { return this.transaction(tx => tx.authorizeOwnerWrite(input)); }
+  finishOwnerOperation(input: OwnerFinish) { return this.transaction(tx => tx.finishOwnerOperation(input)); }
   createOrReplayRequest(input: PatrimonialRequest, now: string) { return this.transaction(tx => tx.createOrReplayRequest(input, now)); }
   getRequest(id: string) { return this.transaction(tx => tx.getRequest(id)); }
   getOperation(id: string) { return this.transaction(tx => tx.getOperation(id)); }

@@ -1,3 +1,4 @@
+import { makeOwnerOperation } from './patrimonial-owner-operations.ts';
 import { createHash, randomUUID } from 'node:crypto';
 import { PatrimonialConflictError, patrimonialFlags, type PatrimonialAssignmentStore } from './patrimonial-store.ts';
 
@@ -29,15 +30,15 @@ export type AssignmentExperiment = {
   assignmentMethod: AssignmentMethod; targetPerOperator: number | null; configuration: Metadata; revision: number;
   startedAt: string | null; endedAt: string | null; createdAt: string; updatedAt: string;
 };
-export type AssignmentIntent = { id: string; kind: string; status: string; revision: number; operatorRevision: number; currentOperatorId: string | null; ownerRef: string | null; quality: LeadQuality };
+export type AssignmentIntent = { id: string; kind: string; status: string; revision: number; operatorRevision: number; currentOperatorId: string | null; ownerRef: string | null; quality: LeadQuality; ownerCheckpointRevision?: number; businessKey?: string };
 export type AssignmentContext = {
   revision: number; receipt: { payloadHash: string; result: AssignmentResult } | null;
   operators: PatrimonialOperator[]; pools: OperatorPool[]; members: PoolMember[];
   experiments: AssignmentExperiment[]; experimentOperators: { experimentId: string; operatorId: string }[];
   assignments: ProspectAssignment[]; snapshots: LeadSnapshot[]; intents: AssignmentIntent[]; cursors: Record<string, string>;
 };
-export type AssignmentResult = { operator?: PatrimonialOperator; pool?: OperatorPool; experiment?: AssignmentExperiment; assignments?: ProspectAssignment[]; assignmentStates?: Record<string, ReturnType<typeof assignmentRemoteState>>; released?: string; localState?: 'LOCAL_ASSIGNED'; remoteOwnerState?: 'REMOTE_OWNER_UNMAPPED' | 'REMOTE_OWNER_SYNC_DISABLED'; revision?: number };
-export type AssignmentWrite = { kind: 'operator' | 'pool' | 'member' | 'experiment' | 'experimentOperators' | 'snapshot' | 'assignment' | 'release' | 'intentOperator' | 'event' | 'cursor'; value: Record<string, unknown> };
+export type AssignmentResult = { operator?: PatrimonialOperator; pool?: OperatorPool; experiment?: AssignmentExperiment; assignments?: ProspectAssignment[]; assignmentStates?: Record<string, ReturnType<typeof assignmentRemoteState>>; released?: string; localState?: 'LOCAL_ASSIGNED'; remoteOwnerState?: 'REMOTE_OWNER_UNMAPPED' | 'REMOTE_OWNER_SYNC_DISABLED' | 'REMOTE_OWNER_SYNC_PENDING'; ownerOperationKeys?: string[]; revision?: number };
+export type AssignmentWrite = { kind: 'operator' | 'pool' | 'member' | 'experiment' | 'experimentOperators' | 'snapshot' | 'assignment' | 'release' | 'intentOperator' | 'event' | 'cursor' | 'ownerOperation'; value: Record<string, unknown> };
 export type AssignmentPlan = { commandKey: string; payloadHash: string; result: AssignmentResult; writes: AssignmentWrite[]; at: string };
 type Base = { commandKey: string; actor: AssignmentActor };
 type OperatorInput = Pick<PatrimonialOperator, 'operatorKey' | 'displayName'> & Partial<Pick<PatrimonialOperator, 'remoteUserRef' | 'active' | 'role' | 'capacity' | 'sortOrder' | 'metadata'>>;
@@ -49,6 +50,7 @@ export type AssignmentCommand = Base & (
   | { type: 'createPool'; poolKey: string; name: string; assignmentPolicy?: AssignmentMethod }
   | { type: 'setPoolMembership'; poolId: string; expectedRevision: number; operatorIds: string[] }
   | ({ type: 'assignProspect' | 'reassignProspect'; method: 'MANUAL' | 'ROUND_ROBIN' } & AssignInput)
+  | { type: 'requestOwnerSync'; intentId: string; expectedRevision: number }
   | { type: 'releaseProspect'; intentId: string; expectedRevision: number; reason: 'MANUAL_RELEASE' | 'INTENT_CLOSED' }
   | { type: 'createAssignmentExperiment'; experimentKey: string; name: string; poolId?: string; method: AssignmentMethod; targetPerOperator?: number; configuration?: Metadata }
   | { type: 'setExperimentOperators'; experimentId: string; expectedRevision: number; operatorIds: string[] }
@@ -77,8 +79,8 @@ function canonical(value: unknown): string {
   return JSON.stringify(value) ?? 'null';
 }
 export function resolveRemoteOwner(operator: Pick<PatrimonialOperator, 'remoteUserRef'>): string | null { return operator.remoteUserRef; }
-export function assignmentRemoteState(operator: Pick<PatrimonialOperator, 'remoteUserRef'>) {
-  return { localState: 'LOCAL_ASSIGNED' as const, remoteOwnerState: resolveRemoteOwner(operator) === null ? 'REMOTE_OWNER_UNMAPPED' as const : 'REMOTE_OWNER_SYNC_DISABLED' as const };
+export function assignmentRemoteState(operator: Pick<PatrimonialOperator, 'remoteUserRef'>, enqueued=false) {
+  return { localState: 'LOCAL_ASSIGNED' as const, remoteOwnerState: resolveRemoteOwner(operator) === null ? 'REMOTE_OWNER_UNMAPPED' as const : enqueued ? 'REMOTE_OWNER_SYNC_PENDING' as const : 'REMOTE_OWNER_SYNC_DISABLED' as const };
 }
 function revision(actual: number, expected: number) { if (!Number.isInteger(expected) || actual !== expected) throw new PatrimonialConflictError(); }
 function validOperator(operator: PatrimonialOperator) {
@@ -95,7 +97,7 @@ export async function executePatrimonialAssignment(store: PatrimonialAssignmentS
   const enabled = () => patrimonialFlags((options.env ?? (() => process.env))()).assignments;
   requireAssignment(enabled(), 'DISABLED');
   const command = structuredClone(input);
-  requireAssignment(['createOperator','updateOperator','deactivateOperator','createPool','setPoolMembership','assignProspect','reassignProspect','releaseProspect','createAssignmentExperiment','setExperimentOperators','activateAssignmentExperiment','pauseAssignmentExperiment','completeAssignmentExperiment','assignBalancedBatch'].includes(command.type));
+  requireAssignment(['createOperator','updateOperator','deactivateOperator','createPool','setPoolMembership','assignProspect','reassignProspect','releaseProspect','createAssignmentExperiment','setExperimentOperators','activateAssignmentExperiment','pauseAssignmentExperiment','completeAssignmentExperiment','assignBalancedBatch','requestOwnerSync'].includes(command.type));
   if ('overrideCapacity' in command) requireAssignment(typeof command.overrideCapacity === 'boolean');
   requireAssignment(key(command.commandKey) && command.actor && ['SYSTEM','ADMIN','WORKER'].includes(command.actor.type) && key(command.actor.ref));
   const hash = createHash('sha256').update(canonical(command)).digest('hex');
@@ -117,7 +119,22 @@ export async function executePatrimonialAssignment(store: PatrimonialAssignmentS
     const experimentById = (id: string) => { const found = state.experiments.find(x => x.id === id); requireAssignment(found, 'EXPERIMENT_STATE'); return found; };
     const activeCount = (id: string) => state.assignments.filter(x => x.operatorId === id && x.releasedAt === null).length;
     let result: AssignmentResult = {};
+    const enqueueOwner = (intent: AssignmentIntent, assignment: ProspectAssignment, operator: PatrimonialOperator, operatorRevision: number, recover=false) => {
+      if (!patrimonialFlags((options.env ?? (()=>process.env))()).ownerSync || !operator.remoteUserRef) return null;
+      const operation=makeOwnerOperation(intent,assignment,operator,operatorRevision,at);
+      put('ownerOperation',{operation,recover}); return operation.operationKey;
+    };
     switch (command.type) {
+      case 'requestOwnerSync': {
+        requireAssignment(['ADMIN','SYSTEM'].includes(command.actor.type));
+        const intent=state.intents.find(i=>i.id===command.intentId); requireAssignment(intent && intent.kind==='OPPORTUNITY' && intent.status==='OPEN','NOT_ASSIGNABLE');
+        revision(intent.operatorRevision,command.expectedRevision);
+        const assignment=state.assignments.find(a=>a.intentId===intent.id && a.releasedAt===null && a.operatorId===intent.currentOperatorId);
+        requireAssignment(assignment,'NOT_ASSIGNABLE'); const operator=operatorById(assignment.operatorId); requireAssignment(operator.active,'NO_ELIGIBLE_OPERATOR');
+        const op=enqueueOwner(intent,assignment,operator,intent.operatorRevision,true);
+        result={...assignmentRemoteState(operator),...(op?{remoteOwnerState:'REMOTE_OWNER_SYNC_PENDING' as const,ownerOperationKeys:[op]}:{})};
+        break;
+      }
       case 'createOperator': {
         admin(); const v = command.operator;
         requireAssignment(v && !state.operators.some(x => x.operatorKey === v.operatorKey));
@@ -232,12 +249,14 @@ export async function executePatrimonialAssignment(store: PatrimonialAssignmentS
           if ('overrideCapacity' in command && command.overrideCapacity === true) assignment.metadata.reasonCode='capacity-override';
           put('snapshot',snapshot);put('assignment',assignment);put('intentOperator',{id:intent.id,expectedRevision:intent.operatorRevision,currentOperatorId:operator.id,businessRevision:intent.revision});
           event(current?'prospect_reassigned':'prospect_assigned',intent.id,{assignmentId:assignment.id,operatorId:operator.id,previousAssignmentId:current?.id??null,qualitySnapshotId:snapshot.id,method},intent.operatorRevision+1,experiment?.id??null);
+          const ownerKey=enqueueOwner(intent,assignment,operator,intent.operatorRevision+1);
           state.assignments.push(assignment);state.snapshots.push(snapshot);produced.push(assignment);
-          result={assignments:produced,assignmentStates:Object.fromEntries(produced.map(a=>[a.id,assignmentRemoteState(operatorById(a.operatorId))])),...(produced.length===1?assignmentRemoteState(operator):{})};
+          result={assignments:produced,assignmentStates:Object.fromEntries(produced.map(a=>[a.id,assignmentRemoteState(operatorById(a.operatorId),writes.some(w=>w.kind==='ownerOperation' && (w.value.operation as {owner:{assignmentId:string}}).owner.assignmentId===a.id))])),...(produced.length===1?assignmentRemoteState(operator):{}),...(ownerKey?{remoteOwnerState:'REMOTE_OWNER_SYNC_PENDING' as const}:{}),ownerOperationKeys:writes.filter(w=>w.kind==='ownerOperation').map(w=>(w.value.operation as {operationKey:string}).operationKey)};
         }
       }
     }
     requireAssignment(enabled(),'DISABLED');
+    if(writes.some(w=>w.kind==='ownerOperation')) requireAssignment(patrimonialFlags((options.env ?? (()=>process.env))()).ownerSync,'DISABLED');
     await tx.commitAssignmentPlan({commandKey:command.commandKey,payloadHash:hash,result,writes,at},state.revision);
     return result;
   });

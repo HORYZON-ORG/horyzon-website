@@ -1,3 +1,4 @@
+import { contactEffectKinds } from './patrimonial-owner-operations.ts';
 import { createHash, randomUUID } from 'node:crypto';
 import type { PatrimonialCrmCheckpoint, PatrimonialOutboxOperation, PatrimonialRequest } from './patrimonial-contract.ts';
 import { patrimonialFlags, PatrimonialStaleLeaseError, type PatrimonialOperationError, type PatrimonialStore } from './patrimonial-store.ts';
@@ -51,7 +52,7 @@ export async function runPatrimonialCrmOnce(options: WorkerOptions): Promise<str
   const timestamp = () => (options.now ?? (() => new Date()))().toISOString();
   const flags = patrimonialFlags(env());
   if (!flags.v2 || (!flags.crmWrite && !options.reconciliationOnly)) return 'HOLD';
-  const [operation] = await store.claimOperations({ now: timestamp(), limit: 1, reconciliationOnly: options.reconciliationOnly });
+  const [operation] = await store.claimOperations({ now: timestamp(), limit: 1, kinds: contactEffectKinds, reconciliationOnly: options.reconciliationOnly });
   if (!operation) return 'IDLE';
   const claim = () => ({ operationId: operation.id, leaseToken: operation.leaseToken!, leaseVersion: operation.leaseVersion, now: timestamp() });
   let effectMayHaveCommitted = false;

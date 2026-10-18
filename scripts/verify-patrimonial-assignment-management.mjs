@@ -181,7 +181,7 @@ try {
     passed.push(`${number===10?'O':'P'}: ${number} frozen experiment participants; pause/resume/complete`);
   }
   assert.equal(resolveRemoteOwner(operators[0]),null);assert.equal(resolveRemoteOwner(operators[24]),'fixture-mapped-user');
-  const mappedLead=await seed();const mapped=await run(assignment(mappedLead.id,operators[24].id),{env:()=>({PATRIMONIAL_ASSIGNMENTS_ENABLED:'true',PATRIMONIAL_OWNER_SYNC_ENABLED:'true'})});
+  const mappedLead=await seed();const mapped=await run(assignment(mappedLead.id,operators[24].id),{env:()=>({PATRIMONIAL_ASSIGNMENTS_ENABLED:'true',PATRIMONIAL_OWNER_SYNC_ENABLED:'false'})});
   assert.equal(mapped.remoteOwnerState,'REMOTE_OWNER_SYNC_DISABLED');assert.equal((await context([mappedLead.id])).intents[0].ownerRef,'fixture-remote-owner');
   assert.equal(mapped.assignmentStates[mapped.assignments[0].id].remoteOwnerState,'REMOTE_OWNER_SYNC_DISABLED');
   const noRemoteOwner=await seed({owner:null});
@@ -236,9 +236,13 @@ try {
 
   // Public contracts, both funnels, assets and applied migrations remain byte-identical.
   const baseline='88fafcba8811e4a02b3575e2e2cd36368b818be8';
-  const protectedPaths=['src/app',':(glob)src/components/patrimonial*','src/content','public','scripts/verify-patrimonial-event-browser.mjs','scripts/verify-patrimonial-architect-browser.mjs','scripts/verify-patrimonial-event-presentation.mjs','scripts/verify-patrimonial-architect-presentation.mjs','src/lib/public-leads/patrimonial-contract.ts','src/lib/public-leads/patrimonial-funnels.ts','src/lib/public-leads/patrimonial-sync.ts','src/lib/public-leads/patrimonial-routing.ts','supabase/migrations/20261014225059_patrimonial_lead_v2.sql','supabase/migrations/20261015100912_patrimonial_opportunity_jsonb_precedence.sql'];
+  const protectedPaths=['src/app',':(glob)src/components/patrimonial*','src/content','public','scripts/verify-patrimonial-event-browser.mjs','scripts/verify-patrimonial-architect-browser.mjs','scripts/verify-patrimonial-event-presentation.mjs','scripts/verify-patrimonial-architect-presentation.mjs','src/lib/public-leads/patrimonial-contract.ts','src/lib/public-leads/patrimonial-funnels.ts','src/lib/public-leads/patrimonial-routing.ts','supabase/migrations/20261014225059_patrimonial_lead_v2.sql','supabase/migrations/20261015100912_patrimonial_opportunity_jsonb_precedence.sql'];
+  // P2B authorizes exactly the contact claim filter; all legacy sync behavior stays pinned.
+  const baselineSync=execFileSync('git',['show',baseline+':src/lib/public-leads/patrimonial-sync.ts'],{encoding:'utf8'}).replace(/\r\n/g,'\n');
+  const currentSync=(await readFile('src/lib/public-leads/patrimonial-sync.ts','utf8')).replace(/\r\n/g,'\n');
+  assert.equal(currentSync,"import { contactEffectKinds } from './patrimonial-owner-operations.ts';\n"+baselineSync.replace('limit: 1, reconciliationOnly: options.reconciliationOnly','limit: 1, kinds: contactEffectKinds, reconciliationOnly: options.reconciliationOnly'));
   const diff=execFileSync('git',['diff',baseline,'--',...protectedPaths],{encoding:'utf8'});assert.equal(diff,'');
   assert.equal(externalAttempts,0);assert(requests.length>0);
-  passed.push('protected baseline byte-identical; v2/sync/funnels/assets unchanged; flags default false; zero external calls');
+  passed.push('protected baseline byte-identical; v2/funnels/assets unchanged; legacy sync pinned except explicit claim filter; flags default false; zero external calls');
   console.log(passed.map(message=>`PASS ${message}`).join('\n'));
 } finally {await db.close();}

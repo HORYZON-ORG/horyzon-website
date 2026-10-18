@@ -36,7 +36,8 @@ assert(!/insert into public\.patrimonial_event_editions[^;]*values\s*\(\s*'/.tes
 // New service methods are additive in the forward P1 migration; retain every
 // original migration assertion above and inspect the whole dispatcher chain.
 const assignmentSql=await readFile('supabase/migrations/20261018094926_patrimonial_assignment_management.sql','utf8');
-for(const method of [...adapter.matchAll(/this\.(?:value(?:<[^;]*?>)?|mutation)\('([A-Za-z]+)'/g)].map(m=>m[1]))assert((source+assignmentSql).includes(`'${method}'`),`missing SQL command: ${method}`);
+const ownerSql=await readFile('supabase/migrations/20261018163245_patrimonial_owner_sync.sql','utf8');
+for(const method of [...adapter.matchAll(/this\.(?:value(?:<[^;]*?>)?|mutation)\('([A-Za-z]+)'/g)].map(m=>m[1]))assert((source+assignmentSql+ownerSql).includes(`'${method}'`),`missing SQL command: ${method}`);
 assert(!/Memory|Map\s*\(/.test(adapter+storeSource));assert(!adapter.includes('console.'));assert(!storeSource.includes('fixtures/'));
 assert(adapter.includes("redirect: 'error'"));assert(adapter.includes("cache: 'no-store'"));assert(adapter.includes('AbortSignal.timeout'));
 console.log('PASS SQL static contract: 7 dedicated tables, partial uniqueness, 10 invoker RPC/helpers, leases/fencing, atomic acquisition, service-role-only privileges, no seeds/purge/cross-product references. SQL not executed.');
