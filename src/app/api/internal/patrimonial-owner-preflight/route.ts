@@ -27,7 +27,7 @@ export async function GET() {
   usersUrl.searchParams.set('locationId', locationId);
 
   const oppsUrl = new URL('https://services.leadconnectorhq.com/opportunities/search');
-  oppsUrl.searchParams.set('location_id', locationId);
+  oppsUrl.searchParams.set('locationId', locationId);
   oppsUrl.searchParams.set('limit', '1');
   oppsUrl.searchParams.set('status', 'all');
 
