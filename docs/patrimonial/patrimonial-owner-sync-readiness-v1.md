@@ -60,3 +60,39 @@ Secondo tentativo: read-only provider preflight PASS, identità esatta PASS, omi
 Cleanup: opportunity sintetica e contatto sintetico eliminati per ID esatti; le letture successive hanno restituito not-found. La route di smoke temporanea è stata rimossa. Non sono stati attivati i flag assignment/owner-sync.
 
 **Limite residuo:** questo smoke certifica credenziale runtime, decoder, payload owner-only, permesso write e provider round-trip. Non certifica ancora il percorso completo assignment → outbox → worker → checkpoint Supabase con una write live. Quel checkpoint richiede una fase successiva dedicata, senza ripetere una seconda owner write senza nuova autorizzazione.
+
+
+## P2D — live worker/checkpoint synthetic smoke
+
+Il 18 ottobre 2026 è stato eseguito il percorso completo live su Preview con oggetti sintetici controllati e una credenziale Supabase server temporanea dedicata al test.
+
+Percorso verificato:
+
+`synthetic OPPORTUNITY intent → createOperator → assignProspect → ASSIGN_OPPORTUNITY_OWNER outbox → claim owner worker → runtime HighLevel user verification → opportunity GET → durable authorizeOwnerWrite marker → una sola PUT assignedTo → GET indipendente → finishOwnerOperation → owner checkpoint Supabase`.
+
+Esito osservato:
+
+- owner operation unica: `SYNCED / CONFIRMED`, attemptCount 1, leaseVersion 1, effectMayHaveCommitted=true;
+- `owner_ref`, `record.ownerId` e `record.remote.assignedTo` convergono allo stesso HighLevel user ID;
+- `owner_checkpoint_revision=1`;
+- durante il checkpoint la business revision resta invariata a 1, stage A01/status OPEN;
+- `current_operator_id` e `operator_revision` restano nello spazio assignment separato;
+- seconda invocazione del worker: IDLE, nessuna seconda owner operation e nessuna seconda PUT;
+- read-back HighLevel indipendente confermato prima del cleanup.
+
+Cleanup locale audit-preserving:
+
+- intent sintetico chiuso come A10/LOST con reason INVALID_REQUEST;
+- assignment rilasciata con INTENT_CLOSED;
+- current_operator_id riportato a null;
+- operator_revision=2;
+- operatore sintetico disattivato, revision=1;
+- owner checkpoint preservato come evidenza storica, senza owner-clear remoto.
+
+Cleanup HighLevel:
+
+- opportunity sintetica eliminata per ID esatto;
+- contatto sintetico eliminato per ID esatto;
+- GET successivi: not-found per entrambi.
+
+La route temporanea P2D è stata rimossa. I flag production restano disattivati. Il P2D certifica quindi **provider + outbox + worker + checkpoint end-to-end live**. Restano limiti dichiarati: nessun CAS remoto HighLevel verificato e owner clear non supportato.
