@@ -4,7 +4,7 @@ import type { PatrimonialConsentEvidence, PatrimonialEvent, PatrimonialIntent, P
 import type { PatrimonialOpportunityIntent, PatrimonialRoutingParticipation } from './patrimonial-routing.ts';
 import type { AssignmentContext, AssignmentPlan } from './patrimonial-assignments.ts';
 import {
-  PatrimonialConflictError, PatrimonialReplayExpiredError, PatrimonialStaleLeaseError, PatrimonialStoreUnavailableError,
+  PatrimonialConflictError, PatrimonialReplayExpiredError, PatrimonialStaleLeaseError, PatrimonialStoreUnavailableError, PatrimonialCapabilityUnavailableError,
   type PatrimonialStore, type PatrimonialTransaction, type PatrimonialOpportunityStore, type PatrimonialOpportunityTransaction,
   type PatrimonialClaimInput, type PatrimonialCrmCompletion, type PatrimonialFailureMutation, type PatrimonialMutation,
   type PatrimonialOperationError, type PatrimonialOpportunitySyncState,
@@ -12,6 +12,15 @@ import {
 } from './patrimonial-store.ts';
 
 export const PATRIMONIAL_STORE_VERSION = 'patrimonial-v2-store-1';
+export const PATRIMONIAL_CAPABILITY_CONTRACT = 'patrimonial-runtime-capabilities-v1';
+type Capability = 'assignmentManagement' | 'ownerSync';
+export { PatrimonialCapabilityUnavailableError } from './patrimonial-store.ts';
+const requiredCapabilities = (commands: Command[]): Capability[] => {
+  const assignment=commands.some(c=>['getAssignmentContext','commitAssignmentPlan'].includes(c.method));
+  const owner=commands.some(c=>['claimOwnerOperations','getOwnerContext','authorizeOwnerWrite','finishOwnerOperation'].includes(c.method)
+    || c.method==='commitAssignmentPlan' && (c.args as [{writes?:{kind:string}[]}])[0]?.writes?.some(w=>w.kind==='ownerOperation'));
+  return owner?['assignmentManagement','ownerSync']:assignment?['assignmentManagement']:[];
+};
 type Config = { url: string; serviceRoleKey: string; fetchImpl?: typeof fetch };
 type Command = { method: string; args: unknown[]; tokens?: string[] };
 type Expected = Record<string, unknown>;
@@ -119,10 +128,23 @@ export class SupabasePatrimonialStore implements PatrimonialStore, PatrimonialOp
     const value = await this.rpc<{ version?: string }>('patrimonial_store_health', {});
     if (value?.version !== PATRIMONIAL_STORE_VERSION) throw unavailable();
   }
+  private async checkCapabilities(required: Capability[]): Promise<void> {
+    if(!required.length) return;
+    let value: {contract?:string;base?:string;assignmentManagement?:string|null;ownerSync?:string|null};
+    try { value=await this.rpc('patrimonial_store_capabilities',{}); }
+    catch { throw new PatrimonialCapabilityUnavailableError(required.at(-1)!); }
+    if(!value || value.contract!==PATRIMONIAL_CAPABILITY_CONTRACT || value.base!==PATRIMONIAL_STORE_VERSION) throw new PatrimonialCapabilityUnavailableError(required.at(-1)!);
+    for(const capability of required) if(value[capability] !== (capability==='assignmentManagement'?'p1-v1':'p2b-v1')) throw new PatrimonialCapabilityUnavailableError(capability);
+  }
+  async assignmentHealth(): Promise<void> { await this.health(); await this.checkCapabilities(['assignmentManagement']); }
+  async ownerSyncHealth(): Promise<void> { await this.health(); await this.checkCapabilities(['assignmentManagement','ownerSync']); }
   async transaction<T>(work: (tx: PatrimonialTransaction & PatrimonialOpportunityTransaction & PatrimonialAssignmentTransaction & PatrimonialOwnerTransaction) => Promise<T>): Promise<T> {
     await this.health();
     for (let attempt = 0; attempt < 4; attempt++) {
       const run = async (commands: Command[], expected: Expected, preview: boolean) => {
+        // No lifetime/global capability cache. Probe before previews AND commit,
+        // before any new command is sent to a pre-capability/partial database.
+        await this.checkCapabilities(requiredCapabilities(commands));
         const name = !preview && commands.some(command => command.method === 'createOrReplayRequest') ? 'acquire_patrimonial_request_v2' : 'patrimonial_store_transaction';
         const results = await this.rpc<unknown[]>(name, { p_commands: commands, p_expected: expected, ...(name === 'patrimonial_store_transaction' ? { p_preview: preview } : {}) });
         if (!Array.isArray(results)) throw unavailable();

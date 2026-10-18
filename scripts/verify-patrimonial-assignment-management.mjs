@@ -25,12 +25,13 @@ const fetchImpl=async(url,init)=>{
   assert.equal(init.method,'POST');
   const name=new URL(url).pathname.split('/').at(-1), body=JSON.parse(init.body);
   requests.push(name);
-  assert(['patrimonial_store_health','patrimonial_store_transaction'].includes(name));
+  assert(['patrimonial_store_health','patrimonial_store_capabilities','patrimonial_store_transaction'].includes(name));
   try {
     const result=await db.transaction(async tx=>{
       await tx.exec('set local role service_role');
       const query=name==='patrimonial_store_health'
         ? await tx.query('select public.patrimonial_store_health() as result')
+        : name==='patrimonial_store_capabilities' ? await tx.query('select public.patrimonial_store_capabilities() as result')
         : await tx.query('select public.patrimonial_store_transaction($1::jsonb,$2::jsonb,$3::boolean) as result',[JSON.stringify(body.p_commands),JSON.stringify(body.p_expected),body.p_preview]);
       return query.rows[0].result;
     });
@@ -73,8 +74,8 @@ async function createExperiment(operatorIds,{poolId,method='BALANCED_BATCH',targ
 }
 try {
   await db.exec('create role anon; create role authenticated; create role service_role bypassrls; grant usage on schema public to anon,authenticated,service_role;');
-  for(const name of ['20261014225059_patrimonial_lead_v2.sql','20261015100912_patrimonial_opportunity_jsonb_precedence.sql','20261018094926_patrimonial_assignment_management.sql']) await db.exec(await readFile(new URL(`../supabase/migrations/${name}`,import.meta.url),'utf8'));
-  passed.push('local SQL: all three migrations compile and execute; real service_role journal');
+  for(const name of ['20261014225059_patrimonial_lead_v2.sql','20261015100912_patrimonial_opportunity_jsonb_precedence.sql','20261018094926_patrimonial_assignment_management.sql','20261018180107_patrimonial_runtime_capabilities.sql']) await db.exec(await readFile(new URL(`../supabase/migrations/${name}`,import.meta.url),'utf8'));
+  passed.push('local SQL: baseline + P1 + adaptive capability migration compile and execute; real service_role journal');
   assert(Object.values(patrimonialFlags({})).every(value=>value===false));
   let forbiddenStore=0;
   await assert.rejects(executePatrimonialAssignment({transaction(){forbiddenStore++;}}, {type:'createOperator',commandKey:'disabled',actor,operator:{operatorKey:'disabled',displayName:'Disabled'}},{env:()=>({})}),e=>e.code==='DISABLED');

@@ -1,162 +1,121 @@
-# Patrimonial remote activation preflight v1 — P2C-A
+# Patrimonial remote activation preflight v1 — P2C-A / P2C-B
 
-18 ottobre 2026. Repo HORYZON-ORG/horyzon-website, branch feat/patrimonial-pilot-funnels. HEAD iniziale e origin dopo fetch: f5908827babeaae1a5c8d9ee5b7893a3cf80b315. **Verdetto: BLOCKED. Nessuna migration remota approvata/applicata da questo preflight.**
+18 ottobre 2026. Repo HORYZON-ORG/horyzon-website, branch feat/patrimonial-pilot-funnels. P2C-B parte da 5b8a997f83c296c6cac4a319df18568e6273be9e, confermato dopo fetch. **Verdetto locale: READY_FOR_REMOTE_MIGRATION_APPROVAL. NON READY_FOR_LIVE.** Nessuna migration remota, history repair, db push, env/flag o HighLevel write eseguita.
 
-La compatibilità delle righe osservate è positiva, ma l'applicazione remota non è ancora approvabile: storico migration non riconciliato e health check senza capability P1/P2B. Il percorso owner nuovo fallisce senza nuovi command, ma il controllo health base restituisce comunque successo. Non correggiamo questi problemi silenziosamente in una fase read-only.
+## Stato dei blocker
 
-## Evidenza e confine delle verifiche
+RESOLVED — MIGRATION_HISTORY_DRIFT come impedimento operativo: adottata la strategia managed/targeted SQL esplicito, senza modificare lo storico. La divergenza storica resta presente e generic db push resta UNSAFE. La [lineage canonica](patrimonial-migration-lineage-v1.md) distingue filename/versione locale, versione remota, nome logico, prove schema e metodo di apply. Non rieseguire baseline già esistenti.
 
-R1: controlli MCP Supabase effettivi, solo get_project, list_migrations e SELECT su cataloghi/aggregati. Project horyzon, ref pmkyeqrfkunypfkbjnyg, ACTIVE_HEALTHY, PostgreSQL 17.6.1.166. Nessuna credenziale, env, riga reale, nome, email o telefono letto/esportato. Il dataset di prova contiene solo ID generati, struttura e categorie sintetiche.
+RESOLVED — STORE_HEALTH_CAPABILITY_GAP: health base v1 resta backward compatible; nuova RPC catalog-only e controlli app bloccano nuovi command prima di qualsiasi journal/mutazione se capability mancanti, parziali o di versione ignota. Nessun fallback dal health base positivo. Probe rifatta prima di preview e commit, senza cache permanente.
 
-R2: schema rilevante confrontato nel database effimero con la baseline locale: colonne/default/nullability delle tre tabelle modificate, CHECK/FK/UNIQUE e hash md5 dei corpi di tutte le 10 funzioni patrimoniali base coincidono. Le versioni nello storico, invece, differiscono. Il confronto dei corpi non certifica identità di tutto il DDL storico o dei prodotti esterni al perimetro patrimoniale.
+STILL BLOCKED per le fasi successive: autorizzazione esplicita apply remoto; autorizzazione smoke sintetico; RUNTIME_TOKEN_NOT_VERIFIED; OPPORTUNITY_NONEMPTY_READ_UNVERIFIED; ASSIGNEDTO_LIVE_SHAPE_UNVERIFIED; OWNER_ROUNDTRIP_UNVERIFIED. OWNER_CLEAR_UNSUPPORTED e REMOTE_CAS_UNVERIFIED restano limiti distinti, non risolti localmente.
 
-R3: dry-run locale PGlite e adapter RPC reali corrente e pre-P2B (dfd2e7b7b7d4af301c0429bd2ba75fa4c12b4739, transpilation soltanto in memoria). La versione engine locale è riportata dal verify: PG18.6, mentre il remoto è PG17.6. I cataloghi NOT NULL differiscono: confrontati attraverso information_schema, escludendo solo contype=n dal confronto pg_constraint. Non si dichiara un'esecuzione nativa PG17; una prova PG17 equivalente resta condizione prudenziale prima dell'applicazione, insieme ai blocker principali.
+## Evidenza remota P2C-A — fotografia, non nuove chiamate P2C-B
 
-R4: evidenza HighLevel esterna fornita dall'utente: Location/users/membership e scopes read verificati, search con 0 opportunity, nessuna write/round-trip. Non è una verifica del token Vercel. Documentazione ufficiale riletta in questa fase, nessuna chiamata a dati account HighLevel.
+P2C-A ha verificato read-only il progetto horyzon, pmkyeqrfkunypfkbjnyg, ACTIVE_HEALTHY, PostgreSQL 17.6.1.166; history fino a 20261015122405_radar_v4_positioning. P1/P2B e loro nuovi oggetti assenti. P2C-B non rilegge segreti né modifica/ricertifica lo stato remoto.
 
-Evidenza riproducibile senza PII: scripts/fixtures/patrimonial-preflight-evidence.json. Verify locale: scripts/verify-patrimonial-activation-preflight.mjs. Entrambi non contengono credenziali né record reali. La fixture di evidenza è una fotografia del 18 ottobre: non sostituisce un controllo fresco al momento di una futura approvazione.
+Counts: 4 intent (3 PROVISIONAL/SYNC_PENDING e 1 OPPORTUNITY/OPEN/A01/revision 1, architect-path), 3 request, 13 outbox, 4 eventi, 6 consensi, 0 edition/participation. Tutti owner_ref null; 1 UPSERT_CONTACT in RECONCILE_REQUIRED, altre 12 operation SYNCED. Nessun mismatch JSON/native, owner malformato, revision negativa o lease incoerente. Le provisional senza revision JSON sono conformi al contratto, non richiedono backfill.
 
-## Stato remoto effettivo e dati da preservare
+Sette tabelle base ENABLE+FORCE RLS, nessun grant cliente/policy, dieci routine INVOKER/search_path fissato/service_role. Confrontati colonne/default/nullability rilevanti, CHECK/FK/UNIQUE e dieci hash routine: equivalenza rilevante locale/remoto. Nessun record reale esportato; evidenza solo schema/categorie/aggregati in scripts/fixtures/patrimonial-preflight-evidence.json. La verifica runtime Supabase service key è distinta dall'accesso MCP dell'audit.
 
-| Tabella | Righe |
-| --- | ---: |
-| patrimonial_intents | 4 |
-| patrimonial_requests | 3 |
-| patrimonial_outbox_operations | 13 |
-| patrimonial_domain_events | 4 |
-| patrimonial_consent_evidence | 6 |
-| patrimonial_event_editions | 0 |
-| patrimonial_participations | 0 |
+## Lineage e preservazione
 
-Intent: 3 PROVISIONAL/architect-path/SYNC_PENDING/revision 0; 1 OPPORTUNITY/architect-path/OPEN/A01/revision 1 con remote ID presente e sync_state SYNCED. Tutti owner_ref null. Nessun ID reale copiato. Le 3 provisional non hanno revision nel JSON per contratto: NON sono inconsistenze e NON richiedono backfill. Identità id/kind se presente coerente; opportunity revision/status/stage/ownerRef/businessKey/Location/contact/remote ID coerenti con colonne. Revision e lease verificati: nessun valore incompatibile.
+Le baseline patrimoniali remote non vanno rieseguite: patrimonial_lead_v2 locale 20261014225059/remoto 20261014215416; patrimonial_opportunity_jsonb_precedence locale 20261015100912/remoto 20261015101816. Altri 15 drift timestamp e migration remote-only rendono non sicuro un db push automatico. Non si rinominano file né si inseriscono fake history entries.
 
-Outbox: SYNC_REQUEST 3 SYNCED; RESOLVE_CONTACT 3 SYNCED; UPSERT_CONTACT 2 SYNCED + 1 RECONCILE_REQUIRED; ADD_TAGS 2 SYNCED; ADD_NOTE 2 SYNCED. Attempt e lease version 1; nessuna lease attiva/incoerente, tipo sconosciuto o mismatch record/native. La reconciliation esistente deve restare tale: non è consumata, chiusa o riprovata da questo audit. Eventi: 3 request_received + 1 ARCHITECT_INTEREST_RECEIVED, nessun nome riservato a esperimenti P1.
+Ordine futuro unico: 20261018094926_patrimonial_assignment_management.sql → 20261018163245_patrimonial_owner_sync.sql → 20261018180107_patrimonial_runtime_capabilities.sql. Nessuna migration intermedia mancante. Ogni targeted apply richiede verifiche assenza/history/oggetti/schema/hash/counts/invarianti/flag prima e verifica schema/ACL/RLS/counts/RPC/invarianti dopo. Manifest con digest e versione effettivamente restituita dal metodo managed; ACK incerto significa read-first, non replay. Nessun apply ora.
 
-P1 e P2B assenti nello storico, tutte le tabelle P1 e tutte le nuove colonne/funzioni P1/P2B assenti: nessuna applicazione parziale rilevata. Tutte le 7 tabelle base hanno ENABLE + FORCE RLS, nessuna policy cliente e nessun grant tabella ad anon/authenticated/PUBLIC. Tutte le 10 routine base sono INVOKER con search_path fissato e ACL postgres/service_role. Indici patrimoniali osservati: 34. L'accesso MCP non prova l'accesso della service key runtime.
+Audit P1/P2B e dry-run preservano le righe esistenti: current_operator_id null, operator_revision 0, checkpoint revision 0 e checkpoint null, nessuna riscrittura dati/JSON o backfill. P1 crea soltanto singleton tecnico, nessun operatore seed. P1 rilassa intent_id NOT NULL solo per eventi esperimento e aggiunge CHECK compatibile coi quattro eventi; P2B sostituisce atomicamente il CHECK effect_type con un superset. Nessun DROP TABLE/COLUMN, DELETE, TRUNCATE o reset. P2B prima di P1 fallisce e rollbacka. Tutti i file precedenti restano immutati.
 
-## Storico migration e ordine
+## Contratto capability adattivo
 
-Ultima migration remota: 20261015122405_radar_v4_positioning. I file locali P1 20261018094926 e P2B 20261018163245 non sono applicati. Nel repository non esiste una terza migration intermedia fra baseline patrimoniale/P1/P2B necessaria a queste dipendenze.
+Nuova migration locale 20261018180107_patrimonial_runtime_capabilities.sql: solo due funzioni STABLE/SECURITY INVOKER, search_path fissato e grants EXECUTE service_role only. Nessuna query a dati business, seed, backfill, journal o lock applicativo. Il probe legge cataloghi PG17 compatibili e restituisce soltanto:
 
-Drift patrimoniale esplicito:
+- contract: patrimonial-runtime-capabilities-v1;
+- base: patrimonial-v2-store-1 se health routine riconosciuta;
+- assignmentManagement: p1-v1 se oggetti P1 completi, altrimenti null;
+- ownerSync: p2b-v1 solo con P1 + P2B completi, altrimenti null.
 
-| Nome | Versione locale | Versione remota |
-| --- | --- | --- |
-| patrimonial_lead_v2 | 20261014225059 | 20261014215416 |
-| patrimonial_opportunity_jsonb_precedence | 20261015100912 | 20261015101816 |
+Controlli: tutte le colonne P1 e colonne aggiunte ai ledger, tipi/nullability/default, vincoli validi, indici validi/ready, trigger attivi, routine con firma/return type/volatility/INVOKER/search_path/hash attesi, RLS e privilegi effettivi client/service. Il wrapper pubblico P1 o P2B è riconosciuto per assignment; owner richiede wrapper P2B, precedente P1, claim filtrato e checkpoint. Nessun valore true dedotto dalla sola installazione del probe. Corpi sconosciuti o metadata parziali → capability null, nessuna auto-repair. Le fingerprint non sono un'autorizzazione di scrittura né una difesa contro un amministratore DB malevolo; sono attestazioni di compatibilità del contratto.
 
-Altri 15 file locali già applicati hanno timestamp diversi nello storico remoto, oltre a numerose migration platform/social solo remote e radar_v4_positioning solo remota. L'elenco completo osservato e il confronto per nome/versione sono nella fixture/verify. Nessun rename, repair o insert nella history è stato fatto. Non usare un db push indiscriminato: può considerare pendenti baseline già presenti. Occorre una riconciliazione formale della lineage e del metodo di applicazione, autorizzata separatamente; i 10 hash routine uguali non autorizzano a riparare automaticamente lo storico.
+Scelta adattiva confermata esplicitamente dall'utente: il probe può essere installato nel laboratorio su P1-only e consente solo assignment; senza P1/P2B non abilita nuove feature. Questo risolve la matrice richiesta senza cambiare P1/P2B. L'ordine operativo remoto resta P1 → P2B → capability; non si propone apply anticipato remoto.
 
-Ordine tecnico provato solo localmente: BASELINE → P1 → P2B. P2B dipende dalle tabelle P1 nei tipi PL/pgSQL: applicarla prima fallisce per patrimonial_assignments mancante e la transazione rollbacka anche ALTER/CHECK iniziali. Non è un'installazione parziale da recuperare manualmente. La dipendenza è espressa da oggetti/commento, non da una custom migration-version assertion.
+SupabasePatrimonialStore aggiunge assignmentHealth/ownerSyncHealth, mantenendo health() e PATRIMONIAL_STORE_VERSION immutati. Il journal verifica capability prima di inviare getAssignmentContext/commitAssignmentPlan e i quattro command owner. Un assignment plan con ownerOperation richiede anche ownerSync. Errore esplicito PatrimonialCapabilityUnavailableError (sottoclasse PatrimonialStoreUnavailableError, code PATRIMONIAL_CAPABILITY_UNAVAILABLE) in caso di RPC assente/non autorizzata, contract ignoto o capability non supportata. Non vengono inviati i nuovi command; le operazioni legacy non richiedono il probe.
 
-## Audit integrale delle due migration
+## Matrice app/database verificata localmente
 
-P1 è additiva: crea 10 tabelle di registro/assegnazione/esperimenti/supporto, aggiunge current_operator_id nullable con FK al nuovo registro vuoto e operator_revision NOT NULL DEFAULT 0 CHECK >=0. Sulle 4 righe esistenti produce null/0 senza cambiare dati/JSON, owner_ref, business revision, stage/status o altri campi. Nessun backfill richiesto. Le nuove FK non hanno valori legacy non-null da validare.
-
-La ledger eventi riceve experiment_id nullable, intent_id DROP NOT NULL e un CHECK di aggregate: i 4 eventi osservati hanno intent_id e nomi non riservati agli esperimenti, quindi restano validi. DROP NOT NULL allenta il vincolo, non elimina dati. I trigger nuovi su intent scattano su insert/update di current_operator_id, non riscrivono righe all'installazione. Il confronto differito null/null con assenza di assignment è valido per gli intent legacy. Tutte le nuove tabelle sono FORCE RLS/service_role only; INVOKER e revoche esplicite sui nuovi helper. L'unico insert di installazione è singleton tecnico assignment_state, non un seed di persone/operatori. Nessun collaboratore hardcoded, DELETE, TRUNCATE, reset, DROP TABLE/COLUMN o update retroattivo di record.
-
-P2B aggiunge owner_checkpoint_revision NOT NULL DEFAULT 0 CHECK >=0 e owner_checkpoint nullable JSON object. Sostituisce il solo CHECK effect_type con un superset dei 5 tipi precedenti + ASSIGN_OPPORTUNITY_OWNER, dentro un'unica transazione; il DROP CONSTRAINT non è DROP dati. Le 13 operation mantengono tipo, JSON, status, lease, tentativi e reconciliation identici; nessuna diventa owner operation. Non ci sono seed, DELETE, TRUNCATE o DROP TABLE/COLUMN. Gli helper e il dispatcher sono INVOKER con EXECUTE solo service_role.
-
-Dispatcher: P1 rinomina il vecchio e delega tutti gli altri command; P2B rinomina il wrapper P1 e delega gli altri command. Il corpo del dispatcher legacy dopo entrambe coincide esattamente con quello remoto base (hash). I 25 command legacy restano nella catena. P2B intercetta saveOpportunityIntent per bloccare ownerId obsoleto solo dopo owner_checkpoint_revision>0: tutte le righe correnti ricevono 0, perciò nessuna reinterpretazione legacy al rollout. Questa restrizione futura è intenzionale, da considerare dopo lo smoke.
-
-## Risultato dry-run popolato
-
-La baseline locale è popolata PRIMA di P1: 4 intent, 3 request, 13 operation, 4 eventi, 6 consensi, 0 edition/participation. Forma kind/funnel/status/stage/revision/sync state e presenza remote ID confrontata con aggregati remoti. Nessun contenuto remoto copiato.
-
-- P1: PASS; righe e tutti i campi preesistenti/JSON identici, nuovi campi null/0, registro senza operatori/assignment.
-- P2B: PASS; stessi valori legacy, checkpoint null/0, nessun required backfill.
-- P2B prima di P1: rifiuto e rollback totale verificati.
-- Adapter pre-P2B e attuale: getRequest/getOpportunity e normale claim invariati sulla fixture, più hash del dispatcher preservato.
-- OLD APP su NEW DB: claim senza kinds esclude una owner operation sintetica aggiunta DOPO la prova di preservazione. NEW APP owner claim non prende il contatto in reconciliation; il vecchio claim reconciliation legge soltanto UPSERT_CONTACT. Queste mutazioni sono solo nel DB locale effimero.
-- ACL/RLS: anon/authenticated senza EXECUTE sulle routine; tabelle FORCE RLS. Le suite owner/assignment verificano anche i comandi e il fencing.
-
-## Store version e compatibilità app/database
-
-PATRIMONIAL_STORE_VERSION e patrimonial_store_health restano patrimonial-v2-store-1. La funzione verifica sette tabelle base e colonne originali: nessuna attestazione di assignment/owner schema, wrapper, claim filtering o checkpoint. Il verify riproduce health() positivo sul vecchio DB e owner command rifiutato: **STORE_HEALTH_CAPABILITY_GAP**. I nuovi command falliscono prima di effetti ma health non è una prova di supporto. È un blocker rispetto al requisito del preflight; non è stato corretto in questa fase.
-
-| App | DB | Status | Evidenza / limite |
+| App | DB | Status | Risultato |
 | --- | --- | --- | --- |
-| OLD pre-P2B | OLD baseline | SAFE | Contratto contatti/business base, nessun owner supportato |
-| NEW P2B | OLD baseline | UNSAFE | Come controllo di readiness: health falso positivo; command nuovi FAIL_CLOSED e rollbackano, ma health da sola non distingue lo schema |
-| OLD pre-P2B | NEW P1+P2B | SAFE | Claim SQL default contatti; non ruba owner effects; delega legacy conservata. Non abilita owner-sync |
-| NEW P2B | NEW P1+P2B | SAFE | Con verifica schema/capability separata e flag owner false; smoke live ancora BLOCKED per credenziali/decoder/autorizzazione |
+| OLD | OLD baseline | SAFE | Health/read/claim legacy funzionanti |
+| NEW | OLD baseline senza probe | FAIL_CLOSED | Base health PASS; errore readiness esplicito prima del nuovo journal |
+| OLD | FULL nuovo DB | SAFE | Base health v1 e behavior legacy invariati; claim default contatti |
+| NEW | P1-only senza probe | FAIL_CLOSED | Non si assume P1 presente dalla sola health base |
+| NEW | P1-only con probe adattivo | SAFE | Assignment PASS; owner FAIL_CLOSED prima dei command |
+| NEW | P1+P2B senza probe | FAIL_CLOSED | Attendere capability migration |
+| NEW | P1+P2B+probe | SAFE | Base/assignment/owner readiness PASS; feature flag invariati |
+| NEW | schema parziale con probe | FAIL_CLOSED | Capability interessata null; owner richiede anche assignment |
 
-Prima di approvare serve una readiness esplicita P1/P2B: ad esempio una capability/schema response dedicata, verificata dall'app prima dei nuovi command. Un bump globale indiscriminato può rompere OLD APP + NEW DB: occorre definire un contratto compatibile e provarne i quattro casi. Non si propone né applica una patch nascosta alla migration già committata.
+I due stati P1-only sono distinti: il deployment canonico mantiene bloccati i command fino all'installazione finale del probe; la possibilità diagnostica su P1-only è dimostrata nella matrice, non inventata su un DB dove la RPC manca.
 
-## Matrice readiness
+## Readiness matrix
 
 | ITEM | STATUS | EVIDENCE | BLOCKER | NEXT ACTION |
 | --- | --- | --- | --- | --- |
-| P1 migration | READY_WITH_CONDITION | Audit integrale e dry-run popolato PASS | History non riconciliata; approvazione assente | Riconciliare lineage, poi approvazione specifica |
-| P2B migration | READY_WITH_CONDITION | Superset CHECK, checkpoint null/0, rollback ordine errato PASS | P1 non installata; health gap | P1 prima, risolvere capability readiness |
-| Migration order | BLOCKED | P1→P2B corretto; nessuna terza dipendenza locale | Timestamp history diversi | Definire procedura puntuale autorizzata; niente db push generico |
-| Existing data compatibility | READY_WITH_CONDITION | SELECT aggregate coerenti e fixture preservata | Foto del momento; locale PG18/remoto PG17 | Ripetere checks freschi e dry-run PG17 prima dell'apply |
-| ACL | READY | Service-only su remoto base e nuovi helper locali | Nessun grant cliente rilevato | Verificare ACL effettive post-apply |
-| RLS | READY | FORCE RLS su 7 base e nuove locali | Nessuno nello scope osservato | Verificare post-apply |
-| RPC compatibility | READY_WITH_CONDITION | 10 hash base identici, 25 command delegati, adapter old/new testati | Health non certifica nuovi command | Capability probe non mutativa dedicata |
-| Store version | BLOCKED | v1 invariata; nuovo codice/vecchio DB health positivo | STORE_HEALTH_CAPABILITY_GAP | Disegnare/verificare readiness P1/P2B separata |
-| Deployment order | READY_WITH_CONDITION | Sequenza sotto preserva baseline | History/health bloccano applicazione | Completare remediation e ripetere preflight |
-| Feature flags | READY_WITH_CONDITION | Exact true, default false nel codice | Valori remoti volutamente non letti | Mantenere assignments/ownerSync false, attestazione rollout senza secret |
-| Runtime Supabase access | BLOCKED | MCP progetto funziona; env canonica nel factory | Service key/URL readiness runtime non verificata | Prova read-only nel runtime effettivo |
-| Runtime HighLevel token | BLOCKED | Solo connessione audit esterna verificata | RUNTIME_TOKEN_NOT_VERIFIED | Prova read-only con credenziale effettiva senza log/env change |
-| Users read | READY_WITH_CONDITION | R4 e decoder mock coerenti con shape riferita | GET esatto con token runtime non provato | Verificare id/deleted/roles sul target corretto |
-| Location read | READY_WITH_CONDITION | R4 identity/membership verificate | Token runtime e HIGHLEVEL_LOCATION_ID non confrontati | Check read-only runtime con ref canonico |
-| Opportunity read | BLOCKED | LOCALLY_VERIFIED_ONLY; R4 search=0 | Nessuna risposta GET non vuota runtime | Fixture sintetica autorizzata e GET per ID |
-| assignedTo decoder | BLOCKED | String/null/empty/missing distinti nei test | Shape/nullability live non provate | Verificare valore reale e proof nullable esplicita |
-| Owner write | BLOCKED | PUT dedicato solo assignedTo, stub generici invariati | Permesso/token/schema runtime e autorizzazione mancanti | Una write sintetica solo in fase separata |
-| Owner round-trip | BLOCKED | Nessuna write live | Read-back/checkpoint live non verificati | Smoke controllato con una write |
-| Owner clear | NOT_APPLICABLE | UNSUPPORTED/UNVERIFIED, nessun clear nel percorso | Fuori scope smoke | Non inviare null/empty/omissione come clear |
-| Remote race/CAS | READY_WITH_CONDITION | Read→PUT→read-back; nessuna CAS verificata | Accettazione solo sintetico controllato; produzione separata | Un worker, nessuna modifica umana, una write, read-back immediato |
-| Cleanup strategy | READY_WITH_CONDITION | Piano per ID esatti, endpoint delete documentati | Permission/delete semantics non provati runtime | Verificare capacità cleanup prima della creazione sintetica |
+| P1 migration | READY | Audit + dry-run popolato PASS, file immutato | Solo approvazione futura | Targeted apply P1 dopo preflight fresco |
+| P2B migration | READY | Superset CHECK e preservazione PASS | P1 prima | Targeted apply P2B e controlli |
+| Capability migration | READY | Probe adattivo locale A–J PASS | P1/P2B prima nel rollout | Targeted apply finale e verifica read-only |
+| Migration order/lineage | READY_WITH_CONDITION | SAFE_WITH_PREFLIGHT; nessuna dipendenza mancante | Vietato db push generico | Usare solo procedura puntuale documentata |
+| Existing data compatibility | READY_WITH_CONDITION | Snapshot shape preservata, nessun backfill | Stato remoto può cambiare | Checks freschi prima/dopo ogni apply |
+| ACL | READY | Client denied, servizio verificato dal probe | Verifica post-apply | Controllare privilegi effettivi |
+| RLS | READY | FORCE RLS e partial negativi | Verifica post-apply | Controllare tabelle target |
+| RPC compatibility | READY | Delega legacy e adapter vecchio testati | Nessuno locale | Readiness e legacy probe post-apply |
+| Store version | READY | Core v1 invariata, capability additiva | Nessuno locale | Non usare health base come attestazione P1/P2B |
+| Deployment order | READY_WITH_CONDITION | Sequenza sotto | Autorizzazione apply separata | Deploy app flag false, poi tre apply puntuali |
+| Feature flags | READY_WITH_CONDITION | Exact true/default false, non modificati | Valori remoti non letti | Attestare assignments=false/ownerSync=false |
+| Runtime Supabase access | READY_WITH_CONDITION | Factory canonical server, readiness esplicita | Credenziale runtime non provata | Verifica read-only prima di attivare feature |
+| Runtime HighLevel token | BLOCKED | Evidenza esterna non equivale a runtime | RUNTIME_TOKEN_NOT_VERIFIED | Prova read-only usando credenziale effettiva |
+| Users read | READY_WITH_CONDITION | Shape esterna riferita e mock | GET target/runtime non provato | Verificare id/deleted/membership |
+| Location read | READY_WITH_CONDITION | Audit esterno VERIFIED | Runtime non confrontato | Verifica Location canonica con token effettivo |
+| Opportunity read | BLOCKED | LOCALLY_VERIFIED_ONLY | OPPORTUNITY_NONEMPTY_READ_UNVERIFIED | Fixture sintetica autorizzata, lookup ID |
+| assignedTo decoder | BLOCKED | String/null/missing distinti | ASSIGNEDTO_LIVE_SHAPE_UNVERIFIED | Verifica response non vuota prima del PUT |
+| Owner write | BLOCKED | Payload esclusivamente assignedTo | Token/permission/smoke approval | Una write sintetica autorizzata |
+| Owner round-trip | BLOCKED | Nessuna write live | OWNER_ROUNDTRIP_UNVERIFIED | Read-back e checkpoint sul sintetico |
+| Owner clear | NOT_APPLICABLE | OWNER_CLEAR_UNSUPPORTED | Fuori scope smoke | Nessun clear/null/empty write |
+| Race/CAS | READY_WITH_CONDITION | READ→PUT→READ-BACK | REMOTE_CAS_UNVERIFIED; produzione separata | Solo sintetico senza concorrenza umana, un worker/una write |
+| Cleanup | READY_WITH_CONDITION | Piano per ID esatti | Permission runtime non provata | Verificare cleanup prima della create sintetica |
+| PG17_NATIVE_DRY_RUN | READY_WITH_CONDITION | SQL usa oggetti/funzioni PG17 documentati | Locale PGlite 18.6; Docker daemon assente | PG17 nativo quando disponibile, nessuna installazione ora |
 
-## Ordine rollout raccomandato — solo piano
+## Ordine futuro — nessuno step eseguito ora
 
-0. Risolvere history drift e health/capability gap con lavoro autorizzato separatamente; completare prova PG17 e ripetere preflight. Nessun apply approvato finché BLOCKED.
-1. Confermare codice revisionato effettivamente deployato sull'ambiente designato con assignments/ownerSync false; nessuna deduzione dal solo push Git. Non effettuato qui.
-2. Applicare SOLO P1 autorizzata; verificare tabelle/colonne/default/trigger/ACL e contatori/invarianti, preservare audit e reconciliation.
-3. Applicare SOLO P2B autorizzata; verificare CHECK/claim filtering/checkpoint/dispatcher/readiness e contatori invariati.
-4. Flag ancora false; verificare credenziali Supabase e HighLevel nel runtime effettivo con sole letture, senza esporre valori.
-5. Autorizzazione separata allo smoke sintetico e cleanup; completare fixture/permissions/ID e-mail controllata.
-6. Solo allora abilitazione controllata del singolo runner trusted, una owner write e read-back; ripristino dei gate allo stato approvato al termine.
+0. Deploy NEW APP capability-aware nell'ambiente designato con feature flags false.
+1. Verifica base e lineage/schema/counts/assenza/flag freschi.
+2. Targeted apply P1 autorizzata.
+3. Verifica P1, preservazione e ACL/RLS.
+4. Targeted apply P2B autorizzata.
+5. Verifica P2B, dispatcher/claim/checkpoint e dati invariati.
+6. Targeted apply runtime capabilities autorizzata.
+7. Verifica RPC e base/assignment/owner; legacy app resta compatibile.
+8. assignments=false, ownerSync=false; nessun altro gate attivato.
+9. Verifica read-only credenziali Supabase/HighLevel effettive runtime, senza leggere/loggare secret qui.
+10. Autorizzazione esplicita separata allo smoke sintetico.
 
-assignments e ownerSync devono restare false. opportunityWrite deve restare disabilitato: il generico è comunque stub CONFIG. Booking/messages/webhook non necessari allo smoke e nessuna nuova attivazione. v2/crmWrite sono ulteriori gate richiesti dalla futura dispatch; non li attiviamo né assumiamo il loro stato effettivo. Tutti i flag sono exact-string true, assenza/valore differente false. DURABLE_STORE_READY da solo attesta approvazione configurativa, non prova P1/P2B.
+PG17 nativo non disponibile: docker.exe esiste ma il daemon locale non risponde, psql/postgres non disponibili. Nessun avvio/installazione sistema. Verificata documentazione PostgreSQL 17 per [STABLE](https://www.postgresql.org/docs/17/xfunc-volatility.html), [catalog inquiry/privileges](https://www.postgresql.org/docs/17/functions-info.html) e [pg_proc](https://www.postgresql.org/docs/17/catalog-pg-proc.html). Nessuna dipendenza da NOT NULL catalog contype=n introdotta in PG18; confronti basati su attnotnull e cataloghi già PG17. Questa è compatibilità documentale e test PG18, non un dry-run PG17 inventato.
 
-## Runtime e contratto HighLevel
+## HighLevel e smoke — invariati e non eseguiti
 
-Il factory Supabase legge SUPABASE_URL o NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY solo server, richiede DURABLE_STORE_READY. Non abbiamo letto env o secret. Il provider owner legge HIGHLEVEL_PRIVATE_TOKEN/HIGHLEVEL_LOCATION_ID dall'env runtime canonica, verifica che non cambino durante le chiamate e richiede proof trusted esplicita. Nessun fallback dal token MCP alla credenziale app e nessun provider live costruito in questo preflight.
+Provider owner separato dal generico, Version/proof v3 documentati; nessuna modifica ai suoi binding. Users/Location/scopes VERIFIED solo nella connessione esterna, non nel token HIGHLEVEL_PRIVATE_TOKEN del runtime. Decoder GET user richiede deleted esplicito e roles.locationIds: omissione → HOLD. GET opportunity non vuoto, assignedTo e round-trip restano non verificati live. Nessun workaround credenziali, capability true o flag aggiunto per aggirare i gate.
 
-Version header e proof sono entrambi v3. [Versioning ufficiale](https://marketplace.gohighlevel.com/docs/Versioning/index.html) e [update opportunity](https://marketplace.gohighlevel.com/docs/ghl/opportunities/update-opportunity/index.html) documentano v3: nessuna discrepanza documentale rilevata. L'header effettivo del tool esterno non è stato fornito; la sua accettazione non certifica il token runtime. Nessuna correzione del provider eseguita.
+Generic search/create/update rimangono CONFIG. Il PUT owner resta solo assignedTo, nessuna create/stage/status/customFields/value/name; release locale e clear unsupported. Nessuna primitiva CAS remota inventata.
 
-readRemoteUser normalizza solo remoteUserId/locationIds/deleted/role/type; match esatto, deleted boolean e membership obbligatori. La shape esterna riferita è coerente. [GET user](https://marketplace.gohighlevel.com/docs/ghl/users/get-user/index.html) mostra roles ma non deleted: il GET specifico deve dimostrare quel campo col token runtime; se omesso il decoder deve restare HOLD, non active per default.
+Futura fixture: contatto Horyzon QA synthetic; email test Horyzon controllata già approvata. Indirizzo non fornito: fermarsi e chiederlo prima dello smoke. Una opportunity [TEST] Patrimonial Owner Sync <timestamp UTC/run ID>, pipeline Architetto Patrimoniale A01/Nuovo interesse solo se mapping runtime coerente. Nessun tag nuovo; test/synthetic solo se già approvato, nessuna nota necessaria.
 
-[GET opportunity](https://marketplace.gohighlevel.com/docs/ghl/opportunities/get-opportunity/index.html): envelope opportunity con identity id/location/contact/pipeline, customFields identity se presente, assignedTo string oppure null solo se contratto autorizzato; marker eventuale. LOCALLY_VERIFIED_ONLY: la futura fixture deve confermare shape e valori col token effettivo, prima di costruire proof live. Se emerge mismatch, STOP e revisione separata.
+Setup/create sintetico richiede autorizzazione e strumento amministrativo dedicato: non abilitare generic sync stub. Un solo worker, opportunity esclusivamente sintetica senza modifiche umane, una owner write e GET immediato, checkpoint e replay senza secondo PUT. Seconda write/reassign richiede scope separato. Produzione richiede una decisione CAS/race distinta; timeout resta read-first.
 
-L'owner PUT invia solo assignedTo. Nessun name/pipeline/stage/status/value/customFields/closeReason. I metodi searchOpportunities/createOpportunity/updateOpportunity generici restano CONFIG byte-identici; il binding owner non implementa l'interfaccia completa e non è passato al legacy sync. I test confermano che opportunityWrite=true non aggira ownerSync=false. Nessuna API di clear.
+Cleanup prima della create deve essere possibile e autorizzato: manifest con ID esatti creati, Location e run ID; stop worker; GET per ID e verifica relazione opportunity.contactId; delete solo opportunity sintetica e poi contatto nuovo sintetico, mai search+delete. Tag/notes solo associazioni/ID aggiunti nel run, nessuna definizione globale o oggetto preesistente. Confermare assenza tramite risposta documentata, 401/403/5xx non valgono come assenza. Nessuna cascade presunta; audit Supabase preservato. Mancanza permessi → gestione manuale autorizzata, non workaround nel payload owner.
 
-## Smoke sintetico futuro — non eseguito
+## Verifiche P2C-B
 
-Contatto: Horyzon QA synthetic. Email: indirizzo test controllato Horyzon già configurato/approvato; nessuno fornito/verificato in questo preflight. **SYNTHETIC_EMAIL_NOT_CONFIRMED: prima dello smoke fermarsi e chiedere quale usare.** Nessuna e-mail personale o indirizzo inventato per inviare messaggi. Nessuna automazione commerciale/messaggio deve partire dal test.
+Lineage offline: nomi/version divergence attesi, dieci hash, schema evidence, assenza P1/P2B nella fotografia, ordine e classificazioni. Runtime capabilities A–J: old/P1/full/probe assente, partial schema/ACL/RLS/trigger/indici/default/routine, old app compatibile, unsupported version e check prima del commit. Dry-run preflight: fixture popolata 4/3/13/4/6 preservata attraverso tutte e tre le migration e claim isolation. Zero network nei verify.
 
-Opportunity: [TEST] Patrimonial Owner Sync <timestamp UTC + run ID>. Una sola pipeline: Percorso Architetto Patrimoniale, A01/Nuovo interesse, solo dopo verifica mapping/location/stage correnti. Nessun ID reale nuovo hardcoded. Nessun tag nuovo; test/synthetic solo se già approvato e presente, altrimenti nessun tag. Nessuna nota necessaria al solo owner-sync.
+Esiti finali PASS: lineage, runtime capabilities A–J, activation preflight, owner-sync A–AE, owner-readiness, assignment management, persistence, CRM, opportunities, remote mapping; typecheck no-emit con tmp esclusa in memoria; ESLint zero warning e git diff --check. Presentation: PRE-EXISTING BASELINE FAILURE, firme identiche prima/dopo (Evento: Protected baseline changed: src/app/(patrimonial-pilot)/benessere-patrimoniale/percorso-architetto-patrimoniale/page.tsx; Architetto: No behavioral change: src/content/patrimonial-architect-session.ts). Nessuna modifica UI. tmp/ e documento Radar preesistenti esclusi dal commit.
 
-La create sintetica non può usare i metodi generici stub e NON li abilita: eventuale setup tramite strumento amministrativo esplicitamente autorizzato, registrando gli ID restituiti, non search-and-pick. Token runtime deve provare users/opportunity reads e permission write. Una sola opportunity identificata; nessun umano la modifica, un solo worker, una write owner, GET immediato, checkpoint e replay con zero ulteriori PUT. Reassignment richiede autorizzazione distinta se comporta una seconda write: non incluso nel primo smoke a una write.
-
-Race senza CAS: accettabile solo alle condizioni sintetiche riportate dall'utente e con scope approvato. Una modifica tra ultimo GET e PUT resta possibile; il fencing locale non la rende atomica. Rischio produzione non accettato da questo documento. Timeout o esito ambiguo → sospendere la write loop, read-first/reconciliation, nessun retry cieco.
-
-## Cleanup futuro per ID esatti — non eseguito
-
-Prima della creazione confermare capacità di cleanup con il token/tool autorizzato. Manifest del run: ID contatto/opportunity creati, Location, run ID, eventuali note ID e soli tag aggiunti, timestamp; nessun record cliente selezionato tramite ricerca generica. Se un contatto esistente viene riusato non lo si elimina: il primo smoke deve preferire un contatto nuovo esclusivamente sintetico.
-
-1. Fermare worker e impedire redispatch dopo pulizia; conservare outbox/checkpoint/audit locali.
-2. GET dei due ID manifestati, verifica reciproca opportunity.contactId e Location/run marker; mismatch → STOP/manual review, nessun delete.
-3. Eliminare esclusivamente opportunity sintetica per ID, poi contatto sintetico per ID, con autorizzazione esplicita. Endpoint documentati [DELETE opportunity](https://marketplace.gohighlevel.com/docs/ghl/opportunities/delete-opportunity/index.html) e [DELETE contact](https://marketplace.gohighlevel.com/docs/ghl/contacts/delete-contact/index.html). Nessuna chiamata delete eseguita o permission dedotta dal read-only.
-4. Se esistono note/tag creati dal test, rimuovere solo quegli ID/associazioni dal manifest; non cancellare definizioni tag globali o note preesistenti. Non presumere cascade: verificare il residuo per ID ed eliminare solo oggetti sintetici esplicitamente tracciati.
-5. GET per ID deve confermare assenza con risposta documentata; 401/403/5xx non valgono come assenza. Se delete non disponibile, chiusura concordata dell'opportunity e cleanup manuale autorizzato, senza ampliare il payload del provider owner. Audit Supabase resta; nessun purge o search+delete.
-
-## Test e consegna
-
-Verify preflight: dry-run popolato, ordine errato/rollback, preservazione JSON, confronto remoto metadata/hash, old/new adapter e claim isolation, ACL/RLS, default flag. Il PASS del verify attesta che le osservazioni sono riproducibili, **non** che il verdetto sia READY: i due blocker sono attesi e riprodotti.
-
-Esiti finali: PASS nuovo verify preflight e tutte le sette suite richieste: owner-sync, owner-readiness, assignment-management (alias npm esistente test:patrimonial-assignment), persistence, CRM, opportunities, remote-mapping; PASS typecheck senza emissione con tmp esclusa solo in memoria, ESLint sul nuovo script a zero warning e git diff --check. Nessun file UI/produzione o migration modificato, nessun browser redesign necessario. tmp/ e documento Radar preesistenti esclusi.
-
-Consegna esclusivamente documentazione/test/evidenza aggregata, commit docs: verify patrimonial remote activation preflight e push solo feature branch. Nessun main merge, deploy, flag, HighLevel/Supabase remote write o migration. **STOP al verdetto BLOCKED: non proseguire con applicazione o smoke.**
+**READY_FOR_REMOTE_MIGRATION_APPROVAL significa soltanto che i blocker locali di lineage/readiness sono rimossi. Non è autorizzazione a eseguire SQL e non abilita HighLevel. Attendere approvazione separata per ciascuna fase remota.**

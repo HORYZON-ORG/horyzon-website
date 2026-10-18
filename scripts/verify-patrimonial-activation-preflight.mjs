@@ -13,7 +13,7 @@ import { patrimonialFlags,PatrimonialStoreUnavailableError } from '../src/lib/pu
 // schema, aggregates/categories and routine hashes from the read-only audit.
 let network=0;globalThis.fetch=async()=>{network++;throw new Error('Network forbidden');};
 const evidence=JSON.parse(await readFile(new URL('./fixtures/patrimonial-preflight-evidence.json',import.meta.url),'utf8'));
-const migrations=['20261014225059_patrimonial_lead_v2.sql','20261015100912_patrimonial_opportunity_jsonb_precedence.sql','20261018094926_patrimonial_assignment_management.sql','20261018163245_patrimonial_owner_sync.sql'];
+const migrations=['20261014225059_patrimonial_lead_v2.sql','20261015100912_patrimonial_opportunity_jsonb_precedence.sql','20261018094926_patrimonial_assignment_management.sql','20261018163245_patrimonial_owner_sync.sql','20261018180107_patrimonial_runtime_capabilities.sql'];
 const sources=await Promise.all(migrations.map(name=>readFile(new URL(`../supabase/migrations/${name}`,import.meta.url),'utf8')));
 const db=new PGlite();
 const query=async(sql,args=[]) => (await db.query(sql,args)).rows;
@@ -24,6 +24,7 @@ const transport=async(url,init)=>{
   try {
     const result=await db.transaction(async tx=>{
       await tx.exec('set local role service_role');
+      if(rpc==='patrimonial_store_capabilities') return (await tx.query('select public.patrimonial_store_capabilities() as result')).rows[0].result;
       if(rpc==='patrimonial_store_health') return (await tx.query('select public.patrimonial_store_health() as result')).rows[0].result;
       assert.equal(rpc,'patrimonial_store_transaction');
       return (await tx.query('select public.patrimonial_store_transaction($1::jsonb,$2::jsonb,$3::boolean) result',[JSON.stringify(body.p_commands),JSON.stringify(body.p_expected),body.p_preview])).rows[0].result;
@@ -76,7 +77,7 @@ try {
   const legacyBehavior=async store=>({requests:await Promise.all(requests.map(id=>store.getRequest(id))),intent:await store.transaction(tx=>tx.getOpportunityIntent(business.id)),idle:await store.claimOperations({now:new Date().toISOString(),limit:1})});
   const oldBefore=await legacyBehavior(old);await current.health();
   await assert.rejects(current.claimOwnerOperations({now:new Date().toISOString(),limit:1}),PatrimonialStoreUnavailableError);
-  console.log('CONFIRMED BLOCKER STORE_HEALTH_CAPABILITY_GAP: NEW APP + OLD DB health succeeds, owner command fails closed');
+  console.log('PASS NEW APP + OLD DB: base health unchanged; missing capability blocks before owner command');
   // Wrong-order application stays inside a disposable local database transaction.
   await assert.rejects(db.exec(sources[3]),e=>/patrimonial_assignments/.test(e.message));await db.exec('rollback');
   assert.equal((await query("select count(*)::integer n from information_schema.columns where table_schema='public' and column_name='owner_checkpoint_revision'"))[0].n,0);
@@ -89,6 +90,9 @@ try {
   for(const t of tables) assert.deepEqual(after[t].map(r=>Object.fromEntries(Object.entries(r).filter(([k])=>!['current_operator_id','operator_revision','experiment_id','owner_checkpoint_revision','owner_checkpoint'].includes(k)))),before[t]);
   assert(after.patrimonial_intents.every(r=>r.owner_checkpoint_revision===0&&r.owner_checkpoint===null));
   assert.deepEqual(await legacyBehavior(old),oldBefore);assert.deepEqual(await legacyBehavior(current),oldBefore);
+  await assert.rejects(current.ownerSyncHealth(),PatrimonialStoreUnavailableError);
+  await db.exec(sources[4]);await current.assignmentHealth();await current.ownerSyncHealth();
+  assert.deepEqual(await snapshot(),after);
   assert.equal((await current.claimOwnerOperations({now:new Date().toISOString(),limit:1})).length,0);
   // SQL default protects the old app, even though its claim call has no kinds.
   await query("select public.patrimonial_put_operation($1::jsonb)",[JSON.stringify({id:randomUUID(),operationKey:'synthetic-owner-isolation',intentId:business.id,requestId:requests[0],kind:'ASSIGN_OPPORTUNITY_OWNER',technicalState:'SYNC_PENDING',createdAt:now,nextAttemptAt:now,attemptCount:0,leaseToken:null,leaseVersion:0,leaseExpiresAt:null,reconcileRequired:false,lastErrorCode:null,identityLockKey:`patrimonial-owner:${business.id}`,owner:{}})]);
@@ -103,7 +107,8 @@ try {
   const localNames=await readdir(new URL('../supabase/migrations/',import.meta.url));const historyDrift=[];
   for(const name of localNames.filter(n=>n.endsWith('.sql')&&n<'20261018094926')) {const version=name.slice(0,14),slug=name.slice(15,-4),match=evidence.remoteHistory.find(m=>m.name===slug||m.name===`${version}_${slug}`);if(!match||match.version!==version) historyDrift.push({file:name,remoteVersion:match?.version??null});}
   assert(historyDrift.some(d=>d.file.includes('patrimonial_lead_v2')));assert(historyDrift.some(d=>d.file.includes('opportunity_jsonb_precedence')));
-  console.log('CONFIRMED BLOCKER MIGRATION_HISTORY_DRIFT:',JSON.stringify(historyDrift));
+  console.log('EXPECTED historical version divergence (managed targeted strategy):',JSON.stringify(historyDrift));
   assert(Object.values(patrimonialFlags({})).every(v=>v===false));assert.equal(network,0);
-  console.log('PASS preflight verifier; readiness verdict BLOCKED (audit findings, not a failing local test). No remote SQL/write/migration performed by this script.');
+  await import('./verify-patrimonial-migration-lineage.mjs');
+  console.log('PASS preflight verifier; readiness READY_FOR_REMOTE_MIGRATION_APPROVAL under targeted strategy + explicit capabilities; live smoke remains unauthorized. No remote SQL/write/migration performed by this script.');
 } finally {await db.close();}

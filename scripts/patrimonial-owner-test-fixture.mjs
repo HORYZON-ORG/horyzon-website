@@ -22,19 +22,20 @@ const fetchImpl=async(url,init)=>{
   assert.equal(init.method,'POST');
   const name=new URL(url).pathname.split('/').at(-1), body=JSON.parse(init.body);
   requests.push(name);
-  assert(['patrimonial_store_health','patrimonial_store_transaction'].includes(name));
+  assert(['patrimonial_store_health','patrimonial_store_capabilities','patrimonial_store_transaction'].includes(name));
   try {
     const result=await db.transaction(async tx=>{
       await tx.exec('set local role service_role');
       const query=name==='patrimonial_store_health'
         ? await tx.query('select public.patrimonial_store_health() as result')
+        : name==='patrimonial_store_capabilities' ? await tx.query('select public.patrimonial_store_capabilities() as result')
         : await tx.query('select public.patrimonial_store_transaction($1::jsonb,$2::jsonb,$3::boolean) as result',[JSON.stringify(body.p_commands),JSON.stringify(body.p_expected),body.p_preview]);
       return query.rows[0].result;
     });
     return Response.json(result);
   } catch(error) {
     if(error instanceof TypeError) throw error;
-    if(error.code!=='PT409' && error.code!=='23505' && error.message!=='Unknown assignment write' && error.message!=='PATRIMONIAL_INVALID_COMMAND') console.error('SQL fixture failure:',error.code,error.message,error.where);
+    if(error.code!=='PT409' && error.code!=='23505' && error.message!=='Unknown assignment write' && error.message!=='PATRIMONIAL_INVALID_COMMAND' && !(name==='patrimonial_store_capabilities' && error.code==='42883')) console.error('SQL fixture failure:',error.code,error.message,error.where);
     return Response.json({code:error.code==='23505'?'PT409':error.code,message:error.code==='23505'?'PATRIMONIAL_CONFLICT':error.message},{status:['PT409','23505'].includes(error.code)?409:500});
   }
 };
@@ -61,7 +62,7 @@ async function seed({profile='',source=null,campaign=null,owner='fixture-remote-
 export {db,store,sql,run,seed,env,actor,makeStore,externalAttempts};
 export async function setup(beforeOwnerMigration=async()=>{}){
  await db.exec('create role anon; create role authenticated; create role service_role bypassrls; grant usage on schema public to anon,authenticated,service_role;');
- for(const name of ['20261014225059_patrimonial_lead_v2.sql','20261015100912_patrimonial_opportunity_jsonb_precedence.sql','20261018094926_patrimonial_assignment_management.sql','20261018163245_patrimonial_owner_sync.sql']) {
+ for(const name of ['20261014225059_patrimonial_lead_v2.sql','20261015100912_patrimonial_opportunity_jsonb_precedence.sql','20261018094926_patrimonial_assignment_management.sql','20261018163245_patrimonial_owner_sync.sql','20261018180107_patrimonial_runtime_capabilities.sql']) {
    if(name==='20261018163245_patrimonial_owner_sync.sql') await beforeOwnerMigration();
    await db.exec(await readFile(new URL('../supabase/migrations/'+name,import.meta.url),'utf8'));
  }

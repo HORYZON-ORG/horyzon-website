@@ -120,5 +120,5 @@ try {
   const functions=await sql("select p.oid::regprocedure::text signature from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname like 'patrimonial_owner_%'");
   for(const f of functions) for(const role of ['anon','authenticated']) assert.equal((await sql('select has_function_privilege($1,$2,\'execute\') allowed',[role,f.signature]))[0].allowed,false);
   for(const table of ['patrimonial_intents','patrimonial_outbox_operations']) {const [security]=await sql('select relrowsecurity,relforcerowsecurity from pg_class where oid=$1::regclass',[`public.${table}`]);assert.equal(security.relrowsecurity,true);assert.equal(security.relforcerowsecurity,true);}
-  assert.equal(new Set(passed).size,31);console.log('PASS owner-sync A–AE:',[...new Set(passed)].sort().join(', '));console.log('PASS actual four-migration SQL, production RPC adapter, HTTP payload/decoder, fencing, ACL, protected paths; external requests: 0');
+  assert.equal(new Set(passed).size,31);console.log('PASS owner-sync A–AE:',[...new Set(passed)].sort().join(', '));console.log('PASS actual five-migration SQL, production RPC adapter, HTTP payload/decoder, fencing, ACL, protected paths; external requests: 0');
 } finally {await db.close();}

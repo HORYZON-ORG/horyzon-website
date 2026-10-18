@@ -54,6 +54,11 @@ export class PatrimonialConflictError extends Error {}
 export class PatrimonialReplayExpiredError extends Error {}
 export class PatrimonialStaleLeaseError extends Error {}
 export class PatrimonialStoreUnavailableError extends Error {}
+export class PatrimonialCapabilityUnavailableError extends PatrimonialStoreUnavailableError {
+  readonly code = 'PATRIMONIAL_CAPABILITY_UNAVAILABLE';
+  readonly capability: 'assignmentManagement' | 'ownerSync';
+  constructor(capability: 'assignmentManagement' | 'ownerSync') { super(`Patrimonial capability unavailable: ${capability}`); this.capability=capability; }
+}
 
 // Separate resolved business aggregates; the existing provisional lead/CRM ledger
 // remains unchanged. All saves are CAS; participation uniqueness is contact+edition,
