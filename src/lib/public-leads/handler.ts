@@ -5,9 +5,10 @@ import { isLegacyLeadPayload, pilotCrmDetails, pilotMode, validatePilotLead, val
 import { pilotForms } from '../../content/patrimonial-funnels.ts';
 import { canonicalPatrimonialPayload, isPatrimonialRequestId, PATRIMONIAL_V2, type PatrimonialRequest } from './patrimonial-contract.ts';
 import { patrimonialConsentEvidence } from './patrimonial-consents.ts';
+import { claimCv, cvStorage, isCvId, readCandidateCv, uploadCvToHighLevel, type CvStorage } from './architect-cv.ts';
 import { createProductionPatrimonialStore, patrimonialFlags, PatrimonialConflictError, PatrimonialReplayExpiredError, type PatrimonialStore } from './patrimonial-store.ts';
 
-type Options = { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch; now?: () => Date; store?: PatrimonialStore };
+type Options = { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch; now?: () => Date; store?: PatrimonialStore; cvStorage?: CvStorage | null };
 const attempts = new Map<string, { count: number; until: number }>();
 const response = (status: number, message: string) => Response.json({ ok: status === 200, message }, { status, headers: { 'Cache-Control': 'no-store' } });
 const text = (value: unknown, max: number) => typeof value === 'string' && value.length <= max ? value.trim() : null;
@@ -39,7 +40,12 @@ export async function handlePublicLead(request: Request, options: Options = {}):
     return handlePatrimonialV2(request, input, options);
   }
   if (Object.hasOwn(input, 'requestId') || request.headers.has('idempotency-key')) return response(400, 'Versione della richiesta mancante.');
-  const pilot = pilotMode(input.mode) ? validatePilotLead(input) : null;
+  // Il CV viaggia a parte (/api/public-leads/cv): qui arriva solo il suo id opaco.
+  // Obbligatorio per la candidatura Architetto, mai accettato dagli altri moduli.
+  const { cvId, ...fields } = input;
+  if (cvId !== undefined && input.mode !== 'architect-path') return response(400, 'Controlla i dati e la richiesta di ricontatto.');
+  const pilot = pilotMode(fields.mode) ? validatePilotLead(fields) : null;
+  if (pilot?.mode === 'architect-path' && !isCvId(cvId)) return response(400, 'Allega il tuo curriculum in PDF per inviare la candidatura.');
   if (!isLegacyLeadPayload(input) && !pilot) return response(400, 'Controlla i dati e la richiesta di ricontatto.');
   const name = text(input.name, 120), email = text(input.email, 254), rawPhone = text(input.phone ?? '', 40), message = text(input.message ?? '', 1500);
   const interest = patrimonialInterest(input.interest);
@@ -61,12 +67,31 @@ export async function handlePublicLead(request: Request, options: Options = {}):
   const crm = { ...config, fetchImpl: options.fetchImpl ?? ((url, init) => fetch(url, { ...init, signal: AbortSignal.timeout(10000) })) };
   if (pilot) {
     const details = pilotCrmDetails(pilot, now);
+    const cv = pilot.mode === 'architect-path' && isCvId(cvId) ? cvId : null;
+    const storage = options.cvStorage !== undefined ? options.cvStorage : cvStorage(env);
+    if (cv) {
+      // Prima il CV, poi il CRM: nessun contatto HighLevel per una candidatura senza CV.
+      if (!storage) return response(503, 'Il caricamento del CV è temporaneamente non disponibile. Puoi scrivere a info@horyzon.it.');
+      try {
+        if (await claimCv(storage, cv) === 'missing') return response(400, 'Il CV caricato non è più disponibile. Caricalo di nuovo e reinvia la candidatura.');
+      } catch { return response(503, 'Non riusciamo a collegare il CV in questo momento. Riprova tra poco.'); }
+    }
     try {
       const result = await callHighLevel<{ contact?: { id?: string } }>(crm, '/contacts/upsert', { locationId: config.locationId, firstName: pilot.firstName, lastName: pilot.lastName, email: pilot.email, ...(pilot.phone ? { phone: pilot.phone } : {}), source: details.source });
       const id = result.contact?.id;
       if (!id || typeof id !== 'string') throw new Error('Contact confirmation missing');
       await callHighLevel(crm, `/contacts/${encodeURIComponent(id)}/tags`, { tags: details.tags });
-      await callHighLevel(crm, `/contacts/${encodeURIComponent(id)}/notes`, { body: details.note });
+      const fieldId = env.HIGHLEVEL_CV_FIELD_ID?.trim();
+      const cvLine = cv ? `\nCurriculum: ricevuto (PDF) · archivio privato Horyzon · rif. ${cv}${fieldId ? '' : ' · campo CV HighLevel non ancora configurato'}` : '';
+      await callHighLevel(crm, `/contacts/${encodeURIComponent(id)}/notes`, { body: details.note + cvLine });
+      if (cv && storage && fieldId) {
+        try {
+          await uploadCvToHighLevel({ ...crm, fetchImpl: options.fetchImpl ?? ((url, init) => fetch(url, { ...init, signal: AbortSignal.timeout(25000) })) }, id, fieldId, await readCandidateCv(storage, cv), `CV-${pilot.lastName}-${pilot.firstName}.pdf`.replace(/[^\w.-]+/g, '_'));
+        } catch {
+          // La candidatura e il CV sono già al sicuro: si segnala solo la verifica manuale.
+          try { await callHighLevel(crm, `/contacts/${encodeURIComponent(id)}/notes`, { body: `Curriculum: caricamento nel campo HighLevel non riuscito · verifica manuale · rif. ${cv}` }); } catch { /* best effort */ }
+        }
+      }
       return response(200, pilotForms[pilot.mode].success);
     } catch {
       return response(502, 'Non possiamo confermare la ricezione completa. Riprova oppure scrivi a info@horyzon.it.');

@@ -6,6 +6,7 @@ import { patrimonialInterest, patrimonialInterests, type PatrimonialInterest } f
 import { pilotAvailability, pilotExperience, pilotForms, pilotGoals, pilotUtmKeys, type PilotMode, type PilotUtm } from '@/content/patrimonial-funnels';
 import { PATRIMONIAL_V2, PatrimonialClientAttempt, PatrimonialRevisionRequiredError } from '@/lib/public-leads/patrimonial-contract';
 import { ArchitectApplicationForm } from './patrimonial-architect-form';
+import { architectCvProblem } from '@/content/architect-cv';
 import { PatrimonialEventForm } from './patrimonial-event-form';
 
 type ArchitectPresentation = { presentation?: 'architect' | 'event'; selectedProfile?: string; onProfileChange?: (value: string) => void };
@@ -52,6 +53,8 @@ function PilotLeadForm({ mode, contractVersion, presentation, selectedProfile = 
   const v2Attempt = useRef<PatrimonialClientAttempt | null>(null);
   const [revisionRequired, setRevisionRequired] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
+  // Un CV già caricato non viene ricaricato a ogni nuovo tentativo con lo stesso file.
+  const uploadedCv = useRef<{ key: string; id: string } | null>(null);
   useEffect(() => { if (!v2) pilotAttribution(mode); }, [mode, v2]);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -66,12 +69,32 @@ function PilotLeadForm({ mode, contractVersion, presentation, selectedProfile = 
     }
     sending.current = true;
     const data = new FormData(event.currentTarget);
+    let cvId: string | undefined;
+    if (mode === 'architect-path' && !v2) {
+      const file = data.get('cv');
+      const problem = architectCvProblem(file);
+      if (problem || !(file instanceof File)) { sending.current = false; setStatus('error'); setNotice(problem ?? 'Allega il tuo curriculum in PDF.'); return; }
+      const key = `${file.name}:${file.size}:${file.lastModified}`;
+      if (uploadedCv.current?.key === key) cvId = uploadedCv.current.id;
+      else {
+        setStatus('sending'); setNotice('Caricamento del CV…');
+        try {
+          const uploaded = await fetch('/api/public-leads/cv', { method: 'POST', headers: { 'Content-Type': 'application/pdf' }, body: file, signal: AbortSignal.timeout(60000) });
+          const result = await uploaded.json();
+          if (!uploaded.ok || result.ok !== true || typeof result.cvId !== 'string') {
+            sending.current = false; setStatus('error'); setNotice(typeof result.message === 'string' ? result.message : 'Non riusciamo a caricare il CV. Riprova.'); return;
+          }
+          cvId = result.cvId; uploadedCv.current = { key, id: result.cvId };
+        } catch { sending.current = false; setStatus('error'); setNotice('Caricamento del CV non riuscito. Controlla la connessione e riprova.'); return; }
+      }
+    }
     const payload = {
       mode, sourcePath: form.path, firstName: data.get('firstName'), lastName: data.get('lastName'),
       email: data.get('email'), phone: data.get('phone'), province: data.get('province'), profile: data.get('profile'),
       message: data.get('message'), consent: data.get('consent') === 'on', marketingConsent: data.get('marketingConsent') === 'on',
       website: data.get('website'), utm: pilotAttribution(mode, !v2),
       ...(mode === 'architect-path' ? { experience: data.get('experience'), goal: data.get('goal'), availability: data.get('availability') } : {}),
+      ...(cvId ? { cvId } : {}),
     };
     setStatus('sending'); setNotice('');
     try {
@@ -87,6 +110,7 @@ function PilotLeadForm({ mode, contractVersion, presentation, selectedProfile = 
       const response = await fetch('/api/public-leads', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(requestId ? { 'Idempotency-Key': requestId } : {}) }, signal: AbortSignal.timeout(35000), body: JSON.stringify(v2 ? { ...payload, contractVersion: PATRIMONIAL_V2, requestId } : payload) });
       const result = await response.json();
       if (!response.ok || result.ok !== true || (v2 && !v2Attempt.current?.acceptReceipt(response.status, result))) {
+        if (response.status === 400 && cvId) uploadedCv.current = null; // CV scaduto: al prossimo invio si ricarica
         if (v2 && response.status === 409) setRevisionRequired(true);
         setStatus('error'); setNotice(typeof result.message === 'string' ? result.message : 'Invio non confermato. Riprova oppure scrivici.');
         sending.current = false; return;

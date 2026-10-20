@@ -1,8 +1,9 @@
 'use client';
-import { useEffect, useRef, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import Link from 'next/link';
 import { pilotAvailability, pilotExperience, pilotGoals } from '@/content/patrimonial-funnels';
 import { architectProfiles } from '@/content/patrimonial-architect-session';
+import { ARCHITECT_CV_MAX_MB, architectCvProblem } from '@/content/architect-cv';
 import styles from './patrimonial-architect.module.css';
 
 // Presentation only. Submission, attribution, attempts and receipts stay owned
@@ -16,6 +17,13 @@ export function ArchitectApplicationForm({ step, setStep, selectedProfile, onPro
   useEffect(() => { if (step === 2) heading.current?.focus(); }, [step]);
   const selected = Object.values(architectProfiles).find(profile => profile.value === selectedProfile);
   const disabled = status === 'sending' || status === 'success';
+  const [cv, setCv] = useState<{ name: string; size: string; problem: string | null } | null>(null);
+  const onCv = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    const problem = file ? architectCvProblem(file) : null;
+    event.target.setCustomValidity(problem ?? '');
+    setCv(file ? { name: file.name, size: `${(file.size / 1024 / 1024).toFixed(1).replace('.', ',')} MB`, problem } : null);
+  };
   return <form className={styles.formCard} onSubmit={onSubmit} aria-labelledby="architect-path-form-title" aria-busy={status === 'sending'} data-pilot-form="architect-path">
     <h3 id="architect-path-form-title" className="sr-only" ref={heading} tabIndex={-1}>La tua candidatura. Passo {step} di 2</h3>
     <div className={styles.formProgress}><span>PASSO {step} DI 2</span><span>{step === 1 ? 'I tuoi recapiti' : 'Il tuo profilo'}</span></div>
@@ -40,6 +48,15 @@ export function ArchitectApplicationForm({ step, setStep, selectedProfile, onPro
         <label>Cosa stai cercando <span>(facoltativo)</span><select name="goal" defaultValue=""><option value="">Seleziona</option>{pilotGoals.map(value => <option key={value}>{value}</option>)}</select></label>
         <label>Disponibilità <span>(facoltativo)</span><select name="availability" defaultValue=""><option value="">Seleziona</option>{pilotAvailability.map(value => <option key={value}>{value}</option>)}</select></label>
       </div>
+      {!v2 && <div className={styles.cvField}>
+        <span className={styles.cvLabel} id="cv-label">Il tuo curriculum</span>
+        <label className={[styles.cvDrop, cv && !cv.problem ? styles.cvReady : '', cv?.problem ? styles.cvError : ''].filter(Boolean).join(' ')}>
+          <input className={styles.cvInput} name="cv" type="file" accept="application/pdf,.pdf" required onChange={onCv} aria-labelledby="cv-label" aria-describedby="cv-help" />
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">{cv && !cv.problem ? <path d="M5 12l5 5L20 7" /> : <><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5M12 18v-6M9 15l3-3 3 3" /></>}</svg>
+          <span className={styles.cvText}>{cv ? <><strong>{cv.name}</strong><span>{cv.problem ?? `${cv.size} · tocca per cambiare file`}</span></> : <><strong>Carica il CV in PDF</strong><span>Obbligatorio · massimo {ARCHITECT_CV_MAX_MB} MB</span></>}</span>
+        </label>
+        <p className={styles.cvHelp} id="cv-help">Lo usiamo solo per valutare la candidatura: resta in un archivio privato e viene cancellato dopo 12 mesi se la selezione non prosegue.</p>
+      </div>}
       <label className={styles.formQuestion}>Perché vuoi candidarti al Percorso Architetto Patrimoniale? <span>(facoltativo)</span><textarea name="message" rows={4} maxLength={1500} /></label>
       <label className={styles.formConsent}><input name="marketingConsent" type="checkbox" defaultChecked={false} /><span>Voglio ricevere anche consigli e novità da Horyzon.</span></label>
     </fieldset>

@@ -403,3 +403,17 @@
 /* === light theme: manual === */
 :global([data-theme="light"]) .page{--accent-stroke:#5F7010;--accent-stroke-18:rgba(95,112,16,.14);--accent-stroke-25:rgba(95,112,16,.3)}
 /* === end light theme: manual === */
+
+.cvField{margin-top:20px}
+.cvLabel{display:block;font-size:14px;font-weight:500;margin-bottom:6px}
+.cvDrop{position:relative;display:flex;align-items:center;gap:14px;min-height:76px;padding:14px 18px;border:1.5px dashed #AEB3AE;border-radius:12px;background:#FFF;color:var(--olive);cursor:pointer;transition:border-color .2s,background-color .2s}
+.cvDrop:hover,.cvDrop:focus-within{border-color:var(--olive);background:#FAFBF3}
+.cvDrop:focus-within{outline:2px solid var(--olive);outline-offset:2px}
+.cvReady{border-style:solid;border-color:var(--olive);background:#F6F9E8}
+.cvError{border-color:#8b2525;color:#8b2525;background:#FDF5F4}
+.cvInput{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.cvText{display:flex;flex-direction:column;gap:2px;min-width:0;color:var(--ink)}
+.cvText strong{font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cvText span{font-size:12px;color:var(--soft-light)}
+.cvError .cvText span{color:#8b2525}
+.cvHelp{margin:8px 0 0;font-size:12px;line-height:1.5;color:var(--soft-light)}

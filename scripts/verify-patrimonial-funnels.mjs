@@ -11,6 +11,9 @@ globalThis.fetch = async () => { throw new Error('External fetch forbidden in pi
 const env = { NODE_ENV: 'test', HIGHLEVEL_PRIVATE_TOKEN: 'test-token', HIGHLEVEL_LOCATION_ID: 'test-location' };
 const now = () => new Date('2026-10-14T10:00:00Z');
 let calls = [];
+// CV della candidatura Architetto: storage finto che conferma il collegamento del PDF (vedi verify-architect-cv.mjs).
+const cvStorage = { url: 'https://cv.test', key: 'test', fetchImpl: async () => new Response('{}', { status: 200 }) };
+const CV_ID = '11111111-1111-4111-8111-111111111111';
 const provider = async (url, init) => {
   calls.push({ url, body: JSON.parse(init.body) });
   return new Response(JSON.stringify(url.endsWith('/upsert') ? { contact: { id: 'test-contact' } } : {}), { status: 200 });
@@ -21,12 +24,12 @@ const payload = mode => ({
   phone: mode === 'architect-path' ? '333 123 4567' : '', province: 'Milano', profile: 'Imprenditore',
   message: 'Vorrei approfondire.', consent: true, marketingConsent: false, website: '',
   utm: { utm_source: 'invito', utm_medium: 'link', utm_campaign: 'pilot', utm_content: 'hero', utm_term: 'patrimonio' },
-  ...(mode === 'architect-path' ? { experience: 'Sì', goal: 'Sto esplorando', availability: 'Da definire' } : {}),
+  ...(mode === 'architect-path' ? { experience: 'Sì', goal: 'Sto esplorando', availability: 'Da definire', cvId: CV_ID } : {}),
 });
 for (const mode of ['architect-path', 'patrimonial-event']) {
   calls = [];
   const input = payload(mode);
-  const response = await handlePublicLead(request(input), { env, now, fetchImpl: provider });
+  const response = await handlePublicLead(request(input), { env, cvStorage, now, fetchImpl: provider });
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { ok: true, message: pilotForms[mode].success });
   assert.equal(calls.length, 3);
@@ -38,7 +41,13 @@ for (const mode of ['architect-path', 'patrimonial-event']) {
   assert.deepEqual(calls[1].body.tags, ['horyzon-patrimoniale', mode === 'architect-path' ? 'percorso-architetto-patrimoniale' : 'evento-patrimoniale', 'pilot']);
   for (const text of [mode, input.sourcePath, now().toISOString(), 'Milano', 'Consenso marketing: no', PATRIMONIAL_PILOT_PRIVACY_VERSION, ...Object.values(input.utm)]) assert(calls[2].body.body.includes(text));
   if (mode === 'architect-path') for (const text of ['Sì', 'Sto esplorando', 'Da definire']) assert(calls[2].body.body.includes(text));
-  const marketing = validatePilotLead({ ...input, marketingConsent: true });
+  if (mode === 'architect-path') {
+    const { cvId: _cv, ...withoutCv } = input;
+    assert.equal((await handlePublicLead(request(withoutCv), { env, cvStorage, fetchImpl: provider })).status, 400, 'candidatura Architetto senza CV');
+    assert(calls[2].body.body.includes(`rif. ${CV_ID}`));
+  } else assert.equal((await handlePublicLead(request({ ...input, cvId: CV_ID }), { env, cvStorage, fetchImpl: provider })).status, 400, 'evento senza CV');
+  const { cvId: _cvId, ...pilotFields } = input;
+  const marketing = validatePilotLead({ ...pilotFields, marketingConsent: true });
   assert(marketing);
   assert(pilotCrmDetails(marketing, now()).note.includes('Consenso marketing: sì'));
   const invalid = [
@@ -51,18 +60,18 @@ for (const mode of ['architect-path', 'patrimonial-event']) {
   ];
   for (const change of invalid) {
     calls = [];
-    assert.equal((await handlePublicLead(request({ ...input, ...change }), { env, fetchImpl: provider })).status, 400, JSON.stringify(change));
+    assert.equal((await handlePublicLead(request({ ...input, ...change }), { env, cvStorage, fetchImpl: provider })).status, 400, JSON.stringify(change));
     assert.equal(calls.length, 0);
   }
   for (const missing of ['mode', 'firstName', 'lastName', 'email', 'province', 'consent', 'marketingConsent', 'sourcePath']) {
     const malformed = { ...input }; delete malformed[missing];
-    assert.equal((await handlePublicLead(request(malformed), { env, fetchImpl: provider })).status, 400, `Missing ${missing}`);
+    assert.equal((await handlePublicLead(request(malformed), { env, cvStorage, fetchImpl: provider })).status, 400, `Missing ${missing}`);
   }
-  assert.equal((await handlePublicLead(request(input, {}, 'https://evil.example'), { env, fetchImpl: provider })).status, 403);
-  assert.equal((await handlePublicLead(request(input), { env: {}, fetchImpl: provider })).status, 503);
+  assert.equal((await handlePublicLead(request(input, {}, 'https://evil.example'), { env, cvStorage, fetchImpl: provider })).status, 403);
+  assert.equal((await handlePublicLead(request(input), { env: {}, cvStorage, fetchImpl: provider })).status, 503);
   for (const failedStep of [1, 2, 3]) {
     let step = 0;
-    const response = await handlePublicLead(request(input), { env, fetchImpl: (...args) => ++step === failedStep ? Promise.resolve(new Response('private provider body', { status: 500 })) : provider(...args) });
+    const response = await handlePublicLead(request(input), { env, cvStorage, fetchImpl: (...args) => ++step === failedStep ? Promise.resolve(new Response('private provider body', { status: 500 })) : provider(...args) });
     assert.equal(response.status, 502);
     assert(!JSON.stringify(await response.json()).includes('private provider body'));
   }
@@ -70,18 +79,18 @@ for (const mode of ['architect-path', 'patrimonial-event']) {
 const legacy = { name: 'Ada Lovelace', email: 'ada@example.com', phone: '', message: '', consent: true, website: '', interest: 'evento-patrimoniale' };
 for (const mode of [undefined, 'legacy/public']) {
   calls = [];
-  assert.equal((await handlePublicLead(request({ ...legacy, ...(mode ? { mode } : {}) }), { env, now, fetchImpl: provider })).status, 200);
+  assert.equal((await handlePublicLead(request({ ...legacy, ...(mode ? { mode } : {}) }), { env, cvStorage, now, fetchImpl: provider })).status, 200);
   assert.deepEqual(calls[1].body.tags, ['horyzon-benessere-patrimoniale', 'horyzon-evento-patrimoniale']);
   assert(calls[2].body.body.includes('Provenienza: horyzon.it/contatti'));
   assert(calls[2].body.body.includes('nessuna iscrizione a campagne marketing'));
 }
 for (const mix of [{ mode: 'invented' }, { mode: 'architect-path' }, { mode: 'patrimonial-event' }, { firstName: 'Ada' }, { marketingConsent: true }]) {
   calls = [];
-  assert.equal((await handlePublicLead(request({ ...legacy, ...mix }), { env, fetchImpl: provider })).status, 400);
+  assert.equal((await handlePublicLead(request({ ...legacy, ...mix }), { env, cvStorage, fetchImpl: provider })).status, 400);
   assert.equal(calls.length, 0);
 }
-for (let i = 0; i < 6; i++) assert.equal((await handlePublicLead(request(payload('patrimonial-event'), { 'x-forwarded-for': '192.0.2.51' }), { env: { ...env, NODE_ENV: 'production' }, now, fetchImpl: provider })).status, i < 5 ? 200 : 429);
-assert.equal((await handlePublicLead(new Request('https://horyzon.it/api/public-leads', { method: 'POST', headers: { Origin: 'https://horyzon.it', 'Content-Type': 'application/json' }, body: 'x'.repeat(12001) }), { env, fetchImpl: provider })).status, 413);
+for (let i = 0; i < 6; i++) assert.equal((await handlePublicLead(request(payload('patrimonial-event'), { 'x-forwarded-for': '192.0.2.51' }), { env: { ...env, NODE_ENV: 'production' }, cvStorage, now, fetchImpl: provider })).status, i < 5 ? 200 : 429);
+assert.equal((await handlePublicLead(new Request('https://horyzon.it/api/public-leads', { method: 'POST', headers: { Origin: 'https://horyzon.it', 'Content-Type': 'application/json' }, body: 'x'.repeat(12001) }), { env, cvStorage, fetchImpl: provider })).status, 413);
 
 const protectedFiles = ['src/components/wellbeing-page.tsx', 'src/components/wellbeing-scene.tsx', 'src/components/wellbeing.module.css', 'src/app/[...slug]/page.tsx', 'src/app/contatti/page.tsx', 'src/content/patrimonial.ts', 'src/content/public-guide.ts', 'src/content/public-faq.ts', 'src/data/pages.ts', 'src/data/archive.json', 'src/components/site-shell.tsx', 'src/app/layout.tsx', 'src/app/robots.ts', 'src/app/llms.txt/route.ts', 'src/app/index.md/route.ts'];
 execFileSync('git', ['diff', '--exit-code', 'b0b62e686bd120e2770e2408bc7a14fd59593e92', '--', ...protectedFiles], { stdio: 'pipe' });
