@@ -8,5 +8,6 @@ const sans = IBM_Plex_Sans({ subsets: ['latin'], weight: ['400', '500', '600'], 
 const mono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400', '500'], variable: '--architect-mono', display: 'swap' });
 export const metadata = { ...pageMetadata({ path: architectPath.path, title: patrimonialBrand.path, description: architectPath.description }), robots: { index: false, follow: false } };
 export default function ArchitectPathPage() {
-  return <PatrimonialThemeFrame><div className={`${display.variable} ${sans.variable} ${mono.variable}`}><ArchitectLanding /></div></PatrimonialThemeFrame>;
+  const durableCandidateIntake = process.env.PATRIMONIAL_ARCHITECT_CANDIDATE_V2_ENABLED === 'true';
+  return <PatrimonialThemeFrame><div className={`${display.variable} ${sans.variable} ${mono.variable}`}><ArchitectLanding durableCandidateIntake={durableCandidateIntake} /></div></PatrimonialThemeFrame>;
 }
