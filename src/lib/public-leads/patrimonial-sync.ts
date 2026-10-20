@@ -140,10 +140,12 @@ export async function runPatrimonialCrmOnce(options: WorkerOptions): Promise<str
       if (!privacy?.choice || !marketing) throw new PatrimonialCrmError('CONFIG');
       const lead = request.payload;
       const body = [marker, `Funnel: ${lead.mode}`, `Source path: ${lead.sourcePath}`, `Ricevuta: ${request.receivedAt}`,
+        ...(lead.mode === 'architect-path' ? [`Tipo pratica: candidatura`, `Origine candidatura: ${lead.utm.utm_source || 'diretta / non indicata'}`] : []),
         `Provincia: ${lead.province}`, `Profilo: ${lead.profile || 'Non indicato'}`,
         ...(lead.mode === 'architect-path' ? [`Esperienza: ${lead.experience || 'Non indicata'}`, `Obiettivo: ${lead.goal || 'Non indicato'}`, `Disponibilità: ${lead.availability || 'Non indicata'}`] : []),
         `Privacy / ricontatto: sì · ${privacy.version}`, `Marketing snapshot: ${marketing.choice ? 'sì' : 'no'} · ${marketing.version}`,
-        ...Object.entries(lead.utm).map(([key, value]) => `${key}: ${value}`), ...(lead.message ? [`Domanda: ${lead.message}`] : []),
+        ...Object.entries(lead.utm).map(([key, value]) => `${key}: ${value}`),
+        ...(lead.message ? [lead.mode === 'architect-path' ? `Motivazione candidatura: ${lead.message}` : `Domanda: ${lead.message}`] : []),
       ].join('\n');
       await writeGuard(); effectMayHaveCommitted = true;
       const note = await provider.addNote(contactId, body);
