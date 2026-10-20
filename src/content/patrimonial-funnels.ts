@@ -11,17 +11,17 @@ export const patrimonialBrand = {
 export const architectPath = {
   path: '/benessere-patrimoniale/percorso-architetto-patrimoniale',
   title: 'Il tuo talento può incontrare un nuovo orizzonte.',
-  description: 'Un percorso per persone che vogliono trasformare capacità relazionali, crescita personale e cultura patrimoniale in una nuova competenza professionale.',
+  description: 'Candidature sempre aperte per persone che vogliono trasformare capacità relazionali, crescita personale e cultura patrimoniale in una nuova competenza professionale.',
   roles: [
     { title: 'Comprendere', text: 'Imparare a leggere bisogni, obiettivi e situazioni.' },
     { title: 'Accompagnare', text: 'Aiutare la persona a fare domande migliori e compiere passi consapevoli.' },
     { title: 'Crescere', text: 'Sviluppare progressivamente competenze, responsabilità e capacità relazionali.' },
   ],
   steps: [
-    { title: 'Conosci il progetto', text: 'Partecipa alla presentazione introduttiva Horyzon.' },
-    { title: 'Raccontaci chi sei', text: 'Esperienza, obiettivi e cosa stai cercando.' },
-    { title: 'Parliamone', text: 'Se ci sono i presupposti, facciamo un colloquio individuale.' },
-    { title: 'Inizia il percorso', text: 'Se entrambe le parti decidono di proseguire, comincia il percorso di formazione e inserimento.' },
+    { title: 'Conosci il progetto', text: 'Leggi la pagina e approfondisci il ruolo prima di candidarti.' },
+    { title: 'Invia la candidatura', text: 'Lasciaci i tuoi recapiti e raccontaci esperienza, obiettivi e disponibilità.' },
+    { title: 'Valutiamo il profilo', text: 'Una persona del team esamina la candidatura e le informazioni inviate.' },
+    { title: 'Prosegui nel percorso', text: 'Se ci sono i presupposti, i passi successivi possono includere contenuti, incontri, colloquio, formazione e inserimento.' },
   ],
   forWhom: [
     'Ti piace lavorare con le persone.', 'Sai costruire relazioni.',
@@ -45,7 +45,7 @@ export const architectPath = {
     "quale ruolo può avere l'Architetto Patrimoniale;", 'come funziona il percorso;',
     'quali caratteristiche cerchiamo;', 'quali sono i passaggi successivi.',
   ],
-  thanks: ['Ricevi la conferma.', 'Ti invitiamo alla presentazione.', 'Se vuoi proseguire, completiamo la qualificazione.', 'Se ci sono i presupposti, fissiamo il colloquio.'],
+  thanks: ['La candidatura è stata registrata.', 'Una persona del team la valuterà.', 'Se il profilo è in linea, riceverai le indicazioni per i passi successivi.', 'Colloquio, formazione e inserimento avvengono solo dopo una conferma reciproca.'],
 } as const;
 
 // Change the working title here: hero, metadata and CRM all read this source.
@@ -81,10 +81,10 @@ export const patrimonialEvent = {
 
 export const pilotForms = {
   'architect-path': {
-    path: architectPath.path, title: 'Raccontaci da dove parti.',
-    intro: 'Non serve avere già tutte le risposte. Ci interessa capire chi sei, cosa stai cercando e se vale la pena approfondire insieme.',
-    submit: 'Voglio conoscere il percorso', success: 'Candidatura ricevuta.',
-    question: 'Perché vuoi conoscere il Percorso Architetto Patrimoniale?',
+    path: architectPath.path, title: 'Completa la tua candidatura.',
+    intro: 'Dopo aver conosciuto il progetto, lasciaci i dati necessari per capire da dove parti e se ha senso approfondire insieme.',
+    submit: 'Invia la mia candidatura', success: 'Candidatura ricevuta.',
+    question: 'Perché vuoi candidarti al Percorso Architetto Patrimoniale?',
     profiles: ['Imprenditore', 'Commerciale', 'Professionista', 'Networker', 'Dipendente', 'Altro'],
   },
   'patrimonial-event': {
