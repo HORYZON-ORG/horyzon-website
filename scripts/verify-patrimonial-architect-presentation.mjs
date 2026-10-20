@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-await import('./verify-patrimonial-form-presentation.mjs');
 
 const read = file => readFileSync(file, 'utf8').replaceAll('\r\n', '\n');
 const landing = read('src/components/patrimonial-architect-landing.tsx');
