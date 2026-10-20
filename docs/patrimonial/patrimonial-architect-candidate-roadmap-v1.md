@@ -1,6 +1,8 @@
 # Architect Candidate Intake — roadmap v1
 
-20 ottobre 2026. Branch `feat/patrimonial-pilot-funnels`.
+20 ottobre 2026. Scope: **ARCHITECT WORKSTREAM**. Branch `feat/patrimonial-pilot-funnels`.
+
+Il confine con il core condiviso e con il funnel Evento è definito in `patrimonial-two-funnel-workstreams-v1.md`. Da identity/contact resolution in avanti, CV, recruitment, colloqui, formazione e attivazione restano esclusivamente in questo workstream.
 
 Obiettivo aggiornato: il Percorso Architetto Patrimoniale non è più una sessione temporanea da prenotare. È una candidatura evergreen che può ricevere traffico da Indeed, altri job board, campagne o link diretti. La persona conosce il ruolo sulla landing, guarda i contenuti introduttivi, invia la candidatura e viene poi gestita in HighLevel lungo selezione, follow-up, contenuti, formazione, incontri e colloquio.
 
