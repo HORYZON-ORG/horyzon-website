@@ -87,14 +87,6 @@ export function ArchitectLanding() {
   </section>
 
 
-  <section className={[styles.s036].filter(Boolean).join(" ")}>
-    <div className={[styles['m-stats'], styles.s037].filter(Boolean).join(" ")}>
-      <div className={[styles.s038].filter(Boolean).join(" ")}><div className={[styles.s039].filter(Boolean).join(" ")}>[N]</div><div className={[styles.s040].filter(Boolean).join(" ")}>candidature ricevute</div></div>
-      <div className={[styles.s038].filter(Boolean).join(" ")}><div className={[styles.s039].filter(Boolean).join(" ")}>[N]</div><div className={[styles.s040].filter(Boolean).join(" ")}>Architetti in formazione</div></div>
-      <div className={[styles.s038].filter(Boolean).join(" ")}><div className={[styles.s039].filter(Boolean).join(" ")}>[N]%</div><div className={[styles.s040].filter(Boolean).join(" ")}>delle candidature accolte</div></div>
-      <div className={[styles.s038].filter(Boolean).join(" ")}><div className={[styles.s039].filter(Boolean).join(" ")}>Milano</div><div className={[styles.s040].filter(Boolean).join(" ")}>sede · FELICITÀ srl</div></div>
-    </div>
-  </section>
 
 
   <section className={[styles['m-sec'], styles.s041].filter(Boolean).join(" ")}>
