@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test:patrimonial": "node --no-warnings --experimental-strip-types scripts/verify-patrimonial-leads.mjs && node scripts/verify-patrimonial-content.mjs",
     "test:patrimonial-funnels": "node --no-warnings --experimental-strip-types scripts/verify-patrimonial-funnels.mjs",
+    "test:patrimonial-architect-evergreen": "node --no-warnings --experimental-strip-types scripts/verify-patrimonial-architect-presentation.mjs",
     "test:patrimonial-ledger": "node --no-warnings --experimental-strip-types scripts/verify-patrimonial-ledger.mjs",
     "test:patrimonial-crm": "node --no-warnings --experimental-strip-types scripts/verify-patrimonial-crm.mjs",
     "test:patrimonial-opportunities": "node --no-warnings --experimental-strip-types scripts/verify-patrimonial-opportunities.mjs",
