@@ -3,9 +3,10 @@ import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import { PatrimonialLeadForm } from './patrimonial-lead-form';
 import { architectProfiles, architectDefaultCopy, type ArchitectProfileKey } from '@/content/patrimonial-architect-session';
+import { PATRIMONIAL_V2 } from '@/lib/public-leads/patrimonial-contract';
 import styles from './patrimonial-architect.module.css';
 
-export function ArchitectLanding() {
+export function ArchitectLanding({ durableCandidateIntake = false }: { durableCandidateIntake?: boolean }) {
   const [profile, setProfile] = useState<ArchitectProfileKey | null>(null);
   const selected = profile ? architectProfiles[profile] : null;
   const heroRef = useRef<HTMLElement>(null), formRef = useRef<HTMLElement>(null);
@@ -385,10 +386,10 @@ export function ArchitectLanding() {
   <section className={[styles['m-sec'], styles.s041].filter(Boolean).join(" ")}>
     <div className={[styles.s143].filter(Boolean).join(" ")}>
       <div className={[styles.s144].filter(Boolean).join(" ")}>
-        <div className={[styles.s043].filter(Boolean).join(" ")}>09 · LA PRESENTAZIONE</div>
-        <h2 className={[styles['m-reveal'], styles.s088].filter(Boolean).join(" ")}>30 minuti che ti risparmiano mesi di dubbi.</h2>
-        <p className={[styles.s145].filter(Boolean).join(" ")}>Online e gratuita. Alla fine sai se vale la pena fare il passo successivo.</p>
-        <a className={[styles.s146].filter(Boolean).join(" ")} href="#richiesta">Candidati ora</a>
+        <div className={[styles.s043].filter(Boolean).join(" ")}>09 · PRIMA DI CANDIDARTI</div>
+        <h2 className={[styles['m-reveal'], styles.s088].filter(Boolean).join(" ")}>30 minuti per capire se vale la pena candidarti.</h2>
+        <p className={[styles.s145].filter(Boolean).join(" ")}>Prima conosci il ruolo e il percorso. Se alla fine ti riconosci, lasci la tua candidatura.</p>
+        <a className={[styles.s146].filter(Boolean).join(" ")} href="#richiesta">Vai alla candidatura</a>
       </div>
       <ol className={[styles.s147].filter(Boolean).join(" ")}>
         <li className={[styles.s148].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>00–04&#x27;</span><span>Perché Horyzon sta aprendo questa divisione proprio adesso</span></li>
@@ -433,13 +434,13 @@ export function ArchitectLanding() {
         <h2 className={[styles['m-reveal'], styles.s088].filter(Boolean).join(" ")}>Candidati al Percorso Architetto Patrimoniale.</h2>
         <p className={[styles.s164].filter(Boolean).join(" ")}>Ogni richiesta viene letta da una persona del team, non da un algoritmo.</p>
         <div className={[styles.s170].filter(Boolean).join(" ")}>
-          <div className={[styles.s171].filter(Boolean).join(" ")}><span className={[styles.s172].filter(Boolean).join(" ")}>→</span><span>Ricevi subito la conferma della candidatura</span></div>
-          <div className={[styles.s171].filter(Boolean).join(" ")}><span className={[styles.s172].filter(Boolean).join(" ")}>→</span><span>Una persona del team ti ricontatta per i passi successivi</span></div>
-          <div className={[styles.s171].filter(Boolean).join(" ")}><span className={[styles.s172].filter(Boolean).join(" ")}>→</span><span>Dopo la presentazione decidi tu se proseguire</span></div>
+          <div className={[styles.s171].filter(Boolean).join(" ")}><span className={[styles.s172].filter(Boolean).join(" ")}>→</span><span>Ricevi la conferma che la candidatura è stata registrata</span></div>
+          <div className={[styles.s171].filter(Boolean).join(" ")}><span className={[styles.s172].filter(Boolean).join(" ")}>→</span><span>Il team valuta il profilo e le informazioni che hai inviato</span></div>
+          <div className={[styles.s171].filter(Boolean).join(" ")}><span className={[styles.s172].filter(Boolean).join(" ")}>→</span><span>Se ci sono i presupposti, ricevi i contenuti e le indicazioni per i passaggi successivi</span></div>
         </div>
       </div>
 
-      <PatrimonialLeadForm mode="architect-path" presentation="architect" selectedProfile={selected?.value ?? ""} onProfileChange={chooseValue} />
+      <PatrimonialLeadForm mode="architect-path" presentation="architect" contractVersion={durableCandidateIntake ? PATRIMONIAL_V2 : undefined} selectedProfile={selected?.value ?? ""} onProfileChange={chooseValue} />
     </div>
   </section>
 
@@ -464,7 +465,7 @@ export function ArchitectLanding() {
     <div className={[styles.s182].filter(Boolean).join(" ")} aria-hidden="true"></div>
     <div className={[styles.s183].filter(Boolean).join(" ")}>
       <h2 className={[styles['m-reveal'], styles.s184].filter(Boolean).join(" ")}>Ogni orizzonte comincia da una conversazione.</h2>
-      <p className={[styles.s185].filter(Boolean).join(" ")}>30 minuti, online e gratuiti. Le candidature sono sempre aperte.</p>
+      <p className={[styles.s185].filter(Boolean).join(" ")}>Prima conosci il progetto. Poi, se ti riconosci, invia la candidatura. Le candidature sono sempre aperte.</p>
       <a className={[styles.s186].filter(Boolean).join(" ")} href="#richiesta">Candidati ora</a>
       <p className={[styles.s187].filter(Boolean).join(" ")}><strong className={[styles.s188].filter(Boolean).join(" ")}>P.S.</strong> Se sei arrivato fin qui, qualcosa ti ha incuriosito. Non decidere niente adesso: inviaci solo la candidatura. Nel peggiore dei casi avrai capito un mestiere nuovo.</p>
     </div>
