@@ -55,7 +55,7 @@ export function PatrimonialEventForm({ step, setStep, selectedProfile, onProfile
     </button>
     {notice && <p role={status === 'error' ? 'alert' : 'status'} className={styles.formNotice}>{notice}</p>}
     {v2 && revisionRequired && <button type="button" className={styles.formBack} disabled={status === 'sending'} onClick={onNewAttempt}>Ho verificato il precedente invio: avvia una nuova richiesta</button>}
-    <div className={styles.formFine}>Ti mandiamo subito una conferma con data, orario e link delle due serate.</div>
+    <div className={styles.formFine}>La richiesta sarà verificata rispetto alla disponibilità dell’edizione. Riceverai data, orario e link quando la partecipazione sarà confermata.</div>
     
   </form>;
 }
