@@ -416,14 +416,14 @@ export function ArchitectLanding() {
       <h2 className={[styles['m-reveal'], styles.s152].filter(Boolean).join(" ")}>Tra dodici mesi sarai in uno di questi due posti.</h2>
       <div className={[styles.s135].filter(Boolean).join(" ")}>
         <div className={[styles.s153].filter(Boolean).join(" ")}>
-          <div className={[styles.s154].filter(Boolean).join(" ")}><Image width={1400} height={930} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles.s155, styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/stuck.jpg" alt="Immagine AI provvisoria: Una scrivania d&#x27;ufficio vuota di sera" /></div>
+          <div className={[styles.s154].filter(Boolean).join(" ")}><Image width={1400} height={930} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles.s155, styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/stuck.jpg" alt="Una persona crolla con la testa sulla scrivania, di sera, in una stanza buia" /></div>
           <div className={[styles.s156].filter(Boolean).join(" ")}>
             <div className={[styles.s157].filter(Boolean).join(" ")}>SE CHIUDI QUESTA PAGINA</div>
             <p className={[styles.s158].filter(Boolean).join(" ")}>Stessa scrivania, stesse domande della domenica sera. Continuerai ad aiutare gli amici gratis, chiedendoti ogni tanto &quot;e se…?&quot;</p>
           </div>
         </div>
         <div className={[styles.s159].filter(Boolean).join(" ")}>
-          <div className={[styles.s154].filter(Boolean).join(" ")}><Image width={1400} height={935} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/conversazione.jpg" alt="Una professionista al portatile spiega un progetto a un cliente seduto di fronte a lei" /></div>
+          <div className={[styles.s154].filter(Boolean).join(" ")}><Image width={1400} height={935} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/conversazione.jpg" alt="Due persone firmano un accordo su carta, guidate da un professionista seduto di fronte a loro" /></div>
           <div className={[styles.s156].filter(Boolean).join(" ")}>
             <div className={[styles.s160].filter(Boolean).join(" ")}>SE DEDICHI 30 MINUTI</div>
             <p className={[styles.s161].filter(Boolean).join(" ")}>Scopri un mestiere che ti somiglia e le persone pronte a insegnartelo. <strong className={[styles.s016].filter(Boolean).join(" ")}>In ogni caso, avrai scelto tu.</strong></p>
