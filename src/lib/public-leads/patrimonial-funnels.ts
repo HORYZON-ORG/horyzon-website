@@ -57,16 +57,17 @@ export function pilotCrmDetails(lead: PilotLead, now: Date) {
   const label = lead.mode === 'architect-path' ? patrimonialBrand.path : patrimonialEvent.title;
   const fields = [
     `Funnel: ${lead.mode}`, `Percorso: ${label}`, `Source path: ${form.path}`, `Ricevuta: ${now.toISOString()}`,
+    ...(lead.mode === 'architect-path' ? [`Tipo pratica: candidatura`, `Origine candidatura: ${lead.utm.utm_source || 'diretta / non indicata'}`] : []),
     `Nome: ${lead.firstName}`, `Cognome: ${lead.lastName}`, `Provincia: ${lead.province}`, `Profilo: ${lead.profile || 'Non indicato'}`,
     ...(lead.mode === 'architect-path' ? [`Esperienza commerciale/relazionale: ${lead.experience || 'Non indicata'}`, `Cosa cerca: ${lead.goal || 'Non indicato'}`, `Disponibilità: ${lead.availability || 'Non indicata'}`] : []),
     `Consenso privacy / ricontatto: sì · ${PATRIMONIAL_PILOT_PRIVACY_VERSION} · /privacy-policy`,
     `Consenso marketing: ${lead.marketingConsent ? 'sì' : 'no'} · ${PATRIMONIAL_PILOT_MARKETING_VERSION}`,
     ...pilotUtmKeys.flatMap(key => lead.utm[key] ? [`${key}: ${lead.utm[key]}`] : []),
     ...(lead.message ? [`Domanda: ${lead.message}`] : []),
-    lead.mode === 'architect-path' ? 'Richiesta ricevuta: nessuna accettazione o ingresso garantito.' : 'Richiesta di partecipazione: nessuna registrazione definitiva o prenotazione confermata.',
+    lead.mode === 'architect-path' ? 'Candidatura ricevuta: nessuna accettazione o ingresso nel percorso garantito.' : 'Richiesta di partecipazione: nessuna registrazione definitiva o prenotazione confermata.',
   ];
   return {
-    source: `${patrimonialBrand.division} · ${lead.mode} (horyzon.it)`,
+    source: lead.mode === 'architect-path' ? `${patrimonialBrand.division} · candidatura Architetto (horyzon.it)` : `${patrimonialBrand.division} · ${lead.mode} (horyzon.it)`,
     tags: ['horyzon-patrimoniale', lead.mode === 'architect-path' ? 'percorso-architetto-patrimoniale' : 'evento-patrimoniale', 'pilot'],
     note: fields.join('\n'),
   };
