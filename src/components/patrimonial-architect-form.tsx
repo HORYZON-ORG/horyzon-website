@@ -20,7 +20,7 @@ export function ArchitectApplicationForm({ step, setStep, selectedProfile, onPro
     <h3 id="architect-path-form-title" className="sr-only" ref={heading} tabIndex={-1}>Raccontaci da dove parti. Passo {step} di 2</h3>
     <div className={styles.formProgress}><span>PASSO {step} DI 2</span><span>{step === 1 ? '30 secondi' : 'Il tuo percorso'}</span></div>
     <div className={styles.formTrack}><div className={step === 1 ? styles.formHalf : styles.formFull} /></div>
-    {selected && <div className={styles.profileNote} id="profileNote"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--olive)" strokeWidth="2" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg><span>Profilo: <strong>{selected.label}</strong> — prepariamo la sessione anche per te</span></div>}
+    {selected && <div className={styles.profileNote} id="profileNote"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--olive)" strokeWidth="2" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg><span>Profilo: <strong>{selected.label}</strong> — ne terremo conto nel ricontatto</span></div>}
     <fieldset className={styles.formFields} hidden={step !== 1} disabled={disabled}>
       <legend className="sr-only">I tuoi recapiti</legend>
       <div className={styles.formGrid}>
@@ -45,10 +45,10 @@ export function ArchitectApplicationForm({ step, setStep, selectedProfile, onPro
     </fieldset>
     <div hidden><label>Sito web<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
     {step === 2 && <button type="button" className={styles.formBack} disabled={disabled} onClick={() => setStep(1)}>← Torna ai recapiti</button>}
-    <button type="submit" className={styles.formSubmit} disabled={disabled || revisionRequired}>{status === 'sending' ? 'Invio in corso…' : status === 'success' ? 'Richiesta ricevuta.' : 'Sì, riservo il mio posto →'}</button>
+    <button type="submit" className={styles.formSubmit} disabled={disabled || revisionRequired}>{status === 'sending' ? 'Invio in corso…' : status === 'success' ? 'Richiesta ricevuta.' : 'Invia la mia candidatura →'}</button>
     {notice && <p role={status === 'error' ? 'alert' : 'status'} className={styles.formNotice}>{notice}</p>}
     {v2 && revisionRequired && <button type="button" className={styles.formBack} disabled={status === 'sending'} onClick={onNewAttempt}>Ho verificato il precedente invio: avvia una nuova richiesta</button>}
-    <p className={styles.formFine}>Gratuito e senza impegno. Puoi disdire con un clic.</p>
-    <p className={styles.formFine}>{step === 1 ? 'Completa il passo 2 per inviare la richiesta.' : 'La richiesta non conferma una prenotazione. Ti ricontatteremo per i dettagli.'} Preferisci scriverci? <a href="mailto:info@horyzon.it">Contattaci via email</a>.</p>
+    <p className={styles.formFine}>Gratuito e senza impegno.</p>
+    <p className={styles.formFine}>{step === 1 ? 'Completa il passo 2 per inviare la richiesta.' : 'Ti ricontatteremo per i passi successivi.'} Preferisci scriverci? <a href="mailto:info@horyzon.it">Contattaci via email</a>.</p>
   </form>;
 }

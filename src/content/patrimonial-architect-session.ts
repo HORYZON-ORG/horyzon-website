@@ -20,7 +20,7 @@ export const architectProfiles = {
 } as const;
 export type ArchitectProfileKey = keyof typeof architectProfiles;
 export const architectDefaultCopy = {
-  sub: 'In una presentazione live di 30 minuti scopri cosa fa questo ruolo, come ti formiamo e se fa per te. Prima capisci. Poi, se vuoi, ne parliamo a tu per tu.', cta: 'Riserva il mio posto',
+  sub: 'In una presentazione online di 30 minuti scopri cosa fa questo ruolo, come ti formiamo e se fa per te. Prima capisci. Poi, se vuoi, ne parliamo a tu per tu.', cta: 'Candidati ora',
 };
 export function architectSessionSnapshot(now: number | null) {
   const confirmed = architectSession.status === 'CONFIRMED';

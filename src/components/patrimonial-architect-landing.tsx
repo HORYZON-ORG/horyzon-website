@@ -1,32 +1,10 @@
 'use client';
 import Image from 'next/image';
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PatrimonialLeadForm } from './patrimonial-lead-form';
-import { architectSession, architectSessionSnapshot, architectProfiles, architectDefaultCopy, type ArchitectProfileKey } from '@/content/patrimonial-architect-session';
+import { architectProfiles, architectDefaultCopy, type ArchitectProfileKey } from '@/content/patrimonial-architect-session';
 import styles from './patrimonial-architect.module.css';
 
-const SessionContext = createContext(architectSessionSnapshot(null));
-function SessionProvider({ children }: { children: ReactNode }) {
-  const [now, setNow] = useState<number | null>(null);
-  useEffect(() => {
-    if (architectSession.status !== 'CONFIRMED' || !architectSession.sessionDate) return;
-    const timer = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-  return <SessionContext value={architectSessionSnapshot(now)}>{children}</SessionContext>;
-}
-function SessionValue({ name }: { name: string }) {
-  const state = useContext(SessionContext);
-  if (name.startsWith('cd.')) return state.cd[name.slice(3) as keyof typeof state.cd];
-  if (name === 'sessionLabel') return state.sessionLabel;
-  if (name === 'seatsTotal') return state.seatsTotal;
-  if (name === 'seatsTaken') return state.seatsTaken;
-  return state.seatsLeft;
-}
-function SeatBar() {
-  const session = useContext(SessionContext);
-  return <div id="seatBar" className={styles.seatBar} style={{ width: `${session.seatPercent}%` }} aria-hidden="true" />;
-}
 export function ArchitectLanding() {
   const [profile, setProfile] = useState<ArchitectProfileKey | null>(null);
   const selected = profile ? architectProfiles[profile] : null;
@@ -46,14 +24,14 @@ export function ArchitectLanding() {
     return () => observer.disconnect();
   }, []);
   const chooseValue = (value: string) => setProfile((Object.keys(architectProfiles) as ArchitectProfileKey[]).find(key => architectProfiles[key].value === value) ?? null);
-  return <SessionProvider><div className={[styles.page, styles.s001].filter(Boolean).join(" ")}>
+  return <div className={[styles.page, styles.s001].filter(Boolean).join(" ")}>
 
 
   <div className={[styles['m-topbar'], styles.s002].filter(Boolean).join(" ")}>
-    <span className={styles['m-hide']}>PILOT / PLACEHOLDER · PROSSIMA PRESENTAZIONE LIVE · <span data-bind="sessionLabel"><SessionValue name="sessionLabel" /></span></span>
+    <span className={styles['m-hide']}>PERCORSO ARCHITETTO PATRIMONIALE</span>
     <span className={styles['m-hide']} aria-hidden="true">·</span>
-    <span>CHIUSURA DA CONFERMARE · <span data-bind="cd.d"><SessionValue name="cd.d" /></span>G <span data-bind="cd.h"><SessionValue name="cd.h" /></span>H <span data-bind="cd.m"><SessionValue name="cd.m" /></span>M</span>
-    <a className={[styles.s003].filter(Boolean).join(" ")} href="#richiesta">Riserva il tuo posto →</a>
+    <span>CANDIDATURE SEMPRE APERTE</span>
+    <a className={[styles.s003].filter(Boolean).join(" ")} href="#richiesta">Candidati ora →</a>
   </div>
 
 
@@ -69,7 +47,7 @@ export function ArchitectLanding() {
           <span className={[styles.s009].filter(Boolean).join(" ")}>HORYZON</span>
           <span className={[styles.s010].filter(Boolean).join(" ")}>BENESSERE PATRIMONIALE</span>
         </div>
-        <a className={[styles.s011].filter(Boolean).join(" ")} href="#richiesta">Riserva il posto</a>
+        <a className={[styles.s011].filter(Boolean).join(" ")} href="#richiesta">Candidati</a>
       </nav>
 
       <div className={[styles['m-hero'], styles.s012].filter(Boolean).join(" ")}>
@@ -93,21 +71,15 @@ export function ArchitectLanding() {
           <div className={[styles.s022].filter(Boolean).join(" ")}>
             <a className={[styles['m-cta-full'], styles.s023].filter(Boolean).join(" ")} href="#richiesta"><span data-bind="cta">{selected?.cta ?? architectDefaultCopy.cta}</span>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
-            <div className={[styles.s024].filter(Boolean).join(" ")}>Gratuita · online · 30 minuti<br /><span className={[styles.s016].filter(Boolean).join(" ")}><span data-bind="seatsLeft"><SessionValue name="seatsLeft" /></span> posti liberi su <span data-bind="seatsTotal"><SessionValue name="seatsTotal" /></span></span></div>
+            <div className={[styles.s024].filter(Boolean).join(" ")}>Gratuito · online · senza impegno<br /><span className={[styles.s016].filter(Boolean).join(" ")}>Candidature sempre aperte</span></div>
           </div>
         </div>
 
         <div className={[styles.s025].filter(Boolean).join(" ")}>
           <div className={[styles.s026].filter(Boolean).join(" ")}><Image width={1400} height={1750} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" preload className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/hero.jpg" alt="Una professionista studia con attenzione un progetto stampato, alla luce del sole" /></div>
           <div className={[styles['m-ticket'], styles.s027].filter(Boolean).join(" ")}>
-            <div className={[styles.s028].filter(Boolean).join(" ")}><span className={[styles.s029, styles['pulse']].filter(Boolean).join(" ")}></span>PRESENTAZIONE LIVE</div>
-            <div className={[styles.s030].filter(Boolean).join(" ")}><span data-bind="sessionLabel"><SessionValue name="sessionLabel" /></span></div>
-            <div className={[styles.s031].filter(Boolean).join(" ")}>
-              <div className={[styles.s032].filter(Boolean).join(" ")}><div className={[styles.s033].filter(Boolean).join(" ")}><span data-bind="cd.d"><SessionValue name="cd.d" /></span></div><div className={[styles.s034].filter(Boolean).join(" ")}>GIORNI</div></div>
-              <div className={[styles.s032].filter(Boolean).join(" ")}><div className={[styles.s033].filter(Boolean).join(" ")}><span data-bind="cd.h"><SessionValue name="cd.h" /></span></div><div className={[styles.s034].filter(Boolean).join(" ")}>ORE</div></div>
-              <div className={[styles.s032].filter(Boolean).join(" ")}><div className={[styles.s033].filter(Boolean).join(" ")}><span data-bind="cd.m"><SessionValue name="cd.m" /></span></div><div className={[styles.s034].filter(Boolean).join(" ")}>MIN</div></div>
-              <div className={[styles.s035].filter(Boolean).join(" ")}><div className={[styles.s033].filter(Boolean).join(" ")}><span data-bind="cd.s"><SessionValue name="cd.s" /></span></div><div className={[styles.s034].filter(Boolean).join(" ")}>SEC</div></div>
-            </div>
+            <div className={[styles.s028].filter(Boolean).join(" ")}><span className={[styles.s029, styles['pulse']].filter(Boolean).join(" ")}></span>SELEZIONE APERTA</div>
+            <div className={[styles.s030].filter(Boolean).join(" ")} style={{ marginBottom: 0 }}>Ogni candidatura viene letta da una persona del team.</div>
           </div>
         </div>
       </div>
@@ -117,7 +89,7 @@ export function ArchitectLanding() {
 
   <section className={[styles.s036].filter(Boolean).join(" ")}>
     <div className={[styles['m-stats'], styles.s037].filter(Boolean).join(" ")}>
-      <div className={[styles.s038].filter(Boolean).join(" ")}><div className={[styles.s039].filter(Boolean).join(" ")}>[N]</div><div className={[styles.s040].filter(Boolean).join(" ")}>persone alle presentazioni</div></div>
+      <div className={[styles.s038].filter(Boolean).join(" ")}><div className={[styles.s039].filter(Boolean).join(" ")}>[N]</div><div className={[styles.s040].filter(Boolean).join(" ")}>candidature ricevute</div></div>
       <div className={[styles.s038].filter(Boolean).join(" ")}><div className={[styles.s039].filter(Boolean).join(" ")}>[N]</div><div className={[styles.s040].filter(Boolean).join(" ")}>Architetti in formazione</div></div>
       <div className={[styles.s038].filter(Boolean).join(" ")}><div className={[styles.s039].filter(Boolean).join(" ")}>[N]%</div><div className={[styles.s040].filter(Boolean).join(" ")}>delle candidature accolte</div></div>
       <div className={[styles.s038].filter(Boolean).join(" ")}><div className={[styles.s039].filter(Boolean).join(" ")}>Milano</div><div className={[styles.s040].filter(Boolean).join(" ")}>sede · FELICITÀ srl</div></div>
@@ -242,7 +214,7 @@ export function ArchitectLanding() {
           <div className={[styles.s073].filter(Boolean).join(" ")}>Priorità chiare e i professionisti giusti per i passi successivi.</div>
         </div>
       </div>
-      <p className={[styles.s082].filter(Boolean).join(" ")}>[NOTA DI CONFORMITÀ: perimetro del ruolo rispetto alla consulenza finanziaria regolamentata]</p>
+      <p className={[styles.s082].filter(Boolean).join(" ")}><strong>Perimetro del ruolo.</strong> L&apos;Architetto Patrimoniale svolge un&apos;attività di ascolto, orientamento e divulgazione di carattere generale. Non presta consulenza in materia di investimenti né altri servizi o attività di investimento riservati dal D.Lgs. 58/1998 (TUF), non promuove né colloca strumenti o prodotti finanziari, non svolge distribuzione assicurativa (D.Lgs. 209/2005), mediazione creditizia o agenzia in attività finanziaria (D.Lgs. 385/1993) e non riceve denaro, titoli od ordini dai clienti. Per questo il ruolo non richiede l&apos;iscrizione all&apos;albo OCF, al RUI o agli elenchi OAM. Ogni scelta su prodotti o servizi regolamentati spetta esclusivamente a intermediari e professionisti autorizzati, con i quali l&apos;Architetto può mettere in contatto la persona.</p>
     </div>
   </section>
 
@@ -292,7 +264,7 @@ export function ArchitectLanding() {
             <div className={[styles.s107, styles['pulse']].filter(Boolean).join(" ")}></div>
             <div className={[styles.s108].filter(Boolean).join(" ")}>SEI QUI</div>
             <h3 className={[styles.s109].filter(Boolean).join(" ")}>Conosci il progetto</h3>
-            <p className={[styles.s110].filter(Boolean).join(" ")}>Presentazione live, 30 minuti. <span data-bind="sessionLabel"><SessionValue name="sessionLabel" /></span>.</p>
+            <p className={[styles.s110].filter(Boolean).join(" ")}>Presentazione online di 30 minuti, gratuita.</p>
           </li>
           <li>
             <div className={[styles.s111].filter(Boolean).join(" ")}></div>
@@ -423,8 +395,8 @@ export function ArchitectLanding() {
       <div className={[styles.s144].filter(Boolean).join(" ")}>
         <div className={[styles.s043].filter(Boolean).join(" ")}>09 · LA PRESENTAZIONE</div>
         <h2 className={[styles['m-reveal'], styles.s088].filter(Boolean).join(" ")}>30 minuti che ti risparmiano mesi di dubbi.</h2>
-        <p className={[styles.s145].filter(Boolean).join(" ")}>Live, con spazio per le tue domande. Alla fine sai se vale la pena fare il passo successivo.</p>
-        <a className={[styles.s146].filter(Boolean).join(" ")} href="#richiesta">Riserva il mio posto</a>
+        <p className={[styles.s145].filter(Boolean).join(" ")}>Online e gratuita. Alla fine sai se vale la pena fare il passo successivo.</p>
+        <a className={[styles.s146].filter(Boolean).join(" ")} href="#richiesta">Candidati ora</a>
       </div>
       <ol className={[styles.s147].filter(Boolean).join(" ")}>
         <li className={[styles.s148].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>00–04&#x27;</span><span>Perché Horyzon sta aprendo questa divisione proprio adesso</span></li>
@@ -432,7 +404,7 @@ export function ArchitectLanding() {
         <li className={[styles.s148].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>09–15&#x27;</span><span>Come funziona la formazione, passo per passo</span></li>
         <li className={[styles.s148].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>15–19&#x27;</span><span>Le 3 caratteristiche che contano più dell&#x27;esperienza</span></li>
         <li className={[styles.s150].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>19–25&#x27;</span><span><strong>Una giornata tipo dell&#x27;Architetto</strong>, raccontata da chi la vive</span></li>
-        <li className={[styles.s151].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>25–30&#x27;</span><span>Le tue domande, dal vivo</span></li>
+        <li className={[styles.s151].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>25–30&#x27;</span><span><strong>Come iniziare</strong>: cosa succede dopo la tua candidatura</span></li>
       </ol>
     </div>
   </section>
@@ -465,17 +437,12 @@ export function ArchitectLanding() {
   <section ref={formRef} className={[styles['m-sec'], styles.s162].filter(Boolean).join(" ")} id="richiesta">
     <div className={[styles.s163].filter(Boolean).join(" ")}>
       <div className={[styles.s087].filter(Boolean).join(" ")}>
-        <div className={[styles.s054].filter(Boolean).join(" ")}>11 · RISERVA IL TUO POSTO</div>
-        <h2 className={[styles['m-reveal'], styles.s088].filter(Boolean).join(" ")}>Il tuo posto per <span data-bind="sessionLabel"><SessionValue name="sessionLabel" /></span>.</h2>
+        <div className={[styles.s054].filter(Boolean).join(" ")}>11 · CANDIDATI</div>
+        <h2 className={[styles['m-reveal'], styles.s088].filter(Boolean).join(" ")}>Candidati al Percorso Architetto Patrimoniale.</h2>
         <p className={[styles.s164].filter(Boolean).join(" ")}>Ogni richiesta viene letta da una persona del team, non da un algoritmo.</p>
-        <div className={[styles.s165].filter(Boolean).join(" ")}>
-          <div className={[styles.s166].filter(Boolean).join(" ")}><span>Posti riservati per questa sessione</span><strong className={[styles.s016].filter(Boolean).join(" ")}><span data-bind="seatsTaken"><SessionValue name="seatsTaken" /></span> / <span data-bind="seatsTotal"><SessionValue name="seatsTotal" /></span></strong></div>
-          <div className={[styles.s167].filter(Boolean).join(" ")}><SeatBar /></div>
-          <div className={[styles.s169].filter(Boolean).join(" ")}>Sessioni a numero chiuso, per rispondere a ogni domanda. Prossima data disponibile: [DATA SUCCESSIVA].</div>
-        </div>
         <div className={[styles.s170].filter(Boolean).join(" ")}>
-          <div className={[styles.s171].filter(Boolean).join(" ")}><span className={[styles.s172].filter(Boolean).join(" ")}>→</span><span>Ricevi subito link e promemoria in calendario</span></div>
-          <div className={[styles.s171].filter(Boolean).join(" ")}><span className={[styles.s172].filter(Boolean).join(" ")}>→</span><span>Ti ricordiamo l&#x27;appuntamento il giorno prima e un&#x27;ora prima</span></div>
+          <div className={[styles.s171].filter(Boolean).join(" ")}><span className={[styles.s172].filter(Boolean).join(" ")}>→</span><span>Ricevi subito la conferma della candidatura</span></div>
+          <div className={[styles.s171].filter(Boolean).join(" ")}><span className={[styles.s172].filter(Boolean).join(" ")}>→</span><span>Una persona del team ti ricontatta per i passi successivi</span></div>
           <div className={[styles.s171].filter(Boolean).join(" ")}><span className={[styles.s172].filter(Boolean).join(" ")}>→</span><span>Dopo la presentazione decidi tu se proseguire</span></div>
         </div>
       </div>
@@ -493,8 +460,8 @@ export function ArchitectLanding() {
         <details className={[styles.s176].filter(Boolean).join(" ")}><summary className={[styles.s177].filter(Boolean).join(" ")}>Devo investire dei soldi per entrare nel percorso?<span className={[styles.s178, styles['plus']].filter(Boolean).join(" ")}>+</span></summary><p className={[styles.s179].filter(Boolean).join(" ")}>No. Entrare nel percorso non costa nulla: nessuna quota d&#x27;ingresso, nessun acquisto obbligatorio, nessun vincolo.</p></details>
         <details className={[styles.s176].filter(Boolean).join(" ")}><summary className={[styles.s177].filter(Boolean).join(" ")}>Serve un&#x27;abilitazione o un&#x27;iscrizione a un albo?<span className={[styles.s178, styles['plus']].filter(Boolean).join(" ")}>+</span></summary><p className={[styles.s179].filter(Boolean).join(" ")}>No. Non serve alcuna abilitazione né iscrizione a un albo: l&#x27;Architetto lavora in partnership con fornitori regolamentati dalla legge.</p></details>
         <details className={[styles.s176].filter(Boolean).join(" ")}><summary className={[styles.s177].filter(Boolean).join(" ")}>Quanto tempo devo dedicare?<span className={[styles.s178, styles['plus']].filter(Boolean).join(" ")}>+</span></summary><p className={[styles.s179].filter(Boolean).join(" ")}>Puoi iniziare part-time o full-time: decidi tu quanto tempo dedicare, in base ai tuoi obiettivi.</p></details>
-        <details className={[styles.s176].filter(Boolean).join(" ")}><summary className={[styles.s177].filter(Boolean).join(" ")}>Come viene riconosciuto economicamente il ruolo?<span className={[styles.s178, styles['plus']].filter(Boolean).join(" ")}>+</span></summary><p className={[styles.s179].filter(Boolean).join(" ")}>Con provvigioni sull&#x27;attività di divulgazione che svolgi: la meritocrazia fa la differenza. Non promettiamo guadagni.</p></details>
-        <details className={[styles.s176].filter(Boolean).join(" ")}><summary className={[styles.s177].filter(Boolean).join(" ")}>E se non posso esserci live?<span className={[styles.s178, styles['plus']].filter(Boolean).join(" ")}>+</span></summary><p className={[styles.s179].filter(Boolean).join(" ")}>Nessun problema: la presentazione viene registrata e dopo la diretta hai 48 ore per rivederla online, gratuitamente.</p></details>
+        <details className={[styles.s176].filter(Boolean).join(" ")}><summary className={[styles.s177].filter(Boolean).join(" ")}>Come viene riconosciuto economicamente il ruolo?<span className={[styles.s178, styles['plus']].filter(Boolean).join(" ")}>+</span></summary><p className={[styles.s179].filter(Boolean).join(" ")}>Con provvigioni sull&#x27;attività di divulgazione che svolgi personalmente: il riconoscimento cresce con il lavoro fatto, non con promesse. Non ci sono fissi garantiti, quote da versare o obiettivi di acquisto, e non promettiamo guadagni. Il modello di provvigioni ti viene spiegato in modo trasparente durante il colloquio, prima di qualsiasi decisione.</p></details>
+        <details className={[styles.s176].filter(Boolean).join(" ")}><summary className={[styles.s177].filter(Boolean).join(" ")}>Ho già la partita IVA: posso candidarmi? E se non ce l&#x27;ho?<span className={[styles.s178, styles['plus']].filter(Boolean).join(" ")}>+</span></summary><p className={[styles.s179].filter(Boolean).join(" ")}>Sì, il percorso è aperto a entrambi. Se hai già la partita IVA (libero professionista, agente, imprenditore individuale, anche in regime forfettario) le provvigioni vengono fatturate come attività autonoma, verificando con il tuo commercialista che il codice ATECO sia compatibile o integrandolo. Se non hai la partita IVA puoi iniziare senza aprirla: finché l&#x27;attività resta occasionale le provvigioni sono riconosciute come prestazione occasionale con ritenuta d&#x27;acconto. Quando diventa continuativa, ti accompagniamo nell&#x27;apertura della partita IVA con l&#x27;inquadramento più adatto. Le informazioni fiscali sono di carattere generale: la scelta va sempre verificata con il tuo commercialista.</p></details>
       </div>
     </div>
   </section>
@@ -505,15 +472,15 @@ export function ArchitectLanding() {
     <div className={[styles.s182].filter(Boolean).join(" ")} aria-hidden="true"></div>
     <div className={[styles.s183].filter(Boolean).join(" ")}>
       <h2 className={[styles['m-reveal'], styles.s184].filter(Boolean).join(" ")}>Ogni orizzonte comincia da una conversazione.</h2>
-      <p className={[styles.s185].filter(Boolean).join(" ")}>30 minuti, online. Restano <span data-bind="seatsLeft"><SessionValue name="seatsLeft" /></span> posti per <span data-bind="sessionLabel"><SessionValue name="sessionLabel" /></span>.</p>
-      <a className={[styles.s186].filter(Boolean).join(" ")} href="#richiesta">Riserva il mio posto</a>
-      <p className={[styles.s187].filter(Boolean).join(" ")}><strong className={[styles.s188].filter(Boolean).join(" ")}>P.S.</strong> Se sei arrivato fin qui, qualcosa ti ha incuriosito. Non decidere niente adesso: riserva solo il posto. Nel peggiore dei casi avrai capito un mestiere nuovo. Le iscrizioni a questa sessione chiudono tra <span data-bind="cd.d"><SessionValue name="cd.d" /></span> giorni.</p>
+      <p className={[styles.s185].filter(Boolean).join(" ")}>30 minuti, online e gratuiti. Le candidature sono sempre aperte.</p>
+      <a className={[styles.s186].filter(Boolean).join(" ")} href="#richiesta">Candidati ora</a>
+      <p className={[styles.s187].filter(Boolean).join(" ")}><strong className={[styles.s188].filter(Boolean).join(" ")}>P.S.</strong> Se sei arrivato fin qui, qualcosa ti ha incuriosito. Non decidere niente adesso: inviaci solo la candidatura. Nel peggiore dei casi avrai capito un mestiere nuovo.</p>
     </div>
   </section>
 
   <footer className={[styles.s189].filter(Boolean).join(" ")}>
     <div className={[styles.s190].filter(Boolean).join(" ")}>
-      <div><strong className={[styles.s191].filter(Boolean).join(" ")}>Horyzon Benessere Patrimoniale</strong><p className={styles.pilotNotice}>PILOT · Data, disponibilità e testimonianze da confermare. Alcune immagini sono provvisorie e generate con AI; le foto non ritraggono il team reale.</p><br />FELICITÀ srl · Viale Papiniano 28, 20123 Milano · P. IVA 05120660757</div>
+      <div><strong className={[styles.s191].filter(Boolean).join(" ")}>Horyzon Benessere Patrimoniale</strong><p className={styles.pilotNotice}>PILOT · Dati e testimonianze da confermare. Alcune immagini sono provvisorie e generate con AI; le foto non ritraggono il team reale.</p><br />FELICITÀ srl · Viale Papiniano 28, 20123 Milano · P. IVA 05120660757</div>
       <div className={[styles.s192].filter(Boolean).join(" ")}><a href="https://www.iubenda.com/privacy-policy/64704330">Privacy</a><a href="https://www.iubenda.com/privacy-policy/64704330/cookie-policy">Cookie</a><a href="mailto:info@horyzon.it">info@horyzon.it</a></div>
     </div>
   </footer>
@@ -521,9 +488,9 @@ export function ArchitectLanding() {
 
   <div aria-hidden={!stickyVisible} inert={!stickyVisible} className={[styles.s193, styles.stickyBar, (!stickyVisible ? styles['is-hidden'] : '')].filter(Boolean).join(" ")} id="stickyBar">
     <div className={[styles['m-sticky'], styles.s194].filter(Boolean).join(" ")}>
-      <div className={[styles.s195].filter(Boolean).join(" ")}><span className={[styles.s029, styles['pulse']].filter(Boolean).join(" ")}></span><span><span className={styles['m-hide']}><span data-bind="sessionLabel"><SessionValue name="sessionLabel" /></span> · </span><span className={[styles.s016].filter(Boolean).join(" ")}><span data-bind="seatsLeft"><SessionValue name="seatsLeft" /></span> posti liberi</span></span></div>
-      <a className={[styles.s196].filter(Boolean).join(" ")} href="#richiesta">Riserva il posto</a>
+      <div className={[styles.s195].filter(Boolean).join(" ")}><span className={[styles.s029, styles['pulse']].filter(Boolean).join(" ")}></span><span>Candidature <span className={[styles.s016].filter(Boolean).join(" ")}>sempre aperte</span></span></div>
+      <a className={[styles.s196].filter(Boolean).join(" ")} href="#richiesta">Candidati</a>
     </div>
   </div>
-</div></SessionProvider>;
+</div>;
 }

@@ -83,7 +83,7 @@ export const pilotForms = {
   'architect-path': {
     path: architectPath.path, title: 'Raccontaci da dove parti.',
     intro: 'Non serve avere già tutte le risposte. Ci interessa capire chi sei, cosa stai cercando e se vale la pena approfondire insieme.',
-    submit: 'Voglio conoscere il percorso', success: 'Richiesta ricevuta.',
+    submit: 'Voglio conoscere il percorso', success: 'Candidatura ricevuta.',
     question: 'Perché vuoi conoscere il Percorso Architetto Patrimoniale?',
     profiles: ['Imprenditore', 'Commerciale', 'Professionista', 'Networker', 'Dipendente', 'Altro'],
   },
