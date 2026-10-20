@@ -827,3 +827,24 @@
 :global([data-theme="light"]) .page .s031 .s033{background:rgba(7,23,29,.12)}
 :global([data-theme="light"]) .page .s031 .s035{color:#5A6B70}
 /* === end light theme: manual === */
+
+/* Scarcity: free seats, the number grows as seats run out */
+.page .vSeats{display:flex;flex-direction:column;gap:2px}
+.page .vSeatsKicker{font:600 11px/1.4 var(--event-mono),monospace;letter-spacing:.14em;text-transform:uppercase;color:#FFB020}
+.page .vSeatsRow{display:flex;align-items:flex-end;gap:12px}
+.page .vSeatsNum{font-weight:800;line-height:.86;letter-spacing:-.05em;color:#FFB020;text-shadow:0 0 28px rgba(255,138,30,.45);font-variant-numeric:tabular-nums}
+.page .vSeatsUnit{font-weight:700;font-size:15px;line-height:1.15;color:#F7F4E8;padding-bottom:6px}
+.page .vSeatsBar{background:linear-gradient(90deg,#FF6A1A,#FFB020)}
+.page .vSeatsInline{color:#FFB020;font-size:1.25em}
+:global([data-theme="light"]) .page .vSeatsKicker,:global([data-theme="light"]) .page .vSeatsNum,:global([data-theme="light"]) .page .vSeatsInline{color:#D9480F}
+:global([data-theme="light"]) .page .vSeatsNum{text-shadow:none}
+:global([data-theme="light"]) .page .vSeatsUnit{color:#07171D}
+
+/* Chapter 1: inflation sentence must jump out */
+.page .vInflation{background:linear-gradient(135deg,#FFC23D 0%,#FF8A1E 100%);border:0;border-radius:14px;padding:20px 22px;color:#07171D;font-size:clamp(18px,2.1vw,23px);font-weight:700;line-height:1.3;letter-spacing:-.01em;box-shadow:0 12px 36px -12px rgba(255,138,30,.55)}
+.page .vInflation .s077{color:#07171D;font-size:1.45em;font-weight:900;background:rgba(255,255,255,.35);padding:0 .25em;border-radius:6px}
+:global([data-theme="light"]) .page .vInflation{background:linear-gradient(135deg,#FFC23D 0%,#FF8A1E 100%);border:0;color:#07171D}
+:global([data-theme="light"]) .page .vInflation .s077{color:#07171D}
+
+/* Instruments quiz now closes chapter 2 */
+.page .vSplitBody .vQuiz{margin-top:40px}

@@ -107,7 +107,7 @@ export const eventInstruments = [
   { id: 'etf', img: '/benessere-patrimoniale/evento/etf.jpg', name: 'ETF', best: 'ETF S&P 500, in euro', ten: '+13,6% l’anno', result: '10.000 € → circa 35.700 €', role: 'Le 500 maggiori aziende americane in un solo strumento.' },
   { id: 'azioni', img: '/benessere-patrimoniale/evento/crescita.jpg', name: 'Azioni', best: 'Azioni globali (MSCI World)', ten: '+9,4% l’anno', result: '10.000 € → circa 24.600 €', role: 'Un pezzo delle aziende migliori del mondo, che crescono nel tempo.' },
   { id: 'obbligazioni', img: '/benessere-patrimoniale/evento/obbligazioni.jpg', name: 'Obbligazioni', best: 'Obbligazioni dei mercati emergenti', ten: '+5,5% l’anno', result: '10.000 € → circa 17.100 €', role: 'Interessi regolari: è la parte del patrimonio che paga una rendita.' },
-  { id: 'cripto', img: '/benessere-patrimoniale/evento/cripto.jpg', name: 'Cripto', best: 'Bitcoin', ten: 'il più alto del decennio', result: 'Anche una quota del 5% ha fatto la differenza', role: 'Mercato giovane: per questo nella mappa pesa solo il 5%.' },
+  { id: 'cripto', img: '/benessere-patrimoniale/evento/cripto.jpg', name: 'Cripto', best: 'Bitcoin', ten: 'il più alto del decennio', result: 'Anche una quota del 5% ha fatto la differenza', role: 'Mercato giovane.' },
   { id: 'collezione', img: '/benessere-patrimoniale/evento/collezione.jpg', name: 'Beni da collezione', best: 'Orologi iconici e moto d’epoca', ten: 'variabile, legato alla rarità', result: 'Alcuni modelli hanno raddoppiato il valore in pochi anni', role: 'Oggetti che ami e che, scelti bene, nel tempo valgono di più.' },
 ] as const;
 export const eventKnowledgeLevels = ['Ne ho sentito parlare', 'So come funziona', 'Ce l’ho già'] as const;

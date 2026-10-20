@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { PatrimonialLeadForm } from './patrimonial-lead-form';
 import { EventNotesContext } from './patrimonial-event-form';
-import { EventSessionProvider, EventSessionValue } from './patrimonial-event-clock';
+import { EventSessionProvider, EventSessionValue, EventSeatsLeft } from './patrimonial-event-clock';
 import { eventSession } from '@/content/patrimonial-event-session';
 import { eventScenes, eventFormTitle, eventCalculator, eventHorizons, type EventHorizon, eventAllocation, eventInstruments, eventKnowledgeLevels, eventNotes } from '@/content/patrimonial-event-content';
 import styles from './patrimonial-event.module.css';
@@ -19,7 +19,7 @@ const questions = [
   { q: 'Quali rischi non compaiono in nessun estratto conto?', sub: 'Ne vediamo tre, e come riconoscerli nel tuo patrimonio.' },
   { q: 'Perché i metalli preziosi?', sub: 'Che ruolo hanno oro e argento in un patrimonio che vuole durare.' },
   { q: 'Metallo fisico o metallo “di carta”: cosa possiedi davvero?', sub: 'La differenza tra un lingotto e un titolo che ne segue il prezzo.' },
-  { q: 'Quanto può rendere la diversificazione?', sub: 'E come si misura se sta funzionando. Prima di scoprirlo, dicci da dove parti qui sotto.' },
+  { q: 'Quanto può rendere la diversificazione?', sub: 'E come si misura se sta funzionando.' },
 ];
 const disclaimer = 'Contenuti a scopo esclusivamente informativo ed educativo. Non costituiscono consulenza in materia di investimenti, raccomandazione personalizzata, sollecitazione al pubblico risparmio né offerta di acquisto o vendita di strumenti finanziari ai sensi del D.Lgs. 58/1998 (TUF). I rendimenti passati non sono indicativi di quelli futuri: il valore di ogni investimento può diminuire, fino alla perdita del capitale investito. Dati storici e indicativi, in euro, al lordo di costi e oneri fiscali. Per decisioni di investimento rivolgiti a un consulente abilitato.';
 function Disclaimer({ sources }: { sources?: string }) {
@@ -86,14 +86,14 @@ export function PatrimonialEventLanding() {
 <span className={[styles.s027].join(' ')}></span>
 <span className={[styles.s028].join(' ')}></span>
 </div>
-<span className={[styles.s029].join(' ')}><strong className={[styles.s003].join(' ')}><EventSessionValue name="seatsTaken" /> persone</strong> hanno già<br />riservato il loro posto</span>
+<span className={[styles.s029].join(' ')}>Restano solo <strong className={styles.vSeatsInline}><EventSessionValue name="seatsLeft" /> posti</strong><br />su <EventSessionValue name="seatsTotal" /> disponibili</span>
 </div>
 </div>
 <div className={[styles.s030].join(' ')}>Gratuito · Online · Due serate · Nessuna vendita durante l&apos;evento</div>
 </div>
 <div className={[styles["tile-d"], styles["hero-chip"], styles.s031].join(' ')}>
-<div className={[styles.s032].join(' ')}><span>Posti occupati</span><strong className={[styles.s003].join(' ')}><EventSessionValue name="seatsTaken" /> / <EventSessionValue name="seatsTotal" /></strong></div>
-<div className={[styles.s033].join(' ')}><div style={ { width: `${eventSession.seatsTaken / eventSession.seatsTotal * 100}%` }} className={[styles.s034].join(' ')}></div></div>
+<div className={styles.vSeats}><span className={styles.vSeatsKicker}>Restano solo</span><span className={styles.vSeatsRow}><EventSeatsLeft className={styles.vSeatsNum} /><span className={styles.vSeatsUnit}>posti<br />liberi</span></span></div>
+<div className={[styles.s033].join(' ')}><div style={ { width: `${(eventSession.seatsTotal - eventSession.seatsTaken) / eventSession.seatsTotal * 100}%` }} className={[styles.s034, styles.vSeatsBar].join(' ')}></div></div>
 <div className={[styles.s035].join(' ')}>Limitati per rispondere a tutte le domande dal vivo.</div>
 </div>
 </div>
@@ -167,7 +167,7 @@ export function PatrimonialEventLanding() {
 <div className={[styles.s072].join(' ')}><span className={[styles.s073].join(' ')}>Fermi sul conto, oggi valgono come</span><span className={[styles.s074].join(' ')}><span data-bind="calc.real">{calc.real}</span> €</span></div>
 <div className={[styles.s072].join(' ')}><span className={[styles.s073].join(' ')}>Potere d&apos;acquisto perso</span><span className={[styles.s075].join(' ')}>−<span data-bind="calc.lost">{calc.lost}</span> €</span></div>
 </div>
-<div className={[styles.s076].join(' ')}>In {years} anni i prezzi sono saliti di circa il <strong className={[styles.s077].join(' ')}>{calc.inflation}%</strong>. Il saldo è rimasto uguale, quello che ci compri no.</div>
+<div className={[styles.s076, styles.vInflation].join(' ')}>In {years} anni i prezzi sono saliti di circa il <strong className={[styles.s077].join(' ')}>{calc.inflation}%</strong>. Il saldo è rimasto uguale, quello che ci compri no.</div>
 </div>
 
 <div className={[styles.s079].join(' ')}>
@@ -230,24 +230,8 @@ export function PatrimonialEventLanding() {
 </div>))}
 </div>
 <Disclaimer sources="Ogni patrimonio è diverso: questa mappa è un modo per ragionare sulla diversificazione, non un’indicazione su come investire." />
-</div>
-</div>
-
-<div data-event-section="questions" className={[styles.s120, styles.vQuestions].join(' ')}>
-<div className={[styles.s114].join(' ')}>
-<div className={[styles.s115].join(' ')}>
-<div className={[styles["label"], styles.s012].join(' ')}>CAPITOLO 03 · COSA SCOPRIRAI</div>
-<h2 className={[styles.reveal, styles.s093].join(' ')}>Le 6 domande a cui risponderemo nelle due serate.</h2>
-<p className={[styles.s065].join(' ')}>Prova a vedere a quante sapresti rispondere oggi. Nessuna formula universale: l&apos;obiettivo è darti più elementi per scegliere con la tua testa.</p>
-<p className={`${styles["swipe-hint"]} ${styles.label} ${styles.vMuted}`}>Scorri le 6 domande →</p>
-</div>
-<div data-carousel="s116" role="region" aria-label="Le sei domande" tabIndex={0} className={[styles["snap"], styles.s116].join(' ')}>
-{questions.map((item, i) => (<div key={item.q} className={styles.vQcard}><span className={styles.vQnum}>0{i + 1}</span><strong className={[styles.s118].join(' ')}>{item.q}</strong><span className={[styles.s121].join(' ')}>{item.sub}</span></div>))}
-</div>
-
 <div className={styles.vQuiz} id="strumenti">
 <div className={styles.vQuizHead}>
-<div className={[styles["label"], styles.s012].join(' ')}>DOMANDA 06 · PRIMA DI SCOPRIRLO</div>
 <h3 className={styles.vQuizTitle}>Quali di questi strumenti conosci?</h3>
 <p className={[styles.s065].join(' ')}>Tocca quelli che conosci: per ognuno vedi quanto ha reso negli ultimi 10 anni l’esempio con il risultato più alto. Hai sbagliato? Tocca di nuovo per toglierlo.</p>
 </div>
@@ -289,6 +273,22 @@ export function PatrimonialEventLanding() {
 <div className={styles.vQuizFoot}><span>Conosci <strong>{Object.keys(known).length}</strong> strumenti su {eventInstruments.length}. Nelle due serate vedrai come si incastrano tra loro, compresi quelli che non hai toccato.</span>
 <a href="#richiesta" className={[styles.cta, styles.s057].join(' ')}>Voglio le risposte <Arrow /></a></div>
 <Disclaimer sources="Fonti: immobili, prezzi e affitti medi richiesti a settembre 2026 per regione (idealista), medie per area pesate sulla popolazione; variazioni dell’ultimo anno: Immobiliare.it Insights, primo trimestre 2026; resa lorda = affitto annuo diviso prezzo, prima di spese e periodi sfitti; Milano 2015–2025: Osservatorio Casa Abbordabile e idealista. Obbligazioni: VanEck, 10 anni al 31/12/2025. ETF e azioni: S&P Dow Jones e MSCI via EU Personal Finance." />
+
+</div>
+</div>
+
+<div data-event-section="questions" className={[styles.s120, styles.vQuestions].join(' ')}>
+<div className={[styles.s114].join(' ')}>
+<div className={[styles.s115].join(' ')}>
+<div className={[styles["label"], styles.s012].join(' ')}>CAPITOLO 03 · COSA SCOPRIRAI</div>
+<h2 className={[styles.reveal, styles.s093].join(' ')}>Le 6 domande a cui risponderemo nelle due serate.</h2>
+<p className={[styles.s065].join(' ')}>Prova a vedere a quante sapresti rispondere oggi. Nessuna formula universale: l&apos;obiettivo è darti più elementi per scegliere con la tua testa.</p>
+<p className={`${styles["swipe-hint"]} ${styles.label} ${styles.vMuted}`}>Scorri le 6 domande →</p>
+</div>
+<div data-carousel="s116" role="region" aria-label="Le sei domande" tabIndex={0} className={[styles["snap"], styles.s116].join(' ')}>
+{questions.map((item, i) => (<div key={item.q} className={styles.vQcard}><span className={styles.vQnum}>0{i + 1}</span><strong className={[styles.s118].join(' ')}>{item.q}</strong><span className={[styles.s121].join(' ')}>{item.sub}</span></div>))}
+</div>
+
 </div>
 </div>
 </div>
@@ -386,8 +386,8 @@ export function PatrimonialEventLanding() {
 <h2 className={[styles.reveal, styles.s197].join(' ')}><span data-bind="formTitle">{formTitle}</span></h2>
 <p className={[styles.s065].join(' ')}>Ci vogliono 30 secondi. Ricevi il link, i promemoria e, dopo l&apos;evento, il tuo Radar Patrimoniale. Teniamo i posti limitati perché rispondiamo a tutte le domande dal vivo.</p>
 <div className={[styles["tile-d"], styles.s198].join(' ')}>
-<div className={[styles.s199].join(' ')}><span className={[styles.s056].join(' ')}>Posti rimasti</span><strong><EventSessionValue name="seatsLeft" /> su <EventSessionValue name="seatsTotal" /></strong></div>
-<div className={[styles.s200].join(' ')}><div style={ { width: `${eventSession.seatsTaken / eventSession.seatsTotal * 100}%` }} className={[styles.s034].join(' ')}></div></div>
+<div className={styles.vSeats}><span className={styles.vSeatsKicker}>Restano solo</span><span className={styles.vSeatsRow}><EventSeatsLeft className={styles.vSeatsNum} /><span className={styles.vSeatsUnit}>posti liberi<br />su <EventSessionValue name="seatsTotal" /></span></span></div>
+<div className={[styles.s200].join(' ')}><div style={ { width: `${(eventSession.seatsTotal - eventSession.seatsTaken) / eventSession.seatsTotal * 100}%` }} className={[styles.s034, styles.vSeatsBar].join(' ')}></div></div>
 <div className={[styles.s073].join(' ')}>Prima serata tra <EventSessionValue name="cd.d" /> giorni e <EventSessionValue name="cd.h" /> ore</div>
 </div>
 <div className={[styles.s201].join(' ')}>
