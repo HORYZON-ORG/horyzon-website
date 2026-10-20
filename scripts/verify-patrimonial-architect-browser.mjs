@@ -35,7 +35,7 @@ try {
     assert.equal(response.status(), 200); assert.equal(response.headers()['x-robots-tag'], 'noindex, nofollow');
     assert.equal(await page.locator('meta[name=robots]').getAttribute('content'), 'noindex, nofollow');
     await page.evaluate(() => document.fonts.ready);
-    assert.equal(await page.locator('h1').count(), 1); assert.equal(await page.locator('section').count(), 15);
+    assert.equal(await page.locator('h1').count(), 1); assert.equal(await page.locator('section').count(), 14);
     assert.equal(await page.locator('[data-profile]').count(), 5); assert.equal(await page.locator('[data-scene]').count(), 3); assert.equal(await page.locator('[data-story]').count(), 3);
     assert.equal(await page.locator('#stickyBar').getAttribute('aria-hidden'), 'true');
     const floating = await page.locator('[class*=s027]').boundingBox(); assert(floating.x >= 0 && floating.x + floating.width <= width);
@@ -77,7 +77,6 @@ try {
     assert.equal(await page.locator('[class*=m-vline]').first().evaluate(element => getComputedStyle(element).animationName), 'none', 'Reduced motion disables flow animation');
     const timeline = await page.locator('[class*=m-track]').boundingBox(); assert(width <= 700 ? timeline.height > timeline.width : timeline.width > timeline.height);
     assert.equal(await page.locator('[class*=formGrid]').first().evaluate(element => getComputedStyle(element).gridTemplateColumns.split(' ').length), width <= 700 ? 1 : 2);
-    assert.equal(await page.locator('[class*=m-stats]').evaluate(element => getComputedStyle(element).gridTemplateColumns.split(' ').filter(track => parseFloat(track) > 0).length), width <= 700 ? 2 : width === 768 ? 3 : 4);
     if (width <= 700) {
       const photo = await page.locator('[class*=s026]').boundingBox();
       const ticket = await page.locator('[class*=s027]').boundingBox();
@@ -94,14 +93,14 @@ try {
     await page.locator('#richiesta').scrollIntoViewIfNeeded();
     await page.waitForFunction(() => document.querySelector('#stickyBar').getAttribute('aria-hidden') === 'true');
     const form = page.locator('form[data-pilot-form=architect-path]');
-    await form.getByRole('button', { name: 'Sì, riservo il mio posto' }).click(); assert.equal(sent.length, 0);
+    await form.getByRole('button', { name: 'Invia la mia candidatura' }).click(); assert.equal(sent.length, 0);
     await form.locator('[name=firstName]').fill('Ada'); await form.locator('[name=lastName]').fill('Lovelace');
     await form.locator('[name=email]').fill('architect-browser@example.invalid'); await form.locator('[name=phone]').fill('3331234567');
-    await form.locator('[name=consent]').check(); await form.getByRole('button', { name: 'Sì, riservo il mio posto' }).click();
+    await form.locator('[name=consent]').check(); await form.getByRole('button', { name: 'Invia la mia candidatura' }).click();
     await form.getByText('PASSO 2 DI 2', { exact: true }).waitFor(); assert.equal(sent.length, 0, 'Step 1 must not send');
     assert.equal(await page.locator(':focus').getAttribute('id'), 'architect-path-form-title');
     assert.equal(await form.locator('[name=profile]').inputValue(), 'Altro'); assert.equal(await form.locator('[name=marketingConsent]').isChecked(), false);
-    await form.getByRole('button', { name: 'Sì, riservo il mio posto' }).click(); assert.equal(sent.length, 0, 'Province required');
+    await form.getByRole('button', { name: 'Invia la mia candidatura' }).click(); assert.equal(sent.length, 0, 'Province required');
     await form.locator('[name=province]').focus(); await page.keyboard.type('Milano'); await form.locator('[name=experience]').selectOption('Sì');
     await form.locator('[name=goal]').selectOption('Sto esplorando'); await form.locator('[name=availability]').selectOption('Part-time');
     await form.locator('[name=message]').fill('Solo verifica UI locale, nessun invio remoto.');
@@ -109,7 +108,7 @@ try {
     await form.evaluate(element => { element.requestSubmit(); element.requestSubmit(); });
     if (fail) {
       await form.getByRole('alert').waitFor(); assert.equal(sent.length, 1); assert.equal(await form.locator('[name=province]').inputValue(), 'Milano');
-      fail = false; await form.getByRole('button', { name: 'Sì, riservo il mio posto' }).click();
+      fail = false; await form.getByRole('button', { name: 'Invia la mia candidatura' }).click();
     }
     await page.waitForURL(`**${routePath}/grazie`); assert.equal(sent.length, width === 1440 ? 2 : 1);
     for (const payload of sent) {
@@ -119,7 +118,7 @@ try {
       assert.deepEqual(payload.utm, { utm_source: 'qa-local', utm_campaign: 'architect-redesign' });
     }
     assert.deepEqual(errors, []); await context.close();
-    console.log(`PASS ${width}px: mobile carousels/snap/keyboard, role/roadmap/form/stats/ticket, sections/crops/overflow, profiles, sticky, metadata, required fields, no step-1 POST, complete mapped payload, double-submit, ${width === 1440 ? 'error/retry, ' : ''}thank-you; all POSTs intercepted locally`);
+    console.log(`PASS ${width}px: evergreen candidature mobile flow, carousels/snap/keyboard, role/roadmap/form/ticket, sections/crops/overflow, profiles, sticky, metadata, required fields, no step-1 POST, UTM payload, double-submit, ${width === 1440 ? 'error/retry, ' : ''}thank-you; all POSTs intercepted locally`);
   }
   const page = await browser.newPage();
   await page.route('**/*', route => new URL(route.request().url()).origin === base.origin && route.request().method() === 'GET' ? route.continue() : route.abort());
