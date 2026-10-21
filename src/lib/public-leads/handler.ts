@@ -48,6 +48,10 @@ export async function handlePublicLead(request: Request, options: Options = {}):
   const pilot = pilotMode(fields.mode) ? validatePilotLead(fields) : null;
   if (pilot?.mode === 'architect-path' && !isCvId(cvId)) return response(400, 'Allega il tuo curriculum in PDF per inviare la candidatura.');
   if (!isLegacyLeadPayload(input) && !pilot) return response(400, 'Controlla i dati e la richiesta di ricontatto.');
+  // Preview links are not a public launch. Fail closed until an explicit event go-live.
+  if (pilot?.mode === 'patrimonial-event' && env.NODE_ENV !== 'test' &&
+      env.PATRIMONIAL_EVENT_SIGNUP_ENABLED !== 'true')
+    return response(503, 'Le iscrizioni all’evento non sono ancora aperte.');
   const name = text(input.name, 120), email = text(input.email, 254), rawPhone = text(input.phone ?? '', 40), message = text(input.message ?? '', 1500);
   const interest = patrimonialInterest(input.interest);
   const phone = rawPhone === null ? null : normalizePhone(rawPhone);
@@ -130,6 +134,9 @@ const v2Attempts = new Map<string, { count: number; until: number }>();
 async function handlePatrimonialV2(request: Request, input: Record<string, unknown>, options: Options): Promise<Response> {
   const env = options.env ?? process.env;
   if (!patrimonialFlags(env).v2) return response(503, 'Questo modulo non è ancora disponibile.');
+  if (input.mode === 'patrimonial-event' && env.NODE_ENV !== 'test' &&
+      env.PATRIMONIAL_EVENT_SIGNUP_ENABLED !== 'true')
+    return response(503, 'Le iscrizioni all’evento non sono ancora aperte.');
   if (input.website) return response(400, 'Richiesta non valida.');
   const now = (options.now ?? (() => new Date()))();
   if (env.NODE_ENV !== 'test') {
