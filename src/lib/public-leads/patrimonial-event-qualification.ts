@@ -1,5 +1,6 @@
-// Event-only structured qualification foundation (not wired to public submission).
-// V2 and the architect candidate funnel deliberately remain unchanged.
+// Event-only structured qualification for the PREVIEW pilot event form (2A).
+// Durable v2 and the architect candidate funnel deliberately remain unchanged;
+// Hub writes remain OFF until the private database migration is verified.
 import { eventInstruments, eventKnowledgeLevels, eventProfiles, eventScenes } from '../../content/patrimonial-event-content.ts';
 
 export const PATRIMONIAL_EVENT_QUALIFICATION_SCHEMA = 1 as const;
