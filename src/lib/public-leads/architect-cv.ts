@@ -129,7 +129,7 @@ export async function eligibleCandidateCvs(s: CvStorage, now: Date, ids: string[
       }
       const changedAt = Date.parse(c.updated_at);
       if (!Number.isFinite(changedAt)) throw new Error('cv_retention_lookup_invalid');
-      if (['received', 'reviewing', 'rejected', 'withdrawn'].includes(c.status) &&
+      if (['rejected', 'withdrawn'].includes(c.status) &&
           now.getTime() - changedAt >= ARCHITECT_CV_RETENTION_MS) {
         eligible.add(c.cv_id);
       }
@@ -140,8 +140,9 @@ export async function eligibleCandidateCvs(s: CvStorage, now: Date, ids: string[
 
 type CandidateRetentionCheck = (cvIds: string[]) => Promise<Set<string>>;
 
-/** Pending PDF: 24h. Candidate PDF: >=12 months AND an explicit Horyzon
- * no-longer-active state. Without a status checker, deletion fails closed. */
+/** Pending PDF: 24h. Candidate PDF: >=12 months since last change and a
+ * verified terminal state (rejected / withdrawn). All unresolved or approved
+ * applications remain protected pending a separate lawful retention review. */
 export async function purgeExpiredCvs(
   s: CvStorage, now: Date, checkCandidates?: CandidateRetentionCheck,
 ): Promise<{ pending: number; candidates: number }> {
