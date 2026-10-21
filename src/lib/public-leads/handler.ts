@@ -6,9 +6,10 @@ import { pilotForms } from '../../content/patrimonial-funnels.ts';
 import { canonicalPatrimonialPayload, isPatrimonialRequestId, PATRIMONIAL_V2, type PatrimonialRequest } from './patrimonial-contract.ts';
 import { patrimonialConsentEvidence } from './patrimonial-consents.ts';
 import { claimCv, cvStorage, isCvId, readCandidateCv, uploadCvToHighLevel, type CvStorage } from './architect-cv.ts';
+import { registerArchitectCandidate, markArchitectCandidateCrm } from './architect-hub-intake.ts';
 import { createProductionPatrimonialStore, patrimonialFlags, PatrimonialConflictError, PatrimonialReplayExpiredError, type PatrimonialStore } from './patrimonial-store.ts';
 
-type Options = { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch; now?: () => Date; store?: PatrimonialStore; cvStorage?: CvStorage | null };
+type Options = { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch; now?: () => Date; store?: PatrimonialStore; cvStorage?: CvStorage | null; hubFetchImpl?: typeof fetch };
 const attempts = new Map<string, { count: number; until: number }>();
 const response = (status: number, message: string) => Response.json({ ok: status === 200, message }, { status, headers: { 'Cache-Control': 'no-store' } });
 const text = (value: unknown, max: number) => typeof value === 'string' && value.length <= max ? value.trim() : null;
@@ -76,6 +77,16 @@ export async function handlePublicLead(request: Request, options: Options = {}):
         if (await claimCv(storage, cv) === 'missing') return response(400, 'Il CV caricato non è più disponibile. Caricalo di nuovo e reinvia la candidatura.');
       } catch { return response(503, 'Non riusciamo a collegare il CV in questo momento. Riprova tra poco.'); }
     }
+    // Store the private Horyzon candidate before projecting it to HighLevel.
+    // The cutover is opt-in and fail-closed; the event/public funnels are unchanged.
+    let hubStored = false;
+    if (cv && pilot.mode === 'architect-path') {
+      try {
+        hubStored = await registerArchitectCandidate(env, cv, pilot, options.hubFetchImpl);
+      } catch {
+        return response(503, 'Non riusciamo a registrare la candidatura nell’archivio Horyzon. Riprova tra poco.');
+      }
+    }
     try {
       const result = await callHighLevel<{ contact?: { id?: string } }>(crm, '/contacts/upsert', { locationId: config.locationId, firstName: pilot.firstName, lastName: pilot.lastName, email: pilot.email, ...(pilot.phone ? { phone: pilot.phone } : {}), source: details.source });
       const id = result.contact?.id;
@@ -92,8 +103,16 @@ export async function handlePublicLead(request: Request, options: Options = {}):
           try { await callHighLevel(crm, `/contacts/${encodeURIComponent(id)}/notes`, { body: `Curriculum: caricamento nel campo HighLevel non riuscito · verifica manuale · rif. ${cv}` }); } catch { /* best effort */ }
         }
       }
+      if (hubStored && cv) {
+        try { await markArchitectCandidateCrm(env, cv, id, true, options.hubFetchImpl); }
+        catch { /* CRM succeeded; Hub keeps a visible pending sync state for reconciliation. */ }
+      }
       return response(200, pilotForms[pilot.mode].success);
     } catch {
+      if (hubStored && cv) {
+        try { await markArchitectCandidateCrm(env, cv, null, false, options.hubFetchImpl); }
+        catch { /* The candidate and CV remain stored; manual reconciliation may be required. */ }
+      }
       return response(502, 'Non possiamo confermare la ricezione completa. Riprova oppure scrivi a info@horyzon.it.');
     }
   }
