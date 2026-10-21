@@ -5,6 +5,7 @@ import { isLegacyLeadPayload, pilotCrmDetails, pilotMode, validatePilotLead, val
 import { pilotForms } from '../../content/patrimonial-funnels.ts';
 import { canonicalPatrimonialPayload, isPatrimonialRequestId, PATRIMONIAL_V2, type PatrimonialRequest } from './patrimonial-contract.ts';
 import { patrimonialConsentEvidence } from './patrimonial-consents.ts';
+import { recordEventLeadInHub } from './patrimonial-hub-event-ingress.ts';
 import { claimCv, cvStorage, isCvId, readCandidateCv, uploadCvToHighLevel, type CvStorage } from './architect-cv.ts';
 import { createProductionPatrimonialStore, patrimonialFlags, PatrimonialConflictError, PatrimonialReplayExpiredError, type PatrimonialStore } from './patrimonial-store.ts';
 
@@ -90,6 +91,18 @@ export async function handlePublicLead(request: Request, options: Options = {}):
         } catch {
           // La candidatura e il CV sono già al sicuro: si segnala solo la verifica manuale.
           try { await callHighLevel(crm, `/contacts/${encodeURIComponent(id)}/notes`, { body: `Curriculum: caricamento nel campo HighLevel non riuscito · verifica manuale · rif. ${cv}` }); } catch { /* best effort */ }
+        }
+      }
+      if (pilot.mode === 'patrimonial-event') {
+        try {
+          await recordEventLeadInHub({
+            lead: pilot, highlevelContactId: id, highlevelLocationId: config.locationId,
+            source: details.source, env, fetchImpl: options.fetchImpl,
+          });
+        } catch {
+          // HighLevel already accepted the contact. Do not claim that Hub received
+          // it; ask for manual verification instead of making up a second person.
+          return response(502, 'Richiesta ricevuta nel CRM, ma collegamento Horyzon non confermato. Non inviare nuovamente: contatta info@horyzon.it per verificare la scheda.');
         }
       }
       return response(200, pilotForms[pilot.mode].success);
