@@ -6,6 +6,10 @@ const lead = {
   email: 'mario@example.invalid', phone: '+393331234567', province: 'Milano',
   profile: 'Privato', message: 'Informazioni webinar', consent: true,
   marketingConsent: false, utm: { utm_source: 'test' },
+  qualification: {
+    schemaVersion: 1, audienceProfile: 'Professionista', sceneId: 'fermi',
+    consultationRequested: false, instruments: [{ instrumentId: 'oro', knowledgeLevel: 'So come funziona' }],
+  },
 };
 const config = {
   SUPABASE_URL: 'https://fixture.supabase.co',
@@ -24,6 +28,7 @@ const success = async (url, init) => {
   assert.equal(value.locationId, 'verified-location');
   assert.equal(value.marketingConsent, false);
   assert.equal(value.editionId, null);
+  assert.deepEqual(value.qualification, lead.qualification);
   assert.equal(value.sourcePath, '/benessere-patrimoniale/evento');
   assert.ok(value.eventId.startsWith('webinar:'));
   eventKeys.push(value.eventId);
