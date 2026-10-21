@@ -41,6 +41,7 @@ export async function recordEventLeadInHub(input: {
     mode: lead.mode, firstName: lead.firstName, lastName: lead.lastName,
     email: lead.email, phone: lead.phone, province: lead.province,
     profile: lead.profile, message: lead.message, marketingConsent: lead.marketingConsent,
+    qualification: lead.qualification ?? null,
     utm: Object.fromEntries(Object.entries(lead.utm).sort(([a],[b]) => a.localeCompare(b))),
   })).digest('hex');
   const eventId = `webinar:${fingerprint.slice(0,56)}`;
@@ -53,6 +54,7 @@ export async function recordEventLeadInHub(input: {
     province: lead.province, profile: lead.profile || null, message: lead.message || null,
     utm: lead.utm, consent: true, marketingConsent: lead.marketingConsent,
     privacyVersion: PATRIMONIAL_PILOT_PRIVACY_VERSION,
+    ...(lead.qualification ? { qualification: lead.qualification } : {}),
   };
   let response: Response;
   try {
