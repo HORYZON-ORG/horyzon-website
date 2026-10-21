@@ -161,7 +161,7 @@ export async function purgeExpiredCvs(
       // Never delete an orphan/approved/in-training CV merely because it aged.
       approved = [];
       if (checkCandidates && expired.length) {
-        const ids = expired.map(path => path.slice('candidates/'.length).replace(/\\.pdf$/, ''));
+        const ids = expired.map(path => path.slice('candidates/'.length).replace(/\.pdf$/, ''));
         const allowed = await checkCandidates(ids);
         if (!(allowed instanceof Set)) throw new Error('cv_retention_lookup_invalid');
         approved = expired.filter((path, i) => allowed.has(ids[i]));
