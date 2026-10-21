@@ -83,7 +83,45 @@ assert.equal(res2.status, 200, 'errore upload HighLevel non fa perdere la candid
 assert(hl.some(k => /^fld1_[0-9a-f-]{36}$/.test(k)), 'chiave multipart <fieldId>_<uuid>');
 assert(hl.some(n => typeof n === 'string' && n.includes('verifica manuale')), 'segnalazione di verifica manuale');
 
-// 4. Retention
+// 4. Integrazione Hub opt-in: CV -> registrazione canonica -> CRM -> receipt.
+const connectedEnv = { ...env, PATRIMONIAL_ARCHITECT_HUB_INTAKE_ENABLED: 'true', SUPABASE_URL: 'https://db.test', SUPABASE_SERVICE_ROLE_KEY: 'secret' };
+const s4 = fakeStorage(); const up4 = await (await upload(s4, pdf())).json();
+const sequence = [];
+const hubFetch = async (url, init) => {
+  const body = JSON.parse(init.body);
+  sequence.push(new URL(url).pathname + ':' + (body.p_success ?? 'intake'));
+  assert.equal(init.headers['Content-Profile'], 'hub');
+  if (url.endsWith('/architect_candidate_intake_v1')) {
+    assert.equal(body.p_cv_id, up4.cvId);
+    assert.match(body.p_hash, /^[0-9a-f]{64}$/);
+    assert.equal(body.p_data.email, 'anna@example.com');
+    return Response.json('92b5c71f-0e7b-4828-ae6c-5228e1811a94');
+  }
+  assert.equal(body.p_contact_id, 'c1');
+  return Response.json(null);
+};
+const acceptedHub = await post(lead({ cvId: up4.cvId }), {
+  env: connectedEnv, cvStorage: s4.storage, hubFetchImpl: hubFetch,
+  fetchImpl: async (url, init) => { sequence.push(new URL(url).pathname); return crmFetch(url, init); },
+});
+assert.equal(acceptedHub.status, 200);
+assert(sequence[0].includes('architect_candidate_intake_v1'), 'Hub intake before HighLevel');
+assert(sequence.some(x => x.includes('/contacts/upsert')));
+assert(sequence.at(-1).includes('architect_candidate_crm_v1:true'), 'Hub CRM receipt');
+assert(s4.objects.has(`candidates/${up4.cvId}.pdf`), 'documento privato rimane in storage');
+
+const s5 = fakeStorage(); const up5 = await (await upload(s5, pdf())).json();
+let attemptedCrm = false;
+const rejectedHub = await post(lead({ cvId: up5.cvId }), {
+  env: connectedEnv, cvStorage: s5.storage,
+  hubFetchImpl: async () => new Response('{}', { status: 503 }),
+  fetchImpl: async () => { attemptedCrm = true; return Response.json({}); },
+});
+assert.equal(rejectedHub.status, 503, 'intake Hub indisponibile: fail-closed');
+assert.equal(attemptedCrm, false, 'nessuna scrittura HighLevel se Hub fallisce');
+assert(s5.objects.has(`candidates/${up5.cvId}.pdf`), 'CV trattenuto per retry idempotente');
+
+// 5. Retention
 const s3 = fakeStorage();
 const day = 86400000, now = Date.now();
 s3.objects.set('pending/old.pdf', { body: pdf(), createdAt: new Date(now - 2 * day).toISOString() });
