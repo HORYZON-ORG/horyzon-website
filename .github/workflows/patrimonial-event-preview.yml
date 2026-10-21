@@ -30,7 +30,23 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Test Event -> Hub and Radar link contracts (no external calls)
         run: npm run test:patrimonial-event-integration
-      - name: Check existing patrimonial funnel regressions (no external calls)
-        run: npm run test:patrimonial-funnels
+      - name: Preserve unrelated public pages relative to event-integration base
+        run: |
+          git diff --exit-code cc15e5d0731a8227eac2a3df39d7e7b0e2242ac3 HEAD -- \
+            src/components/wellbeing-page.tsx \
+            src/components/wellbeing-scene.tsx \
+            src/components/wellbeing.module.css \
+            'src/app/[...slug]/page.tsx' \
+            src/app/contatti/page.tsx \
+            src/content/patrimonial.ts \
+            src/content/public-guide.ts \
+            src/content/public-faq.ts \
+            src/data/pages.ts \
+            src/data/archive.json \
+            src/components/site-shell.tsx \
+            src/app/layout.tsx \
+            src/app/robots.ts \
+            src/app/llms.txt/route.ts \
+            src/app/index.md/route.ts
       - name: Type check
         run: npm run typecheck
