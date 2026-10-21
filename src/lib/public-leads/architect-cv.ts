@@ -7,7 +7,8 @@
 //      candidates/<cvId>.pdf PRIMA di scrivere su HighLevel (niente contatto senza CV)
 //   3. se HIGHLEVEL_CV_FIELD_ID è configurato, il PDF viene caricato anche nel campo
 //      file del contatto; un errore qui non fa perdere la candidatura (nota di verifica)
-//   4. il cron di retention cancella pending dopo 24 ore e candidates dopo 12 mesi
+//   4. il cron elimina pending dopo 24 ore; i CV delle candidature si eliminano
+//      solo se una verifica nello stato Horyzon ne autorizza la retention
 import { randomUUID } from 'node:crypto';
 
 export const ARCHITECT_CV_BUCKET = 'architect-cv';
@@ -101,8 +102,49 @@ async function list(s: CvStorage, prefix: string, offset: number): Promise<Liste
   return await res.json() as Listed[];
 }
 
-/** Retention: pending oltre 24 ore, candidates oltre 12 mesi. Restituisce quanti file ha rimosso. */
-export async function purgeExpiredCvs(s: CvStorage, now: Date): Promise<{ pending: number; candidates: number }> {
+/** Return eligible CV IDs only when the server verifies the associated application
+ * is no longer progressing. Unknown/unlinked/approved applicants are protected.
+ * Reads only technical state (no names, emails, notes or CV data). */
+export async function eligibleCandidateCvs(s: CvStorage, now: Date, ids: string[]): Promise<Set<string>> {
+  const eligible = new Set<string>();
+  const valid = [...new Set(ids.filter(isCvId))];
+  for (let start = 0; start < valid.length; start += 50) {
+    const batch = valid.slice(start, start + 50);
+    const u = new URL(`${s.url}/rest/v1/architect_candidates`);
+    u.searchParams.set('select', 'cv_id,status,updated_at');
+    u.searchParams.set('cv_id', `in.(${batch.join(',')})`);
+    const res = await s.fetchImpl(u.toString(), {
+      headers: headers(s, { 'Accept-Profile': 'hub', Accept: 'application/json', 'Cache-Control': 'no-store' }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) throw new Error('cv_retention_lookup_failed');
+    const rows: unknown = await res.json();
+    if (!Array.isArray(rows)) throw new Error('cv_retention_lookup_invalid');
+    for (const row of rows) {
+      if (!row || typeof row !== 'object') throw new Error('cv_retention_lookup_invalid');
+      const c = row as Record<string, unknown>;
+      if (typeof c.cv_id !== 'string' || !batch.includes(c.cv_id) ||
+          typeof c.status !== 'string' || typeof c.updated_at !== 'string') {
+        throw new Error('cv_retention_lookup_invalid');
+      }
+      const changedAt = Date.parse(c.updated_at);
+      if (!Number.isFinite(changedAt)) throw new Error('cv_retention_lookup_invalid');
+      if (['received', 'reviewing', 'rejected', 'withdrawn'].includes(c.status) &&
+          now.getTime() - changedAt >= ARCHITECT_CV_RETENTION_MS) {
+        eligible.add(c.cv_id);
+      }
+    }
+  }
+  return eligible;
+}
+
+type CandidateRetentionCheck = (cvIds: string[]) => Promise<Set<string>>;
+
+/** Pending PDF: 24h. Candidate PDF: >=12 months AND an explicit Horyzon
+ * no-longer-active state. Without a status checker, deletion fails closed. */
+export async function purgeExpiredCvs(
+  s: CvStorage, now: Date, checkCandidates?: CandidateRetentionCheck,
+): Promise<{ pending: number; candidates: number }> {
   const removed = { pending: 0, candidates: 0 };
   for (const [prefix, ttl, bucket] of [['pending', ARCHITECT_CV_PENDING_TTL_MS, 'pending'], ['candidates', ARCHITECT_CV_RETENTION_MS, 'candidates']] as const) {
     const expired: string[] = [];
@@ -114,13 +156,24 @@ export async function purgeExpiredCvs(s: CvStorage, now: Date): Promise<{ pendin
       }
       if (page.length < 1000) break;
     }
-    for (let i = 0; i < expired.length; i += 100) {
+    let approved = expired;
+    if (bucket === 'candidates') {
+      // Never delete an orphan/approved/in-training CV merely because it aged.
+      approved = [];
+      if (checkCandidates && expired.length) {
+        const ids = expired.map(path => path.slice('candidates/'.length).replace(/\\.pdf$/, ''));
+        const allowed = await checkCandidates(ids);
+        if (!(allowed instanceof Set)) throw new Error('cv_retention_lookup_invalid');
+        approved = expired.filter((path, i) => allowed.has(ids[i]));
+      }
+    }
+    for (let i = 0; i < approved.length; i += 100) {
       const res = await s.fetchImpl(`${s.url}/storage/v1/object/${ARCHITECT_CV_BUCKET}`, {
-        method: 'DELETE', headers: headers(s, { 'Content-Type': 'application/json' }), body: JSON.stringify({ prefixes: expired.slice(i, i + 100) }),
+        method: 'DELETE', headers: headers(s, { 'Content-Type': 'application/json' }), body: JSON.stringify({ prefixes: approved.slice(i, i + 100) }),
       });
       if (!res.ok) throw new Error('cv_purge_failed');
     }
-    removed[bucket] = expired.length;
+    removed[bucket] = approved.length;
   }
   return removed;
 }
