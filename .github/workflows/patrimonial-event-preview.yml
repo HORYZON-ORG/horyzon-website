@@ -1,0 +1,52 @@
+name: Patrimonial event preview checks
+
+on:
+  push:
+    branches:
+      - feat/patrimonial-event-integration-foundation
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  event-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out reviewed feature branch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Set up Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: Install dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Test Event -> Hub and Radar link contracts (no external calls)
+        run: npm run test:patrimonial-event-integration
+      - name: Preserve unrelated public pages relative to event-integration base
+        run: |
+          git diff --exit-code cc15e5d0731a8227eac2a3df39d7e7b0e2242ac3 origin/feat/patrimonial-event-integration-foundation -- \
+            src/components/wellbeing-page.tsx \
+            src/components/wellbeing-scene.tsx \
+            src/components/wellbeing.module.css \
+            'src/app/[...slug]/page.tsx' \
+            src/app/contatti/page.tsx \
+            src/content/patrimonial.ts \
+            src/content/public-guide.ts \
+            src/content/public-faq.ts \
+            src/data/pages.ts \
+            src/data/archive.json \
+            src/components/site-shell.tsx \
+            src/app/layout.tsx \
+            src/app/robots.ts \
+            src/app/llms.txt/route.ts \
+            src/app/index.md/route.ts
+      - name: Type check
+        run: npm run typecheck

@@ -1,0 +1,97 @@
+import assert from 'node:assert/strict';
+import { handleArchitectCvUpload } from '../src/lib/public-leads/architect-cv-upload.ts';
+import { handlePublicLead } from '../src/lib/public-leads/handler.ts';
+import { claimCv, isPdf, purgeExpiredCvs } from '../src/lib/public-leads/architect-cv.ts';
+
+// Finto Storage Supabase in memoria: object, info, move, list, delete.
+function fakeStorage() {
+  const objects = new Map();
+  const calls = [];
+  const fetchImpl = async (url, init = {}) => {
+    const u = new URL(url); const path = u.pathname.replace('/storage/v1/object/', ''); calls.push(`${init.method ?? 'GET'} ${path}`);
+    const json = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
+    if (path === 'move') {
+      const { sourceKey, destinationKey } = JSON.parse(init.body);
+      if (!objects.has(sourceKey)) return json(400, { error: 'not_found' });
+      objects.set(destinationKey, objects.get(sourceKey)); objects.delete(sourceKey); return json(200, {});
+    }
+    if (path.startsWith('info/architect-cv/')) return objects.has(path.slice(18)) ? json(200, {}) : json(404, {});
+    if (path === 'list/architect-cv') {
+      const { prefix } = JSON.parse(init.body);
+      return json(200, [...objects].filter(([k]) => k.startsWith(prefix + '/')).map(([k, v]) => ({ name: k.slice(prefix.length + 1), id: k, created_at: v.createdAt })));
+    }
+    if (path === 'architect-cv' && init.method === 'DELETE') { for (const k of JSON.parse(init.body).prefixes) objects.delete(k); return json(200, []); }
+    const key = path.slice('architect-cv/'.length);
+    if (init.method === 'POST') { objects.set(key, { body: Buffer.from(init.body), createdAt: new Date().toISOString() }); return json(200, { Key: key }); }
+    return objects.has(key) ? new Response(objects.get(key).body, { status: 200 }) : json(404, {});
+  };
+  return { storage: { url: 'https://db.test', key: 'service', fetchImpl }, objects, calls };
+}
+const pdf = (size = 2000) => { const b = Buffer.alloc(size, 32); b.write('%PDF-1.7\n'); b.write('\n%%EOF\n', size - 7); return b; };
+const env = { NODE_ENV: 'test', HIGHLEVEL_PRIVATE_TOKEN: 't', HIGHLEVEL_LOCATION_ID: 'loc' };
+const origin = 'http://localhost:3000';
+const upload = (s, body, type = 'application/pdf') => handleArchitectCvUpload(new Request(`${origin}/api/public-leads/cv`, { method: 'POST', headers: { origin, 'content-type': type }, body }), { env, storage: s.storage });
+
+// 1. Validazione PDF
+assert.equal(isPdf(pdf()), true);
+assert.equal(isPdf(Buffer.from('MZ fake exe '.repeat(20))), false, 'un file non PDF rinominato .pdf viene rifiutato');
+const s = fakeStorage();
+assert.equal((await upload(s, Buffer.from('<html>'.repeat(30)))).status, 400);
+assert.equal((await upload(s, pdf(), 'image/png')).status, 415);
+assert.equal((await upload(s, pdf(5 * 1024 * 1024 + 10))).status, 413, 'oltre 5 MB rifiutato');
+assert.equal((await handleArchitectCvUpload(new Request(`${origin}/x`, { method: 'POST', headers: { origin: 'https://evil.example', 'content-type': 'application/pdf' }, body: pdf() }), { env, storage: s.storage })).status, 403);
+assert.equal((await handleArchitectCvUpload(new Request(`${origin}/x`, { method: 'POST', headers: { origin, 'content-type': 'application/pdf' }, body: pdf() }), { env, storage: null })).status, 503, 'senza storage: errore esplicito, mai finto successo');
+const ok = await (await upload(s, pdf())).json();
+assert.equal(ok.ok, true); assert.match(ok.cvId, /^[0-9a-f-]{36}$/);
+assert(s.objects.has(`pending/${ok.cvId}.pdf`), 'salvato in pending, nome file del candidato mai usato');
+
+// 2. Candidatura: CV obbligatorio, collegato prima del CRM, nota senza file
+const lead = (extra = {}) => ({ mode: 'architect-path', sourcePath: '/benessere-patrimoniale/percorso-architetto-patrimoniale', firstName: 'Anna', lastName: 'Rossi', email: 'anna@example.com', phone: '3331234567', province: 'Milano', profile: '', message: '', consent: true, marketingConsent: false, website: '', utm: {}, experience: '', goal: '', availability: '', ...extra });
+const post = (body, opts) => handlePublicLead(new Request(`${origin}/api/public-leads`, { method: 'POST', headers: { origin, 'content-type': 'application/json' }, body: JSON.stringify(body) }), opts);
+const crmCalls = []; let failNotes = false;
+const crmFetch = async (url, init) => {
+  crmCalls.push(`${init.method} ${new URL(url).pathname}`);
+  if (url.includes('/contacts/upsert')) return Response.json({ contact: { id: 'c1' } });
+  if (url.includes('/notes') && failNotes) return new Response('{}', { status: 500 });
+  return Response.json({ ok: true });
+};
+assert.equal((await post(lead(), { env, fetchImpl: crmFetch, cvStorage: s.storage })).status, 400, 'candidatura senza CV rifiutata');
+assert.equal(crmCalls.length, 0, 'nessuna scrittura CRM senza CV');
+assert.equal((await post(lead({ cvId: '00000000-0000-4000-8000-000000000000' }), { env, fetchImpl: crmFetch, cvStorage: s.storage })).status, 400, 'CV inesistente o scaduto');
+assert.equal(crmCalls.length, 0);
+assert.equal((await post({ ...lead({ cvId: ok.cvId }), mode: 'patrimonial-event', sourcePath: '/benessere-patrimoniale/evento' }, { env, fetchImpl: crmFetch, cvStorage: s.storage })).status, 400, 'il modulo evento non accetta CV');
+
+failNotes = true;
+assert.equal((await post(lead({ cvId: ok.cvId }), { env, fetchImpl: crmFetch, cvStorage: s.storage })).status, 502);
+assert(s.objects.has(`candidates/${ok.cvId}.pdf`), 'il CV resta al sicuro anche se il CRM fallisce');
+failNotes = false; crmCalls.length = 0;
+const accepted = await post(lead({ cvId: ok.cvId }), { env, fetchImpl: async (url, init) => { if (url.includes('/notes')) crmCalls.push(JSON.parse(init.body).body); return crmFetch(url, init); }, cvStorage: s.storage });
+assert.equal(accepted.status, 200, 'retry con lo stesso CV dopo errore CRM: accettato (claim idempotente)');
+const note = crmCalls.find(n => typeof n === 'string' && n.includes('Curriculum'));
+assert(note && note.includes(`rif. ${ok.cvId}`) && !note.includes('%PDF'), 'nota CRM con riferimento, senza contenuto del file');
+assert(note.includes('campo CV HighLevel non ancora configurato'));
+
+// 3. Caricamento nel campo file HighLevel quando configurato; un errore non blocca
+const s2 = fakeStorage(); const up2 = await (await upload(s2, pdf())).json();
+const hl = [];
+const res2 = await post(lead({ cvId: up2.cvId }), { env: { ...env, HIGHLEVEL_CV_FIELD_ID: 'fld1' }, cvStorage: s2.storage, fetchImpl: async (url, init) => {
+  if (url.includes('upload-custom-files')) { hl.push([...init.body.keys()][0]); return new Response('{}', { status: 500 }); }
+  if (url.includes('/notes')) hl.push(JSON.parse(init.body).body);
+  return crmFetch(url, init);
+} });
+assert.equal(res2.status, 200, 'errore upload HighLevel non fa perdere la candidatura');
+assert(hl.some(k => /^fld1_[0-9a-f-]{36}$/.test(k)), 'chiave multipart <fieldId>_<uuid>');
+assert(hl.some(n => typeof n === 'string' && n.includes('verifica manuale')), 'segnalazione di verifica manuale');
+
+// 4. Retention
+const s3 = fakeStorage();
+const day = 86400000, now = Date.now();
+s3.objects.set('pending/old.pdf', { body: pdf(), createdAt: new Date(now - 2 * day).toISOString() });
+s3.objects.set('pending/new.pdf', { body: pdf(), createdAt: new Date(now - 3600000).toISOString() });
+s3.objects.set('candidates/old.pdf', { body: pdf(), createdAt: new Date(now - 366 * day).toISOString() });
+s3.objects.set('candidates/new.pdf', { body: pdf(), createdAt: new Date(now - 300 * day).toISOString() });
+assert.deepEqual(await purgeExpiredCvs(s3.storage, new Date(now)), { pending: 1, candidates: 1 });
+assert.deepEqual([...s3.objects.keys()].sort(), ['candidates/new.pdf', 'pending/new.pdf']);
+assert.equal(await claimCv(s3.storage, 'new'), 'claimed');
+
+console.log('PASS architect CV: solo PDF reali ≤5 MB, origin e storage fail-closed, CV obbligatorio prima di ogni scrittura CRM, retry idempotente, nota senza contenuto, campo HighLevel opzionale e non bloccante, retention 24h/12 mesi.');

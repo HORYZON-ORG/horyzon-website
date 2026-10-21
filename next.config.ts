@@ -29,7 +29,10 @@ const nextConfig: NextConfig = {
    { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
   ] }, { source: '/annunci-10x', headers: [
    { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
-  ] }, { source: '/', headers: [
+  ] }, ...['percorso-architetto-patrimoniale', 'evento'].map(slug => ({
+   source: `/benessere-patrimoniale/${slug}/:path*`,
+   headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+  })), { source: '/', headers: [
    { key: 'Vary', value: 'Accept, RSC, Next-Router-State-Tree, Next-Router-Prefetch, Next-Router-Segment-Prefetch' },
   ] }, { source: '/home.md', headers: [
    { key: 'Content-Type', value: 'text/markdown; charset=utf-8' },

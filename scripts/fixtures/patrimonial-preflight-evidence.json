@@ -1,0 +1,1419 @@
+{
+  "observedAt": "2026-10-18",
+  "source": "Supabase read-only MCP; schema/counts/categories/function hashes only; no real records exported",
+  "projectRef": "pmkyeqrfkunypfkbjnyg",
+  "postgres": "17.6.1.166",
+  "counts": {
+    "events": 4,
+    "outbox": 13,
+    "intents": 4,
+    "editions": 0,
+    "requests": 3,
+    "participations": 0
+  },
+  "shape": {
+    "shape": [
+      {
+        "n": 1,
+        "kind": "OPPORTUNITY",
+        "stage": "A01",
+        "funnel": "architect-path",
+        "status": "OPEN",
+        "revision": 1,
+        "sync_state": "SYNCED",
+        "remote_id_present": true,
+        "sync_write_started": false,
+        "sync_reconcile_required": false
+      },
+      {
+        "n": 3,
+        "kind": "PROVISIONAL",
+        "stage": null,
+        "funnel": "architect-path",
+        "status": "SYNC_PENDING",
+        "revision": 0,
+        "sync_state": "SYNC_PENDING",
+        "remote_id_present": false,
+        "sync_write_started": false,
+        "sync_reconcile_required": false
+      }
+    ],
+    "consents": 6,
+    "eventNames": [
+      {
+        "n": 1,
+        "event_name": "ARCHITECT_INTEREST_RECEIVED"
+      },
+      {
+        "n": 3,
+        "event_name": "request_received"
+      }
+    ]
+  },
+  "intentChecks": {
+    "badId": 0,
+    "opportunity": 1,
+    "provisional": 3,
+    "badIntentSyncLease": 0,
+    "badKindWhenPresent": 0,
+    "opportunityNoRemoteId": 0,
+    "badOpportunityRevision": 0,
+    "badOpportunityStatusStage": 0,
+    "provisionalNoJsonRevision": 3
+  },
+  "outbox": {
+    "effects": [
+      {
+        "n": 2,
+        "status": "SYNCED",
+        "effect_type": "ADD_NOTE",
+        "max_attempt": 1,
+        "min_attempt": 1,
+        "min_lease_version": 1
+      },
+      {
+        "n": 2,
+        "status": "SYNCED",
+        "effect_type": "ADD_TAGS",
+        "max_attempt": 1,
+        "min_attempt": 1,
+        "min_lease_version": 1
+      },
+      {
+        "n": 3,
+        "status": "SYNCED",
+        "effect_type": "RESOLVE_CONTACT",
+        "max_attempt": 1,
+        "min_attempt": 1,
+        "min_lease_version": 1
+      },
+      {
+        "n": 3,
+        "status": "SYNCED",
+        "effect_type": "SYNC_REQUEST",
+        "max_attempt": 1,
+        "min_attempt": 1,
+        "min_lease_version": 1
+      },
+      {
+        "n": 1,
+        "status": "RECONCILE_REQUIRED",
+        "effect_type": "UPSERT_CONTACT",
+        "max_attempt": 1,
+        "min_attempt": 1,
+        "min_lease_version": 1
+      },
+      {
+        "n": 2,
+        "status": "SYNCED",
+        "effect_type": "UPSERT_CONTACT",
+        "max_attempt": 1,
+        "min_attempt": 1,
+        "min_lease_version": 1
+      }
+    ],
+    "invalidLease": 0,
+    "unknownEffect": 0,
+    "recordMismatch": 0,
+    "invalidRevision": 0
+  },
+  "functions": [
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_commands jsonb, p_expected jsonb",
+      "hash": "a53f1b0cc6886bc222321ffd266397d6",
+      "name": "acquire_patrimonial_request_v2",
+      "config": [
+        "search_path=pg_catalog, public"
+      ],
+      "securityDefiner": false
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_input jsonb, p_tokens jsonb",
+      "hash": "88b4d927458cf32cc5209bfcd4246fd6",
+      "name": "claim_patrimonial_operations",
+      "config": [
+        "search_path=pg_catalog, public"
+      ],
+      "securityDefiner": false
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_input jsonb",
+      "hash": "9878e1afbdbc42624aaa480ff5b6aca3",
+      "name": "complete_patrimonial_operation",
+      "config": [
+        "search_path=pg_catalog, public"
+      ],
+      "securityDefiner": false
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_input jsonb",
+      "hash": "7ba91c0290cf11d0052c6fe950221115",
+      "name": "fail_patrimonial_operation",
+      "config": [
+        "search_path=pg_catalog, public"
+      ],
+      "securityDefiner": false
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_command jsonb",
+      "hash": "de2f6996d20ce27f69651b9e6c03c848",
+      "name": "patrimonial_execute_command",
+      "config": [
+        "search_path=pg_catalog, public"
+      ],
+      "securityDefiner": false
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_input jsonb",
+      "hash": "9ce00796fc9a1330b12c4287d01588e5",
+      "name": "patrimonial_owned_operation",
+      "config": [
+        "search_path=pg_catalog, public"
+      ],
+      "securityDefiner": false
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_record jsonb",
+      "hash": "04c0b4c11a53e87fac67ee0ecfbac9aa",
+      "name": "patrimonial_put_operation",
+      "config": [
+        "search_path=pg_catalog, public"
+      ],
+      "securityDefiner": false
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "",
+      "hash": "1eab07a9f9f7758647f0fbd38a5a17fc",
+      "name": "patrimonial_store_health",
+      "config": [
+        "search_path=pg_catalog, public"
+      ],
+      "securityDefiner": false
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_commands jsonb, p_expected jsonb, p_preview boolean",
+      "hash": "d49772d8fdce71128e2073f0d78ca81d",
+      "name": "patrimonial_store_transaction",
+      "config": [
+        "search_path=pg_catalog, public"
+      ],
+      "securityDefiner": false
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_input jsonb",
+      "hash": "abf32c7e70655fd021ca93aeeafbceaa",
+      "name": "renew_patrimonial_operation_lease",
+      "config": [
+        "search_path=pg_catalog, public"
+      ],
+      "securityDefiner": false
+    }
+  ],
+  "columns": [
+    {
+      "type": "uuid",
+      "table": "patrimonial_domain_events",
+      "column": "event_id",
+      "default": "gen_random_uuid()",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "patrimonial_domain_events",
+      "column": "event_key",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "patrimonial_domain_events",
+      "column": "event_name",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "patrimonial_domain_events",
+      "column": "intent_id",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "patrimonial_domain_events",
+      "column": "request_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "patrimonial_domain_events",
+      "column": "participation_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "integer",
+      "table": "patrimonial_domain_events",
+      "column": "revision",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "patrimonial_domain_events",
+      "column": "occurred_at",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "patrimonial_domain_events",
+      "column": "actor_type",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "patrimonial_domain_events",
+      "column": "actor_ref",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "jsonb",
+      "table": "patrimonial_domain_events",
+      "column": "metadata",
+      "default": "'{}'::jsonb",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "patrimonial_domain_events",
+      "column": "supersedes_event_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "patrimonial_domain_events",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "patrimonial_intents",
+      "column": "id",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "patrimonial_intents",
+      "column": "kind",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "patrimonial_intents",
+      "column": "funnel",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "patrimonial_intents",
+      "column": "provisional_key",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "patrimonial_intents",
+      "column": "group_key",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "patrimonial_intents",
+      "column": "business_key",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "patrimonial_intents",
+      "column": "location_ref",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "patrimonial_intents",
+      "column": "remote_contact_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "patrimonial_intents",
+      "column": "remote_opportunity_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "patrimonial_intents",
+      "column": "scope_key",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "integer",
+      "table": "patrimonial_intents",
+      "column": "cycle",
+      "default": "1",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "patrimonial_intents",
+      "column": "status",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "patrimonial_intents",
+      "column": "stage",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "integer",
+      "table": "patrimonial_intents",
+      "column": "revision",
+      "default": "0",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "patrimonial_intents",
+      "column": "next_step",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "patrimonial_intents",
+      "column": "next_step_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "patrimonial_intents",
+      "column": "owner_ref",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "patrimonial_intents",
+      "column": "close_reason",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "patrimonial_intents",
+      "column": "closed_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "jsonb",
+      "table": "patrimonial_intents",
+      "column": "record",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "patrimonial_intents",
+      "column": "sync_state",
+      "default": "'SYNC_PENDING'::text",
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "patrimonial_intents",
+      "column": "sync_token",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "integer",
+      "table": "patrimonial_intents",
+      "column": "sync_lease_version",
+      "default": "0",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "patrimonial_intents",
+      "column": "sync_lease_expires_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "boolean",
+      "table": "patrimonial_intents",
+      "column": "sync_write_started",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "boolean",
+      "table": "patrimonial_intents",
+      "column": "sync_reconcile_required",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "patrimonial_intents",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "patrimonial_intents",
+      "column": "updated_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "patrimonial_intents",
+      "column": "review_after",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "uuid",
+      "table": "patrimonial_outbox_operations",
+      "column": "id",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "patrimonial_outbox_operations",
+      "column": "operation_key",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "patrimonial_outbox_operations",
+      "column": "intent_id",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "patrimonial_outbox_operations",
+      "column": "request_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "patrimonial_outbox_operations",
+      "column": "effect_type",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "patrimonial_outbox_operations",
+      "column": "effect_version",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "patrimonial_outbox_operations",
+      "column": "identity_lock_key",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "patrimonial_outbox_operations",
+      "column": "depends_on",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "patrimonial_outbox_operations",
+      "column": "status",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "integer",
+      "table": "patrimonial_outbox_operations",
+      "column": "attempt_count",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "patrimonial_outbox_operations",
+      "column": "next_attempt_at",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "uuid",
+      "table": "patrimonial_outbox_operations",
+      "column": "lease_token",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "integer",
+      "table": "patrimonial_outbox_operations",
+      "column": "lease_version",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "patrimonial_outbox_operations",
+      "column": "lease_expires_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "boolean",
+      "table": "patrimonial_outbox_operations",
+      "column": "reconcile_required",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "table": "patrimonial_outbox_operations",
+      "column": "remote_id",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "patrimonial_outbox_operations",
+      "column": "last_error_class",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "text",
+      "table": "patrimonial_outbox_operations",
+      "column": "last_error_code",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "patrimonial_outbox_operations",
+      "column": "last_error_at",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "type": "jsonb",
+      "table": "patrimonial_outbox_operations",
+      "column": "record",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "patrimonial_outbox_operations",
+      "column": "created_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "patrimonial_outbox_operations",
+      "column": "updated_at",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "patrimonial_outbox_operations",
+      "column": "completed_at",
+      "default": null,
+      "nullable": "YES"
+    }
+  ],
+  "constraints": [
+    {
+      "name": "patrimonial_domain_events_event_key_key",
+      "table": "patrimonial_domain_events",
+      "validated": true,
+      "definition": "UNIQUE (event_key)"
+    },
+    {
+      "name": "patrimonial_domain_events_intent_id_fkey",
+      "table": "patrimonial_domain_events",
+      "validated": true,
+      "definition": "FOREIGN KEY (intent_id) REFERENCES patrimonial_intents(id)"
+    },
+    {
+      "name": "patrimonial_domain_events_metadata_check",
+      "table": "patrimonial_domain_events",
+      "validated": true,
+      "definition": "CHECK ((jsonb_typeof(metadata) = 'object'::text))"
+    },
+    {
+      "name": "patrimonial_domain_events_participation_id_fkey",
+      "table": "patrimonial_domain_events",
+      "validated": true,
+      "definition": "FOREIGN KEY (participation_id) REFERENCES patrimonial_participations(id) DEFERRABLE INITIALLY DEFERRED"
+    },
+    {
+      "name": "patrimonial_domain_events_pkey",
+      "table": "patrimonial_domain_events",
+      "validated": true,
+      "definition": "PRIMARY KEY (event_id)"
+    },
+    {
+      "name": "patrimonial_domain_events_request_id_fkey",
+      "table": "patrimonial_domain_events",
+      "validated": true,
+      "definition": "FOREIGN KEY (request_id) REFERENCES patrimonial_requests(request_id)"
+    },
+    {
+      "name": "patrimonial_domain_events_revision_check",
+      "table": "patrimonial_domain_events",
+      "validated": true,
+      "definition": "CHECK ((revision >= 0))"
+    },
+    {
+      "name": "patrimonial_domain_events_supersedes_event_id_fkey",
+      "table": "patrimonial_domain_events",
+      "validated": true,
+      "definition": "FOREIGN KEY (supersedes_event_id) REFERENCES patrimonial_domain_events(event_id)"
+    },
+    {
+      "name": "patrimonial_intents_check",
+      "table": "patrimonial_intents",
+      "validated": true,
+      "definition": "CHECK (((jsonb_typeof(record) = 'object'::text) AND ((record ->> 'id'::text) = (id)::text)))"
+    },
+    {
+      "name": "patrimonial_intents_check1",
+      "table": "patrimonial_intents",
+      "validated": true,
+      "definition": "CHECK (((kind <> 'PROVISIONAL'::text) OR ((provisional_key IS NOT NULL) AND (group_key IS NULL))))"
+    },
+    {
+      "name": "patrimonial_intents_check2",
+      "table": "patrimonial_intents",
+      "validated": true,
+      "definition": "CHECK (((kind <> 'OPPORTUNITY'::text) OR ((group_key IS NOT NULL) AND (business_key IS NOT NULL) AND (location_ref IS NOT NULL) AND (remote_contact_id IS NOT NULL) AND (scope_key IS NOT NULL) AND ((record ->> 'groupKey'::text) = group_key) AND ((record ->> 'businessKey'::text) = business_key) AND (((record ->> 'revision'::text))::integer = revision) AND ((record ->> 'status'::text) = status) AND ((record ->> 'stage'::text) = stage) AND (next_step IS NOT NULL) AND (status = ANY (ARRAY['OPEN'::text, 'WON'::text, 'LOST'::text, 'ABANDONED'::text])) AND (stage IS NOT NULL) AND (next_step = ANY (ARRAY['ASSIGN'::text, 'INVITE_PRESENTATION'::text, 'BOOK_PRESENTATION'::text, 'QUALIFY'::text, 'BOOK_INTERVIEW'::text, 'RECORD_OUTCOME'::text, 'AGREE_PATH_START'::text, 'CONFIRM_EDITION'::text, 'RECORD_ATTENDANCE'::text, 'FOLLOW_UP'::text, 'BOOK_CONSULTATION'::text, 'REVIEW'::text, 'NONE'::text])) AND (((funnel = 'architect-path'::text) AND (stage = ANY (ARRAY['A01'::text, 'A02'::text, 'A03'::text, 'A04'::text, 'A05'::text, 'A06'::text, 'A07'::text, 'A08'::text, 'A09'::text, 'A10'::text]))) OR ((funnel = 'patrimonial-event'::text) AND (stage = ANY (ARRAY['E01'::text, 'E02'::text, 'E03'::text, 'E04'::text, 'E05'::text]))) OR ((funnel = 'patrimonial-consultation'::text) AND (stage = ANY (ARRAY['C01'::text, 'C02'::text, 'C03'::text, 'C04'::text, 'C05'::text])))) AND (((status = 'OPEN'::text) AND (next_step IS NOT NULL) AND (next_step <> 'NONE'::text) AND (next_step_at IS NOT NULL)) OR ((status <> 'OPEN'::text) AND (next_step = 'NONE'::text) AND (next_step_at IS NULL))) AND\nCASE\n    WHEN (stage = 'A09'::text) THEN (status = 'WON'::text)\n    WHEN (stage = 'A10'::text) THEN (status = ANY (ARRAY['LOST'::text, 'ABANDONED'::text]))\n    WHEN (stage = ANY (ARRAY['E05'::text, 'C05'::text])) THEN (status <> 'OPEN'::text)\n    ELSE (status = 'OPEN'::text)\nEND)))"
+    },
+    {
+      "name": "patrimonial_intents_cycle_check",
+      "table": "patrimonial_intents",
+      "validated": true,
+      "definition": "CHECK ((cycle > 0))"
+    },
+    {
+      "name": "patrimonial_intents_funnel_check",
+      "table": "patrimonial_intents",
+      "validated": true,
+      "definition": "CHECK ((funnel = ANY (ARRAY['architect-path'::text, 'patrimonial-event'::text, 'patrimonial-consultation'::text])))"
+    },
+    {
+      "name": "patrimonial_intents_group_key_key",
+      "table": "patrimonial_intents",
+      "validated": true,
+      "definition": "UNIQUE (group_key)"
+    },
+    {
+      "name": "patrimonial_intents_kind_check",
+      "table": "patrimonial_intents",
+      "validated": true,
+      "definition": "CHECK ((kind = ANY (ARRAY['PROVISIONAL'::text, 'OPPORTUNITY'::text])))"
+    },
+    {
+      "name": "patrimonial_intents_pkey",
+      "table": "patrimonial_intents",
+      "validated": true,
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "patrimonial_intents_provisional_key_key",
+      "table": "patrimonial_intents",
+      "validated": true,
+      "definition": "UNIQUE (provisional_key)"
+    },
+    {
+      "name": "patrimonial_intents_revision_check",
+      "table": "patrimonial_intents",
+      "validated": true,
+      "definition": "CHECK ((revision >= 0))"
+    },
+    {
+      "name": "patrimonial_intents_sync_state_check",
+      "table": "patrimonial_intents",
+      "validated": true,
+      "definition": "CHECK ((sync_state = ANY (ARRAY['SYNC_PENDING'::text, 'SYNCING'::text, 'SYNCED'::text, 'MANUAL_REVIEW'::text, 'RECONCILE_REQUIRED'::text])))"
+    },
+    {
+      "name": "patrimonial_outbox_operations_attempt_count_check",
+      "table": "patrimonial_outbox_operations",
+      "validated": true,
+      "definition": "CHECK ((attempt_count >= 0))"
+    },
+    {
+      "name": "patrimonial_outbox_operations_check",
+      "table": "patrimonial_outbox_operations",
+      "validated": true,
+      "definition": "CHECK (((jsonb_typeof(record) = 'object'::text) AND ((record ->> 'id'::text) = (id)::text) AND ((record ->> 'technicalState'::text) = status) AND (((record ->> 'leaseVersion'::text))::integer = lease_version)))"
+    },
+    {
+      "name": "patrimonial_outbox_operations_check1",
+      "table": "patrimonial_outbox_operations",
+      "validated": true,
+      "definition": "CHECK ((((status = 'SYNCING'::text) AND (lease_token IS NOT NULL) AND (lease_expires_at IS NOT NULL)) OR ((status <> 'SYNCING'::text) AND (lease_token IS NULL) AND (lease_expires_at IS NULL))))"
+    },
+    {
+      "name": "patrimonial_outbox_operations_depends_on_fkey",
+      "table": "patrimonial_outbox_operations",
+      "validated": true,
+      "definition": "FOREIGN KEY (depends_on) REFERENCES patrimonial_outbox_operations(id)"
+    },
+    {
+      "name": "patrimonial_outbox_operations_effect_type_check",
+      "table": "patrimonial_outbox_operations",
+      "validated": true,
+      "definition": "CHECK ((effect_type = ANY (ARRAY['SYNC_REQUEST'::text, 'RESOLVE_CONTACT'::text, 'UPSERT_CONTACT'::text, 'ADD_TAGS'::text, 'ADD_NOTE'::text])))"
+    },
+    {
+      "name": "patrimonial_outbox_operations_intent_id_effect_type_effect__key",
+      "table": "patrimonial_outbox_operations",
+      "validated": true,
+      "definition": "UNIQUE (intent_id, effect_type, effect_version)"
+    },
+    {
+      "name": "patrimonial_outbox_operations_intent_id_fkey",
+      "table": "patrimonial_outbox_operations",
+      "validated": true,
+      "definition": "FOREIGN KEY (intent_id) REFERENCES patrimonial_intents(id)"
+    },
+    {
+      "name": "patrimonial_outbox_operations_lease_version_check",
+      "table": "patrimonial_outbox_operations",
+      "validated": true,
+      "definition": "CHECK ((lease_version >= 0))"
+    },
+    {
+      "name": "patrimonial_outbox_operations_operation_key_key",
+      "table": "patrimonial_outbox_operations",
+      "validated": true,
+      "definition": "UNIQUE (operation_key)"
+    },
+    {
+      "name": "patrimonial_outbox_operations_pkey",
+      "table": "patrimonial_outbox_operations",
+      "validated": true,
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "patrimonial_outbox_operations_request_id_fkey",
+      "table": "patrimonial_outbox_operations",
+      "validated": true,
+      "definition": "FOREIGN KEY (request_id) REFERENCES patrimonial_requests(request_id)"
+    },
+    {
+      "name": "patrimonial_outbox_operations_status_check",
+      "table": "patrimonial_outbox_operations",
+      "validated": true,
+      "definition": "CHECK ((status = ANY (ARRAY['RECEIVED'::text, 'IDENTITY_REVIEW'::text, 'SYNC_PENDING'::text, 'SYNCING'::text, 'RETRY_SCHEDULED'::text, 'RECONCILE_REQUIRED'::text, 'SYNCED'::text, 'MANUAL_REVIEW'::text, 'REJECTED'::text])))"
+    }
+  ],
+  "indexes": [
+    {
+      "name": "patrimonial_architect_open",
+      "table": "patrimonial_intents",
+      "definition": "CREATE UNIQUE INDEX patrimonial_architect_open ON public.patrimonial_intents USING btree (location_ref, remote_contact_id, scope_key) WHERE ((kind = 'OPPORTUNITY'::text) AND (funnel = 'architect-path'::text) AND (status = 'OPEN'::text))"
+    },
+    {
+      "name": "patrimonial_business_cycle",
+      "table": "patrimonial_intents",
+      "definition": "CREATE UNIQUE INDEX patrimonial_business_cycle ON public.patrimonial_intents USING btree (business_key, cycle) WHERE (kind = 'OPPORTUNITY'::text)"
+    },
+    {
+      "name": "patrimonial_consent_evidence_evidence_key_key",
+      "table": "patrimonial_consent_evidence",
+      "definition": "CREATE UNIQUE INDEX patrimonial_consent_evidence_evidence_key_key ON public.patrimonial_consent_evidence USING btree (evidence_key)"
+    },
+    {
+      "name": "patrimonial_consent_evidence_pkey",
+      "table": "patrimonial_consent_evidence",
+      "definition": "CREATE UNIQUE INDEX patrimonial_consent_evidence_pkey ON public.patrimonial_consent_evidence USING btree (id)"
+    },
+    {
+      "name": "patrimonial_consent_evidence_request_id_purpose_key",
+      "table": "patrimonial_consent_evidence",
+      "definition": "CREATE UNIQUE INDEX patrimonial_consent_evidence_request_id_purpose_key ON public.patrimonial_consent_evidence USING btree (request_id, purpose)"
+    },
+    {
+      "name": "patrimonial_consultation_open",
+      "table": "patrimonial_intents",
+      "definition": "CREATE UNIQUE INDEX patrimonial_consultation_open ON public.patrimonial_intents USING btree (location_ref, remote_contact_id, scope_key) WHERE ((kind = 'OPPORTUNITY'::text) AND (funnel = 'patrimonial-consultation'::text) AND (status = 'OPEN'::text))"
+    },
+    {
+      "name": "patrimonial_domain_events_event_key_key",
+      "table": "patrimonial_domain_events",
+      "definition": "CREATE UNIQUE INDEX patrimonial_domain_events_event_key_key ON public.patrimonial_domain_events USING btree (event_key)"
+    },
+    {
+      "name": "patrimonial_domain_events_pkey",
+      "table": "patrimonial_domain_events",
+      "definition": "CREATE UNIQUE INDEX patrimonial_domain_events_pkey ON public.patrimonial_domain_events USING btree (event_id)"
+    },
+    {
+      "name": "patrimonial_event_editions_edition_key_key",
+      "table": "patrimonial_event_editions",
+      "definition": "CREATE UNIQUE INDEX patrimonial_event_editions_edition_key_key ON public.patrimonial_event_editions USING btree (edition_key)"
+    },
+    {
+      "name": "patrimonial_event_editions_pkey",
+      "table": "patrimonial_event_editions",
+      "definition": "CREATE UNIQUE INDEX patrimonial_event_editions_pkey ON public.patrimonial_event_editions USING btree (id)"
+    },
+    {
+      "name": "patrimonial_event_relationship",
+      "table": "patrimonial_intents",
+      "definition": "CREATE UNIQUE INDEX patrimonial_event_relationship ON public.patrimonial_intents USING btree (location_ref, remote_contact_id) WHERE ((kind = 'OPPORTUNITY'::text) AND (funnel = 'patrimonial-event'::text))"
+    },
+    {
+      "name": "patrimonial_events_intent",
+      "table": "patrimonial_domain_events",
+      "definition": "CREATE INDEX patrimonial_events_intent ON public.patrimonial_domain_events USING btree (intent_id, revision)"
+    },
+    {
+      "name": "patrimonial_events_participation",
+      "table": "patrimonial_domain_events",
+      "definition": "CREATE INDEX patrimonial_events_participation ON public.patrimonial_domain_events USING btree (participation_id) WHERE (participation_id IS NOT NULL)"
+    },
+    {
+      "name": "patrimonial_events_request",
+      "table": "patrimonial_domain_events",
+      "definition": "CREATE INDEX patrimonial_events_request ON public.patrimonial_domain_events USING btree (request_id)"
+    },
+    {
+      "name": "patrimonial_events_supersedes",
+      "table": "patrimonial_domain_events",
+      "definition": "CREATE INDEX patrimonial_events_supersedes ON public.patrimonial_domain_events USING btree (supersedes_event_id) WHERE (supersedes_event_id IS NOT NULL)"
+    },
+    {
+      "name": "patrimonial_intents_group_key_key",
+      "table": "patrimonial_intents",
+      "definition": "CREATE UNIQUE INDEX patrimonial_intents_group_key_key ON public.patrimonial_intents USING btree (group_key)"
+    },
+    {
+      "name": "patrimonial_intents_pkey",
+      "table": "patrimonial_intents",
+      "definition": "CREATE UNIQUE INDEX patrimonial_intents_pkey ON public.patrimonial_intents USING btree (id)"
+    },
+    {
+      "name": "patrimonial_intents_provisional_key_key",
+      "table": "patrimonial_intents",
+      "definition": "CREATE UNIQUE INDEX patrimonial_intents_provisional_key_key ON public.patrimonial_intents USING btree (provisional_key)"
+    },
+    {
+      "name": "patrimonial_intents_review",
+      "table": "patrimonial_intents",
+      "definition": "CREATE INDEX patrimonial_intents_review ON public.patrimonial_intents USING btree (review_after) WHERE (review_after IS NOT NULL)"
+    },
+    {
+      "name": "patrimonial_outbox_dependency",
+      "table": "patrimonial_outbox_operations",
+      "definition": "CREATE INDEX patrimonial_outbox_dependency ON public.patrimonial_outbox_operations USING btree (depends_on) WHERE (depends_on IS NOT NULL)"
+    },
+    {
+      "name": "patrimonial_outbox_due",
+      "table": "patrimonial_outbox_operations",
+      "definition": "CREATE INDEX patrimonial_outbox_due ON public.patrimonial_outbox_operations USING btree (next_attempt_at, id) WHERE (status = ANY (ARRAY['SYNC_PENDING'::text, 'RETRY_SCHEDULED'::text, 'SYNCING'::text, 'RECONCILE_REQUIRED'::text]))"
+    },
+    {
+      "name": "patrimonial_outbox_identity",
+      "table": "patrimonial_outbox_operations",
+      "definition": "CREATE INDEX patrimonial_outbox_identity ON public.patrimonial_outbox_operations USING btree (identity_lock_key, status)"
+    },
+    {
+      "name": "patrimonial_outbox_operations_intent_id_effect_type_effect__key",
+      "table": "patrimonial_outbox_operations",
+      "definition": "CREATE UNIQUE INDEX patrimonial_outbox_operations_intent_id_effect_type_effect__key ON public.patrimonial_outbox_operations USING btree (intent_id, effect_type, effect_version)"
+    },
+    {
+      "name": "patrimonial_outbox_operations_operation_key_key",
+      "table": "patrimonial_outbox_operations",
+      "definition": "CREATE UNIQUE INDEX patrimonial_outbox_operations_operation_key_key ON public.patrimonial_outbox_operations USING btree (operation_key)"
+    },
+    {
+      "name": "patrimonial_outbox_operations_pkey",
+      "table": "patrimonial_outbox_operations",
+      "definition": "CREATE UNIQUE INDEX patrimonial_outbox_operations_pkey ON public.patrimonial_outbox_operations USING btree (id)"
+    },
+    {
+      "name": "patrimonial_outbox_request",
+      "table": "patrimonial_outbox_operations",
+      "definition": "CREATE INDEX patrimonial_outbox_request ON public.patrimonial_outbox_operations USING btree (request_id)"
+    },
+    {
+      "name": "patrimonial_participation_edition",
+      "table": "patrimonial_participations",
+      "definition": "CREATE UNIQUE INDEX patrimonial_participation_edition ON public.patrimonial_participations USING btree (location_ref, contact_ref, edition_id) WHERE (edition_id IS NOT NULL)"
+    },
+    {
+      "name": "patrimonial_participation_generic",
+      "table": "patrimonial_participations",
+      "definition": "CREATE UNIQUE INDEX patrimonial_participation_generic ON public.patrimonial_participations USING btree (location_ref, contact_ref, event_slug) WHERE ((edition_id IS NULL) AND (registration_status = 'PENDING_EDITION'::text))"
+    },
+    {
+      "name": "patrimonial_participations_intent",
+      "table": "patrimonial_participations",
+      "definition": "CREATE INDEX patrimonial_participations_intent ON public.patrimonial_participations USING btree (intent_id)"
+    },
+    {
+      "name": "patrimonial_participations_pkey",
+      "table": "patrimonial_participations",
+      "definition": "CREATE UNIQUE INDEX patrimonial_participations_pkey ON public.patrimonial_participations USING btree (id)"
+    },
+    {
+      "name": "patrimonial_participations_source",
+      "table": "patrimonial_participations",
+      "definition": "CREATE INDEX patrimonial_participations_source ON public.patrimonial_participations USING btree (source_request_id)"
+    },
+    {
+      "name": "patrimonial_requests_intent",
+      "table": "patrimonial_requests",
+      "definition": "CREATE INDEX patrimonial_requests_intent ON public.patrimonial_requests USING btree (intent_id)"
+    },
+    {
+      "name": "patrimonial_requests_pkey",
+      "table": "patrimonial_requests",
+      "definition": "CREATE UNIQUE INDEX patrimonial_requests_pkey ON public.patrimonial_requests USING btree (request_id)"
+    },
+    {
+      "name": "patrimonial_requests_retention",
+      "table": "patrimonial_requests",
+      "definition": "CREATE INDEX patrimonial_requests_retention ON public.patrimonial_requests USING btree (expires_at)"
+    }
+  ],
+  "rls": [
+    {
+      "rls": true,
+      "force": true,
+      "table": "patrimonial_consent_evidence"
+    },
+    {
+      "rls": true,
+      "force": true,
+      "table": "patrimonial_domain_events"
+    },
+    {
+      "rls": true,
+      "force": true,
+      "table": "patrimonial_event_editions"
+    },
+    {
+      "rls": true,
+      "force": true,
+      "table": "patrimonial_intents"
+    },
+    {
+      "rls": true,
+      "force": true,
+      "table": "patrimonial_outbox_operations"
+    },
+    {
+      "rls": true,
+      "force": true,
+      "table": "patrimonial_participations"
+    },
+    {
+      "rls": true,
+      "force": true,
+      "table": "patrimonial_requests"
+    }
+  ],
+  "clientGrants": [],
+  "remoteHistory": [
+    {
+      "version": "20260908003053",
+      "name": "0001_roles"
+    },
+    {
+      "version": "20260908003131",
+      "name": "0002_identity"
+    },
+    {
+      "version": "20260908003203",
+      "name": "0003_audit"
+    },
+    {
+      "version": "20260908003222",
+      "name": "0004_capability_catalog"
+    },
+    {
+      "version": "20260908003236",
+      "name": "0005_seed_roles_permissions"
+    },
+    {
+      "version": "20260908003255",
+      "name": "0006_invitations"
+    },
+    {
+      "version": "20260908003334",
+      "name": "0007_connectors"
+    },
+    {
+      "version": "20260908003345",
+      "name": "0008_permissions_connector_revoke"
+    },
+    {
+      "version": "20260908003418",
+      "name": "0009_managed_operations"
+    },
+    {
+      "version": "20260908003442",
+      "name": "0010_assistant_knowledge"
+    },
+    {
+      "version": "20260908003955",
+      "name": "0011_catalog_rls"
+    },
+    {
+      "version": "20260908155751",
+      "name": "0012_security_hardening"
+    },
+    {
+      "version": "20260908161032",
+      "name": "0013_platform_staff_invitations"
+    },
+    {
+      "version": "20260909100750",
+      "name": "0014_email_routing_capability"
+    },
+    {
+      "version": "20260909100801",
+      "name": "0015_onboarding_checklist_domains"
+    },
+    {
+      "version": "20260909100818",
+      "name": "0016_email_routing_review"
+    },
+    {
+      "version": "20260909100937",
+      "name": "0017_harden_runtime_trigger_search_path"
+    },
+    {
+      "version": "20260909101507",
+      "name": "0018_create_hub_schema"
+    },
+    {
+      "version": "20260909181237",
+      "name": "0019_knowledge_hub_engagement_ref"
+    },
+    {
+      "version": "20260910092301",
+      "name": "backfill_platform_migration_history"
+    },
+    {
+      "version": "20260910092344",
+      "name": "0021_company_blueprints"
+    },
+    {
+      "version": "20260910092409",
+      "name": "0022_mcp_connections"
+    },
+    {
+      "version": "20260910092445",
+      "name": "0023_blueprint_bridge"
+    },
+    {
+      "version": "20260910092529",
+      "name": "0024_approvals_authorizations"
+    },
+    {
+      "version": "20260910092948",
+      "name": "0025_revoke_data_api_grants"
+    },
+    {
+      "version": "20260911202455",
+      "name": "0026_mcp_connector_catalog"
+    },
+    {
+      "version": "20260911202511",
+      "name": "0027_seed_hub_service_client"
+    },
+    {
+      "version": "20260911202547",
+      "name": "0028_metrics_foundation"
+    },
+    {
+      "version": "20260911202618",
+      "name": "0029_operational_sync_foundation"
+    },
+    {
+      "version": "20260911202642",
+      "name": "0030_reports"
+    },
+    {
+      "version": "20260911202703",
+      "name": "0031_dashboard_configuration"
+    },
+    {
+      "version": "20260911202715",
+      "name": "0032_ai_deployment_blueprint_extension"
+    },
+    {
+      "version": "20260911212749",
+      "name": "0033_hub_security_definer_hardening"
+    },
+    {
+      "version": "20260911230037",
+      "name": "0034_blueprint_promotion"
+    },
+    {
+      "version": "20260912094200",
+      "name": "operational_package_hub_schema"
+    },
+    {
+      "version": "20260912095203",
+      "name": "audit_pgcrypto_schema"
+    },
+    {
+      "version": "20260912095257",
+      "name": "audit_pgcrypto_schema_usage"
+    },
+    {
+      "version": "20260914093344",
+      "name": "0035_blueprint_promotion"
+    },
+    {
+      "version": "20260914093410",
+      "name": "0036_operational_snapshot_origin"
+    },
+    {
+      "version": "20260914093920",
+      "name": "20260914130000_blueprint_submission_receipts"
+    },
+    {
+      "version": "20260914094425",
+      "name": "20260914140000_chatgpt_setup_status"
+    },
+    {
+      "version": "20260915221137",
+      "name": "integration_catalog_resolution"
+    },
+    {
+      "version": "20260915230544",
+      "name": "seed_relais_integration_catalog"
+    },
+    {
+      "version": "20260915235437",
+      "name": "operational_package_governance"
+    },
+    {
+      "version": "20260915235835",
+      "name": "operational_package_governance_indexes"
+    },
+    {
+      "version": "20260916133531",
+      "name": "blueprint_contract_v3"
+    },
+    {
+      "version": "20260917091354",
+      "name": "reconcile_platform_history_and_hub_finance_baseline"
+    },
+    {
+      "version": "20260917113439",
+      "name": "delete_test_ai_response"
+    },
+    {
+      "version": "20260917145738",
+      "name": "0043_mcp_oauth21"
+    },
+    {
+      "version": "20260917145842",
+      "name": "0044_mcp_oauth21_foreign_key_indexes"
+    },
+    {
+      "version": "20260917163727",
+      "name": "cleanup_horyzon_consulting_default_readiness"
+    },
+    {
+      "version": "20260917173719",
+      "name": "organization_model_direction_plus_five"
+    },
+    {
+      "version": "20260918092551",
+      "name": "pre_operational_blueprints"
+    },
+    {
+      "version": "20260918131700",
+      "name": "expand_assistant_audiences"
+    },
+    {
+      "version": "20260919093719",
+      "name": "imap_read_only_pilot"
+    },
+    {
+      "version": "20260919093803",
+      "name": "imap_connection_account_index"
+    },
+    {
+      "version": "20260922060925",
+      "name": "20260922041000_ai_score_runtime_store"
+    },
+    {
+      "version": "20260922120311",
+      "name": "grant_ai_score_runtime_schema_usage"
+    },
+    {
+      "version": "20260922195436",
+      "name": "annunci10x_persistence"
+    },
+    {
+      "version": "20260922195633",
+      "name": "annunci10x_fk_indexes"
+    },
+    {
+      "version": "20260926153235",
+      "name": "annunci10x_analysis_runs"
+    },
+    {
+      "version": "20260926153239",
+      "name": "annunci10x_lead_verification"
+    },
+    {
+      "version": "20260926153242",
+      "name": "annunci10x_email_verification_hardening"
+    },
+    {
+      "version": "20260926155335",
+      "name": "annunci10x_email_verification_cleanup"
+    },
+    {
+      "version": "20260926203606",
+      "name": "annunci10x_v2_public_score"
+    },
+    {
+      "version": "20260928093052",
+      "name": "annunci10x_score_report_email_deliveries"
+    },
+    {
+      "version": "20260928095341",
+      "name": "social_content_status"
+    },
+    {
+      "version": "20260928095928",
+      "name": "social_content_status_rls_reuse"
+    },
+    {
+      "version": "20260928120429",
+      "name": "annunci10x_stripe_commerce_foundation"
+    },
+    {
+      "version": "20260928142125",
+      "name": "social_content_assets"
+    },
+    {
+      "version": "20260928142958",
+      "name": "enable_pg_net"
+    },
+    {
+      "version": "20260928171126",
+      "name": "annunci10x_optional_lead_context"
+    },
+    {
+      "version": "20260928190401",
+      "name": "annunci10x_generation_credit_reservations"
+    },
+    {
+      "version": "20260929142506",
+      "name": "paid_radar_foundation"
+    },
+    {
+      "version": "20260930085246",
+      "name": "social_studio_v2"
+    },
+    {
+      "version": "20260930091900",
+      "name": "drop_social_studio_v1"
+    },
+    {
+      "version": "20260930123205",
+      "name": "radar_owner_hourly_profit"
+    },
+    {
+      "version": "20260930165802",
+      "name": "radar_report_advice"
+    },
+    {
+      "version": "20261003120213",
+      "name": "social_post_publications"
+    },
+    {
+      "version": "20261006103132",
+      "name": "radar_v3_owner_context"
+    },
+    {
+      "version": "20261007142454",
+      "name": "social_highlevel"
+    },
+    {
+      "version": "20261007144210",
+      "name": "social_reorder"
+    },
+    {
+      "version": "20261014215416",
+      "name": "patrimonial_lead_v2"
+    },
+    {
+      "version": "20261015101816",
+      "name": "patrimonial_opportunity_jsonb_precedence"
+    },
+    {
+      "version": "20261015122405",
+      "name": "radar_v4_positioning"
+    }
+  ]
+}
