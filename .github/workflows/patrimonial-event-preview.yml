@@ -1,0 +1,31 @@
+name: Patrimonial event preview checks
+
+on:
+  push:
+    branches:
+      - feat/patrimonial-event-integration-foundation
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  event-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out reviewed feature branch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: Install dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Test Event -> Hub and Radar link contracts (no external calls)
+        run: npm run test:patrimonial-event-integration
+      - name: Type check
+        run: npm run typecheck
