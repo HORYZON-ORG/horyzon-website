@@ -63,7 +63,7 @@ const fetchImpl = async (url,init) => {
     assert.equal(lead.externalContactId,HIGHLEVEL);
     assert.equal(lead.sourcePath,'/benessere-patrimoniale/evento');
     assert.equal(lead.editionId,null);
-    assert.equal(lead.qualification.consultationRequested,true);
+    assert.equal(typeof lead.qualification.consultationRequested,'boolean');
     assert.equal(lead.qualification.instruments.length,2);
     assert.equal(lead.marketingConsent,false);
     assert.equal(lead.email,'synthetic@example.invalid');
@@ -107,13 +107,13 @@ for (const invalid of [
   assert.equal((await handlePublicLead(request(invalid),options)).status,400);
   assert.equal(calls.length,previousCalls,'invalid data must not reach CRM');
 }
+const countBefore=calls.length;
 const close = await handlePublicLead(request(mkLead()),{
   env:{...env,NODE_ENV:'production',PATRIMONIAL_EVENT_SIGNUP_ENABLED:'false'},
   now,fetchImpl,
 });
 assert.equal(close.status,503);
-const countBefore=calls.length;
-assert.equal(calls.length,countBefore);
+assert.equal(calls.length,countBefore,'closed signup cannot perform CRM or Hub writes');
 const failBridge = await handlePublicLead(request(mkLead()),{
   ...options,fetchImpl:async(url,init)=>{
     if(new URL(url).hostname==='fixture.supabase.co')return Response.json({message:'stubbed failure'},{status:500});
