@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { handleArchitectCvUpload } from '../src/lib/public-leads/architect-cv-upload.ts';
 import { handlePublicLead } from '../src/lib/public-leads/handler.ts';
-import { claimCv, isPdf, purgeExpiredCvs } from '../src/lib/public-leads/architect-cv.ts';
+import { claimCv, eligibleCandidateCvs, isPdf, purgeExpiredCvs } from '../src/lib/public-leads/architect-cv.ts';
 
 // Finto Storage Supabase in memoria: object, info, move, list, delete.
 function fakeStorage() {
@@ -83,15 +83,113 @@ assert.equal(res2.status, 200, 'errore upload HighLevel non fa perdere la candid
 assert(hl.some(k => /^fld1_[0-9a-f-]{36}$/.test(k)), 'chiave multipart <fieldId>_<uuid>');
 assert(hl.some(n => typeof n === 'string' && n.includes('verifica manuale')), 'segnalazione di verifica manuale');
 
-// 4. Retention
+// 4. Integrazione Hub opt-in: CV -> registrazione canonica -> CRM -> receipt.
+const connectedEnv = { ...env, PATRIMONIAL_ARCHITECT_HUB_INTAKE_ENABLED: 'true', SUPABASE_URL: 'https://db.test', SUPABASE_SERVICE_ROLE_KEY: 'secret' };
+const s4 = fakeStorage(); const up4 = await (await upload(s4, pdf())).json();
+const sequence = [];
+const hubFetch = async (url, init) => {
+  const body = JSON.parse(init.body);
+  sequence.push(new URL(url).pathname + ':' + (body.p_success ?? 'intake'));
+  assert.equal(init.headers['Content-Profile'], 'hub');
+  if (url.endsWith('/architect_candidate_intake_v1')) {
+    assert.equal(body.p_cv_id, up4.cvId);
+    assert.match(body.p_hash, /^[0-9a-f]{64}$/);
+    assert.equal(body.p_data.email, 'anna@example.com');
+    return Response.json('92b5c71f-0e7b-4828-ae6c-5228e1811a94');
+  }
+  assert.equal(body.p_contact_id, 'c1');
+  return Response.json(null);
+};
+const acceptedHub = await post(lead({ cvId: up4.cvId }), {
+  env: connectedEnv, cvStorage: s4.storage, hubFetchImpl: hubFetch,
+  fetchImpl: async (url, init) => { sequence.push(new URL(url).pathname); return crmFetch(url, init); },
+});
+assert.equal(acceptedHub.status, 200);
+assert(sequence[0].includes('architect_candidate_intake_v1'), 'Hub intake before HighLevel');
+assert(sequence.some(x => x.includes('/contacts/upsert')));
+assert(sequence.at(-1).includes('architect_candidate_crm_v1:true'), 'Hub CRM receipt');
+assert(s4.objects.has(`candidates/${up4.cvId}.pdf`), 'documento privato rimane in storage');
+
+const s5 = fakeStorage(); const up5 = await (await upload(s5, pdf())).json();
+let attemptedCrm = false;
+const rejectedHub = await post(lead({ cvId: up5.cvId }), {
+  env: connectedEnv, cvStorage: s5.storage,
+  hubFetchImpl: async () => new Response('{}', { status: 503 }),
+  fetchImpl: async () => { attemptedCrm = true; return Response.json({}); },
+});
+assert.equal(rejectedHub.status, 503, 'intake Hub indisponibile: fail-closed');
+assert.equal(attemptedCrm, false, 'nessuna scrittura HighLevel se Hub fallisce');
+assert(s5.objects.has(`candidates/${up5.cvId}.pdf`), 'CV trattenuto per retry idempotente');
+
+// 5. La receipt Hub resta valida anche quando HighLevel fallisce.
+const s6 = fakeStorage(); const up6 = await (await upload(s6, pdf())).json();
+const crmEvents = [];
+const crmUnavailable = await post(lead({ cvId: up6.cvId }), {
+  env: connectedEnv, cvStorage: s6.storage,
+  hubFetchImpl: async (url, init) => {
+    const body = JSON.parse(init.body);
+    crmEvents.push({ name: new URL(url).pathname, body });
+    if (url.includes('/architect_candidate_intake_v1')) return Response.json('92b5c71f-0e7b-4828-ae6c-5228e1811a94');
+    return Response.json(null);
+  },
+  fetchImpl: async () => new Response('{}', { status: 502 }),
+});
+assert.equal(crmUnavailable.status, 200, 'candidatura conservata nell’Hub non si perde per un guasto CRM');
+assert(crmEvents.some(e => e.name.includes('architect_candidate_crm_v1') && e.body.p_success === false), 'stato CRM da riconciliare');
+const s7 = fakeStorage(); const up7 = await (await upload(s7, pdf())).json();
+let crmTried = false;
+const hubOnly = await post(lead({ cvId: up7.cvId }), {
+  env: { ...connectedEnv, HIGHLEVEL_PRIVATE_TOKEN: '' }, cvStorage: s7.storage,
+  hubFetchImpl: async (_url, init) => {
+    const body = JSON.parse(init.body);
+    assert.equal(body.p_cv_id, up7.cvId);
+    return Response.json('92b5c71f-0e7b-4828-ae6c-5228e1811a94');
+  },
+  fetchImpl: async () => { crmTried = true; return Response.json({}); },
+});
+assert.equal(hubOnly.status, 200, 'il CRM assente non annulla la ricevuta Horyzon');
+assert.equal(crmTried, false);
+
+// 6. Retention
 const s3 = fakeStorage();
 const day = 86400000, now = Date.now();
 s3.objects.set('pending/old.pdf', { body: pdf(), createdAt: new Date(now - 2 * day).toISOString() });
 s3.objects.set('pending/new.pdf', { body: pdf(), createdAt: new Date(now - 3600000).toISOString() });
 s3.objects.set('candidates/old.pdf', { body: pdf(), createdAt: new Date(now - 366 * day).toISOString() });
 s3.objects.set('candidates/new.pdf', { body: pdf(), createdAt: new Date(now - 300 * day).toISOString() });
-assert.deepEqual(await purgeExpiredCvs(s3.storage, new Date(now)), { pending: 1, candidates: 1 });
+assert.deepEqual(await purgeExpiredCvs(s3.storage, new Date(now)), { pending: 1, candidates: 0 },
+  'senza verifica dello stato, nessun CV di candidato viene cancellato');
+assert(s3.objects.has('candidates/old.pdf'), 'il CV storico resta protetto finché non è autorizzato');
+assert.deepEqual(
+  await purgeExpiredCvs(s3.storage, new Date(now), async ids => new Set(ids.filter(id => id === 'old'))),
+  { pending: 0, candidates: 1 },
+  'solo file confermati come eliminabili dalla verifica Horyzon');
 assert.deepEqual([...s3.objects.keys()].sort(), ['candidates/new.pdf', 'pending/new.pdf']);
 assert.equal(await claimCv(s3.storage, 'new'), 'claimed');
 
-console.log('PASS architect CV: solo PDF reali ≤5 MB, origin e storage fail-closed, CV obbligatorio prima di ogni scrittura CRM, retry idempotente, nota senza contenuto, campo HighLevel opzionale e non bloccante, retention 24h/12 mesi.');
+const oldAt = new Date(now - 400 * day).toISOString();
+const youngAt = new Date(now - 100 * day).toISOString();
+const approvedId = '11111111-1111-4111-8111-111111111111';
+const closedId = '22222222-2222-4222-8222-222222222222';
+const trainingId = '33333333-3333-4333-8333-333333333333';
+const recentId = '44444444-4444-4444-8444-444444444444';
+const stalePendingId = '55555555-5555-4555-8555-555555555555';
+const staleReviewId = '66666666-6666-4666-8666-666666666666';
+const rows = [
+  { cv_id: approvedId, status: 'approved', updated_at: oldAt },
+  { cv_id: closedId, status: 'rejected', updated_at: oldAt },
+  { cv_id: trainingId, status: 'training', updated_at: oldAt },
+  { cv_id: recentId, status: 'received', updated_at: youngAt },
+  { cv_id: stalePendingId, status: 'received', updated_at: oldAt },
+  { cv_id: staleReviewId, status: 'reviewing', updated_at: oldAt },
+];
+const allowed = await eligibleCandidateCvs({
+  url: 'https://db.test', key: 'service', fetchImpl: async (url, init) => {
+    assert(new URL(url).pathname.endsWith('/rest/v1/architect_candidates'));
+    assert.equal(init.headers['Accept-Profile'], 'hub');
+    return Response.json(rows);
+  },
+}, new Date(now), [approvedId, closedId, trainingId, recentId, stalePendingId, staleReviewId]);
+assert.deepEqual([...allowed], [closedId], 'approvato, formazione e candidature ancora aperte sono protetti, anche se vecchie');
+
+console.log('PASS architect CV: solo PDF reali ≤5 MB, origin e storage fail-closed, CV obbligatorio prima di ogni scrittura CRM, retry idempotente, nota senza contenuto, campo HighLevel opzionale e non bloccante, retention 24h/12 mesi condizionata allo stato della selezione.');

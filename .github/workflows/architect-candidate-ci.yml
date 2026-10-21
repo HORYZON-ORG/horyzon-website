@@ -1,0 +1,27 @@
+name: Architect Candidate Safety
+on:
+  push:
+    branches: [feat/architect-candidate-selection-hub-v1]
+  pull_request:
+    paths:
+      - 'src/lib/public-leads/**'
+      - 'src/app/api/internal/architect-cv-retention/**'
+      - 'scripts/verify-architect-cv.mjs'
+      - '.github/workflows/architect-candidate-ci.yml'
+permissions:
+  contents: read
+jobs:
+  test-candidate-intake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts
+      - run: npm run test:architect-cv
+      - run: npm run test:patrimonial-funnels
