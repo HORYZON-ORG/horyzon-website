@@ -37,6 +37,7 @@ assert.equal(await saveVerifiedRadarReferenceInHub({binding:{...binding,status:'
 assert.equal(requests,2);
 await assert.rejects(() => saveVerifiedRadarReferenceInHub({binding:{...binding,assessmentId:'not-uuid'},env,fetchImpl}), /RADAR_BINDING_INVALID/);
 await assert.rejects(() => saveVerifiedRadarReferenceInHub({binding:{...binding,verifiedEmail:'not-an-email'},env,fetchImpl}), /RADAR_BINDING_INVALID/);
+await assert.rejects(() => saveVerifiedRadarReferenceInHub({binding:{...binding,verifiedEmail:'user name@example.invalid'},env,fetchImpl}), /RADAR_BINDING_INVALID/, 'spaces are forbidden in verified email');
 await assert.rejects(() => saveVerifiedRadarReferenceInHub({binding:{...binding,status:'COMPLETED',completedAt:null},env,fetchImpl}), /RADAR_BINDING_INVALID/);
 await assert.rejects(() => saveVerifiedRadarReferenceInHub({binding,env:{...env,SUPABASE_URL:'https://evil.example'},fetchImpl}), /RADAR_LINK_CONFIG/);
 await assert.rejects(() => saveVerifiedRadarReferenceInHub({binding,env,fetchImpl:async()=>Response.json({contactId:binding.contactId,assessmentId:'00000000-0000-4000-8000-000000000000',status:binding.status})}), /RADAR_LINK_UNCONFIRMED/);
