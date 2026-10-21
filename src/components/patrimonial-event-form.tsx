@@ -2,10 +2,13 @@
 import { createContext, useContext, useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { eventProfiles, eventProfileValue } from '@/content/patrimonial-event-content';
+import type { EventQualification } from '@/lib/public-leads/patrimonial-event-qualification';
 import styles from './patrimonial-event.module.css';
 
 // Page answers (profile, quiz) reach the CRM notes through the existing message field; the shared form stays untouched.
-export const EventNotesContext = createContext('');
+export const EventNotesContext = createContext<{ notes: string; qualification: Omit<EventQualification, 'consultationRequested'> }>({
+  notes: '', qualification: { schemaVersion: 1, audienceProfile: null, sceneId: null, instruments: [] },
+});
 
 // Presentation only: transport, attempts, attribution and receipts belong to PilotLeadForm.
 export function PatrimonialEventForm({ step, setStep, selectedProfile, onProfileChange, onSubmit, status, notice, revisionRequired, onNewAttempt, v2 }: {
@@ -13,7 +16,7 @@ export function PatrimonialEventForm({ step, setStep, selectedProfile, onProfile
   onSubmit: (event: FormEvent<HTMLFormElement>) => void; status: 'idle' | 'sending' | 'success' | 'error'; notice: string;
   revisionRequired: boolean; onNewAttempt: () => void; v2: boolean;
 }) {
-  const notes = useContext(EventNotesContext);
+  const { notes, qualification } = useContext(EventNotesContext);
   const [architectCall, setArchitectCall] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const firstName = useRef<HTMLInputElement>(null);
@@ -47,6 +50,7 @@ export function PatrimonialEventForm({ step, setStep, selectedProfile, onProfile
       <button type="button" className={styles.formBack} onClick={() => setStep(1)}>← Torna ai recapiti</button>
     </fieldset>
     <input name="profile" type="hidden" value={eventProfileValue(selectedProfile)} />
+    <input name="qualification" type="hidden" value={JSON.stringify({ ...qualification, consultationRequested: architectCall })} />
     <input name="message" type="hidden" value={[notes, architectCall ? 'Confronto 40 minuti con Architetto Patrimoniale: sì' : ''].filter(Boolean).join(' | ')} />
     <div hidden><label>Sito web<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
     <button type="submit" className={`${styles.cta} ${styles.formSubmit}`} disabled={disabled || revisionRequired}>
