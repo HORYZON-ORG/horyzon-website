@@ -1,5 +1,3 @@
-import type { EventQualification } from './patrimonial-event-qualification.ts';
-
 type RadarStatus = 'STARTED' | 'IN_PROGRESS' | 'COMPLETED';
 type TrustedRadarBinding = {
   // Only a trusted Radar server adapter may produce these fields, after verifying
@@ -78,9 +76,3 @@ export async function saveVerifiedRadarReferenceInHub(input: {
   return 'LINKED';
 }
 
-// Reserved for future typed, private advisor summaries; never pass raw answers.
-export type SafeRadarAdvisorMetadata = {
-  questionnaireVersion: string;
-  completionStatus: RadarStatus;
-  qualification: EventQualification | null;
-};
