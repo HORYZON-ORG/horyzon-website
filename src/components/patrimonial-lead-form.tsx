@@ -69,6 +69,19 @@ function PilotLeadForm({ mode, contractVersion, presentation, selectedProfile = 
     }
     sending.current = true;
     const data = new FormData(event.currentTarget);
+    let eventQualification: unknown;
+    if (mode === 'patrimonial-event' && !v2) {
+      const raw = data.get('qualification');
+      if (typeof raw === 'string' && raw.length > 0) {
+        try { eventQualification = JSON.parse(raw); }
+        catch {
+          sending.current = false;
+          setStatus('error');
+          setNotice('Non riusciamo a leggere le risposte del questionario. Aggiorna la pagina e riprova.');
+          return;
+        }
+      }
+    }
     let cvId: string | undefined;
     if (mode === 'architect-path' && !v2) {
       const file = data.get('cv');
@@ -94,6 +107,7 @@ function PilotLeadForm({ mode, contractVersion, presentation, selectedProfile = 
       message: data.get('message'), consent: data.get('consent') === 'on', marketingConsent: data.get('marketingConsent') === 'on',
       website: data.get('website'), utm: pilotAttribution(mode, !v2),
       ...(mode === 'architect-path' ? { experience: data.get('experience'), goal: data.get('goal'), availability: data.get('availability') } : {}),
+      ...(mode === 'patrimonial-event' && !v2 && eventQualification !== undefined ? { qualification: eventQualification } : {}),
       ...(cvId ? { cvId } : {}),
     };
     setStatus('sending'); setNotice('');
