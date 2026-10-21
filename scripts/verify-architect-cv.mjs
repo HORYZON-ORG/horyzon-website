@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { handleArchitectCvUpload } from '../src/lib/public-leads/architect-cv-upload.ts';
 import { handlePublicLead } from '../src/lib/public-leads/handler.ts';
-import { claimCv, isPdf, purgeExpiredCvs } from '../src/lib/public-leads/architect-cv.ts';
+import { claimCv, eligibleCandidateCvs, isPdf, purgeExpiredCvs } from '../src/lib/public-leads/architect-cv.ts';
 
 // Finto Storage Supabase in memoria: object, info, move, list, delete.
 function fakeStorage() {
@@ -157,8 +157,35 @@ s3.objects.set('pending/old.pdf', { body: pdf(), createdAt: new Date(now - 2 * d
 s3.objects.set('pending/new.pdf', { body: pdf(), createdAt: new Date(now - 3600000).toISOString() });
 s3.objects.set('candidates/old.pdf', { body: pdf(), createdAt: new Date(now - 366 * day).toISOString() });
 s3.objects.set('candidates/new.pdf', { body: pdf(), createdAt: new Date(now - 300 * day).toISOString() });
-assert.deepEqual(await purgeExpiredCvs(s3.storage, new Date(now)), { pending: 1, candidates: 1 });
+assert.deepEqual(await purgeExpiredCvs(s3.storage, new Date(now)), { pending: 1, candidates: 0 },
+  'senza verifica dello stato, nessun CV di candidato viene cancellato');
+assert(s3.objects.has('candidates/old.pdf'), 'il CV storico resta protetto finché non è autorizzato');
+assert.deepEqual(
+  await purgeExpiredCvs(s3.storage, new Date(now), async ids => new Set(ids.filter(id => id === 'old'))),
+  { pending: 0, candidates: 1 },
+  'solo file confermati come eliminabili dalla verifica Horyzon');
 assert.deepEqual([...s3.objects.keys()].sort(), ['candidates/new.pdf', 'pending/new.pdf']);
 assert.equal(await claimCv(s3.storage, 'new'), 'claimed');
 
-console.log('PASS architect CV: solo PDF reali ≤5 MB, origin e storage fail-closed, CV obbligatorio prima di ogni scrittura CRM, retry idempotente, nota senza contenuto, campo HighLevel opzionale e non bloccante, retention 24h/12 mesi.');
+const oldAt = new Date(now - 400 * day).toISOString();
+const youngAt = new Date(now - 100 * day).toISOString();
+const approvedId = '11111111-1111-4111-8111-111111111111';
+const closedId = '22222222-2222-4222-8222-222222222222';
+const trainingId = '33333333-3333-4333-8333-333333333333';
+const recentId = '44444444-4444-4444-8444-444444444444';
+const rows = [
+  { cv_id: approvedId, status: 'approved', updated_at: oldAt },
+  { cv_id: closedId, status: 'rejected', updated_at: oldAt },
+  { cv_id: trainingId, status: 'training', updated_at: oldAt },
+  { cv_id: recentId, status: 'received', updated_at: youngAt },
+];
+const allowed = await eligibleCandidateCvs({
+  url: 'https://db.test', key: 'service', fetchImpl: async (url, init) => {
+    assert(new URL(url).pathname.endsWith('/rest/v1/architect_candidates'));
+    assert.equal(init.headers['Accept-Profile'], 'hub');
+    return Response.json(rows);
+  },
+}, new Date(now), [approvedId, closedId, trainingId, recentId]);
+assert.deepEqual([...allowed], [closedId], 'approvato, in formazione e candidatura recente sono protetti');
+
+console.log('PASS architect CV: solo PDF reali ≤5 MB, origin e storage fail-closed, CV obbligatorio prima di ogni scrittura CRM, retry idempotente, nota senza contenuto, campo HighLevel opzionale e non bloccante, retention 24h/12 mesi condizionata allo stato della selezione.');
