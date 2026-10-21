@@ -6,7 +6,7 @@ import { PatrimonialLeadForm } from './patrimonial-lead-form';
 import { EventNotesContext } from './patrimonial-event-form';
 import { EventSessionProvider, EventSessionValue, EventSeatsLeft } from './patrimonial-event-clock';
 import { eventSession } from '@/content/patrimonial-event-session';
-import { eventScenes, eventFormTitle, eventCalculator, eventHorizons, type EventHorizon, eventAllocation, eventInstruments, eventKnowledgeLevels, eventNotes } from '@/content/patrimonial-event-content';
+import { eventScenes, eventFormTitle, eventCalculator, eventHorizons, type EventHorizon, eventAllocation, eventInstruments, eventKnowledgeLevels, eventProfiles, eventNotes } from '@/content/patrimonial-event-content';
 import styles from './patrimonial-event.module.css';
 
 const Arrow = ({ size = 18 }: { size?: number }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>;
@@ -395,7 +395,18 @@ export function PatrimonialEventLanding() {
 <div><strong>La nostra promessa</strong><div className={[styles.s121].join(' ')}>Nessuna vendita durante le serate. Se senti che non fa per te, esci: nessuno ti richiamerà per insistere.</div></div>
 </div>
 </div>
-<EventNotesContext.Provider value={eventNotes(scene, selectedProfile, known)}><PatrimonialLeadForm mode="patrimonial-event" presentation="event" selectedProfile={selectedProfile} onProfileChange={setSelectedProfile} /></EventNotesContext.Provider>
+<EventNotesContext.Provider value={{
+  notes: eventNotes(scene, selectedProfile, known),
+  qualification: {
+    schemaVersion: 1,
+    audienceProfile: eventProfiles.find(item => item.label === selectedProfile)?.label ?? null,
+    sceneId: eventScenes.find(item => item.id === scene)?.id ?? null,
+    instruments: eventInstruments.flatMap(item => {
+      const level = eventKnowledgeLevels.find(value => value === known[item.id]);
+      return level ? [{ instrumentId: item.id, knowledgeLevel: level }] : [];
+    }),
+  },
+}}><PatrimonialLeadForm mode="patrimonial-event" presentation="event" selectedProfile={selectedProfile} onProfileChange={setSelectedProfile} /></EventNotesContext.Provider>
 </div>
 </div>
 
