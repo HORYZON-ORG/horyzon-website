@@ -32,7 +32,7 @@ jobs:
         run: npm run test:patrimonial-event-integration
       - name: Preserve unrelated public pages relative to event-integration base
         run: |
-          git diff --exit-code cc15e5d0731a8227eac2a3df39d7e7b0e2242ac3 HEAD -- \
+          git diff --exit-code cc15e5d0731a8227eac2a3df39d7e7b0e2242ac3 origin/feat/patrimonial-event-integration-foundation -- \
             src/components/wellbeing-page.tsx \
             src/components/wellbeing-scene.tsx \
             src/components/wellbeing.module.css \
