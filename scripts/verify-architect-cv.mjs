@@ -121,7 +121,36 @@ assert.equal(rejectedHub.status, 503, 'intake Hub indisponibile: fail-closed');
 assert.equal(attemptedCrm, false, 'nessuna scrittura HighLevel se Hub fallisce');
 assert(s5.objects.has(`candidates/${up5.cvId}.pdf`), 'CV trattenuto per retry idempotente');
 
-// 5. Retention
+// 5. La receipt Hub resta valida anche quando HighLevel fallisce.
+const s6 = fakeStorage(); const up6 = await (await upload(s6, pdf())).json();
+const crmEvents = [];
+const crmUnavailable = await post(lead({ cvId: up6.cvId }), {
+  env: connectedEnv, cvStorage: s6.storage,
+  hubFetchImpl: async (url, init) => {
+    const body = JSON.parse(init.body);
+    crmEvents.push({ name: new URL(url).pathname, body });
+    if (url.includes('/architect_candidate_intake_v1')) return Response.json('92b5c71f-0e7b-4828-ae6c-5228e1811a94');
+    return Response.json(null);
+  },
+  fetchImpl: async () => new Response('{}', { status: 502 }),
+});
+assert.equal(crmUnavailable.status, 200, 'candidatura conservata nell’Hub non si perde per un guasto CRM');
+assert(crmEvents.some(e => e.name.includes('architect_candidate_crm_v1') && e.body.p_success === false), 'stato CRM da riconciliare');
+const s7 = fakeStorage(); const up7 = await (await upload(s7, pdf())).json();
+let crmTried = false;
+const hubOnly = await post(lead({ cvId: up7.cvId }), {
+  env: { ...connectedEnv, HIGHLEVEL_PRIVATE_TOKEN: '' }, cvStorage: s7.storage,
+  hubFetchImpl: async (_url, init) => {
+    const body = JSON.parse(init.body);
+    assert.equal(body.p_cv_id, up7.cvId);
+    return Response.json('92b5c71f-0e7b-4828-ae6c-5228e1811a94');
+  },
+  fetchImpl: async () => { crmTried = true; return Response.json({}); },
+});
+assert.equal(hubOnly.status, 200, 'il CRM assente non annulla la ricevuta Horyzon');
+assert.equal(crmTried, false);
+
+// 6. Retention
 const s3 = fakeStorage();
 const day = 86400000, now = Date.now();
 s3.objects.set('pending/old.pdf', { body: pdf(), createdAt: new Date(now - 2 * day).toISOString() });
