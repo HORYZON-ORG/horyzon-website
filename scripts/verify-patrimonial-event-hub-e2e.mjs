@@ -95,17 +95,18 @@ result=await handlePublicLead(request(mkLead({
 })),options);
 assert.equal(result.status,200);
 assert.equal(events.size,2,'changed evidence is distinct, contact UUID stays stable');
-for (const invalid of [
-  mkLead({qualification:{...mkLead().qualification,consultationRequested:'true'}}),
-  mkLead({qualification:{...mkLead().qualification,instruments:[
+for (const [invalid, expectedStatus] of [
+  [mkLead({qualification:{...mkLead().qualification,consultationRequested:'true'}}), 400],
+  [mkLead({qualification:{...mkLead().qualification,instruments:[
     {instrumentId:'oro',knowledgeLevel:'Ce l’ho già'},
     {instrumentId:'oro',knowledgeLevel:'Ce l’ho già'},
-  ]}}),
-  {...mkLead(),contractVersion:PATRIMONIAL_V2},
+  ]}}), 400],
+  // The v2 transport is deliberately OFF; gate checks precede v2 validation.
+  [{...mkLead(),contractVersion:PATRIMONIAL_V2}, 503],
 ]) {
   const previousCalls=calls.length;
-  assert.equal((await handlePublicLead(request(invalid),options)).status,400);
-  assert.equal(calls.length,previousCalls,'invalid data must not reach CRM');
+  assert.equal((await handlePublicLead(request(invalid),options)).status,expectedStatus);
+  assert.equal(calls.length,previousCalls,'invalid/disabled data must not reach CRM');
 }
 const countBefore=calls.length;
 const close = await handlePublicLead(request(mkLead()),{
