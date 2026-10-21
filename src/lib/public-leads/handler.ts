@@ -55,7 +55,8 @@ export async function handlePublicLead(request: Request, options: Options = {}):
     return response(400, 'Controlla i dati e la richiesta di ricontatto.');
   }
   const config = highLevelConfig(env);
-  if (!config) return response(503, 'Il modulo è temporaneamente non disponibile. Puoi scrivere a info@horyzon.it.');
+  const hubArchitectEnabled = pilot?.mode === 'architect-path' && env.PATRIMONIAL_ARCHITECT_HUB_INTAKE_ENABLED === 'true';
+  if (!config && !hubArchitectEnabled) return response(503, 'Il modulo è temporaneamente non disponibile. Puoi scrivere a info@horyzon.it.');
   const now = (options.now ?? (() => new Date()))();
   // Process-local abuse guard; no personal data retained in the key. Provider upsert deduplicates contacts.
   if (env.NODE_ENV !== 'test') {
@@ -65,7 +66,7 @@ export async function handlePublicLead(request: Request, options: Options = {}):
     if (entry.count >= 5 || attempts.size >= 5000) return response(429, 'Attendi un minuto prima di riprovare.');
     entry.count++; attempts.set(key, entry);
   }
-  const crm = { ...config, fetchImpl: options.fetchImpl ?? ((url, init) => fetch(url, { ...init, signal: AbortSignal.timeout(10000) })) };
+  const crm = config ? { ...config, fetchImpl: options.fetchImpl ?? ((url, init) => fetch(url, { ...init, signal: AbortSignal.timeout(10000) })) } : null;
   if (pilot) {
     const details = pilotCrmDetails(pilot, now);
     const cv = pilot.mode === 'architect-path' && isCvId(cvId) ? cvId : null;
@@ -87,6 +88,11 @@ export async function handlePublicLead(request: Request, options: Options = {}):
         return response(503, 'Non riusciamo a registrare la candidatura nell’archivio Horyzon. Riprova tra poco.');
       }
     }
+    // The Hub is the receipt of record. A CRM outage must not lose a stored
+    // application or ask the person to submit their CV again.
+    if (!crm || !config) return hubStored
+      ? response(200, pilotForms[pilot.mode].success)
+      : response(503, 'Il modulo è temporaneamente non disponibile.');
     try {
       const result = await callHighLevel<{ contact?: { id?: string } }>(crm, '/contacts/upsert', { locationId: config.locationId, firstName: pilot.firstName, lastName: pilot.lastName, email: pilot.email, ...(pilot.phone ? { phone: pilot.phone } : {}), source: details.source });
       const id = result.contact?.id;
@@ -113,10 +119,13 @@ export async function handlePublicLead(request: Request, options: Options = {}):
         try { await markArchitectCandidateCrm(env, cv, null, false, options.hubFetchImpl); }
         catch { /* The candidate and CV remain stored; manual reconciliation may be required. */ }
       }
-      return response(502, 'Non possiamo confermare la ricezione completa. Riprova oppure scrivi a info@horyzon.it.');
+      return hubStored
+        ? response(200, pilotForms[pilot.mode].success)
+        : response(502, 'Non possiamo confermare la ricezione completa. Riprova oppure scrivi a info@horyzon.it.');
     }
   }
   // The legacy contract and mapping remain unchanged after the pilot branch.
+  if (!crm || !config) return response(503, 'Il modulo è temporaneamente non disponibile.');
   if (!name || !email || !interest) return response(400, 'Controlla i dati e la richiesta di ricontatto.');
   const parts = name.split(/\s+/);
   try {
