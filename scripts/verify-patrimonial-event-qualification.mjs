@@ -56,4 +56,27 @@ for (const invalid of [
 ]) {
   assert.equal(validateEventQualification(invalid), null, JSON.stringify(invalid));
 }
-console.log('Event qualification contract: validation, canonicalization, nullable evidence PASS');
+// The event pilot may supply evidence, but v2 must not accept fields that its
+// existing request hash deliberately excludes. Recruitment may not supply it.
+const { validatePilotLead, validatePatrimonialV2 } = await import('../src/lib/public-leads/patrimonial-funnels.ts');
+const { pilotForms } = await import('../src/content/patrimonial-funnels.ts');
+const { PATRIMONIAL_V2 } = await import('../src/lib/public-leads/patrimonial-contract.ts');
+const eventLead = {
+  mode: 'patrimonial-event', sourcePath: pilotForms['patrimonial-event'].path,
+  firstName: 'Persona', lastName: 'Test', email: 'person@example.invalid', phone: '',
+  province: 'Milano', profile: 'Professionista', message: '', consent: true,
+  marketingConsent: false, utm: {}, website: '',
+};
+const accepted = validatePilotLead({ ...eventLead, qualification: base });
+assert.deepEqual(accepted?.qualification, validateEventQualification(base));
+assert.equal(validatePilotLead({ ...eventLead, qualification: { ...base, instruments: [...base.instruments, base.instruments[0]] } }), null);
+assert.equal(validatePilotLead({ ...eventLead, qualification: null }), null);
+assert(validatePilotLead(eventLead), 'existing event lead remains accepted');
+const architectLead = {
+  ...eventLead, mode: 'architect-path', sourcePath: pilotForms['architect-path'].path,
+  profile: 'Imprenditore', experience: '', goal: '', availability: '',
+};
+assert.equal(validatePilotLead({ ...architectLead, qualification: base }), null, 'candidate funnel cannot carry event qualification');
+assert.equal(validatePatrimonialV2({ ...eventLead, contractVersion: PATRIMONIAL_V2, qualification: base }), null, 'v2 cannot omit qualification from its hash');
+assert(validatePatrimonialV2({ ...eventLead, contractVersion: PATRIMONIAL_V2 }), 'legacy v2 receipt unchanged');
+console.log('Event qualification contract: validation, canonicalization, pilot/v2 isolation PASS');
