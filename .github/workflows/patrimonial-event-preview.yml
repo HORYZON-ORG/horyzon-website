@@ -28,5 +28,7 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Test Event -> Hub and Radar link contracts (no external calls)
         run: npm run test:patrimonial-event-integration
+      - name: Check existing patrimonial funnel regressions (no external calls)
+        run: npm run test:patrimonial-funnels
       - name: Type check
         run: npm run typecheck
