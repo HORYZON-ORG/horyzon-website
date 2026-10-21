@@ -13,6 +13,7 @@ const config = {
   HORYZON_HUB_EVENT_INGRESS_ENABLED: 'true',
 };
 let calls = 0;
+const eventKeys = [];
 const success = async (url, init) => {
   calls++;
   assert.equal(new URL(url).pathname, '/rest/v1/rpc/architetti_event_ingest');
@@ -25,6 +26,7 @@ const success = async (url, init) => {
   assert.equal(value.editionId, null);
   assert.equal(value.sourcePath, '/benessere-patrimoniale/evento');
   assert.ok(value.eventId.startsWith('webinar:'));
+  eventKeys.push(value.eventId);
   return Response.json({
     contactId: '123e4567-e89b-42d3-a456-426614174000',
     registrationId: '123e4567-e89b-42d3-a456-426614174001',
@@ -42,6 +44,7 @@ assert.equal(await recordEventLeadInHub({ ...base, env: config, fetchImpl: succe
 assert.equal(calls, 1);
 assert.equal(await recordEventLeadInHub({ ...base, env: config, fetchImpl: success }), 'RECORDED');
 assert.equal(calls, 2);
+assert.equal(eventKeys[0],eventKeys[1], 'same normalized pilot payload must reuse the same event key');
 await assert.rejects(() => recordEventLeadInHub({ ...base, env: { ...config, SUPABASE_URL: 'http://evil.test' }, fetchImpl: success }), /HUB_INGRESS_CONFIG/);
 await assert.rejects(() => recordEventLeadInHub({ ...base, env: config, fetchImpl: async () => new Response('', { status: 503 }) }), /HUB_INGRESS_UNCONFIRMED/);
 assert.equal(calls, 2);
