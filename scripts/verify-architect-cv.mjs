@@ -173,11 +173,15 @@ const approvedId = '11111111-1111-4111-8111-111111111111';
 const closedId = '22222222-2222-4222-8222-222222222222';
 const trainingId = '33333333-3333-4333-8333-333333333333';
 const recentId = '44444444-4444-4444-8444-444444444444';
+const stalePendingId = '55555555-5555-4555-8555-555555555555';
+const staleReviewId = '66666666-6666-4666-8666-666666666666';
 const rows = [
   { cv_id: approvedId, status: 'approved', updated_at: oldAt },
   { cv_id: closedId, status: 'rejected', updated_at: oldAt },
   { cv_id: trainingId, status: 'training', updated_at: oldAt },
   { cv_id: recentId, status: 'received', updated_at: youngAt },
+  { cv_id: stalePendingId, status: 'received', updated_at: oldAt },
+  { cv_id: staleReviewId, status: 'reviewing', updated_at: oldAt },
 ];
 const allowed = await eligibleCandidateCvs({
   url: 'https://db.test', key: 'service', fetchImpl: async (url, init) => {
@@ -185,7 +189,7 @@ const allowed = await eligibleCandidateCvs({
     assert.equal(init.headers['Accept-Profile'], 'hub');
     return Response.json(rows);
   },
-}, new Date(now), [approvedId, closedId, trainingId, recentId]);
-assert.deepEqual([...allowed], [closedId], 'approvato, in formazione e candidatura recente sono protetti');
+}, new Date(now), [approvedId, closedId, trainingId, recentId, stalePendingId, staleReviewId]);
+assert.deepEqual([...allowed], [closedId], 'approvato, formazione e candidature ancora aperte sono protetti, anche se vecchie');
 
 console.log('PASS architect CV: solo PDF reali ≤5 MB, origin e storage fail-closed, CV obbligatorio prima di ogni scrittura CRM, retry idempotente, nota senza contenuto, campo HighLevel opzionale e non bloccante, retention 24h/12 mesi condizionata allo stato della selezione.');
