@@ -4,6 +4,8 @@ type TrustedRadarBinding = {
   // the session/OTP and resolving the email against the Horyzon contact registry.
   assessmentId: string;
   contactId: string;
+  // Must come from the independently verified Radar email/OTP, never public input.
+  verifiedEmail: string;
   registrationId: string | null;
   questionnaireVersion: string;
   status: RadarStatus;
@@ -29,6 +31,9 @@ export async function saveVerifiedRadarReferenceInHub(input: {
   const { binding, env } = input;
   if (env.HORYZON_HUB_RADAR_LINK_ENABLED !== 'true') return 'DISABLED';
   if (!isUuid(binding.assessmentId) || !isUuid(binding.contactId) ||
+      typeof binding.verifiedEmail !== 'string' ||
+      binding.verifiedEmail.length > 254 ||
+      !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(binding.verifiedEmail.trim()) ||
       (binding.registrationId !== null && !isUuid(binding.registrationId)) ||
       typeof binding.questionnaireVersion !== 'string' ||
       !/^[a-zA-Z0-9_.:-]{1,100}$/.test(binding.questionnaireVersion) ||
@@ -55,6 +60,7 @@ export async function saveVerifiedRadarReferenceInHub(input: {
       headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ p_link: {
         contactId: binding.contactId,
+        verifiedEmail: binding.verifiedEmail.trim().toLowerCase(),
         assessmentId: binding.assessmentId,
         registrationId: binding.registrationId,
         questionnaireVersion: binding.questionnaireVersion,
