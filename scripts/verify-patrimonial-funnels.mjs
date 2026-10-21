@@ -76,6 +76,23 @@ for (const mode of ['architect-path', 'patrimonial-event']) {
     assert(!JSON.stringify(await response.json()).includes('private provider body'));
   }
 }
+// Non-public preview: event submissions are server-closed even if CRM credentials
+// are configured. Recruitment remains a separate workstream.
+calls = [];
+const gateResult = await handlePublicLead(request(payload('patrimonial-event')), {
+  env: { ...env, NODE_ENV: 'production', PATRIMONIAL_EVENT_SIGNUP_ENABLED: 'false' },
+  cvStorage, now, fetchImpl: provider,
+});
+assert.equal(gateResult.status, 503);
+assert.equal(calls.length, 0);
+calls = [];
+// The gate does not block recruitment, which belongs to another workstream.
+assert.equal((await handlePublicLead(request(payload('architect-path')), {
+  env: { ...env, NODE_ENV: 'production', PATRIMONIAL_EVENT_SIGNUP_ENABLED: 'false' },
+  cvStorage, now, fetchImpl: provider,
+})).status, 200);
+assert.equal(calls.length, 3);
+
 const legacy = { name: 'Ada Lovelace', email: 'ada@example.com', phone: '', message: '', consent: true, website: '', interest: 'evento-patrimoniale' };
 for (const mode of [undefined, 'legacy/public']) {
   calls = [];
@@ -89,7 +106,7 @@ for (const mix of [{ mode: 'invented' }, { mode: 'architect-path' }, { mode: 'pa
   assert.equal((await handlePublicLead(request({ ...legacy, ...mix }), { env, cvStorage, fetchImpl: provider })).status, 400);
   assert.equal(calls.length, 0);
 }
-for (let i = 0; i < 6; i++) assert.equal((await handlePublicLead(request(payload('patrimonial-event'), { 'x-forwarded-for': '192.0.2.51' }), { env: { ...env, NODE_ENV: 'production' }, cvStorage, now, fetchImpl: provider })).status, i < 5 ? 200 : 429);
+for (let i = 0; i < 6; i++) assert.equal((await handlePublicLead(request(payload('patrimonial-event'), { 'x-forwarded-for': '192.0.2.51' }), { env: { ...env, NODE_ENV: 'production', PATRIMONIAL_EVENT_SIGNUP_ENABLED: 'true' }, cvStorage, now, fetchImpl: provider })).status, i < 5 ? 200 : 429);
 assert.equal((await handlePublicLead(new Request('https://horyzon.it/api/public-leads', { method: 'POST', headers: { Origin: 'https://horyzon.it', 'Content-Type': 'application/json' }, body: 'x'.repeat(12001) }), { env, cvStorage, fetchImpl: provider })).status, 413);
 
 const protectedFiles = ['src/components/wellbeing-page.tsx', 'src/components/wellbeing-scene.tsx', 'src/components/wellbeing.module.css', 'src/app/[...slug]/page.tsx', 'src/app/contatti/page.tsx', 'src/content/patrimonial.ts', 'src/content/public-guide.ts', 'src/content/public-faq.ts', 'src/data/pages.ts', 'src/data/archive.json', 'src/components/site-shell.tsx', 'src/app/layout.tsx', 'src/app/robots.ts', 'src/app/llms.txt/route.ts', 'src/app/index.md/route.ts'];
