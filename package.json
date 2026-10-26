@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "node scripts/dev.mjs",
-    "build": "node scripts/architect-preview-readonly-preflight.mjs && next build && node scripts/build-readable.mjs",
+    "build": "node --no-warnings --experimental-strip-types scripts/architect-private-e2e-smoke.mjs && node scripts/architect-preview-readonly-preflight.mjs && next build && node scripts/build-readable.mjs",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
