@@ -6,6 +6,7 @@ import { pilotForms } from '../../content/patrimonial-funnels.ts';
 import { canonicalPatrimonialPayload, isPatrimonialRequestId, PATRIMONIAL_V2, type PatrimonialRequest } from './patrimonial-contract.ts';
 import { patrimonialConsentEvidence } from './patrimonial-consents.ts';
 import { recordEventLeadInHub } from './patrimonial-hub-event-ingress.ts';
+import { validateArchitectEventReferral } from './patrimonial-referral-preflight.ts';
 import { claimCv, cvStorage, isCvId, readCandidateCv, uploadCvToHighLevel, type CvStorage } from './architect-cv.ts';
 import { createProductionPatrimonialStore, patrimonialFlags, PatrimonialConflictError, PatrimonialReplayExpiredError, type PatrimonialStore } from './patrimonial-store.ts';
 
@@ -57,6 +58,13 @@ export async function handlePublicLead(request: Request, options: Options = {}):
   const phone = rawPhone === null ? null : normalizePhone(rawPhone);
   if (!pilot && (!name || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !interest || message === null || phone === null || (phone && !/^\+[1-9]\d{7,14}$/.test(phone)) || input.consent !== true || input.website)) {
     return response(400, 'Controlla i dati e la richiesta di ricontatto.');
+  }
+  if (pilot?.mode === 'patrimonial-event' && pilot.referralCode) {
+    try {
+      await validateArchitectEventReferral({ code: pilot.referralCode, env, fetchImpl: options.fetchImpl });
+    } catch {
+      return response(503, 'Il link personale non è verificabile. Non è stata registrata alcuna iscrizione.');
+    }
   }
   const config = highLevelConfig(env);
   if (!config) return response(503, 'Il modulo è temporaneamente non disponibile. Puoi scrivere a info@horyzon.it.');

@@ -42,6 +42,7 @@ export async function recordEventLeadInHub(input: {
     email: lead.email, phone: lead.phone, province: lead.province,
     profile: lead.profile, message: lead.message, marketingConsent: lead.marketingConsent,
     qualification: lead.qualification ?? null,
+    referralCode: lead.referralCode ?? null,
     utm: Object.fromEntries(Object.entries(lead.utm).sort(([a],[b]) => a.localeCompare(b))),
   })).digest('hex');
   const eventId = `webinar:${fingerprint.slice(0,56)}`;
@@ -55,6 +56,7 @@ export async function recordEventLeadInHub(input: {
     utm: lead.utm, consent: true, marketingConsent: lead.marketingConsent,
     privacyVersion: PATRIMONIAL_PILOT_PRIVACY_VERSION,
     ...(lead.qualification ? { qualification: lead.qualification } : {}),
+    ...(lead.referralCode ? { referralCode: lead.referralCode } : {}),
   };
   let response: Response;
   try {
