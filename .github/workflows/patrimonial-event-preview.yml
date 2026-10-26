@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/patrimonial-event-integration-foundation
+      - feat/patrimonial-event-referrals
   workflow_dispatch:
   pull_request:
     branches: [main]
