@@ -17,6 +17,10 @@ on:
       - '.github/workflows/architect-candidate-ci.yml'
 permissions:
   contents: read
+
+concurrency:
+  group: architect-candidate-branch-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   test-candidate-intake:
     runs-on: ubuntu-latest
@@ -50,7 +54,7 @@ jobs:
           node-version: '22'
       - run: npm ci --ignore-scripts
       - run: npm install --no-save --no-package-lock --ignore-scripts playwright@1.58.0
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install chromium
       - name: Start Website locally (no provider credentials)
         shell: bash
         run: |
