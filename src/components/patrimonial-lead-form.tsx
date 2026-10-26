@@ -69,6 +69,11 @@ function PilotLeadForm({ mode, contractVersion, presentation, selectedProfile = 
     }
     sending.current = true;
     const data = new FormData(event.currentTarget);
+    // Attribution is explicit in the URL. Never persist a referral from an
+    // earlier, unrelated browsing session and never trust it as an operator ID.
+    const referralParams = new URLSearchParams(window.location.search);
+    const eventReferral = mode === 'patrimonial-event' && !v2 && referralParams.has('ref')
+      ? referralParams.get('ref') ?? '' : undefined;
     let eventQualification: unknown;
     if (mode === 'patrimonial-event' && !v2) {
       const raw = data.get('qualification');
@@ -108,6 +113,7 @@ function PilotLeadForm({ mode, contractVersion, presentation, selectedProfile = 
       website: data.get('website'), utm: pilotAttribution(mode, !v2),
       ...(mode === 'architect-path' ? { experience: data.get('experience'), goal: data.get('goal'), availability: data.get('availability') } : {}),
       ...(mode === 'patrimonial-event' && !v2 && eventQualification !== undefined ? { qualification: eventQualification } : {}),
+      ...(eventReferral !== undefined ? { referralCode: eventReferral } : {}),
       ...(cvId ? { cvId } : {}),
     };
     setStatus('sending'); setNotice('');
