@@ -9,5 +9,5 @@ const mono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400', '500'], variabl
 export const metadata = { ...pageMetadata({ path: architectPath.path, title: patrimonialBrand.path, description: architectPath.description }), robots: { index: false, follow: false } };
 export default function ArchitectPathPage() {
   const durableCandidateIntake = process.env.PATRIMONIAL_ARCHITECT_CANDIDATE_V2_ENABLED === 'true';
-  return <PatrimonialThemeFrame><div className={`${display.variable} ${sans.variable} ${mono.variable}`}><ArchitectLanding durableCandidateIntake={durableCandidateIntake} /></div></PatrimonialThemeFrame>;
+  return <PatrimonialThemeFrame defaultTheme="light" showBar={false} rememberChoice={false}><div className={`${display.variable} ${sans.variable} ${mono.variable}`}><ArchitectLanding durableCandidateIntake={durableCandidateIntake} /></div></PatrimonialThemeFrame>;
 }

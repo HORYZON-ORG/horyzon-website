@@ -22,6 +22,8 @@ try {
     const sent = [], errors = []; let fail = width === 1440;
     await context.route('**/*', async route => {
       const request = route.request(), url = new URL(request.url());
+      // The mandatory CV upload is answered locally too: no storage write.
+      if (url.origin === base.origin && url.pathname === '/api/public-leads/cv') return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, cvId: 'qa-local-cv' }) });
       if (url.origin === base.origin && url.pathname === '/api/public-leads') {
         assert.equal(request.method(), 'POST'); sent.push(request.postDataJSON());
         await new Promise(resolve => setTimeout(resolve, 150));
@@ -35,15 +37,16 @@ try {
     assert.equal(response.status(), 200); assert.equal(response.headers()['x-robots-tag'], 'noindex, nofollow');
     assert.equal(await page.locator('meta[name=robots]').getAttribute('content'), 'noindex, nofollow');
     await page.evaluate(() => document.fonts.ready);
-    assert.equal(await page.locator('h1').count(), 1); assert.equal(await page.locator('section').count(), 14);
-    assert.equal(await page.locator('[data-profile]').count(), 5); assert.equal(await page.locator('[data-scene]').count(), 3); assert.equal(await page.locator('[data-story]').count(), 3);
+    assert.equal(await page.locator('h1').count(), 1); assert.equal(await page.locator('section').count(), 13);
+    assert.equal(await page.locator('[data-profile]').count(), 5); assert.equal(await page.locator('#richiesta [data-profile]').count(), 5);
+    assert.equal(await page.getByText('Anteprima tema').count(), 0); assert.equal(await page.getByRole('button', { name: /Passa al tema/ }).count(), 1); assert.equal(await page.locator('[data-scene]').count(), 3); assert.equal(await page.locator('[data-story]').count(), 3);
     assert.equal(await page.locator('#stickyBar').getAttribute('aria-hidden'), 'true');
-    const floating = await page.locator('[class*=s027]').boundingBox(); assert(floating.x >= 0 && floating.x + floating.width <= width);
     await page.screenshot({ path: path.join(directory, `architect-mobile-${width}-hero.png`) });
     for (const [key, profile] of Object.entries(architectProfiles)) {
       await page.locator(`[data-profile=${key}]`).click();
       assert.equal(await page.locator(`[data-profile=${key}]`).getAttribute('aria-pressed'), 'true');
-      assert.equal(await page.locator('[data-bind=sub]').innerText(), profile.sub); assert.equal(await page.locator('[data-bind=cta]').innerText(), profile.cta);
+      assert.equal(await page.locator('[data-bind=sub]').innerText(), profile.sub);
+      assert.equal((await page.locator('form[data-pilot-form=architect-path] button[type=submit]').innerText()).trim(), `${profile.cta} →`);
       assert.match(await page.locator(`[data-scene=${profile.scene}]`).getAttribute('class'), /is-mine/);
       assert.match(await page.locator(`[data-story="${profile.story}"]`).getAttribute('class'), /is-mine/);
       assert.equal(await page.locator('[data-scene] [class*=badge]:visible').count(), 1);
@@ -78,9 +81,6 @@ try {
     const timeline = await page.locator('[class*=m-track]').boundingBox(); assert(width <= 700 ? timeline.height > timeline.width : timeline.width > timeline.height);
     assert.equal(await page.locator('[class*=formGrid]').first().evaluate(element => getComputedStyle(element).gridTemplateColumns.split(' ').length), width <= 700 ? 1 : 2);
     if (width <= 700) {
-      const photo = await page.locator('[class*=s026]').boundingBox();
-      const ticket = await page.locator('[class*=s027]').boundingBox();
-      assert(ticket.x >= photo.x && ticket.x + ticket.width <= photo.x + photo.width && ticket.y >= photo.y && ticket.y + ticket.height <= photo.y + photo.height);
       const stickyStyle = await page.locator('[class*=m-sticky]').evaluate(element => ({ wrap: getComputedStyle(element).flexWrap, radius: getComputedStyle(element).borderRadius }));
       assert.deepEqual(stickyStyle, { wrap: 'nowrap', radius: '14px' });
     }
@@ -93,27 +93,30 @@ try {
     await page.locator('#richiesta').scrollIntoViewIfNeeded();
     await page.waitForFunction(() => document.querySelector('#stickyBar').getAttribute('aria-hidden') === 'true');
     const form = page.locator('form[data-pilot-form=architect-path]');
-    await form.getByRole('button', { name: 'Invia la mia candidatura' }).click(); assert.equal(sent.length, 0);
+    await form.locator('button[type=submit]').click(); assert.equal(sent.length, 0);
     await form.locator('[name=firstName]').fill('Ada'); await form.locator('[name=lastName]').fill('Lovelace');
     await form.locator('[name=email]').fill('architect-browser@example.invalid'); await form.locator('[name=phone]').fill('3331234567');
-    await form.locator('[name=consent]').check(); await form.getByRole('button', { name: 'Invia la mia candidatura' }).click();
+    await form.locator('[name=consent]').check(); await form.locator('button[type=submit]').click();
     await form.getByText('PASSO 2 DI 2', { exact: true }).waitFor(); assert.equal(sent.length, 0, 'Step 1 must not send');
+    assert.equal((await form.locator('button[type=submit]').innerText()).trim(), 'Invia la mia candidatura →');
     assert.equal(await page.locator(':focus').getAttribute('id'), 'architect-path-form-title');
     assert.equal(await form.locator('[name=profile]').inputValue(), 'Altro'); assert.equal(await form.locator('[name=marketingConsent]').isChecked(), false);
-    await form.getByRole('button', { name: 'Invia la mia candidatura' }).click(); assert.equal(sent.length, 0, 'Province required');
+    await form.locator('button[type=submit]').click(); assert.equal(sent.length, 0, 'Province required');
     await form.locator('[name=province]').focus(); await page.keyboard.type('Milano'); await form.locator('[name=experience]').selectOption('Sì');
     await form.locator('[name=goal]').selectOption('Sto esplorando'); await form.locator('[name=availability]').selectOption('Part-time');
     await form.locator('[name=message]').fill('Solo verifica UI locale, nessun invio remoto.');
+    await form.locator('[name=cv]').setInputFiles({ name: 'cv.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n%qa\n') });
     await form.screenshot({ path: path.join(directory, `architect-mobile-${width}-step-2.png`) });
     await form.evaluate(element => { element.requestSubmit(); element.requestSubmit(); });
     if (fail) {
       await form.getByRole('alert').waitFor(); assert.equal(sent.length, 1); assert.equal(await form.locator('[name=province]').inputValue(), 'Milano');
-      fail = false; await form.getByRole('button', { name: 'Invia la mia candidatura' }).click();
+      fail = false; await form.locator('button[type=submit]').click();
     }
     await page.waitForURL(`**${routePath}/grazie`); assert.equal(sent.length, width === 1440 ? 2 : 1);
     for (const payload of sent) {
-      assert(validatePilotLead(payload), 'Existing API contract must accept UI payload');
-      assert.equal(payload.profile, 'Altro'); assert.equal(payload.mode, 'architect-path'); assert.equal(payload.sourcePath, routePath);
+      const { cvId, ...lead } = payload; assert.equal(cvId, 'qa-local-cv');
+      assert(validatePilotLead(lead), 'Existing API contract must accept UI payload');
+      assert.equal(lead.profile, 'Altro'); assert.equal(payload.mode, 'architect-path'); assert.equal(payload.sourcePath, routePath);
       assert.equal(payload.consent, true); assert.equal(payload.marketingConsent, false); assert.equal(payload.website, '');
       assert.deepEqual(payload.utm, { utm_source: 'qa-local', utm_campaign: 'architect-redesign' });
     }

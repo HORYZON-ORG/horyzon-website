@@ -1,0 +1,19 @@
+/* Brand band of the architect landing: always dark (night-blue ink) with light text, in both themes.
+   Kept out of patrimonial-architect.module.css so the light-theme generator never remaps it. */
+.band{position:relative;z-index:40;background:#07171D;color:#F7F4E8;border-bottom:1px solid rgba(247,244,232,.12);padding:14px max(16px,env(safe-area-inset-right,0px)) 14px max(16px,env(safe-area-inset-left,0px))}
+.inner{max-width:1240px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{display:flex;flex-direction:column;gap:8px;text-decoration:none;color:inherit;min-width:0}
+.logoWrap{position:relative;display:block;width:190px;line-height:0}
+.logo{display:block;width:100%;height:auto;filter:brightness(0) invert(1)}
+/* Lime point of the canonical logo, restored over the white rendering (same geometry as brand-logo.css). */
+.logoWrap::after{content:"";position:absolute;left:20.93%;top:47.56%;width:3.8%;aspect-ratio:1;border-radius:50%;background:#D9E65F;transform:translate(-50%,-50%);pointer-events:none}
+.rule{position:relative;display:block;height:1.5px;background:rgba(247,244,232,.55)}
+.rule::after{content:"";position:absolute;left:50%;top:50%;width:18%;height:3px;border-radius:2px;background:#D9E65F;transform:translate(-50%,-50%)}
+.division{font-family:var(--architect-sans),system-ui,sans-serif;font-size:9.5px;font-weight:500;letter-spacing:.34em;text-align:center;white-space:nowrap;color:#F7F4E8;margin-right:-.34em}
+.actions{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.toggle{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;border:1px solid rgba(247,244,232,.28);background:rgba(247,244,232,.06);color:#F7F4E8;cursor:pointer;transition:border-color .2s,background .2s,color .2s}
+.toggle:hover{border-color:#D8FF42;color:#D8FF42}
+.cta{display:inline-flex;align-items:center;min-height:44px;padding:0 20px;border-radius:6px;background:#D8FF42;color:#07171D;font-weight:700;font-size:15px;text-decoration:none}
+.cta:hover{background:#E9FF8C}
+.toggle:focus-visible,.cta:focus-visible,.brand:focus-visible{outline:3px solid #D8FF42;outline-offset:3px}
+@media (max-width:600px){.logoWrap{width:148px}.division{font-size:7.6px;letter-spacing:.3em;margin-right:-.3em}.cta{padding:0 14px;font-size:14px}.band{padding-top:10px;padding-bottom:10px}}

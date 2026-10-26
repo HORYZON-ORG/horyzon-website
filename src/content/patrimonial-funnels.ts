@@ -11,7 +11,7 @@ export const patrimonialBrand = {
 export const architectPath = {
   path: '/benessere-patrimoniale/percorso-architetto-patrimoniale',
   title: 'Il tuo talento può incontrare un nuovo orizzonte.',
-  description: 'Candidature sempre aperte per persone che vogliono trasformare capacità relazionali, crescita personale e cultura patrimoniale in una nuova competenza professionale.',
+  description: 'Un percorso di formazione e affiancamento per persone che vogliono trasformare capacità relazionali, crescita personale e cultura patrimoniale in una professione autonoma.',
   roles: [
     { title: 'Comprendere', text: 'Imparare a leggere bisogni, obiettivi e situazioni.' },
     { title: 'Accompagnare', text: 'Aiutare la persona a fare domande migliori e compiere passi consapevoli.' },

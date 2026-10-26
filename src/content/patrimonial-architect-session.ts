@@ -8,19 +8,19 @@ export const architectSession: {
 };
 export const architectProfiles = {
   commerciale: { label: 'Commerciale', value: 'Commerciale', scene: 'opportunita', story: 0,
-    sub: 'Sai già creare fiducia in pochi minuti. Qui impari a usarla per qualcosa che scegli tu, non per chiudere il prossimo contratto.', cta: 'Voglio usare il mio talento diversamente' },
+    sub: 'Sai già creare fiducia. Qui impari a usarla per qualcosa che scegli tu.', cta: 'Voglio usare il mio talento diversamente' },
   imprenditore: { label: 'Imprenditore', value: 'Imprenditore', scene: 'caffe', story: 1,
-    sub: 'Hai costruito qualcosa da zero e sai cosa vuol dire rischiare. Ora puoi mettere quell’esperienza al servizio di chi ci sta passando adesso.', cta: 'Voglio capire se fa per me' },
+    sub: 'Hai costruito qualcosa da zero. Ora puoi mettere la tua esperienza al servizio degli altri.', cta: 'Voglio capire se fa per me' },
   dipendente: { label: 'Dipendente', value: 'Dipendente', scene: 'domenica', story: 2,
-    sub: 'Non devi lasciare tutto domani. Puoi iniziare part-time, formarti e capire passo dopo passo se è la tua strada.', cta: 'Voglio iniziare senza salti nel vuoto' },
+    sub: 'Non devi lasciare tutto domani: puoi iniziare part-time e formarti passo dopo passo.', cta: 'Voglio iniziare senza salti nel vuoto' },
   professionista: { label: 'Professionista', value: 'Professionista', scene: 'caffe', story: 1,
-    sub: 'I tuoi clienti si fidano già di te. Il percorso ti dà un metodo in più per accompagnarli anche sulle scelte patrimoniali.', cta: 'Voglio aggiungere questa competenza' },
+    sub: 'I tuoi clienti si fidano già di te. Qui aggiungi un metodo per accompagnarli anche sul patrimonio.', cta: 'Voglio aggiungere questa competenza' },
   altro: { label: 'Sto esplorando', value: 'Altro', scene: 'domenica', story: 2,
-    sub: 'Non serve sapere già cosa vuoi. In 30 minuti capisci cosa fa questo ruolo e se ti somiglia. Poi decidi tu.', cta: 'Voglio scoprirlo in 30 minuti' },
+    sub: 'Non serve sapere già cosa vuoi. Scopri cosa fa questo ruolo, poi decidi tu.', cta: 'Voglio scoprire se fa per me' },
 } as const;
 export type ArchitectProfileKey = keyof typeof architectProfiles;
 export const architectDefaultCopy = {
-  sub: 'Qui scopri cosa fa questo ruolo, come funziona il percorso e cosa succede dopo una candidatura. Prima capisci. Poi, se ti riconosci, ci racconti da dove parti.', cta: 'Vai alla candidatura',
+  sub: 'Scopri cosa fa questo ruolo e come funziona il percorso. Se ti riconosci, candidati.', cta: 'Vai alla candidatura',
 };
 export function architectSessionSnapshot(now: number | null) {
   const confirmed = architectSession.status === 'CONFIRMED';

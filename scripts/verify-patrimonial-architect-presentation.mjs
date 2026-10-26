@@ -15,13 +15,20 @@ const leadForm = read('src/components/patrimonial-lead-form.tsx');
 const css = read('src/components/patrimonial-architect.module.css');
 
 for (const value of [
-  'CANDIDATURE SEMPRE APERTE',
   'SELEZIONE APERTA',
-  '09 · PRIMA DI CANDIDARTI',
-  '11 · CANDIDATI',
+  '08 · CANDIDATI CON CONSAPEVOLEZZA',
+  '10 · CANDIDATI',
   'Vai alla candidatura',
   'Ricevi la conferma che la candidatura è stata registrata',
 ]) assert(landing.includes(value), `Missing evergreen candidature copy: ${value}`);
+
+// Briefing 26/10: no "always open" promise, no seller comparison; profile choice lives in the candidature section.
+for (const removed of ['SEMPRE APERTE', 'sempre aperte', 'Un venditore parte dal prodotto', 'Ogni candidatura viene letta da una persona del team', 'quasi nessuno sta servendo'])
+  assert(!landing.includes(removed) && !session.includes(removed) && !content.includes(removed), `Removed copy is back: ${removed}`);
+const formSection = landing.slice(landing.indexOf('id="richiesta"') - 200);
+assert.equal((landing.match(/data-profile="/g) ?? []).length, 5);
+assert.equal((formSection.match(/data-profile="/g) ?? []).length, 5, 'Profile chips belong to the candidature section');
+assert(form.includes('step === 1 && selected ? `${selected.cta} →`'), 'Step-1 submit label follows the chosen profile');
 
 for (const obsolete of [
   'PRESENTAZIONE LIVE',
@@ -41,7 +48,7 @@ for (const field of ['firstName','lastName','email','phone','province','profile'
   assert(form.includes(`name="${field}"`), `Missing candidate field ${field}`);
 }
 
-assert(content.includes("description: 'Candidature sempre aperte"));
+assert(content.includes("description: 'Un percorso di formazione e affiancamento"));
 assert(content.includes("title: 'Completa la tua candidatura.'"));
 assert(content.includes("success: 'Candidatura ricevuta.'"));
 assert(content.includes("'La candidatura è stata registrata.'"));
