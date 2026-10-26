@@ -78,7 +78,7 @@ export function ArchitectLanding({ durableCandidateIntake = false }: { durableCa
         </div>
 
         <div className={[styles.s025].filter(Boolean).join(" ")}>
-          <div className={[styles.s026].filter(Boolean).join(" ")}><Image width={1400} height={1750} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" preload className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/hero.jpg" alt="Una professionista studia con attenzione un progetto stampato, alla luce del sole" /></div>
+          <div className={[styles.s026].filter(Boolean).join(" ")}><Image width={1024} height={572} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 500px" preload className={[styles['cover']].filter(Boolean).join(" ")} style={{ objectPosition: '48% 50%' }} src="/benessere-patrimoniale/percorso-architetto/hero-telefono.jpg" alt="Una professionista sorride al telefono mentre lavora al portatile nel suo studio" /></div>
         </div>
       </div>
     </div>
