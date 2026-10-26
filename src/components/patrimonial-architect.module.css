@@ -406,6 +406,8 @@
 /* Profilo selezionato: blu notte del brand con testo lime, come il pulsante di invio */
 :global([data-theme="light"]) .chip[aria-pressed="true"]{background:#07171D;color:#D8FF42;border-color:#07171D;font-weight:600;box-shadow:0 8px 20px rgba(7,23,29,.18)}
 :global([data-theme="light"]) .chip:hover{border-color:#07171D}
+/* Didascalia del video: resta chiara sopra la foto e la sfumatura scura, in entrambi i temi */
+:global([data-theme="light"]) .s120{color:#F7F4E8}
 /* === end light theme: manual === */
 
 .cvField{margin-top:20px}

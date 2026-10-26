@@ -255,7 +255,7 @@ export function ArchitectLanding({ durableCandidateIntake = false }: { durableCa
   <section className={[styles['m-sec'], styles.s053, styles['bp']].filter(Boolean).join(" ")}>
     <div className={[styles.s114].filter(Boolean).join(" ")}>
       <div className={[styles.s115].filter(Boolean).join(" ")}>
-        <Image width={1800} height={1018} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles.s116, styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/founder.jpg" alt="Immagine AI provvisoria: Il fondatore di Horyzon parla in camera" />
+        <Image width={700} height={1050} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 680px" className={[styles.s116, styles['cover']].filter(Boolean).join(" ")} style={{ objectPosition: '50% 16%' }} src="/people/angelo.webp" alt="Angelo Ria Chetta, fondatore di Horyzon" />
         <div className={[styles.s117].filter(Boolean).join(" ")} aria-hidden="true"></div>
         <div className={[styles.s118].filter(Boolean).join(" ")} aria-hidden="true"></div>
         <button disabled title="Video del fondatore da fornire" className={[styles.s119, styles['pulse']].filter(Boolean).join(" ")} type="button" aria-label="Video del fondatore — placeholder non disponibile"><svg width="28" height="28" viewBox="0 0 24 24" fill="#07171D" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg></button>
