@@ -37,7 +37,7 @@ try {
     assert.equal(response.status(), 200); assert.equal(response.headers()['x-robots-tag'], 'noindex, nofollow');
     assert.equal(await page.locator('meta[name=robots]').getAttribute('content'), 'noindex, nofollow');
     await page.evaluate(() => document.fonts.ready);
-    assert.equal(await page.locator('h1').count(), 1); assert.equal(await page.locator('section').count(), 13);
+    assert.equal(await page.locator('h1').count(), 1); assert.equal(await page.locator('section').count(), 11);
     assert.equal(await page.locator('[data-profile]').count(), 5); assert.equal(await page.locator('#richiesta [data-profile]').count(), 5);
     assert.equal(await page.getByText('Anteprima tema').count(), 0); assert.equal(await page.getByRole('button', { name: /Passa al tema/ }).count(), 1); assert.equal(await page.locator('[data-scene]').count(), 3); assert.equal(await page.locator('[data-story]').count(), 3);
     assert.equal(await page.locator('#stickyBar').getAttribute('aria-hidden'), 'true');
@@ -60,7 +60,7 @@ try {
           && !['svg', 'path'].includes(child.tagName.toLowerCase()) && !child.closest('[data-carousel]');
       }).map(child => child.tagName + ':' + child.textContent.slice(0, 50)));
       assert.deepEqual(overflow, [], `Overflow width ${width}, section ${index}`);
-      if ([0, 4, 5, 8, 11].includes(index)) await section.screenshot({ path: path.join(directory, `architect-mobile-${width}-section-${index}.png`) });
+      if ([0, 4, 5, 8, 9].includes(index)) await section.screenshot({ path: path.join(directory, `architect-mobile-${width}-section-${index}.png`) });
     }
     for (const name of ['scenes', 'stories']) {
       const carousel = page.locator(`[data-carousel=${name}]`);

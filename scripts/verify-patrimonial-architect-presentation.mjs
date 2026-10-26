@@ -16,14 +16,14 @@ const css = read('src/components/patrimonial-architect.module.css');
 
 for (const value of [
   'SELEZIONE APERTA',
-  '08 · CANDIDATI CON CONSAPEVOLEZZA',
-  '10 · CANDIDATI',
+  '08 · CANDIDATI',
+  '09 · DOMANDE FREQUENTI',
   'Vai alla candidatura',
   'Ricevi la conferma che la candidatura è stata registrata',
 ]) assert(landing.includes(value), `Missing evergreen candidature copy: ${value}`);
 
 // Briefing 26/10: no "always open" promise, no seller comparison; profile choice lives in the candidature section.
-for (const removed of ['SEMPRE APERTE', 'sempre aperte', 'Un venditore parte dal prodotto', 'Ogni candidatura viene letta da una persona del team', 'quasi nessuno sta servendo'])
+for (const removed of ['SEMPRE APERTE', 'sempre aperte', 'Un venditore parte dal prodotto', 'Ogni candidatura viene letta da una persona del team', 'quasi nessuno sta servendo', 'CANDIDATI CON CONSAPEVOLEZZA', 'LA SCELTA'])
   assert(!landing.includes(removed) && !session.includes(removed) && !content.includes(removed), `Removed copy is back: ${removed}`);
 const formSection = landing.slice(landing.indexOf('id="richiesta"') - 200);
 assert.equal((landing.match(/data-profile="/g) ?? []).length, 5);

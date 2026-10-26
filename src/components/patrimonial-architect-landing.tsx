@@ -78,7 +78,7 @@ export function ArchitectLanding({ durableCandidateIntake = false }: { durableCa
         </div>
 
         <div className={[styles.s025].filter(Boolean).join(" ")}>
-          <div className={[styles.s026].filter(Boolean).join(" ")}><Image width={1024} height={572} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 500px" preload className={[styles['cover']].filter(Boolean).join(" ")} style={{ objectPosition: '48% 50%' }} src="/benessere-patrimoniale/percorso-architetto/hero-telefono.jpg" alt="Una professionista sorride al telefono mentre lavora al portatile nel suo studio" /></div>
+          <div className={[styles.s026].filter(Boolean).join(" ")}><Image width={2048} height={1144} quality={100} sizes="(max-width: 767px) 180vw, (max-width: 1199px) 145vw, 900px" preload className={[styles['cover']].filter(Boolean).join(" ")} style={{ objectPosition: '48% 50%' }} src="/benessere-patrimoniale/percorso-architetto/hero-telefono.jpg" alt="Una professionista sorride al telefono mentre lavora al portatile nel suo studio" /></div>
         </div>
       </div>
     </div>
@@ -351,54 +351,14 @@ export function ArchitectLanding({ durableCandidateIntake = false }: { durableCa
   </section>
 
 
-  <section className={[styles['m-sec'], styles.s041].filter(Boolean).join(" ")}>
-    <div className={[styles.s143].filter(Boolean).join(" ")}>
-      <div className={[styles.s144].filter(Boolean).join(" ")}>
-        <div className={[styles.s043].filter(Boolean).join(" ")}>08 · CANDIDATI CON CONSAPEVOLEZZA</div>
-        <h2 className={[styles['m-reveal'], styles.s088].filter(Boolean).join(" ")}>Candidati con consapevolezza.</h2>
-        <p className={[styles.s145].filter(Boolean).join(" ")}>Dopo la candidatura, se ci sono i presupposti, ricevi una presentazione di 30 minuti. Ecco cosa vedrai.</p>
-        <a className={[styles.s146].filter(Boolean).join(" ")} href="#richiesta">Vai alla candidatura</a>
-      </div>
-      <ol className={[styles.s147].filter(Boolean).join(" ")}>
-        <li className={[styles.s148].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>00–04&#x27;</span><span>Perché Horyzon sta aprendo questa divisione proprio adesso</span></li>
-        <li className={[styles.s148].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>04–09&#x27;</span><span>Il bisogno delle famiglie italiane di capire il denaro</span></li>
-        <li className={[styles.s148].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>09–15&#x27;</span><span>Come funziona la formazione, passo per passo</span></li>
-        <li className={[styles.s148].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>15–19&#x27;</span><span>Le 3 caratteristiche che contano più dell&#x27;esperienza</span></li>
-        <li className={[styles.s148].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>19–25&#x27;</span><span><strong>Una giornata tipo dell&#x27;Architetto</strong>, raccontata da chi la vive</span></li>
-        <li className={[styles.s151].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>25–30&#x27;</span><span><strong>Come iniziare</strong>: colloquio, formazione e affiancamento</span></li>
-      </ol>
-    </div>
-  </section>
 
 
-  <section className={[styles['m-sec'], styles.s053, styles['bp']].filter(Boolean).join(" ")}>
-    <div className={[styles.s042].filter(Boolean).join(" ")}>
-      <div className={[styles.s054].filter(Boolean).join(" ")}>09 · LA SCELTA</div>
-      <h2 className={[styles['m-reveal'], styles.s152].filter(Boolean).join(" ")}>Dove vuoi essere tra un anno?</h2>
-      <div className={[styles.s135].filter(Boolean).join(" ")}>
-        <div className={[styles.s153].filter(Boolean).join(" ")}>
-          <div className={[styles.s154].filter(Boolean).join(" ")}><Image width={1400} height={930} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles.s155, styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/stuck.jpg" alt="Una persona crolla con la testa sulla scrivania, di sera, in una stanza buia" /></div>
-          <div className={[styles.s156].filter(Boolean).join(" ")}>
-            <div className={[styles.s157].filter(Boolean).join(" ")}>SE NON CAMBI NULLA</div>
-            <p className={[styles.s158].filter(Boolean).join(" ")}>Stessa scrivania, stesse domande. E il talento con le persone resta un favore agli amici.</p>
-          </div>
-        </div>
-        <div className={[styles.s159].filter(Boolean).join(" ")}>
-          <div className={[styles.s154].filter(Boolean).join(" ")}><Image width={1400} height={935} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/conversazione.jpg" alt="Due persone firmano un accordo su carta, guidate da un professionista seduto di fronte a loro" /></div>
-          <div className={[styles.s156].filter(Boolean).join(" ")}>
-            <div className={[styles.s160].filter(Boolean).join(" ")}>SE INIZI IL PERCORSO</div>
-            <p className={[styles.s161].filter(Boolean).join(" ")}>Un mestiere che ti somiglia e persone pronte a insegnartelo. <strong className={[styles.s016].filter(Boolean).join(" ")}>In ogni caso, avrai scelto tu.</strong></p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
 
 
   <section ref={formRef} className={[styles['m-sec'], styles.s162].filter(Boolean).join(" ")} id="richiesta">
     <div className={[styles.s163].filter(Boolean).join(" ")}>
       <div className={[styles.s087].filter(Boolean).join(" ")}>
-        <div className={[styles.s054].filter(Boolean).join(" ")}>10 · CANDIDATI</div>
+        <div className={[styles.s054].filter(Boolean).join(" ")}>08 · CANDIDATI</div>
         <h2 className={[styles['m-reveal'], styles.s088].filter(Boolean).join(" ")}>Candidati al Percorso Architetto Patrimoniale.</h2>
           <div className={[styles.s017].filter(Boolean).join(" ")} style={{ margin: '8px 0 20px' }}>
           <div className={[styles.s018].filter(Boolean).join(" ")} id="profilo">Da dove parti oggi? <span className={[styles.s019].filter(Boolean).join(" ")}>Scegli il profilo che ti descrive meglio.</span></div>
@@ -425,7 +385,7 @@ export function ArchitectLanding({ durableCandidateIntake = false }: { durableCa
 
   <section className={[styles['m-sec'], styles.s041].filter(Boolean).join(" ")}>
     <div className={[styles.s173].filter(Boolean).join(" ")}>
-      <div className={[styles.s043].filter(Boolean).join(" ")}>11 · DOMANDE FREQUENTI</div>
+      <div className={[styles.s043].filter(Boolean).join(" ")}>09 · DOMANDE FREQUENTI</div>
       <h2 className={[styles['m-reveal'], styles.s174].filter(Boolean).join(" ")}>Le domande che ci fanno tutti.</h2>
       <div className={[styles.s175].filter(Boolean).join(" ")}>
         <details className={[styles.s176].filter(Boolean).join(" ")}><summary className={[styles.s177].filter(Boolean).join(" ")}>Devo investire soldi per entrare nel percorso?<span className={[styles.s178, styles['plus']].filter(Boolean).join(" ")}>+</span></summary><p className={[styles.s179].filter(Boolean).join(" ")}>No, devi investire coraggio, tempo e impegno. L&#x27;ingresso nel percorso è gratuito; restano i normali costi di un&#x27;attività autonoma.</p></details>
