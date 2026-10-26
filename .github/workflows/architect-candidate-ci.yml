@@ -10,6 +10,7 @@ on:
       - 'scripts/architect-preview-readonly-preflight.mjs'
       - 'scripts/verify-architect-preview-readonly.mjs'
       - 'src/components/patrimonial-architect-*'
+      - 'scripts/verify-architect-browser.mjs'
       - 'src/app/(patrimonial-pilot)/**'
       - '.github/workflows/architect-candidate-ci.yml'
 permissions:
@@ -33,3 +34,34 @@ jobs:
       - run: node scripts/verify-architect-preview-readonly.mjs
       - run: npm run test:patrimonial-funnels
       - run: npm run test:patrimonial-architect-evergreen
+
+  test-browser-architect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts
+      - run: npm install --no-save --no-package-lock --ignore-scripts playwright@1.58.0
+      - run: npx playwright install --with-deps chromium
+      - name: Start Website locally (no provider credentials)
+        shell: bash
+        run: |
+          npx next dev -p 3205 -H 127.0.0.1 > /tmp/architect-next-dev.log 2>&1 &
+          for i in $(seq 1 90); do
+            if curl -fsS 'http://127.0.0.1:3205/benessere-patrimoniale/percorso-architetto-patrimoniale' > /dev/null; then exit 0; fi
+            sleep 2
+          done
+          tail -n 60 /tmp/architect-next-dev.log
+          exit 1
+      - name: Browser smoke with mocked candidate endpoints
+        run: node scripts/verify-architect-browser.mjs
+        env:
+          ARCHITECT_BROWSER_TEST_ORIGIN: http://127.0.0.1:3205
+          PATRIMONIAL_ARCHITECT_CANDIDATE_V2_ENABLED: 'false'
+          PATRIMONIAL_ARCHITECT_HUB_INTAKE_ENABLED: 'false'
+          PATRIMONIAL_ARCHITECT_PRIVATE_E2E_SMOKE: 'false'
