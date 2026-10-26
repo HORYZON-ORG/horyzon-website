@@ -7,7 +7,7 @@ on:
       - feat/patrimonial-event-referrals
   workflow_dispatch:
   pull_request:
-    branches: [main]
+    branches: [main, feat/patrimonial-event-integration-foundation]
 
 permissions:
   contents: read
