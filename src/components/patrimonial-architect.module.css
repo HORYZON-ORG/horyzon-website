@@ -217,6 +217,10 @@
 .s149{font-family: var(--architect-mono), monospace; font-size: 13px; color: var(--olive); flex: 0 0 64px}
 .s150{display: flex; gap: 20px; padding: 22px 28px; border-bottom: 1px solid #E8E6DE; background: #F3F7E2}
 .s151{display: flex; gap: 20px; padding: 22px 28px}
+/* Scaletta dei 30 minuti: righe uguali, si accendono al passaggio del mouse o al tocco */
+.s148,.s151{position: relative; transition: background-color .25s ease, box-shadow .25s ease; cursor: default}
+.s148:hover,.s151:hover,.s148:active,.s151:active{background: #F3F7E2; box-shadow: inset 0 0 0 2px var(--lime), inset 0 0 24px rgba(216,255,66,.35)}
+.s148:hover .s149,.s151:hover .s149,.s148:active .s149,.s151:active .s149{color: var(--ink); font-weight: 500}
 .s152{font-family: var(--architect-display), sans-serif; font-weight: 600; font-size: clamp(32px, 4vw, 54px); line-height: 1.05; letter-spacing: -0.02em; margin: 0 0 48px; max-width: 860px}
 .s153{border-radius: 20px; overflow: hidden; border: 1px solid rgba(163,177,176,.25); background: var(--ink-2)}
 .s154{aspect-ratio: 3 / 2; overflow: hidden}
@@ -423,3 +427,30 @@
 .cvText span{font-size:12px;color:var(--soft-light)}
 .cvError .cvText span{color:#8b2525}
 .cvHelp{margin:8px 0 0;font-size:12px;line-height:1.5;color:var(--soft-light)}
+
+/* === Interazioni: ogni tasto reagisce con luce lime al passaggio, al tocco e alla tastiera === */
+.page .s023,.page .s186,.page .s196,.page .s146,.page .formSubmit,.page .chip,.page .s003,.page .s119,.page .formBack{transition:transform .2s cubic-bezier(.2,.7,.2,1),box-shadow .25s ease,background-color .2s ease,color .2s ease,border-color .2s ease}
+/* Tasti lime pieni */
+.page .s023:hover,.page .s186:hover,.page .s196:hover,.page .s023:focus-visible,.page .s186:focus-visible,.page .s196:focus-visible{background:#E9FF8C;transform:translateY(-2px);box-shadow:0 0 0 4px rgba(216,255,66,.28),0 12px 34px rgba(216,255,66,.6)}
+.page .s023:active,.page .s186:active,.page .s196:active{transform:translateY(0) scale(.97);box-shadow:0 0 0 6px rgba(216,255,66,.4),0 0 40px rgba(216,255,66,.85)}
+/* Tasti blu notte con scritta lime */
+.page .s146:hover,.page .formSubmit:not(:disabled):hover,.page .s146:focus-visible,.page .formSubmit:focus-visible{transform:translateY(-2px);box-shadow:0 0 0 3px rgba(216,255,66,.55),0 12px 30px rgba(216,255,66,.35)}
+.page .s146:active,.page .formSubmit:not(:disabled):active{transform:translateY(0) scale(.98);box-shadow:0 0 0 4px rgba(216,255,66,.75),0 0 36px rgba(216,255,66,.6)}
+/* Profili */
+.page .chip:hover,.page .chip:focus-visible{border-color:var(--lime);transform:translateY(-1px);box-shadow:0 0 0 3px rgba(216,255,66,.25),0 6px 20px rgba(216,255,66,.35)}
+.page .chip:active{transform:scale(.96);box-shadow:0 0 0 4px rgba(216,255,66,.45),0 0 26px rgba(216,255,66,.6)}
+.page .chip[aria-pressed="true"]{box-shadow:0 0 0 3px rgba(216,255,66,.3),0 8px 24px rgba(216,255,66,.35)}
+/* Link nella barra lime */
+.page .s003{display:inline-block;padding:3px 10px;border-radius:999px}
+.page .s003:hover,.page .s003:focus-visible{background:var(--ink);color:var(--lime);box-shadow:0 0 16px rgba(7,23,29,.35)}
+.page .s003:active{transform:scale(.96)}
+/* Play del video */
+.page .s119:hover,.page .s119:focus-visible{transform:translate(-50%,-50%) scale(1.08);box-shadow:0 0 0 10px rgba(216,255,66,.3),0 0 50px rgba(216,255,66,.8)}
+/* Torna ai recapiti */
+.page .formBack:hover,.page .formBack:focus-visible{color:var(--ink);text-shadow:0 0 12px rgba(216,255,66,.9)}
+/* Domande frequenti */
+.page .s177{transition:color .2s ease}
+.page .s177:hover,.page .s177:focus-visible{color:var(--olive)}
+.page .s177:hover .plus,.page .s177:focus-visible .plus{transform:scale(1.25);text-shadow:0 0 14px rgba(216,255,66,.9)}
+.page details[open] .s177:hover .plus{transform:rotate(45deg) scale(1.25)}
+@media (prefers-reduced-motion:reduce){.page .s023,.page .s186,.page .s196,.page .s146,.page .formSubmit,.page .chip,.page .s003,.page .s119{transform:none!important}}

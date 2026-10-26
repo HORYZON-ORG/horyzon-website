@@ -364,7 +364,7 @@ export function ArchitectLanding({ durableCandidateIntake = false }: { durableCa
         <li className={[styles.s148].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>04–09&#x27;</span><span>Il bisogno delle famiglie italiane di capire il denaro</span></li>
         <li className={[styles.s148].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>09–15&#x27;</span><span>Come funziona la formazione, passo per passo</span></li>
         <li className={[styles.s148].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>15–19&#x27;</span><span>Le 3 caratteristiche che contano più dell&#x27;esperienza</span></li>
-        <li className={[styles.s150].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>19–25&#x27;</span><span><strong>Una giornata tipo dell&#x27;Architetto</strong>, raccontata da chi la vive</span></li>
+        <li className={[styles.s148].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>19–25&#x27;</span><span><strong>Una giornata tipo dell&#x27;Architetto</strong>, raccontata da chi la vive</span></li>
         <li className={[styles.s151].filter(Boolean).join(" ")}><span className={[styles.s149].filter(Boolean).join(" ")}>25–30&#x27;</span><span><strong>Come iniziare</strong>: colloquio, formazione e affiancamento</span></li>
       </ol>
     </div>
