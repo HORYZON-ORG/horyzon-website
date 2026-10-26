@@ -17,6 +17,10 @@ export function ArchitectApplicationForm({ step, setStep, selectedProfile, onPro
   useEffect(() => { if (step === 2) heading.current?.focus(); }, [step]);
   const selected = Object.values(architectProfiles).find(profile => profile.value === selectedProfile);
   const disabled = status === 'sending' || status === 'success';
+  // A quick tap before hydration must not perform a native form POST or be lost.
+  // Start disabled on SSR and enable only when React owns submit handlers.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => { setHydrated(true); }, []);
   const [cv, setCv] = useState<{ name: string; size: string; problem: string | null } | null>(null);
   const onCv = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
@@ -62,7 +66,7 @@ export function ArchitectApplicationForm({ step, setStep, selectedProfile, onPro
     </fieldset>
     <div hidden><label>Sito web<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
     {step === 2 && <button type="button" className={styles.formBack} disabled={disabled} onClick={() => setStep(1)}>← Torna ai recapiti</button>}
-    <button type="submit" className={styles.formSubmit} disabled={disabled || revisionRequired}>{status === 'sending' ? 'Invio in corso…' : status === 'success' ? 'Richiesta ricevuta.' : step === 1 && selected ? `${selected.cta} →` : 'Invia la mia candidatura →'}</button>
+    <button type="submit" className={styles.formSubmit} disabled={!hydrated || disabled || revisionRequired}>{status === 'sending' ? 'Invio in corso…' : status === 'success' ? 'Richiesta ricevuta.' : step === 1 && selected ? `${selected.cta} →` : 'Invia la mia candidatura →'}</button>
     {notice && <p role={status === 'error' ? 'alert' : 'status'} className={styles.formNotice}>{notice}</p>}
     {v2 && revisionRequired && <button type="button" className={styles.formBack} disabled={status === 'sending'} onClick={onNewAttempt}>Ho verificato il precedente invio: avvia una nuova richiesta</button>}
     <p className={styles.formFine}>Gratuito e senza impegno.</p>
