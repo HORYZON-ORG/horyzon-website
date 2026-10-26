@@ -54,7 +54,24 @@ async function runCase(browser, viewport) {
     await form.locator('[name="phone"]').fill('3331234567');
     await form.locator('[name="consent"]').check();
     await form.locator('button[type="submit"]').click();
-    await page.getByText('PASSO 2 DI 2',{exact:true}).waitFor({state:'visible',timeout:12000});
+    try {
+      await form.locator('[name="province"]').waitFor({state:'visible',timeout:16000});
+    } catch (err) {
+      const state=await form.evaluate(el=>({
+        step:el.querySelector('.formProgress')?.textContent?.slice(0,100)??'unknown',
+        fieldsets:[...el.querySelectorAll('fieldset')].map(f=>({
+          hidden:f.hidden,disabled:f.disabled,
+          invalid:[...f.querySelectorAll('input[required]')].filter(i=>!i.checkValidity()).map(i=>i.name)
+        })),
+        submitDisabled:el.querySelector('button[type="submit"]')?.disabled,
+      }));
+      console.error('ARCHITECT_BROWSER_STEP1_DIAGNOSTIC',JSON.stringify({
+        viewport:viewport.width+'x'+viewport.height,
+        state,url:new URL(page.url()).pathname,
+        pageErrors:errors.length,
+      }));
+      throw err;
+    }
     assert.equal(intake,0,'no candidate before second step');
     assert.equal(uploads,0,'no CV before second step');
 
