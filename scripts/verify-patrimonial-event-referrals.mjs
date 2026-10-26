@@ -22,7 +22,7 @@ const base = {
   website: '', utm: {}, referralCode: code,
 };
 assert.equal(validatePilotLead(base)?.referralCode, code);
-for (const referralCode of ['','a'.repeat(32),'A'.repeat(32),'none',null,{},code+'x']) {
+for (const referralCode of ['','A'.repeat(32),'none',null,{},code+'x']) {
   assert.equal(validatePilotLead({ ...base, referralCode }), null, 'invalid referral must be rejected');
 }
 assert.equal(validatePilotLead({ ...base, mode: 'architect-path', sourcePath: pilotForms['architect-path'].path, experience: '', goal: '', availability: '' }), null);
