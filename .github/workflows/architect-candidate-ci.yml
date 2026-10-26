@@ -9,6 +9,8 @@ on:
       - 'scripts/verify-architect-cv.mjs'
       - 'scripts/architect-preview-readonly-preflight.mjs'
       - 'scripts/verify-architect-preview-readonly.mjs'
+      - 'scripts/architect-highlevel-readonly-preflight.mjs'
+      - 'scripts/verify-architect-highlevel-readonly.mjs'
       - 'src/components/patrimonial-architect-*'
       - 'scripts/verify-architect-browser.mjs'
       - 'src/app/(patrimonial-pilot)/**'
@@ -32,6 +34,7 @@ jobs:
       - run: node scripts/verify-architect-private-fixture.mjs
       - run: node --no-warnings --experimental-strip-types scripts/architect-private-e2e-smoke.mjs
       - run: node scripts/verify-architect-preview-readonly.mjs
+      - run: node scripts/verify-architect-highlevel-readonly.mjs
       - run: npm run test:patrimonial-funnels
       - run: npm run test:patrimonial-architect-evergreen
 
