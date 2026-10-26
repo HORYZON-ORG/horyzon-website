@@ -1,12 +1,14 @@
 name: Architect Candidate Safety
 on:
   push:
-    branches: [feat/architect-candidate-selection-hub-v1]
+    branches: [feat/architect-candidate-selection-hub-v1, feat/patrimonial-pilot-funnels]
   pull_request:
     paths:
       - 'src/lib/public-leads/**'
       - 'src/app/api/internal/architect-cv-retention/**'
       - 'scripts/verify-architect-cv.mjs'
+      - 'src/components/patrimonial-architect-*'
+      - 'src/app/(patrimonial-pilot)/**'
       - '.github/workflows/architect-candidate-ci.yml'
 permissions:
   contents: read
@@ -25,3 +27,4 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run test:architect-cv
       - run: npm run test:patrimonial-funnels
+      - run: npm run test:patrimonial-architect-evergreen
