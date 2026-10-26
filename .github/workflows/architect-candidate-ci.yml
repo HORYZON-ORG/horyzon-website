@@ -7,6 +7,8 @@ on:
       - 'src/lib/public-leads/**'
       - 'src/app/api/internal/architect-cv-retention/**'
       - 'scripts/verify-architect-cv.mjs'
+      - 'scripts/architect-preview-readonly-preflight.mjs'
+      - 'scripts/verify-architect-preview-readonly.mjs'
       - 'src/components/patrimonial-architect-*'
       - 'src/app/(patrimonial-pilot)/**'
       - '.github/workflows/architect-candidate-ci.yml'
@@ -26,5 +28,6 @@ jobs:
           node-version: '22'
       - run: npm ci --ignore-scripts
       - run: npm run test:architect-cv
+      - run: node scripts/verify-architect-preview-readonly.mjs
       - run: npm run test:patrimonial-funnels
       - run: npm run test:patrimonial-architect-evergreen
