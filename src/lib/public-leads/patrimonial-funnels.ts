@@ -58,7 +58,7 @@ export function validatePilotLead(input: Record<string, unknown>): PilotLead | n
 // No automatic fallback from a malformed pilot request into the public contract.
 export function isLegacyLeadPayload(input: Record<string, unknown>): boolean {
   return (input.mode === undefined || input.mode === 'legacy/public') &&
-    !['sourcePath', 'firstName', 'lastName', 'province', 'profile', 'experience', 'goal', 'availability', 'qualification', 'referralCode', 'marketingConsent', 'utm'.some(key => Object.hasOwn(input, key));
+    !['sourcePath', 'firstName', 'lastName', 'province', 'profile', 'experience', 'goal', 'availability', 'qualification', 'referralCode', 'marketingConsent', 'utm'].some(key => Object.hasOwn(input, key));
 }
 
 export function pilotCrmDetails(lead: PilotLead, now: Date) {
