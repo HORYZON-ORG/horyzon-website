@@ -82,7 +82,8 @@ try {
     assert.equal(await page.locator('[class*=formGrid]').first().evaluate(element => getComputedStyle(element).gridTemplateColumns.split(' ').length), width <= 700 ? 1 : 2);
     if (width <= 700) {
       const stickyStyle = await page.locator('[class*=m-sticky]').evaluate(element => ({ wrap: getComputedStyle(element).flexWrap, radius: getComputedStyle(element).borderRadius }));
-      assert.deepEqual(stickyStyle, { wrap: 'nowrap', radius: '14px' });
+      assert.deepEqual(stickyStyle, { wrap: 'nowrap', radius: '999px' });
+      assert.equal(await page.locator('#stickyBar a').evaluate(element => getComputedStyle(element).borderRadius), '999px');
     }
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
     await page.waitForFunction(() => [...document.querySelectorAll('img')].every(image => image.complete && image.naturalWidth > 0));

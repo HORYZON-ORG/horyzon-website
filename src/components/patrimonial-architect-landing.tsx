@@ -202,13 +202,7 @@ export function ArchitectLanding({ durableCandidateIntake = false }: { durableCa
             </div>
             <div className={[styles.s096].filter(Boolean).join(" ")}>FORMAZIONE</div>
           </div>
-          <div className={[styles['m-annot'], styles.s097].filter(Boolean).join(" ")}>
-            <div className={[styles.s098].filter(Boolean).join(" ")}><div className={[styles.s099].filter(Boolean).join(" ")}>↑ TETTO</div>Il ruolo che costruisci</div>
-            <div className={[styles.s098].filter(Boolean).join(" ")}><div className={[styles.s099].filter(Boolean).join(" ")}>↕ COLONNE</div>Un senior accanto a te, un metodo replicabile, una rete di colleghi</div>
-            <div className={[styles.s098].filter(Boolean).join(" ")}><div className={[styles.s099].filter(Boolean).join(" ")}>↓ FONDAMENTA</div>Contenuti e strumenti da zero · 90 giorni</div>
-          </div>
         </div>
-        <figcaption className={[styles.s100].filter(Boolean).join(" ")}><span>TAV. 01 — STRUTTURA DEL PERCORSO</span><span>HORYZON</span></figcaption>
       </figure>
     </div>
   </section>
