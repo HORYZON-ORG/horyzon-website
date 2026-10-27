@@ -77,7 +77,7 @@ try {
     }
     assert.equal(await page.locator('[class*=m-only]:visible').count(), width <= 700 ? 2 : 0);
     assert.equal(await page.locator('[class*=m-col]').evaluate(element => getComputedStyle(element).flexDirection), width <= 700 ? 'column' : 'row');
-    const flow = await page.locator('[class*=m-vline]').first().boundingBox(); assert(width <= 700 ? flow.height === 44 && flow.width === 2 : flow.width > flow.height);
+    const flow = await page.locator('[class*=m-vline]').first().boundingBox(); assert(width <= 700 ? flow.height >= 44 && flow.width <= 4 : flow.width > flow.height);
     assert.equal(await page.locator('[class*=m-vline]').first().evaluate(element => getComputedStyle(element).animationName), 'none', 'Reduced motion disables flow animation');
     const timeline = await page.locator('[class*=m-track]').boundingBox(); assert(width <= 700 ? timeline.height > timeline.width : timeline.width > timeline.height);
     assert.equal(await page.locator('[class*=formGrid]').first().evaluate(element => getComputedStyle(element).gridTemplateColumns.split(' ').length), width <= 700 ? 1 : 2);

@@ -470,8 +470,15 @@
 .page .roleFlow .s076{width:230px;height:230px;margin-bottom:26px;box-shadow:0 0 0 12px rgba(216,255,66,.14),0 30px 60px rgba(216,255,66,.25)}
 .page .roleFlow .s078{font-size:26px}
 .page .roleFlow .s072{font-size:28px;margin:0;letter-spacing:-.01em}
-.page .roleFlow .s074{position:relative;height:3px;margin-top:129px;border-radius:3px;background:linear-gradient(90deg,var(--accent-stroke-25),var(--accent-stroke))}
-.page .roleFlow .s074::after{content:"";position:absolute;right:-1px;top:50%;width:11px;height:11px;border-top:3px solid var(--accent-stroke);border-right:3px solid var(--accent-stroke);transform:translateY(-50%) rotate(45deg)}
+.page .roleFlow .s074{position:relative;height:3px;margin-top:129px;border-radius:3px;background-image:repeating-linear-gradient(90deg,var(--accent-stroke-25) 0 9px,transparent 9px 16px);background-size:32px 3px;animation:roleDash 1s linear infinite}
+.page .roleFlow .s074::before{content:"";position:absolute;left:0;top:0;height:100%;width:0;border-radius:3px;background:linear-gradient(90deg,transparent,var(--accent-stroke) 35%,var(--accent-stroke));box-shadow:0 0 10px rgba(216,255,66,.55);animation:roleFill 2.8s cubic-bezier(.45,.05,.3,1) infinite}
+.page .roleFlow .s074~.s074::before,.page .roleFlow .s074~.s074::after{animation-delay:1.4s}
+.page .roleFlow .s074::after{content:"";position:absolute;right:-1px;top:50%;width:11px;height:11px;border-top:3px solid var(--accent-stroke);border-right:3px solid var(--accent-stroke);transform:translateY(-50%) rotate(45deg);animation:roleHead 2.8s ease-in-out infinite}
+@keyframes roleDash{from{background-position:0 0}to{background-position:32px 0}}
+@keyframes roleFill{0%{width:0;opacity:1}55%{width:100%;opacity:1}80%{width:100%;opacity:0}100%{width:100%;opacity:0}}
+@keyframes roleHead{0%,40%{opacity:.35;transform:translate(0,-50%) rotate(45deg)}55%{opacity:1;transform:translate(4px,-50%) rotate(45deg);filter:drop-shadow(0 0 6px rgba(216,255,66,.9))}80%,100%{opacity:.35;transform:translate(0,-50%) rotate(45deg)}}
+@keyframes roleDashV{from{background-position:0 0}to{background-position:0 32px}}
+@keyframes roleFillV{0%{height:0;opacity:1}55%{height:100%;opacity:1}80%,100%{height:100%;opacity:0}}
 .perimeter{max-width:720px;margin:44px auto 0;text-align:center;color:var(--muted)}
 .perimeter summary{display:inline-flex;font-size:14px;text-decoration:underline;text-underline-offset:4px;color:var(--muted)}
 .perimeter p{font-size:13px;line-height:1.6;margin:12px 0 0}
@@ -490,8 +497,9 @@
 @media (max-width:1000px) and (min-width:701px){.page .storyTrack>*{flex-basis:calc((100% - 24px)/2)}}
 @media (max-width:700px){
   .page .roleFlow .s069{margin-top:0}
-  .page .roleFlow .s074{margin-top:0;border-radius:0;background-image:repeating-linear-gradient(180deg,var(--lime) 0 8px,transparent 8px 16px) !important}
-  .page .roleFlow .s074::after{display:none}
+  .page .roleFlow .s074{margin-top:0;border-radius:0;height:56px !important;flex-basis:56px !important;background-image:repeating-linear-gradient(180deg,var(--accent-stroke-25) 0 9px,transparent 9px 16px) !important;background-size:3px 32px !important;animation:roleDashV 1s linear infinite !important}
+  .page .roleFlow .s074::before{width:100%;height:0;background:linear-gradient(180deg,transparent,var(--accent-stroke) 35%,var(--accent-stroke));animation-name:roleFillV}
+  .page .roleFlow .s074::after{right:auto;left:50%;top:auto;bottom:-2px;transform:translateX(-50%) rotate(135deg);animation:none;opacity:1}
   .page .roleFlow .s070,.page .roleFlow .s081{width:130px;height:130px;margin-bottom:16px}
   .page .roleFlow .s076{width:180px;height:180px;margin-bottom:16px}
   .page .roleFlow .s072{font-size:23px}
@@ -499,3 +507,5 @@
   .storiesNav{display:none}
 }
 @media (prefers-reduced-motion:reduce){.navBtn{transition:none}.navBtn:hover,.navBtn:active{transform:none}}
+@media (prefers-reduced-motion:reduce){.page .roleFlow .s074,.page .roleFlow .s074::before,.page .roleFlow .s074::after{animation:none !important}.page .roleFlow .s074::before{width:100%;height:100%;opacity:1}}
+.page .roleFlow .s074{flex:1.6 1 110px}
