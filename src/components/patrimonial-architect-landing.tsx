@@ -13,6 +13,15 @@ export function ArchitectLanding({ durableCandidateIntake = false }: { durableCa
   const selected = profile ? architectProfiles[profile] : null;
   const heroRef = useRef<HTMLElement>(null), formRef = useRef<HTMLElement>(null);
   const [stickyVisible, setStickyVisible] = useState(false);
+  const storiesRef = useRef<HTMLDivElement>(null);
+  const scrollStories = (direction: 1 | -1) => {
+    const track = storiesRef.current; if (!track) return;
+    const card = track.querySelector('figure'); const step = card ? card.getBoundingClientRect().width + 24 : track.clientWidth;
+    const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 4;
+    const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (direction === 1 && atEnd) track.scrollTo({ left: 0, behavior: smooth ? 'smooth' : 'instant' });
+    else track.scrollBy({ left: direction * step, behavior: smooth ? 'smooth' : 'instant' });
+  };
   useEffect(() => {
     if (!heroRef.current || !formRef.current || !('IntersectionObserver' in window)) return;
     let heroVisible = true, formVisible = false;
@@ -44,12 +53,6 @@ export function ArchitectLanding({ durableCandidateIntake = false }: { durableCa
     </div>
   </header>
 
-  <div className={[styles['m-topbar'], styles.s002].filter(Boolean).join(" ")}>
-    <span className={styles['m-hide']}>PERCORSO ARCHITETTO PATRIMONIALE</span>
-    <span className={styles['m-hide']} aria-hidden="true">·</span>
-    <span>SELEZIONE APERTA</span>
-    <a className={[styles.s003].filter(Boolean).join(" ")} href="#richiesta">Candidati ora →</a>
-  </div>
 
 
   <section ref={heroRef} className={[styles.s004, styles['bp']].filter(Boolean).join(" ")}>
@@ -64,7 +67,6 @@ export function ArchitectLanding({ durableCandidateIntake = false }: { durableCa
 
       <div className={[styles['m-hero'], styles.s012].filter(Boolean).join(" ")}>
         <div className={[styles.s013].filter(Boolean).join(" ")}>
-          <div className={[styles.s014].filter(Boolean).join(" ")}>PERCORSO ARCHITETTO PATRIMONIALE · SELEZIONE APERTA</div>
           <h1 className={[styles.s015].filter(Boolean).join(" ")}>Le persone si fidano di te.<br /><span className={[styles.s016].filter(Boolean).join(" ")}>Se diventasse la tua professione?</span></h1>
 
 
@@ -73,7 +75,6 @@ export function ArchitectLanding({ durableCandidateIntake = false }: { durableCa
           <div className={[styles.s022].filter(Boolean).join(" ")}>
             <a className={[styles['m-cta-full'], styles.s023].filter(Boolean).join(" ")} href="#richiesta"><span>Vai alla candidatura</span>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
-            <div className={[styles.s024].filter(Boolean).join(" ")}>Gratuito · online · senza impegno</div>
           </div>
         </div>
 
@@ -90,7 +91,7 @@ export function ArchitectLanding({ durableCandidateIntake = false }: { durableCa
   <section className={[styles['m-sec'], styles.s041].filter(Boolean).join(" ")}>
     <div className={[styles.s042].filter(Boolean).join(" ")}>
       <div className={[styles.s043].filter(Boolean).join(" ")}>01 · DA DOVE PARTI</div>
-      <h2 className={[styles['m-reveal'], styles.s044].filter(Boolean).join(" ")}>Forse ti è già successo.</h2>
+      <h2 className={[styles['m-reveal'], styles.s044].filter(Boolean).join(" ")}>Dal lavoro che fai alla professione che ti somiglia.</h2>
       <div className={[styles['m-only'], styles.swipeHint].join(" ")}>SCORRI LE SCHEDE →</div>
       <div data-carousel="scenes" role="region" aria-label="Scene da scorrere" tabIndex={0} className={[styles['m-swipe'], styles.s045].filter(Boolean).join(" ")}>
 
@@ -102,8 +103,8 @@ export function ArchitectLanding({ durableCandidateIntake = false }: { durableCa
 
             </div>
             <figcaption className={[styles.s048].filter(Boolean).join(" ")}>
-              <div className={[styles.s049].filter(Boolean).join(" ")}>DOMENICA, 22:40</div>
-              <p className={[styles.s050].filter(Boolean).join(" ")}>Il tuo lavoro lo fai bene. <strong>Ma non ti chiedi più se ti somiglia.</strong></p>
+              <h3 className={styles.sceneTitle}>Un lavoro che non ti somiglia</h3>
+              <p className={[styles.s050].filter(Boolean).join(" ")}>Lo fai bene, ma non ti appassiona più.</p>
             </figcaption>
           </figure>
 
@@ -115,26 +116,23 @@ export function ArchitectLanding({ durableCandidateIntake = false }: { durableCa
 
             </div>
             <figcaption className={[styles.s048].filter(Boolean).join(" ")}>
-              <div className={[styles.s049].filter(Boolean).join(" ")}>UN CAFFÈ CHE DIVENTA UN’ORA</div>
-              <p className={[styles.s050].filter(Boolean).join(" ")}>Un amico ti chiede un parere su risparmi e futuro. <strong>Perché non è il tuo lavoro?</strong></p>
+              <h3 className={styles.sceneTitle}>La tua passione per le persone</h3>
+              <p className={[styles.s050].filter(Boolean).join(" ")}>Ti chiedono consiglio e tu le aiuti a fare ordine.</p>
             </figcaption>
           </figure>
 
-          <figure className={[styles['m-reveal'], styles['scene'], (selected ? selected.scene === 'opportunita' ? styles['is-mine'] : styles['is-dim'] : '')].filter(Boolean).join(" ")} data-scene="opportunita">
+          <figure className={[styles['m-reveal'], styles['scene'], styles.sceneGoal].filter(Boolean).join(" ")} data-scene="professione">
             <div className={[styles.s046].filter(Boolean).join(" ")}>
-              <Image width={1400} height={930} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/scene-opportunita.jpg" alt="Immagine AI provvisoria: Una mano chiude con decisione un portatile, accanto a una brochure" />
-
-                <div hidden={selected?.scene !== 'opportunita'} className={[styles.s047, styles['badge']].filter(Boolean).join(" ")}>PROBABILMENTE È LA TUA</div>
+              <Image width={1400} height={935} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/conversazione.jpg" alt="Un professionista accompagna due persone in una scelta importante, seduti allo stesso tavolo" />
 
             </div>
             <figcaption className={[styles.s048].filter(Boolean).join(" ")}>
-              <div className={[styles.s049].filter(Boolean).join(" ")}>L’ENNESIMA “OPPORTUNITÀ”</div>
-              <p className={[styles.s050].filter(Boolean).join(" ")}>Hai detto di no più di una volta. <strong>Ti chiedevano solo di vendere.</strong></p>
+              <h3 className={styles.sceneTitle}>La professione di Architetto Patrimoniale</h3>
+              <p className={[styles.s050].filter(Boolean).join(" ")}>Quella passione diventa il tuo lavoro.</p>
             </figcaption>
           </figure>
 
       </div>
-      <p className={[styles.s051].filter(Boolean).join(" ")}>Se almeno una di queste scene ti suona familiare, non ti manca il talento.<br /><span className={[styles.s052].filter(Boolean).join(" ")}>Ti manca il posto giusto in cui usarlo.</span><br /><span style={{ display: 'inline-block', marginTop: 20 }}>Oggi quel talento può diventare una professione moderna, costruita sulle persone.</span></p>
     </div>
   </section>
 
@@ -145,38 +143,29 @@ export function ArchitectLanding({ durableCandidateIntake = false }: { durableCa
       <h2 className={[styles['m-reveal'], styles.s066].filter(Boolean).join(" ")}>Cosa fa un architetto patrimoniale?</h2>
       <p className={[styles.s067].filter(Boolean).join(" ")}>Fa cultura: aiuta le persone a prendere confidenza con il denaro e a capire come farlo lavorare per i propri obiettivi.</p>
 
-      <div className={[styles['m-col'], styles.s068].filter(Boolean).join(" ")}>
+      <div className={[styles['m-col'], styles.s068, styles.roleFlow].filter(Boolean).join(" ")}>
         <div className={[styles.s069].filter(Boolean).join(" ")}>
           <div className={[styles.s070].filter(Boolean).join(" ")}>
-            <svg width="54" height="54" viewBox="0 0 24 24" fill="none" style={{ stroke: 'var(--accent-stroke)' }} strokeWidth="1.2" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20c1.2-3.6 3.8-5.4 7-5.4s5.8 1.8 7 5.4"></path><path d="M17.5 4.5l1.5-1.5M19 7h2" strokeLinecap="round"></path></svg>
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" style={{ stroke: 'var(--accent-stroke)' }} strokeWidth="1.3" strokeLinecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3"></circle><path d="M3.5 19c.9-3 3-4.6 5.5-4.6s4.6 1.6 5.5 4.6"></path><circle cx="17" cy="9.5" r="2.3"></circle><path d="M15.6 14.4c2.3-.4 4.2.9 4.9 3.6"></path></svg>
           </div>
-          <div className={[styles.s071].filter(Boolean).join(" ")}>PUNTO DI PARTENZA</div>
           <div className={[styles.s072].filter(Boolean).join(" ")}>Persone e famiglie</div>
-          <div className={[styles.s073].filter(Boolean).join(" ")}>Domande sul denaro e poca confidenza con le scelte.</div>
         </div>
-        <div className={[styles['m-vline'], styles.s074, styles['flowline']].filter(Boolean).join(" ")} aria-hidden="true"></div>
+        <div className={[styles['m-vline'], styles.s074].filter(Boolean).join(" ")} aria-hidden="true"></div>
         <div className={[styles.s075].filter(Boolean).join(" ")}>
           <div className={[styles.s076, styles['pulse']].filter(Boolean).join(" ")}>
-            <div className={[styles.s077].filter(Boolean).join(" ")}>TU</div>
             <div className={[styles.s078].filter(Boolean).join(" ")}>Architetto<br />Patrimoniale</div>
           </div>
-          <div className={[styles.s079].filter(Boolean).join(" ")}>
-            <span className={[styles.s080].filter(Boolean).join(" ")}>Fa cultura</span>
-            <span className={[styles.s080].filter(Boolean).join(" ")}>Dà confidenza</span>
-            <span className={[styles.s080].filter(Boolean).join(" ")}>Mette in contatto</span>
-          </div>
+          <div className={[styles.s072].filter(Boolean).join(" ")}>Cultura e fiducia</div>
         </div>
-        <div className={[styles['m-vline'], styles.s074, styles['flowline']].filter(Boolean).join(" ")} aria-hidden="true"></div>
+        <div className={[styles['m-vline'], styles.s074].filter(Boolean).join(" ")} aria-hidden="true"></div>
         <div className={[styles.s069].filter(Boolean).join(" ")}>
           <div className={[styles.s081].filter(Boolean).join(" ")}>
-            <svg width="54" height="54" viewBox="0 0 24 24" fill="none" style={{ stroke: 'var(--accent-stroke)' }} strokeWidth="1.2" aria-hidden="true"><path d="M3 20h18M5 20V10l7-6 7 6v10"></path><path d="M9 20v-6h6v6"></path></svg>
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" style={{ stroke: 'var(--accent-stroke)' }} strokeWidth="1.3" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><circle cx="12" cy="12" r="5"></circle><circle cx="12" cy="12" r="1.6"></circle></svg>
           </div>
-          <div className={[styles.s071].filter(Boolean).join(" ")}>PUNTO DI ARRIVO</div>
-          <div className={[styles.s072].filter(Boolean).join(" ")}>Obiettivi chiari</div>
-          <div className={[styles.s073].filter(Boolean).join(" ")}>Il denaro che lavora per i propri obiettivi, con i professionisti giusti.</div>
+          <div className={[styles.s072].filter(Boolean).join(" ")}>Obiettivi</div>
         </div>
       </div>
-      <p className={[styles.s082].filter(Boolean).join(" ")}><strong>Perimetro del ruolo.</strong> L&apos;Architetto Patrimoniale svolge un&apos;attività di ascolto, orientamento e divulgazione di carattere generale. Non presta consulenza in materia di investimenti né altri servizi o attività di investimento riservati dal D.Lgs. 58/1998 (TUF), non promuove né colloca strumenti o prodotti finanziari, non svolge distribuzione assicurativa (D.Lgs. 209/2005), mediazione creditizia o agenzia in attività finanziaria (D.Lgs. 385/1993) e non riceve denaro, titoli od ordini dai clienti. Per questo il ruolo non richiede l&apos;iscrizione all&apos;albo OCF, al RUI o agli elenchi OAM. Ogni scelta su prodotti o servizi regolamentati spetta esclusivamente a intermediari e professionisti autorizzati, con i quali l&apos;Architetto può mettere in contatto la persona.</p>
+      <details className={styles.perimeter}><summary>Perimetro del ruolo</summary><p>L&apos;Architetto Patrimoniale svolge un&apos;attività di ascolto, orientamento e divulgazione di carattere generale. Non presta consulenza in materia di investimenti né altri servizi o attività di investimento riservati dal D.Lgs. 58/1998 (TUF), non promuove né colloca strumenti o prodotti finanziari, non svolge distribuzione assicurativa (D.Lgs. 209/2005), mediazione creditizia o agenzia in attività finanziaria (D.Lgs. 385/1993) e non riceve denaro, titoli od ordini dai clienti. Per questo il ruolo non richiede l&apos;iscrizione all&apos;albo OCF, al RUI o agli elenchi OAM. Ogni scelta su prodotti o servizi regolamentati spetta esclusivamente a intermediari e professionisti autorizzati, con i quali l&apos;Architetto può mettere in contatto la persona.</p></details>
     </div>
   </section>
 
@@ -253,12 +242,10 @@ export function ArchitectLanding({ durableCandidateIntake = false }: { durableCa
         <div className={[styles.s117].filter(Boolean).join(" ")} aria-hidden="true"></div>
         <div className={[styles.s118].filter(Boolean).join(" ")} aria-hidden="true"></div>
         <button disabled title="Video del fondatore da fornire" className={[styles.s119, styles['pulse']].filter(Boolean).join(" ")} type="button" aria-label="Video del fondatore — placeholder non disponibile"><svg width="28" height="28" viewBox="0 0 24 24" fill="#07171D" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg></button>
-        <div className={[styles.s120].filter(Boolean).join(" ")}><span>PERCHÉ NASCE QUESTA DIVISIONE</span><span>1:30</span></div>
       </div>
       <div className={[styles.s087].filter(Boolean).join(" ")}>
         <div className={[styles.s054].filter(Boolean).join(" ")}>05 · PERCHÉ LO FACCIAMO</div>
         <h2 className={[styles['m-reveal'], styles.s121].filter(Boolean).join(" ")}>Perché nasce questa divisione.</h2>
-        <p className={[styles.s122].filter(Boolean).join(" ")}>Nel video Angelo racconta il progetto e il percorso. Link YouTube in arrivo.</p>
         <div className={[styles.s123].filter(Boolean).join(" ")}>
           <div className={[styles.s124].filter(Boolean).join(" ")}></div>
           <div><div className={[styles.s125].filter(Boolean).join(" ")}>Angelo Ria Chetta</div><div className={[styles.s126].filter(Boolean).join(" ")}>Horyzon Consulting</div></div>
@@ -271,9 +258,15 @@ export function ArchitectLanding({ durableCandidateIntake = false }: { durableCa
   <section className={[styles['m-sec'], styles.s041].filter(Boolean).join(" ")}>
     <div className={[styles.s042].filter(Boolean).join(" ")}>
       <div className={[styles.s043].filter(Boolean).join(" ")}>06 · CHI HA GIÀ INIZIATO</div>
-      <h2 className={[styles['m-reveal'], styles.s127].filter(Boolean).join(" ")}>Sono partiti da dove sei tu.</h2>
+      <div className={styles.storiesHead}>
+        <h2 className={[styles['m-reveal'], styles.s127].filter(Boolean).join(" ")}>Sono partiti da dove sei tu.</h2>
+        <div className={styles.storiesNav}>
+          <button type="button" className={styles.navBtn} aria-label="Testimonianza precedente" onClick={() => scrollStories(-1)}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg></button>
+          <button type="button" className={styles.navBtn} aria-label="Testimonianza successiva" onClick={() => scrollStories(1)}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+        </div>
+      </div>
       <div className={[styles['m-only'], styles.swipeHint].join(" ")}>SCORRI LE SCHEDE →</div>
-      <div data-carousel="stories" role="region" aria-label="Testimonianze da scorrere" tabIndex={0} className={[styles['m-swipe'], styles.s045].filter(Boolean).join(" ")}>
+      <div ref={storiesRef} data-carousel="stories" role="region" aria-label="Testimonianze da scorrere" tabIndex={0} className={[styles['m-swipe'], styles.s045, styles.storyTrack].filter(Boolean).join(" ")}>
 
           <figure className={[styles['m-reveal'], styles['story'], (selected?.story === 0 ? styles['is-mine'] : '')].filter(Boolean).join(" ")} data-story="0">
             <div className={[styles.s128].filter(Boolean).join(" ")}>
@@ -311,6 +304,18 @@ export function ArchitectLanding({ durableCandidateIntake = false }: { durableCa
             </div>
           </figure>
 
+          <figure className={[styles['m-reveal'], styles['story']].filter(Boolean).join(" ")} data-story="3">
+            <div className={[styles.s128, styles.storyNoPhoto].filter(Boolean).join(" ")} role="img" aria-label="Foto del testimone da inserire">
+              <span className={styles.storyInitials} aria-hidden="true">?</span>
+              <div className={[styles.s129].filter(Boolean).join(" ")}><span className={[styles.s130].filter(Boolean).join(" ")}>PRIMA: operaio</span><span className={[styles.s131].filter(Boolean).join(" ")}>OGGI: Architetto</span></div>
+            </div>
+            <div className={[styles.s048].filter(Boolean).join(" ")}>
+              <svg width="28" height="22" viewBox="0 0 28 22" fill="#5F7010" aria-hidden="true"><path d="M0 22V12C0 5 4 1 11 0l1 3C8 4 6 7 6 10h5v12H0zm16 0V12c0-7 4-11 11-12l1 3c-4 1-6 4-6 7h5v12H16z"></path></svg>
+              <blockquote className={[styles.s132].filter(Boolean).join(" ")}>[Testimonianza reale: cosa faceva prima, perché ha scelto il percorso, cosa è cambiato.]</blockquote>
+              <div className={[styles.s133].filter(Boolean).join(" ")}><strong className={[styles.s134].filter(Boolean).join(" ")}>[Nome]</strong> · [Città]</div>
+            </div>
+          </figure>
+
       </div>
     </div>
   </section>
@@ -318,12 +323,12 @@ export function ArchitectLanding({ durableCandidateIntake = false }: { durableCa
 
   <section className={[styles['m-sec'], styles.s101].filter(Boolean).join(" ")}>
     <div className={[styles.s042].filter(Boolean).join(" ")}>
-      <div className={[styles.s043].filter(Boolean).join(" ")}>07 · SELEZIONE</div>
-      <h2 className={[styles['m-reveal'], styles.s127].filter(Boolean).join(" ")} style={{ marginBottom: 16 }}>Non è per tutti.</h2>
-      <p className={[styles.s145].filter(Boolean).join(" ")} style={{ marginBottom: 48, maxWidth: 720 }}>È per chi vuole costruirsi una professione autonoma, remunerativa e gratificante.</p>
+      <div className={[styles.s043].filter(Boolean).join(" ")}>07 · IL TUO MOMENTO</div>
+      <h2 className={[styles['m-reveal'], styles.s127].filter(Boolean).join(" ")} style={{ marginBottom: 16 }}>È il momento giusto per te?</h2>
+      <p className={[styles.s145].filter(Boolean).join(" ")} style={{ marginBottom: 48, maxWidth: 720 }}>Non è per tutti: è per chi sente che è arrivato il momento di costruirsi una professione autonoma, remunerativa e gratificante.</p>
       <div className={[styles.s135].filter(Boolean).join(" ")}>
         <div className={[styles.s136].filter(Boolean).join(" ")}>
-          <h3 className={[styles.s137].filter(Boolean).join(" ")}>È il tuo percorso se…</h3>
+          <h3 className={[styles.s137].filter(Boolean).join(" ")}>È il tuo momento se…</h3>
           <ul className={[styles.s138].filter(Boolean).join(" ")}>
             <li className={[styles.s139].filter(Boolean).join(" ")}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ stroke: 'var(--accent-stroke)' }} strokeWidth="2.2" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg><span>Ti piace lavorare con le persone e sai costruire relazioni</span></li>
             <li className={[styles.s139].filter(Boolean).join(" ")}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ stroke: 'var(--accent-stroke)' }} strokeWidth="2.2" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg><span>Vuoi imparare prima di proporre</span></li>
@@ -332,7 +337,7 @@ export function ArchitectLanding({ durableCandidateIntake = false }: { durableCa
           </ul>
         </div>
         <div className={[styles.s140].filter(Boolean).join(" ")}>
-          <h3 className={[styles.s141].filter(Boolean).join(" ")}>Non è il tuo percorso se…</h3>
+          <h3 className={[styles.s141].filter(Boolean).join(" ")}>Non è ancora il momento se…</h3>
           <ul className={[styles.s142].filter(Boolean).join(" ")}>
             <li className={[styles.s139].filter(Boolean).join(" ")}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#41545A" strokeWidth="2.2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg><span>Cerchi un guadagno rapido o garantito</span></li>
             <li className={[styles.s139].filter(Boolean).join(" ")}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#41545A" strokeWidth="2.2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg><span>Vuoi semplicemente vendere un prodotto</span></li>
@@ -355,7 +360,7 @@ export function ArchitectLanding({ durableCandidateIntake = false }: { durableCa
         <div className={[styles.s054].filter(Boolean).join(" ")}>08 · CANDIDATI</div>
         <h2 className={[styles['m-reveal'], styles.s088].filter(Boolean).join(" ")}>Candidati al Percorso Architetto Patrimoniale.</h2>
           <div className={[styles.s017].filter(Boolean).join(" ")} style={{ margin: '8px 0 20px' }}>
-          <div className={[styles.s018].filter(Boolean).join(" ")} id="profilo">Da dove parti oggi? <span className={[styles.s019].filter(Boolean).join(" ")}>Scegli il profilo che ti descrive meglio.</span></div>
+          <div className={[styles.s018].filter(Boolean).join(" ")} id="profilo">Da dove parti oggi?</div>
           <div className={[styles.s020].filter(Boolean).join(" ")} role="group" aria-label="Il tuo profilo">
             <button aria-pressed={profile === "commerciale"} onClick={() => setProfile("commerciale")} className={[styles['chip']].filter(Boolean).join(" ")} type="button" data-profile="commerciale">Commerciale</button>
               <button aria-pressed={profile === "imprenditore"} onClick={() => setProfile("imprenditore")} className={[styles['chip']].filter(Boolean).join(" ")} type="button" data-profile="imprenditore">Imprenditore</button>
@@ -364,12 +369,7 @@ export function ArchitectLanding({ durableCandidateIntake = false }: { durableCa
               <button aria-pressed={profile === "altro"} onClick={() => setProfile("altro")} className={[styles['chip']].filter(Boolean).join(" ")} type="button" data-profile="altro">Sto esplorando</button>
           </div>
         </div>
-        <p className={[styles.s164].filter(Boolean).join(" ")}><span data-bind="sub">{selected?.sub ?? 'Lo useremo per conoscerti meglio e per la tua candidatura.'}</span></p>
-        <div className={[styles.s170].filter(Boolean).join(" ")}>
-          <div className={[styles.s171].filter(Boolean).join(" ")}><span className={[styles.s172].filter(Boolean).join(" ")}>→</span><span>Ricevi la conferma che la candidatura è stata registrata</span></div>
-          <div className={[styles.s171].filter(Boolean).join(" ")}><span className={[styles.s172].filter(Boolean).join(" ")}>→</span><span>Il team valuta il profilo e le informazioni che hai inviato</span></div>
-          <div className={[styles.s171].filter(Boolean).join(" ")}><span className={[styles.s172].filter(Boolean).join(" ")}>→</span><span>Se ci sono i presupposti, ricevi la presentazione e fissiamo un colloquio</span></div>
-        </div>
+        <p className={[styles.s164].filter(Boolean).join(" ")}><span data-bind="sub">{selected?.sub ?? ''}</span></p>
       </div>
 
       <PatrimonialLeadForm mode="architect-path" presentation="architect" contractVersion={durableCandidateIntake ? PATRIMONIAL_V2 : undefined} selectedProfile={selected?.value ?? ""} onProfileChange={chooseValue} />
@@ -397,11 +397,8 @@ export function ArchitectLanding({ durableCandidateIntake = false }: { durableCa
     <Image width={2400} height={1029} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles.s181, styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/skyline.jpg" alt="" aria-hidden="true" />
     <div className={[styles.s182].filter(Boolean).join(" ")} aria-hidden="true"></div>
     <div className={[styles.s183].filter(Boolean).join(" ")}>
-      <h2 className={[styles['m-reveal'], styles.s184].filter(Boolean).join(" ")}>Ogni orizzonte comincia da una conversazione.</h2>
-      <p className={[styles.s185].filter(Boolean).join(" ")}>Se ti riconosci in questo percorso, il primo passo è la tua candidatura.</p>
-      <a className={[styles.s186].filter(Boolean).join(" ")} href="#richiesta">Candidati al percorso</a>
-      <p className={[styles.s187].filter(Boolean).join(" ")}><strong className={[styles.s188].filter(Boolean).join(" ")}>P.S.</strong> Se sei arrivato fin qui, qualcosa ti ha incuriosito. Non decidere niente adesso: inviaci solo la candidatura. Nel peggiore dei casi avrai capito un mestiere nuovo.</p>
-      <p className={[styles.s188].filter(Boolean).join(" ")} style={{ marginTop: 40, fontSize: 13, letterSpacing: '0.12em' }}>HORYZON CONSULTING — DIVISIONE BENESSERE PATRIMONIALE</p>
+      <h2 className={[styles['m-reveal'], styles.s184].filter(Boolean).join(" ")}>Ogni risultato comincia da una nuova azione.</h2>
+      <a className={[styles.s186].filter(Boolean).join(" ")} href="#richiesta">Candidati ora</a>
     </div>
   </section>
 

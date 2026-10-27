@@ -7,7 +7,7 @@ export const architectSession: {
   closeHoursBefore: 2, seatsTotal: null, seatsTaken: null,
 };
 export const architectProfiles = {
-  commerciale: { label: 'Commerciale', value: 'Commerciale', scene: 'opportunita', story: 0,
+  commerciale: { label: 'Commerciale', value: 'Commerciale', scene: 'domenica', story: 0,
     sub: 'Sai già creare fiducia. Qui impari a usarla per qualcosa che scegli tu.', cta: 'Voglio usare il mio talento diversamente' },
   imprenditore: { label: 'Imprenditore', value: 'Imprenditore', scene: 'caffe', story: 1,
     sub: 'Hai costruito qualcosa da zero. Ora puoi mettere la tua esperienza al servizio degli altri.', cta: 'Voglio capire se fa per me' },

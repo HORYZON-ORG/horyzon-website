@@ -39,7 +39,7 @@ try {
     await page.evaluate(() => document.fonts.ready);
     assert.equal(await page.locator('h1').count(), 1); assert.equal(await page.locator('section').count(), 11);
     assert.equal(await page.locator('[data-profile]').count(), 5); assert.equal(await page.locator('#richiesta [data-profile]').count(), 5);
-    assert.equal(await page.getByText('Anteprima tema').count(), 0); assert.equal(await page.getByRole('button', { name: /Passa al tema/ }).count(), 1); assert.equal(await page.locator('[data-scene]').count(), 3); assert.equal(await page.locator('[data-story]').count(), 3);
+    assert.equal(await page.getByText('Anteprima tema').count(), 0); assert.equal(await page.getByRole('button', { name: /Passa al tema/ }).count(), 1); assert.equal(await page.locator('[data-scene]').count(), 3); assert.equal(await page.locator('[data-story]').count(), 4);
     assert.equal(await page.locator('#stickyBar').getAttribute('aria-hidden'), 'true');
     await page.screenshot({ path: path.join(directory, `architect-mobile-${width}-hero.png`) });
     for (const [key, profile] of Object.entries(architectProfiles)) {
@@ -65,7 +65,8 @@ try {
     for (const name of ['scenes', 'stories']) {
       const carousel = page.locator(`[data-carousel=${name}]`);
       const geometry = await carousel.evaluate(element => ({ display: getComputedStyle(element).display, snap: getComputedStyle(element).scrollSnapType, scroll: element.scrollWidth > element.clientWidth, x: element.getBoundingClientRect().x, right: element.getBoundingClientRect().right }));
-      assert.equal(geometry.display, width <= 700 ? 'flex' : 'grid'); assert.equal(geometry.scroll, width <= 700);
+      // Le testimonianze sono un carosello a ogni larghezza; le scene diventano carosello solo su mobile.
+      assert.equal(geometry.display, width <= 700 || name === 'stories' ? 'flex' : 'grid'); assert.equal(geometry.scroll, width <= 700 || name === 'stories');
       assert(geometry.x >= -1 && geometry.right <= width + 1);
       if (width <= 700) {
         assert.equal(geometry.snap, 'x mandatory');
@@ -87,7 +88,7 @@ try {
     }
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
     await page.waitForFunction(() => [...document.querySelectorAll('img')].every(image => image.complete && image.naturalWidth > 0));
-    await page.getByRole('heading', { name: 'Forse ti è già successo.' }).evaluate(element => element.scrollIntoView({ block: 'start', behavior: 'instant' }));
+    await page.getByRole('heading', { name: 'Dal lavoro che fai alla professione che ti somiglia.' }).evaluate(element => element.scrollIntoView({ block: 'start', behavior: 'instant' }));
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     await page.waitForFunction(() => document.querySelector('#stickyBar').getAttribute('aria-hidden') === 'false');
     const sticky = await page.locator('#stickyBar a').boundingBox(); assert(sticky.x >= 0 && sticky.x + sticky.width <= width && sticky.y >= 0 && sticky.y + sticky.height <= 1000);

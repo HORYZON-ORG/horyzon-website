@@ -458,3 +458,44 @@
 .page .s177:hover .plus,.page .s177:focus-visible .plus{transform:scale(1.25);text-shadow:0 0 14px rgba(216,255,66,.9)}
 .page details[open] .s177:hover .plus{transform:rotate(45deg) scale(1.25)}
 @media (prefers-reduced-motion:reduce){.page .s023,.page .s186,.page .s196,.page .s146,.page .formSubmit,.page .chip,.page .s003,.page .s119{transform:none!important}}
+
+/* === Review 27/10 === */
+/* Sezione 1: tre tappe lavoro -> talento -> professione */
+.sceneTitle{font-family:var(--architect-display),sans-serif;font-weight:600;font-size:23px;line-height:1.2;letter-spacing:-.01em;margin:0 0 10px;color:var(--ink)}
+.page .sceneGoal{border:2px solid var(--lime);box-shadow:0 24px 50px rgba(216,255,66,.28)}
+/* Sezione 2: persone e famiglie -> cultura e fiducia -> obiettivi */
+.page .roleFlow{align-items:flex-start;margin-top:8px}
+.page .roleFlow .s069{margin-top:30px}
+.page .roleFlow .s070,.page .roleFlow .s081{width:170px;height:170px;border:2px solid var(--accent-stroke);background:transparent;margin-bottom:26px}
+.page .roleFlow .s076{width:230px;height:230px;margin-bottom:26px;box-shadow:0 0 0 12px rgba(216,255,66,.14),0 30px 60px rgba(216,255,66,.25)}
+.page .roleFlow .s078{font-size:26px}
+.page .roleFlow .s072{font-size:28px;margin:0;letter-spacing:-.01em}
+.page .roleFlow .s074{position:relative;height:3px;margin-top:129px;border-radius:3px;background:linear-gradient(90deg,var(--accent-stroke-25),var(--accent-stroke))}
+.page .roleFlow .s074::after{content:"";position:absolute;right:-1px;top:50%;width:11px;height:11px;border-top:3px solid var(--accent-stroke);border-right:3px solid var(--accent-stroke);transform:translateY(-50%) rotate(45deg)}
+.perimeter{max-width:720px;margin:44px auto 0;text-align:center;color:var(--muted)}
+.perimeter summary{display:inline-flex;font-size:14px;text-decoration:underline;text-underline-offset:4px;color:var(--muted)}
+.perimeter p{font-size:13px;line-height:1.6;margin:12px 0 0}
+/* Sezione 6: carosello delle testimonianze */
+.storiesHead{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px 24px;margin-bottom:40px}
+.storiesHead .s127{margin:0}
+.storiesNav{display:flex;gap:12px}
+.navBtn{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;border:1.5px solid rgba(7,23,29,.22);background:#FFFFFF;color:var(--ink);cursor:pointer;transition:transform .2s cubic-bezier(.2,.7,.2,1),box-shadow .25s ease,background-color .2s ease,border-color .2s ease}
+.navBtn:hover,.navBtn:focus-visible{background:var(--lime);border-color:var(--lime);transform:translateY(-2px);box-shadow:0 0 0 4px rgba(216,255,66,.28),0 10px 28px rgba(216,255,66,.55)}
+.navBtn:active{transform:scale(.94);box-shadow:0 0 0 6px rgba(216,255,66,.4),0 0 32px rgba(216,255,66,.8)}
+.page .storyTrack{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;gap:24px;padding-bottom:10px}
+.page .storyTrack::-webkit-scrollbar{display:none}
+.page .storyTrack>*{flex:0 0 calc((100% - 48px)/3);scroll-snap-align:start;min-width:0}
+.storyNoPhoto{display:grid;place-items:center;background:linear-gradient(160deg,#EFEDE6,#E2E6D4)}
+.storyInitials{width:96px;height:96px;border-radius:50%;display:grid;place-items:center;border:2px dashed rgba(95,112,16,.45);color:#5F7010;font-family:var(--architect-display),sans-serif;font-size:40px;font-weight:600}
+@media (max-width:1000px) and (min-width:701px){.page .storyTrack>*{flex-basis:calc((100% - 24px)/2)}}
+@media (max-width:700px){
+  .page .roleFlow .s069{margin-top:0}
+  .page .roleFlow .s074{margin-top:0;border-radius:0;background-image:repeating-linear-gradient(180deg,var(--lime) 0 8px,transparent 8px 16px) !important}
+  .page .roleFlow .s074::after{display:none}
+  .page .roleFlow .s070,.page .roleFlow .s081{width:130px;height:130px;margin-bottom:16px}
+  .page .roleFlow .s076{width:180px;height:180px;margin-bottom:16px}
+  .page .roleFlow .s072{font-size:23px}
+  .page .storyTrack>*{flex:0 0 84%}
+  .storiesNav{display:none}
+}
+@media (prefers-reduced-motion:reduce){.navBtn{transition:none}.navBtn:hover,.navBtn:active{transform:none}}
