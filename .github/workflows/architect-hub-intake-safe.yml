@@ -27,7 +27,8 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run test:architect-cv
-      - run: npm run test:patrimonial-funnels
+      # Exercise the legacy routing without importing the unpublished pilot route suite.
+      - run: npm run test:patrimonial
       - run: npm run typecheck
       - run: npm run build
         env:
