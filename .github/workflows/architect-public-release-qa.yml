@@ -1,0 +1,71 @@
+name: Public Architect Candidatures Release QA
+on:
+  push:
+    branches: [feat/public-architect-candidatures-20261028]
+  pull_request:
+    paths:
+      - 'src/app/(site)/candidature/**'
+      - 'src/app/api/public-leads/cv/**'
+      - 'src/components/patrimonial-architect-preview*'
+      - 'src/content/patrimonial-funnels.ts'
+      - 'next.config.ts'
+      - 'src/app/sitemap.ts'
+      - 'scripts/verify-architect-canonical-palette.mjs'
+      - '.github/workflows/architect-public-release-qa.yml'
+permissions:
+  contents: read
+concurrency:
+  group: architect-public-release-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      PATRIMONIAL_ARCHITECT_HUB_INTAKE_ENABLED: 'false'
+      VERCEL_ENV: production
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run test:architect-cv
+      - run: node --no-warnings --experimental-strip-types scripts/verify-patrimonial-leads.mjs
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm install --no-save --no-package-lock --ignore-scripts playwright@1.58.0
+      - run: npx playwright install chromium --with-deps
+      - name: Smoke test production-shaped route, redirects and CV safety
+        shell: bash
+        run: |
+          npx next start -p 3207 -H 127.0.0.1 > /tmp/horyzon-candidate-public.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" || true' EXIT
+          for i in $(seq 1 45); do
+            if curl -fsS 'http://127.0.0.1:3207/candidature/architetti-patrimoniali' -o /tmp/architect-public.html; then break; fi
+            sleep 2
+          done
+          grep -q 'Le persone si fidano di te' /tmp/architect-public.html
+          grep -q 'canonical' /tmp/architect-public.html
+          grep -q 'candidature/architetti-patrimoniali' /tmp/architect-public.html
+          curl -fsS 'http://127.0.0.1:3207/candidature/architetti-patrimoniali/grazie' -o /tmp/architect-thanks.html
+          grep -q 'noindex' /tmp/architect-thanks.html
+          old_status=$(curl -s -o /dev/null -w '%{http_code}' 'http://127.0.0.1:3207/benessere-patrimoniale/percorso-architetto-patrimoniale')
+          test "$old_status" = 308
+          curl -fsS 'http://127.0.0.1:3207/sitemap.xml' | grep -q '/candidature/architetti-patrimoniali'
+          cv_status=$(curl -sS -o /tmp/cv-off.json -w '%{http_code}' -X POST 'http://127.0.0.1:3207/api/public-leads/cv' -H 'Origin: https://horyzon.it' -H 'Content-Type: application/pdf' --data-binary 'not-a-pdf')
+          test "$cv_status" = 503
+          bad_status=$(curl -sS -o /dev/null -w '%{http_code}' -X POST 'http://127.0.0.1:3207/api/public-leads' -H 'Origin: https://not-authorized.invalid' -H 'Content-Type: application/json' -d '{}')
+          test "$bad_status" = 403
+          ARCHITECT_PREVIEW_TEST_ORIGIN=http://127.0.0.1:3207 node scripts/verify-architect-canonical-palette.mjs
+      - name: Archive visual comparisons
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: architect-candidatures-public-comparison
+          path: /tmp/architect-*.png
+          if-no-files-found: ignore
