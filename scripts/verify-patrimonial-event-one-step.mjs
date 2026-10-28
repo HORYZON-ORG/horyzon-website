@@ -1,0 +1,24 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { italianProvinceGroups } from '../src/content/italian-provinces.ts';
+
+const groups = italianProvinceGroups;
+const all = groups.flatMap(group => group.provinces);
+assert.equal(groups.length, 20, 'all Italian regions are present');
+assert.equal(all.length, 110, 'ISTAT 2026 provinces / UTS');
+assert.equal(new Set(all.map(p => p.name)).size, all.length, 'no duplicated names');
+assert.equal(new Set(all.map(p => p.code)).size, all.length, 'no duplicated province codes');
+assert(all.every(p => /^[A-Z]{2}$/.test(p.code)));
+assert(all.some(p => p.name === 'Foggia' && p.code === 'FG'));
+assert(all.some(p => p.name === 'Milano' && p.code === 'MI'));
+const form = readFileSync(new URL('../src/components/patrimonial-event-form.tsx', import.meta.url), 'utf8');
+const wrapper = readFileSync(new URL('../src/components/patrimonial-lead-form.tsx', import.meta.url), 'utf8');
+assert.match(form, /<select name="province" defaultValue="" autoComplete="off" required/);
+assert.match(form, /province\.name\} \(\{province\.code\}\)/);
+for (const field of ['firstName','lastName','email','phone','province','consent']) assert.match(form, new RegExp('name="'+field+'"'));
+assert.equal((form.match(/<fieldset/g) ?? []).length, 1, 'single step / one visible fieldset');
+assert.doesNotMatch(form, /setStep|step ===|address-level2/, 'event form must not request second step or city autofill');
+assert.doesNotMatch(wrapper, /presentation === 'event' && mode === 'patrimonial-event' && step === 1/, 'no event step gate');
+assert.match(wrapper, /eventQualification/);
+assert.match(wrapper, /referral\.current/, 'referral still included');
+console.log('Event one-step form, provinces ISTAT 2026, privacy and referral integration PASS');

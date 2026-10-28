@@ -360,7 +360,12 @@
 .page .profileChips{display:flex;flex-wrap:wrap;gap:8px;}
 .page .formGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(180px,100%),1fr));gap:14px;}
 .page .formFields label{display:flex;flex-direction:column;gap:8px;font:500 11px/1.4 var(--event-mono),monospace;letter-spacing:.06em;text-transform:uppercase;color:#CDD6D4;}
-.page .formFields input:not([type=checkbox]){font:500 16px/1.4 var(--event-sans),sans-serif;letter-spacing:0;text-transform:none;padding:13px 14px;border:1px solid rgba(247,244,232,.18);border-radius:8px;background:#07171D;color:#F7F4E8;min-height:50px;min-width:0;width:100%;}
+.page .formFields input:not([type=checkbox]),.page .formFields select{font:500 16px/1.4 var(--event-sans),sans-serif;letter-spacing:0;text-transform:none;padding:13px 14px;border:1px solid rgba(247,244,232,.18);border-radius:8px;background:#07171D;color:#F7F4E8;min-height:50px;min-width:0;width:100%;}
+.page .formFields select{cursor:pointer;color-scheme:dark;}
+.page .formFields select:invalid{color:#A3B1B0;}
+.page .formFields select option,.page .formFields select optgroup{color:#F7F4E8;background:#07171D;}
+.page .formFields .provinceHelp{font:400 12px/1.5 var(--event-sans),sans-serif;letter-spacing:0;text-transform:none;color:#A3B1B0;}
+.page .formFields input:focus-visible,.page .formFields select:focus-visible{outline:2px solid #D8FF42;outline-offset:2px;}
 .page .formFields .formConsent{display:flex;flex-direction:row;gap:10px;align-items:flex-start;font:400 14px/1.6 var(--event-sans),sans-serif;letter-spacing:0;text-transform:none;color:#CDD6D4;}
 .page .formConsent input{margin-top:3px;width:18px;height:18px;flex:none;accent-color:#D8FF42;}
 .page .formConsent a{color:#D8FF42;}
@@ -724,7 +729,11 @@
 :global([data-theme="light"]) .page .formCard{background:#EFEDE6;border:1px solid rgba(7,23,29,0.12);color:#07171D;box-shadow:0 50px 90px -50px rgba(7,23,29,0.27)}
 :global([data-theme="light"]) .page .formLegend{color:#5F7010}
 :global([data-theme="light"]) .page .formFields label{color:#41545A}
-:global([data-theme="light"]) .page .formFields input:not([type=checkbox]){border:1px solid rgba(7,23,29,0.18);background:#FFFFFF;color:#07171D}
+:global([data-theme="light"]) .page .formFields input:not([type=checkbox]),:global([data-theme="light"]) .page .formFields select{border:1px solid rgba(7,23,29,0.18);background:#FFFFFF;color:#07171D}
+:global([data-theme="light"]) .page .formFields select{color-scheme:light}
+:global([data-theme="light"]) .page .formFields select:invalid{color:#5A6B70}
+:global([data-theme="light"]) .page .formFields select option,:global([data-theme="light"]) .page .formFields select optgroup{color:#07171D;background:#FFFFFF}
+:global([data-theme="light"]) .page .formFields .provinceHelp{color:#5A6B70}
 :global([data-theme="light"]) .page .formFields .formConsent{color:#41545A}
 :global([data-theme="light"]) .page .formConsent input{accent-color:#5F7010}
 :global([data-theme="light"]) .page .formConsent a{color:#5F7010}
