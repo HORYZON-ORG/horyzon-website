@@ -1,4 +1,4 @@
-// Pilot-only content. Never import these routes into public navigation or content registries.
+// Shared patrimonial funnel contracts. Architect candidate route is public; event admission follows its own gate.
 export const PATRIMONIAL_PILOT_PRIVACY_VERSION = 'patrimonial-pilot-privacy-v1';
 export const PATRIMONIAL_PILOT_MARKETING_VERSION = 'patrimonial-pilot-marketing-v1';
 export const patrimonialBrand = {
@@ -9,7 +9,7 @@ export const patrimonialBrand = {
 } as const;
 
 export const architectPath = {
-  path: '/benessere-patrimoniale/percorso-architetto-patrimoniale',
+  path: '/candidature/architetti-patrimoniali',
   title: 'Il tuo talento può incontrare un nuovo orizzonte.',
   description: 'Candidature sempre aperte per persone che vogliono trasformare capacità relazionali, crescita personale e cultura patrimoniale in una nuova competenza professionale.',
   roles: [
