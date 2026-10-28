@@ -1,0 +1,40 @@
+name: Event active schedule integration QA
+on:
+  push:
+    branches: [feat/event-edition-live-schedule-20261028]
+  pull_request:
+    paths:
+      - 'src/app/(event-live)/**'
+      - 'src/components/patrimonial-event-landing.tsx'
+      - 'src/components/patrimonial-event-clock.tsx'
+      - 'src/content/patrimonial-event-session.ts'
+      - 'src/lib/public-leads/patrimonial-event-public-schedule.ts'
+      - 'src/lib/public-leads/patrimonial-hub-event-ingress.ts'
+      - 'scripts/verify-patrimonial-event-edition-schedule.mjs'
+      - '.github/workflows/event-edition-schedule-qa.yml'
+permissions:
+  contents: read
+concurrency:
+  group: event-edition-website-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: node --no-warnings --experimental-strip-types scripts/verify-patrimonial-event-edition-schedule.mjs
+      - run: node --no-warnings --experimental-strip-types scripts/verify-patrimonial-event-referrals.mjs
+      - run: node --no-warnings --experimental-strip-types scripts/verify-patrimonial-event-confirmation-email.mjs
+      - run: npm run typecheck
+      - run: npm run build
+        env:
+          PATRIMONIAL_EVENT_SIGNUP_ENABLED: 'false'
+          HORYZON_HUB_EVENT_INGRESS_ENABLED: 'false'
