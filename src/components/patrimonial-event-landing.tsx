@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { PatrimonialLeadForm } from './patrimonial-lead-form';
 import { EventNotesContext } from './patrimonial-event-form';
 import { EventSessionProvider, EventSessionValue } from './patrimonial-event-clock';
-import { eventSession } from '@/content/patrimonial-event-session';
+import { eventSession as defaultSession, type EventSession } from '@/content/patrimonial-event-session';
 import { eventScenes, eventFormTitle, eventCalculator, eventHorizons, type EventHorizon, eventAllocation, eventInstruments, eventKnowledgeLevels, eventProfiles, eventNotes } from '@/content/patrimonial-event-content';
 import styles from './patrimonial-event.module.css';
 
@@ -34,9 +34,9 @@ const evenings = [
 
 // Existing event interactions with route-scoped presentation from the mobile reference.
 // The clock has its own provider so second ticks only rerender session consumers.
-export function PatrimonialEventLanding({ contractVersion, registrationEnabled = false }: { contractVersion?: typeof PATRIMONIAL_V2; registrationEnabled?: boolean }) {
+export function PatrimonialEventLanding({ contractVersion, registrationEnabled = false, session = defaultSession }: { contractVersion?: typeof PATRIMONIAL_V2; registrationEnabled?: boolean; session?: EventSession }) {
   const registrationOpen = registrationEnabled;
-  const editionScheduled = eventSession.status === 'CONFIRMED';
+  const editionScheduled = session.status === 'CONFIRMED';
   const [scene, setScene] = useState<string | null>(null);
   const [selectedProfile, setSelectedProfile] = useState('');
   const [amount, setAmount] = useState(10000);
@@ -52,7 +52,7 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
     if (known[id]) { setKnown(prev => { const next = { ...prev }; delete next[id]; return next; }); setOpen(cur => (cur === id ? null : cur)); return; }
     setKnown(prev => ({ ...prev, [id]: eventKnowledgeLevels[0] })); setOpen(id);
   };
-  return <EventSessionProvider><div data-session-status={eventSession.status} data-availability={eventSession.status === 'PLACEHOLDER' ? 'pending-edition' : 'confirmed'} className={[styles.s000, styles.page].join(' ')}>
+  return <EventSessionProvider session={session}><div data-session-status={session.status} data-availability={session.status === 'PLACEHOLDER' ? 'pending-edition' : 'confirmed'} className={[styles.s000, styles.page].join(' ')}>
 
 <div data-event-section="urgency" className={[styles.s001].join(' ')}>
 <span className={styles.s002}><span className={styles["live-dot"]} aria-hidden="true" />{registrationOpen ? 'Richieste di partecipazione aperte · calendario in definizione' : 'Due serate online gratuite · calendario in definizione'}</span>
