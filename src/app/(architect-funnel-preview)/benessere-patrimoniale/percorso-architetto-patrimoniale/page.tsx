@@ -13,5 +13,5 @@ export default function ArchitectPathPage() {
   // No client-facing submissions until explicitly enabled for this preview.
   const previewSubmissionsEnabled = process.env.PATRIMONIAL_ARCHITECT_PREVIEW_SUBMISSIONS_ENABLED === 'true';
   const durableCandidateIntake = false;
-  return <PatrimonialThemeFrame defaultTheme="light" showBar={false} rememberChoice={false}><div className={`${display.variable} ${sans.variable} ${mono.variable}`}><ArchitectLanding durableCandidateIntake={durableCandidateIntake} previewSubmissionsEnabled={previewSubmissionsEnabled} /></div></PatrimonialThemeFrame>;
+  return <PatrimonialThemeFrame defaultTheme="dark" showBar={false} rememberChoice={false}><div className={`${display.variable} ${sans.variable} ${mono.variable}`}><ArchitectLanding durableCandidateIntake={durableCandidateIntake} previewSubmissionsEnabled={previewSubmissionsEnabled} /></div></PatrimonialThemeFrame>;
 }
