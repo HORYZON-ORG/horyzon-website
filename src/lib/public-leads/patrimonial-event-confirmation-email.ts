@@ -1,4 +1,4 @@
-import 'server-only';
+// This module is imported only by server-side routes and the protected lead handler.
 
 /** One transactional acknowledgment per canonical Horyzon event request. Never marketing. */
 type Claim = { registrationId: string; recipient: string; firstName: string; leaseToken: string };
