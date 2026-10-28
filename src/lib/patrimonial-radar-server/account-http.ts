@@ -42,7 +42,8 @@ export async function handleAccountRadar(request:Request,env:AccountEnv=process.
    for(const k of ['firstName','lastName'])if(typeof b[k]!=='string'||!b[k].trim()||b[k].length>100||/[\u0000-\u001f]/.test(b[k]))throw new RadarBackendError('INVALID');
    const pending={email,firstName:(b.firstName as string).trim(),lastName:(b.lastName as string).trim(),id:randomUUID(),binding:randomBytes(32).toString('base64url'),exp:Date.now()+600000,referral:referral()};
    // Native Supabase OTP delivers the email; no custom identity/password service.
-   await auth('otp',{email,create_user:true});
+   const delivery=await auth('otp',{email,create_user:true});
+   if(!delivery.ok)throw new RadarBackendError('UNAVAILABLE');
    cookies.push(cookie(names.pending,seal(cfg.secret,pending),600));
    return finish(reply({challengeId:pending.id,csrf:new RadarSecrets(cfg.secret).csrf(pending.binding),message:'Se la richiesta può essere elaborata, riceverai un codice temporaneo.'}));
   }

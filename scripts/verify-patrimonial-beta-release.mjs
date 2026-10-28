@@ -12,11 +12,11 @@ const env={VERCEL:'1',VERCEL_ENV:'production',VERCEL_TARGET_ENV:'production',VER
  PATRIMONIAL_RADAR_BETA_EMAILS:email,PATRIMONIAL_RADAR_PUBLISHABLE_KEY:'sb_publishable_synthetic',PATRIMONIAL_RADAR_IDENTITY_SECRET:'SYNTHETIC_ONLY_BETA_RELEASE_TEST_000000000000000000'};
 const checks=[],check=async(name,fn)=>{await fn();checks.push({name,status:'PASS'});console.log('PASS '+name);};
 const cookies=new Map(),uid=randomUUID(),sid=randomUUID(),personId=randomUUID(),access='eyJhbGciOiJIUzI1NiJ9.'+Buffer.from(JSON.stringify({sub:uid,session_id:sid})).toString('base64url')+'.synthetic';
-let currentEmail=email,confirmed=true,csrf='request-code',calls=0,rpc=0,refreshes=0,accessValid=true;
+let currentEmail=email,confirmed=true,csrf='request-code',calls=0,rpc=0,refreshes=0,accessValid=true,otpAvailable=true;
 const transport=async(url,init)=>{
  calls++;assert(url.startsWith('https://pmkyeqrfkunypfkbjnyg.supabase.co/'));
  assert.equal(init.cache,'no-store');assert.equal(init.redirect,'error');
- if(url.endsWith('/auth/v1/otp'))return Response.json({});
+ if(url.endsWith('/auth/v1/otp'))return otpAvailable?Response.json({}):Response.json({error:'SYNTHETIC_OTP_RATE_LIMIT'},{status:429});
  if(url.endsWith('/auth/v1/verify'))return Response.json({access_token:access,refresh_token:'synthetic-refresh'});
  if(url.endsWith('/auth/v1/user'))return accessValid?Response.json({id:uid,email:currentEmail,email_confirmed_at:confirmed?'2026-10-27T00:00:00Z':null,is_anonymous:false}):Response.json({}, {status:401});
  if(url.endsWith('/auth/v1/token?grant_type=refresh_token')){refreshes++;accessValid=true;return Response.json({access_token:access,refresh_token:'synthetic-refresh-next'});}
@@ -45,6 +45,12 @@ await check('non-allowlisted email, wrong Origin, alias and CSRF deny before Aut
  for(const headers of [{Origin:'https://other.invalid'},{Origin:''},{'X-Patrimonial-CSRF':''},{'Sec-Fetch-Site':'cross-site'}])assert.equal((await request('/identity/request',b,{headers})).status,403);
  assert.equal((await request('/identity/request',b,{origin:'https://alias.vercel.app'})).status,403);
  assert.equal(calls,before);
+});
+await check('failed Supabase OTP delivery does not create a pending challenge or pretend success',async()=>{
+ otpAvailable=false;const before=calls;
+ const response=await request('/identity/request',{email,firstName:'Tester',lastName:'Inventato'});
+ otpAvailable=true;
+ assert.equal(response.status,503);assert.equal(response.headers.getSetCookie().length,0);assert.equal(calls,before+1);
 });
 await check('allowed OTP and verified session keep Secure/HttpOnly/Strict cookies and HMAC RPC',async()=>{
  const r=await request('/identity/request',{email,firstName:'Tester',lastName:'Inventato'});assert.equal(r.status,200);
