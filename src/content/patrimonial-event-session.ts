@@ -1,6 +1,6 @@
 // Public event is not yet scheduled. No placeholder availability is published.
 // This public configuration is never an event edition or a backend eligibility gate.
-type EventSession = {
+export type EventSession = {
   status: 'PLACEHOLDER' | 'CONFIRMED'; eventDate: string; eventLabel: string;
   seatsTotal: number; seatsTaken: number;
 };
