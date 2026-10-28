@@ -7,7 +7,7 @@ import { PatrimonialLeadForm } from './patrimonial-lead-form';
 import { EventNotesContext } from './patrimonial-event-form';
 import { EventSessionProvider, EventSessionValue } from './patrimonial-event-clock';
 import { eventSession } from '@/content/patrimonial-event-session';
-import { eventScenes, eventFormTitle, eventCalculator, eventHorizons, type EventHorizon, eventAllocation, eventInstruments, eventKnowledgeLevels, eventNotes } from '@/content/patrimonial-event-content';
+import { eventScenes, eventFormTitle, eventCalculator, eventHorizons, type EventHorizon, eventAllocation, eventInstruments, eventKnowledgeLevels, eventProfiles, eventNotes } from '@/content/patrimonial-event-content';
 import styles from './patrimonial-event.module.css';
 
 const Arrow = ({ size = 18 }: { size?: number }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>;
@@ -371,7 +371,20 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 <div><strong>La nostra promessa</strong><div className={[styles.s121].join(' ')}>Nessuna vendita durante le serate. Se senti che non fa per te, esci: nessuno ti richiamerà per insistere.</div></div>
 </div>
 </div>
-{registrationOpen ? <EventNotesContext.Provider value={eventNotes(scene, selectedProfile, known)}><PatrimonialLeadForm contractVersion={contractVersion} mode="patrimonial-event" presentation="event" selectedProfile={selectedProfile} onProfileChange={setSelectedProfile} /></EventNotesContext.Provider> : <div className={styles.formCard} role="status"><p>Per informazioni sulle prossime serate puoi contattarci direttamente.</p><a href="mailto:info@horyzon.it?subject=Informazioni%20evento%20Quello%20che%20le%20banche%20non%20dicono" className={styles.cta}>Chiedi informazioni <Arrow /></a></div>}
+{registrationOpen ? <EventNotesContext.Provider value={{
+  notes: eventNotes(scene, selectedProfile, known),
+  qualification: {
+    schemaVersion: 1,
+    audienceProfile: eventProfiles.find(item => item.label === selectedProfile)?.label ?? null,
+    sceneId: eventScenes.find(item => item.id === scene)?.id ?? null,
+    instruments: eventInstruments.flatMap(item => {
+      const knowledgeLevel = known[item.id];
+      return knowledgeLevel && eventKnowledgeLevels.includes(knowledgeLevel as typeof eventKnowledgeLevels[number])
+        ? [{instrumentId: item.id, knowledgeLevel: knowledgeLevel as typeof eventKnowledgeLevels[number]}]
+        : [];
+    }),
+  },
+}}><PatrimonialLeadForm contractVersion={contractVersion} mode="patrimonial-event" presentation="event" selectedProfile={selectedProfile} onProfileChange={setSelectedProfile} /></EventNotesContext.Provider> : <div className={styles.formCard} role="status"><p>Per informazioni sulle prossime serate puoi contattarci direttamente.</p><a href="mailto:info@horyzon.it?subject=Informazioni%20evento%20Quello%20che%20le%20banche%20non%20dicono" className={styles.cta}>Chiedi informazioni <Arrow /></a></div>}
 </div>
 </div>
 
