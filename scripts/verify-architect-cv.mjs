@@ -46,7 +46,7 @@ assert.equal(ok.ok, true); assert.match(ok.cvId, /^[0-9a-f-]{36}$/);
 assert(s.objects.has(`pending/${ok.cvId}.pdf`), 'salvato in pending, nome file del candidato mai usato');
 
 // 2. Candidatura: CV obbligatorio, collegato prima del CRM, nota senza file
-const lead = (extra = {}) => ({ mode: 'architect-path', sourcePath: '/benessere-patrimoniale/percorso-architetto-patrimoniale', firstName: 'Anna', lastName: 'Rossi', email: 'anna@example.com', phone: '3331234567', province: 'Milano', profile: '', message: '', consent: true, marketingConsent: false, website: '', utm: {}, experience: '', goal: '', availability: '', ...extra });
+const lead = (extra = {}) => ({ mode: 'architect-path', sourcePath: '/candidature/architetti-patrimoniali', firstName: 'Anna', lastName: 'Rossi', email: 'anna@example.com', phone: '3331234567', province: 'Milano', profile: '', message: '', consent: true, marketingConsent: false, website: '', utm: {}, experience: '', goal: '', availability: '', ...extra });
 const post = (body, opts) => handlePublicLead(new Request(`${origin}/api/public-leads`, { method: 'POST', headers: { origin, 'content-type': 'application/json' }, body: JSON.stringify(body) }), opts);
 const crmCalls = []; let failNotes = false;
 const crmFetch = async (url, init) => {
