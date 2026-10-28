@@ -50,7 +50,7 @@ export const architectPath = {
 
 // Change the working title here: hero, metadata and CRM all read this source.
 export const patrimonialEvent = {
-  path: '/benessere-patrimoniale/evento',
+  path: '/evento/quello-che-le-banche-non-dicono',
   title: 'Quello che le banche non dicono',
   description: "Un incontro online dedicato a persone e imprenditori che vogliono capire meglio patrimonio, inflazione, diversificazione e ruolo dell'oro fisico.",
   date: 'Data da definire',

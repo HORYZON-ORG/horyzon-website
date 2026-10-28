@@ -61,6 +61,8 @@ const nextConfig: NextConfig = {
   ] }];
  },
  async redirects() { return [
+  { source: '/benessere-patrimoniale/evento', destination: '/evento/quello-che-le-banche-non-dicono', permanent: true },
+  { source: '/benessere-patrimoniale/evento/grazie', destination: '/evento/quello-che-le-banche-non-dicono/grazie', permanent: true },
   { source: '/v/frank/Frank-Cannoletta.vcf', destination: '/v/frank/contact.vcf', permanent: true },
   { source: '/v/:person/index.php', destination: '/v/:person', permanent: true },
   { source: '/v/:person/download.php', destination: '/v/:person/contact.vcf', permanent: true },

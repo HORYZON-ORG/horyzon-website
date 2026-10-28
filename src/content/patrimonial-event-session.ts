@@ -1,4 +1,4 @@
-// DEMO VISUAL VALUES for this branch preview. DO NOT SHIP AS REAL AVAILABILITY.
+// Public event is not yet scheduled. No placeholder availability is published.
 // This public configuration is never an event edition or a backend eligibility gate.
 type EventSession = {
   status: 'PLACEHOLDER' | 'CONFIRMED'; eventDate: string; eventLabel: string;
@@ -6,10 +6,10 @@ type EventSession = {
 };
 export const eventSession: EventSession = {
   status: 'PLACEHOLDER',
-  eventDate: '2026-11-19T21:00:00+01:00',
-  eventLabel: 'giovedì 19 novembre, ore 21',
-  seatsTotal: 100,
-  seatsTaken: 68,
+  eventDate: '',
+  eventLabel: 'Date in definizione',
+  seatsTotal: 0,
+  seatsTaken: 0,
 };
 export function eventSessionSnapshot(now: number | null, session: EventSession = eventSession) {
   const total = Math.max(0, session.seatsTotal);
