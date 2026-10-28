@@ -7,6 +7,9 @@ const mono = JetBrains_Mono({ subsets: ['latin'], weight: ['500', '600'], variab
 const sans = Manrope({ subsets: ['latin'], weight: ['400', '500', '600', '700', '800'], variable: '--event-sans', display: 'swap' });
 export const metadata = pageMetadata({ path: patrimonialEvent.path, title: patrimonialEvent.title, description: patrimonialEvent.description });
 export default function EventPage() {
-  // Signups remain disabled until dates, live lead storage, and Hub handoff are validated.
-  return <div className={`${mono.variable} ${sans.variable}`}><PatrimonialEventLanding registrationEnabled={false} /></div>;
+  // Server-side opt-in; the API separately validates the same switch and the Hub bridge.
+  // Requests made before dates are known remain PENDING_EDITION, never confirmed seats.
+  const registrationEnabled = process.env.PATRIMONIAL_EVENT_SIGNUP_ENABLED === 'true' &&
+    process.env.HORYZON_HUB_EVENT_INGRESS_ENABLED === 'true';
+  return <div className={`${mono.variable} ${sans.variable}`}><PatrimonialEventLanding registrationEnabled={registrationEnabled} /></div>;
 }

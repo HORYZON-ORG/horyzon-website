@@ -35,7 +35,8 @@ const evenings = [
 // Existing event interactions with route-scoped presentation from the mobile reference.
 // The clock has its own provider so second ticks only rerender session consumers.
 export function PatrimonialEventLanding({ contractVersion, registrationEnabled = false }: { contractVersion?: typeof PATRIMONIAL_V2; registrationEnabled?: boolean }) {
-  const registrationOpen = registrationEnabled && eventSession.status === 'CONFIRMED';
+  const registrationOpen = registrationEnabled;
+  const editionScheduled = eventSession.status === 'CONFIRMED';
   const [scene, setScene] = useState<string | null>(null);
   const [selectedProfile, setSelectedProfile] = useState('');
   const [amount, setAmount] = useState(10000);
@@ -51,10 +52,10 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
     if (known[id]) { setKnown(prev => { const next = { ...prev }; delete next[id]; return next; }); setOpen(cur => (cur === id ? null : cur)); return; }
     setKnown(prev => ({ ...prev, [id]: eventKnowledgeLevels[0] })); setOpen(id);
   };
-  return <EventSessionProvider><div data-session-status={eventSession.status} data-availability={eventSession.status === 'PLACEHOLDER' ? 'demo' : 'confirmed'} className={[styles.s000, styles.page].join(' ')}>
+  return <EventSessionProvider><div data-session-status={eventSession.status} data-availability={eventSession.status === 'PLACEHOLDER' ? 'pending-edition' : 'confirmed'} className={[styles.s000, styles.page].join(' ')}>
 
 <div data-event-section="urgency" className={[styles.s001].join(' ')}>
-<span className={styles.s002}><span className={styles["live-dot"]} aria-hidden="true" />Due serate online gratuite · calendario in definizione</span>
+<span className={styles.s002}><span className={styles["live-dot"]} aria-hidden="true" />{registrationOpen ? 'Richieste di partecipazione aperte · calendario in definizione' : 'Due serate online gratuite · calendario in definizione'}</span>
 </div>
 
 <div data-event-section="hero" className={[styles["hero"], styles.s004].join(' ')}>
@@ -63,14 +64,14 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 <span className={[styles.s007].join(' ')}>HORYZON</span>
 <span className={[styles.s008].join(' ')}>Benessere Patrimoniale</span>
 </div>
-<a href="#richiesta" className={[styles["cta"], styles["cta-ghost"], styles.s009].join(' ')}>{registrationOpen ? "Riserva il posto" : "Informazioni sull’evento"}</a>
+<a href="#richiesta" className={[styles["cta"], styles["cta-ghost"], styles.s009].join(' ')}>{registrationOpen ? "Richiedi la partecipazione" : "Informazioni sull’evento"}</a>
 </div>
 <div className={[styles["hero-inner"], styles.s010].join(' ')}>
 <div className={[styles.s011].join(' ')}>
 <div className={[styles["label"], styles["load-1"], styles.s012].join(' ')}>Evento online gratuito in due serate · Per lavoratori, pensionati, imprenditori, professionisti e genitori</div>
 <h1 className={[styles["load-2"], styles.s013].join(' ')}>Quello che le banche <span className={[styles["chip-lime"], styles.s014].join(' ')}>non</span> dicono.</h1>
 <p className={[styles["load-3"], styles.s015].join(' ')}>Due serate per vedere il denaro come lo guarda chi un patrimonio lo costruisce e lo protegge da generazioni. <strong className={[styles.s003].join(' ')}>Inflazione, diversificazione, metalli preziosi, immobili, ETF e obbligazioni</strong>: capirli prima di affidare i tuoi risparmi a chiunque.</p>
-{registrationOpen && <div className={[styles["load-4"], styles.s016].join(' ')}>
+{editionScheduled && <div className={[styles["load-4"], styles.s016].join(' ')}>
 <div className={[styles.s017].join(' ')}>LA PRIMA SERATA INIZIA TRA</div>
 <div className={[styles["cd-row"], styles.s018].join(' ')}>
 <div className={[styles["tile-d"], styles.s019].join(' ')}><div className={[styles.s020].join(' ')}><EventSessionValue name="cd.d" /></div><div className={[styles.s021].join(' ')}>GIORNI</div></div>
@@ -80,13 +81,13 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 </div>
 </div>}
 <div className={[styles["stack-m"], styles["load-4"], styles.s022].join(' ')}>
-<a href="#richiesta" className={[styles.cta, styles.s023].join(' ')}>{registrationOpen ? "Sì, riservo il mio posto per le due serate" : "Informazioni sulle prossime serate"}
+<a href="#richiesta" className={[styles.cta, styles.s023].join(' ')}>{registrationOpen ? "Mi iscrivo alla prossima edizione" : "Informazioni sulle prossime serate"}
 <Arrow size={20} /></a>
-{registrationOpen ? <div className={[styles.s024].join(' ')}><strong>Iscrizioni aperte</strong></div> : <div className={[styles.s024].join(' ')}>Le date delle due serate saranno comunicate qui.</div>}
+{registrationOpen ? <div className={[styles.s024].join(' ')}><strong>Richieste aperte</strong> · Le date saranno comunicate in seguito. La richiesta non conferma un posto.</div> : <div className={[styles.s024].join(' ')}>Le date delle due serate saranno comunicate qui.</div>}
 </div>
 <div className={[styles.s030].join(' ')}>Gratuito · Online · Due serate · Nessuna vendita durante l&apos;evento</div>
 </div>
-{registrationOpen && <div className={[styles["tile-d"], styles["hero-chip"], styles.s031].join(' ')}><div className={styles.s035}>Posti limitati per poter rispondere alle domande dal vivo.</div></div>}
+{registrationOpen && !editionScheduled && <div className={[styles["tile-d"], styles["hero-chip"], styles.s031].join(' ')}><div className={styles.s035}>Iscriviti alla prossima edizione: date, accesso e disponibilità saranno definiti successivamente.</div></div>}
 </div>
 </div>
 
@@ -344,7 +345,7 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 <div data-event-section="bonuses" className={[styles.s113].join(' ')}>
 <div className={[styles.s181].join(' ')}>
 <div className={[styles.s182].join(' ')}>
-<div className={[styles.s041].join(' ')}>COSA RICEVI REGISTRANDOTI OGGI</div>
+<div className={[styles.s041].join(' ')}>COSA PREVEDE IL PERCORSO</div>
 <h2 className={[styles.reveal, styles.s093].join(' ')}>Non solo due serate.</h2>
 <p className={[styles.s043].join(' ')}>Un quadro più chiaro, e qualcuno con cui guardarlo. L&apos;obiettivo è uno: farti vedere come lavorano i milionari, come gestiscono e proteggono i loro patrimoni.</p>
 </div>
@@ -354,7 +355,7 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 <div className={[styles.s184].join(' ')}><div><span className={[styles.s187].join(' ')}>BONUS 2</span><br /><strong className={[styles.s185].join(' ')}>Le registrazioni delle due serate per 48 ore</strong><div className={[styles.s119].join(' ')}>Per rivederle con calma, o recuperare quella che hai perso. Solo per chi si registra prima dell&apos;evento</div></div><span className={[styles.s186].join(' ')}>Incluso</span></div>
 <div className={[styles.s184].join(' ')}><div><span className={[styles.s187].join(' ')}>BONUS 3</span><br /><strong className={[styles.s185].join(' ')}>La lista delle domande da fare prima di firmare</strong><div className={[styles.s119].join(' ')}>Da portare al prossimo appuntamento in banca</div></div><span className={[styles.s186].join(' ')}>Incluso</span></div>
 <div className={[styles.s188].join(' ')}><div><span className={[styles.s189].join(' ')}>BONUS 4 · SE LO DESIDERI</span><br /><strong className={[styles.s185].join(' ')}>40 minuti solo per te, con un Architetto Patrimoniale</strong><div className={[styles.s121].join(' ')}>Dopo l&apos;evento partite da quello che ti ha colpito nelle due serate: cosa ti interessa davvero, cosa ti preoccupa, quali strumenti vuoi approfondire. Esci con le idee chiare sul tuo prossimo passo. Nessun costo, nessun obbligo, e non ti chiameremo se non sei tu a chiederlo.</div></div><span className={[styles.s190].join(' ')}>Gratuito</span></div>
-<div className={[styles.s191].join(' ')}><div className={[styles.s192].join(' ')}>Per te, oggi: <strong>gratis</strong>.</div><a href="#richiesta" className={[styles.cta, styles["cta-ink"], styles.s193].join(' ')}>{registrationOpen ? "Riserva il posto e il Radar" : "Informazioni sull’evento"}</a></div>
+<div className={[styles.s191].join(' ')}><div className={[styles.s192].join(' ')}>Per te, oggi: <strong>gratis</strong>.</div><a href="#richiesta" className={[styles.cta, styles["cta-ink"], styles.s193].join(' ')}>{registrationOpen ? "Richiedi la partecipazione gratuita" : "Informazioni sull’evento"}</a></div>
 </div>
 </div>
 </div>
@@ -363,9 +364,9 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 <div className={[styles.s195].join(' ')}>
 <div className={[styles.s196].join(' ')}>
 <div className={[styles["label"], styles.s012].join(' ')}>ULTIMO PASSO</div>
-<h2 className={[styles.reveal, styles.s197].join(' ')}><span data-bind="formTitle">{registrationOpen ? formTitle : "Calendario e iscrizioni in preparazione"}</span></h2>
-<p className={[styles.s065].join(' ')}>{registrationOpen ? 'Riceverai le indicazioni per partecipare e i promemoria delle due serate.' : 'Stiamo definendo le prossime date. Le iscrizioni non sono ancora aperte: qui pubblicheremo il calendario ufficiale prima di raccogliere le adesioni.'}</p>
-{registrationOpen && <div className={[styles["tile-d"], styles.s198].join(' ')}><div className={styles.s199}>Disponibilità comunicata all'apertura delle iscrizioni</div></div>}
+<h2 className={[styles.reveal, styles.s197].join(' ')}><span data-bind="formTitle">{registrationOpen ? "Richiedi di partecipare alla prossima edizione" : "Calendario e iscrizioni in preparazione"}</span></h2>
+<p className={[styles.s065].join(' ')}>{registrationOpen ? 'Le date non sono ancora definite. Inviando il modulo registri una richiesta di partecipazione, non una prenotazione confermata. Ti contatteremo per questo evento quando saranno disponibili date e modalità.' : 'Stiamo definendo le prossime date. Le iscrizioni non sono ancora aperte: qui pubblicheremo il calendario ufficiale prima di raccogliere le adesioni.'}</p>
+{registrationOpen && <div className={[styles["tile-d"], styles.s198].join(' ')}><div className={styles.s199}>Edizione e posti ancora da definire · Richiesta senza impegno</div></div>}
 <div className={[styles.s201].join(' ')}>
 <span className={[styles.s202].join(' ')}><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3z"></path><path d="M9 12l2 2 4-4"></path></svg></span>
 <div><strong>La nostra promessa</strong><div className={[styles.s121].join(' ')}>Nessuna vendita durante le serate. Se senti che non fa per te, esci: nessuno ti richiamerà per insistere.</div></div>
@@ -393,9 +394,9 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 <h2 className={[styles.reveal, styles.s093].join(' ')}>Domande frequenti</h2>
 <div className={[styles.s204].join(' ')}>
 {[
-  ['È davvero gratuito?', 'Le due serate sono gratuite. Ti chiediamo solo di esserci a entrambe. Dopo, se lo chiedi tu, un Architetto Patrimoniale ti dedica 40 minuti gratuiti. Se non lo chiedi, nessuno ti contatterà per proporti qualcosa.'],
-  ['Dove si svolge e cosa mi serve per collegarmi?', 'Online. Ti serve un computer, un tablet o uno smartphone con connessione. Ti mandiamo il link via email e un promemoria prima di ogni serata.'],
-  ['E se perdo una delle due serate?', 'Registrati comunque: chi si iscrive prima dell’evento riceve le registrazioni di entrambe le serate, disponibili per 48 ore.'],
+  ['È davvero gratuito?', 'Sì, richiedere la partecipazione è gratuito e non comporta un posto già assegnato. Il confronto facoltativo con un Architetto Patrimoniale si svolge solo se richiesto esplicitamente.'],
+  ['Dove si svolge e cosa mi serve per collegarmi?', 'Online. Ti serve un computer, un tablet o uno smartphone con connessione. Le date e le indicazioni di accesso saranno comunicate quando l’edizione verrà organizzata.'],
+  ['E se perdo una delle due serate?', 'Nel programma sono previste registrazioni per chi non riesce a seguire una serata. Disponibilità e modalità saranno confermate con il calendario.'],
   ['Devo accendere la videocamera o parlare?', 'No. Puoi seguire in tranquillità e fare domande in chat quando vuoi.'],
   ['Posso partecipare con un familiare?', 'Sì. Le scelte sul patrimonio si fanno meglio insieme.'],
   ['Serve già sapere di finanza?', 'No. Partiamo dalle basi e arriviamo a come ragionano i grandi patrimoni. Ognuno dei quattro profili trova qualcosa per sé.'],
@@ -414,7 +415,7 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 <p className={styles.s012}>Il prossimo passo</p>
 <h2 className={`${styles.reveal} ${styles.s211}`}>Tra un anno potrai dire &quot;avrei dovuto&quot;. Oppure <span className={styles["chip-lime"]}>&quot;per fortuna&quot;</span>.</h2>
 <p className={[styles.s043, styles.vMuted].join(' ')}>La differenza sono due serate. <strong className={styles.s003}>P.S.</strong> Se sei arrivato fin qui senza registrarti, uno dei quattro profili probabilmente ti somiglia già.</p>
-<a href="#richiesta" className={[styles.cta, styles.s212].join(' ')}>{registrationOpen ? "Riserva il mio posto gratuito" : "Informazioni sull’evento"}
+<a href="#richiesta" className={[styles.cta, styles.s212].join(' ')}>{registrationOpen ? "Richiedi la partecipazione gratuita" : "Informazioni sull’evento"}
 <Arrow /></a>
 </div>
 </div>
@@ -430,14 +431,14 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 </div>
 </footer>
 
-<aside data-event-section="sticky" aria-label="Riserva il posto" className={[styles["sticky-cta"]].join(' ')}>
+<aside data-event-section="sticky" aria-label="Richiedi la partecipazione" className={[styles["sticky-cta"]].join(' ')}>
 <div className={[styles["tile-d"], styles.s218].join(' ')}>
 <div className={[styles.s219].join(' ')}>
 <div className={[styles["sticky-hide-m"], styles.s220].join(' ')}>
 <strong className={[styles.s221].join(' ')}>Quello che le banche non dicono</strong>
 <span className={[styles.s130].join(' ')}>Due serate online gratuite · date in definizione</span>
 </div>
-<a href="#richiesta" className={[styles.cta, styles.s222].join(' ')}>{registrationOpen ? "Riserva il posto gratuito" : "Informazioni sull’evento"} <span aria-hidden="true">→</span></a>
+<a href="#richiesta" className={[styles.cta, styles.s222].join(' ')}>{registrationOpen ? "Richiedi la partecipazione" : "Informazioni sull’evento"} <span aria-hidden="true">→</span></a>
 </div>
 </div>
 </aside>

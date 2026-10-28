@@ -75,7 +75,7 @@ export function pilotCrmDetails(lead: PilotLead, now: Date) {
   ];
   return {
     source: `${patrimonialBrand.division} · ${lead.mode} (horyzon.it)`,
-    tags: ['horyzon-patrimoniale', lead.mode === 'architect-path' ? 'percorso-architetto-patrimoniale' : 'evento-patrimoniale', 'pilot'],
+    tags: ['horyzon-patrimoniale', lead.mode === 'architect-path' ? 'percorso-architetto-patrimoniale' : 'evento-patrimoniale', lead.mode === 'architect-path' ? 'pilot' : 'evento-in-attesa-di-edizione'],
     note: fields.join('\n'),
   };
 }
