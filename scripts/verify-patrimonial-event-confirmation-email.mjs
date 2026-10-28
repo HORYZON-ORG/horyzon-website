@@ -9,6 +9,11 @@ assert.match(copy.text,/date dell’evento non sono ancora state fissate/);
 assert.match(copy.text,/telefonicamente/);
 assert.doesNotMatch(copy.text,/newsletter gratuite|guadagni garantiti/);
 assert(!copy.html.includes('<Mario>'));
+const scheduled=eventConfirmationContent({firstName:'Mario',confirmedCalendar:'Due serate: 4 dicembre 2028 e 11 dicembre 2028'});
+assert.match(scheduled.text,/4 dicembre 2028 e 11 dicembre 2028/);
+assert.doesNotMatch(scheduled.text,/date dell’evento non sono ancora state fissate/);
+assert.match(scheduled.text,/NON la prenotazione di un posto/);
+assert.match(scheduled.text,/telefonicamente/);
 const calls=[];let claimed=false;
 const fetchImpl=async(url,init)=>{
  const u=new URL(url);const p=JSON.parse(init.body);calls.push({url:u.pathname,headers:init.headers,body:p});
