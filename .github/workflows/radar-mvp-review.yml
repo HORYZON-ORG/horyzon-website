@@ -23,3 +23,24 @@ jobs:
         run: node --no-warnings --experimental-strip-types scripts/verify-patrimonial-beta-release.mjs
       - run: npm run typecheck
       - run: npm run build
+      - name: Website routes remain available; Radar stays closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- --hostname 127.0.0.1 --port 3214 > /tmp/radar-web-smoke.log 2>&1 &
+          APP_PID=$!
+          trap 'kill "$APP_PID" 2>/dev/null || true' EXIT
+          ready=0
+          for i in $(seq 1 40); do
+            if curl -sS -o /dev/null http://127.0.0.1:3214/; then ready=1; break; fi
+            sleep 1
+          done
+          if [ "$ready" != 1 ]; then tail -35 /tmp/radar-web-smoke.log; exit 1; fi
+          for path in / /ai-score /annunci-10x /radar-impresa; do
+            code=$(curl -sSL -o /dev/null -w '%{http_code}' "http://127.0.0.1:3214$path")
+            echo "$path: $code"
+            test "$code" = 200
+          done
+          code=$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:3214/radar-patrimoniale)
+          echo "/radar-patrimoniale (beta gate OFF): $code"
+          test "$code" = 404
