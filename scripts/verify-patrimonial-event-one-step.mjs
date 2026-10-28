@@ -28,6 +28,10 @@ for (const field of ['firstName','lastName','email','phone','province','consent'
 assert.equal((form.match(/<fieldset/g) ?? []).length, 1, 'single step / one visible fieldset');
 assert.doesNotMatch(form, /setStep|step ===|address-level2/, 'event form must not request second step or city autofill');
 assert.doesNotMatch(wrapper, /presentation === 'event' && mode === 'patrimonial-event' && step === 1/, 'no event step gate');
+assert.match(form, /name="phone"[^>]*required/, 'mobile phone required');
+assert.match(form, /<details className=\{styles\.privacyDetails\}>/, 'layered privacy details');
+assert.match(form, /href="\/privacy-policy"/, 'link to complete privacy policy');
+assert.match(form, /name="consent" type="checkbox" required/, 'required acknowledgment');
 assert.match(wrapper, /eventQualification/);
 assert.match(wrapper, /referral\.current/, 'referral still included');
 console.log('Event one-step form, dependent region/province menus, privacy and referral integration PASS');

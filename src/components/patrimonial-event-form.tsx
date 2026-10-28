@@ -34,7 +34,7 @@ export function PatrimonialEventForm({ selectedProfile, onProfileChange, onSubmi
       </div>
       <div className={styles.formGrid}>
         <label>Email<input name="email" type="email" autoComplete="email" required maxLength={254} /></label>
-        <label><span className={styles["phone-label"]}>Cellulare <span className={styles.optional}>(facoltativo)</span></span><input name="phone" type="tel" autoComplete="tel" maxLength={40} /></label>
+        <label><span className={styles["phone-label"]}>Numero di cellulare *</span><input name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="Es. 333 123 4567" required minLength={8} maxLength={40} pattern="[+0-9() ./\\-]{8,40}" title="Inserisci un numero di cellulare valido, con eventuale prefisso internazionale" aria-describedby="event-phone-help" /><span id="event-phone-help" className={styles.provinceHelp}>Necessario per ricontattarti in relazione alla richiesta di partecipazione.</span></label>
       </div>
       <div className={styles.formGrid}>
         <label>Regione
@@ -54,7 +54,18 @@ export function PatrimonialEventForm({ selectedProfile, onProfileChange, onSubmi
           <span id="event-province-help" className={styles.provinceHelp}>Seleziona la provincia della regione scelta.</span>
         </label>
       </div>
-      <label className={styles.formConsent}><input name="consent" type="checkbox" required /><span>Ho letto l&apos;<Link href="/privacy-policy" target="_blank" rel="noopener">informativa privacy</Link> e accetto di essere ricontattato per questo evento.</span></label>
+      <p className={styles.privacySummary}>Usiamo i tuoi dati, compreso il cellulare, per gestire la richiesta e contattarti per date e partecipazione all’evento. Questa richiesta non autorizza comunicazioni commerciali non pertinenti.</p>
+      <details className={styles.privacyDetails}>
+        <summary>Leggi le informazioni sul trattamento dei dati</summary>
+        <div className={styles.privacyDetailsBody}>
+          <p><strong>Titolare:</strong> FELICITÀ S.r.l., Viale Papiniano 28, 20123 Milano. Contatto: <a href="mailto:info@horyzon.it">info@horyzon.it</a>.</p>
+          <p><strong>Finalità:</strong> registrare la richiesta per «Quello che le banche non dicono», fornire risposte e ricontattarti tramite telefono o email in merito all’organizzazione, alle date e alla partecipazione. L’invio non conferma un posto.</p>
+          <p><strong>Dati:</strong> nome, cognome, email, cellulare e provincia sono richiesti per gestire la tua domanda. Eventuali preferenze e risposte sono usate per contestualizzare la richiesta. Senza i dati obbligatori non possiamo registrarla.</p>
+          <p><strong>Destinatari e diritti:</strong> i dati vengono trattati da Horyzon e dai fornitori dell’infrastruttura e del CRM per le finalità indicate. Puoi esercitare i diritti di accesso, rettifica, cancellazione e gli altri diritti previsti dal GDPR rivolgendoti al titolare, e presentare reclamo al Garante.</p>
+          <p>Leggi l’<Link href="/privacy-policy" target="_blank" rel="noopener">informativa privacy completa</Link> per le basi giuridiche, la conservazione e gli ulteriori dettagli.</p>
+        </div>
+      </details>
+      <label className={styles.formConsent}><input name="consent" type="checkbox" required /><span>Dichiaro di aver preso visione dell’<Link href="/privacy-policy" target="_blank" rel="noopener">informativa privacy</Link> e chiedo di essere ricontattato per questa richiesta tramite i recapiti indicati.</span></label>
       <label className={styles.formConsent}><input name="architectCall" type="checkbox" onChange={event => setArchitectCall(event.target.checked)} /><span>Sì, dopo l&apos;evento voglio il confronto gratuito di 40 minuti con un Architetto Patrimoniale.</span></label>
     </fieldset>
     <input name="profile" type="hidden" value={eventProfileValue(selectedProfile)} />
