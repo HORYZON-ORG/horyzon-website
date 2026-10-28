@@ -32,7 +32,7 @@ export function PatrimonialEventForm({ step, setStep, selectedProfile, onProfile
     <fieldset className={styles.formFields} hidden={step !== 1} disabled={disabled}>
       <legend className={styles.formLegend}>1 · Chi sei?</legend>
       <div className={styles.profileChips}>{eventProfiles.map(profile => <button key={profile.label} type="button" className={`${styles.chip} ${selectedProfile === profile.label ? styles.on : ''}`} data-event-profile={profile.label} aria-pressed={selectedProfile === profile.label} onClick={() => onProfileChange?.(profile.label)}>{profile.label}</button>)}</div>
-      <div className={styles.formLegend}>2 · Dove ti mandiamo il link</div>
+      <div className={styles.formLegend}>2 · Dove riceverai le informazioni sull&apos;evento</div>
       <div className={styles.formGrid}>
         <label>Nome<input ref={firstName} name="firstName" type="text" autoComplete="given-name" required maxLength={120} /></label>
         <label>Email<input name="email" type="email" autoComplete="email" required maxLength={254} /></label>
@@ -54,12 +54,12 @@ export function PatrimonialEventForm({ step, setStep, selectedProfile, onProfile
     <input name="message" type="hidden" value={[notes, architectCall ? 'Confronto 40 minuti con Architetto Patrimoniale: sì' : ''].filter(Boolean).join(' | ')} />
     <div hidden><label>Sito web<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
     <button type="submit" className={`${styles.cta} ${styles.formSubmit}`} disabled={disabled || revisionRequired}>
-      <span>{status === 'sending' ? 'Invio in corso…' : status === 'success' ? 'Richiesta ricevuta.' : step === 1 ? 'Riserva il mio posto' : 'Conferma la richiesta'}</span>
+      <span>{status === 'sending' ? 'Invio in corso…' : status === 'success' ? 'Richiesta ricevuta.' : step === 1 ? 'Continua la richiesta' : 'Invia richiesta di partecipazione'}</span>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
     </button>
     {notice && <p role={status === 'error' ? 'alert' : 'status'} className={styles.formNotice}>{notice}</p>}
     {v2 && revisionRequired && <button type="button" className={styles.formBack} disabled={status === 'sending'} onClick={onNewAttempt}>Ho verificato il precedente invio: avvia una nuova richiesta</button>}
-    <div className={styles.formFine}>{v2 ? 'La ricevuta conferma la richiesta. La partecipazione, la data e il link saranno gestiti separatamente; nessun messaggio automatico viene inviato in questo ambiente locale.' : 'Ti mandiamo subito una conferma con data, orario e link delle due serate.'}</div>
+    <div className={styles.formFine}>L’invio registra la richiesta; non conferma un posto. Date, orari e link saranno comunicati quando disponibili. Nessuna iscrizione a comunicazioni promozionali senza consenso separato.</div>
     
   </form>;
 }
