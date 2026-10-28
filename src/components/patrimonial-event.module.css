@@ -858,3 +858,13 @@
 
 /* Instruments quiz now closes chapter 2 */
 .page .vSplitBody .vQuiz{margin-top:40px}
+
+.page .privacySummary{margin:0;color:#CDD6D4;font:400 13px/1.6 var(--event-sans),sans-serif;}
+.page .privacyDetails{border:1px solid rgba(247,244,232,.18);border-radius:9px;padding:12px 14px;color:#CDD6D4;font:400 13px/1.65 var(--event-sans),sans-serif;}
+.page .privacyDetails summary{cursor:pointer;color:#D8FF42;font-weight:600;}
+.page .privacyDetailsBody{padding-top:12px;display:grid;gap:10px;}
+.page .privacyDetailsBody p{margin:0;}
+.page .privacyDetailsBody a{color:#D8FF42;text-decoration:underline;}
+:global([data-theme="light"]) .page .privacySummary,:global([data-theme="light"]) .page .privacyDetails{color:#41545A;}
+:global([data-theme="light"]) .page .privacyDetails{border-color:rgba(7,23,29,.18);}
+:global([data-theme="light"]) .page .privacyDetails summary,:global([data-theme="light"]) .page .privacyDetailsBody a{color:#5F7010;}

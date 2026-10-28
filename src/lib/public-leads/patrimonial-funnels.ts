@@ -29,7 +29,7 @@ export function validatePilotLead(input: Record<string, unknown>): PilotLead | n
   if (!firstName || !lastName || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !province || province.length < 2 || rawPhone === null || message === null || profile === null) return null;
   if ([firstName, lastName, province].some(value => /[\r\n]/.test(value))) return null;
   const phone = normalizePhone(rawPhone);
-  if ((mode === 'architect-path' && !phone) || (phone && !/^\+[1-9]\d{7,14}$/.test(phone))) return null;
+  if (!phone || !/^\+[1-9]\d{7,14}$/.test(phone)) return null;
   const utm: PilotUtm = {};
   if (input.utm !== undefined) {
     if (!input.utm || typeof input.utm !== 'object' || Array.isArray(input.utm)) return null;
