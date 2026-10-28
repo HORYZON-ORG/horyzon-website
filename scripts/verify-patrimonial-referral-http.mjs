@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';import {createHmac} from 'node:crypto';import {writeFile} from 'node:fs/promises';
+import {handleAccountRadar} from '../src/lib/patrimonial-radar-server/account-http.ts';
+import {accountMacKey} from '../src/lib/patrimonial-radar-server/account-rpc.ts';
+const origin='https://synthetic-preview.example.invalid',code='a'.repeat(32),secret='synthetic-referral-http-key-000000000000000000000000000';
+const env={VERCEL:'1',VERCEL_ENV:'preview',VERCEL_PROJECT_ID:'prj_bJvIOswh4GacqtUootXATXeAkSUO',VERCEL_DEPLOYMENT_ID:'synthetic-referral-deployment',VERCEL_URL:'synthetic-preview.example.invalid',PATRIMONIAL_RADAR_ACCOUNT_ENABLED:'true',PATRIMONIAL_RADAR_PUBLISHABLE_KEY:'sb_publishable_synthetic',PATRIMONIAL_RADAR_IDENTITY_SECRET:secret};
+let calls=0,valid=true;const wire=async(url,init)=>{calls++;assert.equal(url,'https://pmkyeqrfkunypfkbjnyg.supabase.co/rest/v1/rpc/patrimonial_radar_referral_check');assert.equal(init.headers['Content-Profile'],'hub');assert.equal(init.headers.Authorization,undefined);assert.equal(init.cache,'no-store');assert.equal(init.redirect,'error');const b=JSON.parse(init.body),e=JSON.parse(b.p_envelope);assert.equal(e.purpose,'radar-referral-1');assert.equal(b.p_mac,createHmac('sha256',accountMacKey(secret)).update(b.p_envelope).digest('hex'));return Response.json({ok:true,valid});};
+const request=(headers={},body={code})=>new Request(origin+'/api/patrimonial-radar/referral',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json','X-Patrimonial-CSRF':'referral-context',...headers},body:JSON.stringify(body)});
+for(const headers of [{Origin:'https://untrusted.invalid'},{'X-Patrimonial-CSRF':'wrong'},{'Sec-Fetch-Site':'cross-site'}])assert.equal((await handleAccountRadar(request(headers),env,wire)).status,403);
+assert.equal(calls,0);assert.equal((await handleAccountRadar(request({}, {code,operator_id:'client-selected'}),env,wire)).status,400);assert.equal(calls,0);
+const good=await handleAccountRadar(request(),env,wire);assert.equal(good.status,200);assert.deepEqual(await good.json(),{state:'VALID'});
+const cookie=good.headers.get('set-cookie');for(const part of ['__Host-pr_referral=','HttpOnly','SameSite=Strict','Path=/','Secure'])assert(cookie.includes(part));assert(!cookie.includes(code));assert.equal(good.headers.get('referrer-policy'),'no-referrer');
+valid=false;assert.deepEqual(await(await handleAccountRadar(request(),env,wire)).json(),{state:'REVIEW_REQUIRED'});
+assert.equal((await handleAccountRadar(request(),{...env,VERCEL_ENV:'production'},wire)).status,404);
+assert.equal((await handleAccountRadar(request(),{...env,PATRIMONIAL_RADAR_ACCOUNT_ENABLED:'false'},wire)).status,404);
+const result={status:'PASS',scope:'SYNTHETIC_TRANSPORT_NO_REAL_NETWORK',checks:['Exact origin, provenance and custom CSRF header','No client-selected operator','Server MAC and hub profile','Encrypted HttpOnly Secure Strict cookie','Invalid/revoked status remains review','Production and default OFF remain closed'],remoteWrites:0};
+await writeFile('../referral-http-result.json',JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result,null,2));

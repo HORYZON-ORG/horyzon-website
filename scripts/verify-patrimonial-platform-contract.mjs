@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';import {resolve} from 'node:path';import {pathToFileURL} from 'node:url';
+import {planPatrimonialCrmSync} from '../src/lib/patrimonial-radar-server/foundation.ts';
+const arg=process.argv.find(a=>a.startsWith('--platform-contract='));
+if(!arg)throw Error('Supply the built local Platform patrimonial-radar-reference.js; no network fallback');
+const {patrimonialRadarReferenceSchema}=await import(pathToFileURL(resolve(arg.slice(20))).href);
+const person='11111111-1111-4111-8111-111111111111',assessment='22222222-2222-4222-8222-222222222222',intent='33333333-3333-4333-8333-333333333333';
+const input={personId:person,assessmentId:assessment,approvedRevision:29,binding:{state:'VERIFIED',locationId:'synthetic-location',contactId:'synthetic-contact',evidenceRef:'SYNTHETIC_ONLY',revision:1,financialDossier:'MUST_NOT_CROSS'},internalOperatorId:null,assignment:{intentId:intent,operatorId:null,revision:0,answers:['MUST_NOT_CROSS']},verifiedRemoteUserId:null,observedRemoteOwnerId:null,capabilityVerified:true};
+const plan=planPatrimonialCrmSync(input);assert.deepEqual(patrimonialRadarReferenceSchema.parse(plan.metadata),plan.metadata);assert.deepEqual(plan.writes,[]);assert(!JSON.stringify(plan).includes('MUST_NOT_CROSS'));assert.equal(patrimonialRadarReferenceSchema.safeParse({...plan.metadata,answers:[]}).success,false);
+assert.notEqual(plan.idempotencyKey,planPatrimonialCrmSync({...input,assignment:{...input.assignment,revision:1}}).idempotencyKey);
+console.log(JSON.stringify({status:'PASS',contract:plan.metadata.contract,checks:['Website output accepted by actual Platform Zod schema','Financial dossier rejected and never projected','Assignment revision changes idempotency key'],remoteWrites:0},null,2));

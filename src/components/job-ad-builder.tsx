@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
-import styles from "@/app/annuncio-10x/annuncio-10x.module.css";
+import styles from "@/app/(site)/annuncio-10x/annuncio-10x.module.css";
 
 type Mode = "create" | "improve";
 type Brief = {

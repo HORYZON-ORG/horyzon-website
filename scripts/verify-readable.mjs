@@ -1,3 +1,7 @@
+import {mkdir,writeFile} from 'node:fs/promises';
+import path from 'node:path';
+import {hasVary,forbidsSharedStorage,assertReadableCachePair} from './lib/readable-cache-contract.mjs';
+import {verifyReadableHttp} from './lib/readable-http-checks.mjs';
 import assert from 'node:assert/strict';
 import { prefersMarkdown } from '../src/lib/accept-markdown.ts';
 
@@ -10,52 +14,29 @@ for (const [accept, expected] of [
  ['text/markdown;q=0.8, text/html;q=0, */*', true],
 ]) assert.equal(prefersMarkdown(accept), expected, accept);
 
-const base = process.argv[2];
-if (base) {
- const get = async headers => {
-  const response = await fetch(base + '/', { headers, redirect: 'manual' });
-  assert.equal(response.status, 200);
-  // Vercel's Next static adapter replaces Vary on HTML. Its CDN includes
-  // Accept in the cache key by default; downstream caches must revalidate.
-  if (!/\baccept\b/i.test(response.headers.get('vary') ?? '')) {
-   assert.equal(response.headers.get('server'), 'Vercel');
-   assert.match(response.headers.get('cache-control'), /max-age=0/);
-   assert.match(response.headers.get('cache-control'), /must-revalidate/);
-  }
-  assert.match(response.headers.get('vary'), /\brsc\b/i);
-  assert(!response.headers.get('x-robots-tag')?.includes('noindex'), 'Negotiation must not noindex the homepage');
-  return { response, body: await response.text() };
- };
- for (let repeat = 0; repeat < 2; repeat++) {
-  const md = await get({ accept: 'text/markdown' });
-  assert.match(md.response.headers.get('vary'), /\baccept\b/i);
-  assert.match(md.response.headers.get('content-type'), /^text\/markdown; charset=utf-8$/i);
-  assert(/^# Far stare bene un’impresa, _?davvero\._?$/m.test(md.body));
-  assert(md.body.includes('https://hub.horyzon.it/radar'));
-  assert(!md.body.includes('<script') && !md.body.includes('self.__next_f'));
-  for (const accept of ['text/html', '*/*', 'text/markdown;q=0, text/html']) {
-   const html = await get({ accept });
-   assert.match(html.response.headers.get('content-type'), /^text\/html/i);
-   assert(html.body.includes('<h1'));
-   assert(html.body.includes('Far stare bene un’impresa, davvero.'));
-   assert.notEqual(html.response.headers.get('etag'), md.response.headers.get('etag'));
-   for (const [variant, etag] of [['text/html', md.response.headers.get('etag')], ['text/markdown', html.response.headers.get('etag')]]) {
-    assert(etag);
-    const revalidated = await fetch(base + '/', { headers: { accept: variant, 'if-none-match': etag } });
-    assert.equal(revalidated.status, 200, 'A different representation must not return 304');
-    assert.match(revalidated.headers.get('content-type'), new RegExp(`^${variant}`));
-   }
-  }
- }
- const rsc = await fetch(base + '/', { headers: { accept: 'text/markdown', rsc: '1' } });
- assert(!rsc.headers.get('content-type')?.startsWith('text/markdown'), 'RSC must bypass negotiation');
- const direct = await fetch(base + '/home.md');
- assert.equal(direct.status, 200);
- assert.match(direct.headers.get('content-type'), /^text\/markdown/i);
- assert.match(direct.headers.get('x-robots-tag'), /noindex/);
- const head = await fetch(base + '/', { method: 'HEAD', headers: { accept: 'text/markdown' } });
- assert.equal(head.status, 200);
- assert.match(head.headers.get('content-type'), /^text\/markdown/i);
- assert.equal(await head.text(), '');
-}
-console.log(`Markdown negotiation passed${base ? `: ${base}` : ' (Accept unit cases)'}`);
+
+const h=value=>new Headers(value);
+const safe=h({'cache-control':'private, no-store, max-age=0, must-revalidate','cdn-cache-control':'no-store','vercel-cdn-cache-control':'no-store'});
+assert.equal(hasVary('Accept-Encoding','Accept'),false);
+assert.equal(hasVary('RSC, Accept, Accept-Encoding','Accept'),true);
+assert.equal(forbidsSharedStorage(safe),true);
+assertReadableCachePair([safe,safe]);
+const varied=h({vary:'Accept','cache-control':'public, s-maxage=300'});
+assertReadableCachePair([varied,varied]);
+for(const value of [
+ {'cache-control':'public, s-maxage=31536000',vary:'Accept-Encoding'},
+ {'cache-control':'private, max-age=0, must-revalidate'},
+ {'cache-control':'private, no-store','cdn-cache-control':'public, s-maxage=300'},
+ {'cache-control':'private, no-store','vercel-cdn-cache-control':'s-maxage=300'},
+ {'cache-control':'private="Set-Cookie", no-store'},
+])assert.throws(()=>assertReadableCachePair([safe,h(value)]));
+assert.throws(()=>assertReadableCachePair([safe,varied]),'Fallback may not disable caching only for HTML or Markdown');
+
+const base=process.argv[2],directory=process.argv.find(v=>v.startsWith('--artifacts='))?.slice(12);
+if(base) {
+ const evidence={base,status:'FAIL',requests:[]};
+ try{await verifyReadableHttp(base,evidence);}
+ catch(error){evidence.error=error.message;throw error;}
+ finally{if(directory){await mkdir(directory,{recursive:true});await writeFile(path.join(directory,'readable-http.json'),JSON.stringify(evidence,null,2)+'\n');}}
+ console.log('PASS Readable HTTP: '+evidence.requests.length+' actual GET/HEAD/default/alternating/conditional/RSC checks; strategy '+evidence.strategy);
+} else console.log('PASS Readable Accept/cache unit cases: exact Vary tokens, strict both-representation no-store, CDN overrides and unsafe policies rejected');

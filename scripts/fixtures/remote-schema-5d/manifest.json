@@ -1,0 +1,24 @@
+[
+  {
+    "file": "20261021215739_architetti_training_persona_context.sql",
+    "sourceCommit": "cb329b14a987a334dd2e96e103bc65b8eb0adfa1",
+    "sha256": "c4d5502d6ffcb106585bcde3d2b834e5801eff90d116e2838293411b92069e9c"
+  },
+  {
+    "file": "20261022103000_architetti_training_chat_code.sql",
+    "sourceCommit": "cb329b14a987a334dd2e96e103bc65b8eb0adfa1",
+    "sha256": "d23f3a82110a770e3c822204fde690d7415f2c079ba134c23531d066f1ec0354"
+  },
+  {
+    "file": "20261024111527_architetti_training_history.sql",
+    "sourceCommit": "cb329b14a987a334dd2e96e103bc65b8eb0adfa1",
+    "sha256": "24376f1865839559d94029a455f17bf3871ab7f23adba658fa0deb2909e8342d",
+    "upstreamSha256NormalizedLF": "7ba8158f42d07087c285f4a427ceee54a550e105cc8a80d8670f2af7423e1f72",
+    "transformation": "Only final blank line removed for repository whitespace checks; SQL statements unchanged"
+  },
+  {
+    "file": "20261024131336_architetti_training_report_removal.sql",
+    "sourceCommit": "cb329b14a987a334dd2e96e103bc65b8eb0adfa1",
+    "sha256": "f48c4b845e89373ee8e4c5f04c34172ef4b711ef96764ea8f260edcba1c639f8"
+  }
+]

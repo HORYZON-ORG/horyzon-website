@@ -1,0 +1,1779 @@
+{
+  "sourceCommit": "accd6b70b498cbccb7e1dbedb551e165fa38f820",
+  "syntheticOnly": true,
+  "asOf": "2026-10-19",
+  "cases": [
+    {
+      "code": "A",
+      "title": "Due stipendi, casa e progetti familiari",
+      "description": "Un bilancio condiviso sostenuto da due stipendi. Due altre persone dipendono economicamente dal bilancio. Nessun nome, età, datore di lavoro o rapporto giuridico è necessario.",
+      "scope": "HOUSEHOLD",
+      "rows": [
+        {
+          "id": "RP-S01",
+          "fact": "Il nucleo con cui si condivide il bilancio; tutti gli importi sono già le quote di questo stesso nucleo.",
+          "state": "VALUE",
+          "value": "HOUSEHOLD"
+        },
+        {
+          "id": "RP-S02",
+          "fact": "Entrate, spese, debiti e patrimonio coprono lo stesso intero bilancio e tutti i dodici mesi.",
+          "state": "VALUE",
+          "value": "COMPLETE"
+        },
+        {
+          "id": "RP-S03",
+          "fact": "Due entrate da lavoro dipendente; nessun altro tipo di entrata.",
+          "state": "VALUE",
+          "value": [
+            "EMPLOYEE"
+          ]
+        },
+        {
+          "id": "RP-S04",
+          "fact": "Due altre persone dipendono dalle risorse.",
+          "state": "VALUE",
+          "value": "2"
+        },
+        {
+          "id": "RP-A01",
+          "fact": "Entrate nette disponibili negli ultimi dodici mesi: 48.000 € totali, equivalenti a 4.000 € al mese. Non comprendono prestiti, vendite o trasferimenti interni.",
+          "state": "VALUE",
+          "value": {
+            "currency": "EUR",
+            "scope": "HOUSEHOLD",
+            "asOf": "2026-10-19",
+            "period": "T12",
+            "basis": "ANNUAL",
+            "quality": "ESTIMATED",
+            "amount": "48000"
+          }
+        },
+        {
+          "id": "RP-A02",
+          "fact": "Spese negli stessi dodici mesi, escluse rate e investimenti: media 2.500 € al mese (30.000 € annui).",
+          "state": "VALUE",
+          "value": {
+            "currency": "EUR",
+            "scope": "HOUSEHOLD",
+            "asOf": "2026-10-19",
+            "period": "T12",
+            "basis": "MONTHLY",
+            "quality": "ESTIMATED",
+            "amount": "2500"
+          }
+        },
+        {
+          "id": "RP-A03",
+          "fact": "Le entrate sono bastate senza usare il patrimonio.",
+          "state": "VALUE",
+          "value": "COVERED"
+        },
+        {
+          "id": "RP-A04",
+          "fact": "Entrate regolari.",
+          "state": "VALUE",
+          "value": "REGULAR"
+        },
+        {
+          "id": "RP-A05",
+          "fact": "La principale delle due fonti pesa circa il 63%: oltre il 50% e fino all’80%.",
+          "state": "VALUE",
+          "value": "GT50_LE80"
+        },
+        {
+          "id": "RP-C01",
+          "fact": "Un mutuo ancora aperto; nessun altro debito. Sono state pagate rate nei dodici mesi.",
+          "state": "VALUE",
+          "value": {
+            "kinds": [
+              "MORTGAGE"
+            ],
+            "openNow": true
+          }
+        },
+        {
+          "id": "RP-C02",
+          "fact": "Rate intere pagate nei dodici mesi: media 800 € al mese, già separate dalle spese.",
+          "state": "VALUE",
+          "value": {
+            "currency": "EUR",
+            "scope": "HOUSEHOLD",
+            "asOf": "2026-10-19",
+            "period": "T12",
+            "basis": "MONTHLY",
+            "quality": "ESTIMATED",
+            "amount": "800"
+          }
+        },
+        {
+          "id": "RP-C03",
+          "fact": "Nessun ritardo per difficoltà su rate, affitto o utenze.",
+          "state": "VALUE",
+          "value": "NONE"
+        },
+        {
+          "id": "RP-C04",
+          "fact": "Rate attuali: 800 € al mese. Nessun cambiamento di rata già noto.",
+          "state": "VALUE",
+          "value": {
+            "payment": {
+              "currency": "EUR",
+              "scope": "HOUSEHOLD",
+              "asOf": "2026-10-19",
+              "period": "Tnow",
+              "basis": "MONTHLY",
+              "quality": "ESTIMATED",
+              "amount": "800"
+            },
+            "knownChange": {
+              "state": "VALUE",
+              "value": "NO"
+            }
+          }
+        },
+        {
+          "id": "RP-B01",
+          "fact": "Budget essenziale attuale, escluse rate: 1.800 € per un mese.",
+          "state": "VALUE",
+          "value": {
+            "currency": "EUR",
+            "scope": "HOUSEHOLD",
+            "asOf": "2026-10-19",
+            "period": "Tnow",
+            "basis": "MONTHLY",
+            "quality": "ESTIMATED",
+            "amount": "1800"
+          }
+        },
+        {
+          "id": "RP-B02",
+          "fact": "Liquidità disponibile entro sette giorni senza debito o vendita incerta: 20.000 €, inclusi gli accantonamenti seguenti.",
+          "state": "VALUE",
+          "value": {
+            "currency": "EUR",
+            "scope": "HOUSEHOLD",
+            "asOf": "2026-10-19",
+            "period": "T0",
+            "basis": "STOCK",
+            "quality": "ESTIMATED",
+            "amount": "20000"
+          }
+        },
+        {
+          "id": "RP-B03",
+          "fact": "Di quei 20.000 €, 5.000 € sono già destinati a uscite non rinviabili nei prossimi dodici mesi, fuori dal budget mensile.",
+          "state": "VALUE",
+          "value": {
+            "currency": "EUR",
+            "scope": "HOUSEHOLD",
+            "asOf": "2026-10-19",
+            "period": "T0",
+            "basis": "STOCK",
+            "quality": "ESTIMATED",
+            "amount": "5000"
+          }
+        },
+        {
+          "id": "RP-B04",
+          "fact": "Un imprevisto pari a spese essenziali più rate può essere pagato con somme disponibili, senza toccare gli accantonamenti.",
+          "state": "VALUE",
+          "value": "OWN_AVAILABLE"
+        },
+        {
+          "id": "RP-D01",
+          "fact": "Responsabilità individuate: sostentamento di altre persone e disponibilità dell’abitazione.",
+          "state": "VALUE",
+          "value": [
+            "SUPPORT",
+            "HOME"
+          ]
+        },
+        {
+          "id": "RP-D02",
+          "fact": "Per entrambe esiste una strategia di protezione; limiti principali già controllati.",
+          "state": "VALUE",
+          "value": {
+            "SUPPORT": {
+              "state": "VALUE",
+              "value": "CHECKED"
+            },
+            "HOME": {
+              "state": "VALUE",
+              "value": "CHECKED"
+            }
+          }
+        },
+        {
+          "id": "RP-E01",
+          "fact": "Inventario completo: liquidità già indicata, strumenti finanziari non previdenziali, abitazione principale. Nessun’altra categoria.",
+          "state": "VALUE",
+          "value": {
+            "categories": [
+              "CASH",
+              "FINANCIAL",
+              "HOME"
+            ],
+            "complete": true
+          }
+        },
+        {
+          "id": "RP-E02",
+          "fact": "La singola esposizione principale è l’abitazione: dalla metà a meno dei tre quarti delle attività non previdenziali.",
+          "state": "VALUE",
+          "value": {
+            "band": "GE50_LT75",
+            "type": "PROPERTY"
+          }
+        },
+        {
+          "id": "RP-E03",
+          "fact": "Entro trenta giorni è trasformabile in denaro senza rilevante incertezza una quota da un quarto a meno della metà.",
+          "state": "VALUE",
+          "value": "GE25_LT50"
+        },
+        {
+          "id": "RP-E04",
+          "fact": "Entrate e patrimonio non dipendono in parte importante dalla stessa attività o rischio economico.",
+          "state": "VALUE",
+          "value": "NO"
+        },
+        {
+          "id": "RP-F01",
+          "fact": "Obiettivi con tempi e risorse già stimati, da verificare.",
+          "state": "VALUE",
+          "value": "DEFINED"
+        },
+        {
+          "id": "RP-F02",
+          "fact": "Solo una stima personale delle risorse di lungo periodo, senza verifica ufficiale.",
+          "state": "VALUE",
+          "value": "ROUGH"
+        },
+        {
+          "id": "RP-F03",
+          "fact": "Le decisioni economiche principali sono prese direttamente.",
+          "state": "VALUE",
+          "value": "DIRECT"
+        },
+        {
+          "id": "RP-F04",
+          "fact": "Il personaggio non sa individuare e spiegare i costi complessivi. Usa «Non so», senza indovinare.",
+          "state": "UNKNOWN"
+        },
+        {
+          "id": "RP-F05",
+          "fact": "Nell’esempio, il personaggio ritiene che la dipendenza dalla stessa impresa possa rimanere.",
+          "state": "VALUE",
+          "value": "EXPOSURE"
+        },
+        {
+          "id": "RP-F06",
+          "fact": "Ultimo confronto fra entrate, spese e obiettivi: sei mesi fa. La successiva carta di correzione cambierà soltanto questo dato.",
+          "state": "VALUE",
+          "value": "FOUR_TO12"
+        },
+        {
+          "id": "RP-X01",
+          "fact": "Mese con meno entrate negli ultimi dodici: 3.600 € netti.",
+          "state": "VALUE",
+          "value": {
+            "currency": "EUR",
+            "scope": "HOUSEHOLD",
+            "asOf": "2026-10-19",
+            "period": "T12",
+            "basis": "MONTHLY",
+            "quality": "ESTIMATED",
+            "amount": "3600"
+          }
+        },
+        {
+          "id": "RP-X02",
+          "fact": "Nessuna garanzia altrui, obbligazione ulteriore, rata variabile, sospensione, saldo finale importante o cambiamento noto.",
+          "state": "VALUE",
+          "value": [
+            "NONE"
+          ]
+        },
+        {
+          "id": "RP-X03",
+          "fact": "Per sostentamento e abitazione: limiti/disponibilità, condizioni, durata e corrispondenza al bisogno tutti verificati.",
+          "state": "VALUE",
+          "value": {
+            "SUPPORT": {
+              "availability": {
+                "state": "VALUE",
+                "value": "CHECKED"
+              },
+              "conditions": {
+                "state": "VALUE",
+                "value": "CHECKED"
+              },
+              "duration": {
+                "state": "VALUE",
+                "value": "CHECKED"
+              },
+              "need": {
+                "state": "VALUE",
+                "value": "CHECKED"
+              }
+            },
+            "HOME": {
+              "availability": {
+                "state": "VALUE",
+                "value": "CHECKED"
+              },
+              "conditions": {
+                "state": "VALUE",
+                "value": "CHECKED"
+              },
+              "duration": {
+                "state": "VALUE",
+                "value": "CHECKED"
+              },
+              "need": {
+                "state": "VALUE",
+                "value": "CHECKED"
+              }
+            }
+          }
+        },
+        {
+          "id": "RP-X04",
+          "fact": "Valori attuali stimati completi: abitazione 300.000 €; strumenti finanziari 90.000 €. Liquidità già acquisita, non sommarla due volte.",
+          "state": "VALUE",
+          "value": {
+            "complete": true,
+            "rows": {
+              "HOME": {
+                "state": "VALUE",
+                "value": {
+                  "currency": "EUR",
+                  "scope": "HOUSEHOLD",
+                  "asOf": "2026-10-19",
+                  "period": "T0",
+                  "basis": "STOCK",
+                  "quality": "ESTIMATED",
+                  "amount": "300000"
+                }
+              },
+              "FINANCIAL": {
+                "state": "VALUE",
+                "value": {
+                  "currency": "EUR",
+                  "scope": "HOUSEHOLD",
+                  "asOf": "2026-10-19",
+                  "period": "T0",
+                  "basis": "STOCK",
+                  "quality": "ESTIMATED",
+                  "amount": "90000"
+                }
+              }
+            }
+          }
+        },
+        {
+          "id": "RP-X05",
+          "fact": "Il personaggio preferisce non dichiarare il debito residuo, pur avendo indicato le rate. Usa «Preferisco non rispondere» per questa domanda.",
+          "state": "DECLINED"
+        },
+        {
+          "id": "RP-X06",
+          "fact": "Priorità 1: spesa programmata, una tantum, entro dodici mesi, 8.000 €. Priorità 2: lungo periodo, continuativo, oltre trentasei mesi, importo non conosciuto. Confermare questo ordine.",
+          "state": "VALUE",
+          "value": {
+            "goals": [
+              {
+                "id": "a_spesa",
+                "category": "PLANNED_EXPENSE",
+                "rank": {
+                  "state": "VALUE",
+                  "value": 1
+                },
+                "horizon": {
+                  "state": "VALUE",
+                  "value": "WITHIN12"
+                },
+                "nature": {
+                  "state": "VALUE",
+                  "value": "ONCE"
+                },
+                "target": {
+                  "state": "VALUE",
+                  "value": {
+                    "currency": "EUR",
+                    "scope": "HOUSEHOLD",
+                    "asOf": "2026-10-19",
+                    "period": "T0",
+                    "basis": "STOCK",
+                    "quality": "ESTIMATED",
+                    "amount": "8000"
+                  }
+                }
+              },
+              {
+                "id": "a_lungo",
+                "category": "LONGTERM",
+                "rank": {
+                  "state": "VALUE",
+                  "value": 2
+                },
+                "horizon": {
+                  "state": "VALUE",
+                  "value": "OVER36"
+                },
+                "nature": {
+                  "state": "VALUE",
+                  "value": "CONTINUING"
+                },
+                "target": {
+                  "state": "UNKNOWN"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "id": "RP-X07",
+          "fact": "Nel piccolo esercizio il personaggio indica 20 € su 1.000 € al 2% per un anno.",
+          "state": "VALUE",
+          "value": "20"
+        },
+        {
+          "id": "RP-X08",
+          "fact": "Ultima stima basata su una simulazione personale non verificata, fatta negli ultimi dodici mesi.",
+          "state": "VALUE",
+          "value": {
+            "source": {
+              "state": "VALUE",
+              "value": "UNVERIFIED"
+            },
+            "recency": {
+              "state": "VALUE",
+              "value": "WITHIN12"
+            }
+          }
+        },
+        {
+          "id": "RP-X09",
+          "fact": "Dei 20.000 € liquidi: mantenere 12.000 € per riserva e impegni (inclusi i 5.000 € accantonati); destinabili oggi 8.000 €, tutti alla spesa programmata e 0 € al lungo periodo. Nessun’altra risorsa da esaminare. Vincoli globali non negoziabili: non intaccare riserva/impegni; nessun nuovo debito.",
+          "state": "VALUE",
+          "value": {
+            "minimum": {
+              "state": "VALUE",
+              "value": {
+                "currency": "EUR",
+                "scope": "HOUSEHOLD",
+                "asOf": "2026-10-19",
+                "period": "T0",
+                "basis": "STOCK",
+                "quality": "ESTIMATED",
+                "amount": "12000"
+              }
+            },
+            "available": {
+              "state": "VALUE",
+              "value": {
+                "currency": "EUR",
+                "scope": "HOUSEHOLD",
+                "asOf": "2026-10-19",
+                "period": "T0",
+                "basis": "STOCK",
+                "quality": "ESTIMATED",
+                "amount": "8000"
+              }
+            },
+            "collections": {
+              "allocations": "VALUE",
+              "otherResources": "VALUE",
+              "constraints": "VALUE"
+            },
+            "allocations": [
+              {
+                "goalId": "a_spesa",
+                "amount": {
+                  "state": "VALUE",
+                  "value": {
+                    "currency": "EUR",
+                    "scope": "HOUSEHOLD",
+                    "asOf": "2026-10-19",
+                    "period": "T0",
+                    "basis": "STOCK",
+                    "quality": "ESTIMATED",
+                    "amount": "8000"
+                  }
+                }
+              },
+              {
+                "goalId": "a_lungo",
+                "amount": {
+                  "state": "VALUE",
+                  "value": {
+                    "currency": "EUR",
+                    "scope": "HOUSEHOLD",
+                    "asOf": "2026-10-19",
+                    "period": "T0",
+                    "basis": "STOCK",
+                    "quality": "ESTIMATED",
+                    "amount": "0"
+                  }
+                }
+              }
+            ],
+            "otherResources": [],
+            "constraints": [
+              {
+                "id": "reserve",
+                "kind": "PRESERVE_RESERVE",
+                "scope": "GLOBAL",
+                "rigidity": {
+                  "state": "VALUE",
+                  "value": "HARD"
+                }
+              },
+              {
+                "id": "debt",
+                "kind": "NO_NEW_DEBT",
+                "scope": "GLOBAL",
+                "rigidity": {
+                  "state": "VALUE",
+                  "value": "HARD"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "id": "RP-X10",
+          "fact": "Esperienza personale: fondi/ETF detenuti con decisioni affidate ad altri, negli ultimi dodici mesi. Aspettativa: capire rischi, costi e vincoli. Dubbio: costi.",
+          "state": "VALUE",
+          "value": {
+            "personalExperience": {
+              "state": "VALUE",
+              "value": {
+                "none": false,
+                "episodes": [
+                  {
+                    "category": "FUNDS_ETF",
+                    "behavior": {
+                      "state": "VALUE",
+                      "value": "HELD_DELEGATED"
+                    },
+                    "recency": {
+                      "state": "VALUE",
+                      "value": "WITHIN12"
+                    }
+                  }
+                ]
+              }
+            },
+            "expectations": {
+              "state": "VALUE",
+              "value": [
+                "UNDERSTAND_COSTS_RISKS"
+              ]
+            },
+            "doubts": {
+              "state": "VALUE",
+              "value": [
+                "COST"
+              ]
+            }
+          }
+        },
+        {
+          "id": "RP-X11",
+          "fact": "Utilità di un eventuale incontro: chiarire gli obiettivi. Partecipazione futura: confrontarsi e decidere insieme. Non è una prenotazione.",
+          "state": "VALUE",
+          "value": {
+            "main": {
+              "state": "VALUE",
+              "value": "CLARIFY_GOALS"
+            },
+            "futureInvolvement": {
+              "state": "VALUE",
+              "value": "TOGETHER"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "code": "B",
+      "title": "Lavoro autonomo, entrate variabili e poca riserva",
+      "description": "Una persona descrive solo il proprio bilancio. Vive in affitto, lavora in autonomia e non sostiene altre persone. I numeri sono già netti di costi di lavoro, imposte e contributi: non sono fatturato.",
+      "scope": "INDIVIDUAL",
+      "rows": [
+        {
+          "id": "RP-S01",
+          "fact": "Solo la propria situazione.",
+          "state": "VALUE",
+          "value": "INDIVIDUAL"
+        },
+        {
+          "id": "RP-S02",
+          "fact": "Dati dell’intero bilancio individuale e degli stessi dodici mesi.",
+          "state": "VALUE",
+          "value": "COMPLETE"
+        },
+        {
+          "id": "RP-S03",
+          "fact": "Professione o lavoro autonomo.",
+          "state": "VALUE",
+          "value": [
+            "PROFESSIONAL"
+          ]
+        },
+        {
+          "id": "RP-S04",
+          "fact": "Nessun’altra persona dipende dalle risorse.",
+          "state": "VALUE",
+          "value": "0"
+        },
+        {
+          "id": "RP-A01",
+          "fact": "Entrate nette disponibili: media 1.800 € al mese negli ultimi dodici mesi (21.600 € totali).",
+          "state": "VALUE",
+          "value": {
+            "currency": "EUR",
+            "scope": "INDIVIDUAL",
+            "asOf": "2026-10-19",
+            "period": "T12",
+            "basis": "MONTHLY",
+            "quality": "ESTIMATED",
+            "amount": "1800"
+          }
+        },
+        {
+          "id": "RP-A02",
+          "fact": "Spese personali, affitto incluso e rate escluse: media 1.900 € al mese negli stessi dodici mesi.",
+          "state": "VALUE",
+          "value": {
+            "currency": "EUR",
+            "scope": "INDIVIDUAL",
+            "asOf": "2026-10-19",
+            "period": "T12",
+            "basis": "MONTHLY",
+            "quality": "ESTIMATED",
+            "amount": "1900"
+          }
+        },
+        {
+          "id": "RP-A03",
+          "fact": "Nella maggior parte dei mesi sono stati usati risparmi senza averlo programmato.",
+          "state": "VALUE",
+          "value": "REPEATED_GAP"
+        },
+        {
+          "id": "RP-A04",
+          "fact": "Entrate variabili e poco prevedibili.",
+          "state": "VALUE",
+          "value": "UNPREDICTABLE"
+        },
+        {
+          "id": "RP-A05",
+          "fact": "Oltre l’80% delle entrate dipende dalla stessa fonte principale, senza indicarne il nome.",
+          "state": "VALUE",
+          "value": "GT80"
+        },
+        {
+          "id": "RP-C01",
+          "fact": "Un credito al consumo ancora aperto; nessun altro debito.",
+          "state": "VALUE",
+          "value": {
+            "kinds": [
+              "CONSUMER"
+            ],
+            "openNow": true
+          }
+        },
+        {
+          "id": "RP-C02",
+          "fact": "Rate pagate: media 200 € mensili negli ultimi dodici mesi, non incluse nelle spese.",
+          "state": "VALUE",
+          "value": {
+            "currency": "EUR",
+            "scope": "INDIVIDUAL",
+            "asOf": "2026-10-19",
+            "period": "T12",
+            "basis": "MONTHLY",
+            "quality": "ESTIMATED",
+            "amount": "200"
+          }
+        },
+        {
+          "id": "RP-C03",
+          "fact": "Uno o più ritardi per difficoltà di pagamento, tutti risolti.",
+          "state": "VALUE",
+          "value": "RESOLVED"
+        },
+        {
+          "id": "RP-C04",
+          "fact": "Oggi 200 € di rate al mese, nessun cambiamento già noto.",
+          "state": "VALUE",
+          "value": {
+            "payment": {
+              "currency": "EUR",
+              "scope": "INDIVIDUAL",
+              "asOf": "2026-10-19",
+              "period": "Tnow",
+              "basis": "MONTHLY",
+              "quality": "ESTIMATED",
+              "amount": "200"
+            },
+            "knownChange": {
+              "state": "VALUE",
+              "value": "NO"
+            }
+          }
+        },
+        {
+          "id": "RP-B01",
+          "fact": "Spese essenziali attuali, rate escluse: 1.300 € per un mese.",
+          "state": "VALUE",
+          "value": {
+            "currency": "EUR",
+            "scope": "INDIVIDUAL",
+            "asOf": "2026-10-19",
+            "period": "Tnow",
+            "basis": "MONTHLY",
+            "quality": "ESTIMATED",
+            "amount": "1300"
+          }
+        },
+        {
+          "id": "RP-B02",
+          "fact": "Liquidità oggi o entro sette giorni: 1.800 €, inclusi gli accantonamenti.",
+          "state": "VALUE",
+          "value": {
+            "currency": "EUR",
+            "scope": "INDIVIDUAL",
+            "asOf": "2026-10-19",
+            "period": "T0",
+            "basis": "STOCK",
+            "quality": "ESTIMATED",
+            "amount": "1800"
+          }
+        },
+        {
+          "id": "RP-B03",
+          "fact": "Di questi, 600 € sono impegnati per uscite non rinviabili fuori dal budget mensile.",
+          "state": "VALUE",
+          "value": {
+            "currency": "EUR",
+            "scope": "INDIVIDUAL",
+            "asOf": "2026-10-19",
+            "period": "T0",
+            "basis": "STOCK",
+            "quality": "ESTIMATED",
+            "amount": "600"
+          }
+        },
+        {
+          "id": "RP-B04",
+          "fact": "Per un imprevisto di un mese di spese essenziali più rate (1.500 €), occorrerebbe usare anche somme già destinate ad altro.",
+          "state": "VALUE",
+          "value": "EARMARKED"
+        },
+        {
+          "id": "RP-D01",
+          "fact": "Da verificare continuità delle entrate e disponibilità dell’abitazione.",
+          "state": "VALUE",
+          "value": [
+            "INCOME",
+            "HOME"
+          ]
+        },
+        {
+          "id": "RP-D02",
+          "fact": "Entrate: esigenza individuata, strategia ancora da definire. Abitazione: strategia presente ma limiti non controllati.",
+          "state": "VALUE",
+          "value": {
+            "INCOME": {
+              "state": "VALUE",
+              "value": "GAP"
+            },
+            "HOME": {
+              "state": "VALUE",
+              "value": "UNREVIEWED"
+            }
+          }
+        },
+        {
+          "id": "RP-E01",
+          "fact": "Inventario completo: liquidità e strumenti finanziari non previdenziali per 1.000 €; nessun immobile o altro bene patrimoniale.",
+          "state": "VALUE",
+          "value": {
+            "categories": [
+              "CASH",
+              "FINANCIAL"
+            ],
+            "complete": true
+          }
+        },
+        {
+          "id": "RP-E02",
+          "fact": "La principale esposizione è la liquidità: dalla metà a meno dei tre quarti del patrimonio non previdenziale.",
+          "state": "VALUE",
+          "value": {
+            "band": "GE50_LT75",
+            "type": "CASH"
+          }
+        },
+        {
+          "id": "RP-E03",
+          "fact": "Tutto trasformabile in denaro entro trenta giorni senza rilevante incertezza: i 1.000 € finanziari scadono entro trenta giorni; non sono disponibili nei primi sette.",
+          "state": "VALUE",
+          "value": "ALL"
+        },
+        {
+          "id": "RP-E04",
+          "fact": "Entrate e patrimonio non dipendono in modo importante dalla stessa attività o rischio economico.",
+          "state": "VALUE",
+          "value": "NO"
+        },
+        {
+          "id": "RP-F01",
+          "fact": "Solo un’idea, senza tempo né importo formalizzati; gli approfondimenti aiuteranno a descriverla.",
+          "state": "VALUE",
+          "value": "IDEA"
+        },
+        {
+          "id": "RP-F02",
+          "fact": "Il personaggio non sa se sia stato verificato il lungo periodo. Usa «Non so».",
+          "state": "UNKNOWN"
+        },
+        {
+          "id": "RP-F03",
+          "fact": "Decisioni principali prese direttamente.",
+          "state": "VALUE",
+          "value": "DIRECT"
+        },
+        {
+          "id": "RP-F04",
+          "fact": "Il personaggio preferisce non rispondere sui costi degli investimenti. Usa «Preferisco non rispondere».",
+          "state": "DECLINED"
+        },
+        {
+          "id": "RP-F05",
+          "fact": "Nel quesito il personaggio sceglie «Il numero di investimenti basta a eliminare la concentrazione». È una convinzione inventata, non un’indicazione corretta o un giudizio sul volontario.",
+          "state": "VALUE",
+          "value": "COUNT"
+        },
+        {
+          "id": "RP-F06",
+          "fact": "Ultimo confronto fra entrate, spese e obiettivi: sei mesi fa, prima della carta di correzione.",
+          "state": "VALUE",
+          "value": "FOUR_TO12"
+        },
+        {
+          "id": "RP-X01",
+          "fact": "Mese con meno entrate nette: 600 €.",
+          "state": "VALUE",
+          "value": {
+            "currency": "EUR",
+            "scope": "INDIVIDUAL",
+            "asOf": "2026-10-19",
+            "period": "T12",
+            "basis": "MONTHLY",
+            "quality": "ESTIMATED",
+            "amount": "600"
+          }
+        },
+        {
+          "id": "RP-X02",
+          "fact": "Nessuna delle condizioni aggiuntive elencate sui debiti.",
+          "state": "VALUE",
+          "value": [
+            "NONE"
+          ]
+        },
+        {
+          "id": "RP-X03",
+          "fact": "Per entrate e abitazione tutti e quattro gli aspetti della protezione sono ancora da verificare.",
+          "state": "VALUE",
+          "value": {
+            "INCOME": {
+              "availability": {
+                "state": "VALUE",
+                "value": "UNREVIEWED"
+              },
+              "conditions": {
+                "state": "VALUE",
+                "value": "UNREVIEWED"
+              },
+              "duration": {
+                "state": "VALUE",
+                "value": "UNREVIEWED"
+              },
+              "need": {
+                "state": "VALUE",
+                "value": "UNREVIEWED"
+              }
+            },
+            "HOME": {
+              "availability": {
+                "state": "VALUE",
+                "value": "UNREVIEWED"
+              },
+              "conditions": {
+                "state": "VALUE",
+                "value": "UNREVIEWED"
+              },
+              "duration": {
+                "state": "VALUE",
+                "value": "UNREVIEWED"
+              },
+              "need": {
+                "state": "VALUE",
+                "value": "UNREVIEWED"
+              }
+            }
+          }
+        },
+        {
+          "id": "RP-X04",
+          "fact": "Riepilogo completo: strumenti finanziari stimati 1.000 €. La liquidità è quella già indicata.",
+          "state": "VALUE",
+          "value": {
+            "complete": true,
+            "rows": {
+              "FINANCIAL": {
+                "state": "VALUE",
+                "value": {
+                  "currency": "EUR",
+                  "scope": "INDIVIDUAL",
+                  "asOf": "2026-10-19",
+                  "period": "T0",
+                  "basis": "STOCK",
+                  "quality": "ESTIMATED",
+                  "amount": "1000"
+                }
+              }
+            }
+          }
+        },
+        {
+          "id": "RP-X05",
+          "fact": "Debito residuo attuale complessivo: 6.000 €, comprende tutti i debiti.",
+          "state": "VALUE",
+          "value": {
+            "complete": true,
+            "total": {
+              "currency": "EUR",
+              "scope": "INDIVIDUAL",
+              "asOf": "2026-10-19",
+              "period": "T0",
+              "basis": "STOCK",
+              "quality": "ESTIMATED",
+              "amount": "6000"
+            }
+          }
+        },
+        {
+          "id": "RP-X06",
+          "fact": "Un obiettivo da formalizzare ora: riserva per imprevisti di 6.000 €, una tantum, oltre dodici e fino a trentasei mesi; priorità principale. È una riserva futura desiderata, distinta dalla quota attuale da mantenere.",
+          "state": "VALUE",
+          "value": {
+            "goals": [
+              {
+                "id": "b_riserva",
+                "category": "RESERVE",
+                "rank": {
+                  "state": "VALUE",
+                  "value": 1
+                },
+                "horizon": {
+                  "state": "VALUE",
+                  "value": "OVER12_TO36"
+                },
+                "nature": {
+                  "state": "VALUE",
+                  "value": "ONCE"
+                },
+                "target": {
+                  "state": "VALUE",
+                  "value": {
+                    "currency": "EUR",
+                    "scope": "INDIVIDUAL",
+                    "asOf": "2026-10-19",
+                    "period": "T0",
+                    "basis": "STOCK",
+                    "quality": "ESTIMATED",
+                    "amount": "6000"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "id": "RP-X07",
+          "fact": "Nell’esercizio il personaggio sceglie 2 €. È un errore didattico intenzionale del personaggio, non una prova sul volontario.",
+          "state": "VALUE",
+          "value": "2"
+        },
+        {
+          "id": "RP-X08",
+          "fact": "Fonte e data dell’ultima verifica di lungo periodo non conosciute: «Non so» su entrambi i campi.",
+          "state": "VALUE",
+          "value": {
+            "source": {
+              "state": "UNKNOWN"
+            },
+            "recency": {
+              "state": "UNKNOWN"
+            }
+          }
+        },
+        {
+          "id": "RP-X09",
+          "fact": "Dei 1.800 € liquidi mantenere 1.200 € per riserva/impegni, inclusi i 600 € accantonati. Quota attuale destinabile 600 €, tutti all’obiettivo riserva. Nessun’altra risorsa da esaminare. Due vincoli globali non negoziabili: preservare riserva/impegni e nessun nuovo debito. Non si afferma che l’obiettivo sia finanziabile.",
+          "state": "VALUE",
+          "value": {
+            "minimum": {
+              "state": "VALUE",
+              "value": {
+                "currency": "EUR",
+                "scope": "INDIVIDUAL",
+                "asOf": "2026-10-19",
+                "period": "T0",
+                "basis": "STOCK",
+                "quality": "ESTIMATED",
+                "amount": "1200"
+              }
+            },
+            "available": {
+              "state": "VALUE",
+              "value": {
+                "currency": "EUR",
+                "scope": "INDIVIDUAL",
+                "asOf": "2026-10-19",
+                "period": "T0",
+                "basis": "STOCK",
+                "quality": "ESTIMATED",
+                "amount": "600"
+              }
+            },
+            "collections": {
+              "allocations": "VALUE",
+              "otherResources": "VALUE",
+              "constraints": "VALUE"
+            },
+            "allocations": [
+              {
+                "goalId": "b_riserva",
+                "amount": {
+                  "state": "VALUE",
+                  "value": {
+                    "currency": "EUR",
+                    "scope": "INDIVIDUAL",
+                    "asOf": "2026-10-19",
+                    "period": "T0",
+                    "basis": "STOCK",
+                    "quality": "ESTIMATED",
+                    "amount": "600"
+                  }
+                }
+              }
+            ],
+            "otherResources": [],
+            "constraints": [
+              {
+                "id": "reserve",
+                "kind": "PRESERVE_RESERVE",
+                "scope": "GLOBAL",
+                "rigidity": {
+                  "state": "VALUE",
+                  "value": "HARD"
+                }
+              },
+              {
+                "id": "debt",
+                "kind": "NO_NEW_DEBT",
+                "scope": "GLOBAL",
+                "rigidity": {
+                  "state": "VALUE",
+                  "value": "HARD"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "id": "RP-X10",
+          "fact": "Esperienza personale: titoli obbligazionari letti o confrontati senza operazioni negli ultimi dodici mesi; il piccolo titolo posseduto è stato ricevuto senza scelta personale. Aspettativa: risorse disponibili quando servono. Dubbio: accesso alle risorse.",
+          "state": "VALUE",
+          "value": {
+            "personalExperience": {
+              "state": "VALUE",
+              "value": {
+                "none": false,
+                "episodes": [
+                  {
+                    "category": "BONDS",
+                    "behavior": {
+                      "state": "VALUE",
+                      "value": "READ_COMPARED"
+                    },
+                    "recency": {
+                      "state": "VALUE",
+                      "value": "WITHIN12"
+                    }
+                  }
+                ]
+              }
+            },
+            "expectations": {
+              "state": "VALUE",
+              "value": [
+                "AVAILABILITY"
+              ]
+            },
+            "doubts": {
+              "state": "VALUE",
+              "value": [
+                "ACCESS"
+              ]
+            }
+          }
+        },
+        {
+          "id": "RP-X11",
+          "fact": "Utilità: ricostruire risorse e vincoli. Preferenza futura: capire prima le alternative, senza decidere ora.",
+          "state": "VALUE",
+          "value": {
+            "main": {
+              "state": "VALUE",
+              "value": "RESOURCES_CONSTRAINTS"
+            },
+            "futureInvolvement": {
+              "state": "VALUE",
+              "value": "UNDERSTAND_FIRST"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "code": "C",
+      "title": "Pensione e affitto, patrimonio soprattutto immobiliare",
+      "description": "Una persona già in pensione descrive il proprio bilancio, senza altre persone a carico. Ha un’abitazione e un secondo immobile da cui riceve un affitto. Nessun indirizzo, ente o prodotto va identificato.",
+      "scope": "INDIVIDUAL",
+      "rows": [
+        {
+          "id": "RP-S01",
+          "fact": "Solo la propria situazione.",
+          "state": "VALUE",
+          "value": "INDIVIDUAL"
+        },
+        {
+          "id": "RP-S02",
+          "fact": "Intero bilancio individuale, quote complete e stessi dodici mesi.",
+          "state": "VALUE",
+          "value": "COMPLETE"
+        },
+        {
+          "id": "RP-S03",
+          "fact": "Pensione e rendite/affitti.",
+          "state": "VALUE",
+          "value": [
+            "PENSION",
+            "RENT"
+          ]
+        },
+        {
+          "id": "RP-S04",
+          "fact": "Nessun’altra persona dipende dalle risorse.",
+          "state": "VALUE",
+          "value": "0"
+        },
+        {
+          "id": "RP-A01",
+          "fact": "Entrate nette medie: 2.400 € mensili, di cui pensione 1.800 € e affitto 600 €; 28.800 € annui.",
+          "state": "VALUE",
+          "value": {
+            "currency": "EUR",
+            "scope": "INDIVIDUAL",
+            "asOf": "2026-10-19",
+            "period": "T12",
+            "basis": "MONTHLY",
+            "quality": "ESTIMATED",
+            "amount": "2400"
+          }
+        },
+        {
+          "id": "RP-A02",
+          "fact": "Spese negli ultimi dodici mesi: 1.800 € medi mensili, rate escluse.",
+          "state": "VALUE",
+          "value": {
+            "currency": "EUR",
+            "scope": "INDIVIDUAL",
+            "asOf": "2026-10-19",
+            "period": "T12",
+            "basis": "MONTHLY",
+            "quality": "ESTIMATED",
+            "amount": "1800"
+          }
+        },
+        {
+          "id": "RP-A03",
+          "fact": "Entrate sufficienti senza usare il patrimonio.",
+          "state": "VALUE",
+          "value": "COVERED"
+        },
+        {
+          "id": "RP-A04",
+          "fact": "Entrate regolari negli ultimi dodici mesi.",
+          "state": "VALUE",
+          "value": "REGULAR"
+        },
+        {
+          "id": "RP-A05",
+          "fact": "La pensione è la fonte principale: 75%, oltre il 50% e fino all’80%.",
+          "state": "VALUE",
+          "value": "GT50_LE80"
+        },
+        {
+          "id": "RP-C01",
+          "fact": "Nessun debito aperto oggi e nessuna rata di debiti pagata nei dodici mesi.",
+          "state": "VALUE",
+          "value": {
+            "kinds": [
+              "NONE"
+            ]
+          }
+        },
+        {
+          "id": "RP-C02",
+          "fact": "Rate storiche zero. Se il Radar salta la domanda dopo «nessun debito», non forzarne la visualizzazione.",
+          "state": "VALUE",
+          "value": {
+            "currency": "EUR",
+            "scope": "INDIVIDUAL",
+            "asOf": "2026-10-19",
+            "period": "T12",
+            "basis": "MONTHLY",
+            "quality": "ESTIMATED",
+            "amount": "0"
+          }
+        },
+        {
+          "id": "RP-C03",
+          "fact": "Nessun ritardo di rate, affitto o utenze.",
+          "state": "VALUE",
+          "value": "NONE"
+        },
+        {
+          "id": "RP-C04",
+          "fact": "Rate attuali zero, nessun cambiamento noto. Domanda automaticamente non pertinente se non mostrata.",
+          "state": "VALUE",
+          "value": {
+            "payment": {
+              "currency": "EUR",
+              "scope": "INDIVIDUAL",
+              "asOf": "2026-10-19",
+              "period": "Tnow",
+              "basis": "MONTHLY",
+              "quality": "ESTIMATED",
+              "amount": "0"
+            },
+            "knownChange": {
+              "state": "VALUE",
+              "value": "NO"
+            }
+          }
+        },
+        {
+          "id": "RP-B01",
+          "fact": "Spese essenziali attuali: 1.400 € al mese, rate escluse.",
+          "state": "VALUE",
+          "value": {
+            "currency": "EUR",
+            "scope": "INDIVIDUAL",
+            "asOf": "2026-10-19",
+            "period": "Tnow",
+            "basis": "MONTHLY",
+            "quality": "ESTIMATED",
+            "amount": "1400"
+          }
+        },
+        {
+          "id": "RP-B02",
+          "fact": "Liquidità accessibile entro sette giorni: 45.000 €, inclusi accantonamenti.",
+          "state": "VALUE",
+          "value": {
+            "currency": "EUR",
+            "scope": "INDIVIDUAL",
+            "asOf": "2026-10-19",
+            "period": "T0",
+            "basis": "STOCK",
+            "quality": "ESTIMATED",
+            "amount": "45000"
+          }
+        },
+        {
+          "id": "RP-B03",
+          "fact": "Accantonamenti non rinviabili extra budget nei dodici mesi: 5.000 €, già nei 45.000 €.",
+          "state": "VALUE",
+          "value": {
+            "currency": "EUR",
+            "scope": "INDIVIDUAL",
+            "asOf": "2026-10-19",
+            "period": "T0",
+            "basis": "STOCK",
+            "quality": "ESTIMATED",
+            "amount": "5000"
+          }
+        },
+        {
+          "id": "RP-B04",
+          "fact": "L’imprevisto di un mese essenziale può essere coperto senza intaccare gli accantonamenti.",
+          "state": "VALUE",
+          "value": "OWN_AVAILABLE"
+        },
+        {
+          "id": "RP-D01",
+          "fact": "Responsabilità individuate: abitazione e beni essenziali; responsabilità economiche verso altri.",
+          "state": "VALUE",
+          "value": [
+            "HOME",
+            "LIABILITY"
+          ]
+        },
+        {
+          "id": "RP-D02",
+          "fact": "Abitazione: strategia verificata. Responsabilità verso altri: strategia presente, limiti da controllare.",
+          "state": "VALUE",
+          "value": {
+            "HOME": {
+              "state": "VALUE",
+              "value": "CHECKED"
+            },
+            "LIABILITY": {
+              "state": "VALUE",
+              "value": "UNREVIEWED"
+            }
+          }
+        },
+        {
+          "id": "RP-E01",
+          "fact": "Inventario completo: liquidità, strumenti finanziari non previdenziali, abitazione principale e altro immobile. Nessun capitale previdenziale vincolato conteggiato.",
+          "state": "VALUE",
+          "value": {
+            "categories": [
+              "CASH",
+              "FINANCIAL",
+              "HOME",
+              "OTHER_PROPERTY"
+            ],
+            "complete": true
+          }
+        },
+        {
+          "id": "RP-E02",
+          "fact": "Il singolo bene maggiore è il secondo immobile: meno della metà delle attività non previdenziali.",
+          "state": "VALUE",
+          "value": {
+            "band": "LT50",
+            "type": "PROPERTY"
+          }
+        },
+        {
+          "id": "RP-E03",
+          "fact": "Meno di un quarto può diventare denaro entro trenta giorni senza rilevante incertezza; gli immobili non sono liquidità.",
+          "state": "VALUE",
+          "value": "LT25"
+        },
+        {
+          "id": "RP-E04",
+          "fact": "La persona considera importante la dipendenza comune fra una parte delle entrate da affitto e il secondo immobile.",
+          "state": "VALUE",
+          "value": "YES"
+        },
+        {
+          "id": "RP-F01",
+          "fact": "Obiettivi con orizzonte e risorse stimate da verificare.",
+          "state": "VALUE",
+          "value": "DEFINED"
+        },
+        {
+          "id": "RP-F02",
+          "fact": "Confronto di lungo periodo già fatto con informazioni ufficiali datate. La variante del testo per chi è in pensione si riferisce alla situazione attuale.",
+          "state": "VALUE",
+          "value": "CHECKED"
+        },
+        {
+          "id": "RP-F03",
+          "fact": "Delega prevalente delle decisioni a un professionista.",
+          "state": "VALUE",
+          "value": "DELEGATED_PROFESSIONAL"
+        },
+        {
+          "id": "RP-F04",
+          "fact": "Il personaggio preferisce non rispondere sui costi. Usa «Preferisco non rispondere».",
+          "state": "DECLINED"
+        },
+        {
+          "id": "RP-F05",
+          "fact": "Nell’esempio la dipendenza dalla stessa impresa può rimanere.",
+          "state": "VALUE",
+          "value": "EXPOSURE"
+        },
+        {
+          "id": "RP-F06",
+          "fact": "Ultimo confronto fra entrate, spese e obiettivi: sei mesi fa, prima della carta di correzione.",
+          "state": "VALUE",
+          "value": "FOUR_TO12"
+        },
+        {
+          "id": "RP-X01",
+          "fact": "Mese con meno entrate nette: 2.400 €.",
+          "state": "VALUE",
+          "value": {
+            "currency": "EUR",
+            "scope": "INDIVIDUAL",
+            "asOf": "2026-10-19",
+            "period": "T12",
+            "basis": "MONTHLY",
+            "quality": "ESTIMATED",
+            "amount": "2400"
+          }
+        },
+        {
+          "id": "RP-X02",
+          "fact": "Nessuna delle condizioni aggiuntive sui debiti. Se disponibile, scegliere «Nessuna di queste».",
+          "state": "VALUE",
+          "value": [
+            "NONE"
+          ]
+        },
+        {
+          "id": "RP-X03",
+          "fact": "Abitazione: tutti e quattro gli aspetti verificati. Responsabilità verso altri: tutti da verificare.",
+          "state": "VALUE",
+          "value": {
+            "HOME": {
+              "availability": {
+                "state": "VALUE",
+                "value": "CHECKED"
+              },
+              "conditions": {
+                "state": "VALUE",
+                "value": "CHECKED"
+              },
+              "duration": {
+                "state": "VALUE",
+                "value": "CHECKED"
+              },
+              "need": {
+                "state": "VALUE",
+                "value": "CHECKED"
+              }
+            },
+            "LIABILITY": {
+              "availability": {
+                "state": "VALUE",
+                "value": "UNREVIEWED"
+              },
+              "conditions": {
+                "state": "VALUE",
+                "value": "UNREVIEWED"
+              },
+              "duration": {
+                "state": "VALUE",
+                "value": "UNREVIEWED"
+              },
+              "need": {
+                "state": "VALUE",
+                "value": "UNREVIEWED"
+              }
+            }
+          }
+        },
+        {
+          "id": "RP-X04",
+          "fact": "Valori attuali stimati completi: abitazione 200.000 €; altro immobile 250.000 €; strumenti finanziari 20.000 €. Liquidità già collegata 45.000 €, senza duplicarla.",
+          "state": "VALUE",
+          "value": {
+            "complete": true,
+            "rows": {
+              "HOME": {
+                "state": "VALUE",
+                "value": {
+                  "currency": "EUR",
+                  "scope": "INDIVIDUAL",
+                  "asOf": "2026-10-19",
+                  "period": "T0",
+                  "basis": "STOCK",
+                  "quality": "ESTIMATED",
+                  "amount": "200000"
+                }
+              },
+              "OTHER_PROPERTY": {
+                "state": "VALUE",
+                "value": {
+                  "currency": "EUR",
+                  "scope": "INDIVIDUAL",
+                  "asOf": "2026-10-19",
+                  "period": "T0",
+                  "basis": "STOCK",
+                  "quality": "ESTIMATED",
+                  "amount": "250000"
+                }
+              },
+              "FINANCIAL": {
+                "state": "VALUE",
+                "value": {
+                  "currency": "EUR",
+                  "scope": "INDIVIDUAL",
+                  "asOf": "2026-10-19",
+                  "period": "T0",
+                  "basis": "STOCK",
+                  "quality": "ESTIMATED",
+                  "amount": "20000"
+                }
+              }
+            }
+          }
+        },
+        {
+          "id": "RP-X05",
+          "fact": "Debito residuo zero, tutti i debiti compresi. Se il motore lo esclude per assenza di debiti, non forzare.",
+          "state": "VALUE",
+          "value": {
+            "complete": true,
+            "total": {
+              "currency": "EUR",
+              "scope": "INDIVIDUAL",
+              "asOf": "2026-10-19",
+              "period": "T0",
+              "basis": "STOCK",
+              "quality": "ESTIMATED",
+              "amount": "0"
+            }
+          }
+        },
+        {
+          "id": "RP-X06",
+          "fact": "Priorità 1: adattare l’abitazione, 10.000 €, una tantum, entro dodici mesi. Priorità 2: futuro passaggio di risorse familiari, continuativo, oltre trentasei mesi, importo non conosciuto; nessun beneficiario identificato.",
+          "state": "VALUE",
+          "value": {
+            "goals": [
+              {
+                "id": "c_casa",
+                "category": "HOUSING",
+                "rank": {
+                  "state": "VALUE",
+                  "value": 1
+                },
+                "horizon": {
+                  "state": "VALUE",
+                  "value": "WITHIN12"
+                },
+                "nature": {
+                  "state": "VALUE",
+                  "value": "ONCE"
+                },
+                "target": {
+                  "state": "VALUE",
+                  "value": {
+                    "currency": "EUR",
+                    "scope": "INDIVIDUAL",
+                    "asOf": "2026-10-19",
+                    "period": "T0",
+                    "basis": "STOCK",
+                    "quality": "ESTIMATED",
+                    "amount": "10000"
+                  }
+                }
+              },
+              {
+                "id": "c_passaggio",
+                "category": "FAMILY_PASSAGE",
+                "rank": {
+                  "state": "VALUE",
+                  "value": 2
+                },
+                "horizon": {
+                  "state": "VALUE",
+                  "value": "OVER36"
+                },
+                "nature": {
+                  "state": "VALUE",
+                  "value": "CONTINUING"
+                },
+                "target": {
+                  "state": "UNKNOWN"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "id": "RP-X07",
+          "fact": "Il personaggio non conosce la risposta dell’esercizio sui costi. Usa «Non so», senza fare il calcolo al suo posto.",
+          "state": "UNKNOWN"
+        },
+        {
+          "id": "RP-X08",
+          "fact": "Comunicazione ufficiale dell’ente, esaminata otto mesi fa (ultimi dodici mesi).",
+          "state": "VALUE",
+          "value": {
+            "source": {
+              "state": "VALUE",
+              "value": "OFFICIAL"
+            },
+            "recency": {
+              "state": "VALUE",
+              "value": "WITHIN12"
+            }
+          }
+        },
+        {
+          "id": "RP-X09",
+          "fact": "Dei 45.000 € liquidi mantenere 30.000 € per riserva e impegni, inclusi i 5.000 € accantonati. Quota oggi destinabile 15.000 €: 10.000 € all’abitazione e 5.000 € al passaggio futuro. Nessun’altra risorsa da esaminare. Preservare riserva/impegni e non assumere nuovo debito sono vincoli globali non negoziabili.",
+          "state": "VALUE",
+          "value": {
+            "minimum": {
+              "state": "VALUE",
+              "value": {
+                "currency": "EUR",
+                "scope": "INDIVIDUAL",
+                "asOf": "2026-10-19",
+                "period": "T0",
+                "basis": "STOCK",
+                "quality": "ESTIMATED",
+                "amount": "30000"
+              }
+            },
+            "available": {
+              "state": "VALUE",
+              "value": {
+                "currency": "EUR",
+                "scope": "INDIVIDUAL",
+                "asOf": "2026-10-19",
+                "period": "T0",
+                "basis": "STOCK",
+                "quality": "ESTIMATED",
+                "amount": "15000"
+              }
+            },
+            "collections": {
+              "allocations": "VALUE",
+              "otherResources": "VALUE",
+              "constraints": "VALUE"
+            },
+            "allocations": [
+              {
+                "goalId": "c_casa",
+                "amount": {
+                  "state": "VALUE",
+                  "value": {
+                    "currency": "EUR",
+                    "scope": "INDIVIDUAL",
+                    "asOf": "2026-10-19",
+                    "period": "T0",
+                    "basis": "STOCK",
+                    "quality": "ESTIMATED",
+                    "amount": "10000"
+                  }
+                }
+              },
+              {
+                "goalId": "c_passaggio",
+                "amount": {
+                  "state": "VALUE",
+                  "value": {
+                    "currency": "EUR",
+                    "scope": "INDIVIDUAL",
+                    "asOf": "2026-10-19",
+                    "period": "T0",
+                    "basis": "STOCK",
+                    "quality": "ESTIMATED",
+                    "amount": "5000"
+                  }
+                }
+              }
+            ],
+            "otherResources": [],
+            "constraints": [
+              {
+                "id": "reserve",
+                "kind": "PRESERVE_RESERVE",
+                "scope": "GLOBAL",
+                "rigidity": {
+                  "state": "VALUE",
+                  "value": "HARD"
+                }
+              },
+              {
+                "id": "debt",
+                "kind": "NO_NEW_DEBT",
+                "scope": "GLOBAL",
+                "rigidity": {
+                  "state": "VALUE",
+                  "value": "HARD"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "id": "RP-X10",
+          "fact": "Esperienza: titoli obbligazionari detenuti con decisioni affidate ad altri, oltre dodici mesi fa. Aspettative: capire rischi, costi e vincoli; capire quali risultati sono incerti. Dubbio: possibilità di perdita.",
+          "state": "VALUE",
+          "value": {
+            "personalExperience": {
+              "state": "VALUE",
+              "value": {
+                "none": false,
+                "episodes": [
+                  {
+                    "category": "BONDS",
+                    "behavior": {
+                      "state": "VALUE",
+                      "value": "HELD_DELEGATED"
+                    },
+                    "recency": {
+                      "state": "VALUE",
+                      "value": "OVER12"
+                    }
+                  }
+                ]
+              }
+            },
+            "expectations": {
+              "state": "VALUE",
+              "value": [
+                "UNDERSTAND_COSTS_RISKS",
+                "UNCERTAIN_RESULTS"
+              ]
+            },
+            "doubts": {
+              "state": "VALUE",
+              "value": [
+                "LOSS"
+              ]
+            }
+          }
+        },
+        {
+          "id": "RP-X11",
+          "fact": "Utilità: organizzare il lungo periodo. Preferenza futura: capire prima le alternative senza decidere ora.",
+          "state": "VALUE",
+          "value": {
+            "main": {
+              "state": "VALUE",
+              "value": "LONGTERM"
+            },
+            "futureInvolvement": {
+              "state": "VALUE",
+              "value": "UNDERSTAND_FIRST"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

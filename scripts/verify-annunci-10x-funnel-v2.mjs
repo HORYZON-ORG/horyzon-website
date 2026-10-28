@@ -14,19 +14,19 @@ function cssBlock(selector) {
   return css.match(new RegExp(`${escaped} \\{[\\s\\S]*?\\n\\}`))?.[0] ?? '';
 }
 
-const page = await text('src/app/annunci-10x/page.tsx');
+const page = await text('src/app/(site)/annunci-10x/page.tsx');
 const client = await text('src/components/annunci-10x/annunci-10x-client.tsx');
 const flow = await text('src/components/annunci-10x/annunci-10x-analyze-flow.tsx');
 const commerceClient = await text('src/components/annunci-10x/annunci-10x-commerce-client.ts');
 const createFlow = await text('src/lib/annunci-10x/create-flow.ts');
 const identityGate = await text('src/components/annunci-10x/annunci-10x-identity-gate.tsx');
 const css = await text('src/components/annunci-10x/annunci-10x.module.css');
-const landingCss = await text('src/app/annunci-10x/annunci-landing.css');
+const landingCss = await text('src/app/(site)/annunci-10x/annunci-landing.css');
 const kitCss = await text('src/styles/horyzon-landing.css');
 const adSheet = await text('src/components/annunci-10x/landing/ad-sheet.tsx');
 const story = await text('src/components/annunci-10x/landing/candidate-story.tsx');
 const createCta = await text('src/components/annunci-10x/landing/create-cta.tsx');
-const radarPage = await text('src/app/radar/page.tsx');
+const radarPage = await text('src/app/(site)/radar/page.tsx');
 const commercial = await text('src/lib/annunci-10x/commercial.ts');
 const sitemap = await text('src/app/sitemap.ts');
 const shell = await text('src/components/site-shell.tsx');

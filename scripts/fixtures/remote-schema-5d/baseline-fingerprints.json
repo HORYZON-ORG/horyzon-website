@@ -1,0 +1,1045 @@
+{
+  "project": "pmkyeqrfkunypfkbjnyg",
+  "source": "Read-only preflight 2026-10-26; no customer data",
+  "functions": [
+    {
+      "acl": "{postgres=X/postgres}",
+      "args": "p_contact uuid, p_action text, p_summary text, p_subject uuid, p_details jsonb",
+      "name": "audit",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": true,
+      "definition_md5": "ead08e069df86fa6c92cd0d92bd2d01d"
+    },
+    {
+      "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+      "args": "p_id uuid",
+      "name": "can_contact",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": true,
+      "definition_md5": "18f502bb60f659c63829c6e508738e61"
+    },
+    {
+      "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+      "args": "p_action text, p_input jsonb",
+      "name": "command",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": true,
+      "definition_md5": "debec9e00cd6e4363676eca618c6505c"
+    },
+    {
+      "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+      "args": "p_contact_id uuid",
+      "name": "contact_context",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": true,
+      "definition_md5": "78bb29b4aaf20e22e12673b3872715fc"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_event jsonb",
+      "name": "ingest",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": true,
+      "definition_md5": "9a369e15ecb3fc18f110e857c62e9e5a"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_event jsonb",
+      "name": "ingest_event",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": true,
+      "definition_md5": "8938c6dc545e28cda48ca8f566f2c773"
+    },
+    {
+      "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+      "args": "",
+      "name": "is_supervisor",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": true,
+      "definition_md5": "5391d714ae48d4ee325b40b8e31858e7"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_link jsonb",
+      "name": "link_radar",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": true,
+      "definition_md5": "9706be3adfd9eb83b9c9b06f5d431e65"
+    },
+    {
+      "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+      "args": "",
+      "name": "operator_id",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": true,
+      "definition_md5": "a9487c6828b307f75965aa5982cb45b2"
+    },
+    {
+      "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+      "args": "p_query text",
+      "name": "snapshot",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": true,
+      "definition_md5": "16a16e971762de8eaab5781a1db24cca"
+    },
+    {
+      "acl": "{postgres=X/postgres}",
+      "args": "",
+      "name": "training_actor",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": true,
+      "definition_md5": "18113ca63c28a7ff951eb0440d458cf6"
+    },
+    {
+      "acl": "{postgres=X/postgres,horyzon_platform=X/postgres}",
+      "args": "p_case_id text, p_offset integer, p_include_interrupted boolean",
+      "name": "training_case_history",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": true,
+      "definition_md5": "742ce8e56593c3d5426037623d530b5a"
+    },
+    {
+      "acl": "{postgres=X/postgres,horyzon_platform=X/postgres}",
+      "args": "",
+      "name": "training_dashboard_history",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": true,
+      "definition_md5": "ef89ef69c3e53710960b9cea99bc3520"
+    },
+    {
+      "acl": "{postgres=X/postgres}",
+      "args": "p_id uuid, p_created_at timestamp with time zone, p_session_id uuid, p_report jsonb",
+      "name": "training_history_dto",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": false,
+      "definition_md5": "85b3e844c8dd54c3782b682c2fa3443b"
+    },
+    {
+      "acl": "{postgres=X/postgres}",
+      "args": "p_case_id text",
+      "name": "training_history_family",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": false,
+      "definition_md5": "b0d0168070fd20d0101ebb9defe0431f"
+    },
+    {
+      "acl": "{postgres=X/postgres,authenticated=X/postgres,horyzon_platform=X/postgres}",
+      "args": "p_operator uuid",
+      "name": "training_list",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": true,
+      "definition_md5": "4ee44229b66c968611f0aa9d8d8d9787"
+    },
+    {
+      "acl": "{postgres=X/postgres}",
+      "args": "",
+      "name": "training_no_mutation",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": false,
+      "definition_md5": "f80264b2b325f323189bfc622a2ccbef"
+    },
+    {
+      "acl": "{postgres=X/postgres,horyzon_platform=X/postgres}",
+      "args": "",
+      "name": "training_prepare_connection",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": true,
+      "definition_md5": "a5bba353de3c9a0e94639b561b48ba82"
+    },
+    {
+      "acl": "{postgres=X/postgres,authenticated=X/postgres,horyzon_platform=X/postgres}",
+      "args": "",
+      "name": "training_profile",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": true,
+      "definition_md5": "57e1610e5a6a262794311ccc8e3cb1e8"
+    },
+    {
+      "acl": "{postgres=X/postgres,authenticated=X/postgres,horyzon_platform=X/postgres}",
+      "args": "p_operator uuid",
+      "name": "training_progress",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": true,
+      "definition_md5": "0c05137f6ea5c4e2fad0bb8043ebd64f"
+    },
+    {
+      "acl": "{postgres=X/postgres,authenticated=X/postgres,horyzon_platform=X/postgres}",
+      "args": "p_session uuid",
+      "name": "training_receipt",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": true,
+      "definition_md5": "7fcde257c3d5aadda9267ba22c5392e9"
+    },
+    {
+      "acl": "{postgres=X/postgres,horyzon_platform=X/postgres}",
+      "args": "p_case_id text, p_offset integer",
+      "name": "training_removed_case_history",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": true,
+      "definition_md5": "9edb79384632d0493f7c722630585262"
+    },
+    {
+      "acl": "{postgres=X/postgres}",
+      "args": "p_report jsonb",
+      "name": "training_report_extensions_valid_v12",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": false,
+      "definition_md5": "7a6d9663313af0b62e3c41b637ab0adb"
+    },
+    {
+      "acl": "{postgres=X/postgres,horyzon_platform=X/postgres}",
+      "args": "p_report_id uuid, p_hidden boolean",
+      "name": "training_report_set_visibility",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": true,
+      "definition_md5": "78e8e5767cebe6f283aade3009e600cd"
+    },
+    {
+      "acl": "{postgres=X/postgres}",
+      "args": "p_report_id uuid",
+      "name": "training_report_visible",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": false,
+      "definition_md5": "2abdec5c7f449a06153828c14be30bf9"
+    },
+    {
+      "acl": "{postgres=X/postgres,authenticated=X/postgres,horyzon_platform=X/postgres}",
+      "args": "p_input jsonb",
+      "name": "training_save",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": true,
+      "definition_md5": "3aaeb1d81441d26461d6bacd68dc4c70"
+    },
+    {
+      "acl": "{postgres=X/postgres,horyzon_platform=X/postgres}",
+      "args": "p_code text",
+      "name": "training_session_by_code",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": true,
+      "definition_md5": "818c4425d4211572612c542fd3885c7c"
+    },
+    {
+      "acl": "{postgres=X/postgres,horyzon_platform=X/postgres}",
+      "args": "p_session uuid",
+      "name": "training_session_context",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": true,
+      "definition_md5": "80c4e70d69d50ee490f5da34a6be2abd"
+    },
+    {
+      "acl": "{postgres=X/postgres,horyzon_platform=X/postgres}",
+      "args": "p_input jsonb",
+      "name": "training_start_session",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": true,
+      "definition_md5": "a7f2a3fba84191f9f8e1bc161be76ae2"
+    },
+    {
+      "acl": "{postgres=X/postgres}",
+      "args": "",
+      "name": "training_supervisor",
+      "owner": "postgres",
+      "schema": "architetti_private",
+      "definer": true,
+      "definition_md5": "5f71718b9161a7a95d0d8f509095322e"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_value jsonb",
+      "name": "patrimonial_assignment_camel",
+      "owner": "postgres",
+      "schema": "public",
+      "definer": false,
+      "definition_md5": "4daeac0c3e6fdf04bdcd20384db29856"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_plan jsonb, p_revision bigint",
+      "name": "patrimonial_assignment_commit",
+      "owner": "postgres",
+      "schema": "public",
+      "definer": false,
+      "definition_md5": "545578e1b8c812f9099720b0d25af4ce"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_key text, p_intents jsonb, p_experiment uuid",
+      "name": "patrimonial_assignment_context",
+      "owner": "postgres",
+      "schema": "public",
+      "definer": false,
+      "definition_md5": "2ffd8a44b8fad396ee220ee6b787a6e0"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "",
+      "name": "patrimonial_assignment_guard",
+      "owner": "postgres",
+      "schema": "public",
+      "definer": false,
+      "definition_md5": "b14ddc0812f9354bb38850a5ea77e2e2"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "",
+      "name": "patrimonial_assignment_immutable",
+      "owner": "postgres",
+      "schema": "public",
+      "definer": false,
+      "definition_md5": "c15d963f2214b2fec16a6aa47b18b966"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "",
+      "name": "patrimonial_assignment_projection",
+      "owner": "postgres",
+      "schema": "public",
+      "definer": false,
+      "definition_md5": "d2731ddb4e1db89afc6a93fa222299ce"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_value jsonb",
+      "name": "patrimonial_assignment_snake",
+      "owner": "postgres",
+      "schema": "public",
+      "definer": false,
+      "definition_md5": "2fc3a62f772c3210241fad07987f5af6"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_spec jsonb",
+      "name": "patrimonial_capability_objects",
+      "owner": "postgres",
+      "schema": "public",
+      "definer": false,
+      "definition_md5": "e9f65b953bbefe105b2d87585b23df31"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_command jsonb",
+      "name": "patrimonial_execute_command",
+      "owner": "postgres",
+      "schema": "public",
+      "definer": false,
+      "definition_md5": "08945e2448edb50e1f270e4ce6e1979e"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_command jsonb",
+      "name": "patrimonial_execute_command_pre_assignments",
+      "owner": "postgres",
+      "schema": "public",
+      "definer": false,
+      "definition_md5": "706dd64ae399e638c9611cf26665ae2b"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_command jsonb",
+      "name": "patrimonial_execute_command_pre_owner_sync",
+      "owner": "postgres",
+      "schema": "public",
+      "definer": false,
+      "definition_md5": "d0d2d002976c1df48f993f06240026a2"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_input jsonb",
+      "name": "patrimonial_owned_operation",
+      "owner": "postgres",
+      "schema": "public",
+      "definer": false,
+      "definition_md5": "b4d247cf8ed6fa134eee11eb850df720"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_claim jsonb",
+      "name": "patrimonial_owner_context",
+      "owner": "postgres",
+      "schema": "public",
+      "definer": false,
+      "definition_md5": "034a610f9e9b24bd77c847acad41b4ce"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_value jsonb",
+      "name": "patrimonial_owner_enqueue",
+      "owner": "postgres",
+      "schema": "public",
+      "definer": false,
+      "definition_md5": "c9c691be50ae7f27d8ec0a94e518430a"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_op jsonb, p_name text",
+      "name": "patrimonial_owner_event",
+      "owner": "postgres",
+      "schema": "public",
+      "definer": false,
+      "definition_md5": "7c4bf285c5b4e515606b7ce3374df842"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_input jsonb",
+      "name": "patrimonial_owner_finish",
+      "owner": "postgres",
+      "schema": "public",
+      "definer": false,
+      "definition_md5": "50cba7e45e9b6d09bd6a9b7f6ff6d2d0"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "",
+      "name": "patrimonial_performance_capabilities",
+      "owner": "postgres",
+      "schema": "public",
+      "definer": false,
+      "definition_md5": "38723db6037d735bb9889b0dce1fcc71"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "",
+      "name": "patrimonial_performance_guard",
+      "owner": "postgres",
+      "schema": "public",
+      "definer": false,
+      "definition_md5": "82f594a05bc664efa369c81e21058921"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "",
+      "name": "patrimonial_performance_immutable",
+      "owner": "postgres",
+      "schema": "public",
+      "definer": false,
+      "definition_md5": "3ae374b15be8e7711c78824ff4c3fd5a"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_remote_opportunity_id text, p_occurred_at timestamp with time zone",
+      "name": "patrimonial_performance_resolve",
+      "owner": "postgres",
+      "schema": "public",
+      "definer": false,
+      "definition_md5": "6d0f3640e079bceb1f2161bf1849de8d"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_record jsonb",
+      "name": "patrimonial_put_operation",
+      "owner": "postgres",
+      "schema": "public",
+      "definer": false,
+      "definition_md5": "7523ddb67fcc8d1707068875a40b4738"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_event jsonb",
+      "name": "patrimonial_record_performance_event",
+      "owner": "postgres",
+      "schema": "public",
+      "definer": false,
+      "definition_md5": "e34667b34a894cc8e3349ee734fb9414"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "",
+      "name": "patrimonial_store_capabilities",
+      "owner": "postgres",
+      "schema": "public",
+      "definer": false,
+      "definition_md5": "7ef3969a9c2e80bc9da048c5a787574e"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "",
+      "name": "patrimonial_store_health",
+      "owner": "postgres",
+      "schema": "public",
+      "definer": false,
+      "definition_md5": "db3b973314d9e146ef824fbd86ee0f57"
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "args": "p_commands jsonb, p_expected jsonb, p_preview boolean",
+      "name": "patrimonial_store_transaction",
+      "owner": "postgres",
+      "schema": "public",
+      "definer": false,
+      "definition_md5": "83e2b5e15b629fe6ea33ba459f699aaf"
+    }
+  ],
+  "tables": [
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_activities",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_assignment_commands",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_assignment_cursors",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_assignment_experiment_operators",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_assignment_experiments",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": false,
+      "kind": "v",
+      "name": "patrimonial_assignment_performance_v1",
+      "force": false,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_assignment_state",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_assignments",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_consent_evidence",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_contact_event_registrations",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_contact_external_refs",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_contact_history",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_contact_ingress",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_contact_radar_links",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_contacts",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_contracts",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_domain_events",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_event_editions",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_intents",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_lead_snapshots",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_operator_pool_members",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_operator_pools",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_operator_tool_grants",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_operators",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_outbox_operations",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_participations",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_performance_events",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_requests",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_tools",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "rls": true,
+      "kind": "r",
+      "name": "patrimonial_workspace_stages",
+      "force": true,
+      "owner": "postgres",
+      "schema": "public"
+    }
+  ],
+  "constraints": [
+    {
+      "name": "patrimonial_intent_operator_consistent",
+      "table": "patrimonial_intents",
+      "definition": "TRIGGER DEFERRABLE INITIALLY DEFERRED"
+    },
+    {
+      "name": "patrimonial_intents_check",
+      "table": "patrimonial_intents",
+      "definition": "CHECK (((jsonb_typeof(record) = 'object'::text) AND ((record ->> 'id'::text) = (id)::text)))"
+    },
+    {
+      "name": "patrimonial_intents_check1",
+      "table": "patrimonial_intents",
+      "definition": "CHECK (((kind <> 'PROVISIONAL'::text) OR ((provisional_key IS NOT NULL) AND (group_key IS NULL))))"
+    },
+    {
+      "name": "patrimonial_intents_check2",
+      "table": "patrimonial_intents",
+      "definition": "CHECK (((kind <> 'OPPORTUNITY'::text) OR ((group_key IS NOT NULL) AND (business_key IS NOT NULL) AND (location_ref IS NOT NULL) AND (remote_contact_id IS NOT NULL) AND (scope_key IS NOT NULL) AND ((record ->> 'groupKey'::text) = group_key) AND ((record ->> 'businessKey'::text) = business_key) AND (((record ->> 'revision'::text))::integer = revision) AND ((record ->> 'status'::text) = status) AND ((record ->> 'stage'::text) = stage) AND (next_step IS NOT NULL) AND (status = ANY (ARRAY['OPEN'::text, 'WON'::text, 'LOST'::text, 'ABANDONED'::text])) AND (stage IS NOT NULL) AND (next_step = ANY (ARRAY['ASSIGN'::text, 'INVITE_PRESENTATION'::text, 'BOOK_PRESENTATION'::text, 'QUALIFY'::text, 'BOOK_INTERVIEW'::text, 'RECORD_OUTCOME'::text, 'AGREE_PATH_START'::text, 'CONFIRM_EDITION'::text, 'RECORD_ATTENDANCE'::text, 'FOLLOW_UP'::text, 'BOOK_CONSULTATION'::text, 'REVIEW'::text, 'NONE'::text])) AND (((funnel = 'architect-path'::text) AND (stage = ANY (ARRAY['A01'::text, 'A02'::text, 'A03'::text, 'A04'::text, 'A05'::text, 'A06'::text, 'A07'::text, 'A08'::text, 'A09'::text, 'A10'::text]))) OR ((funnel = 'patrimonial-event'::text) AND (stage = ANY (ARRAY['E01'::text, 'E02'::text, 'E03'::text, 'E04'::text, 'E05'::text]))) OR ((funnel = 'patrimonial-consultation'::text) AND (stage = ANY (ARRAY['C01'::text, 'C02'::text, 'C03'::text, 'C04'::text, 'C05'::text])))) AND (((status = 'OPEN'::text) AND (next_step IS NOT NULL) AND (next_step <> 'NONE'::text) AND (next_step_at IS NOT NULL)) OR ((status <> 'OPEN'::text) AND (next_step = 'NONE'::text) AND (next_step_at IS NULL))) AND\nCASE\n    WHEN (stage = 'A09'::text) THEN (status = 'WON'::text)\n    WHEN (stage = 'A10'::text) THEN (status = ANY (ARRAY['LOST'::text, 'ABANDONED'::text]))\n    WHEN (stage = ANY (ARRAY['E05'::text, 'C05'::text])) THEN (status <> 'OPEN'::text)\n    ELSE (status = 'OPEN'::text)\nEND)))"
+    },
+    {
+      "name": "patrimonial_intents_contact_id_fkey",
+      "table": "patrimonial_intents",
+      "definition": "FOREIGN KEY (contact_id) REFERENCES patrimonial_contacts(id)"
+    },
+    {
+      "name": "patrimonial_intents_current_operator_id_fkey",
+      "table": "patrimonial_intents",
+      "definition": "FOREIGN KEY (current_operator_id) REFERENCES patrimonial_operators(id)"
+    },
+    {
+      "name": "patrimonial_intents_cycle_check",
+      "table": "patrimonial_intents",
+      "definition": "CHECK ((cycle > 0))"
+    },
+    {
+      "name": "patrimonial_intents_funnel_check",
+      "table": "patrimonial_intents",
+      "definition": "CHECK ((funnel = ANY (ARRAY['architect-path'::text, 'patrimonial-event'::text, 'patrimonial-consultation'::text, 'manual'::text])))"
+    },
+    {
+      "name": "patrimonial_intents_group_key_key",
+      "table": "patrimonial_intents",
+      "definition": "UNIQUE (group_key)"
+    },
+    {
+      "name": "patrimonial_intents_kind_check",
+      "table": "patrimonial_intents",
+      "definition": "CHECK ((kind = ANY (ARRAY['PROVISIONAL'::text, 'OPPORTUNITY'::text, 'HORYZON_OPPORTUNITY'::text])))"
+    },
+    {
+      "name": "patrimonial_intents_operator_revision_check",
+      "table": "patrimonial_intents",
+      "definition": "CHECK ((operator_revision >= 0))"
+    },
+    {
+      "name": "patrimonial_intents_owner_checkpoint_check",
+      "table": "patrimonial_intents",
+      "definition": "CHECK (((owner_checkpoint IS NULL) OR (jsonb_typeof(owner_checkpoint) = 'object'::text)))"
+    },
+    {
+      "name": "patrimonial_intents_owner_checkpoint_revision_check",
+      "table": "patrimonial_intents",
+      "definition": "CHECK ((owner_checkpoint_revision >= 0))"
+    },
+    {
+      "name": "patrimonial_intents_pkey",
+      "table": "patrimonial_intents",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "patrimonial_intents_provisional_key_key",
+      "table": "patrimonial_intents",
+      "definition": "UNIQUE (provisional_key)"
+    },
+    {
+      "name": "patrimonial_intents_revision_check",
+      "table": "patrimonial_intents",
+      "definition": "CHECK ((revision >= 0))"
+    },
+    {
+      "name": "patrimonial_intents_sync_state_check",
+      "table": "patrimonial_intents",
+      "definition": "CHECK ((sync_state = ANY (ARRAY['SYNC_PENDING'::text, 'SYNCING'::text, 'SYNCED'::text, 'MANUAL_REVIEW'::text, 'RECONCILE_REQUIRED'::text])))"
+    },
+    {
+      "name": "patrimonial_intents_workspace_next_action_check",
+      "table": "patrimonial_intents",
+      "definition": "CHECK ((length(workspace_next_action) <= 500))"
+    },
+    {
+      "name": "patrimonial_intents_workspace_stage_id_fkey",
+      "table": "patrimonial_intents",
+      "definition": "FOREIGN KEY (workspace_stage_id) REFERENCES patrimonial_workspace_stages(id)"
+    },
+    {
+      "name": "patrimonial_intents_workspace_title_check",
+      "table": "patrimonial_intents",
+      "definition": "CHECK ((length(workspace_title) <= 160))"
+    },
+    {
+      "name": "patrimonial_workspace_opportunity",
+      "table": "patrimonial_intents",
+      "definition": "CHECK (((kind <> 'HORYZON_OPPORTUNITY'::text) OR ((contact_id IS NOT NULL) AND (workspace_stage_id IS NOT NULL) AND (workspace_title IS NOT NULL) AND ((length(btrim(workspace_title)) >= 1) AND (length(btrim(workspace_title)) <= 160)) AND (status = ANY (ARRAY['OPEN'::text, 'WON'::text, 'LOST'::text, 'ABANDONED'::text])) AND ((status <> 'OPEN'::text) OR ((workspace_next_action IS NOT NULL) AND ((length(btrim(workspace_next_action)) >= 1) AND (length(btrim(workspace_next_action)) <= 500)) AND (next_step_at IS NOT NULL))))))"
+    },
+    {
+      "name": "patrimonial_network_binding",
+      "table": "patrimonial_operators",
+      "definition": "CHECK (((NOT network_enabled) OR ((user_id IS NOT NULL) AND (network_role IS NOT NULL))))"
+    },
+    {
+      "name": "patrimonial_operators_capacity_check",
+      "table": "patrimonial_operators",
+      "definition": "CHECK (((capacity IS NULL) OR (capacity >= 0)))"
+    },
+    {
+      "name": "patrimonial_operators_display_name_check",
+      "table": "patrimonial_operators",
+      "definition": "CHECK (((length(btrim(display_name)) >= 1) AND (length(btrim(display_name)) <= 120)))"
+    },
+    {
+      "name": "patrimonial_operators_metadata_check",
+      "table": "patrimonial_operators",
+      "definition": "CHECK ((jsonb_typeof(metadata) = 'object'::text))"
+    },
+    {
+      "name": "patrimonial_operators_network_role_check",
+      "table": "patrimonial_operators",
+      "definition": "CHECK ((network_role = ANY (ARRAY['architect'::text, 'manager'::text, 'admin'::text])))"
+    },
+    {
+      "name": "patrimonial_operators_operator_key_check",
+      "table": "patrimonial_operators",
+      "definition": "CHECK ((operator_key ~ '^[a-zA-Z0-9][a-zA-Z0-9_:-]{0,159}$'::text))"
+    },
+    {
+      "name": "patrimonial_operators_operator_key_key",
+      "table": "patrimonial_operators",
+      "definition": "UNIQUE (operator_key)"
+    },
+    {
+      "name": "patrimonial_operators_pkey",
+      "table": "patrimonial_operators",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "patrimonial_operators_revision_check",
+      "table": "patrimonial_operators",
+      "definition": "CHECK ((revision >= 0))"
+    },
+    {
+      "name": "patrimonial_operators_user_id_fkey",
+      "table": "patrimonial_operators",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE RESTRICT"
+    },
+    {
+      "name": "patrimonial_operators_user_id_key",
+      "table": "patrimonial_operators",
+      "definition": "UNIQUE (user_id)"
+    },
+    {
+      "name": "training_operator_user_binding",
+      "table": "patrimonial_operators",
+      "definition": "UNIQUE (id, user_id)"
+    },
+    {
+      "name": "patrimonial_assignment_projection_consistent",
+      "table": "patrimonial_assignments",
+      "definition": "TRIGGER DEFERRABLE INITIALLY DEFERRED"
+    },
+    {
+      "name": "patrimonial_assignments_assigned_by_type_check",
+      "table": "patrimonial_assignments",
+      "definition": "CHECK ((assigned_by_type = ANY (ARRAY['SYSTEM'::text, 'ADMIN'::text, 'WORKER'::text])))"
+    },
+    {
+      "name": "patrimonial_assignments_assignment_key_key",
+      "table": "patrimonial_assignments",
+      "definition": "UNIQUE (assignment_key)"
+    },
+    {
+      "name": "patrimonial_assignments_assignment_method_check",
+      "table": "patrimonial_assignments",
+      "definition": "CHECK ((assignment_method = ANY (ARRAY['MANUAL'::text, 'ROUND_ROBIN'::text, 'BALANCED_BATCH'::text])))"
+    },
+    {
+      "name": "patrimonial_assignments_check",
+      "table": "patrimonial_assignments",
+      "definition": "CHECK (((released_at IS NULL) = (release_reason IS NULL)))"
+    },
+    {
+      "name": "patrimonial_assignments_check1",
+      "table": "patrimonial_assignments",
+      "definition": "CHECK (((released_at IS NULL) OR (released_at >= assigned_at)))"
+    },
+    {
+      "name": "patrimonial_assignments_experiment_id_fkey",
+      "table": "patrimonial_assignments",
+      "definition": "FOREIGN KEY (experiment_id) REFERENCES patrimonial_assignment_experiments(id)"
+    },
+    {
+      "name": "patrimonial_assignments_intent_id_fkey",
+      "table": "patrimonial_assignments",
+      "definition": "FOREIGN KEY (intent_id) REFERENCES patrimonial_intents(id)"
+    },
+    {
+      "name": "patrimonial_assignments_metadata_check",
+      "table": "patrimonial_assignments",
+      "definition": "CHECK ((jsonb_typeof(metadata) = 'object'::text))"
+    },
+    {
+      "name": "patrimonial_assignments_operator_id_fkey",
+      "table": "patrimonial_assignments",
+      "definition": "FOREIGN KEY (operator_id) REFERENCES patrimonial_operators(id)"
+    },
+    {
+      "name": "patrimonial_assignments_pkey",
+      "table": "patrimonial_assignments",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "patrimonial_assignments_pool_id_fkey",
+      "table": "patrimonial_assignments",
+      "definition": "FOREIGN KEY (pool_id) REFERENCES patrimonial_operator_pools(id)"
+    },
+    {
+      "name": "patrimonial_assignments_quality_snapshot_id_fkey",
+      "table": "patrimonial_assignments",
+      "definition": "FOREIGN KEY (quality_snapshot_id) REFERENCES patrimonial_lead_snapshots(id)"
+    },
+    {
+      "name": "patrimonial_assignments_release_reason_check",
+      "table": "patrimonial_assignments",
+      "definition": "CHECK ((release_reason = ANY (ARRAY['REASSIGNED'::text, 'MANUAL_RELEASE'::text, 'INTENT_CLOSED'::text])))"
+    },
+    {
+      "name": "patrimonial_assignments_revision_check",
+      "table": "patrimonial_assignments",
+      "definition": "CHECK ((revision >= 0))"
+    },
+    {
+      "name": "patrimonial_contacts_assigned_by_fkey",
+      "table": "patrimonial_contacts",
+      "definition": "FOREIGN KEY (assigned_by) REFERENCES auth.users(id)"
+    },
+    {
+      "name": "patrimonial_contacts_assigned_operator_id_fkey",
+      "table": "patrimonial_contacts",
+      "definition": "FOREIGN KEY (assigned_operator_id) REFERENCES patrimonial_operators(id)"
+    },
+    {
+      "name": "patrimonial_contacts_check",
+      "table": "patrimonial_contacts",
+      "definition": "CHECK (((next_action IS NULL) = (next_action_at IS NULL)))"
+    },
+    {
+      "name": "patrimonial_contacts_created_by_fkey",
+      "table": "patrimonial_contacts",
+      "definition": "FOREIGN KEY (created_by) REFERENCES auth.users(id)"
+    },
+    {
+      "name": "patrimonial_contacts_email_check",
+      "table": "patrimonial_contacts",
+      "definition": "CHECK (((email IS NULL) OR ((email = lower(btrim(email))) AND (length(email) <= 254) AND (email ~ '^[^[:space:]@]+@[^[:space:]@]+\\.[^[:space:]@]+$'::text))))"
+    },
+    {
+      "name": "patrimonial_contacts_full_name_check",
+      "table": "patrimonial_contacts",
+      "definition": "CHECK (((length(btrim(full_name)) >= 1) AND (length(btrim(full_name)) <= 160)))"
+    },
+    {
+      "name": "patrimonial_contacts_next_action_check",
+      "table": "patrimonial_contacts",
+      "definition": "CHECK ((length(next_action) <= 500))"
+    },
+    {
+      "name": "patrimonial_contacts_phone_check",
+      "table": "patrimonial_contacts",
+      "definition": "CHECK (((phone IS NULL) OR (phone ~ '^\\+[1-9][0-9]{7,14}$'::text)))"
+    },
+    {
+      "name": "patrimonial_contacts_pkey",
+      "table": "patrimonial_contacts",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "patrimonial_contacts_revision_check",
+      "table": "patrimonial_contacts",
+      "definition": "CHECK ((revision >= 0))"
+    },
+    {
+      "name": "patrimonial_contacts_source_check",
+      "table": "patrimonial_contacts",
+      "definition": "CHECK (((length(source) >= 1) AND (length(source) <= 160)))"
+    },
+    {
+      "name": "patrimonial_contacts_status_check",
+      "table": "patrimonial_contacts",
+      "definition": "CHECK ((status = ANY (ARRAY['prospect'::text, 'client'::text])))"
+    }
+  ]
+}

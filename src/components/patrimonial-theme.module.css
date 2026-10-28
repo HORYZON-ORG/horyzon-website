@@ -1,0 +1,32 @@
+.frame { min-width:0; }
+
+/* Preview bar: sits above the page, never overlaps the landing's own top bar. */
+.bar { position:sticky; top:0; z-index:60; display:flex; align-items:center; justify-content:flex-end; gap:14px; padding:8px max(16px,env(safe-area-inset-right,0px)) 8px max(16px,env(safe-area-inset-left,0px)); background:#040E12; border-bottom:1px solid rgba(247,244,232,.12); color:#A3B1B0; }
+.label { font:500 11px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.14em; text-transform:uppercase; }
+.switch { display:inline-flex; padding:3px; gap:3px; border-radius:999px; background:rgba(247,244,232,.08); border:1px solid rgba(247,244,232,.16); }
+.switch button { display:inline-flex; align-items:center; gap:7px; min-height:36px; padding:0 14px; border:0; border-radius:999px; background:transparent; color:#CDD6D4; font:600 14px/1 system-ui,-apple-system,'Segoe UI',sans-serif; cursor:pointer; transition:background .2s,color .2s; }
+.switch button[aria-pressed="true"] { background:#D8FF42; color:#07171D; }
+.switch button:focus-visible { outline:2px solid #D8FF42; outline-offset:2px; }
+
+.frame[data-theme="light"] .bar { background:#FFFFFF; border-bottom-color:rgba(7,23,29,.12); color:#5A6B70; }
+.frame[data-theme="light"] .switch { background:#EFEDE6; border-color:rgba(7,23,29,.12); }
+.frame[data-theme="light"] .switch button { color:#41545A; }
+.frame[data-theme="light"] .switch button[aria-pressed="true"] { background:#07171D; color:#D8FF42; }
+.frame[data-theme="light"] .switch button:focus-visible { outline-color:#5F7010; }
+
+@media (max-width:600px) { .label { display:none; } .bar { justify-content:center; } }
+
+/* Shared lead form (global rd-form kit, dark by default) in the light theme. */
+.frame[data-theme="light"] :global(.rd-form) { background:#FFFFFF; color:#07171D; border-color:rgba(7,23,29,.14); box-shadow:0 40px 80px -50px rgba(7,23,29,.35); }
+.frame[data-theme="light"] :global(.rd-form)>p { color:#41545A; }
+.frame[data-theme="light"] :global(.rd-form label) { color:#41545A; }
+.frame[data-theme="light"] :global(.rd-form input),
+.frame[data-theme="light"] :global(.rd-form textarea),
+.frame[data-theme="light"] :global(.rd-form select) { background:#F7F4E8; color:#07171D; border-color:rgba(7,23,29,.22); }
+.frame[data-theme="light"] :global(.rd-form input:focus),
+.frame[data-theme="light"] :global(.rd-form textarea:focus) { border-color:#5F7010; }
+.frame[data-theme="light"] :global(.rd-form ::placeholder) { color:#6E7E82; }
+.frame[data-theme="light"] :global(.rd-form .rd-form-note) { color:#5A6B70; }
+.frame[data-theme="light"] :global(.rd-form .rd-form-note a),
+.frame[data-theme="light"] :global(.rd-form a) { color:#07171D; }
+.frame[data-theme="light"] :global(.rd-form input[type=checkbox]) { accent-color:#5F7010; }

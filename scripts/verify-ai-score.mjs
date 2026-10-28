@@ -12,7 +12,7 @@ const visibility = readFileSync(join(root, 'src/lib/ai-score/visibility.ts'), 'u
 const externalFootprint = readFileSync(join(root, 'src/lib/ai-score/external-footprint.ts'), 'utf8');
 const types = readFileSync(join(root, 'src/lib/ai-score/types.ts'), 'utf8');
 const client = readFileSync(join(root, 'src/components/ai-score-client.tsx'), 'utf8');
-const methodologyPage = readFileSync(join(root, 'src/app/ai-score/methodology/page.tsx'), 'utf8');
+const methodologyPage = readFileSync(join(root, 'src/app/(site)/ai-score/methodology/page.tsx'), 'utf8');
 
 const categoryWeights = [...methodology.matchAll(/weight: (\d+), description/g)].map((match) => Number(match[1]));
 assert.equal(categoryWeights.reduce((sum, weight) => sum + weight, 0), 100, 'Readiness category weights must total 100');

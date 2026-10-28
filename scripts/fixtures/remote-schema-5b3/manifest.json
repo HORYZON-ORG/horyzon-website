@@ -1,0 +1,30 @@
+[
+  {
+    "file": "20261021101555_architetti_account_search.sql",
+    "sha256": "3c5aeb22eddcec445dca21127df3eb32e5c173b7f024962142a67cdf3aaf3e1a"
+  },
+  {
+    "file": "20261021150003_architetti_training_mcp.sql",
+    "sha256": "6d99def9c63b8f5c8b82463f8057c065c3131961e10901e97b5ff267bb30b803"
+  },
+  {
+    "file": "20261021165945_architetti_training_arena.sql",
+    "sha256": "5b6071ac854809a5f47a9a0bfd2f3a705777da0db6aa173b8ec1647ab513201a"
+  },
+  {
+    "file": "20261021172342_hub_architect_candidates_v1.sql",
+    "sha256": "4e2c37d1d89cc25dad4b2f6da2c878da1f18f1882569f284f90c6412f80a734d"
+  },
+  {
+    "file": "20261021172346_hub_architect_candidate_activation_v1.sql",
+    "sha256": "01f6b7116ccfdbbefe6f1708e9f9838c3f7251366e1241a3db100ea29487e065"
+  },
+  {
+    "file": "20261021173411_architetti_event_radar_contact_link.sql",
+    "sha256": "6506d5ba13fc863cab2cdd66c81f77b3cf1987b8dcaf4d1b240ba4ac03f6caa6"
+  },
+  {
+    "file": "20261021181255_hub_architect_activation_reconcile_v1.sql",
+    "sha256": "4637c1883127f06cbcb05bfb288c51dd269f9652659025eee08c4429159ab328"
+  }
+]
