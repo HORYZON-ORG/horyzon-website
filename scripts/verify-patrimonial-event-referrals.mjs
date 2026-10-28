@@ -26,7 +26,7 @@ for (const referralCode of ['','A'.repeat(32),'none',null,{},code+'x']) {
   assert.equal(validatePilotLead({ ...base, referralCode }), null, 'invalid referral must be rejected');
 }
 assert.equal(validatePilotLead({ ...base, mode: 'architect-path', sourcePath: pilotForms['architect-path'].path, experience: '', goal: '', availability: '' }), null);
-assert.equal(validatePatrimonialV2({ ...base, contractVersion: PATRIMONIAL_V2 }),null);
+assert.equal(validatePatrimonialV2({ ...base, contractVersion: PATRIMONIAL_V2 })?.referralCode, code);
 
 let count = 0;
 const records = [];

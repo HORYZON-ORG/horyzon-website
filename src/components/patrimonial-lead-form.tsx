@@ -94,6 +94,17 @@ function PilotLeadForm({ mode, contractVersion, presentation, selectedProfile = 
         } catch { sending.current = false; setStatus('error'); setNotice('Caricamento del CV non riuscito. Controlla la connessione e riprova.'); return; }
       }
     }
+    let eventQualification: unknown;
+    if (mode === 'patrimonial-event' && !v2) {
+      const raw = data.get('qualification');
+      if (typeof raw !== 'string' || raw.length > 2500) {
+        sending.current = false; setStatus('error'); setNotice('Non riusciamo a leggere le informazioni dell’evento. Aggiorna la pagina.'); return;
+      }
+      try { eventQualification = JSON.parse(raw); }
+      catch {
+        sending.current = false; setStatus('error'); setNotice('Le risposte dell’evento non sono valide. Aggiorna la pagina.'); return;
+      }
+    }
     const payload = {
       mode, sourcePath: form.path, firstName: data.get('firstName'), lastName: data.get('lastName'),
       email: data.get('email'), phone: data.get('phone'), province: data.get('province'), profile: data.get('profile'),
@@ -101,6 +112,7 @@ function PilotLeadForm({ mode, contractVersion, presentation, selectedProfile = 
       website: data.get('website'), utm: pilotAttribution(mode, !v2),
       ...(mode === 'architect-path' ? { experience: data.get('experience'), goal: data.get('goal'), availability: data.get('availability') } : {}),
       ...(cvId ? { cvId } : {}),
+      ...(mode === 'patrimonial-event' && !v2 && eventQualification !== undefined ? {qualification: eventQualification} : {}),
       ...(mode === 'patrimonial-event' && referral.current !== undefined ? {referralCode: referral.current} : {}),
     };
     setStatus('sending'); setNotice('');
