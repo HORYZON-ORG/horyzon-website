@@ -1,0 +1,20 @@
+[
+  {
+    "file": "20261026180004_architetti_event_referral_routing.sql",
+    "sha256": "f65fbcbc00f9d4e1f6c164b1c2acd525da1f4906430fb6b793938672137c69d8",
+    "upstreamSha256Lf": "8937c12a05de70ad7bd8972377fd71a228ad167760e35ed04b77caf298e5bbbb",
+    "transform": "Only terminal blank lines removed"
+  },
+  {
+    "file": "20261026180721_architetti_personal_isolation.sql",
+    "sha256": "4f3d28e115a88c46220a967f337f7d6f2b4446de6e0f07399d5fc3684940a9e0",
+    "upstreamSha256Lf": "96e59c012b0f03cc365dbc582dbd62e77257e7d23d7fe83460dd4e38f411bbbe",
+    "transform": "Only terminal blank lines removed"
+  },
+  {
+    "file": "20261026181058_architetti_personal_event_context.sql",
+    "sha256": "40e47e88294e5c4aeb78501e1547e1f5d5945a3613a0eda8eed98cbf9ae66e07",
+    "upstreamSha256Lf": "ecd7d82320ef77fda4e5ec0cf32e692b94628cf6fb4eee889eb74643bb8a2ca7",
+    "transform": "Only terminal blank lines removed"
+  }
+]

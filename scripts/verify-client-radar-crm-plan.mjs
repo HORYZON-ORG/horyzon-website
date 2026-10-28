@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {planClientRadarCrmSync} from '../src/lib/patrimonial-radar-server/network-crm-plan.ts';
+const personId=randomUUID(),hubContactId=randomUUID(),intentId=randomUUID(),requestIds=[randomUUID(),randomUUID()];
+const input={radar:{personId,assessmentId:randomUUID(),approvedRevision:31,binding:{state:'VERIFIED',locationId:'synthetic-location',contactId:'synthetic-highlevel',evidenceRef:'SYNTHETIC_ONLY',revision:1},internalOperatorId:null,verifiedRemoteUserId:null,observedRemoteOwnerId:'REMOTE_UNTRUSTED_OWNER',assignment:{intentId,operatorId:null,revision:4},capabilityVerified:true},contactBinding:{personId,hubContactId,state:'VERIFIED',revision:1},requestIds,participationIds:[],assignmentHistoryIds:[randomUUID()]};
+const plan=planClientRadarCrmSync(input);assert.equal(plan.status,'RECONCILE_OWNER');assert.deepEqual(plan.writes,[]);assert.equal(plan.metadata.radar.assignment.operatorId,null);
+assert.deepEqual(plan,planClientRadarCrmSync({...input,requestIds:[...requestIds].reverse()}));
+assert.equal(planClientRadarCrmSync({...input,contactBinding:{...input.contactBinding,state:'CANDIDATE'}}).status,'HOLD_CONTACT_BINDING');
+assert.throws(()=>planClientRadarCrmSync({...input,contactBinding:{...input.contactBinding,personId:randomUUID()}}));
+assert(!/amount|answers|email|approvedInput/.test(JSON.stringify(plan)));
+console.log('PASS: verified person/contact references, deterministic checkpoints, P1 authority, no financial copy or provider writes');

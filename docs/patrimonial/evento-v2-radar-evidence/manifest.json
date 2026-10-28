@@ -1,0 +1,70 @@
+{
+  "hashBasis": "Repository file bytes (text LF); verify Git blobs when autocrlf is enabled",
+  "files": [
+    {
+      "file": "browser.json",
+      "bytes": 809,
+      "sha256": "429d19b2c6d7ec68c44777763bf3172db0980662f130e0a1b033090d50a68155"
+    },
+    {
+      "file": "catalog.json",
+      "bytes": 1652,
+      "sha256": "a94df630096029b1561d18a9646fe26486f7c41cf67a5852d2ded7854a2b50e7"
+    },
+    {
+      "file": "code.json",
+      "bytes": 2300,
+      "sha256": "8c9f0ca649b0418ff59fb4d6714f4d80966f008a82a4abeb036919a5cea27709"
+    },
+    {
+      "file": "event-http-received.jpg",
+      "bytes": 60250,
+      "sha256": "618b87d8d2ff73fff69052a1900385ff03cce7211979303fa75d29530859e9b1"
+    },
+    {
+      "file": "execution-notes.json",
+      "bytes": 973,
+      "sha256": "698e5b20f6832483a73d78f3b647bed1eb400315ea609675a4cb80e204a42699"
+    },
+    {
+      "file": "http-chain.json",
+      "bytes": 980,
+      "sha256": "773e918ab05816ce9e205867c0dbd6e96445f101e5864cf5fb12c79e51069a91"
+    },
+    {
+      "file": "log-hashes.json",
+      "bytes": 1288,
+      "sha256": "27a94e471499a762c2eecf50d99284d48ed1ce4c320186d058b9afd4ea73477b"
+    },
+    {
+      "file": "migration-chain.json",
+      "bytes": 1376,
+      "sha256": "71e6b1dd63e564360d069936c1995c9094d41b6297ebfe0e1e80004a55645798"
+    },
+    {
+      "file": "native.json",
+      "bytes": 8191,
+      "sha256": "c43b7b26fd3f237deeb841a44c4392a0272fc760410cb1406d7f5c33734f228f"
+    },
+    {
+      "file": "original-5d.json",
+      "bytes": 829,
+      "sha256": "cb746c3d2a8cd0f4cd004b68679dadd6df7381df2a9b0f699263789bfa1357f2"
+    },
+    {
+      "file": "preservation.json",
+      "bytes": 7619,
+      "sha256": "fa709dcdfd0cdf08bff2a35400522bf32103e458227c55e903ff9d5b27ddffd0"
+    },
+    {
+      "file": "regressions.json",
+      "bytes": 4996,
+      "sha256": "86382d0fcb9c38c888e694d1c140836337982208f42f512155f8edf118caf6cc"
+    },
+    {
+      "file": "source-pin-review.json",
+      "bytes": 6652,
+      "sha256": "20759265f00d9cc35dd415b18592b97f0ebdf9101186962d6cb23f519cb7312e"
+    }
+  ]
+}

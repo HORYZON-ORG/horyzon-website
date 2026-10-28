@@ -1,0 +1,121 @@
+{
+  "phase": "4P.5 historical, not rerun in 4P.6",
+  "deployment": {
+    "deploymentId": "dpl_WHyLB43axP3D8H9MSqNGEYFRzdxj",
+    "url": "https://horyzon-radar-pilot-blelmgb7p-horyzon-consulting.vercel.app",
+    "sha": "accd6b70b498cbccb7e1dbedb551e165fa38f820",
+    "target": "preview confirmed by API filter and project target",
+    "readyState": "READY",
+    "questionnaire": "PASS 29+11",
+    "privacy": "PASS within tested scope",
+    "browserNetwork": {
+      "requests": 144,
+      "writes": 0,
+      "external": 0
+    },
+    "contrastMin": 16.583811416035772,
+    "http304": "FAIL GET and HEAD HTML without ETag",
+    "internalProtectedTests": "GO synthetic only",
+    "volunteers": "CONDITIONAL GO proposal 5–8 synthetic only; individual authorized access and human acceptance of temporary HTTP limitation",
+    "publicPublication": "NO-GO",
+    "oneDeploymentOnly": true,
+    "workspacesUnchanged": true,
+    "noPush": true,
+    "noTicketSent": true,
+    "noPublicDomainPublication": true
+  },
+  "questionsExercised": [
+    "RP-S01",
+    "RP-S02",
+    "RP-S03",
+    "RP-S04",
+    "RP-A01",
+    "RP-A02",
+    "RP-A03",
+    "RP-A04",
+    "RP-A05",
+    "RP-C01",
+    "RP-C02",
+    "RP-C03",
+    "RP-C04",
+    "RP-B01",
+    "RP-B02",
+    "RP-B03",
+    "RP-B04",
+    "RP-D01",
+    "RP-D02",
+    "RP-E01",
+    "RP-E02",
+    "RP-E03",
+    "RP-E04",
+    "RP-F01",
+    "RP-F02",
+    "RP-F03",
+    "RP-F04",
+    "RP-F05",
+    "RP-F06",
+    "RP-X01",
+    "RP-X02",
+    "RP-X03",
+    "RP-X04",
+    "RP-X05",
+    "RP-X06",
+    "RP-X07",
+    "RP-X08",
+    "RP-X09",
+    "RP-X10",
+    "RP-X11"
+  ],
+  "secondaryChecks": 53,
+  "network": {
+    "requests": 144,
+    "writes": 0,
+    "external": 0
+  },
+  "errorCount": 0,
+  "gates": [
+    {
+      "path": "/api/patrimonial-radar/session",
+      "status": 404
+    },
+    {
+      "path": "/api/patrimonial-radar/assessments",
+      "status": 404
+    },
+    {
+      "path": "/internal/radar-patrimoniale/advisor-preview",
+      "status": 404
+    }
+  ],
+  "http": {
+    "requests": 24,
+    "status": "FAIL_KNOWN_ETAG",
+    "assertFailures": [
+      {
+        "label": "Matching ETag GET html",
+        "kind": "KNOWN_ETAG_FAIL",
+        "assertion": "Expected values to be strictly equal:\n+ actual - expected\n\n+ null\n- '\"c46e7bd2a5b0c83c61dc5214abbf0ae7\"'\n"
+      },
+      {
+        "label": "Matching ETag HEAD html",
+        "kind": "KNOWN_ETAG_FAIL",
+        "assertion": "Expected values to be strictly equal:\n+ actual - expected\n\n+ null\n- '\"c46e7bd2a5b0c83c61dc5214abbf0ae7\"'\n"
+      },
+      {
+        "label": "RSC native normalization",
+        "kind": "PREVIOUSLY_DOCUMENTED_RSC_PLATFORM_DIFFERENCE",
+        "assertion": "Next requires its native RSC cache-busting query\n\n200 !== 307\n"
+      },
+      {
+        "label": "RSC native normalization",
+        "kind": "PREVIOUSLY_DOCUMENTED_RSC_PLATFORM_DIFFERENCE",
+        "assertion": "Expected values to be strictly equal:\n\nnull !== '/?_rsc'\n"
+      }
+    ]
+  },
+  "report": {
+    "filename": "radar-patrimoniale-v1-preview-validation-4p5.md",
+    "sha256": "cdedea97a4414cbfdb0859d0779c0b048dcbb213340c23f07eb822e8d699b5b5"
+  },
+  "ticketDraft4p5Sha256": "bf7e1700e3dda12336e20810899ba57ef041668a3c1772b258453563eba3830d"
+}

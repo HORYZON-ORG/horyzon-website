@@ -1,0 +1,132 @@
+{
+  "at": "2026-10-19T13:42:10.999Z",
+  "team": {
+    "id": "team_LsT2CKLXy6aIHfeH9SPKpDIz",
+    "slug": "horyzon-consulting",
+    "plan": "pro"
+  },
+  "project": {
+    "id": "prj_bJvIOswh4GacqtUootXATXeAkSUO",
+    "name": "horyzon-radar-pilot",
+    "accountId": "team_LsT2CKLXy6aIHfeH9SPKpDIz",
+    "ssoProtection": {
+      "deploymentType": "all"
+    },
+    "gitLink": null,
+    "sharedEnvIds": [],
+    "bypassCount": 0,
+    "previewTarget": "dpl_WHyLB43axP3D8H9MSqNGEYFRzdxj",
+    "productionTarget": "dpl_7RDwRCmd7fYc6UE28jJYHyAcvVcz"
+  },
+  "deployment": {
+    "id": "dpl_WHyLB43axP3D8H9MSqNGEYFRzdxj",
+    "url": "horyzon-radar-pilot-blelmgb7p-horyzon-consulting.vercel.app",
+    "readyState": "READY",
+    "target": null,
+    "meta": {
+      "radarSourceCommit": "accd6b70b498cbccb7e1dbedb551e165fa38f820",
+      "radarSourceBranch": "feat/radar-patrimoniale-public-pilot",
+      "radarSourceArchiveSha256": "ab12a83632e2c43be2501fefc326e68d43719171e1eaefe47e45af34b6a1d5e1"
+    }
+  },
+  "deployments": [
+    {
+      "id": "dpl_WHyLB43axP3D8H9MSqNGEYFRzdxj",
+      "target": null,
+      "state": "READY"
+    },
+    {
+      "id": "dpl_4GSWEdYCy9v4PEgmxz86Zw4zGeDi",
+      "target": null,
+      "state": "READY"
+    },
+    {
+      "id": "dpl_J3szQjANkXSV8JsJfgYqPcFgVYW1",
+      "target": null,
+      "state": "ERROR"
+    },
+    {
+      "id": "dpl_7RDwRCmd7fYc6UE28jJYHyAcvVcz",
+      "target": "production",
+      "state": "READY"
+    }
+  ],
+  "env": [
+    {
+      "key": "PATRIMONIAL_RADAR_MODE",
+      "scope": [
+        "preview"
+      ],
+      "present": true,
+      "matchesAnonymousContract": true
+    },
+    {
+      "key": "PATRIMONIAL_RADAR_PUBLIC_ANONYMOUS_ENABLED",
+      "scope": [
+        "preview"
+      ],
+      "present": true,
+      "matchesAnonymousContract": true
+    },
+    {
+      "key": "PATRIMONIAL_RADAR_VERIFIED_PERSISTENT_ENABLED",
+      "scope": [
+        "preview"
+      ],
+      "present": true,
+      "matchesAnonymousContract": true
+    },
+    {
+      "key": "PATRIMONIAL_RADAR_BACKEND_ENABLED",
+      "scope": [
+        "preview"
+      ],
+      "present": true,
+      "matchesAnonymousContract": true
+    },
+    {
+      "key": "PATRIMONIAL_RADAR_ADVISOR_PREVIEW_ENABLED",
+      "scope": [
+        "preview"
+      ],
+      "present": true,
+      "matchesAnonymousContract": true
+    },
+    {
+      "key": "PATRIMONIAL_RADAR_DEMO_ENABLED",
+      "scope": [
+        "preview"
+      ],
+      "present": true,
+      "matchesAnonymousContract": true
+    },
+    {
+      "key": "VERCEL_PREVIEW_FEEDBACK_ENABLED",
+      "scope": [
+        "preview"
+      ],
+      "present": true,
+      "matchesAnonymousContract": true
+    }
+  ],
+  "website": {
+    "id": "prj_EWAOevQbWZqhKddTuD6l8GWSIYHM",
+    "name": "horyzon-website",
+    "productionTarget": "dpl_Cnj429btQQebBFEdQ8re36cNyqEG"
+  },
+  "main": "9146f6372b19fdac6db1770d05f6b0ca10c1f1e5\trefs/heads/main",
+  "finalReadAt": "2026-10-19T13:54:02.390Z",
+  "remotePreserved": true,
+  "dashboardReadOnly": {
+    "environment": "Preview",
+    "share": "Only people with access",
+    "individualEmailControlPresent": true,
+    "peopleWithAccess": "Horyzon Consulting team members",
+    "comments": "not enabled",
+    "analytics": "not enabled",
+    "speedInsights": "not enabled",
+    "noEmailsEntered": true,
+    "noCopyLinkClicked": true,
+    "noPermissionsChanged": true
+  }
+}

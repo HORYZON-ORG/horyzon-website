@@ -1,0 +1,232 @@
+{
+  "objects": [
+    {
+      "rls": true,
+      "name": "sessions",
+      "schema": "auth",
+      "force_rls": false
+    },
+    {
+      "rls": true,
+      "name": "users",
+      "schema": "auth",
+      "force_rls": false
+    },
+    {
+      "rls": true,
+      "name": "user_roles",
+      "schema": "hub",
+      "force_rls": true
+    },
+    {
+      "rls": true,
+      "name": "patrimonial_assignment_commands",
+      "schema": "public",
+      "force_rls": true
+    },
+    {
+      "rls": true,
+      "name": "patrimonial_assignments",
+      "schema": "public",
+      "force_rls": true
+    },
+    {
+      "rls": true,
+      "name": "patrimonial_domain_events",
+      "schema": "public",
+      "force_rls": true
+    },
+    {
+      "rls": true,
+      "name": "patrimonial_intents",
+      "schema": "public",
+      "force_rls": true
+    },
+    {
+      "rls": true,
+      "name": "patrimonial_operators",
+      "schema": "public",
+      "force_rls": true
+    },
+    {
+      "rls": true,
+      "name": "patrimonial_performance_events",
+      "schema": "public",
+      "force_rls": true
+    }
+  ],
+  "database": "postgres",
+  "privileges": [
+    {
+      "role": "anon",
+      "bypass_rls": false,
+      "users_select": false,
+      "intents_update": false,
+      "sessions_select": false,
+      "operators_select": false,
+      "operators_update": false,
+      "auth_schema_usage": true
+    },
+    {
+      "role": "authenticated",
+      "bypass_rls": false,
+      "users_select": false,
+      "intents_update": false,
+      "sessions_select": false,
+      "operators_select": false,
+      "operators_update": false,
+      "auth_schema_usage": true
+    },
+    {
+      "role": "postgres",
+      "bypass_rls": true,
+      "users_select": true,
+      "intents_update": true,
+      "sessions_select": true,
+      "operators_select": true,
+      "operators_update": true,
+      "auth_schema_usage": true
+    },
+    {
+      "role": "service_role",
+      "bypass_rls": true,
+      "users_select": false,
+      "intents_update": true,
+      "sessions_select": false,
+      "operators_select": true,
+      "operators_update": true,
+      "auth_schema_usage": true
+    },
+    {
+      "role": "supabase_auth_admin",
+      "bypass_rls": false,
+      "users_select": true,
+      "intents_update": false,
+      "sessions_select": true,
+      "operators_select": false,
+      "operators_update": false,
+      "auth_schema_usage": true
+    }
+  ],
+  "project_ref": "pmkyeqrfkunypfkbjnyg",
+  "inspected_at": "2026-10-18T22:34:36.570878+00:00",
+  "inspection_role": "postgres",
+  "session_columns": [
+    {
+      "name": "id",
+      "type": "uuid"
+    },
+    {
+      "name": "user_id",
+      "type": "uuid"
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone"
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp with time zone"
+    },
+    {
+      "name": "factor_id",
+      "type": "uuid"
+    },
+    {
+      "name": "aal",
+      "type": "USER-DEFINED"
+    },
+    {
+      "name": "not_after",
+      "type": "timestamp with time zone"
+    },
+    {
+      "name": "refreshed_at",
+      "type": "timestamp without time zone"
+    },
+    {
+      "name": "user_agent",
+      "type": "text"
+    },
+    {
+      "name": "ip",
+      "type": "inet"
+    },
+    {
+      "name": "tag",
+      "type": "text"
+    },
+    {
+      "name": "oauth_client_id",
+      "type": "uuid"
+    },
+    {
+      "name": "refresh_token_hmac_key",
+      "type": "text"
+    },
+    {
+      "name": "refresh_token_counter",
+      "type": "bigint"
+    },
+    {
+      "name": "scopes",
+      "type": "text"
+    }
+  ],
+  "postgres_version": "17.6",
+  "radar_schema_exists": false,
+  "advisor_named_objects": [],
+  "identity_foreign_keys": [
+    {
+      "table": "auth.sessions",
+      "definition": "FOREIGN KEY (oauth_client_id) REFERENCES auth.oauth_clients(id) ON DELETE CASCADE"
+    },
+    {
+      "table": "auth.sessions",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE"
+    },
+    {
+      "table": "hub.user_roles",
+      "definition": "FOREIGN KEY (company_id) REFERENCES hub.finance_companies(id) ON DELETE SET NULL"
+    },
+    {
+      "table": "patrimonial_assignments",
+      "definition": "FOREIGN KEY (experiment_id) REFERENCES patrimonial_assignment_experiments(id)"
+    },
+    {
+      "table": "patrimonial_assignments",
+      "definition": "FOREIGN KEY (intent_id) REFERENCES patrimonial_intents(id)"
+    },
+    {
+      "table": "patrimonial_assignments",
+      "definition": "FOREIGN KEY (operator_id) REFERENCES patrimonial_operators(id)"
+    },
+    {
+      "table": "patrimonial_assignments",
+      "definition": "FOREIGN KEY (pool_id) REFERENCES patrimonial_operator_pools(id)"
+    },
+    {
+      "table": "patrimonial_assignments",
+      "definition": "FOREIGN KEY (quality_snapshot_id) REFERENCES patrimonial_lead_snapshots(id)"
+    }
+  ],
+  "sessions_policy_count": 0,
+  "recent_migration_metadata": [
+    {
+      "name": "patrimonial_assignment_management",
+      "version": "20261018184007"
+    },
+    {
+      "name": "patrimonial_owner_sync",
+      "version": "20261018184045"
+    },
+    {
+      "name": "patrimonial_runtime_capabilities",
+      "version": "20261018184114"
+    },
+    {
+      "name": "patrimonial_performance_tracking",
+      "version": "20261018205124"
+    }
+  ]
+}

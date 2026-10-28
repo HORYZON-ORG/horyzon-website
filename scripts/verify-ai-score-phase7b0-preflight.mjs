@@ -7,16 +7,20 @@ import {
   runOpenAIProviderPreflight,
 } from '../src/lib/ai-score/internal-preflight.ts';
 import { MemoryProviderRuntimeStore } from '../src/lib/ai-score/runtime-store.ts';
-import { POST, isAuthorizedInternalPreflightRequest } from '../src/app/api/internal/ai-score/provider-preflight/route.ts';
+import { POST } from '../src/app/api/internal/ai-score/provider-preflight/route.ts';
+import { isAuthorizedInternalPreflightRequest } from '../src/lib/ai-score/internal-preflight-auth.ts';
 
 const root = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 const route = readFileSync(join(root, 'src/app/api/internal/ai-score/provider-preflight/route.ts'), 'utf8');
+const auth = readFileSync(join(root, 'src/lib/ai-score/internal-preflight-auth.ts'), 'utf8');
 const preflight = readFileSync(join(root, 'src/lib/ai-score/internal-preflight.ts'), 'utf8');
 const publicRoute = readFileSync(join(root, 'src/app/api/ai-score/route.ts'), 'utf8');
 
-assert.match(route, /AI_SCORE_INTERNAL_PREFLIGHT_TOKEN/, 'Internal preflight route must use a dedicated auth token');
-assert.match(route, /timingSafeEqual/, 'Internal preflight auth must use constant-time comparison');
-assert.doesNotMatch(route, /OPENAI_API_KEY|SUPABASE_SERVICE_ROLE_KEY|AI_SCORE_RATE_LIMIT_HMAC_SECRET/, 'Internal preflight route must not use provider/runtime secrets as auth');
+assert.match(auth, /AI_SCORE_INTERNAL_PREFLIGHT_TOKEN/, 'Internal preflight auth must use a dedicated auth token');
+assert.match(auth, /timingSafeEqual/, 'Internal preflight auth must use constant-time comparison');
+assert.doesNotMatch(route + auth, /OPENAI_API_KEY|SUPABASE_SERVICE_ROLE_KEY|AI_SCORE_RATE_LIMIT_HMAC_SECRET/, 'Internal preflight must not use provider/runtime secrets as auth');
+assert.match(route, /import \{ isAuthorizedInternalPreflightRequest \} from .*internal-preflight-auth/);
+assert.doesNotMatch(route, /export function isAuthorizedInternalPreflightRequest/, 'Route exports only Next-supported handlers and config');
 assert.match(preflight, /realNetworkCalls: 0/, 'Preflight must report zero real network calls');
 assert.doesNotMatch(preflight, /OpenAIWebSearchAdapter|RealOpenAIResponsesTransport|api\.openai\.com|\/v1\/models|\/v1\/responses/, 'Preflight must not instantiate or call OpenAI transport');
 assert.doesNotMatch(publicRoute, /internal-preflight|runOpenAIProviderPreflight|provider-preflight/, 'Public AI Score route must not use internal preflight');
@@ -43,6 +47,19 @@ await withEnv({
   });
   assert.equal(isAuthorizedInternalPreflightRequest(request), true, 'Valid internal token must authorize');
   assert.equal(isAuthorizedInternalPreflightRequest(new Request(request.url, { method: 'POST' })), false, 'Missing token must reject');
+  for (const authorization of ['Bearer wrong-token', 'Basic phase7b0-internal-token', 'Bearer', 'Bearer   ', 'Bearer phase7b0-internal-token-extra']) {
+    const invalid = new Request(request.url, { method: 'POST', headers: { authorization } });
+    assert.equal(isAuthorizedInternalPreflightRequest(invalid), false, authorization);
+    assert.equal((await POST(invalid)).status, 401, 'Invalid authorization must stop before preflight');
+  }
+  assert.equal(isAuthorizedInternalPreflightRequest(new Request(request.url, { headers: { authorization: `bearer   ${secretValues.AI_SCORE_INTERNAL_PREFLIGHT_TOKEN}  ` } })), true, 'Preserve case-insensitive scheme and token trimming');
+  await withEnv({ AI_SCORE_INTERNAL_PREFLIGHT_TOKEN: '  ' }, async () => {
+    assert.equal(isAuthorizedInternalPreflightRequest(request), false, 'Blank configured token rejects');
+    assert.equal((await POST(request)).status, 401);
+  });
+  await withEnv({ AI_SCORE_INTERNAL_PREFLIGHT_TOKEN: ` ${secretValues.AI_SCORE_INTERNAL_PREFLIGHT_TOKEN} ` }, async () => {
+    assert.equal(isAuthorizedInternalPreflightRequest(request), false, 'Configured token is compared exactly, not trimmed');
+  });
 
   const unauthorized = await POST(new Request(request.url, { method: 'POST' }));
   assert.equal(unauthorized.status, 401, 'Anonymous preflight route access must be rejected');

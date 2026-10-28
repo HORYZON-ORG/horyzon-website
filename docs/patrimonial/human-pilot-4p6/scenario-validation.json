@@ -1,0 +1,111 @@
+{
+  "date": "2026-10-19",
+  "sourceCommit": "accd6b70b498cbccb7e1dbedb551e165fa38f820",
+  "scenarioSha256": "c1795c0722089f43dd33dce467383fea57ebd489b95c186d9e40618801c6c473",
+  "method": "Node 24.17.0; canonical validateValue, dependencyOrder, recordAnswer, diagnose; same input twice; F06 revision FOUR_TO12 -> WITHIN3. No browser or network in this check.",
+  "results": [
+    {
+      "code": "A",
+      "questionDefinitions": 40,
+      "ordinaryApplicable": 29,
+      "inactive": [],
+      "invalidAnswers": [],
+      "incoherences": [],
+      "goalChecks": [
+        {
+          "rule": "R-G01",
+          "status": "COHERENT"
+        },
+        {
+          "rule": "R-G02",
+          "status": "COHERENT"
+        },
+        {
+          "rule": "R-G03",
+          "status": "COHERENT"
+        },
+        {
+          "rule": "R-G04",
+          "status": "COHERENT"
+        },
+        {
+          "rule": "R-G05",
+          "status": "COHERENT"
+        }
+      ],
+      "deterministic": true,
+      "correctionValidated": true,
+      "syntheticOnly": true
+    },
+    {
+      "code": "B",
+      "questionDefinitions": 40,
+      "ordinaryApplicable": 29,
+      "inactive": [],
+      "invalidAnswers": [],
+      "incoherences": [],
+      "goalChecks": [
+        {
+          "rule": "R-G01",
+          "status": "CLARIFY"
+        },
+        {
+          "rule": "R-G02",
+          "status": "COHERENT"
+        },
+        {
+          "rule": "R-G03",
+          "status": "COHERENT"
+        },
+        {
+          "rule": "R-G04",
+          "status": "COHERENT"
+        },
+        {
+          "rule": "R-G05",
+          "status": "COHERENT"
+        }
+      ],
+      "deterministic": true,
+      "correctionValidated": true,
+      "syntheticOnly": true
+    },
+    {
+      "code": "C",
+      "questionDefinitions": 40,
+      "ordinaryApplicable": 27,
+      "inactive": [
+        "RP-C04",
+        "RP-C02",
+        "RP-X05"
+      ],
+      "invalidAnswers": [],
+      "incoherences": [],
+      "goalChecks": [
+        {
+          "rule": "R-G01",
+          "status": "COHERENT"
+        },
+        {
+          "rule": "R-G02",
+          "status": "COHERENT"
+        },
+        {
+          "rule": "R-G03",
+          "status": "COHERENT"
+        },
+        {
+          "rule": "R-G04",
+          "status": "COHERENT"
+        },
+        {
+          "rule": "R-G05",
+          "status": "COHERENT"
+        }
+      ],
+      "deterministic": true,
+      "correctionValidated": true,
+      "syntheticOnly": true
+    }
+  ]
+}
