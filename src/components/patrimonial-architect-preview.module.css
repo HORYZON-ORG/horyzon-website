@@ -509,29 +509,3 @@
 @media (prefers-reduced-motion:reduce){.navBtn{transition:none}.navBtn:hover,.navBtn:active{transform:none}}
 @media (prefers-reduced-motion:reduce){.page .roleFlow .s074,.page .roleFlow .s074::before,.page .roleFlow .s074::after{animation:none !important}.page .roleFlow .s074::before{width:100%;height:100%;opacity:1}}
 .page .roleFlow .s074{flex:1.6 1 110px}
-
-/* Architect preview visual parity — keep lime accents in both themes. */
-/* The original dark landing is the default. Keep the light option legible but vivid. */
-.page { --lime:#D8FF42; }
-.page .navBtn { background:#07171D; color:#D8FF42; border:1.5px solid #D8FF42; }
-.page .navBtn:hover,.page .navBtn:focus-visible { background:#D8FF42; color:#07171D; }
-/* Explicit structure definition: roof, three columns, foundation. */
-.page .s090 { border-width:2px; border-color:rgba(216,255,66,.56); box-shadow:inset 0 0 0 1px rgba(216,255,66,.12),0 20px 48px rgba(0,0,0,.12); }
-.page .s093 { position:relative; background:linear-gradient(180deg,#E9FF8C 0%,#D8FF42 100%); color:#07171D; }
-.page .s093::after {content:"";position:absolute;bottom:7px;left:14%;width:72%;height:3px;background:rgba(7,23,29,.35);pointer-events:none;}
-.page .s095 {position:relative;border:2px solid #D8FF42;background:rgba(216,255,66,.10);color:#F7F4E8;}
-.page .s095::after {content:"";position:absolute;inset:9px 7px;border-left:1px solid rgba(216,255,66,.4);border-right:1px solid rgba(216,255,66,.4);pointer-events:none;}
-.page .s096 {background:#D8FF42;color:#07171D;box-shadow:inset 0 0 0 2px rgba(7,23,29,.17);}
-/* Do not replace neon-lime with beige buttons in light mode. */
-:global([data-theme="light"]) .page {--lime:#D8FF42;--accent-stroke:#5F7010;}
-:global([data-theme="light"]) .page .s016 {color:#5F7010;background:linear-gradient(transparent 74%,rgba(216,255,66,.65) 74%);}
-:global([data-theme="light"]) .page .s023,
-:global([data-theme="light"]) .page .s186,
-:global([data-theme="light"]) .page .s196 {background:#D8FF42;color:#07171D;box-shadow:0 12px 30px rgba(95,112,16,.22);}
-:global([data-theme="light"]) .page .navBtn {background:#D8FF42;color:#07171D;border-color:#5F7010;}
-:global([data-theme="light"]) .page .s090 {background:#F7F4E8;border-color:#5F7010;box-shadow:inset 0 0 0 1px rgba(95,112,16,.17),0 20px 48px rgba(7,23,29,.1);}
-:global([data-theme="light"]) .page .s093 {background:linear-gradient(180deg,#E9FF8C 0%,#D8FF42 100%);color:#07171D;}
-:global([data-theme="light"]) .page .s095 {background:#07171D;color:#D8FF42;border:2px solid #D8FF42;}
-:global([data-theme="light"]) .page .s096 {background:#D8FF42;color:#07171D;}
-:global([data-theme="light"]) .page .chip[aria-pressed="true"] {background:#D8FF42;color:#07171D;border-color:#5F7010;box-shadow:0 8px 20px rgba(95,112,16,.20);}
-:global([data-theme="light"]) .page .formSubmit {background:#D8FF42;color:#07171D;}
