@@ -1,4 +1,4 @@
-import { eventSession, type EventSession } from "@/content/patrimonial-event-session";
+import { eventSession, type EventSession } from "../../content/patrimonial-event-session.ts";
 
 /**
  * Server-only, fail-closed read of ACTIVE official event editions.
@@ -79,5 +79,40 @@ export async function publishedEventSession(
   } catch {
     // Fallback is honest: never publish a guessed event date.
     return eventSession;
+  }
+}
+
+/** Returns an ACTIVE edition key for server-side signup routing, never client input.
+ * Provider errors keep the application in PENDING_EDITION for supervised staging. */
+export async function publishedEventEditionKey(
+  env: Settings = process.env,
+  fetchImpl: typeof fetch = fetch,
+): Promise<string | null> {
+  const key = env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key || env.SUPABASE_URL?.replace(/\/$/, "") !== projectUrl) return null;
+  try {
+    const url = new URL("/rest/v1/patrimonial_event_editions", projectUrl);
+    url.searchParams.set("select", "edition_key,starts_at,status,record");
+    url.searchParams.set("event_slug", "eq.quello-che-le-banche-non-dicono");
+    url.searchParams.set("status", "eq.ACTIVE");
+    url.searchParams.set("starts_at", "gt." + new Date().toISOString());
+    url.searchParams.set("order", "starts_at.asc");
+    url.searchParams.set("limit", "1");
+    const response = await fetchImpl(url.toString(), {
+      headers: { apikey: key, Authorization: "Bearer " + key },
+      cache: "no-store",
+      signal: AbortSignal.timeout(7000),
+    });
+    if (!response.ok) return null;
+    const rows: unknown = await response.json();
+    if (!Array.isArray(rows) || rows.length !== 1) return null;
+    const entry = rows[0] as Partial<Row>;
+    if (entry.status !== "ACTIVE" || typeof entry.edition_key !== "string"
+      || !/^[a-zA-Z0-9_-]{1,100}$/.test(entry.edition_key)
+      || !Array.isArray(entry.record?.sessions) || entry.record.sessions.length !== 2
+      || !entry.starts_at || !Number.isFinite(Date.parse(entry.starts_at))) return null;
+    return entry.edition_key;
+  } catch {
+    return null;
   }
 }
