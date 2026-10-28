@@ -17,7 +17,7 @@ const env = {
 const base = {
   mode: 'patrimonial-event', sourcePath: pilotForms['patrimonial-event'].path,
   firstName: 'Persona', lastName: 'Test',
-  email: 'person@example.invalid', phone: '', province: 'Milano',
+  email: 'person@example.invalid', phone: '+393331234567', province: 'Milano',
   profile: 'Privato', message: '', consent: true, marketingConsent: false,
   website: '', utm: {}, referralCode: code,
 };

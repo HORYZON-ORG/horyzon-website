@@ -4,5 +4,11 @@
       "codex/radar-mvp-review-20261028": false,
       "codex/radar-mvp-lean-20261028": false
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/patrimonial-event-confirmations",
+      "schedule": "*/10 * * * *"
+    }
+  ]
 }
