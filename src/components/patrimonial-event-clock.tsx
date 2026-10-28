@@ -1,17 +1,17 @@
 'use client';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { eventSessionSnapshot } from '@/content/patrimonial-event-session';
+import { eventSessionSnapshot, eventSession, type EventSession } from '@/content/patrimonial-event-session';
 
 const initialSession = eventSessionSnapshot(null);
 const Session = createContext(initialSession);
-export function EventSessionProvider({ children }: { children: ReactNode }) {
-  const [snapshot, setSnapshot] = useState(initialSession);
+export function EventSessionProvider({ children, session = eventSession }: { children: ReactNode; session?: EventSession }) {
+  const [snapshot, setSnapshot] = useState(() => eventSessionSnapshot(null, session));
   useEffect(() => {
-    const update = () => setSnapshot(eventSessionSnapshot(Date.now()));
+    const update = () => setSnapshot(eventSessionSnapshot(Date.now(), session));
     const frame = requestAnimationFrame(update);
     const timer = setInterval(update, 1000);
     return () => { cancelAnimationFrame(frame); clearInterval(timer); };
-  }, []);
+  }, [session]);
   return <Session.Provider value={snapshot}>{children}</Session.Provider>;
 }
 type SessionName = 'eventLabel' | 'seatsTotal' | 'seatsTaken' | 'seatsLeft' | 'cd.d' | 'cd.h' | 'cd.m' | 'cd.s';
