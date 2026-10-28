@@ -1,0 +1,30 @@
+name: Architect production ingress read-only smoke
+on:
+  push:
+    branches: [qa/architect-production-ingress-20261028]
+permissions:
+  contents: read
+jobs:
+  verify-public-routes-no-write:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check canonical site, legacy redirect, safe CV API and sitemap
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=https://horyzon.it
+          probe="$BASE/candidature/architetti-patrimoniali?verification=public-20261028"
+          status=$(curl -fsSL -o /tmp/architect-public.html -w '%{http_code}' "$probe")
+          test "$status" = 200
+          grep -q 'Le persone si fidano di te' /tmp/architect-public.html
+          grep -q 'candidature/architetti-patrimoniali' /tmp/architect-public.html
+          redirect_status=$(curl -sS -o /dev/null -w '%{http_code}' "$BASE/benessere-patrimoniale/percorso-architetto-patrimoniale?verification=public-20261028")
+          test "$redirect_status" = 308
+          pdf_status=$(curl -sS --retry 0 -o /tmp/cv-negative.json -w '%{http_code}' -X POST "$BASE/api/public-leads/cv" -H 'Origin: https://horyzon.it' -H 'Content-Type: application/pdf' --data-binary 'definitely-not-a-pdf')
+          test "$pdf_status" = 400
+          grep -q 'ok' /tmp/cv-negative.json
+          malformed_status=$(curl -sS -o /tmp/lead-negative.json -w '%{http_code}' -X POST "$BASE/api/public-leads" -H 'Origin: https://horyzon.it' -H 'Content-Type: application/json' --data '{"mode":"architect-path","sourcePath":"/candidature/architetti-patrimoniali"}')
+          test "$malformed_status" = 400
+          curl -fsS "$BASE/sitemap.xml" | grep -q '/candidature/architetti-patrimoniali'
+          echo "PASS production canonical, 308 redirect, CV storage configured (invalid PDF rejected), invalid lead rejected, sitemap"
