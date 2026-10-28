@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { PatrimonialLeadForm } from './patrimonial-lead-form';
 import { EventNotesContext } from './patrimonial-event-form';
 import { EventSessionProvider, EventSessionValue } from './patrimonial-event-clock';
-import { eventSession } from '@/content/patrimonial-event-session';
+import { eventSession as defaultSession, type EventSession } from '@/content/patrimonial-event-session';
 import { eventScenes, eventFormTitle, eventCalculator, eventHorizons, type EventHorizon, eventAllocation, eventInstruments, eventKnowledgeLevels, eventProfiles, eventNotes } from '@/content/patrimonial-event-content';
 import styles from './patrimonial-event.module.css';
 
@@ -34,9 +34,9 @@ const evenings = [
 
 // Existing event interactions with route-scoped presentation from the mobile reference.
 // The clock has its own provider so second ticks only rerender session consumers.
-export function PatrimonialEventLanding({ contractVersion, registrationEnabled = false }: { contractVersion?: typeof PATRIMONIAL_V2; registrationEnabled?: boolean }) {
+export function PatrimonialEventLanding({ contractVersion, registrationEnabled = false, session = defaultSession }: { contractVersion?: typeof PATRIMONIAL_V2; registrationEnabled?: boolean; session?: EventSession }) {
   const registrationOpen = registrationEnabled;
-  const editionScheduled = eventSession.status === 'CONFIRMED';
+  const editionScheduled = session.status === 'CONFIRMED';
   const [scene, setScene] = useState<string | null>(null);
   const [selectedProfile, setSelectedProfile] = useState('');
   const [amount, setAmount] = useState(10000);
@@ -52,10 +52,10 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
     if (known[id]) { setKnown(prev => { const next = { ...prev }; delete next[id]; return next; }); setOpen(cur => (cur === id ? null : cur)); return; }
     setKnown(prev => ({ ...prev, [id]: eventKnowledgeLevels[0] })); setOpen(id);
   };
-  return <EventSessionProvider><div data-session-status={eventSession.status} data-availability={eventSession.status === 'PLACEHOLDER' ? 'pending-edition' : 'confirmed'} className={[styles.s000, styles.page].join(' ')}>
+  return <EventSessionProvider session={session}><div data-session-status={session.status} data-availability={session.status === 'PLACEHOLDER' ? 'pending-edition' : 'confirmed'} className={[styles.s000, styles.page].join(' ')}>
 
 <div data-event-section="urgency" className={[styles.s001].join(' ')}>
-<span className={styles.s002}><span className={styles["live-dot"]} aria-hidden="true" />{registrationOpen ? 'Richieste di partecipazione aperte · calendario in definizione' : 'Due serate online gratuite · calendario in definizione'}</span>
+<span className={styles.s002}><span className={styles["live-dot"]} aria-hidden="true" />{editionScheduled ? 'Date confermate · richieste di partecipazione aperte' : registrationOpen ? 'Richieste di partecipazione aperte · calendario in definizione' : 'Due serate online gratuite · calendario in definizione'}</span>
 </div>
 
 <div data-event-section="hero" className={[styles["hero"], styles.s004].join(' ')}>
@@ -83,7 +83,7 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 <div className={[styles["stack-m"], styles["load-4"], styles.s022].join(' ')}>
 <a href="#richiesta" className={[styles.cta, styles.s023].join(' ')}>{registrationOpen ? "Mi iscrivo alla prossima edizione" : "Informazioni sulle prossime serate"}
 <Arrow size={20} /></a>
-{registrationOpen ? <div className={[styles.s024].join(' ')}><strong>Richieste aperte</strong> · Le date saranno comunicate in seguito. La richiesta non conferma un posto.</div> : <div className={[styles.s024].join(' ')}>Le date delle due serate saranno comunicate qui.</div>}
+{registrationOpen ? <div className={[styles.s024].join(' ')}><strong>Richieste aperte</strong> · {editionScheduled ? session.eventLabel + '. La richiesta non conferma un posto.' : 'Le date saranno comunicate in seguito. La richiesta non conferma un posto.'}</div> : <div className={[styles.s024].join(' ')}>Le date delle due serate saranno comunicate qui.</div>}
 </div>
 <div className={[styles.s030].join(' ')}>Gratuito · Online · Due serate · Nessuna vendita durante l&apos;evento</div>
 </div>
@@ -365,8 +365,8 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 <div className={[styles.s196].join(' ')}>
 <div className={[styles["label"], styles.s012].join(' ')}>ULTIMO PASSO</div>
 <h2 className={[styles.reveal, styles.s197].join(' ')}><span data-bind="formTitle">{registrationOpen ? "Richiedi di partecipare alla prossima edizione" : "Calendario e iscrizioni in preparazione"}</span></h2>
-<p className={[styles.s065].join(' ')}>{registrationOpen ? 'Le date non sono ancora definite. Inviando il modulo registri una richiesta di partecipazione, non una prenotazione confermata. Ti contatteremo per questo evento quando saranno disponibili date e modalità.' : 'Stiamo definendo le prossime date. Le iscrizioni non sono ancora aperte: qui pubblicheremo il calendario ufficiale prima di raccogliere le adesioni.'}</p>
-{registrationOpen && <div className={[styles["tile-d"], styles.s198].join(' ')}><div className={styles.s199}>Edizione e posti ancora da definire · Richiesta senza impegno</div></div>}
+<p className={[styles.s065].join(' ')}>{registrationOpen ? (editionScheduled ? session.eventLabel + '. Inviando il modulo registri una richiesta di partecipazione, non una prenotazione confermata. Ti contatteremo per confermare modalità e disponibilità.' : 'Le date non sono ancora definite. Inviando il modulo registri una richiesta di partecipazione, non una prenotazione confermata. Ti contatteremo per questo evento quando saranno disponibili date e modalità.') : 'Stiamo definendo le prossime date. Le iscrizioni non sono ancora aperte: qui pubblicheremo il calendario ufficiale prima di raccogliere le adesioni.'}</p>
+{registrationOpen && <div className={[styles["tile-d"], styles.s198].join(' ')}><div className={styles.s199}>{editionScheduled ? 'Date in calendario · Posti soggetti a conferma · Richiesta senza impegno' : 'Edizione e posti ancora da definire · Richiesta senza impegno'}</div></div>}
 <div className={[styles.s201].join(' ')}>
 <span className={[styles.s202].join(' ')}><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3z"></path><path d="M9 12l2 2 4-4"></path></svg></span>
 <div><strong>La nostra promessa</strong><div className={[styles.s121].join(' ')}>Nessuna vendita durante le serate. Se senti che non fa per te, esci: nessuno ti richiamerà per insistere.</div></div>
@@ -436,7 +436,7 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 <div className={[styles.s219].join(' ')}>
 <div className={[styles["sticky-hide-m"], styles.s220].join(' ')}>
 <strong className={[styles.s221].join(' ')}>Quello che le banche non dicono</strong>
-<span className={[styles.s130].join(' ')}>Due serate online gratuite · date in definizione</span>
+<span className={[styles.s130].join(' ')}>{editionScheduled ? session.eventLabel : 'Due serate online gratuite · date in definizione'}</span>
 </div>
 <a href="#richiesta" className={[styles.cta, styles.s222].join(' ')}>{registrationOpen ? "Richiedi la partecipazione" : "Informazioni sull’evento"} <span aria-hidden="true">→</span></a>
 </div>

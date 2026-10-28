@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { PATRIMONIAL_PILOT_PRIVACY_VERSION, patrimonialEvent } from '../../content/patrimonial-funnels.ts';
 import type { PilotLead } from './patrimonial-funnels.ts';
+import { publishedEventEditionKey } from './patrimonial-event-public-schedule.ts';
 
 type EventLead = Extract<PilotLead, { mode: 'patrimonial-event' }>;
 type HubIngressResponse = { contactId?: unknown; registrationId?: unknown; state?: unknown };
@@ -46,12 +47,13 @@ export async function recordEventLeadInHub(input: {
     utm: Object.fromEntries(Object.entries(lead.utm).sort(([a],[b]) => a.localeCompare(b))),
   })).digest('hex');
   const eventId = `webinar:${fingerprint.slice(0,56)}`;
+  const activeEdition = await publishedEventEditionKey(env, input.fetchImpl ?? fetch);
   const payload = {
     eventId, locationId: highlevelLocationId, externalContactId: highlevelContactId,
     fullName: `${lead.firstName} ${lead.lastName}`, email: lead.email,
     phone: lead.phone || null, source: input.source,
     sourcePath: patrimonialEvent.path,
-    editionId: null, // No real edition configured; never invent a booking.
+    editionId: activeEdition, // ACTIVE staff edition only; stays a REQUESTED seat, never CONFIRMED.
     province: lead.province, profile: lead.profile || null, message: lead.message || null,
     utm: lead.utm, consent: true, marketingConsent: lead.marketingConsent,
     privacyVersion: PATRIMONIAL_PILOT_PRIVACY_VERSION,
