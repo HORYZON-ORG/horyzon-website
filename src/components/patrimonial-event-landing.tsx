@@ -84,11 +84,9 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 <Arrow size={20} /></a>
 {registrationOpen ? <div className={[styles.s024].join(' ')}><strong>Iscrizioni aperte</strong></div> : <div className={[styles.s024].join(' ')}>Le date delle due serate saranno comunicate qui.</div>}
 </div>
-</div>
 <div className={[styles.s030].join(' ')}>Gratuito · Online · Due serate · Nessuna vendita durante l&apos;evento</div>
 </div>
 {registrationOpen && <div className={[styles["tile-d"], styles["hero-chip"], styles.s031].join(' ')}><div className={styles.s035}>Posti limitati per poter rispondere alle domande dal vivo.</div></div>}
-</div>
 </div>
 </div>
 
