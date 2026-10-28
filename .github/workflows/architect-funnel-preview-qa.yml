@@ -8,6 +8,7 @@ on:
       - 'src/components/patrimonial-architect-preview*'
       - 'src/content/patrimonial-architect-preview-session.ts'
       - 'public/benessere-patrimoniale/percorso-architetto/**'
+      - 'scripts/verify-architect-preview-palette.mjs'
       - '.github/workflows/architect-funnel-preview-qa.yml'
 permissions:
   contents: read
@@ -38,11 +39,12 @@ jobs:
       - run: npm run build
       - run: npm install --no-save --no-package-lock --ignore-scripts playwright@1.58.0
       - run: npx playwright install chromium --with-deps
-      - name: Preview page, lime accents, thank-you and assets without CRM access
+      - name: Preview page, lime accents, thanks and images (no CRM access)
         shell: bash
         run: |
           npx next start -p 3206 -H 127.0.0.1 > /tmp/horyzon-architect-preview.log 2>&1 &
-          trap 'kill $! || true' EXIT
+          server_pid=$!
+          trap 'kill "$server_pid" || true' EXIT
           for i in $(seq 1 40); do
             if curl -fsS 'http://127.0.0.1:3206/benessere-patrimoniale/percorso-architetto-patrimoniale' -o /tmp/architect-page.html; then break; fi
             sleep 2
@@ -51,18 +53,9 @@ jobs:
           grep -q 'noindex' /tmp/architect-page.html
           curl -fsS 'http://127.0.0.1:3206/benessere-patrimoniale/percorso-architetto-patrimoniale/grazie' -o /dev/null
           curl -fsS 'http://127.0.0.1:3206/benessere-patrimoniale/percorso-architetto/hero-telefono.jpg' -o /dev/null
-          curl -sS -o /tmp/architect-bad-origin.txt -w '%{http_code}' -X POST 'http://127.0.0.1:3206/api/public-leads' -H 'Origin: https://invalid.example' -H 'Content-Type: application/json' -d '{}' | grep -q '^403 scripts/verify-architect-preview-palette.mjs
-
-      - name: Retain visual comparison screenshots
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: architect-preview-lime-visual-qa
-          path: /tmp/architect-preview-*.png
-          if-no-files-found: ignore
-
+          http_status=$(curl -sS -o /tmp/architect-bad-origin.txt -w '%{http_code}' -X POST 'http://127.0.0.1:3206/api/public-leads' -H 'Origin: https://invalid.example' -H 'Content-Type: application/json' -d '{}')
+          test "$http_status" = 403
           node scripts/verify-architect-preview-palette.mjs
-
       - name: Retain visual comparison screenshots
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
