@@ -72,10 +72,6 @@ function PilotLeadForm({ mode, contractVersion, previewSubmissionsEnabled = fals
       if (event.currentTarget.reportValidity()) setStep(2);
       return;
     }
-    if (presentation === 'event' && mode === 'patrimonial-event' && step === 1) {
-      if (event.currentTarget.reportValidity()) setStep(2);
-      return;
-    }
     if (mode === 'architect-path' && !previewSubmissionsEnabled) {
       setStatus('error');
       setNotice('Anteprima riservata: l’invio della candidatura è disabilitato fino al collaudo dell’archivio Hub.');
@@ -145,7 +141,7 @@ function PilotLeadForm({ mode, contractVersion, previewSubmissionsEnabled = fals
       v2Attempt.current?.beginNewAttempt(); setRevisionRequired(false); setStatus('idle');
       setNotice('Nuova richiesta pronta. Premi il pulsante di invio per trasmettere i dati aggiornati.');
     }} />;
-  if (presentation === 'event' && mode === 'patrimonial-event') return <PatrimonialEventForm step={step} setStep={setStep} selectedProfile={selectedProfile} onProfileChange={onProfileChange}
+  if (presentation === 'event' && mode === 'patrimonial-event') return <PatrimonialEventForm selectedProfile={selectedProfile} onProfileChange={onProfileChange}
     onSubmit={submit} status={status} notice={notice} revisionRequired={revisionRequired} v2={v2} onNewAttempt={() => {
       v2Attempt.current?.beginNewAttempt(); setRevisionRequired(false); setStatus('idle');
       setNotice('Nuova richiesta pronta. Premi il pulsante di invio per trasmettere i dati aggiornati.');
