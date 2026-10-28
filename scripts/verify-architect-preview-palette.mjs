@@ -33,7 +33,7 @@ try {
           nav:css(nav)?.backgroundColor,
           titleColor:css(title)?.color,
           titleHighlight:css(title)?.backgroundImage,
-          limeToken:css(document.documentElement)?.getPropertyValue('--lime')?.trim()
+          limeToken:css(roof)?.getPropertyValue('--lime')?.trim()
         };
       });
       assert.equal(result.theme,theme,JSON.stringify(result));
