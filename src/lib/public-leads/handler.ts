@@ -5,6 +5,8 @@ import { patrimonialInterest, patrimonialInterests, PATRIMONIAL_PRIVACY_VERSION 
 import { callHighLevel, highLevelConfig, normalizePhone } from '../radar/highlevel.ts';
 import { isLegacyLeadPayload, pilotCrmDetails, pilotMode, validatePilotLead, validatePatrimonialV2 } from './patrimonial-funnels.ts';
 import { pilotForms } from '../../content/patrimonial-funnels.ts';
+import { recordEventLeadInHub } from './patrimonial-hub-event-ingress.ts';
+import { validateArchitectEventReferral } from './patrimonial-referral-preflight.ts';
 import { canonicalPatrimonialPayload, isPatrimonialRequestId, PATRIMONIAL_V2, type PatrimonialRequest } from './patrimonial-contract.ts';
 import { patrimonialConsentEvidence } from './patrimonial-consents.ts';
 import { claimCv, cvStorage, isCvId, readCandidateCv, uploadCvToHighLevel, type CvStorage } from './architect-cv.ts';
@@ -50,6 +52,17 @@ export async function handlePublicLead(request: Request, options: Options = {}):
   const pilot = pilotMode(fields.mode) ? validatePilotLead(fields) : null;
   if (pilot?.mode === 'architect-path' && !isCvId(cvId)) return response(400, 'Allega il tuo curriculum in PDF per inviare la candidatura.');
   if (!isLegacyLeadPayload(input) && !pilot) return response(400, 'Controlla i dati e la richiesta di ricontatto.');
+  // Event signup requires explicit go-live, a functioning Hub bridge and verified referrals.
+  if (pilot?.mode === 'patrimonial-event') {
+    if (env.NODE_ENV !== 'test' && env.PATRIMONIAL_EVENT_SIGNUP_ENABLED !== 'true')
+      return response(503, 'Le iscrizioni all’evento non sono ancora aperte.');
+    if (env.PATRIMONIAL_EVENT_SIGNUP_ENABLED === 'true' && env.HORYZON_HUB_EVENT_INGRESS_ENABLED !== 'true')
+      return response(503, 'L’archivio Horyzon non è ancora pronto per le iscrizioni.');
+    if (pilot.referralCode) {
+      try { await validateArchitectEventReferral({ code: pilot.referralCode, env, fetchImpl: options.fetchImpl }); }
+      catch { return response(503, 'Il link personale non è verificabile. Nessuna iscrizione è stata registrata.'); }
+    }
+  }
   const name = text(input.name, 120), email = text(input.email, 254), rawPhone = text(input.phone ?? '', 40), message = text(input.message ?? '', 1500);
   const interest = patrimonialInterest(input.interest);
   const phone = rawPhone === null ? null : normalizePhone(rawPhone);
@@ -115,6 +128,17 @@ export async function handlePublicLead(request: Request, options: Options = {}):
         try { await markArchitectCandidateCrm(env, cv, id, true, options.hubFetchImpl); }
         catch { /* CRM succeeded; Hub keeps a visible pending sync state for reconciliation. */ }
       }
+      if (pilot.mode === 'patrimonial-event' && env.HORYZON_HUB_EVENT_INGRESS_ENABLED === 'true') {
+        try {
+          const result = await recordEventLeadInHub({
+            lead: pilot, highlevelContactId: id, highlevelLocationId: config.locationId,
+            source: details.source, env, fetchImpl: options.fetchImpl,
+          });
+          if (result !== 'RECORDED') throw new Error('HUB_NOT_RECORDED');
+        } catch {
+          return response(502, 'Richiesta ricevuta nel CRM, ma collegamento Horyzon non confermato. Non inviare nuovamente: contatta info@horyzon.it per verificare la scheda.');
+        }
+      }
       return response(200, pilotForms[pilot.mode].success);
     } catch {
       if (hubStored && cv) {
@@ -147,6 +171,8 @@ const v2Attempts = new Map<string, { count: number; until: number }>();
 async function handlePatrimonialV2(request: Request, input: Record<string, unknown>, options: Options): Promise<Response> {
   const env = options.env ?? process.env;
   if (!patrimonialFlags(env).v2) return response(503, 'Questo modulo non è ancora disponibile.');
+  if (input.mode === 'patrimonial-event' && env.NODE_ENV !== 'test' && env.PATRIMONIAL_EVENT_SIGNUP_ENABLED !== 'true')
+    return response(503, 'Le iscrizioni all’evento non sono ancora aperte.');
   if (input.website) return response(400, 'Richiesta non valida.');
   const now = (options.now ?? (() => new Date()))();
   if (env.NODE_ENV !== 'test') {

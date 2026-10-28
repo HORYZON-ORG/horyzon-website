@@ -4,6 +4,7 @@ import {
   type PilotMode, type PilotUtm,
 } from '../../content/patrimonial-funnels.ts';
 import { normalizePhone } from '../radar/highlevel.ts';
+import { validateEventQualification, type EventQualification } from './patrimonial-event-qualification.ts';
 import { PATRIMONIAL_V2, type PatrimonialV2Lead } from './patrimonial-contract.ts';
 
 type CommonLead = {
@@ -12,7 +13,7 @@ type CommonLead = {
 };
 export type PilotLead = CommonLead & (
   { mode: 'architect-path'; experience: string; goal: string; availability: string }
-  | { mode: 'patrimonial-event' }
+  | { mode: 'patrimonial-event'; qualification?: EventQualification; referralCode?: string }
 );
 const text = (value: unknown, max: number) => typeof value === 'string' && value.length <= max ? value.trim() : null;
 const choice = (value: unknown, choices: readonly string[]) => value === undefined || value === '' ? '' : typeof value === 'string' && choices.includes(value) ? value : null;
@@ -20,7 +21,7 @@ const choice = (value: unknown, choices: readonly string[]) => value === undefin
 export function validatePilotLead(input: Record<string, unknown>): PilotLead | null {
   if (input.mode !== 'architect-path' && input.mode !== 'patrimonial-event') return null;
   const mode = input.mode;
-  const allowed = new Set(['mode', 'sourcePath', 'firstName', 'lastName', 'email', 'phone', 'province', 'profile', 'message', 'consent', 'marketingConsent', 'website', 'utm', ...(mode === 'architect-path' ? ['experience', 'goal', 'availability'] : [])]);
+  const allowed = new Set(['mode', 'sourcePath', 'firstName', 'lastName', 'email', 'phone', 'province', 'profile', 'message', 'consent', 'marketingConsent', 'website', 'utm', ...(mode === 'architect-path' ? ['experience', 'goal', 'availability'] : ['qualification', 'referralCode'])]);
   if (Object.keys(input).some(key => !allowed.has(key)) || input.sourcePath !== pilotForms[mode].path || input.website || input.consent !== true || typeof input.marketingConsent !== 'boolean') return null;
   const firstName = text(input.firstName, 120), lastName = text(input.lastName, 120), email = text(input.email, 254), province = text(input.province, 80);
   const rawPhone = text(input.phone ?? '', 40), message = text(input.message ?? '', 1500);
@@ -40,7 +41,14 @@ export function validatePilotLead(input: Record<string, unknown>): PilotLead | n
     }
   }
   const common: CommonLead = { firstName, lastName, email: email.toLowerCase(), phone, province, profile, message, consent: true, marketingConsent: input.marketingConsent, utm };
-  if (mode === 'patrimonial-event') return { ...common, mode };
+  if (mode === 'patrimonial-event') {
+    const code = input.referralCode;
+    if (code !== undefined && (typeof code !== 'string' || !/^[0-9a-f]{32}$/.test(code))) return null;
+    const referred = code ? { referralCode: code } : {};
+    if (input.qualification === undefined) return { ...common, mode, ...referred };
+    const qualification = validateEventQualification(input.qualification);
+    return qualification ? { ...common, mode, qualification, ...referred } : null;
+  }
   const experience = choice(input.experience, pilotExperience), goal = choice(input.goal, pilotGoals), availability = choice(input.availability, pilotAvailability);
   if (experience === null || goal === null || availability === null) return null;
   return { ...common, mode, experience, goal, availability };
@@ -49,7 +57,7 @@ export function validatePilotLead(input: Record<string, unknown>): PilotLead | n
 // No automatic fallback from a malformed pilot request into the public contract.
 export function isLegacyLeadPayload(input: Record<string, unknown>): boolean {
   return (input.mode === undefined || input.mode === 'legacy/public') &&
-    !['sourcePath', 'firstName', 'lastName', 'province', 'profile', 'experience', 'goal', 'availability', 'marketingConsent', 'utm'].some(key => Object.hasOwn(input, key));
+    !['sourcePath', 'firstName', 'lastName', 'province', 'profile', 'experience', 'goal', 'availability', 'qualification', 'referralCode', 'marketingConsent', 'utm'].some(key => Object.hasOwn(input, key));
 }
 
 export function pilotCrmDetails(lead: PilotLead, now: Date) {

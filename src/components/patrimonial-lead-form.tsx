@@ -62,10 +62,7 @@ function PilotLeadForm({ mode, contractVersion, presentation, selectedProfile = 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (sending.current) return;
-    if (mode === 'patrimonial-event' && referral.current !== undefined && !v2) {
-      setStatus('error'); setNotice('Il link personale non è ancora disponibile in questo ambiente. Nessuna iscrizione è stata inviata.'); return;
-    }
-    if (v2 && mode === 'patrimonial-event' && referral.current === null) {
+    if (mode === 'patrimonial-event' && referral.current === null) {
       setStatus('error'); setNotice('Il link personale non è valido. Chiedi al tuo referente un link aggiornato.'); return;
     }
     if (presentation === 'architect' && mode === 'architect-path' && step === 1) {
@@ -104,7 +101,7 @@ function PilotLeadForm({ mode, contractVersion, presentation, selectedProfile = 
       website: data.get('website'), utm: pilotAttribution(mode, !v2),
       ...(mode === 'architect-path' ? { experience: data.get('experience'), goal: data.get('goal'), availability: data.get('availability') } : {}),
       ...(cvId ? { cvId } : {}),
-      ...(v2 && mode === 'patrimonial-event' && referral.current !== undefined ? {referralCode: referral.current} : {}),
+      ...(mode === 'patrimonial-event' && referral.current !== undefined ? {referralCode: referral.current} : {}),
     };
     setStatus('sending'); setNotice('');
     try {
