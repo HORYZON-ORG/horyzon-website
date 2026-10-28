@@ -21,7 +21,7 @@ export async function recordEventLeadInHub(input: {
   source: string;
   env: Record<string, string | undefined>;
   fetchImpl?: typeof fetch;
-}): Promise<'DISABLED' | 'RECORDED'> {
+}): Promise<'DISABLED' | {registrationId:string;contactId:string;state:string}> {
   const { lead, highlevelContactId, highlevelLocationId, env } = input;
   if (env.HORYZON_HUB_EVENT_INGRESS_ENABLED !== 'true') return 'DISABLED';
   const base = (env.SUPABASE_URL ?? env.NEXT_PUBLIC_SUPABASE_URL)?.trim();
@@ -77,5 +77,5 @@ export async function recordEventLeadInHub(input: {
   if (!uuid(receipt?.contactId) || !uuid(receipt?.registrationId) ||
       !['PENDING_EDITION','REQUESTED'].includes(String(receipt?.state)))
     throw new Error('HUB_INGRESS_UNCONFIRMED');
-  return 'RECORDED';
+  return {registrationId: String(receipt.registrationId), contactId: String(receipt.contactId), state: String(receipt.state)};
 }

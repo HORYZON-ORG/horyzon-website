@@ -6,6 +6,7 @@ import { callHighLevel, highLevelConfig, normalizePhone } from '../radar/highlev
 import { isLegacyLeadPayload, pilotCrmDetails, pilotMode, validatePilotLead, validatePatrimonialV2 } from './patrimonial-funnels.ts';
 import { pilotForms } from '../../content/patrimonial-funnels.ts';
 import { recordEventLeadInHub } from './patrimonial-hub-event-ingress.ts';
+import { sendOneEventConfirmation } from './patrimonial-event-confirmation-email.ts';
 import { validateArchitectEventReferral } from './patrimonial-referral-preflight.ts';
 import { canonicalPatrimonialPayload, isPatrimonialRequestId, PATRIMONIAL_V2, type PatrimonialRequest } from './patrimonial-contract.ts';
 import { patrimonialConsentEvidence } from './patrimonial-consents.ts';
@@ -134,7 +135,9 @@ export async function handlePublicLead(request: Request, options: Options = {}):
             lead: pilot, highlevelContactId: id, highlevelLocationId: config.locationId,
             source: details.source, env, fetchImpl: options.fetchImpl,
           });
-          if (result !== 'RECORDED') throw new Error('HUB_NOT_RECORDED');
+          if (result === 'DISABLED') throw new Error('HUB_NOT_RECORDED');
+          // Event is already durable. Email failure must not invalidate the registration.
+          await sendOneEventConfirmation({registrationId:result.registrationId,env,fetchImpl:options.fetchImpl});
         } catch {
           return response(502, 'Richiesta ricevuta nel CRM, ma collegamento Horyzon non confermato. Non inviare nuovamente: contatta info@horyzon.it per verificare la scheda.');
         }

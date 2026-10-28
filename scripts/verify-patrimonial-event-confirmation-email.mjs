@@ -1,0 +1,26 @@
+import assert from 'node:assert/strict';
+import {eventEmailReady,eventConfirmationContent,sendOneEventConfirmation} from '../src/lib/public-leads/patrimonial-event-confirmation-email.ts';
+const reg='123e4567-e89b-42d3-a456-426614174000',lease='123e4567-e89b-42d3-a456-426614174001';
+const env={RESEND_API_KEY:'re_synthetic_token_abcdefghijkl',SUPABASE_URL:'https://fixture.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'fake-service',ANNUNCI10X_EMAIL_FROM:'Horyzon <noreply@horyzon.it>',ANNUNCI10X_EMAIL_REPLY_TO:'info@horyzon.it'};
+assert(eventEmailReady(env));
+assert(!eventEmailReady({...env,RESEND_API_KEY:undefined}));
+const copy=eventConfirmationContent({firstName:'<Mario>'});
+assert.match(copy.text,/date dell’evento non sono ancora state fissate/);
+assert.match(copy.text,/telefonicamente/);
+assert.doesNotMatch(copy.text,/newsletter gratuite|guadagni garantiti/);
+assert(!copy.html.includes('<Mario>'));
+const calls=[];let claimed=false;
+const fetchImpl=async(url,init)=>{
+ const u=new URL(url);const p=JSON.parse(init.body);calls.push({url:u.pathname,headers:init.headers,body:p});
+ if(u.pathname.endsWith('/patrimonial_event_email_claim')){if(claimed)return Response.json(null);claimed=true;return Response.json({registrationId:reg,leaseToken:lease,firstName:'Mario',recipient:'test@example.invalid'});}
+ if(u.pathname.endsWith('/patrimonial_event_email_finish'))return Response.json(true);
+ if(u.pathname==='/emails')return Response.json({id:'synthetic-message'});
+ throw Error('Unexpected '+u.pathname);
+};
+assert.equal(await sendOneEventConfirmation({registrationId:reg,env,fetchImpl}),'SENT');
+assert.equal(await sendOneEventConfirmation({registrationId:reg,env,fetchImpl}),'NONE');
+assert.equal(calls.filter(x=>x.url==='/emails').length,1);
+assert.equal(calls.find(x=>x.url==='/emails').headers['Idempotency-Key'],'horyzon-event-ack-'+reg);
+assert.equal(calls.find(x=>x.url.endsWith('_finish')).body.p_success,true);
+assert.equal(await sendOneEventConfirmation({registrationId:reg,env:{...env,RESEND_API_KEY:undefined},fetchImpl}),'NOT_CONFIGURED');
+console.log('Event transactional acknowledgment: copy, idempotency, retry boundaries, no-marketing PASS');
