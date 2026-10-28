@@ -1,0 +1,8 @@
+{
+  "git": {
+    "deploymentEnabled": {
+      "codex/radar-mvp-review-20261028": false,
+      "codex/radar-mvp-lean-20261028": false
+    }
+  }
+}
