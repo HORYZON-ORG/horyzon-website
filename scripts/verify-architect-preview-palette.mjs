@@ -43,6 +43,17 @@ async function inspect(base, theme, width, label) {
       frameFill:rgb(frame,'backgroundColor')
     };
   });
+
+    const diagnostics = await page.evaluate(() => {
+      const fig=document.querySelector('figure[role="img"][aria-label*="Tavola"]');
+      const roof=fig?.firstElementChild?.firstElementChild?.children?.[0];
+      const styles = [...document.styleSheets].flatMap(sheet => {
+        try { return [...sheet.cssRules].flatMap(rule => rule.cssRules ? [...rule.cssRules] : [rule]).filter(rule => rule.selectorText && /s093|s096|navBtn|s023/.test(rule.selectorText)).slice(0,15).map(rule => ({selector:rule.selectorText,css:rule.cssText.slice(0,300)})); } catch { return []; }
+      }).slice(0,30);
+      return {roofClass:roof?.className, figureClass:fig?.className,cssSheets:document.styleSheets.length, matching:styles,rootColor:getComputedStyle(document.documentElement).getPropertyValue('--lime'), bodyClass:document.body.className};
+    });
+    console.log('DEBUG '+label+' '+width+' '+JSON.stringify(diagnostics).slice(0,14000));
+
   await page.screenshot({path:`/tmp/architect-${label}-chiaro-${width}.png`,fullPage:true});
   await page.close();
   return result;
