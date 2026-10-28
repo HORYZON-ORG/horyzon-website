@@ -27,10 +27,11 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run test:architect-cv
-      # Exercise the legacy routing without importing the unpublished pilot route suite.
-      - run: npm run test:patrimonial
+      # Input regression runs without a build; the content verifier needs compiled HTML.
+      - run: node --no-warnings --experimental-strip-types scripts/verify-patrimonial-leads.mjs
       - run: npm run typecheck
       - run: npm run build
         env:
           PATRIMONIAL_ARCHITECT_HUB_INTAKE_ENABLED: 'false'
           HORYZON_ARCHITETTI_AUTOPROVISION_ENABLED: 'false'
+      - run: node scripts/verify-patrimonial-content.mjs
