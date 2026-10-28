@@ -18,6 +18,9 @@ export function PatrimonialEventForm({ selectedProfile, onProfileChange, onSubmi
 }) {
   const { notes, qualification } = useContext(EventNotesContext);
   const [architectCall, setArchitectCall] = useState(false);
+  const [region, setRegion] = useState('');
+  const [province, setProvince] = useState('');
+  const availableProvinces = italianProvinceGroups.find(group => group.region === region)?.provinces ?? [];
   const disabled = status === 'sending' || status === 'success';
   return <form className={styles.formCard} onSubmit={onSubmit} aria-labelledby="patrimonial-event-form-title" aria-busy={status === 'sending'} data-pilot-form="patrimonial-event">
     <h3 id="patrimonial-event-form-title" className={styles.microTitle}>La tua richiesta di partecipazione</h3>
@@ -33,15 +36,24 @@ export function PatrimonialEventForm({ selectedProfile, onProfileChange, onSubmi
         <label>Email<input name="email" type="email" autoComplete="email" required maxLength={254} /></label>
         <label><span className={styles["phone-label"]}>Cellulare <span className={styles.optional}>(facoltativo)</span></span><input name="phone" type="tel" autoComplete="tel" maxLength={40} /></label>
       </div>
-      <label>Provincia
-        <select name="province" defaultValue="" autoComplete="off" required aria-describedby="event-province-help">
-          <option value="" disabled>Seleziona la provincia</option>
-          {italianProvinceGroups.map(group => <optgroup key={group.region} label={group.region}>
-            {group.provinces.map(province => <option key={province.code} value={province.name}>{province.name} ({province.code})</option>)}
-          </optgroup>)}
-        </select>
-        <span id="event-province-help" className={styles.provinceHelp}>Scegli la provincia dall’elenco, non il comune o il paese.</span>
-      </label>
+      <div className={styles.formGrid}>
+        <label>Regione
+          <select value={region} autoComplete="off" required onChange={event => {
+            setRegion(event.target.value);
+            setProvince('');
+          }}>
+            <option value="" disabled>Seleziona la regione</option>
+            {italianProvinceGroups.map(group => <option key={group.region} value={group.region}>{group.region}</option>)}
+          </select>
+        </label>
+        <label>Provincia
+          <select name="province" value={province} onChange={event => setProvince(event.target.value)} autoComplete="off" required disabled={!region} aria-describedby="event-province-help">
+            <option value="" disabled>{region ? 'Seleziona la provincia' : 'Prima scegli la regione'}</option>
+            {availableProvinces.map(item => <option key={item.code} value={item.name}>{item.name} ({item.code})</option>)}
+          </select>
+          <span id="event-province-help" className={styles.provinceHelp}>Seleziona la provincia della regione scelta.</span>
+        </label>
+      </div>
       <label className={styles.formConsent}><input name="consent" type="checkbox" required /><span>Ho letto l&apos;<Link href="/privacy-policy" target="_blank" rel="noopener">informativa privacy</Link> e accetto di essere ricontattato per questo evento.</span></label>
       <label className={styles.formConsent}><input name="architectCall" type="checkbox" onChange={event => setArchitectCall(event.target.checked)} /><span>Sì, dopo l&apos;evento voglio il confronto gratuito di 40 minuti con un Architetto Patrimoniale.</span></label>
     </fieldset>

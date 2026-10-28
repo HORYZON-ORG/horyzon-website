@@ -362,6 +362,7 @@
 .page .formFields label{display:flex;flex-direction:column;gap:8px;font:500 11px/1.4 var(--event-mono),monospace;letter-spacing:.06em;text-transform:uppercase;color:#CDD6D4;}
 .page .formFields input:not([type=checkbox]),.page .formFields select{font:500 16px/1.4 var(--event-sans),sans-serif;letter-spacing:0;text-transform:none;padding:13px 14px;border:1px solid rgba(247,244,232,.18);border-radius:8px;background:#07171D;color:#F7F4E8;min-height:50px;min-width:0;width:100%;}
 .page .formFields select{cursor:pointer;color-scheme:dark;}
+.page .formFields select:disabled{opacity:.65;cursor:not-allowed;}
 .page .formFields select:invalid{color:#A3B1B0;}
 .page .formFields select option,.page .formFields select optgroup{color:#F7F4E8;background:#07171D;}
 .page .formFields .provinceHelp{font:400 12px/1.5 var(--event-sans),sans-serif;letter-spacing:0;text-transform:none;color:#A3B1B0;}
