@@ -894,3 +894,17 @@
     text-align:center;
   }
 }
+
+
+/* Event header: the supplied Horyzon Consulting / Benessere Patrimoniale artwork replaces both text labels. */
+.page .eventHeader{background:#002b3b}
+.page .eventBrand{display:block;flex:0 1 288px;width:288px;max-width:100%;line-height:0}
+.page .eventBrandImage{display:block;width:100%;height:auto;object-fit:contain}
+.page .eventHeader .s009{color:#F7F4E8;border-color:rgba(247,244,232,.28)}
+.page .eventHeader .s009:hover,.page .eventHeader .s009:focus-visible{color:#07171D;border-color:#D8FF42}
+@media (max-width:600px){
+  .page .eventHeader .s005{padding:12px 16px;gap:8px 12px}
+  .page .eventBrand{flex-basis:232px;width:232px}
+}
+:global([data-theme="light"]) .page .eventHeader .s009{color:#F7F4E8;border-color:rgba(247,244,232,.28)}
+:global([data-theme="light"]) .page .eventHeader .s009:hover,:global([data-theme="light"]) .page .eventHeader .s009:focus-visible{color:#07171D;border-color:#D8FF42}

@@ -60,12 +60,13 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 </div>
 
 <div data-event-section="hero" className={[styles["hero"], styles.s004].join(' ')}>
+<div className={styles.eventHeader}>
 <div className={[styles.s005].join(' ')}>
-<div className={[styles.s006].join(' ')}>
-<span className={[styles.s007].join(' ')}>HORYZON</span>
-<span className={[styles.s008].join(' ')}>Benessere Patrimoniale</span>
+<div className={styles.eventBrand}>
+<Image src="/benessere-patrimoniale/evento/horyzon-consulting-banner.webp" alt="Horyzon Consulting — Benessere Patrimoniale" width={384} height={144} priority unoptimized className={styles.eventBrandImage} />
 </div>
 <a href={signupTarget} className={[styles["cta"], styles["cta-ghost"], styles.s009].join(' ')}>{registrationOpen ? "Richiedi la partecipazione" : "Informazioni sull’evento"}</a>
+</div>
 </div>
 <div className={[styles["hero-inner"], styles.s010].join(' ')}>
 <div className={[styles.s011].join(' ')}>
