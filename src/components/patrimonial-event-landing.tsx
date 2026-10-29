@@ -439,7 +439,7 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 <strong className={[styles.s221].join(' ')}>Quello che le banche non dicono</strong>
 <span className={[styles.s130].join(' ')}>{editionScheduled ? session.eventLabel : 'Due serate online gratuite · date in definizione'}</span>
 </div>
-<a href={signupTarget} className={[styles.cta, styles.s222].join(' ')}>{registrationOpen ? "Richiedi iscrizione" : "Info evento"} <span aria-hidden="true">→</span></a>
+<a href={signupTarget} className={[styles.cta, styles.s222].join(' ')}>{registrationOpen ? "Fai richiesta" : "Info evento"} <span aria-hidden="true">→</span></a>
 </div>
 </div>
 </aside>
