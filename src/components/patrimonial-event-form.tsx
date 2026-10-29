@@ -22,7 +22,7 @@ export function PatrimonialEventForm({ selectedProfile, onProfileChange, onSubmi
   const [province, setProvince] = useState('');
   const availableProvinces = italianProvinceGroups.find(group => group.region === region)?.provinces ?? [];
   const disabled = status === 'sending' || status === 'success';
-  return <form className={styles.formCard} onSubmit={onSubmit} aria-labelledby="patrimonial-event-form-title" aria-busy={status === 'sending'} data-pilot-form="patrimonial-event">
+  return <form id="modulo-iscrizione" className={styles.formCard} onSubmit={onSubmit} aria-labelledby="patrimonial-event-form-title" aria-busy={status === 'sending'} data-pilot-form="patrimonial-event">
     <h3 id="patrimonial-event-form-title" className={styles.microTitle}>La tua richiesta di partecipazione</h3>
     <fieldset className={styles.formFields} disabled={disabled}>
       <legend className={styles.formLegend}>Scegli il tuo profilo</legend>

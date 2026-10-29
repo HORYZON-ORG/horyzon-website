@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const landing=readFileSync(new URL('../src/components/patrimonial-event-landing.tsx',import.meta.url),'utf8');
+const form=readFileSync(new URL('../src/components/patrimonial-event-form.tsx',import.meta.url),'utf8');
+const css=readFileSync(new URL('../src/components/patrimonial-event.module.css',import.meta.url),'utf8');
+assert.match(landing,/const signupTarget = registrationOpen \? '#modulo-iscrizione' : '#richiesta';/);
+assert.equal((landing.match(/href=\{signupTarget\}/g)||[]).length,7,'all event CTAs share the direct form target');
+assert.match(form,/<form id="modulo-iscrizione"/,'landing CTA target is on the actual form');
+assert.match(css,/\.page \.formCard\{scroll-margin-top:20px;/);
+assert.match(css,/\.page \.sticky-cta \.cta\{[\s\S]*?width:calc\(100% - 128px\)!important;/);
+assert.match(css,/max-width:300px!important;/);
+assert.match(css,/justify-content:center;/);
+assert.match(landing,/Fai richiesta/);
+console.log('Event mobile: centered inset sticky CTA and direct form anchor PASS');
