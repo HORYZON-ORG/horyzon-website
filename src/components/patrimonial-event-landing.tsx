@@ -66,7 +66,7 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
       <span className={architectHeader.division}>BENESSERE PATRIMONIALE</span>
     </a>
     <div className={architectHeader.actions}>
-      <a href={signupTarget} className={architectHeader.cta}>{registrationOpen ? 'Iscriviti' : 'Scopri l’evento'}</a>
+      <a href={signupTarget} className={architectHeader.cta}>{registrationOpen ? 'Iscriviti all’evento' : 'Scopri l’evento'}</a>
     </div>
   </div>
 </header>
