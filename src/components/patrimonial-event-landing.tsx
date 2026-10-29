@@ -9,6 +9,7 @@ import { EventSessionProvider, EventSessionValue } from './patrimonial-event-clo
 import { eventSession as defaultSession, type EventSession } from '@/content/patrimonial-event-session';
 import { eventScenes, eventFormTitle, eventCalculator, eventHorizons, type EventHorizon, eventAllocation, eventInstruments, eventKnowledgeLevels, eventProfiles, eventNotes } from '@/content/patrimonial-event-content';
 import styles from './patrimonial-event.module.css';
+import architectHeader from './patrimonial-architect-header.module.css';
 
 const Arrow = ({ size = 18 }: { size?: number }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>;
 const Check = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>;
@@ -55,19 +56,26 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
   };
   return <EventSessionProvider session={session}><div data-session-status={session.status} data-availability={session.status === 'PLACEHOLDER' ? 'pending-edition' : 'confirmed'} className={[styles.s000, styles.page].join(' ')}>
 
+<header className={architectHeader.band}>
+  <div className={architectHeader.inner}>
+    <a className={architectHeader.brand} href="#inizio-evento" aria-label="Horyzon Consulting · Benessere Patrimoniale, torna all'inizio dell'evento">
+      <span className={architectHeader.logoWrap}>
+        <Image className={architectHeader.logo} src="/horyzon-logo-canonical.png" alt="" width={1670} height={390} sizes="(max-width: 600px) 148px, 190px" priority />
+      </span>
+      <span className={architectHeader.rule} aria-hidden="true" />
+      <span className={architectHeader.division}>BENESSERE PATRIMONIALE</span>
+    </a>
+    <div className={architectHeader.actions}>
+      <a href={signupTarget} className={architectHeader.cta}>{registrationOpen ? 'Iscriviti' : 'Scopri l’evento'}</a>
+    </div>
+  </div>
+</header>
+
 <div data-event-section="urgency" className={[styles.s001].join(' ')}>
 <span className={styles.s002}><span className={styles["live-dot"]} aria-hidden="true" />{editionScheduled ? 'Date confermate · richieste di partecipazione aperte' : registrationOpen ? 'Richieste di partecipazione aperte · calendario in definizione' : 'Due serate online gratuite · calendario in definizione'}</span>
 </div>
 
-<div data-event-section="hero" className={[styles["hero"], styles.s004].join(' ')}>
-<div className={styles.eventHeader}>
-<div className={[styles.s005].join(' ')}>
-<div className={styles.eventBrand}>
-<Image src="/benessere-patrimoniale/evento/horyzon-consulting-banner.webp" alt="Horyzon Consulting — Benessere Patrimoniale" width={384} height={144} priority unoptimized className={styles.eventBrandImage} />
-</div>
-<a href={signupTarget} className={[styles["cta"], styles["cta-ghost"], styles.s009].join(' ')}>{registrationOpen ? "Richiedi la partecipazione" : "Informazioni sull’evento"}</a>
-</div>
-</div>
+<div data-event-section="hero" id="inizio-evento" className={[styles["hero"], styles.s004].join(' ')}>
 <div className={[styles["hero-inner"], styles.s010].join(' ')}>
 <div className={[styles.s011].join(' ')}>
 <div className={[styles["label"], styles["load-1"], styles.s012].join(' ')}>Evento online gratuito in due serate · Per lavoratori, pensionati, imprenditori, professionisti e genitori</div>
