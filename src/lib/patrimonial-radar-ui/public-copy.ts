@@ -1,6 +1,7 @@
-import { question, questionText } from '../patrimonial-radar/catalog.ts';
+// Canonical wording stays in catalog.ts; the public wording lives in editorial-copy.ts.
 import { resolveAnswers, value } from '../patrimonial-radar/answers.ts';
 import type { AssessmentInput, QuestionId } from '../patrimonial-radar/types.ts';
+import { editorialQuestion } from './editorial-copy.ts';
 /** Presentation only: original IDs/options/units/periods/validation stay canonical. */
 export const publicTitles: Partial<Record<QuestionId,string>> = {
   'RP-S03':'Da dove arrivano le entrate del bilancio scelto?',
@@ -35,7 +36,6 @@ const purposes: Partial<Record<QuestionId,string>> = {
   'RP-X09':'Serve a comprendere priorità e vincoli, senza impegnarti a investire.',
 };
 export function publicQuestion(id:QuestionId,input:AssessmentInput) {
-  const q=question(id),income=value<string[]>(resolveAnswers(input),'RP-S03');
-  const help=q.help.replaceAll('C04','la domanda sulle rate attuali').replaceAll('A02','la domanda sulle spese passate').replaceAll('B02','la somma disponibile già indicata');
-  return {text:publicTitles[id]??questionText(id,income),help:[purposes[id],help,'Puoi scegliere “Non so” o “Preferisco non rispondere”.'].filter(Boolean).join(' ')};
+  const copy=editorialQuestion(id,value<string[]>(resolveAnswers(input),'RP-S03')??null);
+  return {text:copy.text,purpose:copy.purpose,help:[purposes[id]&&!copy.purpose?purposes[id]:undefined,copy.help,'Se il dato ti manca, puoi scegliere “Non so” oppure “Preferisco non rispondere”.'].filter(Boolean).join(' ')};
 }

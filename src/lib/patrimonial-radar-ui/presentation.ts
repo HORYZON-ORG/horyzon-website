@@ -1,6 +1,7 @@
 import { question } from '../patrimonial-radar/catalog.ts';
 import { ordinaryRoute, resolveAnswers, value } from '../patrimonial-radar/answers.ts';
 import { recordAnswer } from '../patrimonial-radar/answers.ts';
+import { editorialLabels, editorialOptionalTitles, editorialOverrides } from './editorial-copy.ts';
 import type { AnswerState, AssessmentInput, QuestionId, Scope, Period, Goal } from '../patrimonial-radar/types.ts';
 export interface Draft { state: AnswerState; value?: unknown }
 export const blank = () => ({ state: 'UNANSWERED' as const });
@@ -37,10 +38,10 @@ const overrides: Partial<Record<QuestionId, Record<string, string>>> = {
   'RP-D01': { NONE: 'Nessuna esposizione individuata' }, 'RP-E01': { HOME: 'Abitazione principale', BUSINESS: 'Quota della propria attività', PENSION: 'Capitale previdenziale vincolato', NONE: 'Nessuna attività da indicare' },
   'RP-F01': { NONE: 'Nessun obiettivo definito' }, 'RP-F02': { CHECKED: 'Confronto fatto con informazioni ufficiali o contrattuali datate' }, 'RP-X07': { '2': '2 euro', '20': '20 euro', '200': '200 euro' }, 'RP-X08': { NONE: 'Nessuna verifica', WITHIN12: 'Negli ultimi dodici mesi' }, 'RP-X10': { NONE: 'Nessuna esperienza da segnalare', PENSION: 'Previdenza complementare', CASH: 'Conti, depositi e risparmio disponibile', WITHIN12: 'Negli ultimi dodici mesi' },
 };
-export const label = (code: string, id?: QuestionId) => id && overrides[id]?.[code] || labels[code] || 'Da precisare';
-export const areaNames = { S: 'Il bilancio che descrivi', A: 'Equilibrio economico', B: 'Liquidità e sicurezza', C: 'Indebitamento', D: 'Protezione', E: 'Struttura patrimoniale', F: 'Pianificazione', X: 'Approfondimenti facoltativi' };
-export const stateLabels: Record<AnswerState, string> = { VALUE: 'Risposta indicata', UNKNOWN: 'Non so', DECLINED: 'Preferisco non rispondere', UNANSWERED: 'Da completare', NOT_APPLICABLE: 'Non applicabile' };
-export const optionalTitles = ['Il mese con meno entrate', 'Condizioni dei debiti', 'Limiti delle protezioni', 'Valori del patrimonio', 'Debito residuo', 'I tuoi obiettivi', 'Un esempio sui costi', 'Fonti del lungo periodo', 'Risorse e vincoli', 'Esperienza e aspettative', 'Utilità del colloquio'];
+export const label = (code: string, id?: QuestionId) => id && (editorialOverrides[id]?.[code] || overrides[id]?.[code]) || editorialLabels[code] || labels[code] || 'Da precisare';
+export const areaNames = { S: 'Il tuo bilancio', A: 'Equilibrio economico', B: 'Liquidità e riserve', C: 'Debiti', D: 'Protezione', E: 'Struttura patrimoniale', F: 'Pianificazione', X: 'Approfondimenti facoltativi' };
+export const stateLabels: Record<AnswerState, string> = { VALUE: 'Risposta data', UNKNOWN: 'Non so', DECLINED: 'Preferisco non rispondere', UNANSWERED: 'Da completare', NOT_APPLICABLE: 'Non applicabile' };
+export const optionalTitles = editorialOptionalTitles;
 export function context(input: AssessmentInput) { const a = resolveAnswers(input); return { asOf: input.asOf, scope: value<Scope>(a, 'RP-S01'), answers: a }; }
 export function route(input: AssessmentInput) { const order = ['S', 'A', 'C', 'B', 'D', 'E', 'F']; return ordinaryRoute(resolveAnswers(input)).slice().sort((a, b) => order.indexOf(a[3]) - order.indexOf(b[3])); }
 export function latestDraft(input: AssessmentInput, id: QuestionId): Draft | null { const raw = input.answers.filter(a => a.id === id).at(-1); return raw ? { state: raw.state, value: raw.value } : null; }
