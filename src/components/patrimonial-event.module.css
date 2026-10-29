@@ -882,7 +882,7 @@
   .page .sticky-cta .s222,
   .page .sticky-cta .cta{
     flex:0 1 auto!important;
-    width:calc(100% - 80px)!important;
+    width:calc(100% - 128px)!important;
     max-width:300px!important;
     min-width:0;
     min-height:46px;
