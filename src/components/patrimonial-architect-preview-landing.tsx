@@ -9,6 +9,7 @@ import header from './patrimonial-architect-header.module.css';
 import { PatrimonialThemeToggle } from './patrimonial-architect-preview-theme-frame';
 
 const FRANK_RECRUITING_VIDEO_URL = 'https://pmkyeqrfkunypfkbjnyg.supabase.co/storage/v1/object/public/recruiting-media/frank-architetto-patrimoniale.mp4';
+const FRANK_RECRUITING_VIDEO_POSTER_URL = '/people/frank-recruiting-poster.webp';
 
 export function ArchitectLanding({ durableCandidateIntake = false, previewSubmissionsEnabled = false }: { durableCandidateIntake?: boolean; previewSubmissionsEnabled?: boolean }) {
   const [profile, setProfile] = useState<ArchitectProfileKey | null>(null);
@@ -252,16 +253,16 @@ export function ArchitectLanding({ durableCandidateIntake = false, previewSubmis
       <div className={[styles.s115].filter(Boolean).join(" ")}>
         {frankVideoReady ? (
           <video ref={frankVideoRef} className={styles.frankVideo} src={FRANK_RECRUITING_VIDEO_URL}
-            poster="/people/frank.webp" preload="none" controls playsInline
+            poster={FRANK_RECRUITING_VIDEO_POSTER_URL} preload="none" controls playsInline
             aria-label="Frank Cannoletta presenta il percorso Architetto Patrimoniale"
             onPlay={() => setFrankVideoPlaying(true)} onPause={() => setFrankVideoPlaying(false)}
             onEnded={() => setFrankVideoPlaying(false)}
             onError={() => { setFrankVideoReady(false); setFrankVideoPlaying(false); }} />
         ) : (
-          <Image width={700} height={700} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 680px"
+          <Image width={1280} height={720} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 680px"
             className={[styles.s116, styles['cover']].filter(Boolean).join(" ")}
-            style={{ objectPosition: '50% 22%' }} src="/people/frank.webp"
-            alt="Frank Cannoletta, Horyzon Consulting" />
+            style={{ objectPosition: '50% 50%' }} src={FRANK_RECRUITING_VIDEO_POSTER_URL}
+            alt="Frank Cannoletta sorridente durante la presentazione Horyzon" />
         )}
         {!frankVideoPlaying && <div className={[styles.s117].filter(Boolean).join(" ")} aria-hidden="true"></div>}
         {!frankVideoPlaying && <div className={[styles.s118].filter(Boolean).join(" ")} aria-hidden="true"></div>}
