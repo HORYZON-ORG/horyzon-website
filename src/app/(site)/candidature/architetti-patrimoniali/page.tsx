@@ -6,7 +6,7 @@ import { PatrimonialThemeFrame } from '@/components/patrimonial-architect-previe
 const display = Space_Grotesk({ subsets: ['latin'], variable: '--architect-display', display: 'swap' });
 const sans = IBM_Plex_Sans({ subsets: ['latin'], weight: ['400', '500', '600'], variable: '--architect-sans', display: 'swap' });
 const mono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400', '500'], variable: '--architect-mono', display: 'swap' });
-export const metadata = { ...pageMetadata({ path: architectPath.path, title: 'Candidati come Architetto Patrimoniale', description: architectPath.description }), robots: { index: true, follow: true } };
+export const metadata = { ...pageMetadata({ path: architectPath.path, title: 'Candidati come Architetto Patrimoniale', description: architectPath.description }), robots: { index: false, follow: false } };
 export default function ArchitectPathPage() {
   // Hub-first intake is gated server-side. The client never contains service credentials.
   const previewSubmissionsEnabled = true;
