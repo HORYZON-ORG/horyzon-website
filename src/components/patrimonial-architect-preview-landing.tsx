@@ -12,7 +12,8 @@ const FRANK_RECRUITING_VIDEO_URL = 'https://pmkyeqrfkunypfkbjnyg.supabase.co/sto
 const FRANK_RECRUITING_VIDEO_POSTER_URL = '/people/frank-recruiting-poster.webp';
 
 export function ArchitectLanding({ durableCandidateIntake = false, previewSubmissionsEnabled = false }: { durableCandidateIntake?: boolean; previewSubmissionsEnabled?: boolean }) {
-  const [profile, setProfile] = useState<ArchitectProfileKey | null>(null);
+  const [selectedProfession, setSelectedProfession] = useState('');
+  const profile = (Object.keys(architectProfiles) as ArchitectProfileKey[]).find(key => architectProfiles[key].value === selectedProfession) ?? null;
   const selected = profile ? architectProfiles[profile] : null;
   const heroRef = useRef<HTMLElement>(null), formRef = useRef<HTMLElement>(null);
   const [stickyVisible, setStickyVisible] = useState(false);
@@ -48,7 +49,7 @@ export function ArchitectLanding({ durableCandidateIntake = false, previewSubmis
       .catch(() => { /* Keep the accessible photo fallback until the video is available. */ });
     return () => controller.abort();
   }, []);
-  const chooseValue = (value: string) => setProfile((Object.keys(architectProfiles) as ArchitectProfileKey[]).find(key => architectProfiles[key].value === value) ?? null);
+  const chooseValue = (value: string) => setSelectedProfession(value);
   return <div className={[styles.page, styles.s001].filter(Boolean).join(" ")}>
 
 
@@ -385,17 +386,17 @@ export function ArchitectLanding({ durableCandidateIntake = false, previewSubmis
           <div className={[styles.s017].filter(Boolean).join(" ")} style={{ margin: '8px 0 20px' }}>
           <div className={[styles.s018].filter(Boolean).join(" ")} id="profilo">Da dove parti oggi?</div>
           <div className={[styles.s020].filter(Boolean).join(" ")} role="group" aria-label="Il tuo profilo">
-            <button aria-pressed={profile === "commerciale"} onClick={() => setProfile("commerciale")} className={[styles['chip']].filter(Boolean).join(" ")} type="button" data-profile="commerciale">Commerciale</button>
-              <button aria-pressed={profile === "imprenditore"} onClick={() => setProfile("imprenditore")} className={[styles['chip']].filter(Boolean).join(" ")} type="button" data-profile="imprenditore">Imprenditore</button>
-              <button aria-pressed={profile === "dipendente"} onClick={() => setProfile("dipendente")} className={[styles['chip']].filter(Boolean).join(" ")} type="button" data-profile="dipendente">Dipendente</button>
-              <button aria-pressed={profile === "professionista"} onClick={() => setProfile("professionista")} className={[styles['chip']].filter(Boolean).join(" ")} type="button" data-profile="professionista">Professionista</button>
-              <button aria-pressed={profile === "altro"} onClick={() => setProfile("altro")} className={[styles['chip']].filter(Boolean).join(" ")} type="button" data-profile="altro">Sto esplorando</button>
+            <button aria-pressed={profile === "commerciale"} onClick={() => chooseValue(architectProfiles.commerciale.value)} className={[styles['chip']].filter(Boolean).join(" ")} type="button" data-profile="commerciale">Commerciale</button>
+              <button aria-pressed={profile === "imprenditore"} onClick={() => chooseValue(architectProfiles.imprenditore.value)} className={[styles['chip']].filter(Boolean).join(" ")} type="button" data-profile="imprenditore">Imprenditore</button>
+              <button aria-pressed={profile === "dipendente"} onClick={() => chooseValue(architectProfiles.dipendente.value)} className={[styles['chip']].filter(Boolean).join(" ")} type="button" data-profile="dipendente">Dipendente</button>
+              <button aria-pressed={profile === "professionista"} onClick={() => chooseValue(architectProfiles.professionista.value)} className={[styles['chip']].filter(Boolean).join(" ")} type="button" data-profile="professionista">Professionista</button>
+              <button aria-pressed={profile === "altro"} onClick={() => chooseValue(architectProfiles.altro.value)} className={[styles['chip']].filter(Boolean).join(" ")} type="button" data-profile="altro">Sto esplorando</button>
           </div>
         </div>
         <p className={[styles.s164].filter(Boolean).join(" ")}><span data-bind="sub">{selected?.sub ?? ''}</span></p>
       </div>
 
-      <PatrimonialLeadForm mode="architect-path" presentation="architect" contractVersion={durableCandidateIntake ? PATRIMONIAL_V2 : undefined} previewSubmissionsEnabled={previewSubmissionsEnabled} selectedProfile={selected?.value ?? ""} onProfileChange={chooseValue} />
+      <PatrimonialLeadForm mode="architect-path" presentation="architect" contractVersion={durableCandidateIntake ? PATRIMONIAL_V2 : undefined} previewSubmissionsEnabled={previewSubmissionsEnabled} selectedProfile={selectedProfession} onProfileChange={chooseValue} />
     </div>
   </section>
 
