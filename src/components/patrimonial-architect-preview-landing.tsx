@@ -288,62 +288,63 @@ export function ArchitectLanding({ durableCandidateIntake = false, previewSubmis
 
   <section className={[styles['m-sec'], styles.s041].filter(Boolean).join(" ")}>
     <div className={[styles.s042].filter(Boolean).join(" ")}>
-      <div className={[styles.s043].filter(Boolean).join(" ")}>06 · CHI HA GIÀ INIZIATO</div>
+      <div className={[styles.s043].filter(Boolean).join(" ")}>06 · QUATTRO PUNTI DI PARTENZA</div>
       <div className={styles.storiesHead}>
-        <h2 className={[styles['m-reveal'], styles.s127].filter(Boolean).join(" ")}>Sono partiti da dove sei tu.</h2>
+        <h2 className={[styles['m-reveal'], styles.s127].filter(Boolean).join(" ")}>Storie diverse. Un nuovo percorso da immaginare.</h2>
         <div className={styles.storiesNav}>
-          <button type="button" className={styles.navBtn} aria-label="Testimonianza precedente" onClick={() => scrollStories(-1)}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg></button>
-          <button type="button" className={styles.navBtn} aria-label="Testimonianza successiva" onClick={() => scrollStories(1)}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+          <button type="button" className={styles.navBtn} aria-label="Scenario precedente" onClick={() => scrollStories(-1)}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg></button>
+          <button type="button" className={styles.navBtn} aria-label="Scenario successivo" onClick={() => scrollStories(1)}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
         </div>
       </div>
+      <p className={styles.storiesDisclaimer}>Queste quattro voci sono esempi narrativi, non testimonianze reali o risultati raggiunti: mostrano come persone con esperienze diverse potrebbero avvicinarsi al percorso. Le immagini sono illustrative e generate con AI.</p>
       <div className={[styles['m-only'], styles.swipeHint].join(" ")}>SCORRI LE SCHEDE →</div>
-      <div ref={storiesRef} data-carousel="stories" role="region" aria-label="Testimonianze da scorrere" tabIndex={0} className={[styles['m-swipe'], styles.s045, styles.storyTrack].filter(Boolean).join(" ")}>
+      <div ref={storiesRef} data-carousel="stories" role="region" aria-label="Profili ed esempi narrativi da scorrere" tabIndex={0} className={[styles['m-swipe'], styles.s045, styles.storyTrack].filter(Boolean).join(" ")}>
 
           <figure className={[styles['m-reveal'], styles['story'], (selected?.story === 0 ? styles['is-mine'] : '')].filter(Boolean).join(" ")} data-story="0">
             <div className={[styles.s128].filter(Boolean).join(" ")}>
-              <Image width={1400} height={1045} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/story-1.jpg" alt="Immagine AI provvisoria: Ritratto di un’ex commerciale, oggi Architetta" />
-              <div className={[styles.s129].filter(Boolean).join(" ")}><span className={[styles.s130].filter(Boolean).join(" ")}>PRIMA: commerciale</span><span className={[styles.s131].filter(Boolean).join(" ")}>OGGI: Architetto</span></div>
+              <Image width={1400} height={1045} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/story-1.jpg" alt="Ritratto illustrativo generato con AI: profilo proveniente dal mondo commerciale" />
+              <div className={[styles.s129].filter(Boolean).join(" ")}><span className={[styles.s130].filter(Boolean).join(" ")}>ESPERIENZA: vendite</span><span className={[styles.s131].filter(Boolean).join(" ")}>POSSIBILITÀ: ascolto</span></div>
             </div>
             <div className={[styles.s048].filter(Boolean).join(" ")}>
-              <svg width="28" height="22" viewBox="0 0 28 22" fill="#5F7010" aria-hidden="true"><path d="M0 22V12C0 5 4 1 11 0l1 3C8 4 6 7 6 10h5v12H0zm16 0V12c0-7 4-11 11-12l1 3c-4 1-6 4-6 7h5v12H16z"></path></svg>
-              <blockquote className={[styles.s132].filter(Boolean).join(" ")}>[Testimonianza reale: cosa faceva prima, perché ha scelto il percorso, cosa è cambiato.]</blockquote>
-              <div className={[styles.s133].filter(Boolean).join(" ")}><strong className={[styles.s134].filter(Boolean).join(" ")}>[Nome]</strong> · [Città]</div>
+              <div className={styles.storyExampleLabel}>SCENARIO ILLUSTRATIVO</div>
+              <p className={[styles.s132].filter(Boolean).join(" ")}>Nel mio lavoro ero abituata a parlare con tante persone. Mi piacerebbe usare questa capacità in modo diverso: ascoltare prima di proporre, capire che cosa conta davvero per una famiglia e costruire fiducia nel tempo. Un percorso con formazione e affiancamento mi aiuterebbe a farlo con un metodo, senza improvvisare.</p>
+              <div className={[styles.s133].filter(Boolean).join(" ")}>Profilo illustrativo · commerciale</div>
             </div>
           </figure>
 
           <figure className={[styles['m-reveal'], styles['story'], (selected?.story === 1 ? styles['is-mine'] : '')].filter(Boolean).join(" ")} data-story="1">
             <div className={[styles.s128].filter(Boolean).join(" ")}>
-              <Image width={1400} height={1045} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/story-2.jpg" alt="Immagine AI provvisoria: Ritratto di un ex imprenditore nel suo studio" />
-              <div className={[styles.s129].filter(Boolean).join(" ")}><span className={[styles.s130].filter(Boolean).join(" ")}>PRIMA: imprenditore</span><span className={[styles.s131].filter(Boolean).join(" ")}>OGGI: Architetto</span></div>
+              <Image width={1400} height={1045} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/story-2.jpg" alt="Ritratto illustrativo generato con AI: profilo con esperienza imprenditoriale" />
+              <div className={[styles.s129].filter(Boolean).join(" ")}><span className={[styles.s130].filter(Boolean).join(" ")}>ESPERIENZA: impresa</span><span className={[styles.s131].filter(Boolean).join(" ")}>POSSIBILITÀ: relazioni</span></div>
             </div>
             <div className={[styles.s048].filter(Boolean).join(" ")}>
-              <svg width="28" height="22" viewBox="0 0 28 22" fill="#5F7010" aria-hidden="true"><path d="M0 22V12C0 5 4 1 11 0l1 3C8 4 6 7 6 10h5v12H0zm16 0V12c0-7 4-11 11-12l1 3c-4 1-6 4-6 7h5v12H16z"></path></svg>
-              <blockquote className={[styles.s132].filter(Boolean).join(" ")}>[Testimonianza reale: cosa faceva prima, perché ha scelto il percorso, cosa è cambiato.]</blockquote>
-              <div className={[styles.s133].filter(Boolean).join(" ")}><strong className={[styles.s134].filter(Boolean).join(" ")}>[Nome]</strong> · [Città]</div>
+              <div className={styles.storyExampleLabel}>SCENARIO ILLUSTRATIVO</div>
+              <p className={[styles.s132].filter(Boolean).join(" ")}>Gestire un&apos;attività mi ha insegnato che la fiducia si conquista, non si compra. Oggi vorrei mettere la mia esperienza nelle relazioni al servizio di un progetto nuovo. Mi interessa un ruolo che parta dalle domande delle persone, faccia cultura patrimoniale e sappia quando coinvolgere professionisti autorizzati.</p>
+              <div className={[styles.s133].filter(Boolean).join(" ")}>Profilo illustrativo · imprenditore</div>
             </div>
           </figure>
 
           <figure className={[styles['m-reveal'], styles['story'], (selected?.story === 2 ? styles['is-mine'] : '')].filter(Boolean).join(" ")} data-story="2">
             <div className={[styles.s128].filter(Boolean).join(" ")}>
-              <Image width={1400} height={1045} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/story-3.jpg" alt="Immagine AI provvisoria: Ritratto di un ex dipendente alla finestra" />
-              <div className={[styles.s129].filter(Boolean).join(" ")}><span className={[styles.s130].filter(Boolean).join(" ")}>PRIMA: dipendente</span><span className={[styles.s131].filter(Boolean).join(" ")}>OGGI: in formazione</span></div>
+              <Image width={1400} height={1045} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/story-3.jpg" alt="Ritratto illustrativo generato con AI: profilo di lavoratore dipendente" />
+              <div className={[styles.s129].filter(Boolean).join(" ")}><span className={[styles.s130].filter(Boolean).join(" ")}>ESPERIENZA: dipendente</span><span className={[styles.s131].filter(Boolean).join(" ")}>POSSIBILITÀ: formazione</span></div>
             </div>
             <div className={[styles.s048].filter(Boolean).join(" ")}>
-              <svg width="28" height="22" viewBox="0 0 28 22" fill="#5F7010" aria-hidden="true"><path d="M0 22V12C0 5 4 1 11 0l1 3C8 4 6 7 6 10h5v12H0zm16 0V12c0-7 4-11 11-12l1 3c-4 1-6 4-6 7h5v12H16z"></path></svg>
-              <blockquote className={[styles.s132].filter(Boolean).join(" ")}>[Testimonianza reale: cosa faceva prima, perché ha scelto il percorso, cosa è cambiato.]</blockquote>
-              <div className={[styles.s133].filter(Boolean).join(" ")}><strong className={[styles.s134].filter(Boolean).join(" ")}>[Nome]</strong> · [Città]</div>
+              <div className={styles.storyExampleLabel}>SCENARIO ILLUSTRATIVO</div>
+              <p className={[styles.s132].filter(Boolean).join(" ")}>Ho un lavoro e non voglio fare un salto nel vuoto. La possibilità di conoscere il progetto, formarmi e valutare gradualmente se è la strada giusta per me è ciò che mi incoraggerebbe a provarci. Prima vorrei capire il metodo, poi fare esperienza con chi può affiancarmi.</p>
+              <div className={[styles.s133].filter(Boolean).join(" ")}>Profilo illustrativo · dipendente</div>
             </div>
           </figure>
 
           <figure className={[styles['m-reveal'], styles['story']].filter(Boolean).join(" ")} data-story="3">
-            <div className={[styles.s128, styles.storyNoPhoto].filter(Boolean).join(" ")} role="img" aria-label="Foto del testimone da inserire">
-              <span className={styles.storyInitials} aria-hidden="true">?</span>
-              <div className={[styles.s129].filter(Boolean).join(" ")}><span className={[styles.s130].filter(Boolean).join(" ")}>PRIMA: operaio</span><span className={[styles.s131].filter(Boolean).join(" ")}>OGGI: Architetto</span></div>
+            <div className={[styles.s128, styles.storyNoPhoto].filter(Boolean).join(" ")} role="img" aria-label="Quarto profilo narrativo illustrativo, senza fotografia">
+              <span className={styles.storyInitials} aria-hidden="true">04</span>
+              <div className={[styles.s129].filter(Boolean).join(" ")}><span className={[styles.s130].filter(Boolean).join(" ")}>ESPERIENZA: operaio</span><span className={[styles.s131].filter(Boolean).join(" ")}>POSSIBILITÀ: crescita</span></div>
             </div>
             <div className={[styles.s048].filter(Boolean).join(" ")}>
-              <svg width="28" height="22" viewBox="0 0 28 22" fill="#5F7010" aria-hidden="true"><path d="M0 22V12C0 5 4 1 11 0l1 3C8 4 6 7 6 10h5v12H0zm16 0V12c0-7 4-11 11-12l1 3c-4 1-6 4-6 7h5v12H16z"></path></svg>
-              <blockquote className={[styles.s132].filter(Boolean).join(" ")}>[Testimonianza reale: cosa faceva prima, perché ha scelto il percorso, cosa è cambiato.]</blockquote>
-              <div className={[styles.s133].filter(Boolean).join(" ")}><strong className={[styles.s134].filter(Boolean).join(" ")}>[Nome]</strong> · [Città]</div>
+              <div className={styles.storyExampleLabel}>SCENARIO ILLUSTRATIVO</div>
+              <p className={[styles.s132].filter(Boolean).join(" ")}>Non provengo dal mondo finanziario, ma il mio lavoro mi ha insegnato la concretezza e il valore della parola data. Se iniziassi questo percorso, vorrei imparare a fare le domande giuste, ascoltare senza giudicare e aiutare le persone a orientarsi. Per me il punto di partenza sarebbero formazione, impegno e fiducia.</p>
+              <div className={[styles.s133].filter(Boolean).join(" ")}>Profilo illustrativo · operaio</div>
             </div>
           </figure>
 
