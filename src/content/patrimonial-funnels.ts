@@ -85,7 +85,7 @@ export const pilotForms = {
     intro: 'Dopo aver conosciuto il progetto, lasciaci i dati necessari per capire da dove parti e se ha senso approfondire insieme.',
     submit: 'Invia la mia candidatura', success: 'Candidatura ricevuta.',
     question: 'Perché vuoi candidarti al Percorso Architetto Patrimoniale?',
-    profiles: ['Imprenditore', 'Commerciale', 'Professionista', 'Networker', 'Dipendente', 'Altro'],
+    profiles: ['Dipendente', 'Impiegato', 'Operaio', 'Disoccupato', 'Commerciale', 'Imprenditore', 'Professionista', 'Libero professionista', 'Artigiano', 'Studente', 'Pensionato', 'Networker', 'Altro'],
   },
   'patrimonial-event': {
     path: patrimonialEvent.path, title: 'Partecipa al prossimo incontro.',
