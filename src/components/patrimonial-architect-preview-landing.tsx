@@ -337,8 +337,8 @@ export function ArchitectLanding({ durableCandidateIntake = false, previewSubmis
           </figure>
 
           <figure className={[styles['m-reveal'], styles['story']].filter(Boolean).join(" ")} data-story="3">
-            <div className={[styles.s128, styles.storyNoPhoto].filter(Boolean).join(" ")} role="img" aria-label="Quarto profilo narrativo illustrativo, senza fotografia">
-              <span className={styles.storyInitials} aria-hidden="true">04</span>
+            <div className={[styles.s128].filter(Boolean).join(" ")}>
+              <Image width={512} height={384} sizes="(max-width: 700px) 84vw, (max-width: 1000px) 48vw, 33vw" className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/story-4.webp" alt="Ritratto illustrativo di un professionista con esperienza operaia" />
               <div className={[styles.s129].filter(Boolean).join(" ")}><span className={[styles.s130].filter(Boolean).join(" ")}>ESPERIENZA: operaio</span><span className={[styles.s131].filter(Boolean).join(" ")}>POSSIBILITÀ: crescita</span></div>
             </div>
             <div className={[styles.s048].filter(Boolean).join(" ")}>
