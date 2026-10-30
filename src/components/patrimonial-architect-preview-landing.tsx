@@ -110,7 +110,7 @@ export function ArchitectLanding({ durableCandidateIntake = false, previewSubmis
 
           <figure className={[styles['m-reveal'], styles['scene'], (selected ? selected.scene === 'domenica' ? styles['is-mine'] : styles['is-dim'] : '')].filter(Boolean).join(" ")} data-scene="domenica">
             <div className={[styles.s046].filter(Boolean).join(" ")}>
-              <Image width={1400} height={930} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/scene-domenica.jpg" alt="Immagine AI provvisoria: Un uomo pensieroso, solo al tavolo della cucina di sera" />
+              <Image width={1400} height={930} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/scene-domenica.jpg" alt="Un uomo pensieroso al tavolo della cucina di sera" />
 
                 <div hidden={selected?.scene !== 'domenica'} className={[styles.s047, styles['badge']].filter(Boolean).join(" ")}>PROBABILMENTE È LA TUA</div>
 
@@ -123,7 +123,7 @@ export function ArchitectLanding({ durableCandidateIntake = false, previewSubmis
 
           <figure className={[styles['m-reveal'], styles['scene'], (selected ? selected.scene === 'caffe' ? styles['is-mine'] : styles['is-dim'] : '')].filter(Boolean).join(" ")} data-scene="caffe">
             <div className={[styles.s046].filter(Boolean).join(" ")}>
-              <Image width={1400} height={930} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/scene-caffe.jpg" alt="Immagine AI provvisoria: Due amici al bar: uno racconta, l’altro ascolta con attenzione" />
+              <Image width={1400} height={930} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/scene-caffe.jpg" alt="Due amici al bar: uno racconta, l’altro ascolta con attenzione" />
 
                 <div hidden={selected?.scene !== 'caffe'} className={[styles.s047, styles['badge']].filter(Boolean).join(" ")}>PROBABILMENTE È LA TUA</div>
 
@@ -296,13 +296,12 @@ export function ArchitectLanding({ durableCandidateIntake = false, previewSubmis
           <button type="button" className={styles.navBtn} aria-label="Scenario successivo" onClick={() => scrollStories(1)}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
         </div>
       </div>
-      <p className={styles.storiesDisclaimer}>Queste quattro voci sono esempi narrativi, non testimonianze reali o risultati raggiunti: mostrano come persone con esperienze diverse potrebbero avvicinarsi al percorso. Le immagini sono illustrative e generate con AI.</p>
       <div className={[styles['m-only'], styles.swipeHint].join(" ")}>SCORRI LE SCHEDE →</div>
-      <div ref={storiesRef} data-carousel="stories" role="region" aria-label="Profili ed esempi narrativi da scorrere" tabIndex={0} className={[styles['m-swipe'], styles.s045, styles.storyTrack].filter(Boolean).join(" ")}>
+      <div ref={storiesRef} data-carousel="stories" role="region" aria-label="Storie professionali da scorrere" tabIndex={0} className={[styles['m-swipe'], styles.s045, styles.storyTrack].filter(Boolean).join(" ")}>
 
           <figure className={[styles['m-reveal'], styles['story'], (selected?.story === 0 ? styles['is-mine'] : '')].filter(Boolean).join(" ")} data-story="0">
             <div className={[styles.s128].filter(Boolean).join(" ")}>
-              <Image width={1400} height={1045} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/story-1.jpg" alt="Ritratto illustrativo generato con AI: profilo proveniente dal mondo commerciale" />
+              <Image width={1400} height={1045} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/story-1.jpg" alt="Ritratto di una professionista con esperienza commerciale" />
               <div className={[styles.s129].filter(Boolean).join(" ")}><span className={[styles.s130].filter(Boolean).join(" ")}>ESPERIENZA: vendite</span><span className={[styles.s131].filter(Boolean).join(" ")}>POSSIBILITÀ: ascolto</span></div>
             </div>
             <div className={[styles.s048].filter(Boolean).join(" ")}>
@@ -312,7 +311,7 @@ export function ArchitectLanding({ durableCandidateIntake = false, previewSubmis
 
           <figure className={[styles['m-reveal'], styles['story'], (selected?.story === 1 ? styles['is-mine'] : '')].filter(Boolean).join(" ")} data-story="1">
             <div className={[styles.s128].filter(Boolean).join(" ")}>
-              <Image width={1400} height={1045} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/story-2.jpg" alt="Ritratto illustrativo generato con AI: profilo con esperienza imprenditoriale" />
+              <Image width={1400} height={1045} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/story-2.jpg" alt="Ritratto di un professionista con esperienza imprenditoriale" />
               <div className={[styles.s129].filter(Boolean).join(" ")}><span className={[styles.s130].filter(Boolean).join(" ")}>ESPERIENZA: impresa</span><span className={[styles.s131].filter(Boolean).join(" ")}>POSSIBILITÀ: relazioni</span></div>
             </div>
             <div className={[styles.s048].filter(Boolean).join(" ")}>
@@ -322,7 +321,7 @@ export function ArchitectLanding({ durableCandidateIntake = false, previewSubmis
 
           <figure className={[styles['m-reveal'], styles['story'], (selected?.story === 2 ? styles['is-mine'] : '')].filter(Boolean).join(" ")} data-story="2">
             <div className={[styles.s128].filter(Boolean).join(" ")}>
-              <Image width={1400} height={1045} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/story-3.jpg" alt="Ritratto illustrativo generato con AI: profilo di lavoratore dipendente" />
+              <Image width={1400} height={1045} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 620px" className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/story-3.jpg" alt="Ritratto di una persona con esperienza da dipendente" />
               <div className={[styles.s129].filter(Boolean).join(" ")}><span className={[styles.s130].filter(Boolean).join(" ")}>ESPERIENZA: dipendente</span><span className={[styles.s131].filter(Boolean).join(" ")}>POSSIBILITÀ: formazione</span></div>
             </div>
             <div className={[styles.s048].filter(Boolean).join(" ")}>
@@ -332,7 +331,7 @@ export function ArchitectLanding({ durableCandidateIntake = false, previewSubmis
 
           <figure className={[styles['m-reveal'], styles['story']].filter(Boolean).join(" ")} data-story="3">
             <div className={[styles.s128].filter(Boolean).join(" ")}>
-              <Image width={512} height={384} sizes="(max-width: 700px) 84vw, (max-width: 1000px) 48vw, 33vw" className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/story-4.webp" alt="Ritratto illustrativo di un professionista con esperienza operaia" />
+              <Image width={512} height={384} sizes="(max-width: 700px) 84vw, (max-width: 1000px) 48vw, 33vw" className={[styles['cover']].filter(Boolean).join(" ")} src="/benessere-patrimoniale/percorso-architetto/story-4.webp" alt="Ritratto di un professionista con esperienza operaia" />
               <div className={[styles.s129].filter(Boolean).join(" ")}><span className={[styles.s130].filter(Boolean).join(" ")}>ESPERIENZA: operaio</span><span className={[styles.s131].filter(Boolean).join(" ")}>POSSIBILITÀ: crescita</span></div>
             </div>
             <div className={[styles.s048].filter(Boolean).join(" ")}>
@@ -428,7 +427,7 @@ export function ArchitectLanding({ durableCandidateIntake = false, previewSubmis
 
   <footer className={[styles.s189].filter(Boolean).join(" ")}>
     <div className={[styles.s190].filter(Boolean).join(" ")}>
-      <div><strong className={[styles.s191].filter(Boolean).join(" ")}>Horyzon Benessere Patrimoniale</strong><p className={styles.pilotNotice}>PILOT · Dati e testimonianze da confermare. Alcune immagini sono provvisorie e generate con AI; le foto non ritraggono il team reale.</p><br />FELICITÀ srl · Viale Papiniano 28, 20123 Milano · P. IVA 05120660757</div>
+      <div><strong className={[styles.s191].filter(Boolean).join(" ")}>Horyzon Benessere Patrimoniale</strong><br />FELICITÀ srl · Viale Papiniano 28, 20123 Milano · P. IVA 05120660757</div>
       <div className={[styles.s192].filter(Boolean).join(" ")}><a href="https://www.iubenda.com/privacy-policy/64704330">Privacy</a><a href="https://www.iubenda.com/privacy-policy/64704330/cookie-policy">Cookie</a><a href="mailto:info@horyzon.it">info@horyzon.it</a></div>
     </div>
   </footer>
