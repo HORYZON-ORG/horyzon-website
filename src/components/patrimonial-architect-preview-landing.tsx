@@ -306,9 +306,7 @@ export function ArchitectLanding({ durableCandidateIntake = false, previewSubmis
               <div className={[styles.s129].filter(Boolean).join(" ")}><span className={[styles.s130].filter(Boolean).join(" ")}>ESPERIENZA: vendite</span><span className={[styles.s131].filter(Boolean).join(" ")}>POSSIBILITÀ: ascolto</span></div>
             </div>
             <div className={[styles.s048].filter(Boolean).join(" ")}>
-              <div className={styles.storyExampleLabel}>SCENARIO ILLUSTRATIVO</div>
               <p className={[styles.s132].filter(Boolean).join(" ")}>Nel mio lavoro ero abituata a parlare con tante persone. Mi piacerebbe usare questa capacità in modo diverso: ascoltare prima di proporre, capire che cosa conta davvero per una famiglia e costruire fiducia nel tempo. Un percorso con formazione e affiancamento mi aiuterebbe a farlo con un metodo, senza improvvisare.</p>
-              <div className={[styles.s133].filter(Boolean).join(" ")}>Profilo illustrativo · commerciale</div>
             </div>
           </figure>
 
@@ -318,9 +316,7 @@ export function ArchitectLanding({ durableCandidateIntake = false, previewSubmis
               <div className={[styles.s129].filter(Boolean).join(" ")}><span className={[styles.s130].filter(Boolean).join(" ")}>ESPERIENZA: impresa</span><span className={[styles.s131].filter(Boolean).join(" ")}>POSSIBILITÀ: relazioni</span></div>
             </div>
             <div className={[styles.s048].filter(Boolean).join(" ")}>
-              <div className={styles.storyExampleLabel}>SCENARIO ILLUSTRATIVO</div>
               <p className={[styles.s132].filter(Boolean).join(" ")}>Gestire un&apos;attività mi ha insegnato che la fiducia si conquista, non si compra. Oggi vorrei mettere la mia esperienza nelle relazioni al servizio di un progetto nuovo. Mi interessa un ruolo che parta dalle domande delle persone, faccia cultura patrimoniale e sappia quando coinvolgere professionisti autorizzati.</p>
-              <div className={[styles.s133].filter(Boolean).join(" ")}>Profilo illustrativo · imprenditore</div>
             </div>
           </figure>
 
@@ -330,9 +326,7 @@ export function ArchitectLanding({ durableCandidateIntake = false, previewSubmis
               <div className={[styles.s129].filter(Boolean).join(" ")}><span className={[styles.s130].filter(Boolean).join(" ")}>ESPERIENZA: dipendente</span><span className={[styles.s131].filter(Boolean).join(" ")}>POSSIBILITÀ: formazione</span></div>
             </div>
             <div className={[styles.s048].filter(Boolean).join(" ")}>
-              <div className={styles.storyExampleLabel}>SCENARIO ILLUSTRATIVO</div>
               <p className={[styles.s132].filter(Boolean).join(" ")}>Ho un lavoro e non voglio fare un salto nel vuoto. La possibilità di conoscere il progetto, formarmi e valutare gradualmente se è la strada giusta per me è ciò che mi incoraggerebbe a provarci. Prima vorrei capire il metodo, poi fare esperienza con chi può affiancarmi.</p>
-              <div className={[styles.s133].filter(Boolean).join(" ")}>Profilo illustrativo · dipendente</div>
             </div>
           </figure>
 
@@ -342,9 +336,7 @@ export function ArchitectLanding({ durableCandidateIntake = false, previewSubmis
               <div className={[styles.s129].filter(Boolean).join(" ")}><span className={[styles.s130].filter(Boolean).join(" ")}>ESPERIENZA: operaio</span><span className={[styles.s131].filter(Boolean).join(" ")}>POSSIBILITÀ: crescita</span></div>
             </div>
             <div className={[styles.s048].filter(Boolean).join(" ")}>
-              <div className={styles.storyExampleLabel}>SCENARIO ILLUSTRATIVO</div>
               <p className={[styles.s132].filter(Boolean).join(" ")}>Non provengo dal mondo finanziario, ma il mio lavoro mi ha insegnato la concretezza e il valore della parola data. Se iniziassi questo percorso, vorrei imparare a fare le domande giuste, ascoltare senza giudicare e aiutare le persone a orientarsi. Per me il punto di partenza sarebbero formazione, impegno e fiducia.</p>
-              <div className={[styles.s133].filter(Boolean).join(" ")}>Profilo illustrativo · operaio</div>
             </div>
           </figure>
 
