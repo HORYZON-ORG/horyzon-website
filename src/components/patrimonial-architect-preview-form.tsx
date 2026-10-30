@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import Link from 'next/link';
-import { pilotAvailability, pilotExperience, pilotGoals } from '@/content/patrimonial-funnels';
+import { pilotExperience, pilotForms } from '@/content/patrimonial-funnels';
+import { italianProvinceGroups } from '@/content/italian-provinces';
 import { architectProfiles } from '@/content/patrimonial-architect-preview-session';
 import { ARCHITECT_CV_MAX_MB, architectCvProblem } from '@/content/architect-cv';
 import styles from './patrimonial-architect-preview.module.css';
@@ -17,6 +18,9 @@ export function ArchitectApplicationForm({ step, setStep, selectedProfile, onPro
   useEffect(() => { if (step === 2) heading.current?.focus(); }, [step]);
   const selected = Object.values(architectProfiles).find(profile => profile.value === selectedProfile);
   const disabled = status === 'sending' || status === 'success';
+  const [region, setRegion] = useState('');
+  const [province, setProvince] = useState('');
+  const availableProvinces = italianProvinceGroups.find(group => group.region === region)?.provinces ?? [];
   // A quick tap before hydration must not perform a native form POST or be lost.
   // Start disabled on SSR and enable only when React owns submit handlers.
   const [hydrated, setHydrated] = useState(false);
@@ -46,11 +50,30 @@ export function ArchitectApplicationForm({ step, setStep, selectedProfile, onPro
     <fieldset className={styles.formFields} hidden={step !== 2} disabled={disabled || step === 1}>
       <legend className="sr-only">Il tuo profilo e le tue aspettative</legend>
       <div className={styles.formGrid}>
-        <label>Provincia<input name="province" autoComplete="address-level2" required minLength={2} maxLength={80} /></label>
-        <label>Profilo <span>(facoltativo)</span><select name="profile" value={selectedProfile} onChange={event => onProfileChange?.(event.target.value)}><option value="">Seleziona</option>{Object.values(architectProfiles).map(profile => <option key={profile.value} value={profile.value}>{profile.label}</option>)}</select></label>
-        <label>Esperienza commerciale/relazionale <span>(facoltativo)</span><select name="experience" defaultValue=""><option value="">Seleziona</option>{pilotExperience.map(value => <option key={value}>{value}</option>)}</select></label>
-        <label>Cosa stai cercando <span>(facoltativo)</span><select name="goal" defaultValue=""><option value="">Seleziona</option>{pilotGoals.map(value => <option key={value}>{value}</option>)}</select></label>
-        <label>Disponibilità <span>(facoltativo)</span><select name="availability" defaultValue=""><option value="">Seleziona</option>{pilotAvailability.map(value => <option key={value}>{value}</option>)}</select></label>
+        <label>Regione
+          <select value={region} autoComplete="off" required onChange={event => { setRegion(event.target.value); setProvince(''); }}>
+            <option value="" disabled>Seleziona la regione</option>
+            {italianProvinceGroups.map(group => <option key={group.region} value={group.region}>{group.region}</option>)}
+          </select>
+        </label>
+        <label>Provincia
+          <select name="province" value={province} autoComplete="off" required disabled={!region} onChange={event => setProvince(event.target.value)}>
+            <option value="" disabled>{region ? 'Seleziona la provincia' : 'Prima scegli la regione'}</option>
+            {availableProvinces.map(item => <option key={item.code} value={item.name}>{item.name} ({item.code})</option>)}
+          </select>
+        </label>
+        <label>Da quale professione vieni?
+          <select name="profile" value={selectedProfile} required onChange={event => onProfileChange?.(event.target.value)}>
+            <option value="" disabled>Seleziona la tua situazione</option>
+            {pilotForms['architect-path'].profiles.map(value => <option key={value} value={value}>{value}</option>)}
+          </select>
+        </label>
+        <label>Hai esperienza commerciale?
+          <select name="experience" defaultValue="" required>
+            <option value="" disabled>Seleziona una risposta</option>
+            {pilotExperience.map(value => <option key={value} value={value}>{value}</option>)}
+          </select>
+        </label>
       </div>
       {!v2 && <div className={styles.cvField}>
         <span className={styles.cvLabel} id="cv-label">Il tuo curriculum</span>
@@ -61,8 +84,7 @@ export function ArchitectApplicationForm({ step, setStep, selectedProfile, onPro
         </label>
         <p className={styles.cvHelp} id="cv-help">Lo usiamo solo per valutare la candidatura: resta in un archivio privato e viene cancellato dopo 12 mesi se la selezione non prosegue.</p>
       </div>}
-      <label className={styles.formQuestion}>Perché vuoi candidarti al Percorso Architetto Patrimoniale? <span>(facoltativo)</span><textarea name="message" rows={4} maxLength={1500} /></label>
-      <label className={styles.formConsent}><input name="marketingConsent" type="checkbox" defaultChecked={false} /><span>Voglio ricevere anche consigli e novità da Horyzon.</span></label>
+      <label className={styles.formQuestion}>Vuoi raccontarci qualcosa in più su di te? <span>(facoltativo)</span><textarea name="message" rows={4} maxLength={1500} placeholder="Raccontaci il tuo percorso, cosa ti interessa di questa opportunità o ciò che non emerge dal CV." /></label>
     </fieldset>
     <div hidden><label>Sito web<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
     {step === 2 && <button type="button" className={styles.formBack} disabled={disabled} onClick={() => setStep(1)}>← Torna ai recapiti</button>}
