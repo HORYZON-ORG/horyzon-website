@@ -8,11 +8,16 @@ import styles from './patrimonial-architect-preview.module.css';
 import header from './patrimonial-architect-header.module.css';
 import { PatrimonialThemeToggle } from './patrimonial-architect-preview-theme-frame';
 
+const FRANK_RECRUITING_VIDEO_URL = 'https://pmkyeqrfkunypfkbjnyg.supabase.co/storage/v1/object/public/recruiting-media/frank-architetto-patrimoniale.mp4';
+
 export function ArchitectLanding({ durableCandidateIntake = false, previewSubmissionsEnabled = false }: { durableCandidateIntake?: boolean; previewSubmissionsEnabled?: boolean }) {
   const [profile, setProfile] = useState<ArchitectProfileKey | null>(null);
   const selected = profile ? architectProfiles[profile] : null;
   const heroRef = useRef<HTMLElement>(null), formRef = useRef<HTMLElement>(null);
   const [stickyVisible, setStickyVisible] = useState(false);
+  const [frankVideoReady, setFrankVideoReady] = useState(false);
+  const [frankVideoPlaying, setFrankVideoPlaying] = useState(false);
+  const frankVideoRef = useRef<HTMLVideoElement>(null);
   const storiesRef = useRef<HTMLDivElement>(null);
   const scrollStories = (direction: 1 | -1) => {
     const track = storiesRef.current; if (!track) return;
@@ -34,6 +39,13 @@ export function ArchitectLanding({ durableCandidateIntake = false, previewSubmis
     });
     observer.observe(heroRef.current); observer.observe(formRef.current);
     return () => observer.disconnect();
+  }, []);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(FRANK_RECRUITING_VIDEO_URL, { method: 'HEAD', cache: 'no-store', signal: controller.signal })
+      .then(response => { if (response.ok) setFrankVideoReady(true); })
+      .catch(() => { /* Keep the accessible photo fallback until the video is available. */ });
+    return () => controller.abort();
   }, []);
   const chooseValue = (value: string) => setProfile((Object.keys(architectProfiles) as ArchitectProfileKey[]).find(key => architectProfiles[key].value === value) ?? null);
   return <div className={[styles.page, styles.s001].filter(Boolean).join(" ")}>
@@ -238,17 +250,35 @@ export function ArchitectLanding({ durableCandidateIntake = false, previewSubmis
   <section className={[styles['m-sec'], styles.s053, styles['bp']].filter(Boolean).join(" ")}>
     <div className={[styles.s114].filter(Boolean).join(" ")}>
       <div className={[styles.s115].filter(Boolean).join(" ")}>
-        <Image width={700} height={1050} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 680px" className={[styles.s116, styles['cover']].filter(Boolean).join(" ")} style={{ objectPosition: '50% 16%' }} src="/people/angelo.webp" alt="Angelo Ria Chetta, fondatore di Horyzon" />
-        <div className={[styles.s117].filter(Boolean).join(" ")} aria-hidden="true"></div>
-        <div className={[styles.s118].filter(Boolean).join(" ")} aria-hidden="true"></div>
-        <button disabled title="Video del fondatore da fornire" className={[styles.s119, styles['pulse']].filter(Boolean).join(" ")} type="button" aria-label="Video del fondatore — placeholder non disponibile"><svg width="28" height="28" viewBox="0 0 24 24" fill="#07171D" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg></button>
+        {frankVideoReady ? (
+          <video ref={frankVideoRef} className={styles.frankVideo} src={FRANK_RECRUITING_VIDEO_URL}
+            poster="/people/frank.webp" preload="none" controls playsInline
+            aria-label="Frank Cannoletta presenta il percorso Architetto Patrimoniale"
+            onPlay={() => setFrankVideoPlaying(true)} onPause={() => setFrankVideoPlaying(false)}
+            onEnded={() => setFrankVideoPlaying(false)}
+            onError={() => { setFrankVideoReady(false); setFrankVideoPlaying(false); }} />
+        ) : (
+          <Image width={700} height={700} sizes="(max-width: 767px) 100vw, (max-width: 1199px) 80vw, 680px"
+            className={[styles.s116, styles['cover']].filter(Boolean).join(" ")}
+            style={{ objectPosition: '50% 22%' }} src="/people/frank.webp"
+            alt="Frank Cannoletta, Horyzon Consulting" />
+        )}
+        {!frankVideoPlaying && <div className={[styles.s117].filter(Boolean).join(" ")} aria-hidden="true"></div>}
+        {!frankVideoPlaying && <div className={[styles.s118].filter(Boolean).join(" ")} aria-hidden="true"></div>}
+        {frankVideoReady && !frankVideoPlaying && (
+          <button className={[styles.s119, styles['pulse']].filter(Boolean).join(" ")} type="button"
+            aria-label="Riproduci il video di Frank Cannoletta"
+            onClick={() => { void frankVideoRef.current?.play().catch(() => setFrankVideoPlaying(false)); }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="#07171D" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg>
+          </button>
+        )}
       </div>
       <div className={[styles.s087].filter(Boolean).join(" ")}>
         <div className={[styles.s054].filter(Boolean).join(" ")}>05 · PERCHÉ LO FACCIAMO</div>
         <h2 className={[styles['m-reveal'], styles.s121].filter(Boolean).join(" ")}>Perché nasce questa divisione.</h2>
         <div className={[styles.s123].filter(Boolean).join(" ")}>
           <div className={[styles.s124].filter(Boolean).join(" ")}></div>
-          <div><div className={[styles.s125].filter(Boolean).join(" ")}>Angelo Ria Chetta</div><div className={[styles.s126].filter(Boolean).join(" ")}>Horyzon Consulting</div></div>
+          <div><div className={[styles.s125].filter(Boolean).join(" ")}>Frank Cannoletta</div><div className={[styles.s126].filter(Boolean).join(" ")}>Horyzon Consulting</div></div>
         </div>
       </div>
     </div>
