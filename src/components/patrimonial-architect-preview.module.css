@@ -487,6 +487,9 @@
 /* Sezione 6: carosello delle testimonianze */
 .storiesHead{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px 24px;margin-bottom:40px}
 .storiesHead .s127{margin:0}
+.storiesDisclaimer{max-width:950px;margin:-16px 0 32px;font-size:15px;line-height:1.65;color:var(--soft-light)}
+.storyExampleLabel{font-family:var(--architect-mono),monospace;font-size:11px;letter-spacing:.08em;color:var(--olive);font-weight:600}
+
 .storiesNav{display:flex;gap:12px}
 .navBtn{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;border:1.5px solid rgba(7,23,29,.22);background:#FFFFFF;color:var(--ink);cursor:pointer;transition:transform .2s cubic-bezier(.2,.7,.2,1),box-shadow .25s ease,background-color .2s ease,border-color .2s ease}
 .navBtn:hover,.navBtn:focus-visible{background:var(--lime);border-color:var(--lime);transform:translateY(-2px);box-shadow:0 0 0 4px rgba(216,255,66,.28),0 10px 28px rgba(216,255,66,.55)}
