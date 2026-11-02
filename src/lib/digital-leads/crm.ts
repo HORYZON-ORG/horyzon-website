@@ -40,7 +40,7 @@ async function highLevelGet<T>(token: string, path: string, fetcher: typeof fetc
   try {return await response.json() as T;} catch {throw new Error('CRM_BAD_RESPONSE');}
 }
 async function findExistingOpportunity(token:string,locationId:string,pipelineId:string,contactId:string,fetcher:typeof fetch):Promise<string|null>{
-  const params=new URLSearchParams({locationId,pipelineId,contactId,status:'all',limit:'30'});
+  const params=new URLSearchParams({locationId,pipelineId,contactId,status:'open',limit:'30'});
   const result=await highLevelGet<{opportunities?:Array<{id?:string;pipelineId?:string;contactId?:string}>}>(
     token,'/opportunities/search?'+params.toString(),fetcher);
   const item=result.opportunities?.find(x=>x.pipelineId===pipelineId && x.contactId===contactId && x.id);
