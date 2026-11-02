@@ -9,6 +9,10 @@
     {
       "path": "/api/cron/patrimonial-event-confirmations",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/cron/digital-leads",
+      "schedule": "*/10 * * * *"
     }
   ]
 }
