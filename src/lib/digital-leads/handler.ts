@@ -1,8 +1,8 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { after } from 'next/server';
-import { parseDigitalSubmission } from './contract';
-import { acquireDigitalLead, DigitalStoreError, type DigitalEnv } from './store';
-import { runDigitalCrmDrain } from './crm';
+import { parseDigitalSubmission } from './contract.ts';
+import { acquireDigitalLead, DigitalStoreError, type DigitalEnv } from './store.ts';
+import { runDigitalCrmDrain } from './crm.ts';
 
 type Options = { env?: DigitalEnv; fetcher?: typeof fetch };
 const response = (status: number, message: string, other: Record<string, unknown> = {}) =>
