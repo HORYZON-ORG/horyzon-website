@@ -6,7 +6,8 @@ export type DigitalCrmRow = {
   company_name: string; email: string; phone: string | null; province: string;
   activity: string; frequency: string; tools: string; territory: string;
   privacy_version: string; crm_contact_id: string | null;
-  crm_step: 'upsert' | 'tags' | 'note' | 'done';
+  crm_step: 'upsert' | 'tags' | 'note' | 'opportunity' | 'done';
+  crm_opportunity_id: string | null;
   crm_lease_token: string; crm_attempts: number;
 };
 export class DigitalStoreError extends Error {
@@ -52,7 +53,7 @@ export function acquireDigitalLead(submission: DigitalSubmission, rateKey: strin
 export function claimDigitalCrmJobs(requestId: string | null, limit: number, env: DigitalEnv = process.env, fetcher?: typeof fetch): Promise<DigitalCrmRow[]> {
   return digitalRpc('digital_crm_claim_v1',{p_request_id:requestId,p_limit:limit},env,fetcher);
 }
-export function progressDigitalCrm(row: DigitalCrmRow, nextStep: 'tags' | 'note', contactId: string, env: DigitalEnv = process.env, fetcher?: typeof fetch): Promise<boolean> {
+export function progressDigitalCrm(row: DigitalCrmRow, nextStep: 'tags' | 'note' | 'opportunity', contactId: string, env: DigitalEnv = process.env, fetcher?: typeof fetch): Promise<boolean> {
   return digitalRpc('digital_crm_progress_v1',{p_id:row.id,p_token:row.crm_lease_token,p_step:nextStep,p_contact_id:contactId},env,fetcher);
 }
 export function finishDigitalCrm(row: DigitalCrmRow, success: boolean, contactId: string | null, errorCode: string | null, env: DigitalEnv = process.env, fetcher?: typeof fetch): Promise<boolean> {
