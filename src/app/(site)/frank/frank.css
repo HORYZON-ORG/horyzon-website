@@ -1222,3 +1222,9 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Match the compact monochrome portraits used in the team. */
+.frank-page .frank-portrait-wrapper{width:min(100%,154px)}
+.frank-page .frank-portrait-frame{aspect-ratio:1;border-radius:50%}
+.frank-page .frank-portrait-img{filter:grayscale(1)}
+.frank-page .frank-portrait-badge{position:static;margin-top:20px}
