@@ -1,7 +1,7 @@
 import {
   claimDigitalCrmJobs, progressDigitalCrm, finishDigitalCrm, saveDigitalOpportunityId,
   type DigitalCrmRow, type DigitalEnv,
-} from './store';
+} from './store.ts';
 
 type CrmStats = { claimed: number; synced: number; retry: number };
 const API_BASE = 'https://services.leadconnectorhq.com';
@@ -85,7 +85,8 @@ async function pushOne(row: DigitalCrmRow, token: string, locationId: string, en
       'Informativa: ' + row.privacy_version + ' · ricontatto richiesto; nessun consenso marketing.',
       'Dossier operativo: Hub Horyzon / Benessere Digitale',
     ].join('\n');
-    await highLevelPost(token,'/contacts/' + urlId + '/notes',{body},fetcher);
+    try { await highLevelPost(token,'/contacts/' + urlId + '/notes',{body},fetcher); }
+    catch { throw new Error('CRM_NOTE_UNCERTAIN'); }
     if (!(await progressDigitalCrm(row,'opportunity',contactId,env,fetcher))) throw new Error('CRM_STALE_CLAIM');
     step='opportunity';
   }
