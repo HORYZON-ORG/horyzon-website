@@ -1,4 +1,4 @@
-import type { DigitalSubmission } from './contract';
+import type { DigitalSubmission } from './contract.ts';
 
 export type DigitalReceipt = { id: string; replay: boolean };
 export type DigitalCrmRow = {
