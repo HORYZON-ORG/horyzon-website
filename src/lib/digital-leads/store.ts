@@ -59,3 +59,7 @@ export function progressDigitalCrm(row: DigitalCrmRow, nextStep: 'tags' | 'note'
 export function finishDigitalCrm(row: DigitalCrmRow, success: boolean, contactId: string | null, errorCode: string | null, env: DigitalEnv = process.env, fetcher?: typeof fetch): Promise<boolean> {
   return digitalRpc('digital_crm_finish_v1',{p_id:row.id,p_token:row.crm_lease_token,p_success:success,p_contact_id:contactId,p_error:errorCode},env,fetcher);
 }
+
+export function saveDigitalOpportunityId(row: DigitalCrmRow, opportunityId: string, env: DigitalEnv = process.env, fetcher?: typeof fetch): Promise<boolean> {
+ return digitalRpc('digital_crm_opportunity_record_v1',{p_id:row.id,p_token:row.crm_lease_token,p_opportunity_id:opportunityId},env,fetcher);
+}
