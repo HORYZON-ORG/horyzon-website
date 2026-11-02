@@ -11,7 +11,8 @@ export type DigitalCrmRow = {
   crm_lease_token: string; crm_attempts: number;
 };
 export class DigitalStoreError extends Error {
-  constructor(public readonly code: string) { super(code); }
+  readonly code: string;
+  constructor(code: string) { super(code); this.code = code; }
 }
 export type DigitalEnv = Record<string, string | undefined>;
 
