@@ -1,22 +1,23 @@
 import {
-  claimDigitalCrmJobs, progressDigitalCrm, finishDigitalCrm,
+  claimDigitalCrmJobs, progressDigitalCrm, finishDigitalCrm, saveDigitalOpportunityId,
   type DigitalCrmRow, type DigitalEnv,
 } from './store';
 
 type CrmStats = { claimed: number; synced: number; retry: number };
 const API_BASE = 'https://services.leadconnectorhq.com';
 const VERSION = '2021-07-28';
+const OPPORTUNITY_VERSION = 'v3';
 const FREQUENCY: Record<string, string> = {
   daily: 'Ogni giorno', weekly: 'Ogni settimana', monthly: 'Ogni mese', other: 'Variabile',
 };
-async function highLevelPost<T>(token: string, path: string, body: unknown, fetcher: typeof fetch): Promise<T> {
+async function highLevelPost<T>(token: string, path: string, body: unknown, fetcher: typeof fetch, version: string = VERSION): Promise<T> {
   let response: Response;
   try {
     response = await fetcher(API_BASE + path, {
       method: 'POST', cache: 'no-store', redirect: 'error',
       signal: AbortSignal.timeout(8500),
       headers: {
-        Authorization: 'Bearer ' + token, Version: VERSION,
+        Authorization: 'Bearer ' + token, Version: version,
         Accept: 'application/json', 'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),
@@ -26,6 +27,24 @@ async function highLevelPost<T>(token: string, path: string, body: unknown, fetc
     response.status === 401 || response.status === 403 ? 'CRM_PERMISSION' :
     response.status >= 500 ? 'CRM_UNAVAILABLE' : 'CRM_PROVIDER_REVIEW');
   try { return await response.json() as T; } catch { throw new Error('CRM_BAD_RESPONSE'); }
+}
+
+async function highLevelGet<T>(token: string, path: string, fetcher: typeof fetch): Promise<T> {
+  let response: Response;
+  try {
+    response=await fetcher(API_BASE + path,{method:'GET',cache:'no-store',redirect:'error',
+      signal:AbortSignal.timeout(8500),
+      headers:{Authorization:'Bearer '+token,Version:OPPORTUNITY_VERSION,Accept:'application/json'}});
+  } catch { throw new Error('CRM_NETWORK'); }
+  if(!response.ok) throw new Error(response.status===429?'CRM_RATE_LIMIT':response.status===401||response.status===403?'CRM_PERMISSION':'CRM_OPPORTUNITY_SEARCH');
+  try {return await response.json() as T;} catch {throw new Error('CRM_BAD_RESPONSE');}
+}
+async function findExistingOpportunity(token:string,locationId:string,pipelineId:string,contactId:string,fetcher:typeof fetch):Promise<string|null>{
+  const params=new URLSearchParams({locationId,pipelineId,contactId,status:'all',limit:'30'});
+  const result=await highLevelGet<{opportunities?:Array<{id?:string;pipelineId?:string;contactId?:string}>}>(
+    token,'/opportunities/search?'+params.toString(),fetcher);
+  const item=result.opportunities?.find(x=>x.pipelineId===pipelineId && x.contactId===contactId && x.id);
+  return item?.id??null;
 }
 
 async function pushOne(row: DigitalCrmRow, token: string, locationId: string, env: DigitalEnv, fetcher: typeof fetch): Promise<void> {
@@ -67,6 +86,25 @@ async function pushOne(row: DigitalCrmRow, token: string, locationId: string, en
       'Dossier operativo: Hub Horyzon / Benessere Digitale',
     ].join('\n');
     await highLevelPost(token,'/contacts/' + urlId + '/notes',{body},fetcher);
+    if (!(await progressDigitalCrm(row,'opportunity',contactId,env,fetcher))) throw new Error('CRM_STALE_CLAIM');
+    step='opportunity';
+  }
+  if (step === 'opportunity') {
+    const pipelineId=env.DIGITAL_PIPELINE_ID, stageId=env.DIGITAL_PIPELINE_STAGE_NEW_ID;
+    if (!pipelineId || !stageId) throw new Error('CRM_PIPELINE_MISSING');
+    let opportunityId=row.crm_opportunity_id;
+    if(!opportunityId){
+      opportunityId=await findExistingOpportunity(token,locationId,pipelineId,contactId,fetcher);
+      if(!opportunityId){
+        const created=await highLevelPost<{opportunity?:{id?:string}}>(
+          token,'/opportunities/',{locationId,pipelineId,pipelineStageId:stageId,
+          contactId,name:'Benessere Digitale · '+row.company_name,status:'open'},
+          fetcher,OPPORTUNITY_VERSION);
+        opportunityId=created.opportunity?.id??null;
+      }
+      if(!opportunityId) throw new Error('CRM_BAD_RESPONSE');
+      if (!(await saveDigitalOpportunityId(row,opportunityId,env,fetcher))) throw new Error('CRM_STALE_CLAIM');
+    }
   }
   if (!(await finishDigitalCrm(row,true,contactId,null,env,fetcher))) throw new Error('CRM_STALE_CLAIM');
 }
