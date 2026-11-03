@@ -17,7 +17,7 @@ export function DigitalJourney({ children }: { children: ReactNode }) {
   return <SelectionContext.Provider value={{ selected, toggle: id => setSelected(old => old.includes(id) ? old.filter(x => x !== id) : [...old, id]), submitted, complete: () => setSubmitted(true) }}>{children}</SelectionContext.Provider>;
 }
 export function useDigitalSelection() { return useContext(SelectionContext); }
-function SceneVideo({ id, label }: { id: string; label: string }) {
+export function SceneVideo({ id, label }: { id: string; label: string }) {
   const ref = useRef<HTMLVideoElement>(null);
   const [paused, setPaused] = useState(false);
   useEffect(() => {
