@@ -6,7 +6,7 @@ import { PageHero, Section, Tiles } from '@/components/kit';
 import { Suspense } from 'react';
 import { PatrimonialLeadForm } from '@/components/patrimonial-lead-form';
 export const metadata: Metadata = pageMetadata({ path: '/contatti', title: 'Contatti', description: 'Inizia il Radar o raccontaci che cosa oggi rende più difficile lavorare nella tua impresa.' });
-// The form sits in the hero, next to the question; the three ways in follow on cream, the company data on the panel.
+// The form sits in the hero; company details remain in the shared footer.
 export default function ContactPage(){return <><PageStructuredData path="/contatti" name="Contatti" description="Inizia il Radar o raccontaci che cosa oggi rende più difficile lavorare nella tua impresa." type="ContactPage" breadcrumbs={[{ name: 'Horyzon', path: '/' }, { name: 'Contatti', path: '/contatti' }]} faqs={publicFaqs['/contatti']} /><SiteHeader/><main id="content" className="rd rd-page editorial-page narrative-page" data-page="contatti">
  <PageHero crumbs={[{ name: 'Horyzon', href: '/' }, { name: 'Contatti' }]} label="Il prossimo passo" title={<>Che cosa vorresti <em>cambiare?</em></>} lead="Raccontaci ciò che oggi assorbe tempo, rallenta il lavoro o rende difficile una decisione. Il primo passo è capirlo insieme." aside={<div className="contact-form-surface"><JourneyContactForm/><p className="rd-note">Il modulo prepara un messaggio nel tuo client email: il sito non invia né conserva i dati.</p></div>}><p className="rd-note" style={{ margin: 0 }}>Il primo passo è una conversazione.</p></PageHero>
  <Section id="richiesta-patrimoniale" tone="cream" split label="Benessere patrimoniale" title="Due percorsi. Una richiesta chiara." headingId="contatti-patrimonio" lead="Ricevi informazioni sull’evento oppure conosci il percorso degli Architetti Patrimoniali. I due interessi restano distinti."><div className="contact-form-surface"><Suspense fallback={<p>Caricamento del modulo. Puoi anche scrivere a <a href="mailto:info@horyzon.it">info@horyzon.it</a>, indicando il percorso che ti interessa.</p>}><PatrimonialLeadForm /></Suspense></div></Section>
@@ -18,6 +18,5 @@ export default function ContactPage(){return <><PageStructuredData path="/contat
   ]} />
  </Section>
 <Section id="dove-siamo" tone="cream" label="Dove siamo" title="Le nostre unità operative." headingId="unita-operative" lead="Una presenza in Italia, Svizzera e Grecia."><OperatingUnits /></Section>
- <Section tone="panel" className="contact-company" split title="FELICITÀ srl" headingId="contatti-societa"><p className="rd-statement" style={{ fontSize: 'clamp(24px,2.4vw,36px)' }}>Viale Papiniano 28 · 20123 Milano<br/>P. IVA 05120660757 · SDI SU9YNJA</p><div className="rd-actions"><a className="rd-cta" href="mailto:info@horyzon.it">info@horyzon.it <span aria-hidden="true">↗︎</span></a></div></Section>
  <FaqSection items={publicFaqs['/contatti']} />
 </main><SiteFooter/></>}
