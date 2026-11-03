@@ -16,7 +16,7 @@ export class DigitalStoreError extends Error {
 }
 export type DigitalEnv = Record<string, string | undefined>;
 
-async function digitalRpc<T>(name: string, args: Record<string, unknown>, env: DigitalEnv, fetcher: typeof fetch = fetch): Promise<T> {
+export async function digitalRpc<T>(name: string, args: Record<string, unknown>, env: DigitalEnv, fetcher: typeof fetch = fetch): Promise<T> {
   const origin = env.SUPABASE_URL ?? env.NEXT_PUBLIC_SUPABASE_URL;
   const key = env.SUPABASE_SERVICE_ROLE_KEY;
   if (!origin || !key || /^sb_publishable_/.test(key)) throw new DigitalStoreError('STORE_NOT_CONFIGURED');
@@ -40,6 +40,7 @@ async function digitalRpc<T>(name: string, args: Record<string, unknown>, env: D
     if (error.message === 'DIGITAL_RATE_LIMIT') throw new DigitalStoreError('RATE_LIMIT');
     if (error.message === 'DIGITAL_REPLAY_CONFLICT') throw new DigitalStoreError('REPLAY_CONFLICT');
     if (error.message === 'DIGITAL_INVALID_INPUT') throw new DigitalStoreError('INVALID_INPUT');
+    if (error.message === 'DIGITAL_RADAR_LINK_INVALID') throw new DigitalStoreError('LINK_INVALID');
     throw new DigitalStoreError('STORE_UNAVAILABLE');
   }
   try { return await response.json() as T; } catch { throw new DigitalStoreError('STORE_UNAVAILABLE'); }

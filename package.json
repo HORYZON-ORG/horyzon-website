@@ -48,6 +48,7 @@
     "test:patrimonial-network-clienti": "node --no-warnings --experimental-strip-types scripts/verify-patrimonial-network-clienti.mjs",
     "test:patrimonial-activation": "node --no-warnings --experimental-strip-types scripts/verify-patrimonial-activation.mjs",
     "test:client-radar-crm-plan": "node --no-warnings --experimental-strip-types scripts/verify-client-radar-crm-plan.mjs",
+    "test:digital-radar": "node --no-warnings --experimental-strip-types scripts/verify-digital-radar.mjs && node --no-warnings --experimental-strip-types scripts/verify-digital-funnel.mjs",
     "test:patrimonial-consolidation": "node --no-warnings --experimental-strip-types scripts/verify-patrimonial-consolidation.mjs"
   },
   "dependencies": {

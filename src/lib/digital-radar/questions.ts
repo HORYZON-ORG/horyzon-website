@@ -1,0 +1,10 @@
+export const RADAR_DIMENSIONS = [
+  {id:'dati',dimension:'Dati',title:'Come trovi le informazioni che ti servono?',choices:['Su carta o nei singoli computer','Tra email, chat e cartelle sparse','In cartelle condivise abbastanza ordinate','In un gestionale usato dal team','In archivi aggiornati e collegati']},
+  {id:'processi',dimension:'Processi',title:'Quanto lavoro ripetitivo fai ancora a mano?',choices:['Occupa quasi tutta la giornata','Occupa circa metà del mio tempo','Ci sono procedure, ma molti passaggi restano manuali','Molti passaggi sono già semplificati','Le attività ricorrenti sono ben organizzate e automatizzate']},
+  {id:'strumenti',dimension:'Strumenti attuali',title:'Come funzionano insieme i tuoi programmi?',choices:['Sono spesso lenti o difficili da usare','Devo ricopiare gli stessi dati tra programmi','Funzionano, ma richiedono molti passaggi manuali','Sono moderni e hanno alcuni collegamenti','I principali strumenti scambiano già i dati']},
+  {id:'competenze',dimension:'Competenze digitali del team',title:'Quanto usi gli strumenti di intelligenza artificiale?',choices:['Non li ho mai usati','Li ho provati per curiosità','Li uso ogni tanto per qualche attività','Li uso regolarmente nel lavoro','Uso anche assistenti personalizzati o automazioni']},
+  {id:'cultura',dimension:'Cultura al cambiamento',title:'Come ti senti rispetto a introdurre nuovi strumenti?',choices:['Temo che rendano il lavoro più difficile','Sono scettico sulla loro utilità','Sono curioso e vorrei essere accompagnato','Vorrei provarli su attività concrete','Partecipo già attivamente ai miglioramenti']},
+  {id:'sponsor',dimension:'Sponsor interno',title:'Quanto la direzione sostiene questi miglioramenti?',choices:['C’è forte diffidenza','Al momento altre urgenze hanno la precedenza','C’è interesse, ma poche risorse dedicate','I responsabili incoraggiano le proposte','La direzione segue attivamente il cambiamento']},
+] as const;
+export type RadarDimension = typeof RADAR_DIMENSIONS[number]['id'];
+export type RadarAnswers = Record<RadarDimension,number|null>;
