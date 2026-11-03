@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { SiteHeader, SiteFooter } from '@/components/site-shell';
 import { PageStructuredData } from '@/components/structured-data';
 import { DigitalLeadForm } from '@/components/digital-lead-form';
-import { DigitalJourney, DigitalStoryboard, SceneVideo } from '@/components/digital-storyboard';
+import { DigitalJourney, DigitalStoryboard } from '@/components/digital-storyboard';
 import './digital.css';
 
 export const metadata: Metadata = {
@@ -17,7 +18,7 @@ export default function DigitalWellbeingPage(){
   <SiteHeader/>
   <DigitalJourney><main id="content" className="bd">
   <section className="bd-hero bd-hero-story" aria-labelledby="digital-hero-title">
-    <SceneVideo id="hero" label="Il lavoro quotidiano in azienda"/>
+    <Image src="/digital-story/tempo-ritrovato.webp" alt="Due colleghi si confrontano serenamente in ufficio, con il portatile chiuso sulla scrivania." fill priority sizes="100vw" className="bd-hero-photo"/>
     <div className="bd-hero-overlay"/>
     <div className="bd-wrap bd-hero-story-inner">
       <div className="bd-hero-eyebrow"><span className="bd-hero-dot"/> HORYZON / BENESSERE DIGITALE</div>
