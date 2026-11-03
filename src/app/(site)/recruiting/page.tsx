@@ -57,8 +57,8 @@ export default function RecruitingPage() {
    </Section>
 
    <Section tone="sand" split label="Una cultura delle persone" title="Aziende attraenti per campioni e talenti." headingId="recruiting-libro">
-    <div className={styles.book}><Image src="/books/talenti.webp" width={180} height={250} sizes="(max-width:600px) 110px, 160px" alt="Copertina del libro Aziende attraenti per campioni e talenti di Angelo Ria Chetta" />
-     <div className="rd-prose"><p>Il libro di Angelo Ria Chetta fa parte della biblioteca Horyzon e del lavoro editoriale dedicato al rapporto tra persone e impresa.</p><TextLink href="/biblioteca">Scopri il libro nella biblioteca ↗︎</TextLink></div>
+    <div className={styles.book}><Image src="/books/aziende-attraenti-2026.webp" width={846} height={1200} sizes="(max-width:600px) 110px, 160px" alt="Copertina del libro Aziende attraenti per campioni e talenti di Angelo Ria Chetta" />
+     <div className="rd-prose"><p>Per imprenditori, manager e responsabili delle persone: attrattività, organizzazione, selezione, inserimento e crescita dei collaboratori.</p><p>Ricevi gratuitamente la copia digitale in PDF su angeloria.it lasciando la tua email. Gli aggiornamenti promozionali sono facoltativi.</p><Cta href="https://angeloria.it/ricevi-il-pdf-aziende-attraenti-per-campioni-e-talenti/">Ricevi il libro gratuitamente in PDF</Cta><TextLink href="https://angeloria.it/anteprima-aziende-attraenti/">Leggi la presentazione del libro ↗︎</TextLink></div>
     </div>
    </Section>
 

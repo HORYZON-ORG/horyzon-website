@@ -6,6 +6,12 @@ import type { CSSProperties, ReactNode } from 'react';
 export const delay = (ms: number) => ({ '--d': `${ms}ms` }) as CSSProperties;
 const order = (i: number) => ({ '--i': i }) as CSSProperties;
 const internal = (href: string) => href.startsWith('/') && !href.startsWith('//');
+// HTTP destinations outside Horyzon keep the current site open; email and phone keep their native actions.
+const outbound = (href: string) => {
+ if (!/^https?:\/\//i.test(href) && !href.startsWith('//')) return {};
+ const host = new URL(href, 'https://horyzon.it').hostname;
+ return host === 'horyzon.it' || host === 'www.horyzon.it' ? {} : { target: '_blank', rel: 'noopener noreferrer', title: 'Si apre in una nuova scheda' };
+};
 export type Tone = 'ink' | 'panel' | 'lime' | 'cream' | 'sand';
 
 /** A title split on its last sentence: with more than one sentence the last one is set in the accent colour. */
@@ -16,7 +22,7 @@ export function accentLast(title: string): ReactNode {
 
 export function Cta({ href, children, arrow = '↗︎', className = 'rd-cta', ...rest }: { href: string; children: ReactNode; arrow?: string | null; className?: string } & Record<`data-${string}`, string>) {
  const content = <>{children}{arrow && <span aria-hidden="true">{arrow}</span>}</>;
- return internal(href) ? <Link className={className} href={href} {...rest}>{content}</Link> : <a className={className} href={href} {...rest}>{content}</a>;
+ return internal(href) ? <Link className={className} href={href} {...rest}>{content}</Link> : <a className={className} href={href} {...outbound(href)} {...rest}>{content}</a>;
 }
 export function TextLink({ href, children }: { href: string; children: ReactNode }) {
  return <Cta href={href} className="rd-link" arrow={null}>{children}</Cta>;
@@ -56,7 +62,7 @@ export type Tile = { tag?: string; title: ReactNode; text?: ReactNode; href?: st
 export function Tiles({ items, columns = 3 }: { items: readonly Tile[]; columns?: 2 | 3 }) {
  return <ul className={`rd-tiles ${columns === 2 ? 'rd-tiles-2' : ''}`}>{items.map((item, index) => {
   const body = <>{item.tag && <span className="rd-tile-tag" aria-hidden={/^\d+$/.test(item.tag) || undefined}>{item.tag}</span>}<h3>{item.title}</h3>{item.text && <p>{item.text}</p>}{item.more && <span className="rd-tile-more">{item.more} <span aria-hidden="true">↗︎</span></span>}</>;
-  return <li key={index}>{item.href ? (internal(item.href) ? <Link className={`rd-tile rd-reveal ${item.className ?? ''}`} style={order(index)} href={item.href}>{body}</Link> : <a className={`rd-tile rd-reveal ${item.className ?? ''}`} style={order(index)} href={item.href}>{body}</a>) : <div className={`rd-tile rd-reveal ${item.className ?? ''}`} style={order(index)}>{body}</div>}</li>;
+  return <li key={index}>{item.href ? (internal(item.href) ? <Link className={`rd-tile rd-reveal ${item.className ?? ''}`} style={order(index)} href={item.href}>{body}</Link> : <a className={`rd-tile rd-reveal ${item.className ?? ''}`} style={order(index)} href={item.href} {...outbound(item.href)}>{body}</a>) : <div className={`rd-tile rd-reveal ${item.className ?? ''}`} style={order(index)}>{body}</div>}</li>;
  })}</ul>;
 }
 
@@ -67,7 +73,7 @@ export function Rows({ items, start = 1, ordered = true, className = '' }: { ite
  return <List className={`rd-rows ${tagged ? 'rd-rows-tagged' : ''} ${className}`} start={ordered && start !== 1 ? start : undefined}>{items.map((item, index) => {
   const n = item.tag ? <span className={`rd-row-tag ${item.lit ? 'is-lit' : ''}`}>{item.tag}</span> : <span className="rd-row-n" aria-hidden="true">{String(start + index).padStart(2, '0')}</span>;
   const body = item.title ? <div><h3>{item.title}</h3><p>{item.text}</p></div> : <p className="rd-row-text">{item.text}</p>;
-  return <li key={index}>{item.href ? (() => { const inner = <>{n}{body}<span className="rd-row-go" aria-hidden="true">↗︎</span></>; const cls = `rd-row rd-reveal ${item.className ?? ''}`; return internal(item.href) ? <Link className={cls} style={order(index)} href={item.href}>{inner}</Link> : <a className={cls} style={order(index)} href={item.href}>{inner}</a>; })() : <div className={`rd-row rd-reveal ${item.className ?? ''}`} style={order(index)}>{n}{body}{!tagged && <span />}</div>}</li>;
+  return <li key={index}>{item.href ? (() => { const inner = <>{n}{body}<span className="rd-row-go" aria-hidden="true">↗︎</span></>; const cls = `rd-row rd-reveal ${item.className ?? ''}`; return internal(item.href) ? <Link className={cls} style={order(index)} href={item.href}>{inner}</Link> : <a className={cls} style={order(index)} href={item.href} {...outbound(item.href)}>{inner}</a>; })() : <div className={`rd-row rd-reveal ${item.className ?? ''}`} style={order(index)}>{n}{body}{!tagged && <span />}</div>}</li>;
  })}</List>;
 }
 
