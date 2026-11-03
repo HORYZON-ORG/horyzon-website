@@ -1,24 +1,29 @@
 'use client';
 
-import {useRef,useState,type FormEvent} from 'react';
+import {useRef,useState,useSyncExternalStore,type FormEvent} from 'react';
 import {RADAR_DIMENSIONS} from '@/lib/digital-radar/questions';
 
 type Receipt={coverage:number;mean:number|null;dimensions:Record<string,number>};
 const frequencyOptions=[['daily','Ogni giorno'],['weekly','Ogni settimana'],['monthly','Ogni mese'],['other','Variabile / non so']];
+const subscribeToInitialization=()=>()=>{};
+const initializedOnClient=()=>true;
+const initializingOnServer=()=>false;
 
 export function DigitalRadarForm({token}:{token?:string}){
+ const ready=useSyncExternalStore(subscribeToInitialization,initializedOnClient,initializingOnServer);
  const [step,setStep]=useState(0),[status,setStatus]=useState<'idle'|'sending'|'error'|'done'>('idle');
  const [error,setError]=useState(''),[contact,setContact]=useState(false),[receipt,setReceipt]=useState<Receipt|null>(null);
  const formRef=useRef<HTMLFormElement>(null),pending=useRef<{fingerprint:string;requestId:string}|null>(null);
  const busy=status==='sending';
  function next(){
+  if(!ready||busy)return;
   const current=formRef.current?.querySelector<HTMLFieldSetElement>(`[data-step="${step}"]`);
   const fields=current?.querySelectorAll<HTMLInputElement|HTMLSelectElement|HTMLTextAreaElement>('input,select,textarea');
   if(fields)for(const field of fields){if(!field.reportValidity())return;}
   setStep(s=>s+1);setError('');
  }
  async function submit(event:FormEvent<HTMLFormElement>){
-  event.preventDefault();if(busy)return;
+  event.preventDefault();if(!ready||busy)return;
   // Enter in an earlier step advances rather than silently submitting hidden fields.
   if(step<2){next();return;}
   const form=event.currentTarget;
@@ -59,14 +64,14 @@ export function DigitalRadarForm({token}:{token?:string}){
   }
  }}>
   <nav className="rbd-steps" aria-label="Avanzamento del questionario">{['Azienda e ruolo','Lavoro quotidiano','Radar e invio'].map((label,i)=><span key={label} aria-current={step===i?'step':undefined}>{i+1}. {label}</span>)}</nav>
-  <fieldset data-step="0" hidden={step!==0} disabled={busy}>
+  <fieldset data-step="0" hidden={step!==0} disabled={!ready||busy}>
    <legend>{token?'Il tuo punto di vista':'Partiamo dalla tua azienda'}</legend>
    <p className="rbd-help">{token?'Questo link raccoglie i contributi della stessa azienda. Puoi rispondere senza indicare il nome.':'La compilazione crea una scheda aziendale per il percorso Benessere Digitale. Puoi lasciare i contatti alla fine, se desideri essere ricontattato.'}</p>
    {!token&&<div className="rbd-grid"><label>Nome azienda<input name="company" autoComplete="organization" required minLength={2} maxLength={150}/></label><label>Provincia<input name="province" required minLength={2} maxLength={80} placeholder="Es. Lecce"/></label></div>}
    <label>Il tuo ruolo o reparto<input name="role" required maxLength={160} placeholder="Es. titolare, segreteria, amministrazione"/></label>
    <label>Come ti chiami? <span>(facoltativo)</span><input name="name" autoComplete="name" maxLength={160}/></label>
   </fieldset>
-  <fieldset data-step="1" hidden={step!==1} disabled={busy}>
+  <fieldset data-step="1" hidden={step!==1} disabled={!ready||busy}>
    <legend>Quale attività vorresti semplificare?</legend>
    <label>Descrivi un’attività concreta<textarea name="activity" required minLength={20} maxLength={1200} rows={4} placeholder="Es. ricevo le richieste via email e ricopio prodotti e quantità in Excel per preparare i preventivi."/></label>
    <label>Quali programmi utilizzi? <span>(facoltativo)</span><input name="tools" maxLength={200} placeholder="Es. Excel, Outlook, nome del gestionale"/></label>
@@ -74,7 +79,7 @@ export function DigitalRadarForm({token}:{token?:string}){
    <div className="rbd-grid"><label>Minuti per completarla una volta <span>(facoltativo)</span><input name="minutes" type="number" min={0} max={100000} step={1} inputMode="numeric"/></label><label>Quante volte nel periodo scelto? <span>(facoltativo)</span><input name="occurrences" type="number" min={0} max={100000} step={1} inputMode="numeric"/></label></div>
    <p className="rbd-help">Lascia vuoti i tempi che non conosci. Non inserire password, dati di clienti o documenti riservati.</p>
   </fieldset>
-  <fieldset data-step="2" hidden={step!==2} disabled={busy}>
+  <fieldset data-step="2" hidden={step!==2} disabled={!ready||busy}>
    <legend>Come lavorate oggi</legend><p className="rbd-help">Rispondi dal tuo punto di vista. «Non so» è una risposta utile.</p>
    {RADAR_DIMENSIONS.map(question=><label className="rbd-question" key={question.id}>{question.title}<select name={question.id} required defaultValue=""><option value="" disabled>Scegli la risposta più vicina alla tua esperienza</option>{question.choices.map((choice,i)=><option key={choice} value={i+1}>{choice}</option>)}<option value="unknown">Non so / non riguarda il mio lavoro</option></select></label>)}
    {!token&&<div className="rbd-contact"><label className="rbd-check"><input type="checkbox" checked={contact} onChange={e=>setContact(e.target.checked)}/><span>Vorrei essere ricontattato da Horyzon per approfondire.</span></label>{contact&&<>
@@ -85,7 +90,7 @@ export function DigitalRadarForm({token}:{token?:string}){
   </fieldset>
   <label className="rbd-trap" aria-hidden="true">Sito web<input name="website" tabIndex={-1} autoComplete="off"/></label>
   {error&&<p role="alert" className="rbd-error">{error}</p>}
-  <div className="rbd-actions">{step>0&&<button type="button" className="rbd-back" disabled={busy} onClick={()=>{setStep(s=>s-1);setError('');}}>Indietro</button>}{step<2?<button type="button" onClick={next}>Continua</button>:<button type="submit" disabled={busy}>{busy?'Salvataggio in corso…':status==='error'?'Riprova invio':'Salva le risposte'}</button>}</div>
-  <p className="rbd-small" role="status">Passaggio {step+1} di 3. La conferma finale compare solo dopo il salvataggio.</p>
+  <div className="rbd-actions">{step>0&&<button type="button" className="rbd-back" disabled={!ready||busy} onClick={()=>{setStep(s=>s-1);setError('');}}>Indietro</button>}{step<2?<button type="button" disabled={!ready||busy} onClick={next}>Continua</button>:<button type="submit" disabled={!ready||busy}>{busy?'Salvataggio in corso…':status==='error'?'Riprova invio':'Salva le risposte'}</button>}</div>
+  <p className="rbd-small" role="status">{ready?`Passaggio ${step+1} di 3. La conferma finale compare solo dopo il salvataggio.`:'Preparazione del questionario…'}</p>
  </form>;
 }

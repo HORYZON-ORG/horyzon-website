@@ -8,6 +8,13 @@ const base=process.env.DIGITAL_RADAR_TEST_URL??'http://127.0.0.1:3311';
 assert(['127.0.0.1','localhost'].includes(new URL(base).hostname),'browser fixture tests are local-only');
 const browser=await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CHANNEL?{channel:process.env.PLAYWRIGHT_CHANNEL}:{})});
 try{
+ const initialContext=await browser.newContext({javaScriptEnabled:false});
+ await initialContext.route('**/*',route=>new URL(route.request().url()).origin===new URL(base).origin?route.continue():route.abort());
+ const initialPage=await initialContext.newPage();
+ await initialPage.goto(base+'/benessere-digitale/radar');
+ assert.equal(await initialPage.getByRole('button',{name:'Continua',exact:true}).isDisabled(),true,'server-rendered controls wait for questionnaire initialization');
+ assert.equal(await initialPage.locator('input[name=company]').isDisabled(),true,'early typing cannot precede initialization');
+ await initialContext.close();
  for(const width of [390,1280]){
   const context=await browser.newContext({viewport:{width,height:900}});
   await context.route('**/*',route=>new URL(route.request().url()).origin===new URL(base).origin?route.continue():route.abort());
