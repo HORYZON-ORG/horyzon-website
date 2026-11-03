@@ -2,10 +2,14 @@
 
 import { useRef, useState, type FormEvent } from 'react';
 
+import { digitalScenes, useDigitalSelection } from './digital-storyboard';
+
 type Status = 'idle' | 'sending' | 'done' | 'error';
 const privacyUrl = 'https://www.iubenda.com/privacy-policy/64704330';
 
 export function DigitalLeadForm() {
+  const selection = useDigitalSelection();
+  const chosen = digitalScenes.filter(scene => selection?.selected.includes(scene.id));
   const [status, setStatus] = useState<Status>('idle');
   const [message, setMessage] = useState('');
   // Keep the same UUID on retries; a network timeout must not create a second lead.
@@ -23,7 +27,9 @@ export function DigitalLeadForm() {
     const email = String(values.get('email') ?? '').trim();
     const phone = String(values.get('phone') ?? '').trim();
     const province = String(values.get('province') ?? '').trim();
-    const activity = String(values.get('activity') ?? '').trim();
+    const notes = String(values.get('activity') ?? '').trim();
+    const priority = String(values.get('priority') ?? '');
+    const activity = chosen.length ? `Attività richieste: ${chosen.map(x => x.label).join(', ')}. Priorità: ${priority || chosen[0].label}. Note: ${notes || 'Da approfondire insieme.'}` : notes;
     const frequency = String(values.get('frequency') ?? '');
     const tools = String(values.get('tools') ?? '').trim();
     const website = String(values.get('website') ?? '');
@@ -49,6 +55,7 @@ export function DigitalLeadForm() {
         setMessage(body.message || 'Non riusciamo a confermare la ricezione. Riprova oppure scrivici a info@horyzon.it.');
         return;
       }
+      selection?.complete();
       setStatus('done');
       setMessage('Richiesta registrata. Ti ricontatteremo per conoscere meglio l’attività che vuoi semplificare.');
     } catch {
@@ -71,6 +78,8 @@ export function DigitalLeadForm() {
             <h3>Raccontaci il tuo lavoro.</h3>
             <p>Non serve conoscere l’AI. Parti da una cosa che oggi ti fa perdere tempo.</p>
           </div>
+          <fieldset className="bd-chosen"><legend>Le attività che vuoi semplificare</legend><p>Puoi aggiungere o togliere una scelta anche qui.</p><div>{digitalScenes.map(scene => <button type="button" key={scene.id} aria-pressed={selection?.selected.includes(scene.id) ?? false} onClick={() => selection?.toggle(scene.id)}>{selection?.selected.includes(scene.id) ? '✓ ' : '＋ '}{scene.label}</button>)}</div></fieldset>
+          {chosen.length > 0 && <label>Da quale vuoi partire? <span aria-hidden="true">*</span><select name="priority" key={chosen.map(x => x.id).join(',')} required defaultValue=""><option value="" disabled>Scegli la priorità</option>{chosen.map(scene => <option key={scene.id} value={scene.label}>{scene.label}</option>)}</select></label>}
           <div className="bd-form-grid">
             <label>Nome <span aria-hidden="true">*</span><input name="firstName" autoComplete="given-name" required minLength={2} maxLength={80} placeholder="Il tuo nome" /></label>
             <label>Cognome <span aria-hidden="true">*</span><input name="lastName" autoComplete="family-name" required minLength={2} maxLength={80} placeholder="Il tuo cognome" /></label>
@@ -79,14 +88,14 @@ export function DigitalLeadForm() {
             <label>Email di lavoro <span aria-hidden="true">*</span><input type="email" name="email" autoComplete="email" required maxLength={254} placeholder="nome@azienda.it" /></label>
             <label>Telefono (facoltativo)<input type="tel" name="phone" autoComplete="tel" inputMode="tel" maxLength={35} placeholder="+39 ..." /></label>
           </div>
-          <label>Quale attività vorresti semplificare? <span aria-hidden="true">*</span><textarea name="activity" minLength={20} maxLength={1200} required rows={4} placeholder="Per esempio: ogni giorno leggiamo decine di email e ricopiamo gli stessi dati nei preventivi..."/></label>
+          <label>{chosen.length ? 'C’è qualcos’altro che vorresti raccontarci? (facoltativo)' : 'Quale attività vorresti semplificare? *'}<textarea name="activity" minLength={chosen.length ? undefined : 20} maxLength={800} required={!chosen.length} rows={4} placeholder="Per esempio: ogni giorno leggiamo decine di email e ricopiamo gli stessi dati nei preventivi..."/></label>
           <div className="bd-form-grid">
             <label>Quanto spesso si ripete? <span aria-hidden="true">*</span><select name="frequency" required defaultValue=""><option value="" disabled>Seleziona</option><option value="daily">Ogni giorno</option><option value="weekly">Ogni settimana</option><option value="monthly">Ogni mese</option><option value="other">Dipende dall’attività</option></select></label>
             <label>Programmi utilizzati (facoltativo)<input name="tools" maxLength={200} placeholder="Es. Outlook, Excel, gestionale..." /></label>
           </div>
           <div className="bd-honeypot" aria-hidden="true"><label>Lascia vuoto<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
           <label className="bd-form-consent"><input type="checkbox" name="consent" required /><span>Ho letto l’<a href={privacyUrl} target="_blank" rel="noopener noreferrer">informativa privacy</a> e chiedo a Horyzon di ricontattarmi per questa richiesta. <strong>*</strong> Nessuna iscrizione automatica a newsletter.</span></label>
-          <button type="submit" className="bd-button bd-form-submit" disabled={status === 'sending'}>{status === 'sending' ? 'Invio in corso…' : 'Invia la richiesta'} <span aria-hidden="true">↗</span></button>
+          <button type="submit" className="bd-button bd-form-submit" disabled={status === 'sending'}>{status === 'sending' ? 'Invio in corso…' : 'Parliamo delle attività che hai scelto'} <span aria-hidden="true">↗</span></button>
           {message && <p className="bd-form-feedback" role="alert" aria-live="assertive">{message}</p>}
           <p className="bd-form-small">I campi con * sono obbligatori. Non inserire password, documenti riservati o dati dei tuoi clienti.</p>
         </form>
