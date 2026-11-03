@@ -75,8 +75,8 @@ export function DigitalLeadForm() {
       ) : (
         <form className="bd-lead-form" onSubmit={submit} aria-label="Richiesta Benessere Digitale">
           <div className="bd-form-heading">
-            <h3>Raccontaci il tuo lavoro.</h3>
-            <p>Non serve conoscere l’AI. Parti da una cosa che oggi ti fa perdere tempo.</p>
+            <h3>Diamo spazio al tuo tempo.</h3>
+            <p>Bastano il tuo contatto e un’attività da cui cominciare.</p>
           </div>
           <fieldset className="bd-chosen"><legend>Le attività che vuoi semplificare</legend><p>Puoi aggiungere o togliere una scelta anche qui.</p><div>{digitalScenes.map(scene => <button type="button" key={scene.id} aria-pressed={selection?.selected.includes(scene.id) ?? false} onClick={() => selection?.toggle(scene.id)}>{selection?.selected.includes(scene.id) ? '✓ ' : '＋ '}{scene.label}</button>)}</div></fieldset>
           {chosen.length > 0 && <label>Da quale vuoi partire? <span aria-hidden="true">*</span><select name="priority" key={chosen.map(x => x.id).join(',')} required defaultValue=""><option value="" disabled>Scegli la priorità</option>{chosen.map(scene => <option key={scene.id} value={scene.label}>{scene.label}</option>)}</select></label>}
@@ -95,7 +95,7 @@ export function DigitalLeadForm() {
           </div>
           <div className="bd-honeypot" aria-hidden="true"><label>Lascia vuoto<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
           <label className="bd-form-consent"><input type="checkbox" name="consent" required /><span>Ho letto l’<a href={privacyUrl} target="_blank" rel="noopener noreferrer">informativa privacy</a> e chiedo a Horyzon di ricontattarmi per questa richiesta. <strong>*</strong> Nessuna iscrizione automatica a newsletter.</span></label>
-          <button type="submit" className="bd-button bd-form-submit" disabled={status === 'sending'}>{status === 'sending' ? 'Invio in corso…' : 'Parliamo delle attività che hai scelto'} <span aria-hidden="true">↗</span></button>
+          <button type="submit" className="bd-button bd-form-submit" disabled={status === 'sending'}>{status === 'sending' ? 'Invio in corso…' : 'Parliamo del tuo prossimo passo'} <span aria-hidden="true">↗</span></button>
           {message && <p className="bd-form-feedback" role="alert" aria-live="assertive">{message}</p>}
           <p className="bd-form-small">I campi con * sono obbligatori. Non inserire password, documenti riservati o dati dei tuoi clienti.</p>
         </form>
