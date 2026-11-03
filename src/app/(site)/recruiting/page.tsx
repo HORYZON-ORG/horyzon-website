@@ -51,13 +51,12 @@ export default function RecruitingPage() {
 
    <Section tone="cream" label="Le persone" title="Un confronto con chi lavora su persone e impresa." headingId="recruiting-persone">
     <div className={styles.profile}><Image src="/people/angelo.webp" width={120} height={120} sizes="120px" alt="Angelo Ria Chetta" className={styles.portrait} />
-     <div><h3>Angelo Ria Chetta</h3><p>Autore, ricercatore e imprenditore. Specialista in benessere imprenditoriale e organizzativo.</p><p>Si occupa di recruiting, selezione, inserimento, organizzazione e valorizzazione delle persone.</p><TextLink href="/angelo">Conosci Angelo ↗︎</TextLink></div>
+     <div><h3>Angelo Ria Chetta</h3><p>Autore, ricercatore e imprenditore. Specialista in benessere imprenditoriale e organizzativo.</p><p>Si occupa di recruiting, selezione, inserimento, organizzazione e valorizzazione delle persone.</p><div className={styles.profileActions}><TextLink href="/angelo">Conosci meglio Angelo ↗︎</TextLink><TextLink href="/persone">Le competenze del gruppo Horyzon ↗︎</TextLink></div></div>
     </div>
-    <div className="rd-actions"><TextLink href="/persone">Le competenze del gruppo Horyzon ↗︎</TextLink></div>
    </Section>
 
-   <Section tone="sand" split label="Una cultura delle persone" title="Aziende attraenti per campioni e talenti." headingId="recruiting-libro">
-    <div className={styles.book}><Image src="/books/aziende-attraenti-2026.webp" width={846} height={1200} sizes="(max-width:600px) 110px, 160px" alt="Copertina del libro Aziende attraenti per campioni e talenti di Angelo Ria Chetta" />
+   <Section tone="sand" label="Una cultura delle persone" title="Aziende attraenti per campioni e talenti." headingId="recruiting-libro">
+    <div className={styles.book}><Image src="/books/aziende-attraenti-2026.webp" width={846} height={1200} sizes="(max-width:600px) 240px, (max-width:900px) 280px, 320px" alt="Copertina del libro Aziende attraenti per campioni e talenti di Angelo Ria Chetta" />
      <div className="rd-prose"><p>Per imprenditori, manager e responsabili delle persone: attrattività, organizzazione, selezione, inserimento e crescita dei collaboratori.</p><p>Ricevi gratuitamente la copia digitale in PDF su angeloria.it lasciando la tua email. Gli aggiornamenti promozionali sono facoltativi.</p><Cta href="https://angeloria.it/ricevi-il-pdf-aziende-attraenti-per-campioni-e-talenti/">Ricevi il libro gratuitamente in PDF</Cta><TextLink href="https://angeloria.it/anteprima-aziende-attraenti/">Leggi la presentazione del libro ↗︎</TextLink></div>
     </div>
    </Section>
