@@ -1,3 +1,5 @@
+import { publicFaqs } from '@/content/public-faq';
+import { FaqSection } from '@/components/faq-section';
 import Link from 'next/link';
 import { serviceRoutes, type ServiceEditorial, type ServiceRoute } from '@/content/editorial-routes';
 import { RADAR_URL } from '@/content/product-truth';
@@ -21,8 +23,9 @@ export function ServiceEditorialPage({ route, title, intro, content }: Props) {
   const presentation = servicePresentation[route];
   const parentLabel = pages[content.parent].kicker.replace(/^\d+\s*·\s*/, '');
   const siblings = serviceRoutes.filter(item => item.startsWith(`${content.parent}/`) && item !== route);
+  const faqs = publicFaqs[`/${route}`];
   return <>
-    <PageStructuredData path={`/${route}`} name={title} description={intro} breadcrumbs={[
+    <PageStructuredData path={`/${route}`} name={title} description={intro} faqs={faqs} breadcrumbs={[
       { name: 'Horyzon', path: '/' }, { name: 'I tre benesseri', path: '/le-tre-aree' },
       { name: parentLabel, path: `/${content.parent}` }, { name: title, path: `/${route}` },
     ]} />
@@ -64,6 +67,7 @@ export function ServiceEditorialPage({ route, title, intro, content }: Props) {
       <Section tone="ink" label={parentLabel} title="Continua a esplorare quest’area." headingId="service-related">
         <Tiles columns={2} items={siblings.map(sibling => ({ title: archive[sibling].title, text: archive[sibling].intro, href: `/${sibling}`, more: 'Scopri il percorso' }))} />
       </Section>
+      <FaqSection items={faqs} />
       <PageFinal title="Una priorità chiara. Un passo concreto." text="Raccontaci ciò che vorresti cambiare: il primo lavoro è capire insieme che cosa merita attenzione.">
         <Cta href="/contatti">Parliamone</Cta><TextLink href={`/${content.parent}`}>Torna all’area ↗︎</TextLink>
       </PageFinal>

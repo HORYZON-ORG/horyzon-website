@@ -1,3 +1,5 @@
+import { publicFaqs } from '@/content/public-faq';
+import { FaqSection } from '@/components/faq-section';
 import Link from 'next/link';
 import { pages } from '@/data/pages';
 import archive from '@/data/archive.json';
@@ -45,8 +47,9 @@ export function isWellbeingArea(value: string): value is Area {
 export function WellbeingPage({ area }: { area: Area }) {
   const direction = areas[area];
   const content = pages[area];
+  const faqs = publicFaqs[`/${area}`];
   return <>
-    <PageStructuredData path={`/${area}`} name={content.title} description={content.intro} breadcrumbs={[
+    <PageStructuredData path={`/${area}`} name={content.title} description={content.intro} faqs={faqs} breadcrumbs={[
       { name: 'Horyzon', path: '/' }, { name: 'I tre benesseri', path: '/le-tre-aree' }, { name: direction.label, path: `/${area}` },
     ]} />
     <SiteHeader />
@@ -103,6 +106,7 @@ export function WellbeingPage({ area }: { area: Area }) {
         {area === 'benessere-patrimoniale' && <p className={styles.note}>Un orientamento da approfondire con i professionisti competenti. I contenuti non costituiscono consulenza finanziaria, fiscale o legale personalizzata né promessa di rendimento.</p>}
       </Section>
 
+      <FaqSection items={faqs} />
       <PageFinal title="Diamo forma al prossimo passo." text="Partiamo da ciò che oggi assorbe tempo, limita la crescita o rende più difficili le decisioni.">
         <Cta href="/contatti">Parliamone</Cta><TextLink href="/metodo">Scopri come lavoriamo ↗︎</TextLink>
       </PageFinal>

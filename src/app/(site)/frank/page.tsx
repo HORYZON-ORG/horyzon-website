@@ -1,3 +1,5 @@
+import { publicFaqs } from '@/content/public-faq';
+import { FaqSection } from '@/components/faq-section';
 import { PageStructuredData } from '@/components/structured-data';
 import { pageMetadata } from '@/content/seo';
 import type { Metadata } from 'next';
@@ -24,7 +26,7 @@ export const metadata: Metadata = pageMetadata({path:'/frank',title:'Frank Canno
 export default function FrankPage() {
   return (
     <>
-      <PageStructuredData path="/frank" name="Frank Cannoletta" description={description} type="ProfilePage" breadcrumbs={[{name:'Horyzon',path:'/'},{name:'Persone',path:'/persone'},{name:'Frank Cannoletta',path:'/frank'}]} person={{...frankData.person,intro:description,alternateName:'Francesco Cannoletta',sameAs:[frankData.person.instagramUrl]}} />
+      <PageStructuredData path="/frank" name="Frank Cannoletta" description={description} faqs={publicFaqs['/frank']} type="ProfilePage" breadcrumbs={[{name:'Horyzon',path:'/'},{name:'Persone',path:'/persone'},{name:'Frank Cannoletta',path:'/frank'}]} person={{...frankData.person,intro:description,alternateName:'Francesco Cannoletta',sameAs:[frankData.person.instagramUrl]}} />
       <SiteHeader />
       <main id="content" className="inside editorial-page frank-page" data-page="frank">
         <FrankBreadcrumb />
@@ -38,6 +40,7 @@ export default function FrankPage() {
         <FrankExperience />
         <FrankContact />
         <FrankDisclaimer />
+        <FaqSection items={publicFaqs['/frank']} />
       </main>
       <SiteFooter />
     </>
