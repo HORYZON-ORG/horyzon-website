@@ -1,3 +1,4 @@
+import { OperatingUnits } from '@/components/operating-units';
 import Image from 'next/image';
 import Link from 'next/link';
 import { visionPages, visionRoutes, type VisionRoute } from '@/content/vision';
@@ -55,6 +56,7 @@ export function VisionPage({ route }: { route: VisionRoute }) {
         <Tiles columns={2} items={visionRoutes.filter(page => page !== 'horyzon' && page !== route).map(page => ({ title: labels[page], text: visionPages[page].intro, href: `/${page}`, more: 'Continua a esplorare' }))} />
         <div className={`rd-actions ${styles.morePeople}`}><TextLink href="/horyzon">← Torna a Horyzon</TextLink></div>
       </Section>}
+      {isHome ? <Section id="dove-siamo" tone="cream" label="Dove siamo" title="Le nostre unità operative." headingId="unita-operative" lead="Una presenza in Italia, Svizzera e Grecia."><OperatingUnits /></Section> : null}
       {faqs && <FaqSection items={faqs} />}
       <PageFinal title="Un orizzonte comune comincia da un confronto." text="Partiamo dalle persone, dalla realtà dell’impresa e da ciò che vorresti rendere possibile.">
         <Cta href="/contatti">Parliamone</Cta><TextLink href={isHome ? '/entra-in-horyzon' : '/metodo'}>{isHome ? 'Entra in Horyzon ↗︎' : 'Scopri come lavoriamo ↗︎'}</TextLink>

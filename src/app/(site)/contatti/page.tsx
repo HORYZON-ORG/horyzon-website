@@ -1,3 +1,4 @@
+import { OperatingUnits } from '@/components/operating-units';
 import { PageStructuredData } from '@/components/structured-data'; import { FaqSection } from '@/components/faq-section'; import { publicFaqs } from '@/content/public-faq';
 import { pageMetadata } from '@/content/seo';
 import type { Metadata } from 'next'; import { JourneyContactForm } from '@/components/journey/contact-form'; import { SiteFooter, SiteHeader } from '@/components/site-shell'; import { RADAR_URL } from '@/content/product-truth';
@@ -16,6 +17,7 @@ export default function ContactPage(){return <><PageStructuredData path="/contat
    { tag: '03', title: 'Raccontaci che cosa ti blocca', text: 'Non serve sapere già quale soluzione ti serve.', href: 'mailto:info@horyzon.it?subject=Vorrei%20parlare%20della%20mia%20impresa', more: 'Parliamone' },
   ]} />
  </Section>
+<Section id="dove-siamo" tone="cream" label="Dove siamo" title="Le nostre unità operative." headingId="unita-operative" lead="Una presenza in Italia, Svizzera e Grecia."><OperatingUnits /></Section>
  <Section tone="panel" className="contact-company" split title="FELICITÀ srl" headingId="contatti-societa"><p className="rd-statement" style={{ fontSize: 'clamp(24px,2.4vw,36px)' }}>Viale Papiniano 28 · 20123 Milano<br/>P. IVA 05120660757 · SDI SU9YNJA</p><div className="rd-actions"><a className="rd-cta" href="mailto:info@horyzon.it">info@horyzon.it <span aria-hidden="true">↗︎</span></a></div></Section>
  <FaqSection items={publicFaqs['/contatti']} />
 </main><SiteFooter/></>}
