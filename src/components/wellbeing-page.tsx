@@ -84,6 +84,10 @@ export function WellbeingPage({ area }: { area: Area }) {
         <Section tone="cream" split label="Per chi vuole entrare nella rete" title="Vuoi conoscere gli Architetti Patrimoniali?" headingId="patrimonio-rete" lead="Una strada distinta per chi vuole contribuire alla cultura patrimoniale e lavorare nella relazione con le persone."><div className="rd-prose"><PatrimonialBrandLogo /><p>Presentazione introduttiva Horyzon, colloquio e valutazione di un possibile ingresso. Formazione, affiancamento, responsabilità e condizioni si approfondiscono prima di scegliere.</p><p>Se hai esperienza nel network marketing o nella vendita, raccontaci il tuo percorso. Non sono promessi guadagni né un ingresso automatico.</p><Cta href="/entra-in-horyzon#percorso-consulenti">Conosci il percorso</Cta></div></Section>
       </>}
 
+      {area === 'benessere-organizzativo' && <Section id="recruiting" tone="panel" split label="Recruiting e selezione" title="Le persone giuste per il lavoro che serve." headingId="area-recruiting">
+        <div className="rd-prose"><p>Dalla definizione del ruolo alla valutazione e all’inserimento: scopri il percorso Horyzon dedicato al recruiting, con metodologia e strumenti Performia.</p><Cta href="/recruiting">Scopri Horyzon Recruiting</Cta></div>
+      </Section>}
+
       <Section tone="panel" split label="Che cosa osserviamo" title="Le cose che fanno la differenza." headingId="osserviamo-title"
         lead="La priorità non si indovina: si costruisce insieme, a partire da ciò che accade davvero.">
         <div className={`rd-reveal ${styles.focus}`}><Points items={content.points} /><p className={styles.outcome}>{direction.outcome}</p></div>
