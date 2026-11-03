@@ -1,0 +1,46 @@
+'use client';
+
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+
+export const digitalScenes = [
+  { id: 'email', label: 'Email e richieste', title: 'Ogni mattina ricominci dalle stesse email?', pain: 'Leggi, cerchi un allegato, ricopi i dati. Poi arriva un’altra richiesta e ricominci.', benefit: 'Richieste ordinate, informazioni raccolte e bozze di risposta pronte da controllare.' },
+  { id: 'fatture', label: 'Fatture e documenti', title: 'Gli stessi dati. Inseriti ancora una volta.', pain: 'Da un documento a un foglio, da un foglio al gestionale. E alla fine devi ricontrollare tutto.', benefit: 'Estrazione dei dati e preparazione dei controlli, collegando gli strumenti dove è possibile.' },
+  { id: 'preventivi', label: 'Preventivi', title: 'Il cliente aspetta. Tu cerchi ancora il file giusto.', pain: 'Un vecchio preventivo, un listino, le note della chiamata. Le informazioni ci sono, ma sono sparse.', benefit: 'Una bozza ordinata a partire da modelli e listini approvati. A te resta la verifica finale.' },
+  { id: 'contatti', label: 'Contatti e scadenze', title: 'Quante richieste restano senza un prossimo passo?', pain: 'Un appunto sul tavolo, un messaggio da rileggere, una telefonata da ricordare.', benefit: 'Contatti organizzati, attività assegnate e promemoria per sapere sempre chi deve fare cosa.' },
+  { id: 'report', label: 'Report e riepiloghi', title: 'La giornata finisce. Il report deve ancora cominciare.', pain: 'Apri file, raccogli numeri, ricostruisci quello che è successo. Anche oggi.', benefit: 'Dati raccolti e riepiloghi da verificare, con decisioni e prossime attività in evidenza.' },
+] as const;
+type Selection = { selected: string[]; toggle: (id: string) => void; submitted: boolean; complete: () => void };
+const SelectionContext = createContext<Selection | null>(null);
+export function DigitalJourney({ children }: { children: ReactNode }) {
+  const [selected, setSelected] = useState<string[]>([]);
+  const [submitted, setSubmitted] = useState(false);
+  return <SelectionContext.Provider value={{ selected, toggle: id => setSelected(old => old.includes(id) ? old.filter(x => x !== id) : [...old, id]), submitted, complete: () => setSubmitted(true) }}>{children}</SelectionContext.Provider>;
+}
+export function useDigitalSelection() { return useContext(SelectionContext); }
+function SceneVideo({ id, label }: { id: string; label: string }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  const [paused, setPaused] = useState(false);
+  useEffect(() => {
+    const video = ref.current;
+    if (!video) return;
+    const motion = matchMedia('(prefers-reduced-motion: reduce)');
+    let visible = false;
+    const update = () => { if (visible && !paused && !motion.matches && !document.hidden) { if (!video.src) video.src = `/digital-story/${id}.mp4`; void video.play().catch(() => {}); } else video.pause(); };
+    const observer = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; update(); }, { threshold: 0.15 });
+    observer.observe(video); motion.addEventListener('change', update); document.addEventListener('visibilitychange', update);
+    return () => { observer.disconnect(); motion.removeEventListener('change', update); document.removeEventListener('visibilitychange', update); video.pause(); };
+  }, [id, paused]);
+  return <><video ref={ref} className="bd-scene-video" muted loop playsInline preload="none" poster={`/digital-story/${id}.jpg`} aria-hidden="true"/><button type="button" className="bd-video-control" onClick={() => setPaused(!paused)} aria-label={`${paused ? 'Riprendi' : 'Metti in pausa'} il video: ${label}`}>{paused ? 'Riprendi video' : 'Pausa video'}</button></>;
+}
+export function DigitalStoryboard() {
+  const selection = useDigitalSelection();
+  if (!selection) return null;
+  return <div id="attivita" className="bd-story">
+    <div className="bd-wrap bd-story-intro"><p className="bd-kicker">LA TUA GIORNATA, VISTA DA VICINO</p><h2>Ti riconosci?<br/><em>Partiamo da qui.</em></h2><p>Scorri e scegli le attività che vorresti semplificare. Ritroverai le tue scelte nella richiesta finale.</p><a className="bd-textlink" href="#parliamone">Hai già un’esigenza? Vai alla richiesta ↓</a></div>
+    {digitalScenes.map((scene, index) => <section className="bd-scene" key={scene.id} aria-labelledby={`scene-${scene.id}`}>
+      <SceneVideo id={scene.id} label={scene.label}/><div className="bd-scene-shade"/>
+      <div className="bd-wrap bd-scene-content"><p className="bd-kicker">0{index + 1} / {scene.label.toUpperCase()}</p><h2 id={`scene-${scene.id}`}>{scene.title}</h2><p className="bd-scene-pain">{scene.pain}</p><div className="bd-scene-benefit"><span>PIÙ SPAZIO AL TUO LAVORO</span><p>{scene.benefit}</p></div><button type="button" className="bd-button bd-scene-select" aria-pressed={selection.selected.includes(scene.id)} onClick={() => selection.toggle(scene.id)}>{selection.selected.includes(scene.id) ? '✓ Aggiunta alla richiesta' : '＋ Vorrei semplificare questa attività'}</button></div>
+    </section>)}
+    {selection.selected.length > 0 && !selection.submitted && <aside className="bd-selection-bar" aria-label="La tua richiesta"><span role="status" aria-live="polite">{selection.selected.length} {selection.selected.length === 1 ? 'attività selezionata' : 'attività selezionate'}</span><a href="#parliamone">Rivedi la richiesta ↗</a></aside>}
+  </div>;
+}
