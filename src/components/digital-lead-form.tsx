@@ -73,7 +73,7 @@ export function DigitalLeadForm() {
           <p>{message}</p>
         </div>
       ) : (
-        <form className="bd-lead-form" onSubmit={submit} aria-label="Richiesta Benessere Digitale">
+        <form className="bd-lead-form" onSubmit={submit} aria-label="Richiesta Architetti Digitali Horyzon">
           <div className="bd-form-heading">
             <h3>Diamo spazio al tuo tempo.</h3>
             <p>Bastano il tuo contatto e un’attività da cui cominciare.</p>
@@ -95,7 +95,7 @@ export function DigitalLeadForm() {
           </div>
           <div className="bd-honeypot" aria-hidden="true"><label>Lascia vuoto<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
           <label className="bd-form-consent"><input type="checkbox" name="consent" required /><span>Ho letto l’<a href={privacyUrl} target="_blank" rel="noopener noreferrer">informativa privacy</a> e chiedo a Horyzon di ricontattarmi per questa richiesta. <strong>*</strong> Nessuna iscrizione automatica a newsletter.</span></label>
-          <button type="submit" className="bd-button bd-form-submit" disabled={status === 'sending'}>{status === 'sending' ? 'Invio in corso…' : 'Parliamo del tuo prossimo passo'} <span aria-hidden="true">↗</span></button>
+          <button type="submit" className="bd-button bd-form-submit" disabled={status === 'sending'}>{status === 'sending' ? 'Invio in corso…' : 'Richiedi un confronto sul tuo lavoro'} <span aria-hidden="true">↗</span></button>
           {message && <p className="bd-form-feedback" role="alert" aria-live="assertive">{message}</p>}
           <p className="bd-form-small">I campi con * sono obbligatori. Non inserire password, documenti riservati o dati dei tuoi clienti.</p>
         </form>
