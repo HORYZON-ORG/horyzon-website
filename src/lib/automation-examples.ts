@@ -1,0 +1,9 @@
+export const automationExamples = {
+  email: { label: 'Email e richieste', input: 'Buongiorno, vorrei un preventivo per 20 kit modello A. Consegna a Bari entro il 15 giugno. Grazie, Elena.', output: [{ label: 'Tipo richiesta', value: 'Preventivo' }, { label: 'Prodotto e quantità', value: '20 kit modello A' }, { label: 'Destinazione', value: 'Bari' }, { label: 'Data richiesta', value: '15 giugno · disponibilità da verificare' }], action: 'Bozza di risposta e attività per il commerciale. Prezzo e disponibilità restano da confermare.' },
+  fatture: { label: 'Fatture e documenti', input: 'Fattura di esempio · Fornitore Alfa · N. 42 · Totale € 244 · Scadenza 30 giugno.', output: [{ label: 'Documento', value: 'Fattura n. 42' }, { label: 'Fornitore', value: 'Alfa' }, { label: 'Totale', value: '€ 244' }, { label: 'Scadenza', value: '30 giugno' }], action: 'Dati preparati per il controllo e l’inserimento. Verifica fiscale e autorizzazione del pagamento restano alla persona.' },
+  riunioni: { label: 'Riunioni e attività', input: 'Appunti di esempio: Sara prepara la bozza del preventivo entro venerdì. Paolo verifica le quantità con il magazzino entro giovedì.', output: [{ label: 'Attività 1', value: 'Preparare bozza preventivo' }, { label: 'Responsabile e scadenza', value: 'Sara · venerdì' }, { label: 'Attività 2', value: 'Verificare quantità con magazzino' }, { label: 'Responsabile e scadenza', value: 'Paolo · giovedì' }], action: 'Riepilogo e attività pronti da verificare. Assegnazioni e promemoria vengono confermati prima dell’utilizzo.' },
+} as const;
+export function monthlyManualHours(minutes: number, occurrences: number, people: number, days: number): number {
+  if (![minutes, occurrences, people, days].every(n => Number.isFinite(n) && n >= 0)) return 0;
+  return minutes * occurrences * people * days / 60;
+}
