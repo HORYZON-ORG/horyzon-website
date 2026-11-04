@@ -17,8 +17,8 @@ export function PatrimonialPilotShell({ children }: { children: React.ReactNode 
     <footer className={styles.footer}>
       <div><strong>Horyzon Benessere Patrimoniale</strong><p>FELICITÀ srl · Viale Papiniano 28, 20123 Milano<br />P. IVA 05120660757 · SDI SU9YNJA</p></div>
       <nav aria-label="Informazioni legali e contatti">
-        <a href="https://www.iubenda.com/privacy-policy/64704330" className="iubenda-nostyle no-brand iubenda-embed" data-iub-z-index="10002">Privacy</a>
-        <a href="https://www.iubenda.com/privacy-policy/64704330/cookie-policy" className="iubenda-nostyle no-brand iubenda-embed" data-iub-z-index="10002">Cookie</a>
+        <a href="https://www.iubenda.com/privacy-policy/64704330" className="iubenda-nostyle no-brand iubenda-embed" data-iub-z-index="10002" target="_blank" rel="noopener noreferrer">Privacy</a>
+        <a href="https://www.iubenda.com/privacy-policy/64704330/cookie-policy" className="iubenda-nostyle no-brand iubenda-embed" data-iub-z-index="10002" target="_blank" rel="noopener noreferrer">Cookie</a>
         <button type="button" className="iubenda-cs-preferences-link">Preferenze cookie</button>
         <a href="mailto:info@horyzon.it">info@horyzon.it</a>
       </nav>

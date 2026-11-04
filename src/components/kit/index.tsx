@@ -66,14 +66,14 @@ export function Tiles({ items, columns = 3 }: { items: readonly Tile[]; columns?
  })}</ul>;
 }
 
-export type Row = { title?: ReactNode; text: ReactNode; href?: string; className?: string; tag?: string; lit?: boolean };
+export type Row = { id?: string; title?: ReactNode; text: ReactNode; href?: string; className?: string; tag?: string; lit?: boolean };
 export function Rows({ items, start = 1, ordered = true, className = '' }: { items: readonly Row[]; start?: number; ordered?: boolean; className?: string }) {
  const List = ordered ? 'ol' : 'ul';
  const tagged = items.some(item => item.tag);
  return <List className={`rd-rows ${tagged ? 'rd-rows-tagged' : ''} ${className}`} start={ordered && start !== 1 ? start : undefined}>{items.map((item, index) => {
   const n = item.tag ? <span className={`rd-row-tag ${item.lit ? 'is-lit' : ''}`}>{item.tag}</span> : <span className="rd-row-n" aria-hidden="true">{String(start + index).padStart(2, '0')}</span>;
   const body = item.title ? <div><h3>{item.title}</h3><p>{item.text}</p></div> : <p className="rd-row-text">{item.text}</p>;
-  return <li key={index}>{item.href ? (() => { const inner = <>{n}{body}<span className="rd-row-go" aria-hidden="true">↗︎</span></>; const cls = `rd-row rd-reveal ${item.className ?? ''}`; return internal(item.href) ? <Link className={cls} style={order(index)} href={item.href}>{inner}</Link> : <a className={cls} style={order(index)} href={item.href} {...outbound(item.href)}>{inner}</a>; })() : <div className={`rd-row rd-reveal ${item.className ?? ''}`} style={order(index)}>{n}{body}{!tagged && <span />}</div>}</li>;
+  return <li key={index} id={item.id}>{item.href ? (() => { const inner = <>{n}{body}<span className="rd-row-go" aria-hidden="true">↗︎</span></>; const cls = `rd-row rd-reveal ${item.className ?? ''}`; return internal(item.href) ? <Link className={cls} style={order(index)} href={item.href}>{inner}</Link> : <a className={cls} style={order(index)} href={item.href} {...outbound(item.href)}>{inner}</a>; })() : <div className={`rd-row rd-reveal ${item.className ?? ''}`} style={order(index)}>{n}{body}{!tagged && <span />}</div>}</li>;
  })}</List>;
 }
 

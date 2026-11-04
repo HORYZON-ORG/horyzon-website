@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { SiteHeader, SiteFooter } from '@/components/site-shell';
 import { PageStructuredData } from '@/components/structured-data';
 import { FaqSection } from '@/components/faq-section';
-import { Cta, TextLink, PageHero, HeroIndex, Section, Tiles, Rows, PageFinal } from '@/components/kit';
+import { Cta, TextLink, PageHero, Section, Tiles, Rows, PageFinal } from '@/components/kit';
 import { recruitingTitle, recruitingDescription, recruitingContact, recruitingFaqs } from '@/content/recruiting';
 import { pageMetadata } from '@/content/seo';
 import styles from './recruiting.module.css';
@@ -18,7 +18,11 @@ export default function RecruitingPage() {
    <PageHero crumbs={[{ name: 'Horyzon', href: '/' }, { name: 'Benessere organizzativo', href: '/benessere-organizzativo' }, { name: 'Recruiting' }]}
     label="Horyzon Consulting · Recruiting" title={<>Le persone giuste. <em>Un’impresa più forte.</em></>}
     lead="Affianchiamo imprenditori e aziende nella selezione e nell’inserimento delle persone. Partiamo dal contributo che serve all’impresa e costruiamo un percorso per valutarlo."
-    aside={<HeroIndex caption="Dalla ricerca al lavoro insieme" words={['Chiarire il ruolo', 'Valutare le persone', 'Curare l’inserimento']} note="Esperienza Horyzon, metodologia e strumenti Performia." />}>
+    aside={<figure className={`rd-index ${styles.heroIndex}`}><figcaption>Dalla ricerca al lavoro insieme</figcaption><ol>
+     <li><a href="#definire-ruolo"><b aria-hidden="true">01</b><span>Chiarire il ruolo</span></a></li>
+     <li><a href="#valutare-persone"><b aria-hidden="true">02</b><span>Valutare le persone</span></a></li>
+     <li><a href="#curare-inserimento"><b aria-hidden="true">03</b><span>Curare l’inserimento</span></a></li>
+    </ol><p>Esperienza Horyzon, metodologia e strumenti Performia.</p></figure>}>
     <Cta href={recruitingContact}>Parliamo della persona che stai cercando</Cta>
     <TextLink href="#metodo-recruiting">Scopri come lavoriamo ↓</TextLink>
    </PageHero>
@@ -38,15 +42,15 @@ export default function RecruitingPage() {
    <Section id="metodo-recruiting" tone="cream" label="Come lavoriamo" title="Dal ruolo da coprire alla persona che contribuisce." headingId="recruiting-metodo"
     lead="Il percorso viene definito sulla tua esigenza. Attività, responsabilità e condizioni si chiariscono prima di iniziare.">
     <Rows items={[
-     { title: 'Definire il ruolo', text: 'Mettere a fuoco risultati attesi, responsabilità, requisiti e condizioni concrete della proposta.' },
+     { id: 'definire-ruolo', title: 'Definire il ruolo', text: 'Mettere a fuoco risultati attesi, responsabilità, requisiti e condizioni concrete della proposta.' },
      { title: 'Attrarre candidature pertinenti', text: 'Lavorare sul messaggio dell’annuncio e sulla sua coerenza con il ruolo e con le persone che vuoi raggiungere.' },
-     { title: 'Valutare con metodo', text: 'Approfondire risultati prodotti, motivazione, conoscenze e caratteristiche rilevanti per il lavoro, integrando colloqui e strumenti concordati.' },
-     { title: 'Preparare l’inserimento', text: 'Chiarire aspettative, affiancamento e momenti di verifica perché la scelta possa tradursi in un contributo riconoscibile.' },
+     { id: 'valutare-persone', title: 'Valutare con metodo', text: 'Approfondire risultati prodotti, motivazione, conoscenze e caratteristiche rilevanti per il lavoro, integrando colloqui e strumenti concordati.' },
+     { id: 'curare-inserimento', title: 'Preparare l’inserimento', text: 'Chiarire aspettative, affiancamento e momenti di verifica perché la scelta possa tradursi in un contributo riconoscibile.' },
     ]} />
    </Section>
 
    <Section tone="ink" split label="Il ruolo di Performia" title="Approfondire ciò che il curriculum non racconta." headingId="recruiting-performia">
-    <div className="rd-prose"><p>Nel lavoro di selezione utilizziamo la metodologia e gli strumenti Performia International. Il suo approccio considera quattro dimensioni: risultati prodotti, personalità, motivazione e conoscenze.</p><p>La scelta degli strumenti dipende dal ruolo e dal percorso concordato. Le informazioni raccolte sostengono il confronto e la valutazione; la decisione di assunzione resta dell’azienda.</p><TextLink href="https://performia.com/en-it/about-us">Conosci la metodologia Performia ↗︎</TextLink></div>
+    <div className="rd-prose"><p>Nel lavoro di selezione utilizziamo la metodologia e gli strumenti Performia International. Il suo approccio considera quattro dimensioni: risultati prodotti, personalità, motivazione e conoscenze.</p><p>La scelta degli strumenti dipende dal ruolo e dal percorso concordato. Le informazioni raccolte sostengono il confronto e la valutazione; la decisione di assunzione resta dell’azienda.</p></div>
    </Section>
 
    <Section tone="cream" label="Le persone" title="Un confronto con chi lavora su persone e impresa." headingId="recruiting-persone">
@@ -57,7 +61,7 @@ export default function RecruitingPage() {
 
    <Section tone="sand" label="Una cultura delle persone" title="Aziende attraenti per campioni e talenti." headingId="recruiting-libro">
     <div className={styles.book}><Image src="/books/aziende-attraenti-2026.webp" width={846} height={1200} sizes="(max-width:600px) 240px, (max-width:900px) 280px, 320px" alt="Copertina del libro Aziende attraenti per campioni e talenti di Angelo Ria Chetta" />
-     <div className="rd-prose"><p>Per imprenditori, manager e responsabili delle persone: attrattività, organizzazione, selezione, inserimento e crescita dei collaboratori.</p><p>Ricevi gratuitamente la copia digitale in PDF su angeloria.it lasciando la tua email. Gli aggiornamenti promozionali sono facoltativi.</p><Cta href="https://angeloria.it/ricevi-il-pdf-aziende-attraenti-per-campioni-e-talenti/">Ricevi il libro gratuitamente in PDF</Cta><TextLink href="https://angeloria.it/anteprima-aziende-attraenti/">Leggi la presentazione del libro ↗︎</TextLink></div>
+     <div className="rd-prose"><p>Per imprenditori, manager e responsabili delle persone: attrattività, organizzazione, selezione, inserimento e crescita dei collaboratori.</p><p>Ricevi gratuitamente la copia digitale in PDF su angeloria.it lasciando la tua email. Gli aggiornamenti promozionali sono facoltativi.</p><Cta href="https://angeloria.it/ricevi-il-pdf-aziende-attraenti-per-campioni-e-talenti/">Ricevi il libro gratuitamente in PDF</Cta></div>
     </div>
    </Section>
 

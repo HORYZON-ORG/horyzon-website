@@ -474,7 +474,7 @@ export function ArchitectLanding({ durableCandidateIntake = false }: { durableCa
   <footer className={[styles.s189].filter(Boolean).join(" ")}>
     <div className={[styles.s190].filter(Boolean).join(" ")}>
       <div><strong className={[styles.s191].filter(Boolean).join(" ")}>Horyzon Benessere Patrimoniale</strong><p className={styles.pilotNotice}>PILOT · Dati e testimonianze da confermare. Alcune immagini sono provvisorie e generate con AI; le foto non ritraggono il team reale.</p><br />FELICITÀ srl · Viale Papiniano 28, 20123 Milano · P. IVA 05120660757</div>
-      <div className={[styles.s192].filter(Boolean).join(" ")}><a href="https://www.iubenda.com/privacy-policy/64704330">Privacy</a><a href="https://www.iubenda.com/privacy-policy/64704330/cookie-policy">Cookie</a><a href="mailto:info@horyzon.it">info@horyzon.it</a></div>
+      <div className={[styles.s192].filter(Boolean).join(" ")}><a href="https://www.iubenda.com/privacy-policy/64704330" target="_blank" rel="noopener noreferrer">Privacy</a><a href="https://www.iubenda.com/privacy-policy/64704330/cookie-policy" target="_blank" rel="noopener noreferrer">Cookie</a><a href="mailto:info@horyzon.it">info@horyzon.it</a></div>
     </div>
   </footer>
 
