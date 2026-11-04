@@ -73,12 +73,12 @@ export function DigitalLeadForm() {
           <p>{message}</p>
         </div>
       ) : (
-        <form className="bd-lead-form" onSubmit={submit} aria-label="Richiesta Benessere Digitale">
+        <form className="bd-lead-form" onSubmit={submit} aria-label="Richiesta Horyzon Automazioni">
           <div className="bd-form-heading">
-            <h3>Diamo spazio al tuo tempo.</h3>
-            <p>Bastano il tuo contatto e un’attività da cui cominciare.</p>
+            <h3>Partiamo dalla tua automazione.</h3>
+            <p>Indica il processo, gli strumenti che usi e la priorità. Ti ricontatteremo per definire il passo successivo.</p>
           </div>
-          <fieldset className="bd-chosen"><legend>Le attività che vuoi semplificare</legend><p>Puoi aggiungere o togliere una scelta anche qui.</p><div>{digitalScenes.map(scene => <button type="button" key={scene.id} aria-pressed={selection?.selected.includes(scene.id) ?? false} onClick={() => selection?.toggle(scene.id)}>{selection?.selected.includes(scene.id) ? '✓ ' : '＋ '}{scene.label}</button>)}</div></fieldset>
+          <fieldset className="bd-chosen"><legend>Le automazioni che vuoi valutare</legend><p>Puoi aggiungere o togliere una scelta anche qui.</p><div>{digitalScenes.map(scene => <button type="button" key={scene.id} aria-pressed={selection?.selected.includes(scene.id) ?? false} onClick={() => selection?.toggle(scene.id)}>{selection?.selected.includes(scene.id) ? '✓ ' : '＋ '}{scene.label}</button>)}</div></fieldset>
           {chosen.length > 0 && <label>Da quale vuoi partire? <span aria-hidden="true">*</span><select name="priority" key={chosen.map(x => x.id).join(',')} required defaultValue=""><option value="" disabled>Scegli la priorità</option>{chosen.map(scene => <option key={scene.id} value={scene.label}>{scene.label}</option>)}</select></label>}
           <div className="bd-form-grid">
             <label>Nome <span aria-hidden="true">*</span><input name="firstName" autoComplete="given-name" required minLength={2} maxLength={80} placeholder="Il tuo nome" /></label>
@@ -88,14 +88,14 @@ export function DigitalLeadForm() {
             <label>Email di lavoro <span aria-hidden="true">*</span><input type="email" name="email" autoComplete="email" required maxLength={254} placeholder="nome@azienda.it" /></label>
             <label>Telefono (facoltativo)<input type="tel" name="phone" autoComplete="tel" inputMode="tel" maxLength={35} placeholder="+39 ..." /></label>
           </div>
-          <label>{chosen.length ? 'C’è qualcos’altro che vorresti raccontarci? (facoltativo)' : 'Quale attività vorresti semplificare? *'}<textarea name="activity" minLength={chosen.length ? undefined : 20} maxLength={800} required={!chosen.length} rows={4} placeholder="Per esempio: ogni giorno leggiamo decine di email e ricopiamo gli stessi dati nei preventivi..."/></label>
+          <label>{chosen.length ? 'C’è qualcos’altro che vorresti raccontarci? (facoltativo)' : 'Quale attività vorresti semplificare? *'}<textarea name="activity" minLength={chosen.length ? undefined : 20} maxLength={700} required={!chosen.length} rows={4} placeholder="Per esempio: ogni giorno leggiamo decine di email e ricopiamo gli stessi dati nei preventivi..."/></label>
           <div className="bd-form-grid">
             <label>Quanto spesso si ripete? <span aria-hidden="true">*</span><select name="frequency" required defaultValue=""><option value="" disabled>Seleziona</option><option value="daily">Ogni giorno</option><option value="weekly">Ogni settimana</option><option value="monthly">Ogni mese</option><option value="other">Dipende dall’attività</option></select></label>
             <label>Programmi utilizzati (facoltativo)<input name="tools" maxLength={200} placeholder="Es. Outlook, Excel, gestionale..." /></label>
           </div>
           <div className="bd-honeypot" aria-hidden="true"><label>Lascia vuoto<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
           <label className="bd-form-consent"><input type="checkbox" name="consent" required /><span>Ho letto l’<a href={privacyUrl} target="_blank" rel="noopener noreferrer">informativa privacy</a> e chiedo a Horyzon di ricontattarmi per questa richiesta. <strong>*</strong> Nessuna iscrizione automatica a newsletter.</span></label>
-          <button type="submit" className="bd-button bd-form-submit" disabled={status === 'sending'}>{status === 'sending' ? 'Invio in corso…' : 'Parliamo del tuo prossimo passo'} <span aria-hidden="true">↗</span></button>
+          <button type="submit" className="bd-button bd-form-submit" disabled={status === 'sending'}>{status === 'sending' ? 'Invio in corso…' : 'Voglio valutare le mie automazioni'} <span aria-hidden="true">↗</span></button>
           {message && <p className="bd-form-feedback" role="alert" aria-live="assertive">{message}</p>}
           <p className="bd-form-small">I campi con * sono obbligatori. Non inserire password, documenti riservati o dati dei tuoi clienti.</p>
         </form>
