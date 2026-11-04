@@ -26,7 +26,7 @@ const faq = [
 export default function AutomationsPage() {
   return <>
     <PageStructuredData path="/automazioni" name="Horyzon Automazioni" description="Automazioni progettate sui processi delle aziende" breadcrumbs={[{name:'Horyzon',path:'/'},{name:'Benessere Digitale',path:'/benessere-digitale'},{name:'Horyzon Automazioni',path:'/automazioni'}]} />
-    <header className="ad-header"><div><Link href="/benessere-digitale" aria-label="Horyzon, Benessere Digitale"><Image src="/horyzon-logo-canonical.png" alt="Horyzon Consulting" width={1670} height={390} sizes="165px"/></Link><span>HORYZON AUTOMAZIONI</span><a href="#parliamone">Valuta il tuo processo <span aria-hidden="true">↗</span></a></div></header>
+    <header className="ad-header"><div><Link href="/benessere-digitale" aria-label="Horyzon, Benessere Digitale"><span className="wordmark-logo-wrap"><Image className="wordmark-logo" src="/horyzon-logo-canonical.png" alt="Horyzon Consulting" width={1670} height={390} sizes="165px"/></span></Link><span>HORYZON AUTOMAZIONI</span><a href="#parliamone">Valuta il tuo processo <span aria-hidden="true">↗</span></a></div></header>
     <DigitalJourney><main id="content" className="bd ad-funnel au-funnel">
       <section className="bd-hero bd-hero-story au-hero" aria-labelledby="automation-title">
         <Image src="/digital-story/automazioni-hero.webp" alt="Due professionisti lavorano insieme su un processo aziendale al computer." fill priority sizes="100vw" className="bd-hero-photo"/>
