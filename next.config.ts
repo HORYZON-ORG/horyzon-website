@@ -9,7 +9,8 @@ const csp = [
  "style-src 'self' 'unsafe-inline' *.iubenda.com", "img-src 'self' data: blob: *.iubenda.com",
  "font-src 'self' *.iubenda.com", "media-src 'self' blob: https://pmkyeqrfkunypfkbjnyg.supabase.co",
  `connect-src 'self' *.iubenda.com https://pmkyeqrfkunypfkbjnyg.supabase.co${isDev ? ' ws: wss:' : ''}`,
- "frame-src *.iubenda.com",
+ // HighLevel booking widget shown after a Benessere Digitale contact request.
+ "frame-src *.iubenda.com https://api.leadconnectorhq.com",
  "object-src 'none'", "base-uri 'self'", "form-action 'self' mailto:",
  "frame-ancestors 'none'", ...(!isDev ? ['upgrade-insecure-requests'] : []),
 ].join('; ');

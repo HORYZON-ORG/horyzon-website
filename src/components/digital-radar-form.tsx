@@ -3,13 +3,16 @@
 import {useRef,useState,useSyncExternalStore,type FormEvent} from 'react';
 import {RADAR_DIMENSIONS} from '@/lib/digital-radar/questions';
 
+const employeeOptions=[['1-9','Da 1 a 9'],['10-49','Da 10 a 49'],['50-249','Da 50 a 249'],['250+','250 o più']];
+
 type Receipt={coverage:number;mean:number|null;dimensions:Record<string,number>};
 const frequencyOptions=[['daily','Ogni giorno'],['weekly','Ogni settimana'],['monthly','Ogni mese'],['other','Variabile / non so']];
 const subscribeToInitialization=()=>()=>{};
 const initializedOnClient=()=>true;
 const initializingOnServer=()=>false;
 
-export function DigitalRadarForm({token}:{token?:string}){
+// bookingUrl is the HighLevel calendar shown after a contact request; without it the receipt stays as before.
+export function DigitalRadarForm({token,bookingUrl}:{token?:string;bookingUrl?:string|null}){
  const ready=useSyncExternalStore(subscribeToInitialization,initializedOnClient,initializingOnServer);
  const [step,setStep]=useState(0),[status,setStatus]=useState<'idle'|'sending'|'error'|'done'>('idle');
  const [error,setError]=useState(''),[contact,setContact]=useState(false),[receipt,setReceipt]=useState<Receipt|null>(null);
@@ -32,7 +35,7 @@ export function DigitalRadarForm({token}:{token?:string}){
   const text=(key:string)=>String(values.get(key)??'').trim();
   const optionalNumber=(key:string)=>text(key)===''?null:Number(text(key));
   const answers=Object.fromEntries(RADAR_DIMENSIONS.map(q=>[q.id,text(q.id)==='unknown'?null:Number(text(q.id))]));
-  const body={...(token?{token}:{company:text('company'),province:text('province')}),name:text('name'),role:text('role'),
+  const body={...(token?{token}:{company:text('company'),province:text('province'),companySite:text('companySite'),sector:text('sector'),employees:text('employees')}),name:text('name'),role:text('role'),
    activity:text('activity'),tools:text('tools'),frequency:text('frequency'),minutes:optionalNumber('minutes'),occurrences:optionalNumber('occurrences'),answers,
    contact:!token&&contact?{firstName:text('firstName'),lastName:text('lastName'),email:text('email'),phone:text('phone')}:null,
    consent:values.get('consent')==='on',website:text('website')};
@@ -57,6 +60,11 @@ export function DigitalRadarForm({token}:{token?:string}){
   </>}
   <p>{token?'Il tuo contributo si aggiunge al dossier aziendale. Le risposte degli altri partecipanti restano riservate.':contact?'La richiesta di ricontatto è registrata insieme alle risposte.':'La scheda aziendale è stata registrata. Nessun ricontatto è stato richiesto.'}</p>
   <p className="rbd-small">Il punteggio descrive le risposte dichiarate: fattibilità e risparmi richiedono una verifica sul lavoro reale.</p>
+  {!token&&contact&&bookingUrl&&<div className="rbd-booking">
+   <h3>Scegli subito quando sentirci</h3>
+   <p>Una call conoscitiva di 30 minuti, online, per guardare insieme le risposte e l’attività che vorresti semplificare. Se preferisci, puoi anche non prenotare: ti ricontattiamo noi.</p>
+   <iframe src={bookingUrl} title="Calendario per prenotare la call conoscitiva con Horyzon" loading="lazy"/>
+  </div>}
  </section>;
  return <form ref={formRef} className="rbd-form" onSubmit={submit} noValidate onKeyDown={event=>{
   if(event.key==='Enter'&&step<2&&event.target instanceof HTMLInputElement&&event.target.type!=='checkbox'){
@@ -67,7 +75,9 @@ export function DigitalRadarForm({token}:{token?:string}){
   <fieldset data-step="0" hidden={step!==0} disabled={!ready||busy}>
    <legend>{token?'Il tuo punto di vista':'Partiamo dalla tua azienda'}</legend>
    <p className="rbd-help">{token?'Questo link raccoglie i contributi della stessa azienda. Puoi rispondere senza indicare il nome.':'La compilazione crea una scheda aziendale per il percorso Benessere Digitale. Puoi lasciare i contatti alla fine, se desideri essere ricontattato.'}</p>
-   {!token&&<div className="rbd-grid"><label>Nome azienda<input name="company" autoComplete="organization" required minLength={2} maxLength={150}/></label><label>Provincia<input name="province" required minLength={2} maxLength={80} placeholder="Es. Lecce"/></label></div>}
+   {!token&&<><div className="rbd-grid"><label>Nome azienda<input name="company" autoComplete="organization" required minLength={2} maxLength={150}/></label><label>Provincia<input name="province" required minLength={2} maxLength={80} placeholder="Es. Lecce"/></label></div>
+    <div className="rbd-grid"><label>Sito web dell’azienda <span>(facoltativo)</span><input name="companySite" inputMode="url" autoComplete="url" maxLength={200} placeholder="Es. azienda.it"/></label><label>Settore <span>(facoltativo)</span><input name="sector" minLength={2} maxLength={120} placeholder="Es. edilizia, studio commerciale"/></label></div>
+    <label>Quante persone lavorano in azienda? <span>(facoltativo)</span><select name="employees" defaultValue=""><option value="">Preferisco non indicarlo</option>{employeeOptions.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label></>}
    <label>Il tuo ruolo o reparto<input name="role" required maxLength={160} placeholder="Es. titolare, segreteria, amministrazione"/></label>
    <label>Come ti chiami? <span>(facoltativo)</span><input name="name" autoComplete="name" maxLength={160}/></label>
   </fieldset>
