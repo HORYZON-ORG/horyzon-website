@@ -22,7 +22,7 @@
 .page .person { display:grid; grid-template-columns:96px minmax(0,1fr); gap:22px; flex:1; align-content:start; align-items:center; }
 .page .person h3 { font-size:clamp(23px,2vw,30px); }
 .page .person .role { font-size:13px; line-height:1.55; color:var(--muted); }
-.portrait { width:96px; height:112px; object-fit:cover; object-position:center 18%; border-radius:10px; }
+.portrait { width:96px; height:112px; object-fit:cover; object-position:center 18%; border-radius:10px; filter:grayscale(1); }
 .initials { display:grid; place-items:center; width:96px; height:112px; border:1px solid var(--vision-line); border-radius:10px; background:var(--ink-3); color:var(--lime); font:800 36px var(--font-sans),sans-serif; letter-spacing:-.04em; }
 .page .person .personIntro { grid-column:1/-1; margin:0; font-size:16px; line-height:1.6; }
 .person :global(.rd-tile-more) { grid-column:1/-1; padding-top:0; }

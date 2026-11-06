@@ -6,7 +6,7 @@ import { publicFaqs } from './public-faq';
 export const radarAnswers = publicFaqs['/radar-impresa'];
 
 export const publicGuideLinks = [
- ['Horyzon', '/horyzon', 'Identità e visione'],
+ ['Chi siamo', '/chi-siamo', 'Identità e visione'],
  ['Metodo', '/metodo', 'Dagli obiettivi alla verifica'],
  ['Radar d’Impresa', '/radar-impresa', 'Che cosa misura e quali sono i limiti'],
  ['Sistema impresa', '/le-tre-aree', 'Cinque reparti e tre discipline'],

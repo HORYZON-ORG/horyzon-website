@@ -10,7 +10,7 @@ export const publicFaqs: Record<string, readonly PublicFaq[]> = {
   { question: 'Come ridurre la dipendenza dell’azienda dal titolare?', answer: 'Il percorso rende progressivamente condivisi ruoli, responsabilità, procedure e indicatori. Non esistono tempi o risultati garantiti: ogni attivazione richiede evidenze e verifiche.' },
   { question: 'L’intelligenza artificiale sostituisce le decisioni aziendali?', answer: 'No. L’AI sostiene il lavoro delle persone negli ambienti approvati; responsabilità, verifica e decisione restano umane.' },
  ],
- '/horyzon': [
+ '/chi-siamo': [
   { question: 'La mia azienda cresce, ma l’organizzazione fatica a seguirla: da dove parto?', answer: 'Si parte da ciò che si ripete: ritardi, errori, decisioni ferme e responsabilità incerte. Horyzon aiuta a mettere in relazione questi segnali e scegliere una priorità su cui lavorare.' },
   { question: 'Che cosa fa Horyzon Consulting?', answer: 'Horyzon collega organizzazione, abilitazione digitale e continuità finanziaria per aiutare l’impresa a trasformare una priorità reale in lavoro verificabile.' },
   { question: 'Da dove comincia un percorso con Horyzon?', answer: 'Può iniziare dal Radar d’Impresa, da un debrief di un risultato già ottenuto oppure da un confronto sul collo di bottiglia che oggi limita il lavoro.' },
