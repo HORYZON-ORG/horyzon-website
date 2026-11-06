@@ -37,4 +37,7 @@
 .rbd-results{margin:30px 0}
 .rbd-results>div{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid #e1e7df;padding:12px 0;font-size:14px}
 .rbd-results dd{margin:0;white-space:nowrap;font-weight:700}
+.rbd-booking{border-top:1px solid #d9e1d7;margin-top:30px;padding-top:25px}
+.rbd-booking h3{font-size:22px;letter-spacing:-.02em;margin:0 0 8px}
+.rbd-booking iframe{display:block;width:100%;height:760px;border:0;border-radius:12px;background:#f6f8f5;margin-top:18px}
 @media(max-width:580px){.rbd{padding-top:35px}.rbd-grid{grid-template-columns:1fr}.rbd-steps{gap:12px;font-size:12px}.rbd-form{padding:22px 18px}.rbd-actions button{flex:1;padding-inline:12px}}

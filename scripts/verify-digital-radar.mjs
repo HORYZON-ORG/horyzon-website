@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { parseDigitalRadar, radarScores } from '../src/lib/digital-radar/contract.ts';
 import { handleDigitalRadar } from '../src/lib/digital-radar/handler.ts';
+import { digitalBookingUrl } from '../src/lib/digital-radar/booking.ts';
 
 const id = '123e4567-e89b-42d3-a456-426614174000';
 const input = { requestId:id, company:'Impresa Prova', province:'Lecce', role:'Amministrazione', name:'',
@@ -77,4 +78,28 @@ response=await handleDigitalRadar(request({...input,contact:{firstName:'Ada',las
 });
 assert.equal(response.status,202,'a durable receipt survives CRM scheduling failure');
 assert.equal(scheduled,1);
-console.log('PASS digital Radar: validation, anonymous/team modes, unknown scores, bounded HTTP, durable receipt, CRM isolation.');
+// Optional company profile: public Radar only, one canonical https:// form for the website.
+assert.equal(valid.payload.company_site,null);
+assert.equal(valid.payload.sector,null);
+assert.equal(valid.payload.employees,null);
+const profile=parseDigitalRadar({...input,companySite:' WWW.Azienda.it/chi-siamo/ ',sector:'  Edilizia   e impianti ',employees:'10-49'},id);
+assert(profile);
+assert.equal(profile.payload.company_site,'https://www.azienda.it/chi-siamo');
+assert.equal(profile.payload.sector,'Edilizia e impianti');
+assert.equal(profile.payload.employees,'10-49');
+assert.equal(parseDigitalRadar({...input,companySite:'http://azienda.it'},id)?.payload.company_site,'https://azienda.it');
+assert.equal(parseDigitalRadar({...input,companySite:'',sector:'',employees:''},id)?.hash,valid.hash,'empty optional fields equal omitted ones');
+for(const companySite of ['azienda','javascript:alert(1)','https://user:pw@azienda.it','azienda .it','https://azienda.it:8080','x'.repeat(201)])
+  assert.equal(parseDigitalRadar({...input,companySite},id),null,companySite);
+assert.equal(parseDigitalRadar({...input,sector:'x'},id),null);
+assert.equal(parseDigitalRadar({...input,sector:'x'.repeat(121)},id),null);
+assert.equal(parseDigitalRadar({...input,employees:'5'},id),null);
+assert.equal(parseDigitalRadar({...input,company:undefined,province:undefined,token:'a'.repeat(48),sector:'Edilizia'},id),null,'team links cannot rewrite the company profile');
+
+// Booking widget: only a plain calendar id is accepted, on the fixed HighLevel origin.
+assert.equal(digitalBookingUrl({}),null);
+assert.equal(digitalBookingUrl({DIGITAL_BOOKING_CALENDAR_ID:'aBc123DeF456gHi'}),'https://api.leadconnectorhq.com/widget/booking/aBc123DeF456gHi');
+for(const id of ['https://evil.example/x','abc','abc/../../x','a'.repeat(41)])
+  assert.equal(digitalBookingUrl({DIGITAL_BOOKING_CALENDAR_ID:id}),null,id);
+
+console.log('PASS digital Radar: validation, anonymous/team modes, unknown scores, bounded HTTP, durable receipt, CRM isolation, company profile, booking widget.');
