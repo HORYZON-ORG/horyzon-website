@@ -36,6 +36,10 @@ const nextConfig: NextConfig = {
    { key: 'X-Content-Type-Options', value: 'nosniff' },
    { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
    { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
+  ] }, { source: '/recruiting', headers: [
+   { key: 'Content-Security-Policy', value: csp
+    .replace("img-src 'self'", "img-src 'self' https://performia.com/media/mvtayfzl-1rjc49gn.webp")
+    .replace("media-src 'self'", "media-src 'self' https://performia.com/media/mvtaycut-4wtdne.mp4") },
   ] }, { source: '/internal/radar-patrimoniale/advisor-preview', headers: [
    { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
    { key: 'Cache-Control', value: 'no-store, private' },

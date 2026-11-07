@@ -1,0 +1,37 @@
+// Offices listed at https://performia.com/en-it/contact-us. Coordinates match the map projection.
+export const performiaOffices = [
+ {"code": "AU", "name": "Australia", "city": "Sydney", "x": 920.0, "y": 330.3},
+ {"code": "CZ", "name": "Cechia", "city": "Praga", "x": 540.0, "y": 96.9},
+ {"code": "CN", "name": "Cina", "city": "Shanghai", "x": 837.5, "y": 149.4},
+ {"code": "CO", "name": "Colombia", "city": "Bogotá", "x": 294.2, "y": 223.1},
+ {"code": "CR", "name": "Costa Rica", "city": "San José", "x": 266.4, "y": 208.6},
+ {"code": "EC", "name": "Ecuador", "city": "Quito", "x": 281.9, "y": 236.7},
+ {"code": "EE", "name": "Estonia", "city": "Tallinn", "x": 568.9, "y": 71.1},
+ {"code": "FI", "name": "Finlandia", "city": "Helsinki", "x": 569.2, "y": 68.9},
+ {"code": "FR", "name": "Francia", "city": "Paris", "x": 506.5, "y": 100.3},
+ {"code": "DE", "name": "Germania", "city": "Berlino", "x": 537.2, "y": 90.2},
+ {"code": "JP", "name": "Giappone", "city": "Tokyo", "x": 888.1, "y": 136.9},
+ {"code": "GR", "name": "Grecia", "city": "Atene", "x": 565.8, "y": 130.6},
+ {"code": "GT", "name": "Guatemala", "city": "Città del Guatemala", "x": 248.6, "y": 195.6},
+ {"code": "IT", "name": "Italia", "city": "Milano", "x": 525.5, "y": 109.8},
+ {"code": "KZ", "name": "Kazakistan", "city": "Almaty", "x": 713.6, "y": 116.1},
+ {"code": "MU", "name": "Mauritius", "city": "Port Louis", "x": 659.7, "y": 292.2},
+ {"code": "MX", "name": "Messico", "city": "Città del Messico", "x": 224.7, "y": 182.2},
+ {"code": "NO", "name": "Norvegia", "city": "Oslo", "x": 529.9, "y": 69.7},
+ {"code": "NL", "name": "Paesi Bassi", "city": "Amsterdam", "x": 513.6, "y": 90.6},
+ {"code": "GB", "name": "Regno Unito", "city": "Londra", "x": 499.7, "y": 93.1},
+ {"code": "RO", "name": "Romania", "city": "Bucarest", "x": 572.5, "y": 112.8},
+ {"code": "RW", "name": "Ruanda", "city": "Kigali", "x": 583.5, "y": 241.5},
+ {"code": "SK", "name": "Slovacchia", "city": "Bratislava", "x": 547.5, "y": 102.5},
+ {"code": "ES", "name": "Spagna", "city": "Madrid", "x": 489.7, "y": 123.9},
+ {"code": "SE", "name": "Svezia", "city": "Södertälje", "x": 548.9, "y": 71.7},
+ {"code": "CH", "name": "Svizzera", "city": "Zurigo", "x": 523.6, "y": 104.4},
+ {"code": "TW", "name": "Taiwan", "city": "Taipei", "x": 837.8, "y": 166.7},
+ {"code": "TR", "name": "Turchia", "city": "Istanbul", "x": 580.5, "y": 122.2},
+ {"code": "UA", "name": "Ucraina", "city": "Kyiv", "x": 584.7, "y": 95.8},
+ {"code": "HU", "name": "Ungheria", "city": "Budapest", "x": 552.8, "y": 104.2},
+ {"code": "VE", "name": "Venezuela", "city": "Caracas", "x": 314.2, "y": 206.9},
+];
+
+// Italy outline from Natural Earth, 1:110m (public domain).
+export const italyOutline = "M529,105.9 530.7,106.2 531,105.7 533.8,105.2 534.4,106.2 538.4,106.9 538.1,108.3 538.7,109.5 536.5,109.1 534.2,110.1 534.4,111.4 534.1,112.2 535,113.6 537.6,115 539,117.3 542.1,119.6 544.2,119.6 544.9,120.2 544.1,120.7 546.6,121.7 548.7,122.6 551,124 551.3,124.5 550.8,125.5 549.3,124.2 546.9,123.8 545.7,125.6 547.7,126.6 547.4,128 546.2,128.2 544.7,130.6 543.6,130.8 543.6,130 544.1,128.5 544.7,127.9 543.7,126.3 542.8,124.9 541.7,124.5 540.8,123.3 539.1,122.8 537.9,121.7 535.8,121.5 533.6,120.3 531.1,118.5 529.2,116.9 528.3,114.1 527,113.8 524.7,112.9 523.4,113.2 521.8,114.5 520.7,114.7 521,113.5 519.5,113.2 518.7,111 519.7,110.2 518.9,109.1 519,108.4 520.2,109 521.5,108.8 523.1,107.9 523.6,108.3 524.9,108.2 525.5,107.1 527.6,107.5 528.8,107ZM541,130.2 543.1,129.9 542.1,132.1 542.5,133 541.9,134.4 539.8,133.3 538.4,133 534.5,131.6 534.9,130.2 538.2,130.5ZM524.2,122.5 525.6,121.6 527.2,123.6 526.9,127.3 525.6,127.1 524.5,128 523.4,127.3 523.3,123.9 522.7,122.4Z";

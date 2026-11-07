@@ -6,6 +6,7 @@ import { FaqSection } from '@/components/faq-section';
 import { Cta, TextLink, PageHero, Section, Tiles, Rows, PageFinal } from '@/components/kit';
 import { recruitingTitle, recruitingDescription, recruitingContact, recruitingFaqs } from '@/content/recruiting';
 import { pageMetadata } from '@/content/seo';
+import { PerformiaMap } from './performia-map';
 import styles from './recruiting.module.css';
 
 export const metadata: Metadata = pageMetadata({ path: '/recruiting', title: recruitingTitle, description: recruitingDescription });
@@ -49,8 +50,28 @@ export default function RecruitingPage() {
     ]} />
    </Section>
 
-   <Section tone="ink" split label="Il ruolo di Performia" title="Approfondire ciò che il curriculum non racconta." headingId="recruiting-performia">
+   <Section tone="ink" label="Il ruolo di Performia" title="Approfondire ciò che il curriculum non racconta." headingId="recruiting-performia">
     <div className="rd-prose"><p>Nel lavoro di selezione utilizziamo la metodologia e gli strumenti Performia International. Il suo approccio considera quattro dimensioni: risultati prodotti, personalità, motivazione e conoscenze.</p><p>La scelta degli strumenti dipende dal ruolo e dal percorso concordato. Le informazioni raccolte sostengono il confronto e la valutazione; la decisione di assunzione resta dell’azienda.</p></div>
+    <div className={styles.performiaMedia}>
+     <article className={styles.performiaCard}>
+      <h3>Il carrello di Performia</h3>
+      <p>Chi sta davvero facendo avanzare il tuo team? Il carrello mostra come il contributo di ciascuno cambia il lavoro di tutti.</p>
+      <video className={styles.cartVideo} controls playsInline preload="none"
+       aria-label="Il carrello di Performia, video originale in inglese"
+       poster="https://performia.com/media/mvtayfzl-1rjc49gn.webp"
+       src="https://performia.com/media/mvtaycut-4wtdne.mp4" />
+      <p className={styles.mediaNote}>Video originale Performia · versione inglese</p>
+     </article>
+     <article className={styles.performiaCard}>
+      <h3>Performia nel mondo</h3>
+      <p>Esplora le sedi della rete internazionale. Scegli un Paese sulla mappa o dal menu.</p>
+      <PerformiaMap />
+      <ul className={styles.performiaStats} aria-label="Performia International in numeri">
+       <li>Dal 2001</li><li>Oltre 26 Paesi</li><li>Oltre 25 lingue</li>
+      </ul>
+     </article>
+    </div>
+    <Cta href={recruitingContact}>Parliamo della persona che stai cercando</Cta>
    </Section>
 
    <Section tone="cream" label="Le persone" title="Un confronto con chi lavora su persone e impresa." headingId="recruiting-persone">
