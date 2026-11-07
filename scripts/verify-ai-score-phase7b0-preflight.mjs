@@ -7,7 +7,7 @@ import {
   runOpenAIProviderPreflight,
 } from '../src/lib/ai-score/internal-preflight.ts';
 import { MemoryProviderRuntimeStore } from '../src/lib/ai-score/runtime-store.ts';
-import { POST, isAuthorizedInternalPreflightRequest } from '../src/app/api/internal/ai-score/provider-preflight/route.ts';
+import { POST } from '../src/app/api/internal/ai-score/provider-preflight/route.ts';
 
 const root = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 const route = readFileSync(join(root, 'src/app/api/internal/ai-score/provider-preflight/route.ts'), 'utf8');
@@ -41,8 +41,6 @@ await withEnv({
     method: 'POST',
     headers: { authorization: `Bearer ${secretValues.AI_SCORE_INTERNAL_PREFLIGHT_TOKEN}` },
   });
-  assert.equal(isAuthorizedInternalPreflightRequest(request), true, 'Valid internal token must authorize');
-  assert.equal(isAuthorizedInternalPreflightRequest(new Request(request.url, { method: 'POST' })), false, 'Missing token must reject');
 
   const unauthorized = await POST(new Request(request.url, { method: 'POST' }));
   assert.equal(unauthorized.status, 401, 'Anonymous preflight route access must be rejected');

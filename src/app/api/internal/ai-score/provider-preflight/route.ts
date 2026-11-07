@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   });
 }
 
-export function isAuthorizedInternalPreflightRequest(request: Request): boolean {
+function isAuthorizedInternalPreflightRequest(request: Request): boolean {
   const expected = process.env.AI_SCORE_INTERNAL_PREFLIGHT_TOKEN;
   const provided = readBearerToken(request.headers.get('authorization'));
   if (!expected?.trim() || !provided) return false;
