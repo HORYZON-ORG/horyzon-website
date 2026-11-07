@@ -54,13 +54,13 @@ export default function RecruitingPage() {
     <div className="rd-prose"><p>Nel lavoro di selezione utilizziamo la metodologia e gli strumenti Performia International. Il suo approccio considera quattro dimensioni: risultati prodotti, personalità, motivazione e conoscenze.</p><p>La scelta degli strumenti dipende dal ruolo e dal percorso concordato. Le informazioni raccolte sostengono il confronto e la valutazione; la decisione di assunzione resta dell’azienda.</p></div>
     <div className={styles.performiaMedia}>
      <article className={styles.performiaCard}>
-      <h3>Il carrello di Performia</h3>
-      <p>Chi sta davvero facendo avanzare il tuo team? Il carrello mostra come il contributo di ciascuno cambia il lavoro di tutti.</p>
+      <h3>Il carro di Performia</h3>
+      <p>Chi sta davvero facendo avanzare il tuo team? Il carro mostra come il contributo di ciascuno cambia il lavoro di tutti.</p>
       <video className={styles.cartVideo} controls playsInline preload="none"
-       aria-label="Il carrello di Performia, video originale in inglese"
+       aria-label="Il carro di Performia, video originale in inglese"
        poster="https://performia.com/media/mvtayfzl-1rjc49gn.webp"
        src="https://performia.com/media/mvtaycut-4wtdne.mp4" />
-      <p className={styles.mediaNote}>Video originale Performia · versione inglese</p>
+      <p className={styles.mediaNote}>The Cart · Video originale in inglese</p>
      </article>
      <article className={styles.performiaCard}>
       <h3>Performia nel mondo</h3>
