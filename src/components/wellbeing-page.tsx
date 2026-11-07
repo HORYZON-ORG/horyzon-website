@@ -47,6 +47,9 @@ export function isWellbeingArea(value: string): value is Area {
 export function WellbeingPage({ area }: { area: Area }) {
   const direction = areas[area];
   const content = pages[area];
+  const contactHref = area === 'benessere-organizzativo'
+    ? 'mailto:angelo.ria.chetta@horyzon.it?subject=' + encodeURIComponent('Informazioni sul benessere organizzativo')
+    : '/contatti';
   const faqs = publicFaqs[`/${area}`];
   return <>
     <PageStructuredData path={`/${area}`} name={content.title} description={content.intro} faqs={faqs} breadcrumbs={[
@@ -58,7 +61,7 @@ export function WellbeingPage({ area }: { area: Area }) {
         label={direction.label} title={content.title} lead={content.intro}
         aside={<WellbeingScene key={direction.kind} kind={direction.kind} words={direction.words} />}>
         <Cta href={area === 'benessere-patrimoniale' ? '#evento' : '#comprendere'} arrow="↓">{area === 'benessere-patrimoniale' ? 'Scopri l’evento' : 'Scopri il percorso'}</Cta>
-        <TextLink href={area === 'benessere-patrimoniale' ? '/entra-in-horyzon#percorso-consulenti' : '/contatti'}>{area === 'benessere-patrimoniale' ? 'Scopri gli Architetti Patrimoniali ↗︎' : 'Parliamone ↗︎'}</TextLink>
+        <TextLink href={area === 'benessere-patrimoniale' ? '/entra-in-horyzon#percorso-consulenti' : contactHref}>{area === 'benessere-patrimoniale' ? 'Scopri gli Architetti Patrimoniali ↗︎' : 'Parliamone ↗︎'}</TextLink>
       </PageHero>
 
       <nav className={styles.navigation} aria-label="I tre benesseri">
@@ -106,13 +109,13 @@ export function WellbeingPage({ area }: { area: Area }) {
 
       <Section id="primo-passo" tone="lime" label="Cominciamo da qui" title={<>Prima di cambiare, <span className="rd-lime-chip">facciamo chiarezza.</span></>}
         lead={direction.firstStep} headingId="primo-passo-title">
-        <div className="rd-actions"><Cta href={area === 'benessere-patrimoniale' ? patrimonialContact('evento-patrimoniale') : RADAR_URL}>{area === 'benessere-patrimoniale' ? 'Chiedi informazioni' : 'Inizia il Radar'}</Cta><TextLink href="/contatti">Preferisci parlarne con noi? ↗︎</TextLink></div>
+        <div className="rd-actions"><Cta href={area === 'benessere-patrimoniale' ? patrimonialContact('evento-patrimoniale') : RADAR_URL}>{area === 'benessere-patrimoniale' ? 'Chiedi informazioni' : 'Inizia il Radar'}</Cta><TextLink href={contactHref}>Preferisci parlarne con noi? ↗︎</TextLink></div>
         {area === 'benessere-patrimoniale' && <p className={styles.note}>Un orientamento da approfondire con i professionisti competenti. I contenuti non costituiscono consulenza finanziaria, fiscale o legale personalizzata né promessa di rendimento.</p>}
       </Section>
 
       <FaqSection items={faqs} />
       <PageFinal title="Diamo forma al prossimo passo." text="Partiamo da ciò che oggi assorbe tempo, limita la crescita o rende più difficili le decisioni.">
-        <Cta href="/contatti">Parliamone</Cta><TextLink href="/metodo">Scopri come lavoriamo ↗︎</TextLink>
+        <Cta href={contactHref}>Parliamone</Cta><TextLink href="/metodo">Scopri come lavoriamo ↗︎</TextLink>
       </PageFinal>
     </main>
     <SiteFooter />

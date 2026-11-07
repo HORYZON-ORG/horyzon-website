@@ -23,6 +23,9 @@ export function ServiceEditorialPage({ route, title, intro, content }: Props) {
   const presentation = servicePresentation[route];
   const parentLabel = pages[content.parent].kicker.replace(/^\d+\s*·\s*/, '');
   const siblings = serviceRoutes.filter(item => item.startsWith(`${content.parent}/`) && item !== route);
+  const contactHref = content.parent === 'benessere-organizzativo'
+    ? 'mailto:angelo.ria.chetta@horyzon.it?subject=' + encodeURIComponent(title)
+    : '/contatti';
   const faqs = publicFaqs[`/${route}`];
   return <>
     <PageStructuredData path={`/${route}`} name={title} description={intro} faqs={faqs} breadcrumbs={[
@@ -37,7 +40,7 @@ export function ServiceEditorialPage({ route, title, intro, content }: Props) {
       ]} label={parentLabel} title={title} lead={intro}
         aside={<WellbeingScene key={route} kind={sceneKinds[content.parent]} words={presentation.words} caption={presentation.caption} />}>
         <Cta href="#quando-serve" arrow="↓">Scopri il percorso</Cta>
-        <TextLink href="/contatti">Parliamone ↗︎</TextLink>
+        <TextLink href={contactHref}>Parliamone ↗︎</TextLink>
       </PageHero>
 
       <nav className={`${styles.navigation} ${styles.serviceNavigation}`} aria-label="In questo approfondimento">
@@ -60,7 +63,7 @@ export function ServiceEditorialPage({ route, title, intro, content }: Props) {
 
       <Section id="primo-passo" tone="lime" label="Il prossimo passo" title={<>Mettiamo a fuoco <span className="rd-lime-chip">da dove partire.</span></>}
         headingId="service-start" lead="Il Radar d’Impresa offre una prima lettura dell’organizzazione. Per approfondire questo percorso possiamo partire anche da una conversazione.">
-        <div className="rd-actions"><Cta href="/contatti">Parliamo del tuo percorso</Cta><TextLink href={RADAR_URL}>Inizia il Radar ↗︎</TextLink></div>
+        <div className="rd-actions"><Cta href={contactHref}>Parliamo del tuo percorso</Cta><TextLink href={RADAR_URL}>Inizia il Radar ↗︎</TextLink></div>
         {content.parent === 'benessere-patrimoniale' && <p className={styles.note}>Un orientamento da approfondire con i professionisti competenti. I contenuti non costituiscono consulenza finanziaria, fiscale o legale personalizzata né promessa di rendimento.</p>}
       </Section>
 
@@ -69,7 +72,7 @@ export function ServiceEditorialPage({ route, title, intro, content }: Props) {
       </Section>
       <FaqSection items={faqs} />
       <PageFinal title="Una priorità chiara. Un passo concreto." text="Raccontaci ciò che vorresti cambiare: il primo lavoro è capire insieme che cosa merita attenzione.">
-        <Cta href="/contatti">Parliamone</Cta><TextLink href={`/${content.parent}`}>Torna all’area ↗︎</TextLink>
+        <Cta href={contactHref}>Parliamone</Cta><TextLink href={`/${content.parent}`}>Torna all’area ↗︎</TextLink>
       </PageFinal>
     </main>
     <SiteFooter />
