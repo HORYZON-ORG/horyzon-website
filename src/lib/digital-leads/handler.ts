@@ -1,3 +1,4 @@
+import {drainTempoEmails} from '../tempo-funnel/handler.ts';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { after } from 'next/server';
 import { parseDigitalSubmission } from './contract.ts';
@@ -82,11 +83,13 @@ export async function handleDigitalCrmCron(request: Request, options: Options = 
   const expected = env.CRON_SECRET, provided = request.headers.get('authorization')?.replace(/^Bearer /,'');
   if (!expected || !provided || Buffer.byteLength(expected) !== Buffer.byteLength(provided) ||
     !timingSafeEqual(Buffer.from(expected),Buffer.from(provided))) return Response.json({ok:false},{status:401});
-  if (env.DIGITAL_CRM_SYNC_ENABLED !== 'true') return Response.json({ok:true,disabled:true},{headers:{'Cache-Control':'no-store'}});
+  if (env.DIGITAL_CRM_SYNC_ENABLED !== 'true') { const email=await drainTempoEmails(env,options.fetcher).catch(()=>({sent:0,retry:1})); return Response.json({ok:true,disabled:true,email},{headers:{'Cache-Control':'no-store'}}); }
   try {
+    const email = await drainTempoEmails(env,options.fetcher);
     const stats = await runDigitalCrmDrain({limit:8,env,fetcher:options.fetcher});
-    return Response.json({ok:true,...stats},{headers:{'Cache-Control':'no-store'}});
+    return Response.json({ok:true,...stats,email},{headers:{'Cache-Control':'no-store'}});
   } catch {
     return Response.json({ok:false,reason:'sync_pending'},{status:503,headers:{'Cache-Control':'no-store'}});
   }
 }
+

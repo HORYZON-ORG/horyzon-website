@@ -66,7 +66,7 @@ async function pushOne(row: DigitalCrmRow, token: string, locationId: string, en
   const urlId = encodeURIComponent(contactId);
   if (step === 'tags') {
     await highLevelPost(token, '/contacts/' + urlId + '/tags', {
-      tags: ['horyzon-benessere-digitale', 'horyzon-digitale-richiesta'],
+      tags: ['horyzon-benessere-digitale', 'horyzon-digitale-richiesta', ...(row.activity.startsWith('[KIT GRATUITO')?['horyzon-kit-gratuito']:[])],
     }, fetcher);
     if (!(await progressDigitalCrm(row,'note',contactId,env,fetcher))) throw new Error('CRM_STALE_CLAIM');
     step = 'note';
@@ -82,7 +82,7 @@ async function pushOne(row: DigitalCrmRow, token: string, locationId: string, en
       'Attività: ' + row.activity,
       'Frequenza: ' + (FREQUENCY[row.frequency] ?? row.frequency),
       'Strumenti: ' + (row.tools || 'Non specificati'),
-      'Informativa: ' + row.privacy_version + ' · ricontatto richiesto; nessun consenso marketing.',
+      'Informativa: ' + row.privacy_version + (row.activity.startsWith('[KIT GRATUITO')?' · kit e confronto richiesti; nessun ricontatto commerciale automatico.':' · ricontatto richiesto; nessun consenso marketing.'),
       'Dossier operativo: Hub Horyzon / Benessere Digitale',
     ].join('\n');
     try { await highLevelPost(token,'/contacts/' + urlId + '/notes',{body},fetcher); }
@@ -133,3 +133,4 @@ export async function runDigitalCrmDrain(
   }
   return stats;
 }
+
