@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "node scripts/dev.mjs",
-    "build": "next build --webpack && node scripts/build-readable.mjs",
+    "build": "next build --webpack && node scripts/build-readable.mjs && npm run test:tempo-funnel",
+    "test:tempo-funnel": "node --no-warnings --experimental-strip-types scripts/verify-tempo-funnel.mjs && node --no-warnings --experimental-strip-types scripts/verify-tempo-kit-delivery.mjs",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
