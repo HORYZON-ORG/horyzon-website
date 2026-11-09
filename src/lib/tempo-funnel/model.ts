@@ -37,7 +37,7 @@ export function scenarioText(s:Scenario){
  const kitPct=kitHours>0?n(c.kit.hours/kitHours*100):'—';
  const partialKit=c.kit.priced<c.kit.taskIds.length;
  const partialNote=partialKit?' NOTA: una o più attività del kit non hanno un costo orario: le stime monetarie sono parziali.':'';
- const weekValue=(v:{weeklyValue:number|null})=>money(v.weeklyValue);
+ const monthValue=(v:{annualValue:number|null})=>money(v.annualValue===null?null:v.annualValue/12);
  const yearValue=(v:{annualValue:number|null})=>money(v.annualValue);
  const periodName:Record<string,string>={day:'al giorno',week:'a settimana',month:'al mese'};
  const annualHours=(v:{hours:number})=>n(v.hours*weeks);
@@ -49,29 +49,30 @@ export function scenarioText(s:Scenario){
   '1 · SOLUZIONE GRATUITA · COSTO ZERO',
   'Intervento fai-da-te sulla singola attività: '+c.priority.name,
   'Obiettivo indicativo: '+c.free.pct+'% del tempo (da misurare, non garantito).',
-  'Tempo potenzialmente recuperabile: '+n(c.free.hours)+' ore/settimana, '+annualHours(c.free)+' ore/anno.',
-  'Valore del tempo: '+weekValue(c.free)+'/settimana, '+yearValue(c.free)+'/anno.',
+  'Tempo potenzialmente recuperabile: '+n(c.free.hours*weeks/12)+' ore/mese, '+annualHours(c.free)+' ore/anno.',
+  'Valore del tempo: '+monthValue(c.free)+'/mese, '+yearValue(c.free)+'/anno.',
   '',
   '2 · AUTOMAZIONE SINGOLA HORYZON',
   'Attività: '+c.priority.name+'. Recupero complessivo stimato: '+c.single.pct+'%.',
-  'Tempo potenzialmente recuperabile: '+n(c.single.hours)+' ore/settimana, '+annualHours(c.single)+' ore/anno.',
-  'Valore del tempo: '+weekValue(c.single)+'/settimana, '+yearValue(c.single)+'/anno.',
+  'Tempo potenzialmente recuperabile: '+n(c.single.hours*weeks/12)+' ore/mese, '+annualHours(c.single)+' ore/anno.',
+  'Valore del tempo: '+monthValue(c.single)+'/mese, '+yearValue(c.single)+'/anno.',
   'Prezzo iniziale: '+price+'. Canoni, strumenti e assistenza eventuali da preventivare.',
   'Perimetro: '+c.single.scope,
   '',
   '3 · KIT HORYZON · '+c.kit.name.toUpperCase(),
   'Attività comprese in questo scenario: '+c.kit.taskIds.length+'. Recupero medio ponderato: '+kitPct+'%.',
   ...c.kit.taskNames.map(name=>' • '+name),
-  'Tempo potenzialmente recuperabile: '+n(c.kit.hours)+' ore/settimana, '+annualHours(c.kit)+' ore/anno.',
-  'Valore del tempo: '+weekValue(c.kit)+'/settimana, '+yearValue(c.kit)+'/anno.'+partialNote,
+  'Tempo potenzialmente recuperabile: '+n(c.kit.hours*weeks/12)+' ore/mese, '+annualHours(c.kit)+' ore/anno.',
+  'Valore del tempo: '+monthValue(c.kit)+'/mese, '+yearValue(c.kit)+'/anno.'+partialNote,
   'Prezzo indicativo: '+money(c.kit.setup)+' di setup + '+money(c.kit.monthly)+'/mese + IVA.',
   'Costo del primo anno: '+money(c.kit.firstYear)+' + IVA, esclusi strumenti ed eventuali integrazioni.',
   c.kit.excluded?'Altre '+c.kit.excluded+' attività selezionate non sono incluse nel calcolo del kit.':'',
   '',
   'PARAMETRI DA TE INSERITI',
-  ...s.entries.map(e=>taskCatalog[e.id].name+': '+n(e.volume)+' casi '+periodName[e.period]+', '+n(e.minutes)+' minuti/caso, '+n(hours(e,s))+' ore/settimana, '+(e.rate===null?'costo orario non specificato':money(e.rate)+'/ora')),
-  'Settimane lavorative/anno: '+weeks+'.',
+  ...s.entries.map(e=>taskCatalog[e.id].name+': '+n(e.volume)+' casi '+periodName[e.period]+', '+n(e.minutes)+' minuti/caso, '+n(hours(e,s)*weeks/12)+' ore/mese, '+(e.rate===null?'costo orario non specificato':money(e.rate)+'/ora')),
+  'Settimane lavorative/anno: '+weeks+'. Media mensile = totale annuo / 12.',
   '',
   'IMPORTANTE: questi sono tre scenari ALTERNATIVI, non cumulativi. Le percentuali sono ipotesi Horyzon da verificare sul tuo processo. Il valore del tempo recuperabile non corrisponde automaticamente a risparmio di cassa. Dove manca il costo orario, la stima economica è parziale o non disponibile. Prezzi non vincolanti, fattibilità, licenze e integrazioni da confermare.'
  ].filter(Boolean).join('\n');
 }
+
