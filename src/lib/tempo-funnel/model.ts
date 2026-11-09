@@ -28,5 +28,50 @@ export function comparison(s:Scenario){
  const service=taskCatalog[priority.id];
  return {category:s.category,categoryName:categoryNames[s.category],priority:{id:priority.id,name:service.name,baselineHours:hours(priority,s)},free:{...metric([priority],true),pct:10,price:0},single:{...metric([priority]),pct:service.pct,service:service.service,scope:service.scope,price:servicePrices[service.service]??null},kit:{...metric(rows),...tier,firstYear:tier.setup+tier.monthly*12,taskIds:rows.map(e=>e.id),taskNames:rows.map(e=>taskCatalog[e.id].name),excluded:s.entries.length-rows.length},modelVersion:'tempo-offers-v1-2026-11-09'};
 }
-export function scenarioText(s:Scenario){const c=comparison(s),n=(v:number)=>v.toLocaleString('it-IT',{maximumFractionDigits:1}),money=(v:number|null)=>v===null?'costo orario non indicato':new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(v);
- return ['BILANCIO DEL TEMPO HORYZON', 'Attività prioritaria: '+c.priority.name,'',...s.entries.map(e=>taskCatalog[e.id].name+': '+e.volume+' casi/'+e.period+', '+e.minutes+' min/caso; '+n(hours(e,s))+' h/settimana; '+(e.rate===null?'costo non indicato':e.rate+' EUR/ora')),'','GRATUITO: '+c.free.pct+'% sulla priorità; '+n(c.free.hours)+' h/settimana; '+money(c.free.weeklyValue)+'/settimana.','AUTOMAZIONE SINGOLA: '+c.single.pct+'%; '+n(c.single.hours)+' h/settimana; '+money(c.single.weeklyValue)+'/settimana. Setup '+(c.single.price===null?'su preventivo':money(c.single.price)+' + IVA')+'.',c.single.scope,'KIT: '+c.kit.name+' su '+c.kit.taskNames.join(', ')+'; '+n(c.kit.hours)+' h/settimana; '+money(c.kit.weeklyValue)+'/settimana. Setup '+money(c.kit.setup)+' + '+money(c.kit.monthly)+'/mese + IVA; primo anno '+money(c.kit.firstYear)+' + IVA.',c.kit.excluded?c.kit.excluded+' attività escluse dalla simulazione Kit: da valutare separatamente.':'','Scenari alternativi, non cumulativi. Percentuali indicative da verificare; valore del tempo, non risparmio di cassa garantito. Canoni, licenze, consumi e integrazioni della singola automazione da preventivare.'].filter(Boolean).join('\n');}
+export function scenarioText(s:Scenario){
+ const c=comparison(s),weeks=s.weeks;
+ const n=(v:number)=>v.toLocaleString('it-IT',{maximumFractionDigits:1});
+ const money=(v:number|null)=>v===null?'non disponibile (costo orario mancante)':new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(v);
+ const price=c.single.price===null?'da definire in preventivo':money(c.single.price)+' + IVA';
+ const kitHours=c.kit.taskIds.reduce((total,id)=>total+hours(s.entries.find(e=>e.id===id)!,s),0);
+ const kitPct=kitHours>0?n(c.kit.hours/kitHours*100):'—';
+ const partialKit=c.kit.priced<c.kit.taskIds.length;
+ const partialNote=partialKit?' NOTA: una o più attività del kit non hanno un costo orario: le stime monetarie sono parziali.':'';
+ const weekValue=(v:{weeklyValue:number|null})=>money(v.weeklyValue);
+ const yearValue=(v:{annualValue:number|null})=>money(v.annualValue);
+ const periodName:Record<string,string>={day:'al giorno',week:'a settimana',month:'al mese'};
+ const annualHours=(v:{hours:number})=>n(v.hours*weeks);
+ return [
+  'IL TUO CONFRONTO PERSONALIZZATO · HORYZON',
+  'Area: '+c.categoryName,
+  'Prima attività da migliorare: '+c.priority.name,
+  '',
+  '1 · SOLUZIONE GRATUITA · COSTO ZERO',
+  'Intervento fai-da-te sulla singola attività: '+c.priority.name,
+  'Obiettivo indicativo: '+c.free.pct+'% del tempo (da misurare, non garantito).',
+  'Tempo potenzialmente recuperabile: '+n(c.free.hours)+' ore/settimana, '+annualHours(c.free)+' ore/anno.',
+  'Valore del tempo: '+weekValue(c.free)+'/settimana, '+yearValue(c.free)+'/anno.',
+  '',
+  '2 · AUTOMAZIONE SINGOLA HORYZON',
+  'Attività: '+c.priority.name+'. Recupero complessivo stimato: '+c.single.pct+'%.',
+  'Tempo potenzialmente recuperabile: '+n(c.single.hours)+' ore/settimana, '+annualHours(c.single)+' ore/anno.',
+  'Valore del tempo: '+weekValue(c.single)+'/settimana, '+yearValue(c.single)+'/anno.',
+  'Prezzo iniziale: '+price+'. Canoni, strumenti e assistenza eventuali da preventivare.',
+  'Perimetro: '+c.single.scope,
+  '',
+  '3 · KIT HORYZON · '+c.kit.name.toUpperCase(),
+  'Attività comprese in questo scenario: '+c.kit.taskIds.length+'. Recupero medio ponderato: '+kitPct+'%.',
+  ...c.kit.taskNames.map(name=>' • '+name),
+  'Tempo potenzialmente recuperabile: '+n(c.kit.hours)+' ore/settimana, '+annualHours(c.kit)+' ore/anno.',
+  'Valore del tempo: '+weekValue(c.kit)+'/settimana, '+yearValue(c.kit)+'/anno.'+partialNote,
+  'Prezzo indicativo: '+money(c.kit.setup)+' di setup + '+money(c.kit.monthly)+'/mese + IVA.',
+  'Costo del primo anno: '+money(c.kit.firstYear)+' + IVA, esclusi strumenti ed eventuali integrazioni.',
+  c.kit.excluded?'Altre '+c.kit.excluded+' attività selezionate non sono incluse nel calcolo del kit.':'',
+  '',
+  'PARAMETRI DA TE INSERITI',
+  ...s.entries.map(e=>taskCatalog[e.id].name+': '+n(e.volume)+' casi '+periodName[e.period]+', '+n(e.minutes)+' minuti/caso, '+n(hours(e,s))+' ore/settimana, '+(e.rate===null?'costo orario non specificato':money(e.rate)+'/ora')),
+  'Settimane lavorative/anno: '+weeks+'.',
+  '',
+  'IMPORTANTE: questi sono tre scenari ALTERNATIVI, non cumulativi. Le percentuali sono ipotesi Horyzon da verificare sul tuo processo. Il valore del tempo recuperabile non corrisponde automaticamente a risparmio di cassa. Dove manca il costo orario, la stima economica è parziale o non disponibile. Prezzi non vincolanti, fattibilità, licenze e integrazioni da confermare.'
+ ].filter(Boolean).join('\n');
+}
