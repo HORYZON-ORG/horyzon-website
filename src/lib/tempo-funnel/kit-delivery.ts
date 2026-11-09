@@ -36,7 +36,7 @@ export function kitComparisonMarkup(s:Scenario):string{
  const incremental=c.single.annualValue!==null&&c.free.annualValue!==null?eur(c.single.annualValue-c.free.annualValue):'—';
  const labels=c.kit.taskNames.map(name=>'<li>'+esc(name)+'</li>').join('');
  return '<section id="kit-confronto" class="tk-comparison" aria-label="Confronto personalizzato Horyzon">'+
- '<small>IL TUO CONFRONTO DOPO LA REGISTRAZIONE</small><h2 class="tk-title">Tre modi per recuperare tempo.</h2>'+
+ '<small>IL TUO CONFRONTO DOPO LA REGISTRAZIONE · '+esc(c.categoryName)+'</small><h2 class="tk-title">Tre modi per recuperare tempo.</h2>'+
  '<p class="tk-sub">Basato sulla tua valutazione: opzioni alternative, non cumulabili. Il valore del tempo non è risparmio di cassa garantito.</p><div class="tk-grid">'+
  '<article class="tk-card"><small>01 · FAI DA TE · GRATUITO</small><h3>Il tuo primo passo</h3><p>Attività: <strong>'+esc(c.priority.name)+'</strong></p><p class="tk-percent">'+c.free.pct+'% da verificare</p>'+metric(c.free,c.free.priced<1)+'<p class="tk-price">Prezzo: 0 €</p><p>Applica una micro-soluzione e misura il miglioramento reale.</p></article>'+
  '<article class="tk-card"><small>02 · AUTOMAZIONE SINGOLA</small><h3>Horyzon sulla stessa attività</h3><p>'+esc(c.priority.name)+'</p><p class="tk-percent">'+c.single.pct+'% stimato</p>'+metric(c.single,c.single.priced<1)+'<p class="tk-price">'+esc(singlePrice)+'</p><p>Rispetto al gratuito: '+esc(incremental)+'/anno di ulteriore valore del tempo potenziale.</p></article>'+
