@@ -51,10 +51,10 @@ const nextConfig: NextConfig = {
    // Keep inherited third-party consent scripts away from this in-memory demo.
    { key: 'Content-Security-Policy', value: `default-src 'self'; script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'${isDev ? ' ws: wss:' : ''}; form-action 'none'; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'` },
   ] }, { source: '/candidature/architetti-patrimoniali/startup', headers: [
-   // Drive video embeds need frame-src; scope this allowance to Startup only.
+   // Permit only the Horyzon-owned Vercel Blob video host on the Startup page.
    { key: 'Content-Security-Policy', value: csp.replace(
-     'frame-src *.iubenda.com https://api.leadconnectorhq.com',
-     'frame-src *.iubenda.com https://api.leadconnectorhq.com https://drive.google.com',
+     "media-src 'self' blob: https://pmkyeqrfkunypfkbjnyg.supabase.co",
+     "media-src 'self' blob: https://pmkyeqrfkunypfkbjnyg.supabase.co https://zbpegzd1dv3ut14o.public.blob.vercel-storage.com",
    ) },
    { key: 'Referrer-Policy', value: 'no-referrer' },
    { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
