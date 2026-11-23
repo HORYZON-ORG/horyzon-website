@@ -6,6 +6,7 @@ import {
   issueArchitectStartupLink,
   confirmArchitectStartupInterest,
   beginArchitectStartupLead,
+  getArchitectStartupVideoGate,
 } from '../src/lib/public-leads/architect-hub-intake.ts';
 
 const candidateId = '8fb24e11-1317-449b-9496-6b8733a624e6';
@@ -47,6 +48,10 @@ const mockFetch = async (url, init) => {
     draftIssued = args.p_token_hash;
     return Response.json(true);
   }
+  if (rpc === 'architect_startup_video_gate_v1') {
+    assert.match(args.p_token_hash, /^[0-9a-f]{64}$/);
+    return Response.json(661);
+  }
   if (rpc === 'architect_startup_lead_confirm_v1')
     return Response.json(args.p_token_hash === draftIssued);
   if (rpc === 'architect_candidate_intake_v1') return Response.json(candidateId);
@@ -73,6 +78,8 @@ const minimalHref = await beginArchitectStartupLead(env, {
 }, '198.51.100.1', mockFetch);
 assert.match(minimalHref, /^\/candidature\/architetti-patrimoniali\/startup#token=[A-Za-z0-9_-]{43}$/);
 assert(!minimalHref.includes('candidate@example.invalid'));
+assert.equal(await getArchitectStartupVideoGate(env, minimalHref.split('token=')[1], mockFetch), 661);
+assert.equal(await getArchitectStartupVideoGate(env, 'invalid', mockFetch), null);
 assert.equal(await confirmArchitectStartupInterest(env, minimalHref.split('token=')[1], mockFetch), true);
 const received = await registerArchitectCandidate(env, cvId, lead, mockFetch);
 assert.equal(received, candidateId, 'l’intake restituisce id Hub, non dati personali in URL');
@@ -88,6 +95,7 @@ assert.equal(await confirmArchitectStartupInterest(env, 'z'.repeat(43), mockFetc
 assert.equal(await registerArchitectCandidate({ ...env, PATRIMONIAL_ARCHITECT_HUB_INTAKE_ENABLED: 'false' }, cvId, lead, mockFetch), null);
 assert.deepEqual(calls.map(x => x.rpc), [
   'architect_startup_lead_begin_v1',
+  'architect_startup_video_gate_v1',
   'architect_startup_lead_confirm_v1',
   'architect_candidate_intake_v1',
   'architect_candidate_startup_issue_v1',
@@ -96,4 +104,4 @@ assert.deepEqual(calls.map(x => x.rpc), [
   'architect_startup_lead_confirm_v1',
   'architect_candidate_startup_confirm_v1',
 ]);
-console.log('PASS: minimal lead staged without CV, candidate created only on confirmed interest, legacy tokens preserved');
+console.log('PASS: server video gate receipt, minimal lead, candidate only after confirmed interest, legacy tokens preserved');
