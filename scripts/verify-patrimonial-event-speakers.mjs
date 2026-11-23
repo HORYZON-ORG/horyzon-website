@@ -28,7 +28,18 @@ for(const [name,role,file] of [
  assert(landing.includes(name)&&landing.includes(role)&&landing.includes(file),name+' correct original portrait and role');
 }
 assert(!section.includes('Mi ero affidato')&&!section.includes('11 anni')&&!section.includes('<blockquote'));
-assert.match(css,/grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+assert.match(css,/\.page \.vSpeakerRosterGrid\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+assert.match(css,/\.page \.vSpeakerRosterPortrait\{position:relative;aspect-ratio:1/,'large photos are square');
+assert(!landing.includes('vSpeakerRosterCircle'),'square photos replace circular portraits');
+const source=readFileSync(new URL('../src/content/patrimonial-event-content.ts',import.meta.url),'utf8');
+assert.doesNotMatch(landing,/radar\s+patrimoniale|il tuo radar/i,'no radar copy even in hidden agenda');
+assert.doesNotMatch(source,/radar\s+patrimoniale|il tuo radar/i,'no radar promise in dynamic profile copy');
+assert.doesNotMatch(css,/\.page \.vRadar/,'obsolete Radar bonus CSS removed');
+const order=section.match(/name: ['\x22][^'\x22]+/g)||[];
+const expectedNames=['Frank Cannoletta','Francesco Aquilanti','Gianni Mazzotta','Angelo Ria Chetta'];
+const speakerDefs=landing.slice(landing.indexOf('const eventSpeakers = ['),landing.indexOf('] as const;',landing.indexOf('const eventSpeakers = [')));
+assert.deepEqual([...speakerDefs.matchAll(/name: '([^']+)'/g)].map(m=>m[1]),expectedNames,'speaker order Frank Francesco Gianni Angelo');
+assert(landing.indexOf('vSpeakerRosterPortrait')<landing.indexOf('vSpeakerRosterBody'),'photo above title');
 assert.match(css,/@media\(max-width:650px\)/);
 for(const file of ['angelo-ria-chetta.webp','gianni-mazzotta.webp','francesco-aquilanti.webp']){
  const data=readFileSync(join(process.cwd(),'public','benessere-patrimoniale','evento','speakers',file));

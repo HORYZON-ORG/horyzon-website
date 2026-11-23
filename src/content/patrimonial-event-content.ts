@@ -28,7 +28,7 @@ export const eventScenes = [
     text: "Hai già un metodo: ETF, immobili, magari un po' d'oro. Ora vuoi capire come ragionano i grandi patrimoni e cosa ti manca per fare il salto.",
     kicker: 'PER TE CHE STAI GIÀ COSTRUENDO',
     answer: 'Vedrai la mappa 50/50 con cui ragionano i grandi patrimoni, e dove il tuo è ancora scoperto.',
-    detail: 'Il Radar Patrimoniale, in regalo, ti mostra in un colpo d’occhio cosa ti manca.',
+    detail: 'Le domande giuste ti aiutano a valutare ciò che hai già costruito e le scelte da fare.',
     cta: 'Voglio fare il salto' },
 ] as const;
 

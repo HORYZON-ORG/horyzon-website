@@ -40,7 +40,7 @@ function Disclaimer({ sources }: { sources?: string }) {
 
 const evenings = [
   { n: '1', img: '/benessere-patrimoniale/evento/serata-1.jpg', alt: "Lampada d'oro che illumina un taccuino aperto e una penna", title: 'Pensare come chi un patrimonio ce l’ha', items: [['Il denaro non sta mai fermo', 'Perché tenere i soldi sul conto è già una scelta, e quanto ti costa ogni anno.'], ['I quattro profili', 'Da chi rincorre il mese a chi costruisce: dove sei oggi e qual è il tuo prossimo passo.'], ['La regola 70-10-10-10', '70% per vivere, 10% per il fondo di sicurezza, 10% da investire, 10% per eliminare i debiti o per crescere.'], ['Come ragionano i milionari', 'Non cercano il prodotto migliore: costruiscono un sistema in cui ogni pezzo ha un compito.'], ['Le tue domande, dal vivo', '']] },
-  { n: '2', img: '/benessere-patrimoniale/evento/serata-2.jpg', alt: "Porta di un caveau d'oro socchiusa con luce calda", title: 'Come si costruisce e si protegge un patrimonio', items: [['La mappa 50/50', 'Beni reali e beni finanziari: perché servono entrambi.'], ['Metalli preziosi e immobili', 'Oro e argento, fisico o di carta; quando una casa è un investimento e quando è solo una spesa.'], ['ETF, azioni e obbligazioni', 'Cosa possiedi davvero quando compri un ETF, e cosa è successo ai BTP nel 2022.'], ['Le domande da fare al tuo consulente', 'La lista da portare al prossimo appuntamento in banca.'], ['Il tuo Radar Patrimoniale e le tue domande', '']] },
+  { n: '2', img: '/benessere-patrimoniale/evento/serata-2.jpg', alt: "Porta di un caveau d'oro socchiusa con luce calda", title: 'Come si costruisce e si protegge un patrimonio', items: [['La mappa 50/50', 'Beni reali e beni finanziari: perché servono entrambi.'], ['Metalli preziosi e immobili', 'Oro e argento, fisico o di carta; quando una casa è un investimento e quando è solo una spesa.'], ['ETF, azioni e obbligazioni', 'Cosa possiedi davvero quando compri un ETF, e cosa è successo ai BTP nel 2022.'], ['Le domande da fare al tuo consulente', 'La lista da portare al prossimo appuntamento in banca.'], ['Dubbi e domande dal vivo', '']] },
 ];
 
 // Existing event interactions with route-scoped presentation from the mobile reference.
@@ -351,9 +351,7 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
       {eventSpeakers.map(person => (
         <article key={person.name} className={styles.vSpeakerRosterCard}>
           <div className={styles.vSpeakerRosterPortrait}>
-            <div className={styles.vSpeakerRosterCircle}>
-              <Image src={person.image} alt={`Foto di ${person.name}`} fill sizes="(max-width: 650px) 44vw, (max-width: 1024px) 40vw, 240px" className={person.name === "Angelo Ria Chetta" ? styles.vSpeakerAngeloPhoto : undefined} />
-            </div>
+            <Image src={person.image} alt={`Foto di ${person.name}`} fill sizes="(max-width: 650px) 45vw, (max-width: 1024px) 46vw, 540px" className={person.name === "Angelo Ria Chetta" ? styles.vSpeakerAngeloPhoto : undefined} />
           </div>
           <div className={styles.vSpeakerRosterBody}>
             <h3 className={styles.vSpeakerRosterName}>{person.name}</h3>
