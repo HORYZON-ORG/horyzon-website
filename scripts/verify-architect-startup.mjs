@@ -5,6 +5,7 @@ import {
   registerArchitectCandidate,
   issueArchitectStartupLink,
   confirmArchitectStartupInterest,
+  beginArchitectStartupLead,
 } from '../src/lib/public-leads/architect-hub-intake.ts';
 
 const candidateId = '8fb24e11-1317-449b-9496-6b8733a624e6';
@@ -23,12 +24,25 @@ assert.equal(architectStartupVideoUrl({ ARCHITECT_STARTUP_VIDEO_URL: 'https://vi
 assert.equal(architectStartupConfirmationEnabled({ ...env, ARCHITECT_STARTUP_VIDEO_URL: 'https://horyzon.it/presentazione.mp4', PATRIMONIAL_ARCHITECT_STARTUP_ENABLED: 'true' }), true);
 const calls = [];
 let issued = '';
+let draftIssued = '';
 const mockFetch = async (url, init) => {
   const rpc = new URL(url).pathname.split('/').at(-1);
   const args = JSON.parse(init.body);
   calls.push({ rpc, args });
   assert.equal(init.headers['Content-Profile'], 'hub');
   assert.equal(init.headers['Cache-Control'], 'no-store');
+  if (rpc === 'architect_startup_lead_begin_v1') {
+    assert.equal(args.p_first_name, 'Persona');
+    assert.equal(args.p_last_name, 'Test');
+    assert.equal(args.p_email, 'candidate@example.invalid');
+    assert.equal(args.p_phone, '+393331234567');
+    assert.equal(args.p_consent, true);
+    assert.match(args.p_ip_hash, /^[0-9a-f]{64}$/);
+    draftIssued = args.p_token_hash;
+    return Response.json(true);
+  }
+  if (rpc === 'architect_startup_lead_confirm_v1')
+    return Response.json(args.p_token_hash === draftIssued);
   if (rpc === 'architect_candidate_intake_v1') return Response.json(candidateId);
   if (rpc === 'architect_candidate_startup_issue_v1') {
     assert.equal(args.p_candidate_id, candidateId);
@@ -47,6 +61,13 @@ const lead = {
   province: 'Milano', profile: '', message: '', consent: true,
   marketingConsent: false, utm: {}, experience: '', goal: '', availability: '',
 };
+const minimalHref = await beginArchitectStartupLead(env, {
+  firstName: 'Persona', lastName: 'Test', email: 'candidate@example.invalid',
+  phone: '+393331234567', privacyVersion: 'patrimonial-pilot-privacy-v1',
+}, '198.51.100.1', mockFetch);
+assert.match(minimalHref, /^\/candidature\/architetti-patrimoniali\/startup#token=[A-Za-z0-9_-]{43}$/);
+assert(!minimalHref.includes('candidate@example.invalid'));
+assert.equal(await confirmArchitectStartupInterest(env, minimalHref.split('token=')[1], mockFetch), true);
 const received = await registerArchitectCandidate(env, cvId, lead, mockFetch);
 assert.equal(received, candidateId, 'l’intake restituisce id Hub, non dati personali in URL');
 
@@ -60,9 +81,13 @@ assert.equal(await confirmArchitectStartupInterest(env, 'invalid', mockFetch), f
 assert.equal(await confirmArchitectStartupInterest(env, 'z'.repeat(43), mockFetch), false);
 assert.equal(await registerArchitectCandidate({ ...env, PATRIMONIAL_ARCHITECT_HUB_INTAKE_ENABLED: 'false' }, cvId, lead, mockFetch), null);
 assert.deepEqual(calls.map(x => x.rpc), [
+  'architect_startup_lead_begin_v1',
+  'architect_startup_lead_confirm_v1',
   'architect_candidate_intake_v1',
   'architect_candidate_startup_issue_v1',
+  'architect_startup_lead_confirm_v1',
   'architect_candidate_startup_confirm_v1',
+  'architect_startup_lead_confirm_v1',
   'architect_candidate_startup_confirm_v1',
 ]);
-console.log('PASS: candidate-linked startup token, no PII, page without video, confirmation gated by video');
+console.log('PASS: minimal lead staged without CV, candidate created only on confirmed interest, legacy tokens preserved');
