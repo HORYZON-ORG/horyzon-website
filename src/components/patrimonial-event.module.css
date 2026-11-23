@@ -918,6 +918,7 @@
 :global([data-theme="light"]) .page .eventHeader .s009{color:#F7F4E8;border-color:rgba(247,244,232,.28)}
 :global([data-theme="light"]) .page .eventHeader .s009:hover,:global([data-theme="light"]) .page .eventHeader .s009:focus-visible{color:#07171D;border-color:#D8FF42}
 
+.page [data-event-section="agenda"][hidden]{display:none!important}
 /* Horyzon webinar speakers: four original photos, two square photo cards per row. */
 .page .vSpeakerRoster{background:#07171D;color:#F7F4E8;padding:clamp(64px,8vw,110px) 24px}
 .page .vSpeakerRosterInner{max-width:1080px;margin:0 auto}
