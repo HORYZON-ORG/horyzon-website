@@ -39,7 +39,7 @@ export function renderEventEmailFrame(input: {
     '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F4F1E9"><tr><td align="center" style="padding:28px 12px 32px">',
     '<table role="presentation" class="email-shell" cellpadding="0" cellspacing="0" border="0" width="620" style="width:620px;max-width:620px;background:#FFFFFF;border-collapse:separate">',
     '<tr><td class="email-pad" style="background:#0B222A;padding:34px 44px 38px;color:#FFFFFF">',
-    '<p style="margin:0;color:#FFFFFF;font-size:24px;font-weight:800;letter-spacing:2.8px">HORY<span style="color:#CCEB59">Z</span>ON<span style="font-size:10px;letter-spacing:2px;font-weight:700;color:#D5DCCC;padding-left:10px">CONSULTING</span></p>',
+    '<p style="margin:0;color:#FFFFFF;font-size:24px;font-weight:800;letter-spacing:2.8px">HOR<span style="color:#CCEB59">Y</span>ZON<span style="font-size:10px;letter-spacing:2px;font-weight:700;color:#D5DCCC;padding-left:10px">CONSULTING</span></p>',
     '<p style="margin:8px 0 39px;font-size:10px;font-weight:700;color:#CCD7CC;letter-spacing:2.5px">BENESSERE PATRIMONIALE</p>',
     '<p style="margin:0 0 19px;border:1px solid #CCEB59;padding:8px 12px;color:#CCEB59;font-size:11px;font-weight:800;letter-spacing:1.5px;display:inline-block">' + escapeHtml(input.eyebrow) + '</p>',
     '<h1 class="email-heading" style="font-size:43px;line-height:49px;letter-spacing:-1.4px;margin:0;color:#FFFFFF;font-weight:800">' + escapeHtml(input.headline) + '</h1>',
