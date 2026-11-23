@@ -937,7 +937,7 @@
 .page .vSpeakerGianniPortrait{background:linear-gradient(90deg,#d9d9d9 0%,#cccccc 100%)}
 .page .vSpeakerGianniPortrait img{object-fit:contain;object-position:center center;filter:none}
 /* Angelo keeps the small downward adjustment requested earlier, without modifying his original photo. */
-.page .vSpeakerRosterPortrait .vSpeakerAngeloPhoto{object-position:center top;transform:translateY(5%) scale(1.1)}
+.page .vSpeakerRosterPortrait .vSpeakerAngeloPhoto{object-fit:contain;object-position:center center;filter:none;transform:none}
 .page .vSpeakerRosterBody{padding:24px clamp(20px,3vw,30px) 29px;display:flex;flex-direction:column;gap:8px;min-height:116px}
 .page .vSpeakerRosterName{margin:0;font-size:clamp(22px,2.5vw,30px);line-height:1.15;font-weight:800;letter-spacing:-.035em;color:#F7F4E8}
 .page .vSpeakerRosterRole{margin:0;color:#D8FF42;font-size:clamp(14px,1.4vw,17px);line-height:1.45;font-weight:600}

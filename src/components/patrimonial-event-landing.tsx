@@ -16,7 +16,7 @@ const eventSpeakers = [
   { name: 'Frank Cannoletta', role: 'Moderatore evento', image: '/people/frank-no-badge.png' },
   { name: 'Francesco Aquilanti', role: 'Area Manager CIG (Care is Gold)', image: '/benessere-patrimoniale/evento/speakers/francesco-aquilanti-ritratto-originale.webp' },
   { name: 'Gianni Mazzotta', role: 'Architetto Patrimoniale', image: '/benessere-patrimoniale/evento/speakers/gianni-mazzotta-ritratto-originale.webp' },
-  { name: 'Angelo Ria Chetta', role: 'Founder Horyzon', image: '/benessere-patrimoniale/evento/speakers/angelo-ria-chetta.webp' },
+  { name: 'Angelo Ria Chetta', role: 'Founder Horyzon', image: '/benessere-patrimoniale/evento/speakers/angelo-ria-chetta-ritratto-approvato.webp' },
 ] as const;
 
 const Check = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>;
