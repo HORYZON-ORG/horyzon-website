@@ -53,8 +53,8 @@ export const patrimonialEvent = {
   path: '/evento/quello-che-le-banche-non-dicono',
   title: 'Quello che le banche non dicono',
   description: "Un incontro online dedicato a persone e imprenditori che vogliono capire meglio patrimonio, inflazione, diversificazione e ruolo dell'oro fisico.",
-  date: 'Data da definire',
-  time: 'Orario da definire',
+  date: '9 dicembre 2026',
+  time: '21:00–22:00 (Europe/Rome)',
   format: 'Online',
   phase: 'before' as 'before' | 'after',
   questions: [
@@ -90,7 +90,7 @@ export const pilotForms = {
   'patrimonial-event': {
     path: patrimonialEvent.path, title: 'Partecipa al prossimo incontro.',
     intro: 'Registrati e ricevi le informazioni per partecipare.',
-    submit: 'Richiedi il tuo posto', success: "Abbiamo ricevuto la tua richiesta di partecipazione all'evento.",
+    submit: 'Iscriviti gratuitamente', success: 'Iscrizione all’evento del 9 dicembre confermata.',
     question: 'Qual è la domanda sul tuo patrimonio alla quale vorresti trovare risposta?',
     profiles: ['Privato', 'Imprenditore', 'Professionista', 'Altro'],
   },

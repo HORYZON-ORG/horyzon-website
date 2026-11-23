@@ -14,5 +14,5 @@ export default async function EventPage() {
   const registrationEnabled = process.env.PATRIMONIAL_EVENT_SIGNUP_ENABLED === 'true' &&
     process.env.HORYZON_HUB_EVENT_INGRESS_ENABLED === 'true';
   const session = await publishedEventSession();
-  return <div className={`${mono.variable} ${sans.variable}`}><PatrimonialEventLanding registrationEnabled={registrationEnabled} session={session} /></div>;
+  return <div className={`${mono.variable} ${sans.variable}`}><PatrimonialEventLanding registrationEnabled={registrationEnabled && Boolean(session.editionKey)} session={session} /></div>;
 }
