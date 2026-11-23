@@ -75,5 +75,5 @@ assert.equal(angelo[20],0x2f,'approved Angelo VP8L signature');
 const angeloGeometry=angelo.readUInt32LE(21);
 assert.equal((angeloGeometry & 0x3fff)+1,1254,'approved Angelo square image native width');
 assert.equal(((angeloGeometry>>14)&0x3fff)+1,1254,'approved Angelo square image native height');
-assert.match(css,/\\.page \\.vSpeakerRosterPortrait \\.vSpeakerAngeloPhoto\\{object-fit:contain;object-position:center center;filter:none;transform:none\\}/,'Angelo square image fully visible with no crop or grayscale alteration');
+assert.match(css,/\.page \.vSpeakerRosterPortrait \.vSpeakerAngeloPhoto\{object-fit:contain;object-position:center center;filter:none;transform:none\}/,'Angelo square image fully visible with no crop or grayscale alteration');
 console.log('Event copy and all four speakers with approved square Angelo portrait PASS');
