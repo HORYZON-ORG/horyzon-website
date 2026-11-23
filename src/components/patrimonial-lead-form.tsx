@@ -131,7 +131,6 @@ function PilotLeadForm({ mode, contractVersion, presentation, selectedProfile = 
         sending.current = false; return;
       }
       setStatus('success'); setNotice(form.success);
-      if (v2 && mode === 'patrimonial-event' && typeof result.radarNextStep?.href === 'string' && /^\/radar-patrimoniale#event=[A-Za-z0-9_-]{43}$/.test(result.radarNextStep.href)) { router.push(`${form.path}/grazie#radar=${result.radarNextStep.href.split('=')[1]}`); return; }
       router.push(`${form.path}/grazie`);
     } catch (error) {
       sending.current = false; setStatus('error');
