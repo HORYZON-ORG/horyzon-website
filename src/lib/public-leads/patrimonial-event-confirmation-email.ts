@@ -27,7 +27,7 @@ async function rpc<T>(name: string, payload: Record<string,unknown>, env:Config,
   return (await r.json()) as T;
 }
 export function eventConfirmationContent(input:{firstName:string;confirmedCalendar?:string}) {
-  const first=input.firstName.replace(/[\\r\\n<>]/g,' ').trim().slice(0,80);
+  const first=input.firstName.replace(/[\r\n<>]/g,' ').trim().slice(0,80);
   const greet=first ? 'Ciao '+first+',' : 'Ciao,';
   const subject='Iscrizione confermata | Quello che le banche non dicono · 9 dicembre';
   const text=[greet,'',
@@ -40,9 +40,9 @@ export function eventConfirmationContent(input:{firstName:string;confirmedCalend
     'Le indicazioni di accesso saranno comunicate via email non appena disponibili. Conserva questo messaggio.',
     'Queste email sono esclusivamente organizzative e non costituiscono iscrizione a comunicazioni promozionali.',
     'Se non riconosci questa iscrizione, rispondi a questa email o scrivi a info@horyzon.it.',
-    'Horyzon Benessere Patrimoniale',EVENT_PAGE].join('\\n\\n');
+    'Horyzon Benessere Patrimoniale',EVENT_PAGE].join('\n\n');
   const html='<div style="font-family:Arial,sans-serif;color:#07171D;background:#F7F4E8;padding:32px"><div style="max-width:600px;margin:auto;background:#fff;padding:30px;border-radius:12px"><p style="color:#61721A;font-size:12px;letter-spacing:2px">HORYZON · BENESSERE PATRIMONIALE</p><h1 style="font-size:24px">Iscrizione confermata</h1>'
-    +text.split('\\n\\n').map(p=>'<p style="font-size:15px;line-height:1.6">'+escapeHtml(p).replace(/\\n/g,'<br>')+'</p>').join('')
+    +text.split('\n\n').map(p=>'<p style="font-size:15px;line-height:1.6">'+escapeHtml(p).replace(/\n/g,'<br>')+'</p>').join('')
     +'<p><a href="'+escapeHtml(eventGoogleCalendarUrl())+'">Aggiungi a Google Calendar</a> · <a href="'+EVENT_ICS_URL+'">Apple / Outlook (.ics)</a></p></div></div>';
   return {subject,text,html};
 }

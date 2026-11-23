@@ -6,7 +6,7 @@ import { callHighLevel, highLevelConfig, normalizePhone } from '../radar/highlev
 import { isLegacyLeadPayload, pilotCrmDetails, pilotMode, validatePilotLead, validatePatrimonialV2 } from './patrimonial-funnels.ts';
 import { pilotForms } from '../../content/patrimonial-funnels.ts';
 import { recordEventLeadInHub } from './patrimonial-hub-event-ingress.ts';
-import { sendOneEventConfirmation } from './patrimonial-event-confirmation-email.ts';
+import { sendOneEventConfirmation, eventEmailReady } from './patrimonial-event-confirmation-email.ts';
 import { validateArchitectEventReferral } from './patrimonial-referral-preflight.ts';
 import { canonicalPatrimonialPayload, isPatrimonialRequestId, PATRIMONIAL_V2, type PatrimonialRequest } from './patrimonial-contract.ts';
 import { patrimonialConsentEvidence } from './patrimonial-consents.ts';
@@ -55,6 +55,7 @@ export async function handlePublicLead(request: Request, options: Options = {}):
   if (!isLegacyLeadPayload(input) && !pilot) return response(400, 'Controlla i dati e la richiesta di ricontatto.');
   // Event signup requires explicit go-live, a functioning Hub bridge and verified referrals.
   if (pilot?.mode === 'patrimonial-event') {
+    if (!eventEmailReady(env)) return response(503, 'Iscrizioni momentaneamente sospese: il servizio email di conferma non è pronto.');
     if (env.NODE_ENV !== 'test' && env.PATRIMONIAL_EVENT_SIGNUP_ENABLED !== 'true')
       return response(503, 'Le iscrizioni all’evento non sono ancora aperte.');
     if (env.PATRIMONIAL_EVENT_SIGNUP_ENABLED === 'true' && env.HORYZON_HUB_EVENT_INGRESS_ENABLED !== 'true')

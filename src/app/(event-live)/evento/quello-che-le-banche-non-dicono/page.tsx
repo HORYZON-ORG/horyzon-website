@@ -3,6 +3,7 @@ import { PatrimonialEventLanding } from '@/components/patrimonial-event-landing'
 import { patrimonialEvent } from '@/content/patrimonial-funnels';
 import { pageMetadata } from '@/content/seo';
 import { publishedEventSession } from '@/lib/public-leads/patrimonial-event-public-schedule';
+import { eventEmailReady } from '@/lib/public-leads/patrimonial-event-confirmation-email';
 
 const mono = JetBrains_Mono({ subsets: ['latin'], weight: ['500', '600'], variable: '--event-mono', display: 'swap' });
 const sans = Manrope({ subsets: ['latin'], weight: ['400', '500', '600', '700', '800'], variable: '--event-sans', display: 'swap' });
@@ -14,5 +15,5 @@ export default async function EventPage() {
   const registrationEnabled = process.env.PATRIMONIAL_EVENT_SIGNUP_ENABLED === 'true' &&
     process.env.HORYZON_HUB_EVENT_INGRESS_ENABLED === 'true';
   const session = await publishedEventSession();
-  return <div className={`${mono.variable} ${sans.variable}`}><PatrimonialEventLanding registrationEnabled={registrationEnabled && Boolean(session.editionKey)} session={session} /></div>;
+  return <div className={`${mono.variable} ${sans.variable}`}><PatrimonialEventLanding registrationEnabled={registrationEnabled && eventEmailReady() && Boolean(session.editionKey)} session={session} /></div>;
 }
