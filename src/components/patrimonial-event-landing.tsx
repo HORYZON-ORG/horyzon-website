@@ -15,7 +15,7 @@ const Arrow = ({ size = 18 }: { size?: number }) => <svg width={size} height={si
 const eventSpeakers = [
   { name: 'Frank Cannoletta', role: 'Moderatore evento', image: '/people/frank-no-badge.png' },
   { name: 'Francesco Aquilanti', role: 'Area Manager CIG (Care is Gold)', image: '/benessere-patrimoniale/evento/speakers/francesco-aquilanti-ritratto-originale.webp' },
-  { name: 'Gianni Mazzotta', role: 'Architetto Patrimoniale', image: '/benessere-patrimoniale/evento/speakers/gianni-mazzotta.webp' },
+  { name: 'Gianni Mazzotta', role: 'Architetto Patrimoniale', image: '/benessere-patrimoniale/evento/speakers/gianni-mazzotta-ritratto-originale.webp' },
   { name: 'Angelo Ria Chetta', role: 'Founder Horyzon', image: '/benessere-patrimoniale/evento/speakers/angelo-ria-chetta.webp' },
 ] as const;
 
@@ -350,7 +350,7 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
     <div className={styles.vSpeakerRosterGrid}>
       {eventSpeakers.map(person => (
         <article key={person.name} className={styles.vSpeakerRosterCard}>
-          <div className={[styles.vSpeakerRosterPortrait, person.name === 'Francesco Aquilanti' ? styles.vSpeakerFrancescoPortrait : ''].filter(Boolean).join(' ')}>
+          <div className={[styles.vSpeakerRosterPortrait, person.name === 'Francesco Aquilanti' ? styles.vSpeakerFrancescoPortrait : '', person.name === 'Gianni Mazzotta' ? styles.vSpeakerGianniPortrait : ''].filter(Boolean).join(' ')}>
             <Image src={person.image} alt={`Foto di ${person.name}`} fill sizes="(max-width: 650px) 45vw, (max-width: 1024px) 46vw, 540px" className={person.name === "Angelo Ria Chetta" ? styles.vSpeakerAngeloPhoto : undefined} />
           </div>
           <div className={styles.vSpeakerRosterBody}>
