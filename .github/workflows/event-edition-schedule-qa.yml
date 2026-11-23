@@ -9,6 +9,7 @@ on:
       - 'src/components/patrimonial-event.module.css'
       - 'public/benessere-patrimoniale/evento/speakers/**'
       - 'scripts/verify-patrimonial-event-speakers.mjs'
+      - 'scripts/verify-patrimonial-event-audience-spacing.mjs'
       - 'src/components/patrimonial-event-clock.tsx'
       - 'src/content/patrimonial-event-session.ts'
       - 'src/lib/public-leads/patrimonial-event-public-schedule.ts'
@@ -46,6 +47,7 @@ jobs:
       - run: node --no-warnings --experimental-strip-types scripts/verify-patrimonial-event-optional-fields.mjs
       - run: node --no-warnings --experimental-strip-types scripts/verify-patrimonial-event-hub-e2e.mjs
       - run: node --no-warnings --experimental-strip-types scripts/verify-patrimonial-event-speakers.mjs
+      - run: node --no-warnings --experimental-strip-types scripts/verify-patrimonial-event-audience-spacing.mjs
       - run: npm run typecheck
       - run: npm run build
         env:
