@@ -78,6 +78,8 @@ jobs:
           test "$cv_status" = 503
           startup_status=$(curl -sS -o /dev/null -w '%{http_code}' -X POST 'http://127.0.0.1:3207/api/architect-startup/start' -H 'Origin: https://horyzon.it' -H 'Content-Type: application/json' -d '{}')
           test "$startup_status" = 503
+          timer_status=$(curl -sS -o /dev/null -w '%{http_code}' -X POST 'http://127.0.0.1:3207/api/architect-startup/video-gate' -H 'Origin: https://horyzon.it' -H 'Content-Type: application/json' -d '{"token":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}')
+          test "$timer_status" = 503
           bad_status=$(curl -sS -o /dev/null -w '%{http_code}' -X POST 'http://127.0.0.1:3207/api/public-leads' -H 'Origin: https://not-authorized.invalid' -H 'Content-Type: application/json' -d '{}')
           test "$bad_status" = 403
           ARCHITECT_PREVIEW_TEST_ORIGIN=http://127.0.0.1:3207 node scripts/verify-architect-canonical-palette.mjs
