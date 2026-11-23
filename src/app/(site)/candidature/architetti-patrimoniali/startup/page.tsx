@@ -1,6 +1,7 @@
 import { pageMetadata } from '@/content/seo';
 import { PatrimonialThemeFrame } from '@/components/patrimonial-architect-preview-theme-frame';
 import { ArchitectStartupPresentation } from '@/components/patrimonial-architect-startup';
+import { architectStartupVideoUrl } from '@/lib/public-leads/architect-startup-config';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,8 +18,7 @@ export const metadata = {
 export default function ArchitectStartupPage() {
   // Solo video HTTPS MP4 o percorso pubblico locale: finché non arriva il video,
   // il pulsante finale non viene mostrato e nessuna conferma viene registrata.
-  const configured = process.env.ARCHITECT_STARTUP_VIDEO_URL?.trim() ?? '';
-  const videoUrl = /^(https:\/\/[^\s]+\.mp4(?:\?[^\s]*)?|\/[^\s?#]+\.mp4)$/.test(configured) ? configured : '';
+  const videoUrl = architectStartupVideoUrl(process.env);
   return <PatrimonialThemeFrame defaultTheme="light" showBar={false} rememberChoice={false}>
     <ArchitectStartupPresentation videoUrl={videoUrl} />
   </PatrimonialThemeFrame>;
