@@ -5,6 +5,11 @@ on:
   pull_request:
     paths:
       - 'src/app/(site)/candidature/**'
+      - 'src/app/api/architect-startup/**'
+      - 'src/lib/public-leads/architect-hub-intake.ts'
+      - 'src/lib/public-leads/handler.ts'
+      - 'src/components/patrimonial-architect-startup*'
+      - 'scripts/verify-architect-startup.mjs'
       - 'src/app/api/public-leads/cv/**'
       - 'src/components/patrimonial-architect-preview*'
       - 'src/content/patrimonial-funnels.ts'
@@ -19,7 +24,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
       PATRIMONIAL_ARCHITECT_HUB_INTAKE_ENABLED: 'false'
@@ -34,6 +39,7 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run test:architect-cv
+      - run: node --no-warnings --experimental-strip-types scripts/verify-architect-startup.mjs
       - run: node --no-warnings --experimental-strip-types scripts/verify-patrimonial-leads.mjs
       - run: npm run typecheck
       - run: npm run build
@@ -54,6 +60,9 @@ jobs:
           grep -q 'candidature/architetti-patrimoniali' /tmp/architect-public.html
           curl -fsS 'http://127.0.0.1:3207/candidature/architetti-patrimoniali/grazie' -o /tmp/architect-thanks.html
           grep -q 'noindex' /tmp/architect-thanks.html
+          curl -fsS 'http://127.0.0.1:3207/candidature/architetti-patrimoniali/startup' -o /tmp/architect-startup.html
+          grep -q 'Startup Horyzon' /tmp/architect-startup.html
+          grep -q 'noindex' /tmp/architect-startup.html
           old_status=$(curl -s -o /dev/null -w '%{http_code}' 'http://127.0.0.1:3207/benessere-patrimoniale/percorso-architetto-patrimoniale')
           test "$old_status" = 308
           curl -fsS 'http://127.0.0.1:3207/sitemap.xml' | grep -q '/candidature/architetti-patrimoniali'
