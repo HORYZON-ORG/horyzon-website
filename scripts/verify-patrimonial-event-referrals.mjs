@@ -33,7 +33,7 @@ let count = 0;
 const records = [];
 const fake = async (url, init) => {
   const address = new URL(url);
-  const body = JSON.parse(init.body);
+  const body = JSON.parse(init.body || '{}');
   count++;
   if (address.pathname === '/rest/v1/rpc/architetti_referral_validate') {
     assert.equal(body.p_code, code);
