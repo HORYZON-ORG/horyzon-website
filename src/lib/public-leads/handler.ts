@@ -12,6 +12,7 @@ import { canonicalPatrimonialPayload, isPatrimonialRequestId, PATRIMONIAL_V2, ty
 import { patrimonialConsentEvidence } from './patrimonial-consents.ts';
 import { claimCv, cvStorage, isCvId, readCandidateCv, uploadCvToHighLevel, type CvStorage } from './architect-cv.ts';
 import { registerArchitectCandidate, issueArchitectStartupLink, markArchitectCandidateCrm } from './architect-hub-intake.ts';
+import { architectStartupEnabled } from './architect-startup-config.ts';
 import { createProductionPatrimonialStore, patrimonialFlags, PatrimonialConflictError, PatrimonialReplayExpiredError, type PatrimonialStore } from './patrimonial-store.ts';
 
 type Options = { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch; now?: () => Date; store?: PatrimonialStore; cvStorage?: CvStorage | null; eventRadarNextStep?: (requestId:string,email:string,payloadHash:string)=>Promise<{href:string;expiresInSeconds:number}>; eventIntake?:EventIntakePort; hubFetchImpl?: typeof fetch };
@@ -103,7 +104,7 @@ export async function handlePublicLead(request: Request, options: Options = {}):
       try {
         const candidateId = await registerArchitectCandidate(env, cv, pilot, options.hubFetchImpl);
         hubStored = Boolean(candidateId);
-        if (candidateId && env.PATRIMONIAL_ARCHITECT_STARTUP_ENABLED === 'true') {
+        if (candidateId && architectStartupEnabled(env)) {
           startupNextStep = await issueArchitectStartupLink(env, candidateId, options.hubFetchImpl);
         }
       } catch {
