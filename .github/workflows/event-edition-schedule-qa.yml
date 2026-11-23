@@ -6,6 +6,9 @@ on:
     paths:
       - 'src/app/(event-live)/**'
       - 'src/components/patrimonial-event-landing.tsx'
+      - 'src/components/patrimonial-event.module.css'
+      - 'public/benessere-patrimoniale/evento/speakers/**'
+      - 'scripts/verify-patrimonial-event-speakers.mjs'
       - 'src/components/patrimonial-event-clock.tsx'
       - 'src/content/patrimonial-event-session.ts'
       - 'src/lib/public-leads/patrimonial-event-public-schedule.ts'
@@ -42,6 +45,7 @@ jobs:
       - run: node --no-warnings --experimental-strip-types scripts/verify-patrimonial-event-one-step.mjs
       - run: node --no-warnings --experimental-strip-types scripts/verify-patrimonial-event-optional-fields.mjs
       - run: node --no-warnings --experimental-strip-types scripts/verify-patrimonial-event-hub-e2e.mjs
+      - run: node --no-warnings --experimental-strip-types scripts/verify-patrimonial-event-speakers.mjs
       - run: npm run typecheck
       - run: npm run build
         env:
