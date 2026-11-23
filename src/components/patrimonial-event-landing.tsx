@@ -13,7 +13,7 @@ import architectHeader from './patrimonial-architect-header.module.css';
 
 const Arrow = ({ size = 18 }: { size?: number }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>;
 const eventSpeakers = [
-  { name: 'Frank Cannoletta', role: 'Moderatore evento', image: '/people/frank-no-badge.png' },
+  { name: 'Frank Cannoletta', role: 'Moderatore evento', image: '/benessere-patrimoniale/evento/speakers/frank-cannoletta-ritratto-approvato.webp' },
   { name: 'Francesco Aquilanti', role: 'Area Manager CIG (Care is Gold)', image: '/benessere-patrimoniale/evento/speakers/francesco-aquilanti-ritratto-originale.webp' },
   { name: 'Gianni Mazzotta', role: 'Architetto Patrimoniale', image: '/benessere-patrimoniale/evento/speakers/gianni-mazzotta-ritratto-originale.webp' },
   { name: 'Angelo Ria Chetta', role: 'Founder Horyzon', image: '/benessere-patrimoniale/evento/speakers/angelo-ria-chetta-ritratto-approvato.webp' },
@@ -350,7 +350,7 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
     <div className={styles.vSpeakerRosterGrid}>
       {eventSpeakers.map(person => (
         <article key={person.name} className={styles.vSpeakerRosterCard}>
-          <div className={[styles.vSpeakerRosterPortrait, person.name === 'Francesco Aquilanti' ? styles.vSpeakerFrancescoPortrait : '', person.name === 'Gianni Mazzotta' ? styles.vSpeakerGianniPortrait : ''].filter(Boolean).join(' ')}>
+          <div className={[styles.vSpeakerRosterPortrait, person.name === 'Frank Cannoletta' ? styles.vSpeakerFrankPortrait : '', person.name === 'Francesco Aquilanti' ? styles.vSpeakerFrancescoPortrait : '', person.name === 'Gianni Mazzotta' ? styles.vSpeakerGianniPortrait : ''].filter(Boolean).join(' ')}>
             <Image src={person.image} alt={`Foto di ${person.name}`} fill sizes="(max-width: 650px) 45vw, (max-width: 1024px) 46vw, 540px" className={person.name === "Angelo Ria Chetta" ? styles.vSpeakerAngeloPhoto : undefined} />
           </div>
           <div className={styles.vSpeakerRosterBody}>

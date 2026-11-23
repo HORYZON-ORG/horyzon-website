@@ -20,7 +20,7 @@ assert(speaker>=0&&speaker<bonus,'speaker section precedes benefits');
 assert(!landing.includes('data-event-section="other-speakers"'),'no separate speaker section');
 const section=landing.slice(speaker,bonus);
 for(const [name,role,file] of [
-  ['Frank Cannoletta','Moderatore evento','/people/frank-no-badge.png'],
+  ['Frank Cannoletta','Moderatore evento','/benessere-patrimoniale/evento/speakers/frank-cannoletta-ritratto-approvato.webp'],
   ['Francesco Aquilanti','Area Manager CIG (Care is Gold)','/benessere-patrimoniale/evento/speakers/francesco-aquilanti-ritratto-originale.webp'],
   ['Gianni Mazzotta','Architetto Patrimoniale','/benessere-patrimoniale/evento/speakers/gianni-mazzotta-ritratto-originale.webp'],
   ['Angelo Ria Chetta','Founder Horyzon','/benessere-patrimoniale/evento/speakers/angelo-ria-chetta-ritratto-approvato.webp'],
@@ -49,7 +49,7 @@ const speakerDefs=landing.slice(landing.indexOf('const eventSpeakers = ['),landi
 assert.deepEqual([...speakerDefs.matchAll(/name: '([^']+)'/g)].map(m=>m[1]),expectedNames,'speaker order Frank Francesco Gianni Angelo');
 assert(landing.indexOf('vSpeakerRosterPortrait')<landing.indexOf('vSpeakerRosterBody'),'photo above title');
 assert.match(css,/@media\(max-width:650px\)/);
-for(const file of ['angelo-ria-chetta-ritratto-approvato.webp','gianni-mazzotta-ritratto-originale.webp','francesco-aquilanti-ritratto-originale.webp']){
+for(const file of ['frank-cannoletta-ritratto-approvato.webp','angelo-ria-chetta-ritratto-approvato.webp','gianni-mazzotta-ritratto-originale.webp','francesco-aquilanti-ritratto-originale.webp']){
  const data=readFileSync(join(process.cwd(),'public','benessere-patrimoniale','evento','speakers',file));
  assert(data.length>10000&&data.subarray(0,4).toString('ascii')==='RIFF'&&data.subarray(8,12).toString('ascii')==='WEBP','original photo still present '+file);
 }
@@ -76,4 +76,13 @@ const angeloGeometry=angelo.readUInt32LE(21);
 assert.equal((angeloGeometry & 0x3fff)+1,1254,'approved Angelo square image native width');
 assert.equal(((angeloGeometry>>14)&0x3fff)+1,1254,'approved Angelo square image native height');
 assert.match(css,/\.page \.vSpeakerRosterPortrait \.vSpeakerAngeloPhoto\{object-fit:contain;object-position:center center;filter:none;transform:none\}/,'Angelo square image fully visible with no crop or grayscale alteration');
-console.log('Event copy and all four speakers with approved square Angelo portrait PASS');
+
+const frank=readFileSync(join(process.cwd(),'public','benessere-patrimoniale','evento','speakers','frank-cannoletta-ritratto-approvato.webp'));
+assert.equal(frank.subarray(12,16).toString('ascii'),'VP8L','approved Frank photo stored as lossless WebP');
+assert.equal(frank[20],0x2f,'valid Frank lossless WebP signature');
+const frankGeometry=frank.readUInt32LE(21);
+assert.equal((frankGeometry & 0x3fff)+1,1254,'Frank approved square width unchanged');
+assert.equal(((frankGeometry>>14)&0x3fff)+1,1254,'Frank approved square height unchanged');
+assert.match(css,/\.page \.vSpeakerFrankPortrait img\{object-fit:contain;object-position:center center;filter:none;transform:none\}/,'Frank photo fits square card without cropping');
+assert.match(landing,/person\.name === 'Frank Cannoletta' \? styles\.vSpeakerFrankPortrait : ''/,'Frank light background applied only to his card');
+console.log('Event copy and all four speakers, including approved Frank portrait, PASS');

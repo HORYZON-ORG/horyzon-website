@@ -930,6 +930,9 @@
 .page .vSpeakerRosterCard{display:flex;flex-direction:column;min-width:0;border:1px solid rgba(247,244,232,.18);border-radius:18px;background:#102229;overflow:hidden}
 .page .vSpeakerRosterPortrait{position:relative;aspect-ratio:1;background:radial-gradient(circle at 50% 38%,#234048 0%,#102229 68%);overflow:hidden}
 .page .vSpeakerRosterPortrait img{object-fit:cover;object-position:center 20%;filter:grayscale(1)}
+/* Frank: the exact approved light-background square speaker image, without cropping or recoloring. */
+.page .vSpeakerFrankPortrait{background:#d1d1d1}
+.page .vSpeakerFrankPortrait img{object-fit:contain;object-position:center center;filter:none;transform:none}
 /* Preserve the uploaded original portrait in full within the square card: no crop, grayscale filter or source alteration. */
 .page .vSpeakerFrancescoPortrait{background:linear-gradient(90deg,#c6c5c4 0%,#bcbabb 100%)}
 .page .vSpeakerFrancescoPortrait img{object-fit:contain;object-position:center center;filter:none}
