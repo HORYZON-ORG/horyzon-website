@@ -6,12 +6,14 @@ import { patrimonialInterest, patrimonialInterests, type PatrimonialInterest } f
 import { pilotAvailability, pilotExperience, pilotForms, pilotGoals, pilotUtmKeys, type PilotMode, type PilotUtm } from '@/content/patrimonial-funnels';
 import { PATRIMONIAL_V2, PatrimonialClientAttempt, PatrimonialRevisionRequiredError } from '@/lib/public-leads/patrimonial-contract';
 import { ArchitectApplicationForm } from './patrimonial-architect-preview-form';
+import { ArchitectStartupEntryForm } from './patrimonial-architect-startup-entry-form';
 import { architectCvProblem } from '@/content/architect-cv';
 import { PatrimonialEventForm } from './patrimonial-event-form';
 import { eventReferralFromSearch } from '@/lib/public-leads/patrimonial-event-referral';
 
 type ArchitectPresentation = { presentation?: 'architect' | 'event'; selectedProfile?: string; onProfileChange?: (value: string) => void };
 export function PatrimonialLeadForm({ mode = 'legacy/public', contractVersion, previewSubmissionsEnabled = false, ...presentation }: { mode?: 'legacy/public' | PilotMode; contractVersion?: typeof PATRIMONIAL_V2; previewSubmissionsEnabled?: boolean } & ArchitectPresentation) {
+  if (mode === 'architect-path' && presentation.presentation === 'architect') return <ArchitectStartupEntryForm />;
   return mode === 'legacy/public' ? <PublicLeadForm /> : <PilotLeadForm mode={mode} contractVersion={contractVersion} previewSubmissionsEnabled={previewSubmissionsEnabled} {...presentation} />;
 }
 function PublicLeadForm() {
