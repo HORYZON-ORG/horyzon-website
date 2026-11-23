@@ -6,9 +6,19 @@ const startupPath = '/candidature/architetti-patrimoniali/startup';
 const token = 'A'.repeat(43);
 const browser = await chromium.launch({ headless: true });
 try {
-  for (const width of [390, 1366]) {
+  for (const width of [320, 390, 1366]) {
     const page = await browser.newPage({ viewport: { width, height: 860 }, reducedMotion: 'reduce' });
     await page.route('https://zbpegzd1dv3ut14o.public.blob.vercel-storage.com/**', route => route.abort());
+    await page.addInitScript(() => {
+      // Test native player lifecycle deterministically without downloading 227 MB.
+      HTMLMediaElement.prototype.play = function() {
+        this.dispatchEvent(new Event('play'));
+        return Promise.resolve();
+      };
+      HTMLMediaElement.prototype.pause = function() {
+        this.dispatchEvent(new Event('pause'));
+      };
+    });
 
     let requests = 0;
     await page.route('**/api/architect-startup/video-gate', route => {
@@ -25,6 +35,18 @@ try {
     await page.goto(origin + startupPath + '#token=' + token, { waitUntil: 'domcontentloaded' });
     assert.equal(await page.locator('video').count(), 1, 'Native HTML5 video player is used');
     assert.equal(await page.locator('iframe[src*="drive.google.com"]').count(), 0, 'Google Drive iframe removed');
+    assert.equal(await page.getByRole('heading', { name: /Un progetto da conoscere.*Una scelta da fare consapevolmente/ }).count(), 1, 'Compact title before the video');
+    assert.equal(await page.locator('.unused-hero').count(), 0);
+    assert.equal(await page.locator('video').getAttribute('poster'), null, 'Old skyline poster removed');
+    const cover = page.getByRole('button', { name: 'Riproduci la presentazione Startup Horyzon' });
+    await cover.waitFor({ state: 'visible' });
+    assert.equal(await page.getByRole('heading', { name: 'Ti riconosci in questo progetto?' }).count(), 1);
+    await cover.click();
+    await cover.waitFor({ state: 'hidden' });
+    assert.equal(await page.locator('video').evaluate(v => v.controls), true, 'Controls available while playing');
+    await page.locator('video').evaluate(v => v.pause());
+    await cover.waitFor({ state: 'visible' });
+    assert.equal(await page.locator('video').evaluate(v => v.controls), false, 'Branded cover returns on pause');
     await firstReceipt;
 
     const button = page.getByRole('button', { name: 'Ho completato la visione del video e vado avanti' });
@@ -55,7 +77,7 @@ try {
     await finalButton.waitFor();
     assert.equal(await finalButton.isEnabled(), true);
     assert.equal(await page.getByText('Hai confermato la visione.', { exact: false }).count(), 1);
-    console.log('PASS Startup gate ' + width + 'px: 661s grey lock, server ready lime, explicit two-step consent');
+    console.log('PASS Startup ' + width + 'px: branded video cover/play/pause, 661s gate, contact opt-in');
     await page.close();
 
     const anonymous = await browser.newPage({ viewport: { width, height: 860 }, reducedMotion: 'reduce' });

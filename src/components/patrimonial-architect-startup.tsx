@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import header from './patrimonial-architect-header.module.css';
 import styles from './patrimonial-architect-startup.module.css';
 
@@ -15,6 +15,8 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
   const [status, setStatus] = useState<Status>('idle');
   const [notice, setNotice] = useState('');
   const [videoError, setVideoError] = useState(false);
+  const [videoPlaying, setVideoPlaying] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     const readToken = () => {
@@ -80,6 +82,17 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
     };
   }, [token, videoUrl]);
 
+  async function startPresentation() {
+    const player = videoRef.current;
+    if (!player || !videoUrl) return;
+    try {
+      await player.play();
+      setVideoError(false);
+    } catch {
+      setVideoError(true);
+    }
+  }
+
   async function confirmInterest() {
     if (!gateReady || !watchAcknowledged || !videoUrl || !token || status === 'sending' || status === 'success') return;
     setStatus('sending'); setNotice('');
@@ -118,28 +131,14 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
     </header>
 
     <main>
-      <section className={styles.hero} aria-labelledby="startup-title">
-        <div className={styles.heroBackdrop} aria-hidden="true" />
-        <div className={styles.heroLines} aria-hidden="true"><span /><span /><span /></div>
-        <div className={styles.heroInner}>
-          <div className={styles.kicker}><span className={styles.kickerDot} /> PRESENTAZIONE STARTUP HORYZON</div>
-          <h1 id="startup-title">Prima di scegliere un percorso,<br /><em>conosci chi lo sta costruendo.</em></h1>
-          <p>Una presentazione di Horyzon Consulting: la visione, il progetto e il ruolo delle persone che ne faranno parte. Guarda il video, poi decidi liberamente se vuoi proseguire.</p>
-          <div className={styles.heroMeta}>
-            <span>01 / Conosci Horyzon</span>
-            <span>02 / Ascolta la presentazione</span>
-            <span>03 / Conferma la tua scelta</span>
-          </div>
+      <section className={styles.intro} aria-labelledby="startup-video-title">
+        <div className={styles.introInner}>
+          <span className={styles.introKicker}><span aria-hidden="true" className={styles.kickerDot} /> STARTUP HORYZON <span className={styles.introSeparator} aria-hidden="true" /> PRESENTAZIONE</span>
+          <h1 id="startup-video-title">Un progetto da conoscere.<br /><em>Una scelta da fare consapevolmente.</em></h1>
         </div>
       </section>
 
-      <section id="startup-video" className={styles.presentation} aria-labelledby="startup-video-title">
-        <div className={styles.sectionHeading}>
-          <span className={styles.eyebrow}>LA PRESENTAZIONE</span>
-          <h2 id="startup-video-title">Un progetto da conoscere.<br /><span>Una scelta da fare consapevolmente.</span></h2>
-          <p>Guarda la presentazione completa. Alla fine potrai decidere se chiedere al team Horyzon di contattarti.</p>
-        </div>
-
+      <section id="startup-video" className={styles.presentation} aria-label="Video Startup Horyzon">
         <div className={styles.videoWrap}>
           <div className={styles.videoHeader}>
             <span className={styles.videoLed} aria-hidden="true" />
@@ -147,12 +146,40 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
             <span className={styles.videoNote}>PRESENTAZIONE</span>
           </div>
           {videoUrl ? (
-            <video key={videoUrl} className={styles.video} src={videoUrl} controls playsInline preload="metadata"
-              poster="/benessere-patrimoniale/percorso-architetto/skyline.jpg"
-              onError={() => setVideoError(true)}
-              aria-label="Presentazione della startup Horyzon Consulting">
-              Il browser non supporta la riproduzione del video.
-            </video>
+            <div className={styles.videoStage}>
+              <video
+                ref={videoRef}
+                key={videoUrl}
+                className={styles.video}
+                src={videoUrl}
+                controls={videoPlaying}
+                playsInline
+                preload="metadata"
+                onPlay={() => { setVideoPlaying(true); setVideoError(false); }}
+                onPause={() => setVideoPlaying(false)}
+                onEnded={() => setVideoPlaying(false)}
+                onError={() => { setVideoError(true); setVideoPlaying(false); }}
+                aria-label="Presentazione della Startup Horyzon Consulting">
+                Il browser non supporta la riproduzione del video.
+              </video>
+              {!videoPlaying && (
+                <button className={styles.videoCover} type="button"
+                  onClick={() => void startPresentation()}
+                  aria-label="Riproduci la presentazione Startup Horyzon">
+                  <span className={styles.videoCoverOrbit} aria-hidden="true" />
+                  <span className={styles.videoCoverBrand}>
+                    <span className={styles.videoCoverLogo}>
+                      <Image src="/horyzon-logo-canonical.png" width={1670} height={390}
+                        sizes="(max-width: 600px) 220px, 340px" alt="" />
+                    </span>
+                    <span className={styles.videoCoverRule} aria-hidden="true" />
+                    <span className={styles.videoCoverDivision}>BENESSERE PATRIMONIALE</span>
+                  </span>
+                  <span className={styles.videoPlay} aria-hidden="true"><span className={styles.videoPlayTriangle} /></span>
+                  <span className={styles.videoPlayCaption}>GUARDA LA PRESENTAZIONE</span>
+                </button>
+              )}
+            </div>
           ) : (
             <div className={styles.videoPlaceholder}>
               <span className={styles.playSymbol} aria-hidden="true">▶</span>
@@ -169,6 +196,7 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
           <div className={styles.confirmIntro}>
             <span className={styles.eyebrow}>LA TUA DECISIONE</span>
             <h2>Ti riconosci in questo progetto?</h2>
+            <p>Prima di scegliere un percorso, conosci chi lo sta costruendo. Poi decidi se proseguire.</p>
           </div>
           <div className={styles.confirmAction}>
             {status === 'success' ? (
@@ -217,32 +245,6 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
         </div>
       </section>
 
-      <section className={styles.values} aria-labelledby="startup-path-title">
-        <div className={styles.valuesOrbit} aria-hidden="true" />
-        <div className={styles.valuesInner}>
-          <div className={styles.valuesHeading}>
-            <span className={styles.valuesEyebrow}>IL PERCORSO HORYZON <span aria-hidden="true">/ 01—03</span></span>
-            <h2 id="startup-path-title">Conosci il progetto.<br /><em>La scelta è tua.</em></h2>
-          </div>
-          <div className={styles.valuesSteps}>
-            <div className={styles.valueStep}>
-              <div className={styles.valueTop}><span className={styles.valueNumber}>01</span><span className={styles.valueLine} aria-hidden="true" /></div>
-              <h3>Conosci la visione</h3>
-              <p>Scopri le persone e le idee da cui nasce Horyzon.</p>
-            </div>
-            <div className={styles.valueStep}>
-              <div className={styles.valueTop}><span className={styles.valueNumber}>02</span><span className={styles.valueLine} aria-hidden="true" /></div>
-              <h3>Comprendi il percorso</h3>
-              <p>Esplora il metodo e il ruolo dell’Architetto Patrimoniale.</p>
-            </div>
-            <div className={styles.valueStep}>
-              <div className={styles.valueTop}><span className={styles.valueNumber}>03</span><span className={styles.valueLine} aria-hidden="true" /></div>
-              <h3>Scegli consapevolmente</h3>
-              <p>Decidi tu se fare il prossimo passo insieme a noi.</p>
-            </div>
-          </div>
-        </div>
-      </section>
     </main>
 
     <footer className={styles.footer}>
