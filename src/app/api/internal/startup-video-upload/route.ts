@@ -2,7 +2,7 @@ import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
 import { timingSafeEqual } from 'node:crypto';
 
 export const runtime = 'nodejs';
-const VIDEO_PATH = 'startup/horyzon-startup-720p.mp4';
+const VIDEO_PATH = 'startup/horyzon-startup-full-hd.mp4';
 
 /**
  * Temporary, narrowly-scoped large-file migration endpoint.
