@@ -13,6 +13,8 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
   const [status, setStatus] = useState<Status>('idle');
   const [notice, setNotice] = useState('');
   const [videoError, setVideoError] = useState(false);
+  const driveEmbed = /^https:\/\/drive\.google\.com\/file\/d\/[A-Za-z0-9_-]+\/preview$/.test(videoUrl);
+  const driveViewUrl = driveEmbed ? videoUrl.replace(/\/preview$/, '/view') : '';
 
   useEffect(() => {
     const readToken = () => {
@@ -93,7 +95,13 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
             <span>HORYZON CONSULTING / STARTUP</span>
             <span className={styles.videoNote}>PRESENTAZIONE</span>
           </div>
-          {videoUrl ? (
+          {videoUrl ? driveEmbed ? (
+            <iframe key={videoUrl} className={styles.video} src={videoUrl}
+              title="Video della Startup Horyzon Consulting"
+              referrerPolicy="no-referrer"
+              allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+              allowFullScreen loading="eager" />
+          ) : (
             <video key={videoUrl} className={styles.video} src={videoUrl} controls playsInline preload="metadata"
               poster="/benessere-patrimoniale/percorso-architetto/skyline.jpg"
               onEnded={() => setEnded(true)} onError={() => setVideoError(true)}
@@ -110,6 +118,7 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
           )}
         </div>
 
+        {driveEmbed && <p className={styles.videoFallback}>Se il video non si apre, <a href={driveViewUrl} target="_blank" rel="noopener noreferrer">guardalo direttamente su Google Drive</a> e torna qui per confermare.</p>}
         {videoError && <p className={styles.error} role="alert">Il video non è disponibile al momento. Non è stata registrata alcuna conferma.</p>}
 
         <div className={styles.confirmPanel}>
@@ -119,6 +128,11 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
             <p>La scheda in Selezione Architetti viene creata solo se premi il pulsante dopo il video. Confermare significa chiedere un ricontatto, non essere già selezionato o assunto.</p>
           </div>
           <div className={styles.confirmAction}>
+            {driveEmbed && token && status !== 'success' && <label className={styles.watchAttestation}>
+              <input type="checkbox" checked={ended} disabled={status === 'sending'}
+                onChange={event => setEnded(event.target.checked)} />
+              <span>Confermo di aver terminato la visione del video.</span>
+            </label>}
             {status === 'success' ? (
               <div className={styles.success} role="status">
                 <strong>✓ Richiesta di ricontatto registrata</strong>
@@ -135,7 +149,7 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
             ) : (
               <div className={styles.locked}>
                 <span aria-hidden="true">◷</span>
-                <p>{!videoUrl ? 'I tuoi recapiti sono stati ricevuti per questo passaggio. Il video è in preparazione; nessuna scheda sarà creata in Selezione Architetti finché non confermerai l’interesse.' : !token ? 'Per confermare torna al modulo iniziale e inserisci i tuoi recapiti.' : 'Il pulsante di conferma comparirà al termine del video.'}</p>
+                <p>{!videoUrl ? 'I tuoi recapiti sono stati ricevuti per questo passaggio. Il video è in preparazione; nessuna scheda sarà creata in Selezione Architetti finché non confermerai l’interesse.' : !token ? 'Per confermare torna al modulo iniziale e inserisci i tuoi recapiti.' : driveEmbed ? 'Quando hai finito di guardare il video, confermalo qui sopra per proseguire.' : 'Il pulsante di conferma comparirà al termine del video.'}</p>
               </div>
             )}
             {status === 'error' && <p className={styles.error} role="alert">{notice}</p>}
