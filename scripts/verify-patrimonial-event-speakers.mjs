@@ -35,7 +35,15 @@ const source=readFileSync(new URL('../src/content/patrimonial-event-content.ts',
 assert.doesNotMatch(landing,/radar\s+patrimoniale|il tuo radar/i,'no radar copy even in hidden agenda');
 assert.doesNotMatch(source,/radar\s+patrimoniale|il tuo radar/i,'no radar promise in dynamic profile copy');
 assert.doesNotMatch(css,/\.page \.vRadar/,'obsolete Radar bonus CSS removed');
-const order=section.match(/name: ['\x22][^'\x22]+/g)||[];
+for(const path of [
+  '../src/app/(event-live)/evento/quello-che-le-banche-non-dicono/page.tsx',
+  '../src/app/(event-live)/evento/quello-che-le-banche-non-dicono/grazie/page.tsx',
+  '../src/components/patrimonial-event-form.tsx',
+  '../src/components/patrimonial-lead-form.tsx',
+]){
+ const text=readFileSync(new URL(path,import.meta.url),'utf8');
+ assert.doesNotMatch(text,/radar-patrimoniale|Radar Patrimoniale|Il tuo Radar/i,'no Radar link or promise in active event flow: '+path);
+}
 const expectedNames=['Frank Cannoletta','Francesco Aquilanti','Gianni Mazzotta','Angelo Ria Chetta'];
 const speakerDefs=landing.slice(landing.indexOf('const eventSpeakers = ['),landing.indexOf('] as const;',landing.indexOf('const eventSpeakers = [')));
 assert.deepEqual([...speakerDefs.matchAll(/name: '([^']+)'/g)].map(m=>m[1]),expectedNames,'speaker order Frank Francesco Gianni Angelo');
