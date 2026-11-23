@@ -78,7 +78,7 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 <div data-event-section="hero" id="inizio-evento" className={[styles["hero"], styles.s004].join(' ')}>
 <div className={[styles["hero-inner"], styles.s010].join(' ')}>
 <div className={[styles.s011].join(' ')}>
-<div className={[styles["label"], styles["load-1"], styles.s012].join(' ')}>Evento online gratuito · Mercoledì 9 dicembre 2026 · Ore 21:00 · 60 minuti + domande</div>
+<div className={[styles["label"], styles["load-1"], styles.s012].join(' ')}>Evento online gratuito · Mercoledì 9 dicembre 2026 · Ore 21:00 · 60 minuti più eventuali domande</div>
 <h1 className={[styles["load-2"], styles.s013].join(' ')}>Quello che le banche <span className={[styles["chip-lime"], styles.s014].join(' ')}>non</span> dicono.</h1>
 <p className={[styles["load-3"], styles.s015].join(' ')}>Un incontro online di 60 minuti per vedere il denaro come lo guarda chi un patrimonio lo costruisce e lo protegge da generazioni. <strong className={[styles.s003].join(' ')}>Inflazione, diversificazione, metalli preziosi, immobili, ETF e obbligazioni</strong>: capirli prima di affidare i tuoi risparmi a chiunque.</p>
 {editionScheduled && <div className={[styles["load-4"], styles.s016].join(' ')}>
@@ -95,7 +95,7 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 <Arrow size={20} /></a>
 {registrationOpen ? <div className={[styles.s024].join(' ')}><strong>Iscrizioni aperte</strong> · {session.eventLabel}. Ricevi conferma e promemoria via email.</div> : <div className={[styles.s024].join(' ')}>9 dicembre 2026 · Ore 21:00 · 60 minuti con domande e risposte.</div>}
 </div>
-<div className={[styles.s030].join(' ')}>Gratuito · Online · 60 minuti con domande · Nessuna vendita durante l&apos;evento</div>
+<div className={[styles.s030].join(' ')}>Gratuito · Online · 60 minuti + eventuali domande · Nessuna vendita durante l&apos;evento</div>
 </div>
 {registrationOpen && !editionScheduled && <div className={[styles["tile-d"], styles["hero-chip"], styles.s031].join(' ')}><div className={styles.s035}>9 dicembre alle 21:00. Le iscrizioni si aprono appena il sistema è pronto.</div></div>}
 </div>
@@ -301,7 +301,7 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 <div className={[styles.s041].join(' ')}>COME SI SVOLGE</div>
 <h2 className={[styles.reveal, styles.s093].join(' ')}>Cosa scoprirai durante l’incontro.</h2>
 </div>
-<div className={[styles.s146].join(' ')}>In un unico incontro di 60 minuti toccheremo due temi: il valore dei tuoi soldi e come costruire e proteggere un patrimonio, con spazio alle domande.</div>
+<div className={[styles.s146].join(' ')}>In 60 minuti parleremo del valore dei tuoi soldi e di come costruire e proteggere un patrimonio. Al termine ci sarà spazio per eventuali domande.</div>
 </div>
 <div className={styles.vEvenings}>
 {evenings.map(evening => (<article key={evening.n} className={styles.vEvening}>
@@ -360,7 +360,7 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 <p className={[styles.s043].join(' ')}>Un quadro più chiaro, e qualcuno con cui guardarlo. L&apos;obiettivo è uno: farti vedere come lavorano i milionari, come gestiscono e proteggono i loro patrimoni.</p>
 </div>
 <div className={[styles.s183].join(' ')}>
-<div className={[styles.s184].join(' ')}><div><strong className={[styles.s185].join(' ')}>Evento live · 9 dicembre ore 21:00</strong><div className={[styles.s119].join(' ')}>60 minuti, con domande e risposte dal vivo e la regola 70-10-10-10 da conoscere</div></div><span className={[styles.s186].join(' ')}>Incluso</span></div>
+<div className={[styles.s184].join(' ')}><div><strong className={[styles.s185].join(' ')}>Evento live · 9 dicembre ore 21:00</strong><div className={[styles.s119].join(' ')}>60 minuti di contenuti più eventuali domande dal vivo, con la regola 70-10-10-10 da conoscere</div></div><span className={[styles.s186].join(' ')}>Incluso</span></div>
 <div className={styles.vRadar}><div className={styles.vRadarImg}><Image src="/benessere-patrimoniale/evento/radar.jpg" alt="Quadrante d'oro con anelli concentrici e una lancetta" width={800} height={800} sizes="160px" /></div><div><span className={[styles.s187].join(' ')}>BONUS 1 · IN REGALO</span><br /><strong className={[styles.s185].join(' ')}>Il tuo Radar Patrimoniale</strong><div className={[styles.s119].join(' ')}>Uno strumento utile per i tuoi investimenti: ti mostra in un colpo d&apos;occhio dove il tuo patrimonio è scoperto e dove è troppo concentrato.</div></div><span className={[styles.s186].join(' ')}>Gratuito</span></div>
 
 <div className={[styles.s184].join(' ')}><div><span className={[styles.s187].join(' ')}>BONUS 2</span><br /><strong className={[styles.s185].join(' ')}>La lista delle domande da fare prima di firmare</strong><div className={[styles.s119].join(' ')}>Da portare al prossimo appuntamento in banca</div></div><span className={[styles.s186].join(' ')}>Incluso</span></div>
@@ -375,8 +375,8 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 <div className={[styles.s196].join(' ')}>
 <div className={[styles["label"], styles.s012].join(' ')}>ULTIMO PASSO</div>
 <h2 className={[styles.reveal, styles.s197].join(' ')}><span data-bind="formTitle">{registrationOpen ? "Iscriviti all’evento del 9 dicembre" : "Calendario e iscrizioni in preparazione"}</span></h2>
-<p className={[styles.s065].join(' ')}>{registrationOpen ? '9 dicembre 2026 · Ore 21:00–22:00. Compilando il modulo ti iscrivi direttamente all’evento e ricevi la conferma, il calendario e due promemoria via email.' : 'L’evento è fissato per il 9 dicembre alle 21:00. Le iscrizioni online riprenderanno quando il sistema di registrazione sarà disponibile.'}</p>
-{registrationOpen && <div className={[styles["tile-d"], styles.s198].join(' ')}><div className={styles.s199}>{editionScheduled ? '9 dicembre 2026 · Ore 21:00–22:00 · Iscrizione diretta' : '9 dicembre 2026 · Ore 21:00 · Iscrizioni in preparazione'}</div></div>}
+<p className={[styles.s065].join(' ')}>{registrationOpen ? '9 dicembre 2026 · Ore 21:00 · 60 minuti più eventuali domande. Compilando il modulo ti iscrivi direttamente all’evento e ricevi la conferma, il calendario e due promemoria via email.' : 'L’evento è fissato per il 9 dicembre alle 21:00. Le iscrizioni online riprenderanno quando il sistema di registrazione sarà disponibile.'}</p>
+{registrationOpen && <div className={[styles["tile-d"], styles.s198].join(' ')}><div className={styles.s199}>{editionScheduled ? '9 dicembre 2026 · Ore 21:00 · 60 min + domande · Iscrizione diretta' : '9 dicembre 2026 · Ore 21:00 · Iscrizioni in preparazione'}</div></div>}
 <div className={[styles.s201].join(' ')}>
 <span className={[styles.s202].join(' ')}><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3z"></path><path d="M9 12l2 2 4-4"></path></svg></span>
 <div><strong>La nostra promessa</strong><div className={[styles.s121].join(' ')}>Nessuna vendita durante l’evento. Se senti che non fa per te, esci: nessuno ti richiamerà per insistere.</div></div>
@@ -395,7 +395,7 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
         : [];
     }),
   },
-}}><PatrimonialLeadForm contractVersion={contractVersion} mode="patrimonial-event" presentation="event" selectedProfile={selectedProfile} onProfileChange={setSelectedProfile} /></EventNotesContext.Provider> : <div className={styles.formCard} role="status"><p>Per informazioni sulle prossime serate puoi contattarci direttamente.</p><a href="mailto:info@horyzon.it?subject=Informazioni%20evento%20Quello%20che%20le%20banche%20non%20dicono" className={styles.cta}>Chiedi informazioni <Arrow /></a></div>}
+}}><PatrimonialLeadForm contractVersion={contractVersion} mode="patrimonial-event" presentation="event" selectedProfile={selectedProfile} onProfileChange={setSelectedProfile} /></EventNotesContext.Provider> : <div className={styles.formCard} role="status"><p>Per informazioni sull’incontro del 9 dicembre puoi contattarci direttamente.</p><a href="mailto:info@horyzon.it?subject=Informazioni%20evento%20Quello%20che%20le%20banche%20non%20dicono" className={styles.cta}>Chiedi informazioni <Arrow /></a></div>}
 </div>
 </div>
 
@@ -405,8 +405,8 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 <div className={[styles.s204].join(' ')}>
 {[
   ['È davvero gratuito?', 'Sì, la partecipazione è gratuita e la registrazione conferma direttamente la tua iscrizione. Il confronto facoltativo con un Architetto Patrimoniale si svolge solo se richiesto esplicitamente.'],
-  ['Dove si svolge e cosa mi serve per collegarmi?', 'Online. Ti serve un computer, un tablet o uno smartphone con connessione. L’evento è il 9 dicembre 2026 dalle 21:00 alle 22:00. Le istruzioni per accedere arriveranno via email.'],
-  ['E se non posso partecipare?', 'L’incontro dura 60 minuti il 9 dicembre. Per informazioni su materiali o eventuale registrazione scrivi a info@horyzon.it.'],
+  ['Dove si svolge e cosa mi serve per collegarmi?', 'Online. Ti serve un computer, un tablet o uno smartphone con connessione. L’evento inizia il 9 dicembre 2026 alle 21:00. Dura 60 minuti, più eventuali domande. Le istruzioni per accedere arriveranno via email.'],
+  ['E se non posso partecipare?', 'L’incontro del 9 dicembre dura 60 minuti, più eventuali domande. Per informazioni su materiali o eventuale registrazione scrivi a info@horyzon.it.'],
   ['Devo accendere la videocamera o parlare?', 'No. Puoi seguire in tranquillità e fare domande in chat quando vuoi.'],
   ['Posso partecipare con un familiare?', 'Sì. Le scelte sul patrimonio si fanno meglio insieme.'],
   ['Serve già sapere di finanza?', 'No. Partiamo dalle basi e arriviamo a come ragionano i grandi patrimoni. Ognuno dei quattro profili trova qualcosa per sé.'],

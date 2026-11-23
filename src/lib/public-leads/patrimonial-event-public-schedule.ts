@@ -74,7 +74,7 @@ export async function publishedEventSession(
     return {
       status: "CONFIRMED",
       eventDate: sessions[0].startsAt,
-      eventLabel: format(sessions[0].startsAt) + ' · ore 21:00–22:00 (Italia) · 60 minuti con domande e risposte',
+      eventLabel: format(sessions[0].startsAt) + ' · ore 21:00 (Italia) · 60 minuti più eventuali domande',
       editionKey: row.edition_key,
       seatsTotal: capacity ?? 0,
       seatsTaken: taken,

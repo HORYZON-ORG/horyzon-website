@@ -4,7 +4,7 @@ export const EVENT_END = '2026-12-09T21:00:00.000Z';
 export const EVENT_TITLE = 'Quello che le banche non dicono · Horyzon';
 export const EVENT_PAGE = 'https://horyzon.it/evento/quello-che-le-banche-non-dicono';
 export const EVENT_ICS_URL = 'https://horyzon.it/api/patrimonial-event/calendar';
-export const EVENT_DESCRIPTION = 'Evento online gratuito di 60 minuti con domande e risposte dal vivo. Le indicazioni di accesso saranno comunicate da Horyzon via email.';
+export const EVENT_DESCRIPTION = 'Evento online gratuito dalle 21:00: 60 minuti di incontro, più eventuali domande dal vivo al termine (possibile prolungamento oltre le 22:00). Le indicazioni per accedere saranno comunicate da Horyzon via email.';
 export function eventGoogleCalendarUrl() {
   const query = new URLSearchParams({
     action: 'TEMPLATE', text: EVENT_TITLE, dates: '20261209T200000Z/20261209T210000Z',

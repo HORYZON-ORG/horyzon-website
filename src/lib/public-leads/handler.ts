@@ -114,6 +114,29 @@ export async function handlePublicLead(request: Request, options: Options = {}):
       const result = await callHighLevel<{ contact?: { id?: string } }>(crm, '/contacts/upsert', { locationId: config.locationId, firstName: pilot.firstName, lastName: pilot.lastName, email: pilot.email, ...(pilot.phone ? { phone: pilot.phone } : {}), source: details.source });
       const id = result.contact?.id;
       if (!id || typeof id !== 'string') throw new Error('Contact confirmation missing');
+      // Confirm the event in Horyzon first, immediately after identity upsert.
+      // Optional CRM tags/notes must never prevent an otherwise valid registration.
+      if (pilot.mode === 'patrimonial-event' && env.HORYZON_HUB_EVENT_INGRESS_ENABLED === 'true') {
+        let registrationId: string;
+        try {
+          const receipt = await recordEventLeadInHub({
+            lead: pilot, highlevelContactId: id, highlevelLocationId: config.locationId,
+            source: details.source, env, fetchImpl: options.fetchImpl,
+          });
+          if (receipt === 'DISABLED' || receipt.state !== 'CONFIRMED') throw new Error('HUB_NOT_CONFIRMED');
+          registrationId = receipt.registrationId;
+        } catch {
+          return response(502, 'Contatto ricevuto, ma iscrizione non confermata nell’archivio Horyzon. Non inviare nuovamente: scrivi a info@horyzon.it per verificare.');
+        }
+        // The confirmation email is attempted immediately. The durable outbox retries provider outages.
+        // Horyzon's stored registration is authoritative regardless of optional CRM enrichment.
+        await Promise.allSettled([
+          sendOneEventConfirmation({registrationId,env,fetchImpl:options.fetchImpl}),
+          callHighLevel(crm, `/contacts/${encodeURIComponent(id)}/tags`, { tags: details.tags }),
+          callHighLevel(crm, `/contacts/${encodeURIComponent(id)}/notes`, { body: details.note }),
+        ]);
+        return response(200, pilotForms[pilot.mode].success);
+      }
       await callHighLevel(crm, `/contacts/${encodeURIComponent(id)}/tags`, { tags: details.tags });
       const fieldId = env.HIGHLEVEL_CV_FIELD_ID?.trim();
       const cvLine = cv ? `\nCurriculum: ricevuto (PDF) · archivio privato Horyzon · rif. ${cv}${fieldId ? '' : ' · campo CV HighLevel non ancora configurato'}` : '';
@@ -129,19 +152,6 @@ export async function handlePublicLead(request: Request, options: Options = {}):
       if (hubStored && cv) {
         try { await markArchitectCandidateCrm(env, cv, id, true, options.hubFetchImpl); }
         catch { /* CRM succeeded; Hub keeps a visible pending sync state for reconciliation. */ }
-      }
-      if (pilot.mode === 'patrimonial-event' && env.HORYZON_HUB_EVENT_INGRESS_ENABLED === 'true') {
-        try {
-          const result = await recordEventLeadInHub({
-            lead: pilot, highlevelContactId: id, highlevelLocationId: config.locationId,
-            source: details.source, env, fetchImpl: options.fetchImpl,
-          });
-          if (result === 'DISABLED') throw new Error('HUB_NOT_RECORDED');
-          // Event is already durable. Email failure must not invalidate the registration.
-          await sendOneEventConfirmation({registrationId:result.registrationId,env,fetchImpl:options.fetchImpl});
-        } catch {
-          return response(502, 'Richiesta ricevuta nel CRM, ma collegamento Horyzon non confermato. Non inviare nuovamente: contatta info@horyzon.it per verificare la scheda.');
-        }
       }
       return response(200, pilotForms[pilot.mode].success);
     } catch {

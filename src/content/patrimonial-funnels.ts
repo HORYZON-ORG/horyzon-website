@@ -54,7 +54,7 @@ export const patrimonialEvent = {
   title: 'Quello che le banche non dicono',
   description: "Un incontro online dedicato a persone e imprenditori che vogliono capire meglio patrimonio, inflazione, diversificazione e ruolo dell'oro fisico.",
   date: '9 dicembre 2026',
-  time: '21:00–22:00 (Europe/Rome)',
+  time: '21:00 (Europe/Rome) · 60 minuti più eventuali domande',
   format: 'Online',
   phase: 'before' as 'before' | 'after',
   questions: [

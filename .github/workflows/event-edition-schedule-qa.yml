@@ -39,6 +39,9 @@ jobs:
       - run: node --no-warnings --experimental-strip-types scripts/verify-patrimonial-event-referrals.mjs
       - run: node --no-warnings --experimental-strip-types scripts/verify-patrimonial-event-confirmation-email.mjs
       - run: node --no-warnings --experimental-strip-types scripts/verify-patrimonial-event-reminders.mjs
+      - run: node --no-warnings --experimental-strip-types scripts/verify-patrimonial-event-one-step.mjs
+      - run: node --no-warnings --experimental-strip-types scripts/verify-patrimonial-event-optional-fields.mjs
+      - run: node --no-warnings --experimental-strip-types scripts/verify-patrimonial-event-hub-e2e.mjs
       - run: npm run typecheck
       - run: npm run build
         env:
