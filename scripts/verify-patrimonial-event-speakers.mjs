@@ -23,7 +23,7 @@ for(const [name,role,file] of [
   ['Frank Cannoletta','Moderatore evento','/people/frank-no-badge.png'],
   ['Francesco Aquilanti','Area Manager CIG (Care is Gold)','/benessere-patrimoniale/evento/speakers/francesco-aquilanti-ritratto-originale.webp'],
   ['Gianni Mazzotta','Architetto Patrimoniale','/benessere-patrimoniale/evento/speakers/gianni-mazzotta-ritratto-originale.webp'],
-  ['Angelo Ria Chetta','Founder Horyzon','/benessere-patrimoniale/evento/speakers/angelo-ria-chetta.webp'],
+  ['Angelo Ria Chetta','Founder Horyzon','/benessere-patrimoniale/evento/speakers/angelo-ria-chetta-ritratto-approvato.webp'],
 ]){
  assert(landing.includes(name)&&landing.includes(role)&&landing.includes(file),name+' correct original portrait and role');
 }
@@ -49,7 +49,7 @@ const speakerDefs=landing.slice(landing.indexOf('const eventSpeakers = ['),landi
 assert.deepEqual([...speakerDefs.matchAll(/name: '([^']+)'/g)].map(m=>m[1]),expectedNames,'speaker order Frank Francesco Gianni Angelo');
 assert(landing.indexOf('vSpeakerRosterPortrait')<landing.indexOf('vSpeakerRosterBody'),'photo above title');
 assert.match(css,/@media\(max-width:650px\)/);
-for(const file of ['angelo-ria-chetta.webp','gianni-mazzotta-ritratto-originale.webp','francesco-aquilanti-ritratto-originale.webp']){
+for(const file of ['angelo-ria-chetta-ritratto-approvato.webp','gianni-mazzotta-ritratto-originale.webp','francesco-aquilanti-ritratto-originale.webp']){
  const data=readFileSync(join(process.cwd(),'public','benessere-patrimoniale','evento','speakers',file));
  assert(data.length>10000&&data.subarray(0,4).toString('ascii')==='RIFF'&&data.subarray(8,12).toString('ascii')==='WEBP','original photo still present '+file);
 }
@@ -69,4 +69,11 @@ assert.equal((gianniGeometry & 0x3fff)+1,1024,'Gianni uploaded portrait original
 assert.equal(((gianniGeometry>>14)&0x3fff)+1,1536,'Gianni uploaded portrait original height');
 assert.match(css,/\.page \.vSpeakerGianniPortrait img\{object-fit:contain;object-position:center center;filter:none\}/,'Gianni whole figure is visible without crop');
 assert.match(landing,/person\.name === 'Gianni Mazzotta' \? styles\.vSpeakerGianniPortrait : ''/,'Gianni framing applies only to his own card');
-console.log('Event copy, speaker photos, original Francesco and new Gianni portrait PASS');
+const angelo=readFileSync(join(process.cwd(),'public','benessere-patrimoniale','evento','speakers','angelo-ria-chetta-ritratto-approvato.webp'));
+assert.equal(angelo.subarray(12,16).toString('ascii'),'VP8L','approved Angelo photo has lossless WebP pixels');
+assert.equal(angelo[20],0x2f,'approved Angelo VP8L signature');
+const angeloGeometry=angelo.readUInt32LE(21);
+assert.equal((angeloGeometry & 0x3fff)+1,1254,'approved Angelo square image native width');
+assert.equal(((angeloGeometry>>14)&0x3fff)+1,1254,'approved Angelo square image native height');
+assert.match(css,/\\.page \\.vSpeakerRosterPortrait \\.vSpeakerAngeloPhoto\\{object-fit:contain;object-position:center center;filter:none;transform:none\\}/,'Angelo square image fully visible with no crop or grayscale alteration');
+console.log('Event copy and all four speakers with approved square Angelo portrait PASS');

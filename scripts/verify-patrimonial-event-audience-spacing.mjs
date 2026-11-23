@@ -6,7 +6,7 @@ assert.match(css,/\.page \.s155\{[^}]*border-top: 1px solid rgba\(7,23,29,\.14\)
 assert.match(css,/\.page \.s155\{[^}]*gap: clamp\(28px, 3vw, 42px\)/,'audience cards have larger desktop gap');
 assert.match(css,/@media\(max-width:650px\)\{\s*\.page \.s155\{margin-top:32px;padding-top:42px;gap:24px\}/,'mobile cards stay separated');
 assert.match(landing,/person\.name === "Angelo Ria Chetta" \? styles\.vSpeakerAngeloPhoto : undefined/,'Angelo portrait receives dedicated class only');
-assert.match(css,/\.page \.vSpeakerRosterPortrait \.vSpeakerAngeloPhoto\{object-position:center top;transform:translateY\(5%\) scale\(1\.1\)\}/,'Angelo face remains lowered within the square image');
+assert.match(css,/\.page \.vSpeakerRosterPortrait \.vSpeakerAngeloPhoto\{object-fit:contain;object-position:center center;filter:none;transform:none\}/,'Angelo approved square image is displayed without cropping or repositioning');
 assert.equal((landing.match(/data-event-section="speaker"/g)||[]).length,1,'existing speaker section untouched');
 assert.match(landing,/return <details className=\{styles\.vDisclaimer\}>/,'disclaimer defaults to collapsed native details');
 assert.match(landing,/<summary className=\{styles\.vDisclaimerToggle\}>Avvertenza/,'disclaimer expands via accessible summary');
