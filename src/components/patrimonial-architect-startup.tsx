@@ -62,7 +62,7 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
           <span className={header.rule} aria-hidden="true" />
           <span className={header.division}>BENESSERE PATRIMONIALE</span>
         </a>
-        <a className={styles.headerTag} href="#startup-video" aria-label="Vai al video Startup Horyzon">STARTUP HORYZON <span aria-hidden="true">↗</span></a>
+        <button className={styles.headerTag} type="button" onClick={() => document.getElementById('startup-video')?.scrollIntoView({ behavior: 'smooth' })} aria-label="Vai al video Startup Horyzon">STARTUP HORYZON <span aria-hidden="true">↗</span></button>
       </div>
     </header>
 
@@ -203,7 +203,7 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
           <span className={styles.footerDivision}>BENESSERE PATRIMONIALE</span>
         </a>
         <nav className={styles.footerNav} aria-label="Collegamenti Startup Horyzon">
-          <a href="#startup-video">Rivedi la presentazione <span aria-hidden="true">↗</span></a>
+          <button type="button" onClick={() => document.getElementById('startup-video')?.scrollIntoView({ behavior: 'smooth' })}>Rivedi la presentazione <span aria-hidden="true">↗</span></button>
           <a href="/privacy-policy">Privacy <span aria-hidden="true">↗</span></a>
         </nav>
       </div>
