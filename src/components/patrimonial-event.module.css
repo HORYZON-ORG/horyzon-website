@@ -586,8 +586,10 @@
 .page .vMapChevron{font-size:20px;line-height:1;color:#E6C98A;transition:transform .25s}
 .page .vMapItem.on .vMapChevron{transform:rotate(45deg)}
 .page .vMapWhy{margin:0;padding:0 16px 16px 40px;font-size:15px;line-height:1.55;color:#C9D3D1}
-.page .vDisclaimer{margin-top:22px;border-radius:12px;border:1px solid rgba(247,244,232,.14);background:rgba(7,23,29,.35);font-size:12.5px;line-height:1.55;color:#A3B1B0;overflow:hidden}
-.page .vDisclaimerToggle{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:44px;padding:10px 18px;cursor:pointer;font-family:var(--event-mono),monospace;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#E6C98A}
+.page .vDisclaimer{display:block;width:fit-content;max-width:100%;margin:16px auto 0 0;border:0;border-radius:8px;background:transparent;font-size:12.5px;line-height:1.55;color:#A3B1B0;overflow:hidden}
+.page .vDisclaimer[open]{width:min(100%,760px);border:1px solid rgba(247,244,232,.14);background:rgba(7,23,29,.35)}
+.page .vDisclaimerToggle{display:inline-flex;align-items:center;justify-content:flex-start;gap:7px;min-height:40px;padding:7px 4px 7px 0;cursor:pointer;font-family:var(--event-mono),monospace;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#E6C98A}
+.page .vDisclaimer[open] .vDisclaimerToggle{padding:7px 14px}
 .page .vDisclaimerToggle:hover{background:rgba(247,244,232,.05)}
 .page .vDisclaimerChevron{font-family:var(--event-sans),system-ui,sans-serif;font-size:21px;font-weight:500;line-height:1;transition:transform .2s ease}
 .page .vDisclaimer[open] .vDisclaimerChevron{transform:rotate(45deg)}
@@ -818,7 +820,8 @@
 :global([data-theme="light"]) .page .vMapBtn{color:#07171D}
 :global([data-theme="light"]) .page .vMapChevron{color:#7A5C17}
 :global([data-theme="light"]) .page .vMapWhy{color:#41545A}
-:global([data-theme="light"]) .page .vDisclaimer{border:1px solid rgba(7,23,29,0.14);background:rgba(255,255,255,0.35);color:#5A6B70}
+:global([data-theme="light"]) .page .vDisclaimer{border:0;background:transparent;color:#5A6B70}
+:global([data-theme="light"]) .page .vDisclaimer[open]{border:1px solid rgba(7,23,29,.14);background:rgba(255,255,255,.35)}
 :global([data-theme="light"]) .page .vDisclaimerToggle{color:#7A5C17}
 :global([data-theme="light"]) .page .vDisclaimerToggle:hover{background:rgba(7,23,29,.04)}
 :global([data-theme="light"]) .page .vDisclaimerContent{border-top-color:rgba(7,23,29,.12)}

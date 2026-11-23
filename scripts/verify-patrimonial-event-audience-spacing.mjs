@@ -14,4 +14,8 @@ assert.equal((landing.match(/<Disclaimer sources=/g)||[]).length,3,'three discla
 assert.doesNotMatch(landing,/Durante l’incontro vedrai come si incastrano tra loro, compresi quelli che non hai toccato/,'remove verbose quiz footer');
 assert.match(landing,/Conosci <strong>\{Object\.keys\(known\)\.length\}<\/strong> su \{eventInstruments\.length\}/,'only tool count remains in quiz');
 assert.match(css,/\.page \.vDisclaimer\[open\] \.vDisclaimerChevron/,'expanded affordance');
-console.log('Event spacing, Angelo portrait, collapsible warnings and quiz copy PASS');
+assert.match(css,/\.page \.vDisclaimer\{[^}]*width:fit-content;max-width:100%;margin:16px auto 0 0/,'collapsed disclosure remains compact and left aligned');
+assert.match(css,/\.page \.vDisclaimer\[open\]\{width:min\(100%,760px\)/,'disclaimer panel expands only when opened');
+assert.match(css,/\.page \.vDisclaimerToggle\{display:inline-flex;align-items:center;justify-content:flex-start;gap:7px/,'label itself is the compact click target');
+assert.doesNotMatch(landing,/<details className=\{styles\.vDisclaimer\} open/,'warnings must start closed');
+console.log('Event spacing, portrait, compact left warnings and quiz copy PASS');
