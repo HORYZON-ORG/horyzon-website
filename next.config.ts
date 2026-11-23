@@ -50,6 +50,14 @@ const nextConfig: NextConfig = {
    { key: 'Referrer-Policy', value: 'no-referrer' },
    // Keep inherited third-party consent scripts away from this in-memory demo.
    { key: 'Content-Security-Policy', value: `default-src 'self'; script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'${isDev ? ' ws: wss:' : ''}; form-action 'none'; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'` },
+  ] }, { source: '/candidature/architetti-patrimoniali/startup', headers: [
+   // Drive video embeds need frame-src; scope this allowance to Startup only.
+   { key: 'Content-Security-Policy', value: csp.replace(
+     'frame-src *.iubenda.com https://api.leadconnectorhq.com',
+     'frame-src *.iubenda.com https://api.leadconnectorhq.com https://drive.google.com',
+   ) },
+   { key: 'Referrer-Policy', value: 'no-referrer' },
+   { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
   ] }, { source: '/annunci-10x', headers: [
    { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
   ] }, ...['percorso-architetto-patrimoniale', 'evento'].map(slug => ({
