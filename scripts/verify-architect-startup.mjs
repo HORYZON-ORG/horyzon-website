@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { architectStartupEnabled, architectStartupVideoUrl } from '../src/lib/public-leads/architect-startup-config.ts';
 import {
   registerArchitectCandidate,
   issueArchitectStartupLink,
@@ -14,6 +15,10 @@ const env = {
   SUPABASE_URL: 'https://pmkyeqrfkunypfkbjnyg.supabase.co',
   SUPABASE_SERVICE_ROLE_KEY: 'synthetic-only',
 };
+assert.equal(architectStartupEnabled(env), false, 'senza video l’accesso alla startup resta spento');
+assert.equal(architectStartupVideoUrl({ ARCHITECT_STARTUP_VIDEO_URL: 'https://horyzon.it/presentazione.mp4' }), 'https://horyzon.it/presentazione.mp4');
+assert.equal(architectStartupVideoUrl({ ARCHITECT_STARTUP_VIDEO_URL: 'https://video.example.invalid/watch' }), '', 'provider senza evento ended non abilitato');
+assert.equal(architectStartupEnabled({ ...env, ARCHITECT_STARTUP_VIDEO_URL: 'https://horyzon.it/presentazione.mp4', PATRIMONIAL_ARCHITECT_STARTUP_ENABLED: 'true' }), true);
 const calls = [];
 let issued = '';
 const mockFetch = async (url, init) => {
