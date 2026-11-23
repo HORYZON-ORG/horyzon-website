@@ -5,15 +5,18 @@ const env={RESEND_API_KEY:'re_synthetic_token_abcdefghijkl',SUPABASE_URL:'https:
 assert(eventEmailReady(env));
 assert(!eventEmailReady({...env,RESEND_API_KEY:undefined}));
 const copy=eventConfirmationContent({firstName:'<Mario>'});
-assert.match(copy.text,/date dell’evento non sono ancora state fissate/);
-assert.match(copy.text,/telefonicamente/);
-assert.doesNotMatch(copy.text,/newsletter gratuite|guadagni garantiti/);
+assert.match(copy.text,/iscrizione.*CONFERMATA/i);
+assert.match(copy.text,/9 dicembre 2026/);
+assert.match(copy.text,/21:00–22:00/);
+assert.match(copy.text,/8 dicembre alle ore 21:00/);
+assert.match(copy.text,/9 dicembre alle ore 20:30/);
+assert.match(copy.text,/calendar.google.com/);
+assert.match(copy.text,/api\/patrimonial-event\/calendar/);
+assert.doesNotMatch(copy.text,/posto non confermato|due serate|NON la prenotazione/);
 assert(!copy.html.includes('<Mario>'));
-const scheduled=eventConfirmationContent({firstName:'Mario',confirmedCalendar:'Due serate: 4 dicembre 2028 e 11 dicembre 2028'});
-assert.match(scheduled.text,/4 dicembre 2028 e 11 dicembre 2028/);
-assert.doesNotMatch(scheduled.text,/date dell’evento non sono ancora state fissate/);
-assert.match(scheduled.text,/NON la prenotazione di un posto/);
-assert.match(scheduled.text,/telefonicamente/);
+const scheduled=eventConfirmationContent({firstName:'Mario'});
+assert.match(scheduled.subject,/Iscrizione confermata/);
+assert.match(scheduled.text,/Mercoledì 9 dicembre 2026/);
 const calls=[];let claimed=false;
 const fetchImpl=async(url,init)=>{
  const u=new URL(url);const p=JSON.parse(init.body);calls.push({url:u.pathname,headers:init.headers,body:p});

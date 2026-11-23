@@ -43,8 +43,8 @@ export async function publishedEventSession(
       || typeof row.edition_key !== "string"
       || !/^[a-zA-Z0-9_-]{1,100}$/.test(row.edition_key)
       || !Number.isFinite(Date.parse(row.starts_at))
-      || row.starts_at !== sessions[0].startsAt
-      || (row.ends_at !== null && row.ends_at !== sessions[0].endsAt)
+      || Date.parse(row.starts_at) !== Date.parse(sessions[0].startsAt)
+      || (row.ends_at !== null && Date.parse(row.ends_at) !== Date.parse(sessions[0].endsAt))
       || !sessions.every((s) => Number.isFinite(Date.parse(s.startsAt)) && Number.isFinite(Date.parse(s.endsAt)))) return eventSession;
     const capacity = row.capacity;
     // A missing capacity is not an assertion that the meeting is full.
@@ -114,7 +114,7 @@ export async function publishedEventEditionKey(
       || !/^[a-zA-Z0-9_-]{1,100}$/.test(entry.edition_key)
       || !Array.isArray(entry.record?.sessions) || entry.record.sessions.length !== 1
       || !entry.starts_at || !Number.isFinite(Date.parse(entry.starts_at))
-      || entry.starts_at !== entry.record.sessions[0].startsAt) return null;
+      || Date.parse(entry.starts_at) !== Date.parse(entry.record.sessions[0].startsAt)) return null;
     return entry.edition_key;
   } catch {
     return null;

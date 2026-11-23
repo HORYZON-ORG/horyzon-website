@@ -8,7 +8,8 @@ import { PATRIMONIAL_V2 } from '../src/lib/public-leads/patrimonial-contract.ts'
 const code = 'b'.repeat(32);
 const env = {
   NODE_ENV: 'test',
-  SUPABASE_URL: 'https://fixture.supabase.co',
+  SUPABASE_URL: 'https://pmkyeqrfkunypfkbjnyg.supabase.co',
+  RESEND_API_KEY:'re_fixture_synthetic_no_real_send',
   SUPABASE_SERVICE_ROLE_KEY: 'fixture-private-secret',
   HIGHLEVEL_PRIVATE_TOKEN: 'fixture-token',
   HIGHLEVEL_LOCATION_ID: 'fixture-location',
@@ -42,13 +43,16 @@ const fake = async (url, init) => {
     return Response.json({ contact: { id: 'fixture-contact' } });
   if (address.pathname.endsWith('/tags') || address.pathname.endsWith('/notes'))
     return Response.json({});
+  if (address.pathname === '/rest/v1/patrimonial_event_editions')
+    return Response.json([{edition_key:'qclbnd_20261209_2100',status:'ACTIVE',starts_at:'2026-12-09T20:00:00+00:00',record:{sessions:[{startsAt:'2026-12-09T20:00:00+00:00',endsAt:'2026-12-09T21:00:00+00:00'}]}}]);
+  if (address.pathname === '/rest/v1/rpc/patrimonial_event_email_claim') return Response.json(null);
   if (address.pathname === '/rest/v1/rpc/architetti_event_ingest') {
     assert.equal(body.p_event.referralCode, code);
     records.push(body.p_event);
     return Response.json({
       contactId: '123e4567-e89b-42d3-a456-426614174000',
       registrationId: '123e4567-e89b-42d3-a456-426614174001',
-      state: 'PENDING_EDITION',attributionStatus: 'ASSIGNED_NEW',
+      state: 'CONFIRMED',attributionStatus: 'ASSIGNED_NEW',
     });
   }
   throw new Error('Unexpected endpoint ' + address.pathname);
@@ -70,7 +74,7 @@ const req = data=>new Request('https://horyzon.it/api/public-leads', {
 const received=await handlePublicLead(req(base),{env,fetchImpl:fake});
 assert.equal(received.status,200);
 assert.equal(records.length,1);
-assert.equal(count,6,'preflight then 3 CRM operations then one Hub save, plus direct preflight');
+assert.equal(count,8,'preflight, CRM, active edition, Hub confirmation and email claim');
 assert.equal(records[0].referralCode,code);
 const countAtSuccess=count;
 const bad=await handlePublicLead(req({...base,referralCode:'bogus'}),{env,fetchImpl:fake});
