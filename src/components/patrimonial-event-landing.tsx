@@ -13,10 +13,9 @@ import architectHeader from './patrimonial-architect-header.module.css';
 
 const Arrow = ({ size = 18 }: { size?: number }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>;
 const otherEventSpeakers = [
-  { name: 'Angelo Ria Chetta', role: 'Founder Horyzon', initials: 'ARC', image: '/people/angelo.webp' },
-  // Authentic original photo is in the event poster, but is not yet exported to website assets.
-  { name: 'Gianni Mazzotta', role: 'Architetto Patrimoniale', initials: 'GM', image: null },
-  { name: 'Francesco Aquilanti', role: 'Care is Gold', initials: 'FA', image: null },
+  { name: 'Angelo Ria Chetta', role: 'Founder Horyzon', image: '/benessere-patrimoniale/evento/speakers/angelo-ria-chetta.webp' },
+  { name: 'Gianni Mazzotta', role: 'Architetto Patrimoniale', image: '/benessere-patrimoniale/evento/speakers/gianni-mazzotta.webp' },
+  { name: 'Francesco Aquilanti', role: 'Care is Gold', image: '/benessere-patrimoniale/evento/speakers/francesco-aquilanti.webp' },
 ] as const;
 
 const Check = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>;
@@ -369,11 +368,9 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
       {otherEventSpeakers.map(person => (
         <article key={person.name} className={styles.vSpeakerRosterCard}>
           <div className={styles.vSpeakerRosterPortrait}>
-            {person.image ? (
-              <Image src={person.image} alt={person.name} fill sizes="(max-width: 760px) 100vw, 33vw" />
-            ) : (
-              <span className={styles.vSpeakerRosterInitials} aria-hidden="true">{person.initials}</span>
-            )}
+            <div className={styles.vSpeakerRosterCircle}>
+              <Image src={person.image} alt={`Foto di ${person.name}`} fill sizes="(max-width: 650px) 70vw, (max-width: 820px) 28vw, 250px" />
+            </div>
           </div>
           <div className={styles.vSpeakerRosterBody}>
             <h3 className={styles.vSpeakerRosterName}>{person.name}</h3>
