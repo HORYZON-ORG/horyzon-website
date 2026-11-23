@@ -70,7 +70,7 @@ export function PatrimonialEventForm({ selectedProfile, onProfileChange, onSubmi
     </fieldset>
     <input name="profile" type="hidden" value={eventProfileValue(selectedProfile)} />
     <input name="qualification" type="hidden" value={JSON.stringify({...qualification, consultationRequested: architectCall})} />
-    <input name="message" type="hidden" value={[notes, architectCall ? 'Confronto 40 minuti con Architetto Patrimoniale: sì' : ''].filter(Boolean).join(' | ')} />
+    <input name="message" type="hidden" value={[region ? 'Regione: ' + region : '', notes, architectCall ? 'Confronto 40 minuti con Architetto Patrimoniale: sì' : ''].filter(Boolean).join(' | ').slice(0, 1500)} />
     <div hidden><label>Sito web<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
     <button type="submit" className={`${styles.cta} ${styles.formSubmit}`} disabled={disabled || revisionRequired}>
       <span>{status === 'sending' ? 'Invio in corso…' : status === 'success' ? 'Iscrizione confermata.' : 'Conferma la mia iscrizione gratuita'}</span>
