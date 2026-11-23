@@ -10,6 +10,7 @@ on:
       - 'src/lib/public-leads/handler.ts'
       - 'src/components/patrimonial-architect-startup*'
       - 'scripts/verify-architect-startup.mjs'
+      - 'scripts/verify-architect-startup-ui.mjs'
       - 'src/app/api/public-leads/cv/**'
       - 'src/components/patrimonial-architect-preview*'
       - 'src/content/patrimonial-funnels.ts'
@@ -80,6 +81,7 @@ jobs:
           bad_status=$(curl -sS -o /dev/null -w '%{http_code}' -X POST 'http://127.0.0.1:3207/api/public-leads' -H 'Origin: https://not-authorized.invalid' -H 'Content-Type: application/json' -d '{}')
           test "$bad_status" = 403
           ARCHITECT_PREVIEW_TEST_ORIGIN=http://127.0.0.1:3207 node scripts/verify-architect-canonical-palette.mjs
+          ARCHITECT_PREVIEW_TEST_ORIGIN=http://127.0.0.1:3207 node scripts/verify-architect-startup-ui.mjs
       - name: Archive visual comparisons
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
