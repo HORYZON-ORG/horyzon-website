@@ -18,7 +18,7 @@ function settings(env: Env) {
 
 async function invokeHub(
   env: Env,
-  functionName: 'architect_candidate_intake_v1' | 'architect_candidate_crm_v1' | 'architect_candidate_startup_issue_v1' | 'architect_candidate_startup_confirm_v1' | 'architect_startup_lead_begin_v1' | 'architect_startup_lead_confirm_v1',
+  functionName: 'architect_candidate_intake_v1' | 'architect_candidate_crm_v1' | 'architect_candidate_startup_issue_v1' | 'architect_candidate_startup_confirm_v1' | 'architect_startup_lead_begin_v1' | 'architect_startup_lead_confirm_v1' | 'architect_startup_video_gate_v1',
   params: Record<string, unknown>,
   fetchImpl: typeof fetch,
 ): Promise<unknown> {
@@ -124,6 +124,22 @@ export async function beginArchitectStartupLead(
   }, fetchImpl);
   if (ok !== true) throw new Error('architect_startup_draft_rejected');
   return `/candidature/architetti-patrimoniali/startup#token=${token}`;
+}
+
+/** The server starts the invisible gate at first page open. Refreshing does not restart it. */
+export async function getArchitectStartupVideoGate(
+  env: Env,
+  token: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<number | null> {
+  if (!/^[A-Za-z0-9_-]{43}$/.test(token)) return null;
+  const hash = createHash('sha256').update(token).digest('hex');
+  const remaining = await invokeHub(env, 'architect_startup_video_gate_v1', {
+    p_token_hash: hash,
+  }, fetchImpl);
+  if (typeof remaining !== 'number' || !Number.isInteger(remaining) ||
+    remaining < 0 || remaining > 661) return null;
+  return remaining;
 }
 
 /** Idempotent declaration of interest; not evidence of a complete video watch. */
