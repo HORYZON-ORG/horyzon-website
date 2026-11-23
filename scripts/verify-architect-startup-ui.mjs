@@ -8,8 +8,7 @@ const browser = await chromium.launch({ headless: true });
 try {
   for (const width of [390, 1366]) {
     const page = await browser.newPage({ viewport: { width, height: 860 }, reducedMotion: 'reduce' });
-    await page.route('https://drive.google.com/**', route =>
-      route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>Video test</title>' }));
+    await page.route('https://zbpegzd1dv3ut14o.public.blob.vercel-storage.com/**', route => route.abort());
 
     let requests = 0;
     await page.route('**/api/architect-startup/video-gate', route => {
@@ -24,6 +23,8 @@ try {
 
     const firstReceipt = page.waitForResponse(r => r.url().includes('/api/architect-startup/video-gate'));
     await page.goto(origin + startupPath + '#token=' + token, { waitUntil: 'domcontentloaded' });
+    assert.equal(await page.locator('video').count(), 1, 'Native HTML5 video player is used');
+    assert.equal(await page.locator('iframe[src*="drive.google.com"]').count(), 0, 'Google Drive iframe removed');
     await firstReceipt;
 
     const button = page.getByRole('button', { name: 'Ho completato la visione del video e vado avanti' });
@@ -58,8 +59,7 @@ try {
     await page.close();
 
     const anonymous = await browser.newPage({ viewport: { width, height: 860 }, reducedMotion: 'reduce' });
-    await anonymous.route('https://drive.google.com/**', route =>
-      route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>Video test</title>' }));
+    await anonymous.route('https://zbpegzd1dv3ut14o.public.blob.vercel-storage.com/**', route => route.abort());
     await anonymous.goto(origin + startupPath, { waitUntil: 'domcontentloaded' });
     const anonButton = anonymous.getByRole('button', { name: 'Ho completato la visione del video e vado avanti' });
     await anonButton.waitFor({ state: 'visible', timeout: 15000 });
