@@ -205,7 +205,7 @@ BEGIN
     RAISE EXCEPTION 'EVENT_INGRESS_IDEMPOTENCY_CONFLICT';
   END IF;
   RETURN jsonb_build_object('contactId',v_contact,'registrationId',v_old.id,'state',v_old.registration_status);
-END $function$
+END $function$;
 
 
 CREATE OR REPLACE FUNCTION architetti_private.ingest_event_referred(p_event jsonb)
@@ -297,7 +297,7 @@ BEGIN
                          ELSE 'referral_attributed' END,
       'Iscrizione webinar da link personale · '||v_state);
   RETURN v_receipt || jsonb_build_object('attributionStatus',v_state);
-END $function$
+END $function$;
 
 
 CREATE OR REPLACE FUNCTION public.patrimonial_event_email_enqueue()
@@ -310,7 +310,7 @@ begin
     insert into public.patrimonial_event_email_deliveries(registration_id) values(new.id) on conflict do nothing;
   end if;
   return new;
-end; $function$
+end; $function$;
 
 
 CREATE OR REPLACE FUNCTION public.patrimonial_event_email_claim(p_registration_id uuid DEFAULT NULL::uuid)
@@ -339,4 +339,4 @@ begin
    where registration_id=chosen.registration_id;
   return jsonb_build_object('registrationId',chosen.registration_id,'recipient',chosen.email,
        'firstName',split_part(chosen.full_name,' ',1),'leaseToken',token);
-end; $function$
+end; $function$;
