@@ -12,10 +12,11 @@ import styles from './patrimonial-event.module.css';
 import architectHeader from './patrimonial-architect-header.module.css';
 
 const Arrow = ({ size = 18 }: { size?: number }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>;
-const otherEventSpeakers = [
-  { name: 'Angelo Ria Chetta', role: 'Founder Horyzon', image: '/benessere-patrimoniale/evento/speakers/angelo-ria-chetta.webp' },
+const eventSpeakers = [
+  { name: 'Frank Cannoletta', role: 'Moderatore evento', image: '/people/frank-no-badge.png' },
+  { name: 'Francesco Aquilanti', role: 'Area Manager CIG (Care is Gold)', image: '/benessere-patrimoniale/evento/speakers/francesco-aquilanti.webp' },
   { name: 'Gianni Mazzotta', role: 'Architetto Patrimoniale', image: '/benessere-patrimoniale/evento/speakers/gianni-mazzotta.webp' },
-  { name: 'Francesco Aquilanti', role: 'Care is Gold', image: '/benessere-patrimoniale/evento/speakers/francesco-aquilanti.webp' },
+  { name: 'Angelo Ria Chetta', role: 'Founder Horyzon', image: '/benessere-patrimoniale/evento/speakers/angelo-ria-chetta.webp' },
 ] as const;
 
 const Check = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>;
@@ -301,7 +302,7 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 </div>
 </div>
 
-<div data-event-section="agenda" className={[styles.s114].join(' ')}>
+<div data-event-section="agenda" hidden aria-hidden="true" className={[styles.s114].join(' ')}>
 <div className={[styles.s144].join(' ')}>
 <div className={[styles.s145].join(' ')}>
 <div className={[styles.s041].join(' ')}>COME SI SVOLGE</div>
@@ -326,7 +327,7 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 <div className={[styles.s156].join(' ')}>
 <h3 className={[styles.s157].join(' ')}>È per te se…</h3>
 <div className={[styles.s150].join(' ')}>
-{['Arrivi a fine mese senza riuscire a mettere da parte nulla, e vuoi un metodo semplice per iniziare.', 'Hai dei risparmi fermi sul conto e senti che stanno perdendo valore.', 'Sei in pensione e vuoi proteggere quello che hai costruito in una vita di lavoro.', 'Sei un imprenditore o un professionista e vuoi separare la ricchezza dell’azienda da quella della tua famiglia.', 'Ti affidi a un consulente ma vuoi capire cosa firmi e quali domande fare.', 'Vuoi capire oro, argento, immobili, ETF e obbligazioni prima di scegliere.', 'Investi già e vuoi vedere come ragionano i grandi patrimoni.', 'Sei un genitore e vuoi lasciare ai tuoi figli soldi e anche il modo di gestirli.'].map(text => (<div key={text} className={[styles.s096].join(' ')}><span className={[styles.s158].join(' ')}><Check /></span><span>{text}</span></div>))}
+{['Arrivi a fine mese senza riuscire a mettere da parte nulla, e vuoi un metodo semplice per iniziare.', 'Hai dei risparmi fermi sul conto e senti che stanno perdendo valore.', 'Sei in pensione e vuoi proteggere quello che hai costruito in una vita di lavoro.', 'Sei un imprenditore o un professionista e vuoi separare la ricchezza dell’azienda da quella della tua famiglia.', 'Ti affidi a un consulente ma vuoi capire cosa firmi e quali domande fare.', 'Sei un genitore e vuoi lasciare ai tuoi figli soldi e anche il modo di gestirli.'].map(text => (<div key={text} className={[styles.s096].join(' ')}><span className={[styles.s158].join(' ')}><Check /></span><span>{text}</span></div>))}
 </div>
 </div>
 <div className={[styles.s159].join(' ')}>
@@ -337,39 +338,18 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 </div>
 </div>
 
-<div data-event-section="speaker" className={[styles.s120].join(' ')}>
-<div className={[styles.s162].join(' ')}>
-<div className={[styles["portrait"], styles.s163].join(' ')}>
-<Image src="/people/frank-no-badge.png" alt="Frank Cannoletta, Imprenditore e Strategista Horyzon" fill sizes="(max-width: 820px) calc(100vw - 48px), 420px" className={styles['speaker-photo']} />
-</div>
-<div className={[styles.s167].join(' ')}>
-<div className={[styles["label"], styles.s012].join(' ')}>CHI TI ACCOMPAGNA</div>
-<h2 className={[styles.reveal, styles.s168].join(' ')}>Frank Cannoletta</h2>
-<div className={[styles.s130].join(' ')}>Imprenditore &amp; Strategista Horyzon</div>
-<blockquote className={[styles.s169].join(' ')}>&quot;Mi occupo di patrimonio e finanza da quando ho perso un anno di lavoro della mia vita nelle mani di un consulente.&quot;</blockquote>
-<p className={[styles.s065].join(' ')}>Mi ero affidato ai consigli di un consulente che non ha saputo leggere il mercato e a me mancavano le competenze per accorgermene in tempo. Anni interi di guadagni derivanti dal mio lavoro sono andati perduti. Da quel giorno ho deciso che non avrei più firmato nulla senza capirlo: ho investito oltre 10.000 euro in corsi e formazione sulla finanza, ho studiato come ragionano i grandi patrimoni e ho iniziato ad applicarlo.</p>
-<p className={[styles.s065].join(' ')}>Durante questo incontro ti do quello che a me è mancato: <strong className={styles.s003}>le domande giuste, prima di firmare.</strong></p>
-<div className={[styles.s170].join(' ')}>
-<div><div className={[styles.accent, styles.s171].join(' ')}>11 anni</div><div className={[styles.s073].join(' ')}>al fianco di imprese e imprenditori per farli crescere</div></div>
-<div><div className={[styles.accent, styles.s171].join(' ')}>10.000+</div><div className={[styles.s073].join(' ')}>consulenze erogate</div></div>
-<div><div className={[styles.accent, styles.s171].join(' ')}>Centinaia</div><div className={[styles.s073].join(' ')}>di seminari pubblici</div></div>
-</div>
-</div>
-</div>
-</div>
-
-<section data-event-section="other-speakers" className={styles.vSpeakerRoster} aria-labelledby="other-speakers-heading">
+<section data-event-section="speaker" className={styles.vSpeakerRoster} aria-labelledby="event-speakers-heading">
   <div className={styles.vSpeakerRosterInner}>
     <div className={styles.vSpeakerRosterIntro}>
-      <p className={[styles.label, styles.vSpeakerRosterEyebrow].join(' ')}>LE PERSONE DELL'EVENTO</p>
-      <h2 id="other-speakers-heading" className={styles.vSpeakerRosterHeading}>Insieme a Frank, <span>gli altri protagonisti.</span></h2>
+      <p className={[styles.label, styles.vSpeakerRosterEyebrow].join(' ')}>L’EVENTO DEL 9 DICEMBRE</p>
+      <h2 id="event-speakers-heading" className={styles.vSpeakerRosterHeading}>Chi ti <span>accompagna.</span></h2>
     </div>
     <div className={styles.vSpeakerRosterGrid}>
-      {otherEventSpeakers.map(person => (
+      {eventSpeakers.map(person => (
         <article key={person.name} className={styles.vSpeakerRosterCard}>
           <div className={styles.vSpeakerRosterPortrait}>
             <div className={styles.vSpeakerRosterCircle}>
-              <Image src={person.image} alt={`Foto di ${person.name}`} fill sizes="(max-width: 650px) 70vw, (max-width: 820px) 28vw, 250px" />
+              <Image src={person.image} alt={`Foto di ${person.name}`} fill sizes="(max-width: 650px) 44vw, (max-width: 1024px) 40vw, 240px" />
             </div>
           </div>
           <div className={styles.vSpeakerRosterBody}>
@@ -391,10 +371,10 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 </div>
 <div className={[styles.s183].join(' ')}>
 <div className={[styles.s184].join(' ')}><div><strong className={[styles.s185].join(' ')}>Evento live · 9 dicembre ore 21:00</strong><div className={[styles.s119].join(' ')}>60 minuti di contenuti più eventuali domande dal vivo, con la regola 70-10-10-10 da conoscere</div></div><span className={[styles.s186].join(' ')}>Incluso</span></div>
-<div className={styles.vRadar}><div className={styles.vRadarImg}><Image src="/benessere-patrimoniale/evento/radar.jpg" alt="Quadrante d'oro con anelli concentrici e una lancetta" width={800} height={800} sizes="160px" /></div><div><span className={[styles.s187].join(' ')}>BONUS 1 · IN REGALO</span><br /><strong className={[styles.s185].join(' ')}>Il tuo Radar Patrimoniale</strong><div className={[styles.s119].join(' ')}>Uno strumento utile per i tuoi investimenti: ti mostra in un colpo d&apos;occhio dove il tuo patrimonio è scoperto e dove è troppo concentrato.</div></div><span className={[styles.s186].join(' ')}>Gratuito</span></div>
 
-<div className={[styles.s184].join(' ')}><div><span className={[styles.s187].join(' ')}>BONUS 2</span><br /><strong className={[styles.s185].join(' ')}>La lista delle domande da fare prima di firmare</strong><div className={[styles.s119].join(' ')}>Da portare al prossimo appuntamento in banca</div></div><span className={[styles.s186].join(' ')}>Incluso</span></div>
-<div className={[styles.s188].join(' ')}><div><span className={[styles.s189].join(' ')}>BONUS 3 · SE LO DESIDERI</span><br /><strong className={[styles.s185].join(' ')}>40 minuti solo per te, con un Architetto Patrimoniale</strong><div className={[styles.s121].join(' ')}>Dopo l&apos;evento partite da quello che ti ha colpito nell’incontro: cosa ti interessa davvero, cosa ti preoccupa, quali strumenti vuoi approfondire. Esci con le idee chiare sul tuo prossimo passo. Nessun costo, nessun obbligo.</div></div><span className={[styles.s190].join(' ')}>Gratuito</span></div>
+
+<div className={[styles.s184].join(' ')}><div><span className={[styles.s187].join(' ')}>BONUS 1</span><br /><strong className={[styles.s185].join(' ')}>La lista delle domande da fare prima di firmare</strong><div className={[styles.s119].join(' ')}>Da portare al prossimo appuntamento in banca</div></div><span className={[styles.s186].join(' ')}>Incluso</span></div>
+<div className={[styles.s188].join(' ')}><div><span className={[styles.s189].join(' ')}>BONUS 2 · SE LO DESIDERI</span><br /><strong className={[styles.s185].join(' ')}>40 minuti solo per te, con un Architetto Patrimoniale</strong><div className={[styles.s121].join(' ')}>Dopo l&apos;evento partite da quello che ti ha colpito nell’incontro: cosa ti interessa davvero, cosa ti preoccupa. Esci con le idee chiare sul tuo prossimo passo. Nessun costo, nessun obbligo.</div></div><span className={[styles.s190].join(' ')}>Gratuito</span></div>
 <div className={[styles.s191].join(' ')}><div className={[styles.s192].join(' ')}>Per te, oggi: <strong>gratis</strong>.</div><a href={signupTarget} className={[styles.cta, styles["cta-ink"], styles.s193].join(' ')}>{registrationOpen ? "Iscriviti gratuitamente" : "Informazioni sull’evento"}</a></div>
 </div>
 </div>
@@ -444,7 +424,6 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
   ['Mi direte in cosa investire?', 'No. L’incontro ha uno scopo informativo ed educativo: ti diamo gli strumenti per capire e le domande da fare a chi ti segue.'],
   ['I rendimenti mostrati sulla pagina sono garantiti?', 'No. Sono dati storici e indicativi. I rendimenti passati non sono indicativi di quelli futuri e ogni strumento può perdere valore.'],
   ['Perché parlate di metalli preziosi?', 'Perché sono la parte del patrimonio che non dipende da una banca o da un’azienda. Nella seconda parte vediamo pro e contro, costi compresi.'],
-  ['Cos’è il Radar Patrimoniale?', 'Uno strumento che ti regaliamo, utile per i tuoi investimenti: ti mostra come è diviso oggi quello che hai e dove sei scoperto o troppo concentrato.'],
   ['Chi organizza l’evento?', 'Horyzon Benessere Patrimoniale, divisione di FELICITÀ srl, Viale Papiniano 28, Milano.'],
 ].map(([q, a]) => (<details key={q} className={[styles.s205].join(' ')}><summary className={[styles.s206].join(' ')}>{q}<span className={[styles["faq-plus"], styles.s207].join(' ')}>+</span></summary><p className={[styles.s208].join(' ')}>{a}</p></details>))}
 </div>
