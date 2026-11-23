@@ -26,25 +26,83 @@ async function rpc<T>(name: string, payload: Record<string,unknown>, env:Config,
   if(!r.ok){await r.body?.cancel().catch(()=>{});throw new Error('EVENT_EMAIL_STORE_RPC_FAILED');}
   return (await r.json()) as T;
 }
-export function eventConfirmationContent(input:{firstName:string;confirmedCalendar?:string}) {
-  const first=input.firstName.replace(/[\r\n<>]/g,' ').trim().slice(0,80);
-  const greet=first ? 'Ciao '+first+',' : 'Ciao,';
-  const subject='Iscrizione confermata | Quello che le banche non dicono · 9 dicembre';
-  const text=[greet,'',
-    'La tua iscrizione a «Quello che le banche non dicono» è CONFERMATA.',
-    'Mercoledì 9 dicembre 2026, ore 21:00–22:00 (ora italiana). Evento online gratuito, 60 minuti con domande e risposte dal vivo.',
-    'Aggiungi subito l’evento al calendario:',
-    'Google Calendar: '+eventGoogleCalendarUrl(),
-    'Apple / Outlook / altri (.ics): '+EVENT_ICS_URL,
-    'Riceverai due promemoria: martedì 8 dicembre alle ore 21:00 e mercoledì 9 dicembre alle ore 20:30 (ora italiana).',
-    'Le indicazioni di accesso saranno comunicate via email non appena disponibili. Conserva questo messaggio.',
-    'Queste email sono esclusivamente organizzative e non costituiscono iscrizione a comunicazioni promozionali.',
-    'Se non riconosci questa iscrizione, rispondi a questa email o scrivi a info@horyzon.it.',
-    'Horyzon Benessere Patrimoniale',EVENT_PAGE].join('\n\n');
-  const html='<div style="font-family:Arial,sans-serif;color:#07171D;background:#F7F4E8;padding:32px"><div style="max-width:600px;margin:auto;background:#fff;padding:30px;border-radius:12px"><p style="color:#61721A;font-size:12px;letter-spacing:2px">HORYZON · BENESSERE PATRIMONIALE</p><h1 style="font-size:24px">Iscrizione confermata</h1>'
-    +text.split('\n\n').map(p=>'<p style="font-size:15px;line-height:1.6">'+escapeHtml(p).replace(/\n/g,'<br>')+'</p>').join('')
-    +'<p><a href="'+escapeHtml(eventGoogleCalendarUrl())+'">Aggiungi a Google Calendar</a> · <a href="'+EVENT_ICS_URL+'">Apple / Outlook (.ics)</a></p></div></div>';
-  return {subject,text,html};
+
+/** Table-layout HTML email, with inline styles supported by common mail clients. */
+export function renderEventEmailFrame(input: {
+  preheader: string; eyebrow: string; headline: string; bodyHtml: string;
+}) {
+  return [
+    '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">',
+    '<style>@media only screen and (max-width:640px){.email-shell{width:100%!important}.email-pad{padding-left:24px!important;padding-right:24px!important}.email-heading{font-size:32px!important;line-height:39px!important}.email-button{display:block!important;width:auto!important}}</style></head>',
+    '<body style="margin:0;padding:0;background:#F4F1E9;color:#0B222A;font-family:Arial,Helvetica,sans-serif">',
+    '<div style="display:none!important;visibility:hidden;opacity:0;color:transparent;height:0;width:0;overflow:hidden;mso-hide:all">' + escapeHtml(input.preheader) + '</div>',
+    '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F4F1E9"><tr><td align="center" style="padding:28px 12px 32px">',
+    '<table role="presentation" class="email-shell" cellpadding="0" cellspacing="0" border="0" width="620" style="width:620px;max-width:620px;background:#FFFFFF;border-collapse:separate">',
+    '<tr><td class="email-pad" style="background:#0B222A;padding:34px 44px 38px;color:#FFFFFF">',
+    '<p style="margin:0;color:#FFFFFF;font-size:24px;font-weight:800;letter-spacing:2.8px">HORY<span style="color:#CCEB59">Z</span>ON<span style="font-size:10px;letter-spacing:2px;font-weight:700;color:#D5DCCC;padding-left:10px">CONSULTING</span></p>',
+    '<p style="margin:8px 0 39px;font-size:10px;font-weight:700;color:#CCD7CC;letter-spacing:2.5px">BENESSERE PATRIMONIALE</p>',
+    '<p style="margin:0 0 19px;border:1px solid #CCEB59;padding:8px 12px;color:#CCEB59;font-size:11px;font-weight:800;letter-spacing:1.5px;display:inline-block">' + escapeHtml(input.eyebrow) + '</p>',
+    '<h1 class="email-heading" style="font-size:43px;line-height:49px;letter-spacing:-1.4px;margin:0;color:#FFFFFF;font-weight:800">' + escapeHtml(input.headline) + '</h1>',
+    '<p style="font-size:16px;line-height:25px;color:#C7D3CF;margin:20px 0 0">QUELLO CHE LE BANCHE <strong style="color:#CCEB59">NON</strong> DICONO</p>',
+    '</td></tr><tr><td style="height:7px;background:#CCEB59;font-size:0;line-height:0">&nbsp;</td></tr>',
+    '<tr><td class="email-pad" style="padding:39px 44px 12px;background:#FFFFFF">' + input.bodyHtml + '</td></tr>',
+    '<tr><td class="email-pad" style="padding:18px 44px 31px;background:#FFFFFF"><p style="color:#64727A;font-size:12px;line-height:19px;margin:0">Questa comunicazione riguarda esclusivamente la tua partecipazione all’evento e non costituisce iscrizione a newsletter o messaggi commerciali.</p></td></tr>',
+    '<tr><td class="email-pad" style="padding:25px 44px 27px;background:#0B222A">',
+    '<p style="margin:0 0 9px;font-size:13px;font-weight:800;color:#FFFFFF;letter-spacing:1px">HORYZON CONSULTING</p>',
+    '<p style="margin:0 0 10px;font-size:12px;line-height:19px;color:#B8C4C1">Benessere Patrimoniale · FELICITÀ S.r.l.<br>Viale Papiniano 28, 20123 Milano</p>',
+    '<p style="margin:0;font-size:12px;line-height:20px;color:#CCEB59"><a href="mailto:info@horyzon.it" style="color:#CCEB59;text-decoration:underline">info@horyzon.it</a> &nbsp; · &nbsp; <a href="https://horyzon.it/privacy-policy" style="color:#CCEB59;text-decoration:underline">Privacy</a></p>',
+    '</td></tr></table></td></tr></table></body></html>',
+  ].join('');
+}
+
+/** Sent immediately for new confirmed registrations, with durable retries on email errors. */
+export function eventConfirmationContent(input: { firstName: string }) {
+  const first = input.firstName.replace(/[\r\n<>]/g, ' ').trim().slice(0, 80);
+  const greeting = first ? 'Ciao ' + first + ',' : 'Ciao,';
+  const subject = 'Iscrizione confermata · Quello che le banche non dicono · 9 dicembre ore 21:00';
+  const text = [
+    greeting,
+    'La tua iscrizione a «Quello che le banche non dicono» è confermata.',
+    'MERCOLEDÌ 9 DICEMBRE 2026 · ORE 21:00 (ora italiana).',
+    'Evento online e gratuito. Durata: 60 minuti di incontro, più eventuali domande al termine.',
+    'Aggiungi l’evento al calendario:',
+    'Google Calendar: ' + eventGoogleCalendarUrl(),
+    'Apple / Outlook / altri: ' + EVENT_ICS_URL,
+    'Riceverai un promemoria martedì 8 dicembre alle 21:00 e un altro mercoledì 9 dicembre alle 20:30 (ora italiana).',
+    'Le indicazioni per accedere alla diretta ti saranno comunicate via email non appena disponibili.',
+    'Per informazioni, rispondi a questo messaggio o scrivi a info@horyzon.it.',
+    'Questa email è solo organizzativa, non commerciale.',
+    'Horyzon Benessere Patrimoniale',
+    EVENT_PAGE,
+  ].join('\n\n');
+  const html = renderEventEmailFrame({
+    preheader: 'Iscrizione confermata. Ti aspettiamo il 9 dicembre alle ore 21:00, online e gratuitamente.',
+    eyebrow: '✓ ISCRIZIONE CONFERMATA',
+    headline: 'Ci vediamo il 9 dicembre.',
+    bodyHtml: [
+      '<p style="font-size:18px;font-weight:700;line-height:27px;color:#0B222A;margin:0 0 13px">' + escapeHtml(greeting) + '</p>',
+      '<p style="font-size:16px;line-height:26px;margin:0 0 27px;color:#3A4C52">La tua iscrizione è <strong style="color:#0B222A">confermata</strong>. Ti aspettiamo all’incontro online <strong>Quello che le banche non dicono</strong>.</p>',
+      '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F5F3EB;border:1px solid #E4E5D7;margin:0 0 27px"><tr><td style="padding:25px 24px 24px">',
+      '<p style="font-size:11px;letter-spacing:2px;color:#64794A;font-weight:800;margin:0 0 13px">IL TUO APPUNTAMENTO</p>',
+      '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>',
+      '<td width="28%" valign="middle" style="border-right:1px solid #D8DFCA;padding:0 18px 0 0"><span style="display:block;font-size:51px;line-height:52px;font-weight:800;letter-spacing:-2px;color:#0B222A">09</span><span style="display:block;font-size:12px;font-weight:800;letter-spacing:1.7px;color:#4C6165">DIC 2026</span></td>',
+      '<td valign="middle" style="padding:0 0 0 21px"><span style="display:block;font-size:13px;font-weight:700;color:#596A6E">MERCOLEDÌ · ONLINE</span><span style="display:block;font-size:29px;font-weight:800;color:#0B222A;line-height:39px">ORE 21:00</span><span style="font-size:12px;color:#526368">Orario italiano</span></td>',
+      '</tr></table><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:21px;border-top:1px solid #D8DFCA"><tr><td style="padding-top:16px"><span style="font-size:13px;line-height:21px;color:#0B222A"><strong>60 minuti di incontro</strong> + eventuali domande al termine</span></td></tr></table>',
+      '</td></tr></table>',
+      '<p style="font-size:17px;font-weight:800;color:#0B222A;margin:0 0 11px">Mettilo subito in calendario.</p>',
+      '<p style="font-size:14px;color:#59696D;line-height:22px;margin:0 0 19px">Basta un clic per non perdere l’appuntamento.</p>',
+      '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td style="padding-bottom:11px">',
+      '<a class="email-button" href="' + escapeHtml(eventGoogleCalendarUrl()) + '" style="display:block;background:#CCEB59;color:#0B222A;padding:17px 21px;text-align:center;text-decoration:none;font-size:15px;font-weight:800">AGGIUNGI A GOOGLE CALENDAR &nbsp; ›</a>',
+      '</td></tr><tr><td><a class="email-button" href="' + escapeHtml(EVENT_ICS_URL) + '" style="display:block;border:1px solid #A2B08A;color:#0B222A;padding:15px 21px;text-align:center;text-decoration:none;font-size:14px;font-weight:700">APPLE / OUTLOOK / ALTRI CALENDARI &nbsp; ›</a></td></tr></table>',
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:30px;border-top:1px solid #E4E8DF"><tr><td style="padding-top:23px">',
+      '<p style="font-size:16px;font-weight:800;margin:0 0 12px;color:#0B222A">Ti ricorderemo noi l’evento.</p>',
+      '<p style="font-size:14px;line-height:24px;color:#40545A;margin:0 0 5px"><strong>08 dicembre · 21:00</strong> — Promemoria del giorno prima</p>',
+      '<p style="font-size:14px;line-height:24px;color:#40545A;margin:0 0 17px"><strong>09 dicembre · 20:30</strong> — Mancano 30 minuti</p>',
+      '<p style="font-size:13px;line-height:22px;margin:0;color:#627278">Le indicazioni per collegarti alla diretta saranno comunicate via email non appena disponibili. Per domande, rispondi a questo messaggio.</p>',
+      '</td></tr></table>',
+    ].join(''),
+  });
+  return { subject, text, html };
 }
 export async function sendOneEventConfirmation(input:{registrationId?:string|null;env?:Config;fetchImpl?:typeof fetch}):Promise<'SENT'|'FAILED'|'NONE'|'NOT_CONFIGURED'>{
  const env=input.env??process.env;
