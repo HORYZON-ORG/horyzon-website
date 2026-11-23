@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { PATRIMONIAL_PILOT_PRIVACY_VERSION, pilotForms } from '../../content/patrimonial-funnels.ts';
 import type { PilotLead } from './patrimonial-funnels.ts';
 
@@ -18,7 +18,7 @@ function settings(env: Env) {
 
 async function invokeHub(
   env: Env,
-  functionName: 'architect_candidate_intake_v1' | 'architect_candidate_crm_v1',
+  functionName: 'architect_candidate_intake_v1' | 'architect_candidate_crm_v1' | 'architect_candidate_startup_issue_v1' | 'architect_candidate_startup_confirm_v1',
   params: Record<string, unknown>,
   fetchImpl: typeof fetch,
 ): Promise<unknown> {
@@ -48,8 +48,8 @@ export async function registerArchitectCandidate(
   cvId: string,
   lead: ArchitectLead,
   fetchImpl: typeof fetch = fetch,
-): Promise<boolean> {
-  if (!settings(env)) return false; // explicit preview-gated cutover
+): Promise<string | null> {
+  if (!settings(env)) return null; // explicit preview-gated cutover
   const data = {
     ...lead,
     sourcePath: pilotForms['architect-path'].path,
@@ -62,7 +62,7 @@ export async function registerArchitectCandidate(
   if (typeof result !== 'string' || !/^[0-9a-f-]{36}$/i.test(result)) {
     throw new Error('architect_hub_receipt_missing');
   }
-  return true;
+  return result;
 }
 
 /** CRM is a projection: failure must never remove the private candidate record or CV. */
@@ -77,4 +77,35 @@ export async function markArchitectCandidateCrm(
   await invokeHub(env, 'architect_candidate_crm_v1', {
     p_cv_id: cvId, p_contact_id: contactId, p_success: success,
   }, fetchImpl);
+}
+
+
+/** Generates a 256-bit, short-lived access link only after durable candidate intake. */
+export async function issueArchitectStartupLink(
+  env: Env,
+  candidateId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<string> {
+  if (!/^[0-9a-f-]{36}$/i.test(candidateId)) throw new Error('invalid_architect_candidate_id');
+  const token = randomBytes(32).toString('base64url');
+  const tokenHash = createHash('sha256').update(token).digest('hex');
+  const ok = await invokeHub(env, 'architect_candidate_startup_issue_v1', {
+    p_candidate_id: candidateId, p_token_hash: tokenHash,
+  }, fetchImpl);
+  if (ok !== true) throw new Error('architect_startup_link_not_issued');
+  // Fragment avoids propagating a bearer token via page requests or Referer headers.
+  return `/candidature/architetti-patrimoniali/startup#token=${token}`;
+}
+
+/** Idempotent declaration of interest; not evidence of a complete video watch. */
+export async function confirmArchitectStartupInterest(
+  env: Env,
+  token: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<boolean> {
+  if (!/^[A-Za-z0-9_-]{43}$/.test(token)) return false;
+  const hash = createHash('sha256').update(token).digest('hex');
+  return await invokeHub(env, 'architect_candidate_startup_confirm_v1', {
+    p_token_hash: hash,
+  }, fetchImpl) === true;
 }
