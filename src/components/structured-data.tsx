@@ -3,7 +3,8 @@ import type { PublicFaq } from '@/content/public-faq';
 import { people } from '@/data/people';
 
 export function StructuredData({ data }: { data: unknown }) {
-  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, '\\u003c') }} />;
+  // Iubenda annotates this non-executable script with its own data-cmp attributes.
+  return <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, '\\u003c') }} />;
 }
 
 function teamPersonNodes() {

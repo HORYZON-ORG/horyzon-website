@@ -3,6 +3,7 @@
 import type { FormEvent, KeyboardEvent, ReactNode } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ANNUNCI10X_FULFILLMENT_REFRESH_EVENT, generateAnnunci10xPremiumOutput } from './annunci-10x-premium-client';
+import { Annunci10xCheckupResult } from './annunci-10x-checkup-result';
 import { Annunci10xIdentityGate } from './annunci-10x-identity-gate';
 import { Annunci10xLoader } from './annunci-10x-loader';
 import { annunci10xProgressForAnalysisStage, type Annunci10xAnalysisStage } from '@/lib/annunci-10x/loading';
@@ -25,6 +26,7 @@ interface AnalysisRunState {
 }
 
 interface FreeResult {
+  checkup?: boolean;
   analysisRunId: string;
   resultVersion: 'V1_COMPAT' | 'V2';
   score: {
@@ -166,6 +168,21 @@ export function Annunci10xAnalyzeFlow() {
     return () => window.clearTimeout(timer);
   }, [analysisRun?.id, analysisRun?.status, analysisRun?.stage, result, busy]);
 
+  async function uploadFile(file?: File) {
+    if (!file) return;
+    setBusy('upload'); setError(null);
+    try {
+      if (file.size > 3_000_000) throw new Error('Il file deve essere inferiore a 3 MB.');
+      const body = new FormData(); body.append('file', file);
+      const response = await fetch('/api/annunci-10x/source-file', { method: 'POST', body });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) throw new Error(payload.error?.message ?? 'File non leggibile.');
+      setText(payload.text); setSourceMode('PASTED_TEXT');
+      setStatusMessage('Testo estratto. Controllalo e invialo per il check-up.');
+    } catch (cause) { setError(customerSafeError(cause, 'File non leggibile.')); }
+    finally { setBusy(null); }
+  }
+
   async function submitSource(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const cycle = flowCycleRef.current + 1;
@@ -183,9 +200,9 @@ export function Annunci10xAnalyzeFlow() {
       const response = await fetch('/api/annunci-10x/analysis', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(sourceMode === 'PUBLIC_URL'
+        body: JSON.stringify({ checkup: true, attribution: Object.fromEntries(new URLSearchParams(window.location.search)), ...(sourceMode === 'PUBLIC_URL'
           ? { sourceKind: 'PUBLIC_URL', url, requestNonce: analysisRequestNonceRef.current }
-          : { sourceKind: 'PASTED_TEXT', text, requestNonce: analysisRequestNonceRef.current }),
+          : { sourceKind: 'PASTED_TEXT', text, requestNonce: analysisRequestNonceRef.current }) }),
       });
       const payload = await response.json();
       if (!response.ok || !payload.ok) throw new Error(payload.error?.message ?? 'Analisi non avviata.');
@@ -298,28 +315,31 @@ export function Annunci10xAnalyzeFlow() {
     <form className={styles.form} data-submitted={submitted} onSubmit={submitSource} aria-labelledby="analyze-source-title">
       <div className={styles.formHead}>
         <p>{!submitted ? 'Score gratuito' : result ? 'Annuncio analizzato' : 'Annuncio inviato'}</p>
-        <h2 id="analyze-source-title">Analizza gratis il tuo annuncio</h2>
+        <h2 id="analyze-source-title">Richiedi il check-up gratuito</h2>
       </div>
       {submitted ? <div className={styles.sourceSummary}>
         <p>{sourceSummary ? `“${sourceSummary.length > 110 ? `${sourceSummary.slice(0, 110)}…` : sourceSummary}”` : result ? 'Analisi completata.' : 'Il tuo annuncio è in analisi.'}</p>
         <button type="button" className={styles.flowLink} onClick={analyzeAnother}>Analizza un altro annuncio</button>
       </div> : <>
+      <Field label="Oppure carica il file dell’annuncio" htmlFor="annunci10x-source-file"><input id="annunci10x-source-file" type="file" accept=".pdf,.docx,.txt" disabled={Boolean(busy)} onChange={e => { void uploadFile(e.target.files?.[0]); e.target.value = ''; }} /></Field>
+      <p className={styles.note}>PDF, DOCX o TXT · massimo 3 MB, 20 pagine e 12.000 caratteri. Non inviare CV o dati personali dei candidati. I PDF devono contenere testo selezionabile.</p>
+      {busy === 'upload' && <p role="status">Lettura del file in corso…</p>}
       <div className={styles.sourceToggle} role="radiogroup" aria-label="Sorgente annuncio" onKeyDown={handleSourceToggleKeyDown}>
         <button ref={textRadioRef} type="button" role="radio" aria-checked={sourceMode === 'PASTED_TEXT'} tabIndex={sourceMode === 'PASTED_TEXT' ? 0 : -1} data-active={sourceMode === 'PASTED_TEXT'} onClick={() => selectSourceMode('PASTED_TEXT')} disabled={busy === 'source'}>Testo</button>
         <button ref={linkRadioRef} type="button" role="radio" aria-checked={sourceMode === 'PUBLIC_URL'} tabIndex={sourceMode === 'PUBLIC_URL' ? 0 : -1} data-active={sourceMode === 'PUBLIC_URL'} onClick={() => selectSourceMode('PUBLIC_URL')} disabled={busy === 'source'}>Link</button>
       </div>
       {sourceMode === 'PASTED_TEXT'
         ? <Field label="Testo annuncio" htmlFor="annunci10x-source-text" required>
-            <textarea ref={sourceTextareaRef} id="annunci10x-source-text" className={styles.sourceTextarea} data-empty={!text.trim()} required value={text} onChange={(event) => setText(event.target.value)} placeholder="Incolla qui il testo del tuo annuncio" rows={text.trim() ? 10 : 3} disabled={busy === 'source'} />
+            <textarea ref={sourceTextareaRef} id="annunci10x-source-text" className={styles.sourceTextarea} data-empty={!text.trim()} required minLength={80} maxLength={12000} value={text} onChange={(event) => setText(event.target.value)} placeholder="Incolla qui il testo del tuo annuncio" rows={text.trim() ? 10 : 3} disabled={busy === 'source'} />
           </Field>
         : <Field label="URL annuncio" htmlFor="annunci10x-source-url" required>
             <input id="annunci10x-source-url" type="url" required value={url} onChange={(event) => setUrl(event.target.value)} placeholder="Incolla il link pubblico dell'annuncio" disabled={busy === 'source'} />
           </Field>}
       <div className={styles.actions}>
-        <button type="submit" disabled={busy === 'source'}>{busy === 'source' ? 'Avvio in corso' : 'Analizza il mio annuncio — gratis'}<span aria-hidden="true">→</span></button>
+        <button type="submit" disabled={Boolean(busy)}>{busy === 'source' ? 'Avvio in corso' : 'Invia il mio annuncio per il check-up gratuito'}<span aria-hidden="true">→</span></button>
         {sourceMode === 'PASTED_TEXT' && <button type="button" className={styles.flowLink} disabled={busy === 'source'} onClick={() => setText(sampleAd)}>Usa esempio</button>}
       </div>
-      <p className={styles.formMicrocopy}>Gratis · 2 minuti · nessuna carta di credito</p>
+      <p className={styles.formMicrocopy}>Un annuncio · PDF gratuito via email · nessun obbligo di acquisto</p>
       </>}
     </form>
 
@@ -347,6 +367,7 @@ export function Annunci10xAnalyzeFlow() {
 
       {canShowContact && !result && <Annunci10xIdentityGate
         key={identityResetKey}
+        checkup
         eyebrow="Report via email"
         title="Dove ti mandiamo il report?"
         description="Ti chiediamo questi dati per collegare il risultato alla tua richiesta e inviarti il report."
@@ -375,17 +396,16 @@ export function Annunci10xAnalyzeFlow() {
       {error && <p className={styles.error} role="alert">{error}</p>}
 
       {result && <div ref={resultRef} tabIndex={-1} className={styles.resultStack}>
-        <FreeResultCard result={result} />
-        <RewriteFreeCard />
+        {result.checkup ? <Annunci10xCheckupResult analysisRunId={result.analysisRunId} /> : <><FreeResultCard result={result} /><RewriteFreeCard /></>}
       </div>}
     </div>}
   </section>;
 }
 
 const FLOW_STEPS = [
-  ['Incolla', 'Testo o link dell’annuncio'],
+  ['Carica', 'File, testo o link dell’annuncio'],
   ['Verifica', 'Un codice di 6 cifre via email'],
-  ['Score', 'Il risultato, qui e via email'],
+  ['PDF completo', 'Confronto e proposta, qui e via email'],
 ] as const;
 
 // The free result reads as a report: one big number, the band on a five-step scale, the interpretation and

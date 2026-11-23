@@ -477,6 +477,9 @@ export function buildRoleCardFromExtract(rawText: string, extract: Annunci10xExt
   return {
     title,
     mission,
+    applicationInstructions: facts.get('applicationInstructions')?.value
+      ? stringFact(facts.get('applicationInstructions')!.value, 'EXTRACTED', 'original-application')
+      : (() => { const found = rawText.match(/(?:Candidatur[ae]|Per candidarsi|Invia(?:re|ci|te))[^\n.!?]{5,300}[.!?]?/i); return found ? stringFact(found[0], 'EXTRACTED', 'original-application') : undefined; })(),
     outcomes: [stringFact(guessOutcome(rawText), 'SYSTEM_INFERRED', 'outcome-nd', false)],
     responsibilities: [responsibility],
     requirements: [{ id: 'req-1', label: requirement, classification: 'REQUIRED' }],

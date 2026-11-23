@@ -8,6 +8,7 @@ import styles from './annunci-10x.module.css';
 type BusinessRole = 'OWNER_ENTREPRENEUR' | 'HR' | 'INTERNAL_RECRUITER' | 'CONSULTANT' | 'OTHER';
 
 interface IdentityGateProps {
+  checkup?: boolean;
   title: string;
   eyebrow: string;
   description: string;
@@ -30,6 +31,9 @@ export function Annunci10xIdentityGate(props: IdentityGateProps) {
     companyName: '',
     businessRole: '' as BusinessRole | '',
     email: '',
+    phone: '',
+    roleSought: '',
+    difficulty: 'FEW_APPLICATIONS',
     marketingConsent: false,
   });
   const [contactSaved, setContactSaved] = useState(Boolean(props.initialContactSaved));
@@ -58,7 +62,7 @@ export function Annunci10xIdentityGate(props: IdentityGateProps) {
       const response = await fetch('/api/annunci-10x/contact', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(contact),
+        body: JSON.stringify({ ...contact, analysisRunId: props.analysisRunId }),
       });
       const payload = await response.json();
       if (!response.ok || !payload.ok) throw new Error(payload.error?.message ?? 'Dati non salvati.');
@@ -128,14 +132,20 @@ export function Annunci10xIdentityGate(props: IdentityGateProps) {
         <Field label="Cognome" htmlFor={`${idPrefix}-last-name`} required><input id={`${idPrefix}-last-name`} required value={contact.lastName} onChange={(event) => setContact({ ...contact, lastName: event.target.value })} disabled={busy === 'contact'} /></Field>
       </div>
       <Field label="Email aziendale" htmlFor={`${idPrefix}-email`} required><input id={`${idPrefix}-email`} type="email" required value={contact.email} onChange={(event) => setContact({ ...contact, email: event.target.value })} disabled={busy === 'contact'} /></Field>
-      <details className={styles.optionalFields}>
+      {props.checkup ? <>
+        <Field label="Telefono" htmlFor={`${idPrefix}-phone`} required><input id={`${idPrefix}-phone`} type="tel" autoComplete="tel" required maxLength={40} placeholder="Es. +39 …" value={contact.phone} onChange={e => setContact({ ...contact, phone: e.target.value })} disabled={busy === 'contact'} /></Field>
+        <p className={styles.note}>Il numero viene raccolto, senza verifica tramite SMS. La telefonata resta facoltativa.</p>
+        <Field label="Azienda" htmlFor={`${idPrefix}-company`} required><input id={`${idPrefix}-company`} required maxLength={160} autoComplete="organization" value={contact.companyName} onChange={e => setContact({ ...contact, companyName: e.target.value })} disabled={busy === 'contact'} /></Field>
+        <Field label="Ruolo ricercato" htmlFor={`${idPrefix}-role-sought`} required><input id={`${idPrefix}-role-sought`} required maxLength={160} value={contact.roleSought} onChange={e => setContact({ ...contact, roleSought: e.target.value })} disabled={busy === 'contact'} /></Field>
+        <Field label="Qual è oggi la difficoltà principale?" htmlFor={`${idPrefix}-difficulty`} required><select id={`${idPrefix}-difficulty`} value={contact.difficulty} onChange={e => setContact({ ...contact, difficulty: e.target.value })} disabled={busy === 'contact'}><option value="FEW_APPLICATIONS">Poche candidature</option><option value="OFF_TARGET">Candidature fuori target</option><option value="STALLED">Ricerca ferma</option><option value="OTHER">Altro</option></select></Field>
+      </> : <details className={styles.optionalFields}>
         <summary>Dati facoltativi <span>azienda e ruolo</span></summary>
         <p>Puoi aggiungerli ora o lasciarli vuoti: non bloccano verifica email e Score.</p>
         <div className={styles.fieldGrid}>
           <Field label="Azienda" htmlFor={`${idPrefix}-company`} optional><input id={`${idPrefix}-company`} value={contact.companyName} onChange={(event) => setContact({ ...contact, companyName: event.target.value })} disabled={busy === 'contact'} /></Field>
           <Field label="Ruolo aziendale" htmlFor={`${idPrefix}-role`} optional><select id={`${idPrefix}-role`} value={contact.businessRole} onChange={(event) => setContact({ ...contact, businessRole: event.target.value as BusinessRole | '' })} disabled={busy === 'contact'}><option value="">Non indicato</option><option value="OWNER_ENTREPRENEUR">Titolare</option><option value="HR">HR</option><option value="INTERNAL_RECRUITER">Recruiter interno</option><option value="CONSULTANT">Consulente</option><option value="OTHER">Altro</option></select></Field>
         </div>
-      </details>
+      </details>}
       <label className={styles.unknownToggle}><input type="checkbox" checked={contact.marketingConsent} onChange={(event) => setContact({ ...contact, marketingConsent: event.target.checked })} disabled={busy === 'contact'} /><span>Voglio ricevere anche consigli e novità da Horyzon.</span></label>
       <p className={styles.note}>Usiamo questi dati per fornire il risultato e gestire la richiesta nel CRM HighLevel di Horyzon. Il consenso alle novità è facoltativo e distinto dalla verifica email. <a href="https://www.iubenda.com/privacy-policy/64704330" target="_blank" rel="noopener noreferrer">Leggi l’informativa privacy ↗︎</a></p>
       <p className={styles.formMicrocopy}>Niente spam. Ti cancelli con un clic.</p>

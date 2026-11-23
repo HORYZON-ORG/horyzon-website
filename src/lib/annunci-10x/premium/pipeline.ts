@@ -863,6 +863,18 @@ async function requestAnnunci10xCreateClientRevision(input: {
   };
 }
 
+/** Reuses the factual writer and the V2 evaluator, pinned to this analysis snapshot. */
+export async function generateAnnunci10xCheckupOutput(input: {
+  context: Annunci10xRuntimeContext;
+  session: PersistedAnnunci10xSession;
+  sessionSecret: string;
+  snapshot: PersistedSnapshot;
+  analysisRunId: string;
+}) {
+  return executePremiumPipeline({ ...input, channel: preferredChannel(input.snapshot),
+    authIdentity: `recruiting-checkup-v1:${input.analysisRunId}`, skipChannelVariant: true });
+}
+
 async function executePremiumPipeline(input: {
   context: Annunci10xRuntimeContext;
   session: PersistedAnnunci10xSession;
@@ -870,6 +882,7 @@ async function executePremiumPipeline(input: {
   snapshot: PersistedSnapshot;
   channel: PublicationChannel;
   authIdentity: string;
+  skipChannelVariant?: boolean;
 }): Promise<{
   masterOutput: PersistedOutput;
   evaluation: PersistedEvaluation;
@@ -990,7 +1003,7 @@ async function executePremiumPipeline(input: {
 
   let variantOutput: PersistedOutput | null = null;
   let channelVariant: ChannelVariant | null = null;
-  if (gate.status !== 'BLOCKED') {
+  if (gate.status !== 'BLOCKED' && !input.skipChannelVariant) {
     const channelResult = await orchestrator.runTask({
       sessionId: input.session.id,
       sessionSecret: input.sessionSecret,
@@ -1501,6 +1514,7 @@ function sourceFactIdsForSection(master: GeneratedAd, type: ClientRevisionSectio
 }
 
 function isEditorialPolishSectionSafe(value: string): boolean {
+  if (/N\/D|(?:missione|risultato atteso) da chiarire|\bdi\s+[a-zà-ù]+(?:erà|irà|eranno|iranno)(?=\s|[.,;:]|$)/i.test(value)) return false;
   return !/\b(?:garantire|garantendo|facilitare|facilitando|segnalare|segnalando|correggere|correggendo|risolvere|risolvendo|coordinare|coordinando|spedizione|spedizioni|team operativo|ritiri|quotidian[aoe]?|ogni giorno|regolarmente|ridurre errori|ridurre ritardi|buona manualit|documenti di magazzino|ddt|bolle|consegne|altri reparti|team logistico|procedure interne|procedure operative|procedure aziendali|organizzazione specifica del magazzino|formazione|dpi|sicurezza)\b/i.test(value);
 }
 

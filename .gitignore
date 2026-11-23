@@ -46,3 +46,5 @@ next-env.d.ts
 
 # presentations
 *.pptx
+
+/output/recruiting-checkup-qa/

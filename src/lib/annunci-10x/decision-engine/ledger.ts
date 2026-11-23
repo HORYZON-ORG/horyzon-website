@@ -17,6 +17,7 @@ export function isUnknownOptionalFact(value: string): boolean {
 export function createAnnunci10xTruthLedger(roleCard: RoleCard): Annunci10xTruthLedger {
   const facts: Annunci10xTruthFact[] = [];
   const addFact = (fact: Omit<Annunci10xTruthFact, 'id'>): void => {
+    if (/^(?:N\/D|UNKNOWN|Requisiti da chiarire|Attivita operative indicate nel testo originale)/i.test(fact.value)) return;
     if (!fact.value || (!fact.publishable && fact.category !== 'BOUNDARY' && fact.category !== 'REQUIREMENT_TRAINABLE')) return;
     facts.push({ ...fact, id: `F${String(facts.length + 1).padStart(2, '0')}` });
   };

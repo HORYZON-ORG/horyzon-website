@@ -27,7 +27,11 @@ const nextConfig: NextConfig = {
  images: { qualities: [75, 100] },
  poweredByHeader: false,
  // The Radar report PDF reads its fonts and logos from disk.
- outputFileTracingIncludes: { '/api/radar/**': ['./src/lib/radar/fonts/**', './src/lib/radar/assets/**'] },
+ outputFileTracingIncludes: {
+  '/api/radar/**': ['./src/lib/radar/fonts/**', './src/lib/radar/assets/**'],
+  '/api/annunci-10x/**': ['./node_modules/pdfkit/js/standard-fonts/**', './public/horyzon-logo-canonical.png'],
+  '/api/cron/recruiting-checkups': ['./node_modules/pdfkit/js/standard-fonts/**', './public/horyzon-logo-canonical.png'],
+ },
  async headers() {
   return [{ source: '/:path*', headers: [
    { key: 'Content-Security-Policy', value: csp },

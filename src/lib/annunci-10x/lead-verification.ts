@@ -1,3 +1,4 @@
+import { checkupEmail } from './checkup.ts';
 import { createHash, createHmac, randomInt, randomUUID, timingSafeEqual } from 'node:crypto';
 import { getAnnunci10xCatalogItem, getAnnunci10xOffer } from './commercial.ts';
 import { Annunci10xPublicError, type Annunci10xRuntimeContext, type Annunci10xSessionCookie } from './product-flow.ts';
@@ -91,6 +92,7 @@ export interface ScoreReportEmailAreaInput {
 }
 
 export interface ScoreReportEmailInput {
+  checkup?: { afterScore: number | null; pdfBase64: string };
   deliveryId: string;
   analysisRunId: string;
   recipient: string;
@@ -513,6 +515,7 @@ export function buildResendScoreReportPayload(input: ScoreReportEmailInput & {
   from: string;
   replyTo?: string | null;
 }): Record<string, unknown> {
+  if (input.checkup) return { ...checkupEmail({ ...input, ...input.checkup }), to: [input.recipient] };
   const firstName = cleanOptionalEmailName(input.firstName);
   const greeting = firstName ? `Ciao ${firstName},` : 'Ciao,';
   const scoreLabel = input.score === null ? 'N/D' : `${formatScoreValue(input.score)}/100`;

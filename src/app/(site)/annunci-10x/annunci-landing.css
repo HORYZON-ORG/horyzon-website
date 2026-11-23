@@ -123,3 +123,26 @@
   .ax .rd-story.is-live .ax-fact dt{font-size:10px;letter-spacing:.06em}
   .ax-footer p{max-width:36ch}
 }
+
+/* Recruiting check-up: quiet surfaces keep the focus on the gift and form. */
+.ck .rd-map{background:#f4f2e9;color:#102229;padding-top:88px;padding-bottom:88px}
+.ck .rd-map h2 span{background:none;color:inherit;padding:0}
+.ck .rd-map .rd-tile{background:#fffdf6;border-color:#d8ddd1}
+.ck .rd-map h2{font-size:clamp(32px,4.2vw,58px)}
+.ck .rd-hero h1{font-size:clamp(38px,4.6vw,68px)}
+.ck .ax-price{padding-top:88px;padding-bottom:88px}
+.ck .rd-map li,.ck .rd-hero li{line-height:1.65}
+.ck-video-section{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(260px,.75fr);grid-template-areas:"intro video" "detail video";column-gap:6vw;padding:88px 6vw;background:var(--ink-2);border-top:1px solid var(--line)}
+.ck-video-copy{grid-area:intro;align-self:end;max-width:660px}
+.ck-video-detail{grid-area:detail;align-self:start;max-width:660px}
+.ck-video-copy h2{font-size:clamp(36px,4.4vw,64px);line-height:1.04;letter-spacing:-.035em}
+.ck-video-copy>p,.ck-video-detail>p{line-height:1.65;color:#d6dfda}
+.ck-video-copy .ck-video-lead{font-size:clamp(18px,1.5vw,22px);line-height:1.5;margin-top:26px}
+.ck-video-detail .ck-video-note{margin:26px 0;padding-top:20px;border-top:1px solid var(--line);color:var(--cream)}
+.ck-video-figure{grid-area:video;align-self:center;width:min(100%,350px);justify-self:center;margin:0}
+.ck-video{display:block;width:100%;height:auto;aspect-ratio:9/16;background:var(--ink);border:1px solid var(--line);border-radius:18px}
+.ck-video-figure figcaption{margin:14px 0 0;font-size:12px;line-height:1.5;color:#b8c5c1}
+.ck-video-transcript{margin-top:12px;font-size:13px;line-height:1.6;color:#d6dfda}
+.ck-video-transcript summary{min-height:44px;display:flex;align-items:center;cursor:pointer;text-decoration:underline;text-underline-offset:4px}
+.ck-video-transcript p{margin:12px 0}
+@media(max-width:800px){.ck-video-section{grid-template-columns:1fr;grid-template-areas:"intro" "video" "detail";padding:70px 5vw;gap:30px}.ck-video-copy,.ck-video-detail{max-width:none}.ck-video-figure{width:min(100%,330px)}}

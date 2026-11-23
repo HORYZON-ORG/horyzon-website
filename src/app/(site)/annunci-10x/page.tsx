@@ -1,165 +1,96 @@
-import { Annunci10xClient } from '@/components/annunci-10x/annunci-10x-client';
-import { AdSheet } from '@/components/annunci-10x/landing/ad-sheet';
-import { AnnunciDock } from '@/components/annunci-10x/landing/annunci-dock';
-import { CandidateStory } from '@/components/annunci-10x/landing/candidate-story';
-import { CreateCta } from '@/components/annunci-10x/landing/create-cta';
+import { Annunci10xAnalyzeFlow } from '@/components/annunci-10x/annunci-10x-analyze-flow';
+import flowStyles from '@/components/annunci-10x/annunci-10x.module.css';
 import { SITE_URL } from '@/content/seo';
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import '@/styles/horyzon-landing.css';
 import './annunci-landing.css';
-
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const fetchCache = 'force-no-store';
-
-const title = 'Annunci 10x — Score e annuncio pronti gratis';
-const description = 'Valuta gratis chiarezza e completezza del tuo annuncio. Poi miglioralo o creane uno da zero gratuitamente, con un testo completo costruito solo sui fatti che confermi.';
-const image = `${SITE_URL}/opengraph-image`;
-
 export const metadata: Metadata = {
-  title: { absolute: title },
-  description,
-  alternates: { canonical: `${SITE_URL}/annunci-10x` },
+  title: { absolute: 'Check-up gratuito dell’annuncio | HORYZON Recruiting' },
+  description: 'Ricevi un PDF gratuito con valutazione automatica, proposta migliorata e confronto dei punteggi. Poi scegli se prenotare 15 minuti con Angelo.',
+  alternates: { canonical: `${SITE_URL}/recruiting/check-up-annuncio` },
   robots: { index: false, follow: false, nocache: true },
-  openGraph: {
-    title,
-    description,
-    url: `${SITE_URL}/annunci-10x`,
-    siteName: 'Horyzon Consulting Recruiting',
-    locale: 'it_IT',
-    type: 'website',
-    images: [image],
-  },
-  twitter: { card: 'summary_large_image', title, description, images: [image] },
 };
-
-// Same structure as /radar: one idea per section, one gesture (the job ad, vague in the hero and rewritten
-// line by line in the story), one lime field.
-// The copy states only what the product does; the score itself is never shown or invented here.
-const scoreDisclaimer = 'Il punteggio valuta la chiarezza e la completezza delle informazioni disponibili nell’annuncio. Non prevede il numero di candidature né sostituisce la valutazione delle persone.';
-const freeGenerationCopy = 'Creazione e miglioramento dell’annuncio sono gratuiti. Nessuna carta di credito: dopo la verifica dell’email generiamo il testo completo usando solo i fatti che hai confermato.';
-const guidePreviewPath = '/annunci-10x/annunci-10x-anteprima.pdf';
-
-const outputs = [
-  ['Score', 'Score di chiarezza', 'Un valore su 100, calcolato sui 20 controlli valutabili.'],
-  ['Fascia', 'Da Critico a Eccellente', 'Descrive chiarezza e completezza, non la probabilità di assumere.'],
-  ['Priorità', 'Aree prioritarie', 'I punti che frenano di più la comprensione del ruolo.'],
-  ['Motivo', 'Motivazione', 'Perché quel punto è debole, rispetto a ciò che c’è scritto.'],
-  ['Mancanze', 'Informazioni da chiarire', 'I dati che mancano e che solo tu puoi confermare.'],
-  ['Report', 'Indicazioni via email', 'Le indicazioni operative arrivano nel report via email.'],
-] as const;
-
-const roles = ['operaio di produzione', 'saldatore', 'manutentore meccanico', 'elettricista', 'tecnico installatore', 'magazziniere carrellista', 'autista patente C', 'commerciale B2B', 'impiegato amministrativo', 'addetto alla contabilità', 'cuoco', 'cameriere di sala'];
-
 const faqs = [
-  ['Devo sostituire una persona: da dove parto?', 'Dall’annuncio con cui l’hai trovata. Se lo ripubblichi uguale, rischi di attirare di nuovo lo stesso profilo. Lo Score ti mostra che cosa chiarire prima di ripubblicarlo.'],
-  ['Quanto costa?', 'Lo Score, il miglioramento di un annuncio esistente e la creazione di un nuovo annuncio sono gratuiti. Puoi partire da un testo già scritto oppure da un brief guidato.'],
-  ['Perché mi chiedete l’email?', 'Serve per collegare il report alla tua richiesta e inviartelo. Comunicazioni marketing solo con consenso separato.'],
-  ['Mi garantite più candidature?', 'No. Le candidature dipendono da mercato, canale, condizioni e attrattività dell’offerta. Annunci 10x lavora su chiarezza e coerenza dell’annuncio.'],
-  ['Usate l’intelligenza artificiale?', 'Sì. L’intelligenza artificiale applica i controlli del metodo. Il sistema è progettato per non riempire informazioni mancanti con fatti professionali inventati.'],
-  ['Funziona anche per ruoli operativi?', `Sì. È pensato per i ruoli che assumono davvero le PMI: ${roles.join(', ')}.`],
+  ['Il check-up è davvero gratuito?', 'Sì. La valutazione automatica, la proposta migliorata e il PDF sono gratuiti. Se lo desideri puoi prenotare anche 15 minuti con Angelo, senza obbligo di acquisto.'],
+  ['Che cosa contiene la versione migliorata?', 'Una riscrittura basata sulle informazioni presenti nel tuo annuncio. I dati che mancano vengono segnalati: non inventiamo condizioni dell’offerta. La telefonata facoltativa può aiutare a completarli.'],
+  ['Quanto tempo richiede?', 'Puoi compilare la richiesta direttamente qui. Vedrai lo stato reale dell’elaborazione e dell’invio. Il sistema non attribuisce ad Angelo una revisione personale: la valutazione è automatica.'],
+  ['Come si svolgono i 15 minuti?', 'È una telefonata. Prenoti l’orario e lasci il numero: Angelo ti chiamerà per parlare della figura cercata, dei risultati attesi e delle condizioni offerte.'],
+  ['Posso richiederlo se non ho ancora scritto l’annuncio?', 'Questo check-up parte da un testo esistente. Se devi costruire l’annuncio da zero, scrivi ad angelo.ria.chetta@horyzon.it per spiegare l’esigenza.'],
+  ['Il check-up mi garantisce di trovare il candidato?', 'La revisione aiuta a rendere più chiaro e coerente il messaggio. L’esito della ricerca dipende anche dal ruolo, dalle condizioni offerte, dai canali e dal processo di selezione.'],
 ] as const;
-
-function Cta({ position, children = 'Valuta il mio annuncio' }: { position: string; children?: React.ReactNode }) {
-  return <a className="rd-cta" href="#valuta" data-analytics-event="annunci10x_lp_cta_click" data-cta-position={position}>{children}<span aria-hidden="true">↓</span></a>;
-}
-
-function Brand() {
-  return <Link href="/" className="ax-brand" aria-label="Horyzon Consulting Recruiting"><Image src="/annunci-10x/horyzon-consulting-recruiting-white.png" alt="" width={2048} height={768} sizes="(max-width: 600px) 168px, 220px" aria-hidden="true" unoptimized /></Link>;
-}
-
-const delay = (ms: number) => ({ '--d': `${ms}ms` }) as React.CSSProperties;
-
+function Cta() { return <a className="rd-cta" href="#valuta">Richiedi il check-up gratuito del tuo annuncio<span aria-hidden="true">↓</span></a>; }
+function Brand() { return <Link href="/" className="ax-brand" aria-label="HORYZON Recruiting"><Image src="/annunci-10x/horyzon-consulting-recruiting-white.png" alt="" width={2048} height={768} sizes="220px" unoptimized suppressHydrationWarning /></Link>; }
 export default function Annunci10xPage() {
-  return <div className="rd ax">
+  return <div className="rd ax ck">
     <a className="ax-skip" href="#content">Salta al contenuto</a>
-    <header className="rd-header"><Brand /><Cta position="header">Valuta gratis</Cta></header>
-
-    <main id="content" data-page="annunci-10x">
-      <section id="ax-hero" className="rd-hero ax-hero" aria-labelledby="ax-hero-title">
+    <header className="rd-header"><Brand /><a className="rd-link" href="#valuta">Check-up gratuito ↓</a></header>
+    <main id="content" data-page="recruiting-checkup">
+      <section className="rd-hero ax-hero" aria-labelledby="ax-hero-title">
         <div className="rd-hero-copy">
-          <p className="rd-label rd-rise" style={delay(0)}>Annunci 10x <i>·</i> Score gratuito <i>·</i> 2 minuti</p>
-          <h1 id="ax-hero-title"><span className="rd-mask"><span className="rd-line" style={delay(120)}>Il candidato sbagliato non ha dubbi.</span></span> <span className="rd-mask"><span className="rd-line rd-accent" style={delay(320)}>Quello giusto sì.</span></span></h1>
-          <p className="rd-lead rd-rise" style={delay(620)}>Un annuncio vago fa passare oltre chi sarebbe adatto e attira chi si candida a tutto. Lo Score di chiarezza ti mostra che cosa capisce davvero chi lo legge.</p>
-          <div className="rd-actions rd-rise" style={delay(760)}><Cta position="hero" /><a className="rd-link" href="#ax-story-title">Prima fammi vedere</a></div>
+          <p className="rd-label">HORYZON Recruiting · Check-up gratuito dell’annuncio</p>
+          <h1 id="ax-hero-title">Cerchi una persona. <span className="rd-accent">Il tuo annuncio le dà un buon motivo per candidarsi?</span></h1>
+          <p className="rd-lead">Quando arrivano poche candidature, oppure molte ma lontane dal profilo cercato, vale la pena partire da ciò che l’annuncio comunica.</p>
+          <p>Carica il tuo annuncio per il check-up automatico gratuito. Ricevi via email un PDF con il voto motivato, una possibile versione migliorata e le informazioni che possono renderla più precisa.</p>
+          <div className="rd-actions"><Cta /></div>
+          <p>Un annuncio · PDF gratuito via email · 15 minuti facoltativi con Angelo</p>
         </div>
-        <AdSheet className="ax-hero-sheet" scan />
+        <aside className="rd-tile" aria-label="Contenuto del regalo">
+          <p className="rd-label">Dall’attuale al possibile</p><h2>Il tuo annuncio, letto con criteri espliciti.</h2>
+          <ol><li>Valutazione motivata su 20 controlli</li><li>Una proposta fedele ai fatti disponibili</li><li>Confronto dei voti, senza risultati preassegnati</li><li>PDF completo da scaricare e conservare</li></ol>
+          <p>Il regalo non dipende dalla prenotazione di una telefonata.</p>
+        </aside>
       </section>
-
-      <CandidateStory />
-
-      <section className="rd-map" aria-labelledby="ax-map-title">
-        <header className="rd-reveal"><p className="rd-label">Il risultato</p><h2 id="ax-map-title">Non un voto. <span>Una lista di priorità.</span></h2></header>
-        <ul className="rd-tiles">
-          {outputs.map(([tag, heading, text], index) => <li key={heading} className="rd-tile rd-reveal" style={{ '--i': index } as React.CSSProperties}><span className="rd-tile-tag">{tag}</span><h3>{heading}</h3><p>{text}</p></li>)}
-        </ul>
-        <p className="rd-map-note">{scoreDisclaimer}</p>
+      <section className="rd-map" aria-labelledby="situazioni-title">
+        <header><p className="rd-label">Ti riconosci?</p><h2 id="situazioni-title">Partiamo da ciò che <span>l’annuncio comunica.</span></h2></header>
+        <ul className="rd-tiles">{[
+          ['Poche risposte', 'Pubblichi e arrivano poche risposte.', 'La ricerca resta aperta e il lavoro continua a ricadere su chi è già in azienda.'],
+          ['Fuori target', 'Ricevi candidature poco pertinenti.', 'Dedichi tempo a leggere CV e fare colloqui, ma fai fatica a riconoscere le persone adatte.'],
+          ['Ricerca ferma', 'Hai già cambiato l’annuncio più volte.', 'Non è ancora chiaro che cosa debba cambiare nel messaggio, nella proposta o nella definizione del ruolo.'],
+        ].map(([tag, title, text]) => <li className="rd-tile" key={tag}><span className="rd-tile-tag">{tag}</span><h3>{title}</h3><p>{text}</p></li>)}</ul>
       </section>
-
-      <section id="valuta" className="rd-product" aria-labelledby="ax-product-title">
-        <header className="rd-product-head">
-          <p className="rd-label">Tocca a te</p>
-          <h2 id="ax-product-title">Che cosa capisce <em>chi lo legge?</em></h2>
-        </header>
-        <Annunci10xClient />
-        <p className="rd-product-note">Usiamo la tua email per inviarti il report <i>·</i> <Link href="/privacy-policy">Privacy ↗︎</Link></p>
+      <section className="rd-map" aria-labelledby="regalo-title">
+        <header><p className="rd-label">Che cosa riceverai</p><h2 id="regalo-title">Un risultato utile, <span>già nel PDF.</span></h2></header>
+        <p>Testo originale, griglia e voto, criticità motivate, possibile versione migliorata, seconda valutazione e differenze. Ogni testo viene valutato con gli stessi 20 controlli. Il voto su 10 deriva dal punteggio su 100 diviso 10.</p>
+        <p>La proposta non inventa stipendio, benefit, requisiti o condizioni. Gli elementi da chiarire sono indicati a parte. Anche un annuncio già buono può mantenere il proprio voto.</p>
+        <p><a className="rd-link" href="/annunci-10x/checkup-esempio.pdf" target="_blank" rel="noopener noreferrer">Guarda un facsimile del PDF ↗</a> · Annuncio fittizio e valutazioni simulate, a scopo dimostrativo.</p>
+        <p className="rd-map-note">È una valutazione automatica di chiarezza e completezza. Non misura la qualità dell’azienda o delle persone e non garantisce candidature o assunzioni.</p>
       </section>
-
-      <section id="annuncio-10x" className="ax-price" aria-labelledby="ax-price-title">
-        <div className="ax-price-figure">
-          <p className="rd-label">Annuncio 10x</p>
-          <strong>Gratis</strong>
-          <ul><li>1 annuncio</li><li>1 versione finale</li><li>3 modifiche mirate</li><li>1 canale</li></ul>
+      <section className="ck-video-section" aria-labelledby="checkup-video-title">
+        <div className="ck-video-copy">
+          <p className="rd-label">Il punto da cui partire</p>
+          <h2 id="checkup-video-title">Quanto è chiaro<br />il tuo annuncio?</h2>
+          <p className="ck-video-lead">«Dinamico e motivato» dice poco sul lavoro che una persona farà. Frank parte da qui: rendere riconoscibili il ruolo e ciò che richiede.</p>
         </div>
-        <div className="ax-price-copy">
-          <h2 id="ax-price-title">Poi, se serve, <em>lo scriviamo noi.</em></h2>
-          <p>Parti dal risultato dello Score o, se il testo non esiste ancora, da un brief guidato sui fatti del ruolo. Generiamo gratuitamente il testo completo, senza aggiungere fatti che non hai confermato.</p>
-          <CreateCta className="rd-cta" position="price">Non ho ancora un annuncio: crealo gratis<span aria-hidden="true">↑</span></CreateCta>
-          <p className="ax-guarantee">{freeGenerationCopy}</p>
+        <div className="ck-video-detail">
+          <p>Il check-up mette a confronto il testo attuale e una versione migliorata, con valutazioni motivate e modifiche spiegate. Ricevi tutto nel PDF gratuito via email.</p>
+          <p>HORYZON Recruiting integra metodo e strumenti specialistici Performia nel proprio lavoro con le imprese.</p>
+          <p className="ck-video-note">Il regalo è già completo. I 15 minuti con Angelo sono un approfondimento successivo e facoltativo.</p>
+          <Cta />
         </div>
+        <figure className="ck-video-figure">
+          <video className="ck-video" width={720} height={1280} controls playsInline preload="none" poster="/recruiting/checkup-51/poster.jpg" aria-label="Frank presenta il check-up gratuito dell’annuncio" suppressHydrationWarning>
+            <source src="/recruiting/checkup-51/checkup-51.mp4" type="video/mp4" />
+            <track src="/recruiting/checkup-51/captions-it.vtt" kind="captions" srcLang="it" label="Italiano" />
+            Puoi <a href="/recruiting/checkup-51/checkup-51.mp4">guardare il video del check-up gratuito</a> oppure leggere il testo qui sotto.
+          </video>
+          <figcaption>Frank · Check-up gratuito dell’annuncio · 23 secondi</figcaption>
+          <details className="ck-video-transcript"><summary>Leggi il contenuto del video</summary><p>Ma il tuo annuncio di lavoro, quanto è chiaro davvero? Spesso dice «dinamico e motivato», ma non dice cosa farà la persona.</p><p>Dall’attuale al possibile: ricevi un PDF gratuito via email con valutazione motivata, versione migliorata e confronto dei voti.</p><p>Il regalo è già completo. Se vuoi approfondire, puoi scegliere 15 minuti gratuiti con Angelo: un confronto facoltativo per partire dal lavoro già fatto.</p><p>Carica l’annuncio qui sotto. Nessun obbligo di acquisto.</p></details>
+        </figure>
       </section>
-
-      <section id="guida-annunci-10x" className="ax-price ax-guide" aria-labelledby="ax-guide-title">
-        <div className="ax-price-figure ax-guide-figure">
-          <p className="rd-label">Guida Annunci 10x</p>
-          <strong>49 €</strong>
-          <ul><li>Metodo</li><li>Esempi</li><li>Checklist</li></ul>
-        </div>
-        <div className="ax-price-copy ax-guide-copy">
-          <h2 id="ax-guide-title">Vuoi farlo in autonomia? <em>Ti diamo il metodo.</em></h2>
-          <p>Una guida operativa per leggere, correggere e scrivere annunci più chiari senza inventare condizioni, requisiti o promesse. Parti dai fatti del ruolo e trasformali in un testo che un candidato possa capire davvero.</p>
-          <ul className="ax-guide-list" aria-label="Cosa include la Guida Annunci 10x">
-            <li>Il metodo dei 20 controlli spiegato in modo pratico.</li>
-            <li>Esempi per distinguere attività, requisiti, condizioni e candidatura.</li>
-            <li>Una traccia per riscrivere gli annunci mantenendo solo fatti confermati.</li>
-          </ul>
-          <div className="ax-guide-actions">
-            <a className="rd-cta" href="#guida-annunci-10x" data-analytics-event="annunci10x_guide_cta_click" data-cta-position="guide">Scopri la guida — 49 €<span aria-hidden="true">↑</span></a>
-            <a className="rd-link ax-guide-preview" href={guidePreviewPath} target="_blank" rel="noreferrer">Anteprima</a>
-          </div>
-          <p className="ax-guide-note">Acquisto online non ancora attivo. L’anteprima ufficiale è disponibile ora.</p>
-        </div>
+      <section className="ax-price" aria-labelledby="angelo-title">
+        <Image src="/people/angelo.webp" alt="Angelo Ria Chetta" width={320} height={480} style={{ width: '100%', maxWidth: 320, height: 'auto', borderRadius: 12 }} suppressHydrationWarning />
+        <div className="ax-price-copy"><p className="rd-label">Chi puoi incontrare dopo il check-up</p><h2 id="angelo-title">Angelo Ria Chetta</h2><p>Analista d’azienda specializzato nelle risorse umane. Autore, ricercatore e imprenditore, specialista in benessere imprenditoriale e organizzativo.</p><p>Nel lavoro di recruiting collega annuncio, risultati attesi dal ruolo, selezione e inserimento. È autore di <em>Aziende attraenti per campioni e talenti</em>.</p><p>Puoi scegliere 15 minuti gratuiti per partire dal lavoro già fatto e individuare ulteriori miglioramenti.</p></div>
       </section>
-
-      <section className="rd-faq" aria-labelledby="ax-faq-title">
-        <h2 id="ax-faq-title">Prima di iniziare.</h2>
-        <div>{faqs.map(([question, answer]) => <details key={question}><summary>{question}<span aria-hidden="true" /></summary><p>{answer}</p></details>)}</div>
-      </section>
-
-      <section id="ax-final" className="rd-final" aria-labelledby="ax-final-title">
-        <p className="rd-label">Il prossimo passo</p>
-        <h2 id="ax-final-title">Prima di ripubblicare lo stesso annuncio, <em>scopri che cosa non si capisce.</em></h2>
-        <Cta position="final" />
-        <CreateCta className="rd-link" position="final">Non ho ancora un annuncio</CreateCta>
-      </section>
+      <section className="rd-map" aria-labelledby="come-title"><header><h2 id="come-title">Come funziona</h2></header><ol><li><strong>Carica l’annuncio.</strong> Allega PDF, DOCX o TXT, incolla il testo oppure usa un link pubblico. Indica email e telefono.</li><li><strong>Ricevi il PDF.</strong> Verifica l’email con il codice: il sistema prepara il confronto e lo invia alla tua casella.</li><li><strong>Scegli se approfondire.</strong> Dopo il regalo puoi prenotare 15 minuti con Angelo.</li></ol></section>
+      <section id="valuta" className="rd-product" aria-labelledby="ax-product-title"><header className="rd-product-head"><p className="rd-label">Richiedi il tuo check-up</p><h2 id="ax-product-title">Hai un annuncio aperto? <em>Partiamo da quello.</em></h2></header><div className={flowStyles.flowRoot}><Annunci10xAnalyzeFlow /></div></section>
+      <section className="rd-faq" aria-labelledby="faq-title"><h2 id="faq-title">Domande frequenti</h2><div>{faqs.map(([q, a]) => <details key={q}><summary>{q}<span aria-hidden="true" /></summary><p>{a}</p></details>)}</div></section>
+      <section className="rd-final"><h2>Il primo passo è <em>il tuo annuncio.</em></h2><Cta /></section>
     </main>
-
-    <footer className="rd-footer ax-footer">
-      <div><Brand /><p>FELICITÀ srl · Viale Papiniano 28, 20123 Milano · P.IVA 05120660757 · SDI SU9YNJA</p></div>
-      <nav aria-label="Link legali Annunci 10x"><Link href="/privacy-policy">Privacy</Link><Link href="/cookie-policy">Cookie</Link><a href="mailto:info@horyzon.it">info@horyzon.it</a></nav>
-    </footer>
-    <AnnunciDock />
+    <footer className="rd-footer ax-footer"><div><Brand /><p>FELICITÀ srl · Viale Papiniano 28, 20123 Milano · P.IVA 05120660757 · SDI SU9YNJA</p></div><nav aria-label="Link legali"><Link href="/privacy-policy">Privacy</Link><Link href="/cookie-policy">Cookie</Link><a href="mailto:info@horyzon.it">info@horyzon.it</a></nav><p>Impresa, Economia e Umanità al servizio del Sistema Italia.</p></footer>
   </div>;
 }

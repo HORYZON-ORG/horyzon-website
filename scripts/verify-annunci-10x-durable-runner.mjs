@@ -174,8 +174,8 @@ async function verifyRunningOperationPolicy() {
 function verifyRouteAndCopyContracts() {
   const postRoute = readFileSync('src/app/api/annunci-10x/analysis/route.ts', 'utf8');
   const getRoute = readFileSync('src/app/api/annunci-10x/analysis/[id]/route.ts', 'utf8');
-  assert.match(postRoute, /export const maxDuration = 120/);
-  assert.match(getRoute, /export const maxDuration = 120/);
+  assert.match(postRoute, /export const maxDuration = 300/);
+  assert.match(getRoute, /export const maxDuration = 300/);
   assert.match(postRoute, /after\(async \(\) =>/);
   assert.match(getRoute, /after\(async \(\) =>/);
 }
