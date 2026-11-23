@@ -933,6 +933,9 @@
 /* Preserve the uploaded original portrait in full within the square card: no crop, grayscale filter or source alteration. */
 .page .vSpeakerFrancescoPortrait{background:linear-gradient(90deg,#c6c5c4 0%,#bcbabb 100%)}
 .page .vSpeakerFrancescoPortrait img{object-fit:contain;object-position:center center;filter:none}
+/* Gianni's original monochrome portrait has a transparent background: show the full head, crossed arms and jacket. */
+.page .vSpeakerGianniPortrait{background:linear-gradient(90deg,#d9d9d9 0%,#cccccc 100%)}
+.page .vSpeakerGianniPortrait img{object-fit:contain;object-position:center center;filter:none}
 /* Angelo keeps the small downward adjustment requested earlier, without modifying his original photo. */
 .page .vSpeakerRosterPortrait .vSpeakerAngeloPhoto{object-position:center top;transform:translateY(5%) scale(1.1)}
 .page .vSpeakerRosterBody{padding:24px clamp(20px,3vw,30px) 29px;display:flex;flex-direction:column;gap:8px;min-height:116px}
