@@ -1,4 +1,5 @@
 import { confirmArchitectStartupInterest } from '@/lib/public-leads/architect-hub-intake';
+import { architectStartupEnabled } from '@/lib/public-leads/architect-startup-config';
 
 export const runtime = 'nodejs';
 
@@ -8,7 +9,7 @@ const json = (status: number, message: string) => Response.json(
 );
 
 export async function POST(request: Request) {
-  if (process.env.PATRIMONIAL_ARCHITECT_STARTUP_ENABLED !== 'true') {
+  if (!architectStartupEnabled(process.env)) {
     return json(503, 'La conferma non è ancora disponibile.');
   }
   const url = new URL(request.url);
