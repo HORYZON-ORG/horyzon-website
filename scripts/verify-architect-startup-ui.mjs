@@ -6,7 +6,7 @@ const startupPath = '/candidature/architetti-patrimoniali/startup';
 const token = 'A'.repeat(43);
 const browser = await chromium.launch({ headless: true });
 try {
-  for (const width of [390, 1366]) {
+  for (const width of [320, 390, 1366]) {
     const page = await browser.newPage({ viewport: { width, height: 860 }, reducedMotion: 'reduce' });
     await page.route('https://zbpegzd1dv3ut14o.public.blob.vercel-storage.com/**', route => route.abort());
     await page.addInitScript(() => {
