@@ -42,7 +42,7 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
         return;
       }
       setStatus('success');
-      setNotice('La tua conferma è stata registrata. Il team Horyzon potrà contattarti per valutare insieme i prossimi passi.');
+      setNotice('Grazie. La tua richiesta di ricontatto è stata registrata nella Selezione Architetti Horyzon, con data e ora della conferma.');
     } catch {
       setStatus('error');
       setNotice('Connessione non disponibile: riprova, senza inviare una nuova candidatura.');
@@ -66,7 +66,7 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
         <div className={styles.heroBackdrop} aria-hidden="true" />
         <div className={styles.heroLines} aria-hidden="true"><span /><span /><span /></div>
         <div className={styles.heroInner}>
-          <div className={styles.kicker}><span className={styles.kickerDot} /> FASE FINALE DELLA CANDIDATURA</div>
+          <div className={styles.kicker}><span className={styles.kickerDot} /> PRESENTAZIONE STARTUP HORYZON</div>
           <h1 id="startup-title">Prima di scegliere un percorso,<br /><em>conosci chi lo sta costruendo.</em></h1>
           <p>Una presentazione di Horyzon Consulting: la visione, il progetto e il ruolo delle persone che ne faranno parte. Guarda il video, poi decidi liberamente se vuoi proseguire.</p>
           <div className={styles.heroMeta}>
@@ -81,7 +81,7 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
         <div className={styles.sectionHeading}>
           <span className={styles.eyebrow}>LA PRESENTAZIONE</span>
           <h2 id="startup-video-title">Un progetto da conoscere.<br /><span>Una scelta da fare consapevolmente.</span></h2>
-          <p>Questo passaggio ti permette di conoscere la startup Horyzon prima che il nostro team ti ricontatti per un eventuale colloquio.</p>
+          <p>Guarda la presentazione completa. Alla fine potrai decidere se chiedere al team Horyzon di contattarti.</p>
         </div>
 
         <div className={styles.videoWrap}>
@@ -113,26 +113,26 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
           <div className={styles.confirmIntro}>
             <span className={styles.eyebrow}>LA TUA DECISIONE</span>
             <h2>Ti riconosci in questo progetto?</h2>
-            <p>Confermare significa dichiarare il tuo interesse a essere contattato, non essere già stato selezionato o assunto. La valutazione del profilo resta a cura del team Horyzon.</p>
+            <p>La scheda in Selezione Architetti viene creata solo se premi il pulsante dopo il video. Confermare significa chiedere un ricontatto, non essere già selezionato o assunto.</p>
           </div>
           <div className={styles.confirmAction}>
             {status === 'success' ? (
               <div className={styles.success} role="status">
-                <strong>✓ Candidatura completata</strong>
+                <strong>✓ Richiesta di ricontatto registrata</strong>
                 <p>{notice}</p>
               </div>
             ) : videoUrl && ended && token ? (
               <>
                 <button className={styles.confirmButton} type="button" disabled={status === 'sending'} onClick={() => void confirmInterest()}>
-                  {status === 'sending' ? 'Registrazione della conferma…' : 'Ho preso visione della startup. Voglio proseguire con Horyzon'}
+                  {status === 'sending' ? 'Registrazione della conferma…' : 'Ho visto il video di Startup. Voglio essere contattato'}
                   <span aria-hidden="true">↗</span>
                 </button>
-                <small>Riceveremo la conferma nella scheda della tua candidatura.</small>
+                <small>Il team vedrà nome, cognome, email, telefono e data e ora della tua conferma.</small>
               </>
             ) : (
               <div className={styles.locked}>
                 <span aria-hidden="true">◷</span>
-                <p>{!videoUrl ? 'La tua candidatura è stata ricevuta. La presentazione è in preparazione: non devi inviare di nuovo il modulo.' : !token ? 'Per confermare torna al modulo iniziale e completa la candidatura.' : 'Il pulsante di conferma comparirà al termine del video.'}</p>
+                <p>{!videoUrl ? 'I tuoi recapiti sono stati ricevuti per questo passaggio. Il video è in preparazione; nessuna scheda sarà creata in Selezione Architetti finché non confermerai l’interesse.' : !token ? 'Per confermare torna al modulo iniziale e inserisci i tuoi recapiti.' : 'Il pulsante di conferma comparirà al termine del video.'}</p>
               </div>
             )}
             {status === 'error' && <p className={styles.error} role="alert">{notice}</p>}
