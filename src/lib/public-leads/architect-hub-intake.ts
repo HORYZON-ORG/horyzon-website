@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash, createHmac, randomBytes } from 'node:crypto';
 import { PATRIMONIAL_PILOT_PRIVACY_VERSION, pilotForms } from '../../content/patrimonial-funnels.ts';
 import type { PilotLead } from './patrimonial-funnels.ts';
 
@@ -18,7 +18,7 @@ function settings(env: Env) {
 
 async function invokeHub(
   env: Env,
-  functionName: 'architect_candidate_intake_v1' | 'architect_candidate_crm_v1' | 'architect_candidate_startup_issue_v1' | 'architect_candidate_startup_confirm_v1',
+  functionName: 'architect_candidate_intake_v1' | 'architect_candidate_crm_v1' | 'architect_candidate_startup_issue_v1' | 'architect_candidate_startup_confirm_v1' | 'architect_startup_lead_begin_v1' | 'architect_startup_lead_confirm_v1',
   params: Record<string, unknown>,
   fetchImpl: typeof fetch,
 ): Promise<unknown> {
@@ -97,6 +97,35 @@ export async function issueArchitectStartupLink(
   return `/candidature/architetti-patrimoniali/startup#token=${token}`;
 }
 
+
+/** A private 7-day draft only: no candidate exists in Selezione before video confirmation. */
+export async function beginArchitectStartupLead(
+  env: Env,
+  lead: { firstName: string; lastName: string; email: string; phone: string; privacyVersion: string },
+  sourceIp: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<string> {
+  const cfg = settings(env);
+  if (!cfg) throw new Error('architect_startup_unavailable');
+  const token = randomBytes(32).toString('base64url');
+  const tokenHash = createHash('sha256').update(token).digest('hex');
+  const today = new Date().toISOString().slice(0, 10);
+  const ipHash = createHmac('sha256', cfg.key)
+    .update(`startup-minimal-v1:${today}:${sourceIp.slice(0, 80)}`).digest('hex');
+  const ok = await invokeHub(env, 'architect_startup_lead_begin_v1', {
+    p_token_hash: tokenHash,
+    p_first_name: lead.firstName,
+    p_last_name: lead.lastName,
+    p_email: lead.email,
+    p_phone: lead.phone,
+    p_privacy_version: lead.privacyVersion,
+    p_ip_hash: ipHash,
+    p_consent: true,
+  }, fetchImpl);
+  if (ok !== true) throw new Error('architect_startup_draft_rejected');
+  return `/candidature/architetti-patrimoniali/startup#token=${token}`;
+}
+
 /** Idempotent declaration of interest; not evidence of a complete video watch. */
 export async function confirmArchitectStartupInterest(
   env: Env,
@@ -105,6 +134,10 @@ export async function confirmArchitectStartupInterest(
 ): Promise<boolean> {
   if (!/^[A-Za-z0-9_-]{43}$/.test(token)) return false;
   const hash = createHash('sha256').update(token).digest('hex');
+  // New minimal flow creates the dossier here. Legacy CV-based tokens still work.
+  if (await invokeHub(env, 'architect_startup_lead_confirm_v1', {
+    p_token_hash: hash,
+  }, fetchImpl) === true) return true;
   return await invokeHub(env, 'architect_candidate_startup_confirm_v1', {
     p_token_hash: hash,
   }, fetchImpl) === true;

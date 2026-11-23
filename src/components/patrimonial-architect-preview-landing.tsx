@@ -228,14 +228,14 @@ export function ArchitectLanding({ durableCandidateIntake = false, previewSubmis
           <li>
             <div className={[styles.s111].filter(Boolean).join(" ")}></div>
             <div className={[styles.s112].filter(Boolean).join(" ")}></div>
-            <h3 className={[styles.s109].filter(Boolean).join(" ")}>Invia la candidatura</h3>
-            <p className={[styles.s110].filter(Boolean).join(" ")}>I tuoi recapiti e qualche informazione su di te.</p>
+            <h3 className={[styles.s109].filter(Boolean).join(" ")}>Lascia i tuoi recapiti</h3>
+            <p className={[styles.s110].filter(Boolean).join(" ")}>Nome, cognome, email, telefono e privacy. Nessun curriculum.</p>
           </li>
           <li>
             <div className={[styles.s111].filter(Boolean).join(" ")}></div>
             <div className={[styles.s112].filter(Boolean).join(" ")}></div>
-            <h3 className={[styles.s109].filter(Boolean).join(" ")}>Presentazione e colloquio</h3>
-            <p className={[styles.s110].filter(Boolean).join(" ")}>Se ci sono i presupposti, la presentazione di 30 minuti e poi un colloquio.</p>
+            <h3 className={[styles.s109].filter(Boolean).join(" ")}>Guarda la startup e scegli</h3>
+            <p className={[styles.s110].filter(Boolean).join(" ")}>Guarda il video e conferma solo se desideri essere ricontattato.</p>
           </li>
           <li>
             <div className={[styles.s113].filter(Boolean).join(" ")}></div>
@@ -381,19 +381,9 @@ export function ArchitectLanding({ durableCandidateIntake = false, previewSubmis
   <section ref={formRef} className={[styles['m-sec'], styles.s162].filter(Boolean).join(" ")} id="richiesta">
     <div className={[styles.s163].filter(Boolean).join(" ")}>
       <div className={[styles.s087].filter(Boolean).join(" ")}>
-        <div className={[styles.s054].filter(Boolean).join(" ")}>08 · CANDIDATI</div>
-        <h2 className={[styles['m-reveal'], styles.s088].filter(Boolean).join(" ")}>Candidati al Percorso Architetto Patrimoniale.</h2>
-          <div className={[styles.s017].filter(Boolean).join(" ")} style={{ margin: '8px 0 20px' }}>
-          <div className={[styles.s018].filter(Boolean).join(" ")} id="profilo">Da dove parti oggi?</div>
-          <div className={[styles.s020].filter(Boolean).join(" ")} role="group" aria-label="Il tuo profilo">
-            <button aria-pressed={profile === "commerciale"} onClick={() => chooseValue(architectProfiles.commerciale.value)} className={[styles['chip']].filter(Boolean).join(" ")} type="button" data-profile="commerciale">Commerciale</button>
-              <button aria-pressed={profile === "imprenditore"} onClick={() => chooseValue(architectProfiles.imprenditore.value)} className={[styles['chip']].filter(Boolean).join(" ")} type="button" data-profile="imprenditore">Imprenditore</button>
-              <button aria-pressed={profile === "dipendente"} onClick={() => chooseValue(architectProfiles.dipendente.value)} className={[styles['chip']].filter(Boolean).join(" ")} type="button" data-profile="dipendente">Dipendente</button>
-              <button aria-pressed={profile === "professionista"} onClick={() => chooseValue(architectProfiles.professionista.value)} className={[styles['chip']].filter(Boolean).join(" ")} type="button" data-profile="professionista">Professionista</button>
-              <button aria-pressed={profile === "altro"} onClick={() => chooseValue(architectProfiles.altro.value)} className={[styles['chip']].filter(Boolean).join(" ")} type="button" data-profile="altro">Sto esplorando</button>
-          </div>
-        </div>
-        <p className={[styles.s164].filter(Boolean).join(" ")}><span data-bind="sub">{selected?.sub ?? ''}</span></p>
+        <div className={[styles.s054].filter(Boolean).join(" ")}>08 · ACCEDI ALLA STARTUP</div>
+        <h2 className={[styles['m-reveal'], styles.s088].filter(Boolean).join(" ")}>Scopri Horyzon. Poi scegli se proseguire.</h2>
+        <p className={[styles.s164].filter(Boolean).join(" ")}>Bastano i tuoi recapiti per accedere alla presentazione. Dopo il video deciderai se vuoi che ti ricontattiamo.</p>
       </div>
 
       <PatrimonialLeadForm mode="architect-path" presentation="architect" contractVersion={durableCandidateIntake ? PATRIMONIAL_V2 : undefined} previewSubmissionsEnabled={previewSubmissionsEnabled} selectedProfile={selectedProfession} onProfileChange={chooseValue} />

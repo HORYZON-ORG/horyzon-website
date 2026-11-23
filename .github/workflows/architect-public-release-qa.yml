@@ -57,6 +57,9 @@ jobs:
           done
           grep -q 'Le persone si fidano di te' /tmp/architect-public.html
           grep -q 'canonical' /tmp/architect-public.html
+          grep -q 'UN SOLO PASSAGGIO' /tmp/architect-public.html
+          ! grep -q 'name="cv"' /tmp/architect-public.html
+          ! grep -q 'PASSO 2 DI 2' /tmp/architect-public.html
           grep -q 'candidature/architetti-patrimoniali' /tmp/architect-public.html
           curl -fsS 'http://127.0.0.1:3207/candidature/architetti-patrimoniali/grazie' -o /tmp/architect-thanks.html
           grep -q 'noindex' /tmp/architect-thanks.html
@@ -68,6 +71,8 @@ jobs:
           curl -fsS 'http://127.0.0.1:3207/sitemap.xml' | grep -q '/candidature/architetti-patrimoniali'
           cv_status=$(curl -sS -o /tmp/cv-off.json -w '%{http_code}' -X POST 'http://127.0.0.1:3207/api/public-leads/cv' -H 'Origin: https://horyzon.it' -H 'Content-Type: application/pdf' --data-binary 'not-a-pdf')
           test "$cv_status" = 503
+          startup_status=$(curl -sS -o /dev/null -w '%{http_code}' -X POST 'http://127.0.0.1:3207/api/architect-startup/start' -H 'Origin: https://horyzon.it' -H 'Content-Type: application/json' -d '{}')
+          test "$startup_status" = 503
           bad_status=$(curl -sS -o /dev/null -w '%{http_code}' -X POST 'http://127.0.0.1:3207/api/public-leads' -H 'Origin: https://not-authorized.invalid' -H 'Content-Type: application/json' -d '{}')
           test "$bad_status" = 403
           ARCHITECT_PREVIEW_TEST_ORIGIN=http://127.0.0.1:3207 node scripts/verify-architect-canonical-palette.mjs
