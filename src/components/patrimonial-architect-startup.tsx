@@ -18,6 +18,9 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
     const readToken = () => {
       const match = /^#token=([A-Za-z0-9_-]{43})$/.exec(window.location.hash);
       setToken(match?.[1] ?? '');
+      setEnded(false);
+      setStatus('idle');
+      setNotice('');
     };
     readToken();
     window.addEventListener('hashchange', readToken);
@@ -102,7 +105,7 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
               <span className={styles.playSymbol} aria-hidden="true">▶</span>
               <strong>Startup Horyzon</strong>
               <p>Qui sarà inserito il video ufficiale della presentazione.</p>
-              <small>Il percorso di conferma sarà attivato con il video definitivo.</small>
+              <small>La conferma sarà disponibile quando arriverà il video. I recapiti temporanei scadono dopo 7 giorni; non viene ancora creata alcuna scheda nell’Hub.</small>
             </div>
           )}
         </div>
