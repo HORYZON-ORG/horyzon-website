@@ -32,7 +32,10 @@ const questions = [
 ];
 const disclaimer = 'Contenuti a scopo esclusivamente informativo ed educativo. Non costituiscono consulenza in materia di investimenti, raccomandazione personalizzata, sollecitazione al pubblico risparmio né offerta di acquisto o vendita di strumenti finanziari ai sensi del D.Lgs. 58/1998 (TUF). I rendimenti passati non sono indicativi di quelli futuri: il valore di ogni investimento può diminuire, fino alla perdita del capitale investito. Dati storici e indicativi, in euro, al lordo di costi e oneri fiscali. Per decisioni di investimento rivolgiti a un consulente abilitato.';
 function Disclaimer({ sources }: { sources?: string }) {
-  return <div className={styles.vDisclaimer} role="note"><strong>Avvertenza</strong><p>{disclaimer}</p>{sources && <p className={styles.vSources}>{sources}</p>}</div>;
+  return <details className={styles.vDisclaimer}>
+    <summary className={styles.vDisclaimerToggle}>Avvertenza <span className={styles.vDisclaimerChevron} aria-hidden="true">+</span></summary>
+    <div className={styles.vDisclaimerContent} role="note"><p>{disclaimer}</p>{sources && <p className={styles.vSources}>{sources}</p>}</div>
+  </details>;
 }
 
 const evenings = [
@@ -295,7 +298,7 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 <div className={styles.vLevels}>{eventKnowledgeLevels.map(level => (<button type="button" key={level} aria-pressed={known[openInst.id] === level} onClick={() => setKnown(prev => ({ ...prev, [openInst.id]: level }))} className={[styles.vLevel, known[openInst.id] === level ? styles.on : ''].join(' ')}>{level}</button>))}</div>
 </div>
 </div>)}
-<div className={styles.vQuizFoot}><span>Conosci <strong>{Object.keys(known).length}</strong> strumenti su {eventInstruments.length}. Durante l’incontro vedrai come si incastrano tra loro, compresi quelli che non hai toccato.</span>
+<div className={styles.vQuizFoot}><span>Conosci <strong>{Object.keys(known).length}</strong> su {eventInstruments.length}.</span>
 <a href={signupTarget} className={[styles.cta, styles.s057].join(' ')}>Voglio le risposte <Arrow /></a></div>
 <Disclaimer sources="Fonti: immobili, prezzi e affitti medi richiesti a settembre 2026 per regione (idealista), medie per area pesate sulla popolazione; variazioni dell’ultimo anno: Immobiliare.it Insights, primo trimestre 2026; resa lorda = affitto annuo diviso prezzo, prima di spese e periodi sfitti; Milano 2015–2025: Osservatorio Casa Abbordabile e idealista. Obbligazioni: VanEck, 10 anni al 31/12/2025. ETF e azioni: S&P Dow Jones e MSCI via EU Personal Finance." />
 </div>
@@ -349,7 +352,7 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
         <article key={person.name} className={styles.vSpeakerRosterCard}>
           <div className={styles.vSpeakerRosterPortrait}>
             <div className={styles.vSpeakerRosterCircle}>
-              <Image src={person.image} alt={`Foto di ${person.name}`} fill sizes="(max-width: 650px) 44vw, (max-width: 1024px) 40vw, 240px" />
+              <Image src={person.image} alt={`Foto di ${person.name}`} fill sizes="(max-width: 650px) 44vw, (max-width: 1024px) 40vw, 240px" className={person.name === "Angelo Ria Chetta" ? styles.vSpeakerAngeloPhoto : undefined} />
             </div>
           </div>
           <div className={styles.vSpeakerRosterBody}>
