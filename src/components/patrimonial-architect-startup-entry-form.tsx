@@ -58,10 +58,6 @@ export function ArchitectStartupEntryForm() {
       <span>UN SOLO PASSAGGIO</span>
     </div>
     <div className={styles.formTrack}><div className={styles.formFull} /></div>
-    <p style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 22 }}>
-      Lasciaci i tuoi recapiti per vedere la presentazione. <strong>Non stai ancora confermando la candidatura.</strong>
-      Solo al termine del video potrai scegliere se essere ricontattato.
-    </p>
     <fieldset className={styles.formFields} disabled={sending}>
       <legend className="sr-only">I tuoi recapiti</legend>
       <div className={styles.formGrid}>
@@ -80,7 +76,5 @@ export function ArchitectStartupEntryForm() {
       {sending ? 'Preparazione della presentazione…' : 'Confermo la candidatura →'}
     </button>
     {error && <p className={styles.formNotice} role="alert">{error}</p>}
-    <p className={styles.formFine}>Gratuito e senza impegno · Nessun curriculum richiesto.</p>
-    <p className={styles.formFine}>La tua scheda verrà creata in Selezione Architetti soltanto se, dopo il video, richiederai esplicitamente di essere contattato.</p>
   </form>;
 }
