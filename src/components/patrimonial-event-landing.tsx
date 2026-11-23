@@ -395,7 +395,7 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
         : [];
     }),
   },
-}}><PatrimonialLeadForm contractVersion={contractVersion} mode="patrimonial-event" presentation="event" selectedProfile={selectedProfile} onProfileChange={setSelectedProfile} /></EventNotesContext.Provider> : <div className={styles.formCard} role="status"><p>Per informazioni sulle prossime serate puoi contattarci direttamente.</p><a href="mailto:info@horyzon.it?subject=Informazioni%20evento%20Quello%20che%20le%20banche%20non%20dicono" className={styles.cta}>Chiedi informazioni <Arrow /></a></div>}
+}}><PatrimonialLeadForm contractVersion={contractVersion} mode="patrimonial-event" presentation="event" selectedProfile={selectedProfile} onProfileChange={setSelectedProfile} /></EventNotesContext.Provider> : <div className={styles.formCard} role="status"><p>Per informazioni sull’incontro del 9 dicembre puoi contattarci direttamente.</p><a href="mailto:info@horyzon.it?subject=Informazioni%20evento%20Quello%20che%20le%20banche%20non%20dicono" className={styles.cta}>Chiedi informazioni <Arrow /></a></div>}
 </div>
 </div>
 
