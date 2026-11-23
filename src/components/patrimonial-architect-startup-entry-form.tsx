@@ -77,7 +77,7 @@ export function ArchitectStartupEntryForm() {
     </fieldset>
     <div hidden aria-hidden="true"><label>Sito web<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
     <button type="submit" className={styles.formSubmit} disabled={!hydrated || sending}>
-      {sending ? 'Preparazione della presentazione…' : 'Vai alla Startup Horyzon →'}
+      {sending ? 'Preparazione della presentazione…' : 'Confermo la candidatura →'}
     </button>
     {error && <p className={styles.formNotice} role="alert">{error}</p>}
     <p className={styles.formFine}>Gratuito e senza impegno · Nessun curriculum richiesto.</p>
