@@ -26,11 +26,14 @@ const nextConfig: NextConfig = {
  allowedDevOrigins: ['terminal.local'],
  images: { qualities: [75, 100] },
  poweredByHeader: false,
+ // PDF.js resolves its worker and native canvas from its own Node module URL.
+ serverExternalPackages: ['pdfjs-dist'],
  // The Radar report PDF reads its fonts and logos from disk.
  outputFileTracingIncludes: {
   '/api/radar/**': ['./src/lib/radar/fonts/**', './src/lib/radar/assets/**'],
   '/api/annunci-10x/**': ['./node_modules/pdfkit/js/standard-fonts/**', './public/horyzon-logo-canonical.png'],
   '/api/cron/recruiting-checkups': ['./node_modules/pdfkit/js/standard-fonts/**', './public/horyzon-logo-canonical.png'],
+  '/api/annunci-10x/source-file': ['./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs', './node_modules/@napi-rs/canvas*/**'],
  },
  async headers() {
   return [{ source: '/:path*', headers: [
