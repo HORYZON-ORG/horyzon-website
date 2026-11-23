@@ -383,7 +383,7 @@ export function ArchitectLanding({ durableCandidateIntake = false, previewSubmis
       <div className={[styles.s087].filter(Boolean).join(" ")}>
         <div className={[styles.s054].filter(Boolean).join(" ")}>08 · ACCEDI ALLA STARTUP</div>
         <h2 className={[styles['m-reveal'], styles.s088].filter(Boolean).join(" ")}>Scopri Horyzon. Poi scegli se proseguire.</h2>
-        <p className={[styles.s164].filter(Boolean).join(" ")}>Bastano i tuoi recapiti per accedere alla presentazione. Dopo il video deciderai se vuoi che ti ricontattiamo.</p>
+        <p className={[styles.s164].filter(Boolean).join(" ")}>Conferma i tuoi recapiti per accedere alla presentazione della Startup Horyzon. Al termine del video potrai scegliere se essere ricontattato dal nostro team.</p>
       </div>
 
       <PatrimonialLeadForm mode="architect-path" presentation="architect" contractVersion={durableCandidateIntake ? PATRIMONIAL_V2 : undefined} previewSubmissionsEnabled={previewSubmissionsEnabled} selectedProfile={selectedProfession} onProfileChange={chooseValue} />
