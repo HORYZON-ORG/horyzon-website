@@ -7,7 +7,7 @@ export type EventSession = {
 export const eventSession: EventSession = {
   status: 'CONFIRMED',
   eventDate: '2026-12-09T20:00:00.000Z',
-  eventLabel: 'Mercoledì 9 dicembre 2026 · ore 21:00–22:00 (Italia) · 60 minuti con domande e risposte',
+  eventLabel: 'Mercoledì 9 dicembre 2026 · ore 21:00 (Italia) · 60 minuti più eventuali domande',
   seatsTotal: 0,
   seatsTaken: 0,
 };

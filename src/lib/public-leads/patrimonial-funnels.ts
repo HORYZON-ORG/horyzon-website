@@ -23,10 +23,10 @@ export function validatePilotLead(input: Record<string, unknown>): PilotLead | n
   const mode = input.mode;
   const allowed = new Set(['mode', 'sourcePath', 'firstName', 'lastName', 'email', 'phone', 'province', 'profile', 'message', 'consent', 'marketingConsent', 'website', 'utm', ...(mode === 'architect-path' ? ['experience', 'goal', 'availability'] : ['qualification', 'referralCode'])]);
   if (Object.keys(input).some(key => !allowed.has(key)) || input.sourcePath !== pilotForms[mode].path || input.website || input.consent !== true || typeof input.marketingConsent !== 'boolean') return null;
-  const firstName = text(input.firstName, 120), lastName = text(input.lastName, 120), email = text(input.email, 254), province = text(input.province, 80);
+  const firstName = text(input.firstName, 120), lastName = text(input.lastName, 120), email = text(input.email, 254), province = text(input.province ?? (mode === 'patrimonial-event' ? '' : undefined), 80);
   const rawPhone = text(input.phone ?? '', 40), message = text(input.message ?? '', 1500);
   const profile = choice(input.profile, pilotForms[mode].profiles);
-  if (!firstName || !lastName || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !province || province.length < 2 || rawPhone === null || message === null || profile === null) return null;
+  if (!firstName || !lastName || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || province === null || (mode === 'architect-path' && !province) || (province !== null && province !== '' && province.length < 2) || rawPhone === null || message === null || profile === null) return null;
   if ([firstName, lastName, province].some(value => /[\r\n]/.test(value))) return null;
   const phone = normalizePhone(rawPhone);
   if (!phone || !/^\+[1-9]\d{7,14}$/.test(phone)) return null;
@@ -65,17 +65,17 @@ export function pilotCrmDetails(lead: PilotLead, now: Date) {
   const label = lead.mode === 'architect-path' ? patrimonialBrand.path : patrimonialEvent.title;
   const fields = [
     `Funnel: ${lead.mode}`, `Percorso: ${label}`, `Source path: ${form.path}`, `Ricevuta: ${now.toISOString()}`,
-    `Nome: ${lead.firstName}`, `Cognome: ${lead.lastName}`, `Provincia: ${lead.province}`, `Profilo: ${lead.profile || 'Non indicato'}`,
+    `Nome: ${lead.firstName}`, `Cognome: ${lead.lastName}`, `Provincia: ${lead.province || 'Non indicata'}`, `Profilo: ${lead.profile || 'Non indicato'}`,
     ...(lead.mode === 'architect-path' ? [`Esperienza commerciale/relazionale: ${lead.experience || 'Non indicata'}`, `Cosa cerca: ${lead.goal || 'Non indicato'}`, `Disponibilità: ${lead.availability || 'Non indicata'}`] : []),
     `Consenso privacy / ricontatto: sì · ${PATRIMONIAL_PILOT_PRIVACY_VERSION} · /privacy-policy`,
     `Consenso marketing: ${lead.marketingConsent ? 'sì' : 'no'} · ${PATRIMONIAL_PILOT_MARKETING_VERSION}`,
     ...pilotUtmKeys.flatMap(key => lead.utm[key] ? [`${key}: ${lead.utm[key]}`] : []),
     ...(lead.message ? [`Domanda: ${lead.message}`] : []),
-    lead.mode === 'architect-path' ? 'Richiesta ricevuta: nessuna accettazione o ingresso garantito.' : 'Richiesta di partecipazione: nessuna registrazione definitiva o prenotazione confermata.',
+    lead.mode === 'architect-path' ? 'Richiesta ricevuta: nessuna accettazione o ingresso garantito.' : 'Iscrizione confermata: evento 9 dicembre 2026, ore 21:00; 60 minuti più eventuali domande.',
   ];
   return {
     source: `${patrimonialBrand.division} · ${lead.mode} (horyzon.it)`,
-    tags: ['horyzon-patrimoniale', lead.mode === 'architect-path' ? 'percorso-architetto-patrimoniale' : 'evento-patrimoniale', lead.mode === 'architect-path' ? 'pilot' : 'evento-in-attesa-di-edizione'],
+    tags: ['horyzon-patrimoniale', lead.mode === 'architect-path' ? 'percorso-architetto-patrimoniale' : 'evento-patrimoniale', lead.mode === 'architect-path' ? 'pilot' : 'iscritto-evento-2026-12-09'],
     note: fields.join('\n'),
   };
 }

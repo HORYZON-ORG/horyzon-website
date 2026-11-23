@@ -11,8 +11,8 @@ export default function Thanks() {
   return <main style={{padding:'clamp(4rem, 8vw, 8rem) 2rem',maxWidth:760,margin:'auto'}}>
     <p style={{fontWeight:700,letterSpacing:'.12em'}}>HORYZON · BENESSERE PATRIMONIALE</p>
     <h1>La tua iscrizione è confermata!</h1>
-    <p>Ti aspettiamo a «Quello che le banche non dicono» <strong>mercoledì 9 dicembre 2026, dalle 21:00 alle 22:00 (ora italiana)</strong>.</p>
-    <p>L’incontro è online, gratuito, dura 60 minuti e include uno spazio per le domande. Riceverai un’email di conferma e due promemoria: il giorno prima alle 21:00 e 30 minuti prima, alle 20:30.</p>
+    <p>Ti aspettiamo a «Quello che le banche non dicono» <strong>mercoledì 9 dicembre 2026, dalle 21:00 (ora italiana)</strong>.</p>
+    <p>L’incontro è online, gratuito, prevede 60 minuti di contenuti, più eventuali domande al termine. Riceverai un’email di conferma e due promemoria: il giorno prima alle 21:00 e 30 minuti prima, alle 20:30.</p>
     <p>Aggiungi l’appuntamento al calendario:</p>
     <p style={{display:'flex',flexWrap:'wrap',gap:16}}>
       <a href={eventGoogleCalendarUrl()} target="_blank" rel="noopener noreferrer">Google Calendar ↗</a>
