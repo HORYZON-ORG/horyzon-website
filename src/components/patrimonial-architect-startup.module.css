@@ -4,7 +4,7 @@
 .headerTag:hover{background:#EAFF96;box-shadow:0 7px 24px #D8FF423d;transform:translateY(-1px)}
 .headerTag:focus-visible{outline:3px solid #F7F4E8;outline-offset:4px}
 
-.intro{position:relative;isolation:isolate;overflow:hidden;background:radial-gradient(ellipse 510px 290px at 94% -20%,#D8FF4214,transparent 75%),linear-gradient(115deg,#07171D 8%,#102D34 100%);color:#F7F4E8;padding:52px 0 112px}
+.intro{position:relative;isolation:isolate;overflow:hidden;background:radial-gradient(ellipse 510px 290px at 94% -20%,#D8FF4214,transparent 75%),linear-gradient(115deg,#07171D 8%,#102D34 100%);color:#F7F4E8;padding:52px 0 52px}
 .intro::after{content:"";position:absolute;right:-170px;bottom:-255px;width:550px;height:550px;border:1px solid #D8FF421f;border-radius:50%;z-index:-1;pointer-events:none;box-shadow:0 0 0 84px #D8FF4208,0 0 0 164px #D8FF4205}
 .introInner{width:min(1040px,calc(100% - 48px));margin:auto}
 .introKicker{display:flex;flex-wrap:wrap;align-items:center;gap:9px;color:#D8FF42;font-size:.71rem;font-weight:750;letter-spacing:.17em}
@@ -13,7 +13,7 @@
 .intro h1{max-width:1010px;margin:18px 0 0;font-family:var(--architect-display,Arial),sans-serif;font-size:clamp(2.15rem,4vw,3.65rem);line-height:1.1;font-weight:650;letter-spacing:-.052em}
 .intro h1 em{font-style:normal;font-weight:540;color:#D8FF42}
 
-.presentation{position:relative;z-index:2;width:min(1040px,calc(100% - 48px));margin:-73px auto 0;padding-bottom:64px;scroll-margin-top:20px}
+.presentation{position:relative;z-index:2;width:min(1040px,calc(100% - 48px));margin:64px auto 0;padding-bottom:64px;scroll-margin-top:20px}
 .videoWrap{overflow:hidden;background:#07171D;border:1px solid #2A4145;border-radius:18px;box-shadow:0 26px 75px #07171D32}
 .videoHeader{display:flex;align-items:center;gap:12px;height:48px;padding:0 20px;border-bottom:1px solid #F7F4E824;color:#F7F4E8;font-size:.67rem;font-weight:650;letter-spacing:.16em}
 .videoLed{flex:0 0 8px;width:8px;height:8px;background:#D8FF42;border-radius:50%;box-shadow:0 0 10px #D8FF4270}
@@ -82,11 +82,11 @@
 
 @media(max-width:750px){
   .headerTag{min-height:40px;padding:9px 11px;gap:7px;font-size:.62rem;letter-spacing:.045em}
-  .intro{padding:38px 0 94px}
+  .intro{padding:38px 0 42px}
   .introInner{width:calc(100% - 36px)}
   .intro h1{font-size:clamp(1.97rem,6.4vw,3rem);line-height:1.14;margin-top:15px}
   .introKicker{font-size:.61rem;letter-spacing:.1em}
-  .presentation{width:calc(100% - 30px);margin-top:-62px;padding-bottom:42px}
+  .presentation{width:calc(100% - 30px);margin-top:42px;padding-bottom:42px}
   .videoHeader{height:42px;padding:0 14px;font-size:.58rem;letter-spacing:.1em}
   .videoCoverBrand{width:min(250px,65%);gap:7px;margin-bottom:15px}
   .videoCover{padding:12px}

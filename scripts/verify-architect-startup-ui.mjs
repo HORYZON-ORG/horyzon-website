@@ -38,6 +38,23 @@ try {
     assert.equal(await page.getByRole('heading', { name: /Un progetto da conoscere.*Una scelta da fare consapevolmente/ }).count(), 1, 'Compact title before the video');
     assert.equal(await page.locator('.unused-hero').count(), 0);
     assert.equal(await page.locator('video').getAttribute('poster'), null, 'Old skyline poster removed');
+    // The video card must sit entirely on the cream canvas, with balanced space
+    // above the video and below the decision panel (before the footer).
+    const layout = await page.evaluate(() => {
+      const intro = document.querySelector('section[aria-labelledby="startup-video-title"]');
+      const presentation = document.querySelector('#startup-video');
+      const blocks = presentation?.querySelectorAll(':scope > div');
+      const footer = document.querySelector('footer');
+      if (!intro || !blocks || blocks.length < 2 || !footer) return null;
+      return {
+        topGap: blocks[0].getBoundingClientRect().top - intro.getBoundingClientRect().bottom,
+        bottomGap: footer.getBoundingClientRect().top - blocks[blocks.length - 1].getBoundingClientRect().bottom,
+      };
+    });
+    assert.ok(layout, 'Startup hero, video, decision and footer are present');
+    const targetGap = width <= 750 ? 42 : 64;
+    assert.ok(Math.abs(layout.topGap - targetGap) <= 3, 'Video should be separated from hero by ' + targetGap + 'px');
+    assert.ok(Math.abs(layout.topGap - layout.bottomGap) <= 4, 'Top and bottom spacing should be visually balanced');
     const cover = page.getByRole('button', { name: 'Riproduci la presentazione Startup Horyzon' });
     await cover.waitFor({ state: 'visible' });
     assert.equal(await page.getByRole('heading', { name: 'Ti riconosci in questo progetto?' }).count(), 1);
