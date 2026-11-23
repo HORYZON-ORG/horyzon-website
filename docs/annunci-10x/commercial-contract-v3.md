@@ -4,6 +4,8 @@ Status: implemented pre-payment, checkout disabled.
 Owner: Horyzon Consulting Recruiting.
 Public products: Annuncio 10x; Guida Annunci 10x.
 
+Scope update, 22 November 2026: the approved HORYZON Recruiting check-up supersedes the legacy landing journey at `/annunci-10x` and `/recruiting/check-up-annuncio`. For these routes, `recruiting-checkup-v1.md` governs the offer: one complete free PDF with evaluation and rewritten ad, followed by an optional 15-minute conversation. The guide and CREATE remain separate capabilities and are not promoted in this entry journey. This update does not enable checkout.
+
 ## Public offer
 
 Annuncio 10x is the public free rewrite/create service in the funnel.
@@ -89,7 +91,7 @@ Canonical web logo asset: `/annunci-10x/horyzon-consulting-recruiting-white.png`
 
 The approved asset uses the transparent white/lime Horyzon Consulting Recruiting lockup. It must stay transparent in the funnel header, without a white panel, CSS shadow or glow. The previous typographic fallback is no longer used in the funnel header.
 
-Performia must not appear in the public Annunci 10x funnel while this contract is active.
+The legacy Annunci 10x product excluded Performia from its public copy. The HORYZON Recruiting check-up follows Angelo's approved design, recovered from 16 November 2026 and reconfirmed on 22 November: it may state that HORYZON Recruiting integrates specialist Performia methods and tools in its work with businesses. HORYZON remains the principal brand. The automatic 20-criterion text score is not presented as a Performia certification or an assessment of a candidate. Do not add unsupported primacy, performance, qualification or distributor claims.
 
 ## Service note
 

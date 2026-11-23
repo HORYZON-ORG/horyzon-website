@@ -566,6 +566,8 @@ export interface Annunci10xPersistenceAdapter {
   getLatestEvaluation(sessionId: string, sessionSecret: string): Promise<PersistedEvaluation | null>;
   getEvaluationById(evaluationId: string, sessionId: string, sessionSecret: string): Promise<PersistedEvaluation | null>;
   getEvaluationByTarget(sessionId: string, sessionSecret: string, targetRef: string): Promise<PersistedEvaluation | null>;
+  findCheckupBookingTarget(analysisRunId: string, email: string): Promise<{ sessionId: string; queueToken: string } | null>;
+  listQueuedCheckups(limit: number): Promise<PersistedAnalysisRun[]>;
   createOrGetAnalysisRun(input: CreateAnalysisRunInput): Promise<PersistedAnalysisRun>;
   getAnalysisRun(analysisRunId: string, sessionSecret: string): Promise<PersistedAnalysisRun | null>;
   getLatestAnalysisRun(sessionId: string, sessionSecret: string): Promise<PersistedAnalysisRun | null>;
@@ -580,6 +582,7 @@ export interface Annunci10xPersistenceAdapter {
   markEmailVerificationSent(verificationId: string, sessionSecret: string): Promise<PersistedEmailVerification>;
   markEmailVerificationFailed(verificationId: string, sessionSecret: string): Promise<PersistedEmailVerification>;
   verifyEmailCode(input: VerifyEmailCodeInput): Promise<VerifyEmailCodeResult>;
+  getEmailDelivery(sessionId: string, sessionSecret: string, analysisRunId: string, recipient: string): Promise<PersistedEmailDelivery | null>;
   claimEmailDelivery(input: ClaimEmailDeliveryInput): Promise<PersistedEmailDelivery | null>;
   markEmailDeliverySent(input: MarkEmailDeliverySentInput): Promise<PersistedEmailDelivery>;
   markEmailDeliveryFailed(input: MarkEmailDeliveryFailedInput): Promise<PersistedEmailDelivery>;

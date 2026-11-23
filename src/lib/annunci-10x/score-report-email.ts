@@ -159,6 +159,11 @@ export async function maybeSendAnnunci10xScoreReport(input: {
 
   const run = await input.context.persistence.getAnalysisRun(input.analysisRunId, input.session.sessionSecret);
   if (!isEligibleRun(run)) return { status: 'NOT_ELIGIBLE' };
+  if (run.retrievalMetadata?.checkupVersion === 'recruiting-checkup-v1') {
+    const { prepareCheckup } = await import('./checkup.ts');
+    const gift = await prepareCheckup(input);
+    return { status: gift.status === 'EMAIL_ACCEPTED' ? 'SENT' : gift.status === 'EMAIL_ERROR' || gift.status === 'FAILED' ? 'FAILED' : 'NOT_ELIGIBLE' };
+  }
 
   const lead = await input.context.persistence.getLead(input.session.sessionId, input.session.sessionSecret);
   if (!lead?.emailVerifiedAt) return { status: 'NOT_ELIGIBLE' };

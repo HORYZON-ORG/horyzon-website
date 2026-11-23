@@ -306,6 +306,26 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
     return rows[0] ? parseEvaluationRow(rows[0]) : null;
   }
 
+  // Trusted worker only: queue tokens remain encrypted and are never returned by public handlers.
+  async findCheckupBookingTarget(analysisRunId: string, email: string): Promise<{ sessionId: string; queueToken: string } | null> {
+    const runs = await this.select('annunci10x_analysis_runs', { id: `eq.${analysisRunId}`, status: 'eq.READY', select: '*', limit: '1' });
+    if (!runs[0]) return null;
+    const run = parseAnalysisRunRow(runs[0]);
+    if (run.retrievalMetadata.checkupVersion !== 'recruiting-checkup-v1' || typeof run.retrievalMetadata.checkupQueueToken !== 'string') return null;
+    const leads = await this.select('annunci10x_leads', { session_id: `eq.${run.sessionId}`, email_normalized: `eq.${email}`, email_verified_at: 'not.is.null', select: 'id', limit: '1' });
+    return leads.length ? { sessionId: run.sessionId, queueToken: run.retrievalMetadata.checkupQueueToken } : null;
+  }
+
+  async listQueuedCheckups(limit: number): Promise<PersistedAnalysisRun[]> {
+    const rows = await this.select('annunci10x_analysis_runs', { select: '*', status: 'in.(QUEUED,RUNNING,READY)',
+      'retrieval_metadata->>checkupVersion': 'eq.recruiting-checkup-v1',
+      'retrieval_metadata->>checkupQueueToken': 'not.is.null',
+      or: '(retrieval_metadata->>checkupQueueDone.is.null,retrieval_metadata->>checkupQueueDone.eq.false)',
+      created_at: `gte.${new Date(Date.now() - 14 * 86400000).toISOString()}`,
+      order: 'updated_at.asc', limit: String(Math.max(1, Math.min(12, limit))) });
+    return rows.map(parseAnalysisRunRow);
+  }
+
   async createOrGetAnalysisRun(input: CreateAnalysisRunInput): Promise<PersistedAnalysisRun> {
     const row = await this.rpc<DbRow>('annunci10x_create_or_get_analysis_run', {
       p_session_id: input.sessionId,
@@ -487,6 +507,12 @@ export class SupabaseAnnunci10xPersistenceAdapter implements Annunci10xPersisten
       p_code_matches: input.codeMatches,
     });
     return parseVerifyEmailCodeResult(row);
+  }
+
+  async getEmailDelivery(sessionId: string, sessionSecret: string, analysisRunId: string, recipient: string): Promise<PersistedEmailDelivery | null> {
+    await this.requireOwnership(sessionId, sessionSecret);
+    const rows = await this.select('annunci10x_email_deliveries', { session_id: `eq.${sessionId}`, analysis_run_id: `eq.${analysisRunId}`, recipient_normalized: `eq.${recipient}`, kind: 'eq.SCORE_REPORT', select: '*', limit: '1' });
+    return rows[0] ? parseEmailDeliveryRow(rows[0]) : null;
   }
 
   async claimEmailDelivery(input: ClaimEmailDeliveryInput): Promise<PersistedEmailDelivery | null> {
@@ -1032,6 +1058,23 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
     return row ? parseEvaluationRow(row) : null;
   }
 
+  async findCheckupBookingTarget(analysisRunId: string, email: string): Promise<{ sessionId: string; queueToken: string } | null> {
+    const row = this.analysisRuns.get(analysisRunId);
+    if (!row || row.status !== 'READY') return null;
+    const run = parseAnalysisRunRow(row);
+    const lead = this.leads.get(run.sessionId);
+    return lead?.email_normalized === email && lead.email_verified_at && typeof run.retrievalMetadata.checkupQueueToken === 'string'
+      ? { sessionId: run.sessionId, queueToken: run.retrievalMetadata.checkupQueueToken } : null;
+  }
+
+  async listQueuedCheckups(limit: number): Promise<PersistedAnalysisRun[]> {
+    return [...this.analysisRuns.values()].filter(r => ['QUEUED','RUNNING','READY'].includes(String(r.status)) &&
+      (r.retrieval_metadata as Record<string, unknown>)?.checkupVersion === 'recruiting-checkup-v1' &&
+      !!(r.retrieval_metadata as Record<string, unknown>)?.checkupQueueToken &&
+      (r.retrieval_metadata as Record<string, unknown>)?.checkupQueueDone !== true)
+      .sort((a,b) => String(a.updated_at).localeCompare(String(b.updated_at))).slice(0, limit).map(parseAnalysisRunRow);
+  }
+
   async createOrGetAnalysisRun(input: CreateAnalysisRunInput): Promise<PersistedAnalysisRun> {
     this.requireMemoryOwnership(input.sessionId, input.sessionSecret);
     const existing = [...this.analysisRuns.values()].find((row) => row.session_id === input.sessionId && row.input_identity === input.inputIdentity);
@@ -1290,6 +1333,12 @@ export class MemoryAnnunci10xPersistenceAdapter implements Annunci10xPersistence
       lead.updated_at = row.consumed_at;
     }
     return { outcome: 'VERIFIED', lead: lead ? parseLeadRow(lead) : null, verification: parseEmailVerificationRow(row, { includeHash: true }) };
+  }
+
+  async getEmailDelivery(sessionId: string, sessionSecret: string, analysisRunId: string, recipient: string): Promise<PersistedEmailDelivery | null> {
+    this.requireMemoryOwnership(sessionId, sessionSecret);
+    const row = [...this.emailDeliveries.values()].find(r => r.session_id === sessionId && r.analysis_run_id === analysisRunId && r.recipient_normalized === recipient && r.kind === 'SCORE_REPORT');
+    return row ? parseEmailDeliveryRow(row) : null;
   }
 
   async claimEmailDelivery(input: ClaimEmailDeliveryInput): Promise<PersistedEmailDelivery | null> {

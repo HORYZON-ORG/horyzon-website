@@ -4,7 +4,7 @@ import { createContext, getSessionCookie, toErrorResponse } from '../../../_shar
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 30;
+export const maxDuration = 300;
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -22,7 +22,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
         // Score report delivery is recovery-safe and must not affect result rendering.
       }
     });
-    return NextResponse.json({ ok: true, result }, { headers: { 'Cache-Control': 'no-store' } });
+    const run = await context.persistence.getAnalysisRun(id, cookie.sessionSecret);
+    return NextResponse.json({ ok: true, result: { ...result, checkup: run?.retrievalMetadata.checkupVersion === 'recruiting-checkup-v1' } }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
     return toErrorResponse(error);
   }

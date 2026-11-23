@@ -17,6 +17,10 @@
     {
       "path": "/api/cron/digital-leads",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/cron/recruiting-checkups",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

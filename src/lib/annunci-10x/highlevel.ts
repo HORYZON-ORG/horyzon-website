@@ -1,3 +1,4 @@
+import { getCheckupContact } from './checkup-contact.ts';
 import { createHash } from 'node:crypto';
 import { callHighLevel, highLevelConfig } from '../radar/highlevel.ts';
 import type { Annunci10xPersistenceAdapter } from './persistence/types.ts';
@@ -22,7 +23,9 @@ export async function syncAnnunci10xLead(input: Input): Promise<{ status: Annunc
     const owner = await input.persistence.getSession(input.session.sessionId, input.session.sessionSecret);
     const lead = await input.persistence.getLead(input.session.sessionId, input.session.sessionSecret);
     if (!owner || !lead || !['ANALYZE', 'CREATE'].includes(owner.flow)) return { status: 'FAILED' };
-    const syncKey = createHash('sha256').update(JSON.stringify([lead.id, lead.firstName, lead.lastName, lead.emailNormalized, lead.companyName, lead.businessRole, lead.marketingConsent, lead.marketingConsentVersion, lead.emailVerifiedAt ?? null])).digest('hex');
+    const run = await input.persistence.getLatestAnalysisRun(input.session.sessionId, input.session.sessionSecret);
+    const checkupContact = run ? await getCheckupContact({ persistence: input.persistence } as import('./product-flow.ts').Annunci10xRuntimeContext, input.session, run.id) : null;
+    const syncKey = createHash('sha256').update(JSON.stringify([checkupContact, lead.id, lead.firstName, lead.lastName, lead.emailNormalized, lead.companyName, lead.businessRole, lead.marketingConsent, lead.marketingConsentVersion, lead.emailVerifiedAt ?? null])).digest('hex');
     const key = `${input.session.sessionId}:${syncKey}`;
     const running = pending.get(key);
     if (running) return running;
@@ -67,6 +70,7 @@ export async function syncAnnunci10xLead(input: Input): Promise<{ status: Annunc
           const result = await callHighLevel<{ contact?: { id?: string } }>(crm, '/contacts/upsert', {
             locationId: config.locationId, firstName: lead.firstName, lastName: lead.lastName, email: lead.emailNormalized,
             ...(lead.companyName ? { companyName: lead.companyName } : {}),
+            ...(checkupContact ? { phone: checkupContact.phone } : {}),
           });
           if (!result.contact?.id) throw new Error('CRM contact acknowledgement missing');
           await record({ contactId: result.contact.id, stage: 'CONTACT', status: 'PARTIAL' });
@@ -82,6 +86,8 @@ export async function syncAnnunci10xLead(input: Input): Promise<{ status: Annunc
           `Annunci 10x · richiesta ${owner.flow === 'ANALYZE' ? 'analisi annuncio' : 'creazione annuncio'}`,
           'Provenienza: horyzon.it/annunci-10x', `Ricevuta: ${lead.createdAt}`,
           `Ruolo dichiarato: ${lead.businessRole ?? 'non indicato'}`,
+          ...(checkupContact ? [`Ruolo ricercato: ${checkupContact.roleSought}`, `Difficoltà della ricerca: ${checkupContact.difficulty}`, 'Telefono raccolto, non verificato tramite SMS.'] : []),
+          ...(run?.retrievalMetadata.attribution ? [`Campagna: ${JSON.stringify(run.retrievalMetadata.attribution)}`] : []),
           `Email verificata al momento della sincronizzazione: ${lead.emailVerifiedAt ? 'sì' : 'no'}`,
           `Consenso marketing: ${lead.marketingConsent ? 'espresso' : 'non espresso'}`,
           `Versione consenso: ${lead.marketingConsentVersion ?? 'non disponibile'}`,

@@ -1,3 +1,4 @@
+import { buildCheckupRoleCard } from './checkup-facts.ts';
 import { createHash } from 'node:crypto';
 import {
   ANNUNCI10X_METHOD_VERSION,
@@ -253,7 +254,9 @@ async function runExtractStage(
     idempotencyInputIdentityOverride: stageIdentity(run, 'EXTRACT'),
   });
   let operationRefs = withRef(run.operationRefs, 'EXTRACT', extract.operation.id);
-  const roleCard = buildRoleCardFromExtract(requireTargetText(run), extract.output as Annunci10xExtractOutput);
+  const roleCard = run.retrievalMetadata.checkupVersion === 'recruiting-checkup-v1'
+    ? buildCheckupRoleCard(requireTargetText(run), extract.output as Annunci10xExtractOutput)
+    : buildRoleCardFromExtract(requireTargetText(run), extract.output as Annunci10xExtractOutput);
   const roleSnapshot = await getOrCreateRoleSnapshot(run, session, context, operationRefs, roleCard);
   operationRefs = withRef(operationRefs, ROLE_SNAPSHOT_REF, roleSnapshot.id);
   return updateRunStage(run, session, context, 'PROFILE', operationRefs);

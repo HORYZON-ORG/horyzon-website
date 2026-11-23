@@ -50,7 +50,8 @@
     "test:patrimonial-activation": "node --no-warnings --experimental-strip-types scripts/verify-patrimonial-activation.mjs",
     "test:client-radar-crm-plan": "node --no-warnings --experimental-strip-types scripts/verify-client-radar-crm-plan.mjs",
     "test:digital-radar": "node --no-warnings --experimental-strip-types scripts/verify-digital-radar.mjs && node --no-warnings --experimental-strip-types scripts/verify-digital-funnel.mjs",
-    "test:patrimonial-consolidation": "node --no-warnings --experimental-strip-types scripts/verify-patrimonial-consolidation.mjs"
+    "test:patrimonial-consolidation": "node --no-warnings --experimental-strip-types scripts/verify-patrimonial-consolidation.mjs",
+    "test:recruiting-checkup": "node --no-warnings --experimental-strip-types scripts/verify-recruiting-checkup.mjs"
   },
   "dependencies": {
     "@higgsfield/client": "^0.2.6",
@@ -58,9 +59,13 @@
     "@react-three/drei": "^10.7.8",
     "@react-three/fiber": "^9.7.0",
     "@vercel/oidc": "4.0.0",
+    "fflate": "0.8.3",
     "jose": "6.2.12",
+    "libphonenumber-js": "1.13.16",
+    "mammoth": "1.13.0",
     "motion": "^13.3.0",
     "next": "16.3.5",
+    "pdfjs-dist": "6.5.438",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "stripe": "^22.6.2",
