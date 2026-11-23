@@ -8,4 +8,10 @@ assert.match(css,/@media\(max-width:650px\)\{\s*\.page \.s155\{margin-top:32px;p
 assert.match(landing,/person\.name === "Angelo Ria Chetta" \? styles\.vSpeakerAngeloPhoto : undefined/,'Angelo portrait receives dedicated class only');
 assert.match(css,/\.page \.vSpeakerRosterCircle \.vSpeakerAngeloPhoto\{object-position:center top;transform:translateY\(6%\) scale\(1\.16\)\}/,'Angelo face lowered without changing the source image');
 assert.equal((landing.match(/data-event-section="speaker"/g)||[]).length,1,'existing speaker section untouched');
-console.log('Event audience spacing, top border and Angelo portrait crop PASS');
+assert.match(landing,/return <details className=\{styles\.vDisclaimer\}>/,'disclaimer defaults to collapsed native details');
+assert.match(landing,/<summary className=\{styles\.vDisclaimerToggle\}>Avvertenza/,'disclaimer expands via accessible summary');
+assert.equal((landing.match(/<Disclaimer sources=/g)||[]).length,3,'three disclaimers remain available');
+assert.doesNotMatch(landing,/Durante l’incontro vedrai come si incastrano tra loro, compresi quelli che non hai toccato/,'remove verbose quiz footer');
+assert.match(landing,/Conosci <strong>\{Object\.keys\(known\)\.length\}<\/strong> su \{eventInstruments\.length\}/,'only tool count remains in quiz');
+assert.match(css,/\.page \.vDisclaimer\[open\] \.vDisclaimerChevron/,'expanded affordance');
+console.log('Event spacing, Angelo portrait, collapsible warnings and quiz copy PASS');
