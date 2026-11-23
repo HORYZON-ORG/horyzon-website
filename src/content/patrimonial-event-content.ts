@@ -6,7 +6,7 @@ export const eventScenes = [
     thought: 'Non riesco a mettere da parte niente.',
     text: 'Lo stipendio arriva e se ne va. Non spendi in cose folli, eppure a fine mese non resta nulla. Ti hanno detto di risparmiare, nessuno ti ha detto come.',
     kicker: 'PER TE CHE OGGI NON RIESCI A METTERE DA PARTE',
-    answer: 'La prima serata parte da te: la regola 70-10-10-10 per dare un posto a ogni euro, anche con uno stipendio normale.',
+    answer: 'Durante l’incontro partiamo da te: la regola 70-10-10-10 per dare un posto a ogni euro, anche con uno stipendio normale.',
     detail: 'Niente rinunce impossibili. Un metodo semplice, da applicare dal prossimo stipendio.',
     cta: 'Voglio iniziare a mettere da parte' },
   { id: 'fermi', level: 2, label: 'CHI HA I SOLDI FERMI', img: '/benessere-patrimoniale/evento/profilo-2.jpg', alt: 'Una donna tiene in mano un barattolo di vetro pieno di risparmi',
@@ -14,13 +14,13 @@ export const eventScenes = [
     text: 'Sono sul conto corrente da anni. Ogni tanto pensi di investirli, poi rimandi per paura di sbagliare. Intanto, anno dopo anno, comprano sempre meno.',
     kicker: 'PER TE CHE HAI RISPARMI FERMI SUL CONTO',
     answer: 'Prova il calcolatore qui sotto: vedrai cosa è successo negli ultimi 20 anni ai soldi rimasti fermi, e a quelli che hanno lavorato.',
-    detail: 'Nelle due serate vedrai da dove si comincia, senza fretta e senza salti nel buio.',
+    detail: 'Durante l’incontro vedrai da dove si comincia, senza fretta e senza salti nel buio.',
     cta: 'Voglio capire cosa farne' },
   { id: 'consulente', level: 3, label: 'CHI SI AFFIDA', img: '/benessere-patrimoniale/evento/profilo-3.jpg', alt: 'Una coppia a colloquio con un consulente',
     thought: 'Mi affido al consulente della banca.',
     text: 'Hai qualcuno che segue i tuoi investimenti, ma quando ti propone un prodotto non sai bene che domande fare. Vorresti capire, non solo firmare.',
     kicker: 'PER TE CHE TI AFFIDI A UN CONSULENTE',
-    answer: 'Nella seconda serata ti diamo la lista delle domande da portare al prossimo appuntamento in banca.',
+    answer: 'Durante l’incontro ti diamo la lista delle domande da portare al prossimo appuntamento in banca.',
     detail: 'Entrerai sapendo cosa chiedere, e capirai le risposte.',
     cta: 'Voglio le domande giuste' },
   { id: 'costruisce', level: 4, label: 'CHI COSTRUISCE', img: '/benessere-patrimoniale/evento/profilo-4.jpg', alt: 'Mani che analizzano grafici di mercato al portatile',
@@ -51,7 +51,7 @@ const titles: Record<string, string> = {
   Genitore: 'Riserva il tuo posto. Per ciò che vuoi lasciare intero.',
 };
 export function eventFormTitle(profile: string) {
-  return titles[profile] ?? 'Riserva il tuo posto per le due serate.';
+  return titles[profile] ?? 'Riserva il tuo posto per il 9 dicembre.';
 }
 
 // Inflation: cumulated Italian consumer prices over each horizon, ending 2025 (ISTAT, rounded).

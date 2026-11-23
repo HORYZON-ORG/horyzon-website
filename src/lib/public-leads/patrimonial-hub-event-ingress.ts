@@ -48,12 +48,13 @@ export async function recordEventLeadInHub(input: {
   })).digest('hex');
   const eventId = `webinar:${fingerprint.slice(0,56)}`;
   const activeEdition = await publishedEventEditionKey(env, input.fetchImpl ?? fetch);
+  if (!activeEdition) throw new Error('EVENT_EDITION_UNAVAILABLE');
   const payload = {
     eventId, locationId: highlevelLocationId, externalContactId: highlevelContactId,
     fullName: `${lead.firstName} ${lead.lastName}`, email: lead.email,
     phone: lead.phone || null, source: input.source,
     sourcePath: patrimonialEvent.path,
-    editionId: activeEdition, // ACTIVE staff edition only; stays a REQUESTED seat, never CONFIRMED.
+    editionId: activeEdition, // Only a verified future ACTIVE edition may confirm registration.
     province: lead.province, profile: lead.profile || null, message: lead.message || null,
     utm: lead.utm, consent: true, marketingConsent: lead.marketingConsent,
     privacyVersion: PATRIMONIAL_PILOT_PRIVACY_VERSION,
@@ -77,7 +78,7 @@ export async function recordEventLeadInHub(input: {
   try { receipt = (await response.json()) as HubIngressResponse; }
   catch { throw new Error('HUB_INGRESS_UNCONFIRMED'); }
   if (!uuid(receipt?.contactId) || !uuid(receipt?.registrationId) ||
-      !['PENDING_EDITION','REQUESTED'].includes(String(receipt?.state)))
+      receipt?.state !== 'CONFIRMED')
     throw new Error('HUB_INGRESS_UNCONFIRMED');
   return {registrationId: String(receipt.registrationId), contactId: String(receipt.contactId), state: String(receipt.state)};
 }

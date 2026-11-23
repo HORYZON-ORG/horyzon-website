@@ -14,7 +14,8 @@ const env = {
   NODE_ENV: 'test',
   HIGHLEVEL_PRIVATE_TOKEN: 'synthetic-highlevel-token',
   HIGHLEVEL_LOCATION_ID: LOCATION,
-  SUPABASE_URL: 'https://fixture.supabase.co',
+  SUPABASE_URL: 'https://pmkyeqrfkunypfkbjnyg.supabase.co',
+  RESEND_API_KEY:'re_fixture_synthetic_no_real_send',
   SUPABASE_SERVICE_ROLE_KEY: 'synthetic-service-secret',
   HORYZON_HUB_EVENT_INGRESS_ENABLED: 'true',
 };
@@ -56,13 +57,16 @@ const fetchImpl = async (url,init) => {
       return Response.json({});
     throw new Error('Unexpected HighLevel operation '+parsed.pathname);
   }
-  if (parsed.hostname === 'fixture.supabase.co' &&
+  if (parsed.pathname === '/rest/v1/patrimonial_event_editions')
+    return Response.json([{edition_key:'qclbnd_20261209_2100',status:'ACTIVE',starts_at:'2026-12-09T20:00:00+00:00',record:{sessions:[{startsAt:'2026-12-09T20:00:00+00:00',endsAt:'2026-12-09T21:00:00+00:00'}]}}]);
+  if (parsed.pathname === '/rest/v1/rpc/patrimonial_event_email_claim') return Response.json(null);
+  if (parsed.hostname === 'pmkyeqrfkunypfkbjnyg.supabase.co' &&
       parsed.pathname === '/rest/v1/rpc/architetti_event_ingest') {
     const lead = body.p_event;
     assert.equal(lead.locationId,LOCATION);
     assert.equal(lead.externalContactId,HIGHLEVEL);
     assert.equal(lead.sourcePath,'/evento/quello-che-le-banche-non-dicono');
-    assert.equal(lead.editionId,null);
+    assert.equal(lead.editionId,'qclbnd_20261209_2100');
     assert.equal(typeof lead.qualification.consultationRequested,'boolean');
     assert.equal(lead.qualification.instruments.length,2);
     assert.equal(lead.marketingConsent,false);
@@ -72,7 +76,7 @@ const fetchImpl = async (url,init) => {
     return Response.json({
       contactId:CONTACT_ID,
       registrationId:events.get(lead.eventId),
-      state:'PENDING_EDITION',
+      state:'CONFIRMED',
     });
   }
   throw new Error('Unexpected external destination '+parsed.origin+parsed.pathname);
@@ -81,13 +85,13 @@ const now=()=>new Date('2026-10-21T18:00:00Z');
 const options={env,now,fetchImpl};
 let result=await handlePublicLead(request(mkLead()),options);
 assert.equal(result.status,200,'event lead accepted only by injected synthetic transport');
-assert.equal(calls.length,4);
+assert.equal(calls.length,6);
 assert.equal(events.size,1);
 const firstKey=[...events.keys()][0];
 const firstRegistration=[...events.values()][0];
 result=await handlePublicLead(request(mkLead()),options);
 assert.equal(result.status,200);
-assert.equal(calls.length,8);
+assert.equal(calls.length,12);
 assert.equal(events.size,1,'retries are idempotent');
 assert.equal(events.get(firstKey),firstRegistration);
 result=await handlePublicLead(request(mkLead({
@@ -117,7 +121,7 @@ assert.equal(close.status,503);
 assert.equal(calls.length,countBefore,'closed signup cannot perform CRM or Hub writes');
 const failBridge = await handlePublicLead(request(mkLead()),{
   ...options,fetchImpl:async(url,init)=>{
-    if(new URL(url).hostname==='fixture.supabase.co')return Response.json({message:'stubbed failure'},{status:500});
+    if(new URL(url).hostname==='pmkyeqrfkunypfkbjnyg.supabase.co')return Response.json({message:'stubbed failure'},{status:500});
     return fetchImpl(url,init);
   },
 });

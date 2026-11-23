@@ -1,13 +1,13 @@
-// Public event is not yet scheduled. No placeholder availability is published.
-// This public configuration is never an event edition or a backend eligibility gate.
+// Official date supplied by the event organizer. Only the Hub's verified ACTIVE edition
+// provides editionKey and permits registrations.
 export type EventSession = {
-  status: 'PLACEHOLDER' | 'CONFIRMED'; eventDate: string; eventLabel: string;
+  status: 'PLACEHOLDER' | 'CONFIRMED'; eventDate: string; eventLabel: string; editionKey?: string;
   seatsTotal: number; seatsTaken: number;
 };
 export const eventSession: EventSession = {
-  status: 'PLACEHOLDER',
-  eventDate: '',
-  eventLabel: 'Date in definizione',
+  status: 'CONFIRMED',
+  eventDate: '2026-12-09T20:00:00.000Z',
+  eventLabel: 'Mercoledì 9 dicembre 2026 · ore 21:00–22:00 (Italia) · 60 minuti con domande e risposte',
   seatsTotal: 0,
   seatsTaken: 0,
 };

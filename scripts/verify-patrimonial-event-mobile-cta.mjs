@@ -10,5 +10,5 @@ assert.match(css,/\.page \.formCard\{scroll-margin-top:20px;/);
 assert.match(css,/\.page \.sticky-cta \.cta\{[\s\S]*?width:calc\(100% - 128px\)!important;/);
 assert.match(css,/max-width:300px!important;/);
 assert.match(css,/justify-content:center;/);
-assert.match(landing,/Fai richiesta/);
+assert.match(landing,/Iscriviti/);
 console.log('Event mobile: centered inset sticky CTA and direct form anchor PASS');

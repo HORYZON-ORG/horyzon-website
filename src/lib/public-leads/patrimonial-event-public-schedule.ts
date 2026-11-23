@@ -39,10 +39,12 @@ export async function publishedEventSession(
     if (!Array.isArray(rows) || rows.length !== 1) return eventSession;
     const row = rows[0] as Row;
     const sessions = row.record?.sessions;
-    if (row.status !== "ACTIVE" || !Array.isArray(sessions) || sessions.length !== 2
+    if (row.status !== "ACTIVE" || !Array.isArray(sessions) || sessions.length !== 1
       || typeof row.edition_key !== "string"
       || !/^[a-zA-Z0-9_-]{1,100}$/.test(row.edition_key)
       || !Number.isFinite(Date.parse(row.starts_at))
+      || Date.parse(row.starts_at) !== Date.parse(sessions[0].startsAt)
+      || (row.ends_at !== null && Date.parse(row.ends_at) !== Date.parse(sessions[0].endsAt))
       || !sessions.every((s) => Number.isFinite(Date.parse(s.startsAt)) && Number.isFinite(Date.parse(s.endsAt)))) return eventSession;
     const capacity = row.capacity;
     // A missing capacity is not an assertion that the meeting is full.
@@ -72,7 +74,8 @@ export async function publishedEventSession(
     return {
       status: "CONFIRMED",
       eventDate: sessions[0].startsAt,
-      eventLabel: "Due serate: " + format(sessions[0].startsAt) + " e " + format(sessions[1].startsAt),
+      eventLabel: format(sessions[0].startsAt) + ' · ore 21:00–22:00 (Italia) · 60 minuti con domande e risposte',
+      editionKey: row.edition_key,
       seatsTotal: capacity ?? 0,
       seatsTaken: taken,
     };
@@ -109,8 +112,9 @@ export async function publishedEventEditionKey(
     const entry = rows[0] as Partial<Row>;
     if (entry.status !== "ACTIVE" || typeof entry.edition_key !== "string"
       || !/^[a-zA-Z0-9_-]{1,100}$/.test(entry.edition_key)
-      || !Array.isArray(entry.record?.sessions) || entry.record.sessions.length !== 2
-      || !entry.starts_at || !Number.isFinite(Date.parse(entry.starts_at))) return null;
+      || !Array.isArray(entry.record?.sessions) || entry.record.sessions.length !== 1
+      || !entry.starts_at || !Number.isFinite(Date.parse(entry.starts_at))
+      || Date.parse(entry.starts_at) !== Date.parse(entry.record.sessions[0].startsAt)) return null;
     return entry.edition_key;
   } catch {
     return null;
