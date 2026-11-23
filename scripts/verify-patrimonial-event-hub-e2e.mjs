@@ -67,8 +67,10 @@ const fetchImpl = async (url,init) => {
     assert.equal(lead.externalContactId,HIGHLEVEL);
     assert.equal(lead.sourcePath,'/evento/quello-che-le-banche-non-dicono');
     assert.equal(lead.editionId,'qclbnd_20261209_2100');
-    assert.equal(typeof lead.qualification.consultationRequested,'boolean');
-    assert.equal(lead.qualification.instruments.length,2);
+    if (lead.qualification) {
+      assert.equal(typeof lead.qualification.consultationRequested,'boolean');
+      assert.equal(lead.qualification.instruments.length,2);
+    }
     assert.equal(lead.marketingConsent,false);
     assert.equal(lead.email,'synthetic@example.invalid');
     assert.match(lead.eventId,/^webinar:[a-f0-9]{56}$/);
@@ -87,6 +89,7 @@ let result=await handlePublicLead(request(mkLead()),options);
 assert.equal(result.status,200,'event lead accepted only by injected synthetic transport');
 assert.equal(calls.length,6);
 assert.equal(events.size,1);
+assert(calls.findIndex(x=>x.pathname==='/rest/v1/rpc/architetti_event_ingest') < calls.findIndex(x=>x.pathname.endsWith('/tags')),'Hub confirmation must precede optional CRM metadata');
 const firstKey=[...events.keys()][0];
 const firstRegistration=[...events.values()][0];
 result=await handlePublicLead(request(mkLead()),options);
@@ -127,5 +130,9 @@ const failBridge = await handlePublicLead(request(mkLead()),{
 });
 assert.equal(failBridge.status,502,'never report Hub receipt if it failed');
 assert.equal(events.size,2);
+const minimal=mkLead({province:'',profile:'',message:'',utm:{},qualification:undefined});
+result=await handlePublicLead(request(minimal),options);
+assert.equal(result.status,200,'only four personal fields and privacy must suffice');
+assert.equal(events.size,3,'new minimal signup is confirmed');
 assert.equal(realFetch !== globalThis.fetch,true);
 console.log('Synthetic Event → HighLevel → Hub: idempotency, qualification, gating and failure semantics PASS');
