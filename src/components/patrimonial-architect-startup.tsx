@@ -62,7 +62,7 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
           <span className={header.rule} aria-hidden="true" />
           <span className={header.division}>BENESSERE PATRIMONIALE</span>
         </a>
-        <span className={styles.headerTag}>STARTUP HORYZON</span>
+        <a className={styles.headerTag} href="#startup-video" aria-label="Vai al video Startup Horyzon">STARTUP HORYZON <span aria-hidden="true">↗</span></a>
       </div>
     </header>
 
@@ -82,7 +82,7 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
         </div>
       </section>
 
-      <section className={styles.presentation} aria-labelledby="startup-video-title">
+      <section id="startup-video" className={styles.presentation} aria-labelledby="startup-video-title">
         <div className={styles.sectionHeading}>
           <span className={styles.eyebrow}>LA PRESENTAZIONE</span>
           <h2 id="startup-video-title">Un progetto da conoscere.<br /><span>Una scelta da fare consapevolmente.</span></h2>
@@ -125,45 +125,92 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
           <div className={styles.confirmIntro}>
             <span className={styles.eyebrow}>LA TUA DECISIONE</span>
             <h2>Ti riconosci in questo progetto?</h2>
-            <p>La scheda in Selezione Architetti viene creata solo se premi il pulsante dopo il video. Confermare significa chiedere un ricontatto, non essere già selezionato o assunto.</p>
           </div>
           <div className={styles.confirmAction}>
-            {driveEmbed && token && status !== 'success' && <label className={styles.watchAttestation}>
-              <input type="checkbox" checked={ended} disabled={status === 'sending'}
-                onChange={event => setEnded(event.target.checked)} />
-              <span>Confermo di aver terminato la visione del video.</span>
-            </label>}
             {status === 'success' ? (
               <div className={styles.success} role="status">
                 <strong>✓ Richiesta di ricontatto registrata</strong>
                 <p>{notice}</p>
               </div>
-            ) : videoUrl && ended && token ? (
-              <>
-                <button className={styles.confirmButton} type="button" disabled={status === 'sending'} onClick={() => void confirmInterest()}>
-                  {status === 'sending' ? 'Registrazione della conferma…' : 'Ho visto il video di Startup. Voglio essere contattato'}
-                  <span aria-hidden="true">↗</span>
-                </button>
-                <small>Il team vedrà nome, cognome, email, telefono e data e ora della tua conferma.</small>
-              </>
             ) : (
-              <div className={styles.locked}>
-                <span aria-hidden="true">◷</span>
-                <p>{!videoUrl ? 'I tuoi recapiti sono stati ricevuti per questo passaggio. Il video è in preparazione; nessuna scheda sarà creata in Selezione Architetti finché non confermerai l’interesse.' : !token ? 'Per confermare torna al modulo iniziale e inserisci i tuoi recapiti.' : driveEmbed ? 'Quando hai finito di guardare il video, confermalo qui sopra per proseguire.' : 'Il pulsante di conferma comparirà al termine del video.'}</p>
-              </div>
+              <>
+                {driveEmbed && videoUrl && token && (
+                  <label className={`${styles.watchAttestation} ${ended ? styles.watchAttestationReady : ''}`}>
+                    <input type="checkbox" checked={ended} disabled={status === 'sending'}
+                      onChange={event => setEnded(event.target.checked)} />
+                    <span>Ho terminato di vedere il video della Startup.</span>
+                  </label>
+                )}
+                {ended && videoUrl && token && (
+                  <p className={styles.readyNote} role="status"><span aria-hidden="true">✓</span> Hai completato questo passaggio. Ora puoi inviare la tua adesione.</p>
+                )}
+                <button
+                  className={styles.confirmButton}
+                  type="button"
+                  disabled={!videoUrl || !ended || !token || status === 'sending'}
+                  onClick={() => void confirmInterest()}
+                  aria-label="Ho preso visione della Startup Horyzon. Voglio essere ricontattato">
+                  <span className={styles.confirmButtonText}>{status === 'sending' ? 'Registrazione della conferma…' : 'Ho preso visione della Startup Horyzon. Voglio essere ricontattato'}</span>
+                  <span className={styles.confirmArrow} aria-hidden="true">↗</span>
+                </button>
+                {videoUrl && token && !ended && (
+                  <p className={styles.confirmHint}>{driveEmbed
+                    ? 'Al termine del video, conferma qui sopra di averlo visto per attivare il pulsante.'
+                    : 'Il pulsante si attiverà automaticamente alla fine del video.'}</p>
+                )}
+                {!videoUrl && <p className={styles.confirmHint}>La presentazione non è ancora disponibile.</p>}
+                {!token && videoUrl && <p className={styles.confirmHint}>Per confermare, completa prima il modulo di candidatura.</p>}
+              </>
             )}
             {status === 'error' && <p className={styles.error} role="alert">{notice}</p>}
           </div>
         </div>
       </section>
 
-      <section className={styles.values} aria-label="I tre passaggi del percorso">
-        <div><span>01</span><h3>Conosci la visione</h3><p>Scopri da dove nasce il progetto e quali obiettivi vuole perseguire.</p></div>
-        <div><span>02</span><h3>Comprendi il percorso</h3><p>Approfondisci il modello, il metodo e il ruolo dell’Architetto Patrimoniale.</p></div>
-        <div><span>03</span><h3>Scegli consapevolmente</h3><p>Se ti riconosci in quello che hai ascoltato, comunica il tuo interesse al team.</p></div>
+      <section className={styles.values} aria-labelledby="startup-path-title">
+        <div className={styles.valuesOrbit} aria-hidden="true" />
+        <div className={styles.valuesInner}>
+          <div className={styles.valuesHeading}>
+            <span className={styles.valuesEyebrow}>IL PERCORSO HORYZON <span aria-hidden="true">/ 01—03</span></span>
+            <h2 id="startup-path-title">Conosci il progetto.<br /><em>La scelta è tua.</em></h2>
+          </div>
+          <div className={styles.valuesSteps}>
+            <div className={styles.valueStep}>
+              <div className={styles.valueTop}><span className={styles.valueNumber}>01</span><span className={styles.valueLine} aria-hidden="true" /></div>
+              <h3>Conosci la visione</h3>
+              <p>Scopri le persone e le idee da cui nasce Horyzon.</p>
+            </div>
+            <div className={styles.valueStep}>
+              <div className={styles.valueTop}><span className={styles.valueNumber}>02</span><span className={styles.valueLine} aria-hidden="true" /></div>
+              <h3>Comprendi il percorso</h3>
+              <p>Esplora il metodo e il ruolo dell’Architetto Patrimoniale.</p>
+            </div>
+            <div className={styles.valueStep}>
+              <div className={styles.valueTop}><span className={styles.valueNumber}>03</span><span className={styles.valueLine} aria-hidden="true" /></div>
+              <h3>Scegli consapevolmente</h3>
+              <p>Decidi tu se fare il prossimo passo insieme a noi.</p>
+            </div>
+          </div>
+        </div>
       </section>
     </main>
 
-    <footer className={styles.footer}><span>HORYZON CONSULTING · BENESSERE PATRIMONIALE</span><a href="/privacy-policy">Privacy</a></footer>
+    <footer className={styles.footer}>
+      <div className={styles.footerInner}>
+        <a className={styles.footerBrand} href="/candidature/architetti-patrimoniali" aria-label="Horyzon Consulting, pagina Architetti Patrimoniali">
+          <span className={styles.footerLogoWrap}><Image src="/horyzon-logo-canonical.png" width={1670} height={390} sizes="190px" alt="Horyzon Consulting" /></span>
+          <span className={styles.footerBrandRule} aria-hidden="true" />
+          <span className={styles.footerDivision}>BENESSERE PATRIMONIALE</span>
+        </a>
+        <nav className={styles.footerNav} aria-label="Collegamenti Startup Horyzon">
+          <a href="#startup-video">Rivedi la presentazione <span aria-hidden="true">↗</span></a>
+          <a href="/privacy-policy">Privacy <span aria-hidden="true">↗</span></a>
+        </nav>
+      </div>
+      <div className={styles.footerBase}>
+        <span>HORYZON CONSULTING</span>
+        <span>Visione. Persone. Futuro.</span>
+      </div>
+    </footer>
   </div>;
 }
