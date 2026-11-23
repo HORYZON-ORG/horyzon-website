@@ -1,5 +1,5 @@
 // This module is imported only by server-side routes and the protected lead handler.
-import { publishedEventSession } from './patrimonial-event-public-schedule.ts';
+import { eventGoogleCalendarUrl, EVENT_ICS_URL, EVENT_PAGE } from './patrimonial-event-calendar.ts';
 
 /** One transactional acknowledgment per canonical Horyzon event request. Never marketing. */
 type Claim = { registrationId: string; recipient: string; firstName: string; leaseToken: string };
@@ -26,17 +26,24 @@ async function rpc<T>(name: string, payload: Record<string,unknown>, env:Config,
   if(!r.ok){await r.body?.cancel().catch(()=>{});throw new Error('EVENT_EMAIL_STORE_RPC_FAILED');}
   return (await r.json()) as T;
 }
-export function eventConfirmationContent(input:{firstName:string; confirmedCalendar?:string}) {
-  const first=input.firstName.replace(/[\r\n<>]/g,' ').trim().slice(0,80);
+export function eventConfirmationContent(input:{firstName:string;confirmedCalendar?:string}) {
+  const first=input.firstName.replace(/[\\r\\n<>]/g,' ').trim().slice(0,80);
   const greet=first ? 'Ciao '+first+',' : 'Ciao,';
-  const subject='Horyzon | Abbiamo ricevuto la tua richiesta per l’evento';
-  const text=[greet,'','Abbiamo ricevuto correttamente la tua richiesta di partecipazione a «Quello che le banche non dicono».',
-    input.confirmedCalendar ? input.confirmedCalendar + '. Questa email conferma la ricezione della richiesta, NON la prenotazione di un posto.' : 'Le date dell’evento non sono ancora state fissate: questa email conferma la ricezione della richiesta, NON la prenotazione di un posto.',
-    'Un referente Horyzon o il tuo Architetto Patrimoniale di riferimento ti contatterà telefonicamente per definire i dettagli organizzativi e ricordarti l’incontro quando il calendario sarà disponibile.',
-    input.confirmedCalendar ? 'Riceverai le indicazioni di accesso e la conferma del posto soltanto dopo la verifica della disponibilità.' : 'Riceverai via email le informazioni relative all’evento, comprese le date e le indicazioni per accedere, quando saranno confermate.',
-    'Questa comunicazione riguarda soltanto la richiesta che hai inviato e non costituisce iscrizione a newsletter o messaggi promozionali.',
-    'Se non riconosci questa richiesta, rispondi a questa email oppure scrivi a info@horyzon.it.','','Horyzon Benessere Patrimoniale','https://horyzon.it/evento/quello-che-le-banche-non-dicono'].join('\n\n');
-  const html='<div style="font-family:Arial,sans-serif;color:#07171D;background:#F7F4E8;padding:32px"><div style="max-width:600px;margin:auto;background:#fff;padding:30px;border-radius:12px"><p style="color:#61721A;font-size:12px;letter-spacing:2px">HORYZON · BENESSERE PATRIMONIALE</p><h1 style="font-size:24px">Richiesta ricevuta</h1>'+text.split('\n\n').map(p=>'<p style="font-size:15px;line-height:1.6">'+escapeHtml(p).replace(/\n/g,'<br>')+'</p>').join('')+'</div></div>';
+  const subject='Iscrizione confermata | Quello che le banche non dicono · 9 dicembre';
+  const text=[greet,'',
+    'La tua iscrizione a «Quello che le banche non dicono» è CONFERMATA.',
+    'Mercoledì 9 dicembre 2026, ore 21:00–22:00 (ora italiana). Evento online gratuito, 60 minuti con domande e risposte dal vivo.',
+    'Aggiungi subito l’evento al calendario:',
+    'Google Calendar: '+eventGoogleCalendarUrl(),
+    'Apple / Outlook / altri (.ics): '+EVENT_ICS_URL,
+    'Riceverai due promemoria: martedì 8 dicembre alle ore 21:00 e mercoledì 9 dicembre alle ore 20:30 (ora italiana).',
+    'Le indicazioni di accesso saranno comunicate via email non appena disponibili. Conserva questo messaggio.',
+    'Queste email sono esclusivamente organizzative e non costituiscono iscrizione a comunicazioni promozionali.',
+    'Se non riconosci questa iscrizione, rispondi a questa email o scrivi a info@horyzon.it.',
+    'Horyzon Benessere Patrimoniale',EVENT_PAGE].join('\\n\\n');
+  const html='<div style="font-family:Arial,sans-serif;color:#07171D;background:#F7F4E8;padding:32px"><div style="max-width:600px;margin:auto;background:#fff;padding:30px;border-radius:12px"><p style="color:#61721A;font-size:12px;letter-spacing:2px">HORYZON · BENESSERE PATRIMONIALE</p><h1 style="font-size:24px">Iscrizione confermata</h1>'
+    +text.split('\\n\\n').map(p=>'<p style="font-size:15px;line-height:1.6">'+escapeHtml(p).replace(/\\n/g,'<br>')+'</p>').join('')
+    +'<p><a href="'+escapeHtml(eventGoogleCalendarUrl())+'">Aggiungi a Google Calendar</a> · <a href="'+EVENT_ICS_URL+'">Apple / Outlook (.ics)</a></p></div></div>';
   return {subject,text,html};
 }
 export async function sendOneEventConfirmation(input:{registrationId?:string|null;env?:Config;fetchImpl?:typeof fetch}):Promise<'SENT'|'FAILED'|'NONE'|'NOT_CONFIGURED'>{
@@ -51,9 +58,7 @@ export async function sendOneEventConfirmation(input:{registrationId?:string|nul
  if(!uuid(claim.registrationId)||!uuid(claim.leaseToken)||typeof claim.recipient!=='string'||claim.recipient.length>254||!claim.recipient.includes('@'))return 'FAILED';
  let success=false,providerId:string|null=null;
  try{
-   const calendar=await publishedEventSession(env,fetchImpl);
-   const content=eventConfirmationContent({firstName:claim.firstName,
-     ...(calendar.status==='CONFIRMED'?{confirmedCalendar:calendar.eventLabel}:{})});
+   const content=eventConfirmationContent({firstName:claim.firstName});
    const from=env.PATRIMONIAL_EVENT_EMAIL_FROM??env.ANNUNCI10X_EMAIL_FROM??'Horyzon <noreply@horyzon.it>';
    const replyTo=env.PATRIMONIAL_EVENT_EMAIL_REPLY_TO??env.ANNUNCI10X_EMAIL_REPLY_TO??'info@horyzon.it';
    const r=await fetchImpl('https://api.resend.com/emails',{
