@@ -1,6 +1,5 @@
 import {drainEventConfirmationQueue} from '@/lib/public-leads/patrimonial-event-confirmation-email';
 import {timingSafeEqual} from 'node:crypto';
-import {drainEventReminders} from '@/lib/public-leads/patrimonial-event-reminder-email';
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
 export async function GET(req:Request){
@@ -10,6 +9,5 @@ export async function GET(req:Request){
  if(!secret||header.length!==expected.length||!timingSafeEqual(Buffer.from(header),Buffer.from(expected)))
    return Response.json({ok:false},{status:401,headers:{'Cache-Control':'no-store'}});
  const confirmations=await drainEventConfirmationQueue({limit:12});
- const reminders=await drainEventReminders({limit:12});
- return Response.json({ok:confirmations.status==='PROCESSED'&&reminders.status==='PROCESSED',confirmations,reminders},{headers:{'Cache-Control':'no-store'}});
+ return Response.json({ok:confirmations.status==='PROCESSED' ,confirmations},{headers:{'Cache-Control':'no-store'}});
 }

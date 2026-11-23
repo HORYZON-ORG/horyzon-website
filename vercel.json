@@ -11,6 +11,10 @@
       "schedule": "*/10 * * * *"
     },
     {
+      "path": "/api/cron/patrimonial-event-reminders",
+      "schedule": "* * * * *"
+    },
+    {
       "path": "/api/cron/digital-leads",
       "schedule": "*/10 * * * *"
     }
