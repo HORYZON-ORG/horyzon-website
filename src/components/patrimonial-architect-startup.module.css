@@ -24,7 +24,11 @@
 .videoHeader{height:54px;display:flex;align-items:center;gap:12px;padding:0 22px;color:#dce4e5;font-size:.67rem;font-weight:650;letter-spacing:.15em;border-bottom:1px solid #f6ffff22}
 .videoLed{width:8px;height:8px;border-radius:50%;background:#d6f594;box-shadow:0 0 12px #d6f5946e}
 .videoNote{margin-left:auto;color:#93a8aa}
-.video{display:block;width:100%;aspect-ratio:16/9;max-height:700px;background:#091520;object-fit:contain}
+.video{display:block;width:100%;aspect-ratio:16/9;max-height:700px;background:#091520;object-fit:contain;border:0}
+.videoFallback{margin:12px 3px 0;font-size:.83rem;line-height:1.6;color:#516167;text-align:center}
+.videoFallback a{color:#254d33;text-decoration:underline;text-underline-offset:3px}
+.watchAttestation{display:flex;align-items:flex-start;gap:12px;cursor:pointer;padding:17px 18px;border:1px solid #b4c8b5;border-radius:12px;background:#f1f6ec;font-size:.93rem;line-height:1.5;font-weight:620;color:#294b38}
+.watchAttestation input{width:20px;height:20px;flex:0 0 20px;margin:2px 0 0;accent-color:#507c23;cursor:pointer}
 .videoPlaceholder{min-height:390px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:radial-gradient(ellipse at 50% 115%,#344d45,#101e26 55%,#0b151c);padding:30px;text-align:center;color:#f7f5ed}
 .videoPlaceholder strong{font-size:clamp(1.6rem,4vw,2.8rem);letter-spacing:-.04em;font-weight:600}
 .videoPlaceholder p{margin:0;color:#e3eadf}
