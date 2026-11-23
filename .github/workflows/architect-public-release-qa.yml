@@ -64,7 +64,8 @@ jobs:
           grep -q 'candidature/architetti-patrimoniali' /tmp/architect-public.html
           curl -fsS 'http://127.0.0.1:3207/candidature/architetti-patrimoniali/grazie' -o /tmp/architect-thanks.html
           grep -q 'noindex' /tmp/architect-thanks.html
-          curl -fsS 'http://127.0.0.1:3207/candidature/architetti-patrimoniali/startup' -o /tmp/architect-startup.html
+          curl -fsS -D /tmp/architect-startup-headers.txt 'http://127.0.0.1:3207/candidature/architetti-patrimoniali/startup' -o /tmp/architect-startup.html
+          grep -i 'content-security-policy:' /tmp/architect-startup-headers.txt | grep -q 'frame-src.*https://drive.google.com'
           grep -q 'Startup Horyzon' /tmp/architect-startup.html
           grep -q 'drive.google.com/file/d/1O0E-tA6q5jJ0ZfJ9TEJG8VD54l342_Vx/preview' /tmp/architect-startup.html
           grep -q '<iframe' /tmp/architect-startup.html
