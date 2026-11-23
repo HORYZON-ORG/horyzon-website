@@ -31,6 +31,16 @@ try {
     assert.equal(await button.isDisabled(), true, 'Unchecked attestation relocks the CTA');
     console.log('PASS Startup visual + gate ' + width + 'px: grey / lime, header/footer scroll, token retained');
     await page.close();
+
+    const anonymous = await browser.newPage({ viewport: { width, height: 860 }, reducedMotion: 'reduce' });
+    await anonymous.route('https://drive.google.com/**', route =>
+      route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>Video test</title>' }));
+    await anonymous.goto(origin + startupPath, { waitUntil: 'domcontentloaded' });
+    const anonymousButton = anonymous.getByRole('button', { name: 'Ho preso visione della Startup Horyzon. Voglio essere ricontattato' });
+    await anonymousButton.waitFor({ state: 'visible', timeout: 15000 });
+    assert.equal(await anonymousButton.isDisabled(), true, 'A direct visit without candidate link cannot submit');
+    assert.equal(await anonymous.getByRole('checkbox', { name: 'Ho terminato di vedere il video della Startup.' }).count(), 0);
+    await anonymous.close();
   }
 } finally {
   await browser.close();
