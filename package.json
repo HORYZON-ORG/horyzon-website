@@ -57,6 +57,7 @@
     "@react-pdf/renderer": "^4.9.0",
     "@react-three/drei": "^10.7.8",
     "@react-three/fiber": "^9.7.0",
+    "@vercel/blob": "2.9.0",
     "@vercel/oidc": "4.0.0",
     "jose": "6.2.12",
     "motion": "^13.3.0",
