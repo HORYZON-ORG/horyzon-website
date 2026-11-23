@@ -11,7 +11,7 @@ import { validateArchitectEventReferral } from './patrimonial-referral-preflight
 import { canonicalPatrimonialPayload, isPatrimonialRequestId, PATRIMONIAL_V2, type PatrimonialRequest } from './patrimonial-contract.ts';
 import { patrimonialConsentEvidence } from './patrimonial-consents.ts';
 import { claimCv, cvStorage, isCvId, readCandidateCv, uploadCvToHighLevel, type CvStorage } from './architect-cv.ts';
-import { registerArchitectCandidate, markArchitectCandidateCrm } from './architect-hub-intake.ts';
+import { registerArchitectCandidate, issueArchitectStartupLink, markArchitectCandidateCrm } from './architect-hub-intake.ts';
 import { createProductionPatrimonialStore, patrimonialFlags, PatrimonialConflictError, PatrimonialReplayExpiredError, type PatrimonialStore } from './patrimonial-store.ts';
 
 type Options = { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch; now?: () => Date; store?: PatrimonialStore; cvStorage?: CvStorage | null; eventRadarNextStep?: (requestId:string,email:string,payloadHash:string)=>Promise<{href:string;expiresInSeconds:number}>; eventIntake?:EventIntakePort; hubFetchImpl?: typeof fetch };
@@ -98,17 +98,26 @@ export async function handlePublicLead(request: Request, options: Options = {}):
     // Store the private Horyzon candidate before projecting it to HighLevel.
     // The cutover is opt-in and fail-closed; the event/public funnels are unchanged.
     let hubStored = false;
+    let startupNextStep: string | null = null;
     if (cv && pilot.mode === 'architect-path') {
       try {
-        hubStored = await registerArchitectCandidate(env, cv, pilot, options.hubFetchImpl);
+        const candidateId = await registerArchitectCandidate(env, cv, pilot, options.hubFetchImpl);
+        hubStored = Boolean(candidateId);
+        if (candidateId && env.PATRIMONIAL_ARCHITECT_STARTUP_ENABLED === 'true') {
+          startupNextStep = await issueArchitectStartupLink(env, candidateId, options.hubFetchImpl);
+        }
       } catch {
         return response(503, 'Non riusciamo a registrare la candidatura nell’archivio Horyzon. Riprova tra poco.');
       }
     }
+    const architectReceipt = () => startupNextStep
+      ? Response.json({ ok: true, message: pilotForms[pilot.mode].success,
+          nextStep: { href: startupNextStep } }, { status: 200, headers: { 'Cache-Control': 'no-store' } })
+      : response(200, pilotForms[pilot.mode].success);
     // The Hub is the receipt of record. A CRM outage must not lose a stored
     // application or ask the person to submit their CV again.
     if (!crm || !config) return hubStored
-      ? response(200, pilotForms[pilot.mode].success)
+      ? architectReceipt()
       : response(503, 'Il modulo è temporaneamente non disponibile.');
     try {
       const result = await callHighLevel<{ contact?: { id?: string } }>(crm, '/contacts/upsert', { locationId: config.locationId, firstName: pilot.firstName, lastName: pilot.lastName, email: pilot.email, ...(pilot.phone ? { phone: pilot.phone } : {}), source: details.source });
@@ -153,14 +162,14 @@ export async function handlePublicLead(request: Request, options: Options = {}):
         try { await markArchitectCandidateCrm(env, cv, id, true, options.hubFetchImpl); }
         catch { /* CRM succeeded; Hub keeps a visible pending sync state for reconciliation. */ }
       }
-      return response(200, pilotForms[pilot.mode].success);
+      return pilot.mode === 'architect-path' ? architectReceipt() : response(200, pilotForms[pilot.mode].success);
     } catch {
       if (hubStored && cv) {
         try { await markArchitectCandidateCrm(env, cv, null, false, options.hubFetchImpl); }
         catch { /* The candidate and CV remain stored; manual reconciliation may be required. */ }
       }
       return hubStored
-        ? response(200, pilotForms[pilot.mode].success)
+        ? architectReceipt()
         : response(502, 'Non possiamo confermare la ricezione completa. Riprova oppure scrivi a info@horyzon.it.');
     }
   }
