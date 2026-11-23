@@ -21,7 +21,7 @@ assert(!landing.includes('data-event-section="other-speakers"'),'no separate spe
 const section=landing.slice(speaker,bonus);
 for(const [name,role,file] of [
   ['Frank Cannoletta','Moderatore evento','/people/frank-no-badge.png'],
-  ['Francesco Aquilanti','Area Manager CIG (Care is Gold)','/benessere-patrimoniale/evento/speakers/francesco-aquilanti.webp'],
+  ['Francesco Aquilanti','Area Manager CIG (Care is Gold)','/benessere-patrimoniale/evento/speakers/francesco-aquilanti-ritratto-originale.webp'],
   ['Gianni Mazzotta','Architetto Patrimoniale','/benessere-patrimoniale/evento/speakers/gianni-mazzotta.webp'],
   ['Angelo Ria Chetta','Founder Horyzon','/benessere-patrimoniale/evento/speakers/angelo-ria-chetta.webp'],
 ]){
@@ -49,8 +49,16 @@ const speakerDefs=landing.slice(landing.indexOf('const eventSpeakers = ['),landi
 assert.deepEqual([...speakerDefs.matchAll(/name: '([^']+)'/g)].map(m=>m[1]),expectedNames,'speaker order Frank Francesco Gianni Angelo');
 assert(landing.indexOf('vSpeakerRosterPortrait')<landing.indexOf('vSpeakerRosterBody'),'photo above title');
 assert.match(css,/@media\(max-width:650px\)/);
-for(const file of ['angelo-ria-chetta.webp','gianni-mazzotta.webp','francesco-aquilanti.webp']){
+for(const file of ['angelo-ria-chetta.webp','gianni-mazzotta.webp','francesco-aquilanti-ritratto-originale.webp']){
  const data=readFileSync(join(process.cwd(),'public','benessere-patrimoniale','evento','speakers',file));
  assert(data.length>10000&&data.subarray(0,4).toString('ascii')==='RIFF'&&data.subarray(8,12).toString('ascii')==='WEBP','original photo still present '+file);
 }
-console.log('Event simplified copy and four authentic speakers PASS');
+const francesco=readFileSync(join(process.cwd(),'public','benessere-patrimoniale','evento','speakers','francesco-aquilanti-ritratto-originale.webp'));
+assert.equal(francesco.subarray(12,16).toString('ascii'),'VP8L','lossless WebP contains exact original pixels');
+assert.equal(francesco[20],0x2f,'valid VP8L signature');
+const geometry=francesco.readUInt32LE(21);
+assert.equal((geometry & 0x3fff)+1,1122,'Francesco original width unchanged');
+assert.equal(((geometry>>14)&0x3fff)+1,1402,'Francesco original height unchanged');
+assert.match(css,/\.page \.vSpeakerFrancescoPortrait img\{object-fit:contain;object-position:center center;filter:none\}/,'Francesco portrait fully visible, no crop or filter');
+assert.match(landing,/person\.name === 'Francesco Aquilanti' \? styles\.vSpeakerFrancescoPortrait : ''/,'only Francesco uses full-body framing');
+console.log('Event copy, authentic speakers and original Francesco portrait 1122x1402 PASS');
