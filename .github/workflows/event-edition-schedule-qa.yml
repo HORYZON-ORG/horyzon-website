@@ -10,6 +10,11 @@ on:
       - 'src/content/patrimonial-event-session.ts'
       - 'src/lib/public-leads/patrimonial-event-public-schedule.ts'
       - 'src/lib/public-leads/patrimonial-hub-event-ingress.ts'
+      - 'src/lib/public-leads/patrimonial-event-reminder-email.ts'
+      - 'src/lib/public-leads/patrimonial-event-confirmation-email.ts'
+      - 'src/lib/public-leads/patrimonial-event-calendar.ts'
+      - 'src/components/patrimonial-event-form.tsx'
+      - 'supabase/migrations/20261123153000_patrimonial_event_one_session_reminders.sql'
       - 'scripts/verify-patrimonial-event-edition-schedule.mjs'
       - '.github/workflows/event-edition-schedule-qa.yml'
 permissions:
@@ -33,6 +38,7 @@ jobs:
       - run: node --no-warnings --experimental-strip-types scripts/verify-patrimonial-event-edition-schedule.mjs
       - run: node --no-warnings --experimental-strip-types scripts/verify-patrimonial-event-referrals.mjs
       - run: node --no-warnings --experimental-strip-types scripts/verify-patrimonial-event-confirmation-email.mjs
+      - run: node --no-warnings --experimental-strip-types scripts/verify-patrimonial-event-reminders.mjs
       - run: npm run typecheck
       - run: npm run build
         env:
