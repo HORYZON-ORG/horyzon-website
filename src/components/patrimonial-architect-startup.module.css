@@ -112,6 +112,12 @@
   .confirmButton{padding:15px 16px;font-size:.92rem}
   .footerNav a,.footerNav button{font-size:.78rem;padding:11px 12px}
 }
+@media(max-width:360px){
+  .videoCoverBrand{width:60%;gap:4px;margin-bottom:6px}
+  .videoCover{padding:8px}
+  .videoPlay{width:46px;height:46px}
+  .videoPlayCaption{margin-top:8px;font-size:.46rem}
+}
 @media(prefers-reduced-motion:reduce){
   .headerTag,.videoPlay,.confirmButton,.footerBrand,.footerNav a,.footerNav button{transition:none}
   .headerTag:hover,.confirmButton:hover:not(:disabled),.videoCover:hover .videoPlay{transform:none}
