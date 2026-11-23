@@ -132,7 +132,7 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
             ) : (
               <div className={styles.locked}>
                 <span aria-hidden="true">◷</span>
-                <p>{!videoUrl ? 'Presentazione in preparazione.' : !token ? 'Per confermare torna al modulo iniziale e completa la candidatura.' : 'Il pulsante di conferma comparirà al termine del video.'}</p>
+                <p>{!videoUrl ? 'La tua candidatura è stata ricevuta. La presentazione è in preparazione: non devi inviare di nuovo il modulo.' : !token ? 'Per confermare torna al modulo iniziale e completa la candidatura.' : 'Il pulsante di conferma comparirà al termine del video.'}</p>
               </div>
             )}
             {status === 'error' && <p className={styles.error} role="alert">{notice}</p>}
