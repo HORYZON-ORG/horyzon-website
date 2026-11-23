@@ -12,6 +12,13 @@ import styles from './patrimonial-event.module.css';
 import architectHeader from './patrimonial-architect-header.module.css';
 
 const Arrow = ({ size = 18 }: { size?: number }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>;
+const otherEventSpeakers = [
+  { name: 'Angelo Ria Chetta', role: 'Founder Horyzon', initials: 'ARC', image: '/people/angelo.webp' },
+  // Authentic original photo is in the event poster, but is not yet exported to website assets.
+  { name: 'Gianni Mazzotta', role: 'Architetto Patrimoniale', initials: 'GM', image: null },
+  { name: 'Francesco Aquilanti', role: 'Care is Gold', initials: 'FA', image: null },
+] as const;
+
 const Check = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>;
 const Cross = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>;
 
@@ -95,7 +102,7 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 <Arrow size={20} /></a>
 {registrationOpen ? <div className={[styles.s024].join(' ')}><strong>Iscrizioni aperte</strong> · {session.eventLabel}. Ricevi conferma e promemoria via email.</div> : <div className={[styles.s024].join(' ')}>9 dicembre 2026 · Ore 21:00 · 60 minuti con domande e risposte.</div>}
 </div>
-<div className={[styles.s030].join(' ')}>Gratuito · Online · 60 minuti + eventuali domande · Nessuna vendita durante l&apos;evento</div>
+<div className={[styles.s030].join(' ')}>Gratuito · Online · 60 minuti + eventuali domande</div>
 </div>
 {registrationOpen && !editionScheduled && <div className={[styles["tile-d"], styles["hero-chip"], styles.s031].join(' ')}><div className={styles.s035}>9 dicembre alle 21:00. Le iscrizioni si aprono appena il sistema è pronto.</div></div>}
 </div>
@@ -352,6 +359,32 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 </div>
 </div>
 
+<section data-event-section="other-speakers" className={styles.vSpeakerRoster} aria-labelledby="other-speakers-heading">
+  <div className={styles.vSpeakerRosterInner}>
+    <div className={styles.vSpeakerRosterIntro}>
+      <p className={[styles.label, styles.vSpeakerRosterEyebrow].join(' ')}>LE PERSONE DELL'EVENTO</p>
+      <h2 id="other-speakers-heading" className={styles.vSpeakerRosterHeading}>Insieme a Frank, <span>gli altri protagonisti.</span></h2>
+    </div>
+    <div className={styles.vSpeakerRosterGrid}>
+      {otherEventSpeakers.map(person => (
+        <article key={person.name} className={styles.vSpeakerRosterCard}>
+          <div className={styles.vSpeakerRosterPortrait}>
+            {person.image ? (
+              <Image src={person.image} alt={person.name} fill sizes="(max-width: 760px) 100vw, 33vw" />
+            ) : (
+              <span className={styles.vSpeakerRosterInitials} aria-hidden="true">{person.initials}</span>
+            )}
+          </div>
+          <div className={styles.vSpeakerRosterBody}>
+            <h3 className={styles.vSpeakerRosterName}>{person.name}</h3>
+            <p className={styles.vSpeakerRosterRole}>{person.role}</p>
+          </div>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
 <div data-event-section="bonuses" className={[styles.s113].join(' ')}>
 <div className={[styles.s181].join(' ')}>
 <div className={[styles.s182].join(' ')}>
@@ -379,7 +412,7 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
 {registrationOpen && <div className={[styles["tile-d"], styles.s198].join(' ')}><div className={styles.s199}>{editionScheduled ? '9 dicembre 2026 · Ore 21:00 · 60 min + domande · Iscrizione diretta' : '9 dicembre 2026 · Ore 21:00 · Iscrizioni in preparazione'}</div></div>}
 <div className={[styles.s201].join(' ')}>
 <span className={[styles.s202].join(' ')}><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3z"></path><path d="M9 12l2 2 4-4"></path></svg></span>
-<div><strong>La nostra promessa</strong><div className={[styles.s121].join(' ')}>Nessuna vendita durante l’evento. Se senti che non fa per te, esci: nessuno ti richiamerà per insistere.</div></div>
+<div><strong>Un incontro per fare chiarezza</strong><div className={[styles.s121].join(' ')}>Mercoledì 9 dicembre alle ore 21:00, online. 60 minuti di contenuti e spazio per eventuali domande. Riceverai conferma e promemoria via email.</div></div>
 </div>
 </div>
 {registrationOpen ? <EventNotesContext.Provider value={{
