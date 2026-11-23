@@ -20,7 +20,13 @@ assert.equal(architectStartupEnabled(env), false, 'senza flag il passaggio alla 
 assert.equal(architectStartupEnabled({ ...env, PATRIMONIAL_ARCHITECT_STARTUP_ENABLED: 'true' }), true, 'la pagina startup è raggiungibile anche senza video');
 assert.equal(architectStartupConfirmationEnabled({ ...env, PATRIMONIAL_ARCHITECT_STARTUP_ENABLED: 'true' }), false, 'nessuna conferma senza video');
 assert.equal(architectStartupVideoUrl({ ARCHITECT_STARTUP_VIDEO_URL: 'https://horyzon.it/presentazione.mp4' }), 'https://horyzon.it/presentazione.mp4');
-assert.equal(architectStartupVideoUrl({ ARCHITECT_STARTUP_VIDEO_URL: 'https://video.example.invalid/watch' }), '', 'provider senza evento ended non abilitato');
+assert.equal(architectStartupVideoUrl({ ARCHITECT_STARTUP_VIDEO_URL: 'https://video.example.invalid/watch' }), '', 'unknown video host blocked');
+const driveUrl = 'https://drive.google.com/file/d/1O0E-tA6q5jJ0ZfJ9TEJG8VD54l342_Vx/view?usp=sharing';
+const driveEmbed = 'https://drive.google.com/file/d/1O0E-tA6q5jJ0ZfJ9TEJG8VD54l342_Vx/preview';
+assert.equal(architectStartupVideoUrl({ ARCHITECT_STARTUP_VIDEO_URL: driveUrl }), driveEmbed, 'Drive share link normalizes to embeddable preview');
+assert.equal(architectStartupVideoUrl({ ARCHITECT_STARTUP_VIDEO_URL: 'https://drive.google.com/drive/folders/1O0E-tA6q5jJ0ZfJ9TEJG8VD54l342_Vx' }), '', 'Drive folders are not accepted as videos');
+assert.equal(architectStartupVideoUrl({ ARCHITECT_STARTUP_VIDEO_URL: 'https://drive.google.com/file/d/1O0E-tA6q5jJ0ZfJ9TEJG8VD54l342_Vx/view#unsafe' }), '', 'fragments cannot be used in iframe source');
+assert.equal(architectStartupConfirmationEnabled({ ...env, ARCHITECT_STARTUP_VIDEO_URL: driveUrl, PATRIMONIAL_ARCHITECT_STARTUP_ENABLED: 'true' }), true, 'Drive embed allows explicit self-attested final confirmation');
 assert.equal(architectStartupConfirmationEnabled({ ...env, ARCHITECT_STARTUP_VIDEO_URL: 'https://horyzon.it/presentazione.mp4', PATRIMONIAL_ARCHITECT_STARTUP_ENABLED: 'true' }), true);
 const calls = [];
 let issued = '';

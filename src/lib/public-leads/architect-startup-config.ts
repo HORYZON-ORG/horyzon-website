@@ -1,14 +1,18 @@
-/** Central, server-side video readiness guard for the public candidate hand-off. */
+/** Validated media source for the public Startup presentation. */
 export function architectStartupVideoUrl(env: Record<string, string | undefined>): string {
   const configured = env.ARCHITECT_STARTUP_VIDEO_URL?.trim() ?? '';
-  // No third-party iframe whose completion cannot be verified through a media ended event.
-  return /^(https:\/\/[^\s]+\.mp4(?:\?[^\s]*)?|\/[^\s?#]+\.mp4)$/.test(configured)
-    ? configured : '';
+  if (/^(https:\/\/[^\s]+\.mp4(?:\?[^\s]*)?|\/[^\s?#]+\.mp4)$/.test(configured)) return configured;
+
+  // Google Drive public video preview (not a raw media URL). Only the fixed
+  // file path is accepted; arbitrary Google URLs are never embedded.
+  const googleDrive = /^https:\/\/drive\.google\.com\/file\/d\/([A-Za-z0-9_-]{20,})\/(?:view|preview)(?:\?[^\s#]*)?$/.exec(configured);
+  return googleDrive ? `https://drive.google.com/file/d/${googleDrive[1]}/preview` : '';
 }
-/** The application can lead to the startup landing while video materials are being prepared. */
+
+/** The application can lead to the Startup landing while materials are prepared. */
 export const architectStartupEnabled = (env: Record<string, string | undefined>) =>
   env.PATRIMONIAL_ARCHITECT_STARTUP_ENABLED === 'true';
 
-/** Only the real video can unlock the final interest confirmation. */
+/** Explicit contact-interest confirmation is available only with a configured video. */
 export const architectStartupConfirmationEnabled = (env: Record<string, string | undefined>) =>
   architectStartupEnabled(env) && Boolean(architectStartupVideoUrl(env));
