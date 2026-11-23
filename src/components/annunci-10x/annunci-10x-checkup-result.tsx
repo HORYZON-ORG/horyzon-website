@@ -43,7 +43,7 @@ export function Annunci10xCheckupResult({ analysisRunId }: { analysisRunId: stri
         <p>Valutazione automatica di chiarezza e completezza: non garantisce candidature o assunzioni. La proposta usa i fatti disponibili; verifica il testo prima di pubblicarlo.</p>
       </>}
     </section>
-    {report && <section className={styles.offerCard}>
+    {report && <section className={styles.checkupOffer}>
       <p>Un ulteriore miglioramento, se lo desideri</p>
       <h3>15 minuti gratuiti con Angelo</h3>
       {CHECKUP_INVITATION.slice(0, 3).map(p => <p key={p}>{p}</p>)}
