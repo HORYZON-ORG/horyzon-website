@@ -1,6 +1,6 @@
 // Transactional, scheduled reminders for a confirmed event registration.
 // The DB leases one reminder/kind/registration; Resend ensures idempotent scheduling.
-import { eventEmailReady } from './patrimonial-event-confirmation-email.ts';
+import { eventEmailReady, renderEventEmailFrame } from './patrimonial-event-confirmation-email.ts';
 import { eventGoogleCalendarUrl, EVENT_ICS_URL, EVENT_PAGE } from './patrimonial-event-calendar.ts';
 
 type Config = Readonly<Record<string,string|undefined>>;
@@ -24,14 +24,32 @@ export function eventReminderContent(kind:Claim['kind'],firstName:string){
   const text=[
     greet?'Ciao '+greet+',':'Ciao,',
     today?'Ci vediamo domani, mercoledì 9 dicembre, alle 21:00!':'Tra 30 minuti inizia «Quello che le banche non dicono»!',
-    'Evento online gratuito · mercoledì 9 dicembre 2026 · ore 21:00–22:00 (ora italiana). 60 minuti con domande e risposte.',
+    'Evento online gratuito · mercoledì 9 dicembre 2026 · ore 21:00 (ora italiana). 60 minuti più eventuali domande.',
     'Google Calendar: '+eventGoogleCalendarUrl(),
     'Apple / Outlook (.ics): '+EVENT_ICS_URL,
     'Per partecipare consulta le indicazioni organizzative ricevute da Horyzon. Se non hai ricevuto un link di accesso, scrivi a info@horyzon.it.',
     'Questo è un promemoria relativo alla tua iscrizione all’evento, non una comunicazione promozionale.',
     'Horyzon Benessere Patrimoniale · '+EVENT_PAGE,
   ].join('\n\n');
-  const html='<div style="font-family:Arial,sans-serif;color:#07171D;background:#F7F4E8;padding:32px"><div style="max-width:600px;margin:auto;background:#fff;padding:30px;border-radius:12px"><h1>'+htmlSafe(subject)+'</h1>'+text.split('\n\n').map(x=>'<p>'+htmlSafe(x)+'</p>').join('')+'<p><a href="'+htmlSafe(eventGoogleCalendarUrl())+'">Google Calendar</a> · <a href="'+EVENT_ICS_URL+'">Apple / Outlook (.ics)</a></p></div></div>';
+  const greeting=greet?'Ciao '+greet+',':'Ciao,';
+  const html=renderEventEmailFrame({
+    preheader: today?'Domani alle 21:00 c’è il tuo evento Horyzon.':'Tra 30 minuti inizia il tuo evento Horyzon.',
+    eyebrow: today?'PROMEMORIA · DOMANI':'PROMEMORIA · 30 MINUTI',
+    headline: today?'Ci vediamo domani.':'Tra poco si comincia.',
+    bodyHtml:[
+      '<p style="font-size:18px;font-weight:700;color:#0B222A;margin:0 0 13px">'+htmlSafe(greeting)+'</p>',
+      '<p style="font-size:16px;line-height:26px;color:#3A4C52;margin:0 0 22px">'+
+         (today?'Domani alle 21:00 ci vediamo online per <strong>Quello che le banche non dicono</strong>.':'Fra 30 minuti comincia <strong>Quello che le banche non dicono</strong>. Ti aspettiamo!')+'</p>',
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F5F3EB;border:1px solid #E4E5D7"><tr><td style="padding:22px">',
+      '<p style="font-size:11px;font-weight:800;letter-spacing:1.7px;color:#64794A;margin:0 0 8px">MERCOLEDÌ 09 DICEMBRE 2026</p>',
+      '<p style="font-size:31px;font-weight:800;color:#0B222A;margin:0 0 8px">ORE 21:00</p>',
+      '<p style="font-size:13px;line-height:20px;margin:0;color:#4C6165">Online · Gratuito · 60 minuti più eventuali domande</p>',
+      '</td></tr></table>',
+      '<p style="font-size:14px;line-height:23px;color:#40545A;margin:24px 0 22px">Le indicazioni per collegarti sono comunicate da Horyzon via email. Se non hai ricevuto un link di accesso, scrivi a info@horyzon.it.</p>',
+      '<a class="email-button" href="'+htmlSafe(eventGoogleCalendarUrl())+'" style="display:block;padding:16px 19px;background:#CCEB59;color:#0B222A;font-size:14px;font-weight:800;text-decoration:none;text-align:center">APRI IL CALENDARIO &nbsp; ›</a>',
+      '<p style="text-align:center;margin:14px 0 0;font-size:13px"><a href="'+htmlSafe(EVENT_ICS_URL)+'" style="color:#53656C">Apple / Outlook (.ics)</a></p>',
+    ].join(''),
+  });
   return {subject,text,html};
 }
 export async function scheduleOneEventReminder(options:{registrationId?:string|null;env?:Config;fetchImpl?:typeof fetch}={}):Promise<'SCHEDULED'|'FAILED'|'NONE'|'NOT_CONFIGURED'>{
