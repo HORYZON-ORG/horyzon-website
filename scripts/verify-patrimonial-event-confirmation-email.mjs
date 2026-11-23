@@ -7,7 +7,11 @@ assert(!eventEmailReady({...env,RESEND_API_KEY:undefined}));
 const copy=eventConfirmationContent({firstName:'<Mario>'});
 assert.match(copy.text,/iscrizione.*CONFERMATA/i);
 assert.match(copy.text,/9 dicembre 2026/);
-assert.match(copy.text,/21:00–22:00/);
+assert.match(copy.text,/ORE 21:00/);
+assert.match(copy.text,/60 minuti di incontro, più eventuali domande/);
+assert.match(copy.html,/HORYZON/);
+assert.match(copy.html,/AGGIUNGI A GOOGLE CALENDAR/);
+assert.match(copy.html,/APPLE \/ OUTLOOK/);
 assert.match(copy.text,/8 dicembre alle ore 21:00/);
 assert.match(copy.text,/9 dicembre alle ore 20:30/);
 assert.match(copy.text,/calendar.google.com/);
@@ -16,7 +20,7 @@ assert.doesNotMatch(copy.text,/posto non confermato|due serate|NON la prenotazio
 assert(!copy.html.includes('<Mario>'));
 const scheduled=eventConfirmationContent({firstName:'Mario'});
 assert.match(scheduled.subject,/Iscrizione confermata/);
-assert.match(scheduled.text,/Mercoledì 9 dicembre 2026/);
+assert.match(scheduled.text,/MERCOLEDÌ 9 DICEMBRE 2026/);
 const calls=[];let claimed=false;
 const fetchImpl=async(url,init)=>{
  const u=new URL(url);const p=JSON.parse(init.body);calls.push({url:u.pathname,headers:init.headers,body:p});
