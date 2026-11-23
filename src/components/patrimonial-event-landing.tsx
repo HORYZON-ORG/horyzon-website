@@ -349,7 +349,7 @@ export function PatrimonialEventLanding({ contractVersion, registrationEnabled =
         <article key={person.name} className={styles.vSpeakerRosterCard}>
           <div className={styles.vSpeakerRosterPortrait}>
             <div className={styles.vSpeakerRosterCircle}>
-              <Image src={person.image} alt={`Foto di ${person.name}`} fill sizes="(max-width: 650px) 44vw, (max-width: 1024px) 40vw, 240px" />
+              <Image src={person.image} alt={`Foto di ${person.name}`} fill sizes="(max-width: 650px) 44vw, (max-width: 1024px) 40vw, 240px" className={person.name === "Angelo Ria Chetta" ? styles.vSpeakerAngeloPhoto : undefined} />
             </div>
           </div>
           <div className={styles.vSpeakerRosterBody}>

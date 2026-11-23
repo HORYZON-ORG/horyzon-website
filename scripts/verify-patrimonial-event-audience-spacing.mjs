@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+const css=readFileSync(new URL('../src/components/patrimonial-event.module.css',import.meta.url),'utf8');
+const landing=readFileSync(new URL('../src/components/patrimonial-event-landing.tsx',import.meta.url),'utf8');
+assert.match(css,/\.page \.s155\{[^}]*border-top: 1px solid rgba\(7,23,29,\.14\)/,'top rule separates Chapter 3 from audience');
+assert.match(css,/\.page \.s155\{[^}]*gap: clamp\(28px, 3vw, 42px\)/,'audience cards have larger desktop gap');
+assert.match(css,/@media\(max-width:650px\)\{\s*\.page \.s155\{margin-top:32px;padding-top:42px;gap:24px\}/,'mobile cards stay separated');
+assert.match(landing,/person\.name === "Angelo Ria Chetta" \? styles\.vSpeakerAngeloPhoto : undefined/,'Angelo portrait receives dedicated class only');
+assert.match(css,/\.page \.vSpeakerRosterCircle \.vSpeakerAngeloPhoto\{object-position:center top;transform:translateY\(6%\) scale\(1\.16\)\}/,'Angelo face lowered without changing the source image');
+assert.equal((landing.match(/data-event-section="speaker"/g)||[]).length,1,'existing speaker section untouched');
+console.log('Event audience spacing, top border and Angelo portrait crop PASS');

@@ -235,7 +235,7 @@
 .page .s152{font-family: var(--event-mono), ui-monospace, monospace; font-weight: 500; line-height: 1.4; letter-spacing: .18em; text-transform: uppercase; font-size: 11px; color: #5F7010}
 .page .s153{font-weight: 800; font-size: 18px; line-height: 1.3; letter-spacing: -.02em}
 .page .s154{width: 48px; height: 48px; border-radius: 50%; background: #D8FF42; box-shadow: 0 0 0 6px #F7F4E8, 0 0 30px rgba(216,255,66,0.8); display: flex; align-items: center; justify-content: center; color: #07171D; font-weight: 800; border: 2px solid #07171D}
-.page .s155{max-width: 1280px; margin: 0 auto; padding: 0 24px clamp(80px, 9vw, 130px); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 20px}
+.page .s155{max-width: 1280px; margin: clamp(36px, 5vw, 64px) auto 0; padding: clamp(48px, 6vw, 76px) 24px clamp(80px, 9vw, 130px); border-top: 1px solid rgba(7,23,29,.14); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: clamp(28px, 3vw, 42px)}
 .page .s156{background: #FFFFFF; border-radius: 16px; padding: clamp(26px, 3vw, 40px); display: flex; flex-direction: column; gap: 18px; box-shadow: none; border: 1px solid rgba(7,23,29,.12)}
 .page .s157{font-family: var(--event-sans), system-ui, sans-serif; font-weight: 800; letter-spacing: -.045em; line-height: 1; margin: 0; text-wrap: balance; font-size: 30px}
 .page .s158{color: #5F7010; flex: none; margin-top: 3px}
@@ -922,6 +922,8 @@
 .page .vSpeakerRosterPortrait{position:relative;aspect-ratio:5/4;background:radial-gradient(circle at 50% 38%,#234048 0%,#102229 68%);display:flex;align-items:center;justify-content:center;overflow:hidden}
 .page .vSpeakerRosterCircle{position:relative;width:min(78%,240px);aspect-ratio:1;border:4px solid #D8FF42;border-radius:50%;background:#07171D;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.32)}
 .page .vSpeakerRosterCircle img{object-fit:cover;object-position:center 22%;filter:grayscale(1)}
+/* Angelo only: lower the face subtly without changing the original photo or other speakers. */
+.page .vSpeakerRosterCircle .vSpeakerAngeloPhoto{object-position:center top;transform:translateY(6%) scale(1.16)}
 .page .vSpeakerRosterBody{padding:20px 19px 25px;display:flex;flex-direction:column;gap:8px;min-height:117px}
 .page .vSpeakerRosterName{margin:0;font-size:clamp(18px,1.7vw,24px);line-height:1.15;font-weight:800;letter-spacing:-.035em;color:#F7F4E8}
 .page .vSpeakerRosterRole{margin:0;color:#D8FF42;font-size:13px;line-height:1.45;font-weight:600}
@@ -938,4 +940,8 @@
   .page .vSpeakerRosterBody{padding:14px 12px 18px;min-height:113px;gap:7px}
   .page .vSpeakerRosterName{font-size:17px}
   .page .vSpeakerRosterRole{font-size:12px}
+}
+
+@media(max-width:650px){
+  .page .s155{margin-top:32px;padding-top:42px;gap:24px}
 }
