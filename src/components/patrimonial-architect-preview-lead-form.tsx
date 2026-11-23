@@ -127,6 +127,10 @@ function PilotLeadForm({ mode, contractVersion, previewSubmissionsEnabled = fals
         sending.current = false; return;
       }
       setStatus('success'); setNotice(form.success);
+       if (mode === 'architect-path' && typeof result.nextStep?.href === 'string' &&
+         /^\/candidature\/architetti-patrimoniali\/startup#token=[A-Za-z0-9_-]{43}$/.test(result.nextStep.href)) {
+         router.push(result.nextStep.href); return;
+       }
       if (v2 && mode === 'patrimonial-event' && typeof result.radarNextStep?.href === 'string' && /^\/radar-patrimoniale#event=[A-Za-z0-9_-]{43}$/.test(result.radarNextStep.href)) { router.push(`${form.path}/grazie#radar=${result.radarNextStep.href.split('=')[1]}`); return; }
       router.push(`${form.path}/grazie`);
     } catch (error) {
