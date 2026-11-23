@@ -1,5 +1,5 @@
 .page{min-height:100vh;background:#f7f5ee;color:#162a31;font-family:var(--architect-sans,Arial),sans-serif}
-.headerTag{display:inline-flex;align-items:center;justify-content:center;gap:14px;min-height:46px;padding:11px 20px;border:1px solid #D8FF42;border-radius:9px;background:#D8FF42;color:#07171D;text-decoration:none;font-size:.76rem;font-weight:850;letter-spacing:.095em;white-space:nowrap;box-shadow:0 8px 28px rgba(216,255,66,.2);transition:transform .2s ease,background .2s ease,box-shadow .2s ease}
+.headerTag{display:inline-flex;align-items:center;justify-content:center;gap:14px;min-height:46px;padding:11px 20px;border:1px solid #D8FF42;border-radius:9px;background:#D8FF42;color:#07171D;text-decoration:none;font:inherit;font-size:.76rem;cursor:pointer;font-weight:850;letter-spacing:.095em;white-space:nowrap;box-shadow:0 8px 28px rgba(216,255,66,.2);transition:transform .2s ease,background .2s ease,box-shadow .2s ease}
 .headerTag span{font-size:1.1rem;line-height:1;transition:transform .2s ease}
 .headerTag:hover{background:#E9FF8C;box-shadow:0 10px 32px rgba(216,255,66,.37);transform:translateY(-2px)}
 .headerTag:hover span{transform:translate(2px,-2px)}
@@ -83,7 +83,7 @@
 .footerInner{display:flex;align-items:center;justify-content:space-between;gap:36px;padding-bottom:43px}
 .footerBrand{display:flex;flex-direction:column;gap:8px;width:max-content;max-width:100%;text-decoration:none;color:inherit;transition:filter .2s}
 .footerBrand:hover{filter:drop-shadow(0 0 10px rgba(216,255,66,.2))}
-.footerBrand:focus-visible,.footerNav a:focus-visible{outline:3px solid #D8FF42;outline-offset:4px}
+.footerBrand:focus-visible,.footerNav a:focus-visible,.footerNav button:focus-visible{outline:3px solid #D8FF42;outline-offset:4px}
 .footerLogoWrap{display:block;position:relative;line-height:0;width:190px}
 .footerLogoWrap img{width:100%;height:auto;display:block;filter:brightness(0) invert(1)}
 .footerLogoWrap::after{content:"";position:absolute;left:20.93%;top:47.56%;width:3.8%;aspect-ratio:1;border-radius:50%;background:#D8FF42;transform:translate(-50%,-50%);pointer-events:none}
@@ -91,9 +91,9 @@
 .footerBrandRule::after{content:"";position:absolute;left:50%;top:50%;width:18%;height:3px;border-radius:2px;background:#D8FF42;transform:translate(-50%,-50%)}
 .footerDivision{font-size:9.5px;font-weight:550;letter-spacing:.34em;text-align:center;margin-right:-.34em;white-space:nowrap}
 .footerNav{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.footerNav a{display:inline-flex;align-items:center;gap:12px;border:1px solid rgba(247,244,232,.27);border-radius:8px;padding:14px 18px;color:#F7F4E8;text-decoration:none;font-size:.86rem;font-weight:650;transition:color .2s,border-color .2s,background .2s}
-.footerNav a:hover{border-color:#D8FF42;background:rgba(216,255,66,.08);color:#D8FF42}
-.footerNav a span{color:#D8FF42}
+.footerNav a,.footerNav button{display:inline-flex;align-items:center;gap:12px;border:1px solid rgba(247,244,232,.27);border-radius:8px;padding:14px 18px;color:#F7F4E8;text-decoration:none;background:transparent;font:inherit;font-size:.86rem;font-weight:650;cursor:pointer;transition:color .2s,border-color .2s,background .2s}
+.footerNav a:hover,.footerNav button:hover{border-color:#D8FF42;background:rgba(216,255,66,.08);color:#D8FF42}
+.footerNav a span,.footerNav button span{color:#D8FF42}
 .footerBase{display:flex;align-items:center;justify-content:space-between;gap:16px;border-top:1px solid rgba(247,244,232,.16);padding-top:19px;color:#AAB9B7;font-size:.67rem;letter-spacing:.12em;text-transform:uppercase}
 @media(max-width:750px){
 .headerTag{font-size:.64rem;letter-spacing:.045em;padding:10px 12px;min-height:42px;gap:8px}
@@ -131,10 +131,10 @@
 .videoNote{display:none}
 .confirmButton{padding:17px;font-size:.94rem;gap:12px}
 .sectionHeading h2{font-size:2rem}
-.footerNav a{font-size:.77rem;padding:12px 13px}
+.footerNav a,.footerNav button{font-size:.77rem;padding:12px 13px}
 .footerLogoWrap{width:170px}
 }
 @media(prefers-reduced-motion:reduce){
-.headerTag,.headerTag span,.confirmButton,.confirmArrow,.watchAttestation,.footerBrand,.footerNav a{transition:none}
+.headerTag,.headerTag span,.confirmButton,.confirmArrow,.watchAttestation,.footerBrand,.footerNav a,.footerNav button{transition:none}
 .headerTag:hover,.confirmButton:hover:not(:disabled),.headerTag:hover span,.confirmButton:hover:not(:disabled) .confirmArrow{transform:none}
 }
