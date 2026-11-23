@@ -9,7 +9,9 @@ type Status = 'idle' | 'sending' | 'success' | 'error';
 
 export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string }) {
   const [token, setToken] = useState('');
-  const [ended, setEnded] = useState(false);
+  const [gateReady, setGateReady] = useState(false);
+  const [watchAcknowledged, setWatchAcknowledged] = useState(false);
+  const [gateProblem, setGateProblem] = useState(false);
   const [status, setStatus] = useState<Status>('idle');
   const [notice, setNotice] = useState('');
   const [videoError, setVideoError] = useState(false);
@@ -20,7 +22,9 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
     const readToken = () => {
       const match = /^#token=([A-Za-z0-9_-]{43})$/.exec(window.location.hash);
       setToken(match?.[1] ?? '');
-      setEnded(false);
+      setGateReady(false);
+      setWatchAcknowledged(false);
+      setGateProblem(false);
       setStatus('idle');
       setNotice('');
     };
@@ -29,8 +33,57 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
     return () => window.removeEventListener('hashchange', readToken);
   }, []);
 
+  useEffect(() => {
+    if (!token || !videoUrl) return;
+    let active = true;
+    let retry: ReturnType<typeof setTimeout> | undefined;
+
+    async function verifyServerGate() {
+      if (!active) return;
+      try {
+        const response = await fetch('/api/architect-startup/video-gate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          cache: 'no-store',
+          body: JSON.stringify({ token }),
+          signal: AbortSignal.timeout(15000),
+        });
+        const result: { ok?: boolean; remainingSeconds?: number } = await response.json();
+        if (!active) return;
+        if (!response.ok || result.ok !== true ||
+            typeof result.remainingSeconds !== 'number' ||
+            !Number.isInteger(result.remainingSeconds) ||
+            result.remainingSeconds < 0 || result.remainingSeconds > 661) {
+          setGateProblem(true);
+          retry = setTimeout(() => void verifyServerGate(), 15000);
+          return;
+        }
+        setGateProblem(false);
+        if (result.remainingSeconds === 0) {
+          setGateReady(true);
+          return;
+        }
+        setGateReady(false);
+        // The server owns the start time. This timeout is only a UI refresh;
+        // it does not authorize confirmation or persist elapsed time.
+        retry = setTimeout(() => void verifyServerGate(),
+          result.remainingSeconds * 1000 + 1200);
+      } catch {
+        if (!active) return;
+        setGateProblem(true);
+        retry = setTimeout(() => void verifyServerGate(), 15000);
+      }
+    }
+
+    void verifyServerGate();
+    return () => {
+      active = false;
+      if (retry !== undefined) clearTimeout(retry);
+    };
+  }, [token, videoUrl]);
+
   async function confirmInterest() {
-    if (!ended || !videoUrl || !token || status === 'sending' || status === 'success') return;
+    if (!gateReady || !watchAcknowledged || !videoUrl || !token || status === 'sending' || status === 'success') return;
     setStatus('sending'); setNotice('');
     try {
       const response = await fetch('/api/architect-startup/confirm', {
@@ -104,7 +157,7 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
           ) : (
             <video key={videoUrl} className={styles.video} src={videoUrl} controls playsInline preload="metadata"
               poster="/benessere-patrimoniale/percorso-architetto/skyline.jpg"
-              onEnded={() => setEnded(true)} onError={() => setVideoError(true)}
+              onError={() => setVideoError(true)}
               aria-label="Presentazione della startup Horyzon Consulting">
               Il browser non supporta la riproduzione del video.
             </video>
@@ -132,34 +185,40 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
                 <strong>✓ Richiesta di ricontatto registrata</strong>
                 <p>{notice}</p>
               </div>
-            ) : (
+            ) : !watchAcknowledged ? (
               <>
-                {driveEmbed && videoUrl && token && (
-                  <label className={`${styles.watchAttestation} ${ended ? styles.watchAttestationReady : ''}`}>
-                    <input type="checkbox" checked={ended} disabled={status === 'sending'}
-                      onChange={event => setEnded(event.target.checked)} />
-                    <span>Ho terminato di vedere il video della Startup.</span>
-                  </label>
-                )}
-                {ended && videoUrl && token && (
-                  <p className={styles.readyNote} role="status"><span aria-hidden="true">✓</span> Hai completato questo passaggio. Ora puoi inviare la tua adesione.</p>
-                )}
                 <button
                   className={styles.confirmButton}
                   type="button"
-                  disabled={!videoUrl || !ended || !token || status === 'sending'}
-                  onClick={() => void confirmInterest()}
-                  aria-label="Ho preso visione della Startup Horyzon. Voglio essere ricontattato">
-                  <span className={styles.confirmButtonText}>{status === 'sending' ? 'Registrazione della conferma…' : 'Ho preso visione della Startup Horyzon. Voglio essere ricontattato'}</span>
+                  disabled={!videoUrl || !gateReady || !token}
+                  onClick={() => setWatchAcknowledged(true)}>
+                  <span className={styles.confirmButtonText}>Ho completato la visione del video e vado avanti</span>
                   <span className={styles.confirmArrow} aria-hidden="true">↗</span>
                 </button>
-                {videoUrl && token && !ended && (
-                  <p className={styles.confirmHint}>{driveEmbed
-                    ? 'Al termine del video, conferma qui sopra di averlo visto per attivare il pulsante.'
-                    : 'Il pulsante si attiverà automaticamente alla fine del video.'}</p>
+                {gateReady && token && videoUrl ? (
+                  <p className={styles.readyNote} role="status"><span aria-hidden="true">✓</span> Puoi confermare la visione e proseguire.</p>
+                ) : (
+                  <p className={styles.confirmHint}>
+                    {!videoUrl ? 'La presentazione non è ancora disponibile.' :
+                     !token ? 'Per proseguire completa prima il modulo di candidatura.' :
+                     gateProblem ? 'Verifica temporaneamente non disponibile. La pagina riproverà automaticamente.' :
+                     'Guarda la presentazione. Il pulsante si abiliterà automaticamente quando potrai proseguire.'}
+                  </p>
                 )}
-                {!videoUrl && <p className={styles.confirmHint}>La presentazione non è ancora disponibile.</p>}
-                {!token && videoUrl && <p className={styles.confirmHint}>Per confermare, completa prima il modulo di candidatura.</p>}
+              </>
+            ) : (
+              <>
+                <p className={styles.readyNote} role="status"><span aria-hidden="true">✓</span> Hai confermato la visione. Ora puoi scegliere se richiedere un ricontatto.</p>
+                <button
+                  className={styles.confirmButton}
+                  type="button"
+                  disabled={status === 'sending'}
+                  onClick={() => void confirmInterest()}>
+                  <span className={styles.confirmButtonText}>{status === 'sending'
+                    ? 'Registrazione della richiesta…'
+                    : 'Voglio essere ricontattato da un Architetto Patrimoniale Horyzon'}</span>
+                  <span className={styles.confirmArrow} aria-hidden="true">↗</span>
+                </button>
               </>
             )}
             {status === 'error' && <p className={styles.error} role="alert">{notice}</p>}
