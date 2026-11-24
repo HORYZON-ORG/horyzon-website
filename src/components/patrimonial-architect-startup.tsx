@@ -19,6 +19,28 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
+    let active = true;
+    const resumeFromCookie = async () => {
+      try {
+        const response = await fetch('/api/architect-startup/resume', {
+          method: 'GET',
+          cache: 'no-store',
+          credentials: 'same-origin',
+          signal: AbortSignal.timeout(15000),
+        });
+        if (!response.ok || !active || window.location.hash) return;
+        const result: { ok?: boolean; token?: string } = await response.json();
+        if (!active || result.ok !== true ||
+          !result.token || !/^[A-Za-z0-9_-]{43}$/.test(result.token) ||
+          window.location.hash) return;
+        // Fragment keeps the bearer token out of HTTP requests and Referer.
+        window.history.replaceState(window.history.state, '',
+          `${window.location.pathname}${window.location.search}#token=${result.token}`);
+        setToken(result.token);
+      } catch {
+        // Recovery is optional: the original private link remains supported.
+      }
+    };
     const readToken = () => {
       const match = /^#token=([A-Za-z0-9_-]{43})$/.exec(window.location.hash);
       setToken(match?.[1] ?? '');
@@ -27,10 +49,11 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
       setGateProblem(false);
       setStatus('idle');
       setNotice('');
+      if (!match) void resumeFromCookie();
     };
     readToken();
     window.addEventListener('hashchange', readToken);
-    return () => window.removeEventListener('hashchange', readToken);
+    return () => { active = false; window.removeEventListener('hashchange', readToken); };
   }, []);
 
   useEffect(() => {

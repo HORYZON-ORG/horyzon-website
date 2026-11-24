@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { architectStartupEnabled, architectStartupConfirmationEnabled, architectStartupVideoUrl } from '../src/lib/public-leads/architect-startup-config.ts';
+import { architectStartupResumeCookieOptions } from '../src/lib/public-leads/architect-startup-resume.ts';
 import {
   registerArchitectCandidate,
   issueArchitectStartupLink,
@@ -17,6 +18,11 @@ const env = {
   SUPABASE_URL: 'https://pmkyeqrfkunypfkbjnyg.supabase.co',
   SUPABASE_SERVICE_ROLE_KEY: 'synthetic-only',
 };
+const resumeCookie = architectStartupResumeCookieOptions();
+assert.equal(resumeCookie.maxAge, 7 * 24 * 60 * 60);
+assert.equal(resumeCookie.httpOnly, true);
+assert.equal(resumeCookie.sameSite, 'lax');
+assert.equal(resumeCookie.path, '/');
 assert.equal(architectStartupEnabled(env), false, 'senza flag il passaggio alla startup resta spento');
 assert.equal(architectStartupEnabled({ ...env, PATRIMONIAL_ARCHITECT_STARTUP_ENABLED: 'true' }), true, 'la pagina startup è raggiungibile anche senza video');
 assert.equal(architectStartupConfirmationEnabled({ ...env, PATRIMONIAL_ARCHITECT_STARTUP_ENABLED: 'true' }), false, 'nessuna conferma senza video');

@@ -1,5 +1,11 @@
 import { confirmArchitectStartupInterest } from '@/lib/public-leads/architect-hub-intake';
 import { architectStartupConfirmationEnabled } from '@/lib/public-leads/architect-startup-config';
+import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
+import {
+  ARCHITECT_STARTUP_RESUME_COOKIE,
+  architectStartupResumeCookieOptions,
+} from '@/lib/public-leads/architect-startup-resume';
 
 export const runtime = 'nodejs';
 
@@ -39,7 +45,16 @@ export async function POST(request: Request) {
   try {
     const confirmed = await confirmArchitectStartupInterest(process.env, token);
     if (!confirmed) return json(400, 'Link non valido o scaduto. Contatta Horyzon per assistenza.');
-    return json(200, 'Conferma registrata. Il team potrà ricontattarti.');
+    const response = NextResponse.json({
+      ok: true,
+      message: 'Conferma registrata. Il team potrà ricontattarti.',
+    }, { status: 200, headers: { 'Cache-Control': 'private, no-store' } });
+    const storedToken = (await cookies()).get(ARCHITECT_STARTUP_RESUME_COOKIE)?.value;
+    if (storedToken === token) {
+      response.cookies.set(ARCHITECT_STARTUP_RESUME_COOKIE, '',
+        { ...architectStartupResumeCookieOptions(), maxAge: 0 });
+    }
+    return response;
   } catch {
     return json(503, 'Non riusciamo a registrare la conferma. Riprova senza ripetere la candidatura.');
   }
