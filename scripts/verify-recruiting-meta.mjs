@@ -24,7 +24,7 @@ function fixture(locationHref = href, storage = new Map()) {
   const win = { location: { href: locationHref }, crypto: webcrypto,
     fbq: (...args) => calls.push(args),
     sessionStorage: { getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value) },
-    document: { createElement: () => ({}), head: { appendChild: script => scripts.push(script) } },
+    document: { createElement: () => ({ setAttribute(name, value) { this[name] = value; } }), head: { appendChild: script => scripts.push(script) } },
   };
   const tracker = createRecruitingMetaTracker(pixelId, win, value => statuses.push(value));
   return { tracker, win, calls, scripts, statuses, storage };

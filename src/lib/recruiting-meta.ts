@@ -81,6 +81,10 @@ export function createRecruitingMetaTracker(pixelId: string, win: Window, status
     // rechecks consent. Revoking while the library is downloading discards events.
     win.fbq('consent', 'revoke');
     const script = win.document.createElement('script');
+    // This loader already requires marketing consent and rechecks it on load.
+    // Keep Iubenda from replacing its load/error callbacks after that check:
+    // https://www.iubenda.com/en/help/153445-what-to-do-when-the-automatic-blocking-mode-is-blocking-too-much/
+    script.setAttribute('data-cmp-ab', '2');
     script.id = 'horyzon-recruiting-meta-library';
     script.async = true;
     script.referrerPolicy = 'strict-origin';
