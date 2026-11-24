@@ -104,6 +104,36 @@ try {
     await anonButton.waitFor({ state: 'visible', timeout: 15000 });
     assert.equal(await anonButton.isDisabled(), true, 'No-token visitor cannot bypass server gate');
     await anonymous.close();
+
+    // Candidate returns later to the plain Startup URL in the same browser.
+    // A secure cookie is verified by the server (mocked here) and restores the
+    // unique bearer link without asking for contact details again.
+    const returnPage = await browser.newPage({ viewport: { width, height: 860 }, reducedMotion: 'reduce' });
+    await returnPage.route('https://zbpegzd1dv3ut14o.public.blob.vercel-storage.com/**', route => route.abort());
+    let resumeCalls = 0;
+    await returnPage.route('**/api/architect-startup/resume', route => {
+      resumeCalls++;
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true, token }),
+      });
+    });
+    await returnPage.route('**/api/architect-startup/video-gate', route => route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ ok: true, remainingSeconds: 0 }),
+    }));
+    await returnPage.goto(origin + startupPath, { waitUntil: 'domcontentloaded' });
+    await returnPage.waitForFunction((expected) =>
+      window.location.hash === '#token=' + expected, token, { timeout: 15000 });
+    assert.equal(resumeCalls, 1, 'Only one same-browser resume check is needed');
+    assert.equal(await returnPage.getByRole('button', {
+      name: 'Ho completato la visione del video e vado avanti',
+    }).isEnabled(), true, 'Recovered candidate retains completed server timer');
+    assert.equal(await returnPage.locator('input[name="email"]').count(), 0,
+      'Resume does not ask for PII a second time');
+    await returnPage.close();
+    console.log('PASS Startup same-browser return ' + width + 'px: candidate link restored without new form');
   }
 } finally {
   await browser.close();
