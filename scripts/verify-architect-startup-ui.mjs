@@ -127,6 +127,11 @@ try {
     await returnPage.waitForFunction((expected) =>
       window.location.hash === '#token=' + expected, token, { timeout: 15000 });
     assert.equal(resumeCalls, 1, 'Only one same-browser resume check is needed');
+    await returnPage.waitForFunction(() => {
+      const button = [...document.querySelectorAll('button')].find(
+        node => node.textContent?.includes('Ho completato la visione del video e vado avanti'));
+      return button && !button.disabled;
+    }, undefined, { timeout: 15000 });
     assert.equal(await returnPage.getByRole('button', {
       name: 'Ho completato la visione del video e vado avanti',
     }).isEnabled(), true, 'Recovered candidate retains completed server timer');
