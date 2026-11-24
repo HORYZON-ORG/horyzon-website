@@ -14,8 +14,7 @@ for(const kind of ['DAY_BEFORE','HALF_HOUR']){
   const content=eventReminderContent(kind,'<Mario>','https://meet.example.org/event/abc','2026-12-09T20:00:00Z');
   assert(!content.html.includes('<Mario>'));
   assert.match(content.text,/9 dicembre 2026/);
-  assert.match(content.text,/https:\/\/meet.example.org\/event\/abc/);
-  assert.match(content.html,/COLLEGATI ALL.EVENTO/);
+  if(kind==='HALF_HOUR') { assert.match(content.text,/https:\/\/meet.example.org\/event\/abc/); assert.match(content.html,/PARTECIPA ALL.EVENTO/); } else { assert(!content.text.includes('https://meet.example.org/event/abc')); assert(!content.html.includes('https://meet.example.org/event/abc')); assert.match(content.text,/Riceverai il link/); }
   assert.match(content.subject,kind==='DAY_BEFORE'?/Domani alle 21:00/:/Tra 30 minuti/);
 }
 const env={RESEND_API_KEY:'re_synthetic_token_abcdefghijkl',SUPABASE_URL:'https://fixture.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'fixture',
@@ -37,7 +36,8 @@ const fetchImpl=async(url,options)=>{
 assert.deepEqual(await drainEventReminders({limit:3,env,fetchImpl}),{status:'PROCESSED',sent:2,failed:0});
 assert.equal(sends.length,2);
 assert.equal(sends[0].body.scheduled_at,undefined);
-assert.match(sends[0].body.html,/https:\/\/meet.example.org\/event\/abc/);
+assert(!sends[0].body.html.includes('https://meet.example.org/event/abc'));
+assert(sends[1].body.html.includes('https://meet.example.org/event/abc'));
 assert.equal(sends[1].body.scheduled_at,undefined);
 assert.equal(sends[0].headers['Idempotency-Key'],'horyzon-event-day_before-'+reg);
 assert.equal(sends[1].headers['Idempotency-Key'],'horyzon-event-half_hour-'+reg);

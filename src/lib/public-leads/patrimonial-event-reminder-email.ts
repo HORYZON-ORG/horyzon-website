@@ -41,7 +41,7 @@ async function rpc<T>(name: string, payload: Record<string, unknown>, env: Confi
 }
 
 export function eventReminderContent(kind: Kind, firstName: string, joinUrl: string, eventStartsAt: string) {
-  if (!validMeetingUrl(joinUrl) || !Number.isFinite(Date.parse(eventStartsAt)))
+  if ((kind === 'HALF_HOUR' && !validMeetingUrl(joinUrl)) || !Number.isFinite(Date.parse(eventStartsAt)))
     throw Error('EVENT_REMINDER_INVALID_LINK_OR_TIME');
   const first = firstName.replace(/[\r\n<>]/g, ' ').trim().slice(0, 80);
   const greeting = first ? 'Ciao ' + first + ',' : 'Ciao,';
@@ -62,13 +62,12 @@ export function eventReminderContent(kind: Kind, firstName: string, joinUrl: str
   const text = [
     greeting, intro,
     'Evento online gratuito · ' + day + ' · ore ' + time + ' (ora italiana).',
-    'COLLEGATI ALL’EVENTO: ' + joinUrl,
-    'Ti consigliamo di aprire il link qualche minuto prima dell’inizio.',
+    ...(isDayBefore ? ['Riceverai il link di accesso 30 minuti prima dell’inizio.'] : ['PARTECIPA ALL’EVENTO: ' + joinUrl, 'Ti consigliamo di aprire il link qualche minuto prima dell’inizio.']),
     'Questa è una comunicazione relativa alla tua iscrizione, non un messaggio promozionale.',
     'Horyzon Benessere Patrimoniale · ' + EVENT_PAGE,
   ].join('\n\n');
   const html = renderEventEmailFrame({
-    preheader: isDayBefore ? 'Il link per partecipare domani è pronto.' : 'Il tuo link per partecipare tra poco.',
+    preheader: isDayBefore ? 'Riceverai il link di accesso 30 minuti prima dell’inizio.' : 'Il tuo link per partecipare tra poco.',
     eyebrow: isDayBefore ? 'PROMEMORIA · DOMANI' : 'PROMEMORIA · 30 MINUTI',
     headline: isDayBefore ? 'Ci vediamo domani.' : 'Tra poco si comincia.',
     bodyHtml: [
@@ -79,10 +78,12 @@ export function eventReminderContent(kind: Kind, firstName: string, joinUrl: str
       '<p style="font-size:31px;font-weight:800;color:#0B222A;margin:0 0 8px">ORE ' + escapeHtml(time) + '</p>',
       '<p style="font-size:13px;line-height:20px;margin:0;color:#4C6165">Online · Gratuito · 60 minuti più eventuali domande</p>',
       '</td></tr></table>',
+      ...(isDayBefore ? ['<p style="font-size:15px;line-height:24px;color:#0B222A">Riceverai il link di accesso 30 minuti prima dell’inizio.</p>'] : [
       '<p style="font-size:15px;font-weight:700;color:#0B222A;margin:25px 0 13px">Questo è il tuo link di accesso all’evento:</p>',
-      '<a class="email-button" href="' + escapeHtml(joinUrl) + '" style="display:block;padding:18px 19px;background:#CCEB59;color:#0B222A;font-size:15px;font-weight:800;text-decoration:none;text-align:center">COLLEGATI ALL’EVENTO &nbsp; ›</a>',
+      '<a class="email-button" href="' + escapeHtml(joinUrl) + '" style="display:block;padding:18px 19px;background:#CCEB59;color:#0B222A;font-size:15px;font-weight:800;text-decoration:none;text-align:center">PARTECIPA ALL’EVENTO &nbsp; ›</a>',
       '<p style="font-size:13px;line-height:21px;color:#526368;margin:15px 0 22px">Se il pulsante non funziona, apri questo indirizzo:<br><a href="' + escapeHtml(joinUrl) + '" style="color:#245F66;word-break:break-all">' + escapeHtml(joinUrl) + '</a></p>',
       '<p style="font-size:13px;line-height:20px;color:#64727A;margin:0">Apri il link qualche minuto prima dell’inizio. Per assistenza scrivi a info@horyzon.it.</p>',
+      ]),
     ].join(''),
   });
   return { subject, text, html };
@@ -105,7 +106,7 @@ export async function sendOneEventReminder(options: {
     || !['DAY_BEFORE', 'HALF_HOUR'].includes(claim.kind)
     || typeof claim.recipient !== 'string' || claim.recipient.length > 254
     || !claim.recipient.includes('@') || !Number.isFinite(Date.parse(claim.sendAt))
-    || !validMeetingUrl(claim.joinUrl) || !Number.isFinite(Date.parse(claim.eventStartsAt)))
+    || (claim.kind === 'HALF_HOUR' && !validMeetingUrl(claim.joinUrl)) || !Number.isFinite(Date.parse(claim.eventStartsAt)))
     return 'FAILED';
   let success = false;
   let providerId: string | null = null;
