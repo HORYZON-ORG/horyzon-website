@@ -2,6 +2,11 @@ import { beginArchitectStartupLead } from '@/lib/public-leads/architect-hub-inta
 import { architectStartupEnabled } from '@/lib/public-leads/architect-startup-config';
 import { PATRIMONIAL_PILOT_PRIVACY_VERSION } from '@/content/patrimonial-funnels';
 import { normalizePhone } from '@/lib/radar/highlevel';
+import { NextResponse } from 'next/server';
+import {
+  ARCHITECT_STARTUP_RESUME_COOKIE,
+  architectStartupResumeCookieOptions,
+} from '@/lib/public-leads/architect-startup-resume';
 
 export const runtime = 'nodejs';
 
@@ -51,7 +56,19 @@ export async function POST(request: Request) {
     const href = await beginArchitectStartupLead(process.env, {
       firstName, lastName, email, phone, privacyVersion: PATRIMONIAL_PILOT_PRIVACY_VERSION,
     }, sourceIp);
-    return json(200, 'Recapiti ricevuti. Puoi accedere alla presentazione Startup Horyzon.', { href });
+    const token = href.split('#token=')[1];
+    if (!token || !/^[A-Za-z0-9_-]{43}$/.test(token))
+      throw new Error('architect_startup_invalid_link');
+    const response = NextResponse.json({
+      ok: true,
+      message: 'Recapiti ricevuti. Puoi accedere alla presentazione Startup Horyzon.',
+      nextStep: { href },
+    }, { headers: { 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' } });
+    // The link stays in the fragment; a short-lived HttpOnly cookie additionally
+    // restores it if the candidate later opens Startup directly in this browser.
+    response.cookies.set(ARCHITECT_STARTUP_RESUME_COOKIE, token,
+      architectStartupResumeCookieOptions());
+    return response;
   } catch {
     return json(503, 'Non riusciamo a preparare la presentazione. Riprova fra poco.');
   }
