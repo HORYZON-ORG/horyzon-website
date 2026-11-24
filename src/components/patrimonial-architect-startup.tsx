@@ -154,10 +154,11 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
   function handleVideoTimeUpdate() {
     const video = videoRef.current;
     if (!video || !Number.isFinite(video.currentTime)) return;
+    if (video.seeking) return;
     const position = video.currentTime;
     maxPlayedRef.current = Math.max(maxPlayedRef.current, position);
     setVideoSeconds(position);
-    if (video.paused || video.seeking || videoEnded) return;
+    if (video.paused || videoEnded) return;
     if (position >= lastPingRef.current + 2.5) {
       lastPingRef.current = position;
       void recordProgress(position);
@@ -408,7 +409,7 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
                      'Completa la presentazione per attivare il pulsante. Puoi mettere in pausa, tornare indietro e cambiare velocità.'}
                   </p>
                 )}
-                {videoUrl && token && !gateReady && (
+                {videoUrl && token && !gateReady && (videoEnded || gateProblem) && (
                   <button className={styles.gateRefreshButton} type="button"
                     onClick={() => videoEnded
                       ? void recordProgress(videoRef.current?.currentTime ?? VIDEO_DURATION_SECONDS, true)
