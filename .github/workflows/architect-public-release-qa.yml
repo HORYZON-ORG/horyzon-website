@@ -11,6 +11,7 @@ on:
       - 'src/components/patrimonial-architect-startup*'
       - 'scripts/verify-architect-startup.mjs'
       - 'scripts/verify-architect-startup-ui.mjs'
+      - 'scripts/verify-architect-startup-form-navigation.mjs'
       - 'src/app/api/public-leads/cv/**'
       - 'src/components/patrimonial-architect-preview*'
       - 'src/content/patrimonial-funnels.ts'
@@ -45,8 +46,13 @@ jobs:
       - run: node --no-warnings --experimental-strip-types scripts/verify-patrimonial-leads.mjs
       - run: npm run typecheck
       - run: npm run build
-      - run: npm install --no-save --no-package-lock --ignore-scripts playwright@1.58.0
-      - run: npx playwright install chromium --with-deps
+      - name: Install Playwright in an isolated directory
+        run: |
+          # Re-resolving the site's large dependency tree may fail on unrelated
+          # transient registry versions. Keep browser QA isolated and pinned.
+          npm install --prefix /tmp/architect-browser-qa --no-save --no-package-lock --ignore-scripts playwright@1.58.0
+          ln -s /tmp/architect-browser-qa/node_modules/playwright node_modules/playwright
+      - run: node /tmp/architect-browser-qa/node_modules/playwright/cli.js install chromium --with-deps
       - name: Smoke test production-shaped route, redirects and CV safety
         shell: bash
         run: |
@@ -87,6 +93,7 @@ jobs:
           test "$bad_status" = 403
           ARCHITECT_PREVIEW_TEST_ORIGIN=http://127.0.0.1:3207 node scripts/verify-architect-canonical-palette.mjs
           ARCHITECT_PREVIEW_TEST_ORIGIN=http://127.0.0.1:3207 node scripts/verify-architect-startup-ui.mjs
+          ARCHITECT_PREVIEW_TEST_ORIGIN=http://127.0.0.1:3207 node scripts/verify-architect-startup-form-navigation.mjs
       - name: Archive visual comparisons
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

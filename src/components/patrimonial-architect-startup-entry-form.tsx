@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect, useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
+
 import Link from 'next/link';
 import styles from './patrimonial-architect-preview.module.css';
 
 /** The public funnel asks for contact details only. A Hub candidate does not exist yet. */
 export function ArchitectStartupEntryForm() {
-  const router = useRouter();
+
   const [hydrated, setHydrated] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
@@ -44,7 +44,11 @@ export function ArchitectStartupEntryForm() {
         setError(body.message || 'Non è stato possibile proseguire. Riprova.');
         return;
       }
-      router.push(href);
+      // Full document navigation is required: on a Next.js client-side transition
+      // the browser retains the source page's Content-Security-Policy, which does
+      // not authorize the Horyzon video Blob. A document navigation applies the
+      // Startup route's scoped media-src and preserves the personal #token.
+      window.location.assign(href);
     } catch {
       setError('Connessione non disponibile. Verifica la rete e riprova.');
     } finally { setSending(false); }
