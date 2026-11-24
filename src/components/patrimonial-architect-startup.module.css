@@ -58,6 +58,10 @@
 .readyNote{display:flex;align-items:center;gap:10px;margin:0;color:#345A2C;font-size:.88rem;line-height:1.5;font-weight:720}
 .readyNote span{display:grid;place-items:center;width:22px;height:22px;flex:0 0 22px;border-radius:50%;background:#E2F8BD;color:#315E20}
 .confirmHint{margin:0;color:#677574;font-size:.81rem;line-height:1.5}
+.gateRefreshButton{display:inline-flex;align-items:center;gap:9px;align-self:flex-start;margin:0;padding:5px 0;border:0;background:transparent;color:#395D4D;font:inherit;font-size:.83rem;line-height:1.5;font-weight:720;text-decoration:underline;text-underline-offset:4px;cursor:pointer}
+.gateRefreshButton:hover{color:#162F36}
+.gateRefreshButton:focus-visible{outline:3px solid #507A27;outline-offset:4px;border-radius:3px}
+.gateRefreshButton span{font-size:1.05rem;text-decoration:none}
 .success{padding:20px;background:#F0F8E7;border:1px solid #B8D68F;border-radius:12px}
 .success strong{display:block;font-size:1.08rem}
 .success p{margin:8px 0 0;line-height:1.6;font-size:.91rem}
