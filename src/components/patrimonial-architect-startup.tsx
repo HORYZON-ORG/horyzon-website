@@ -277,6 +277,7 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
             <span className={styles.videoNote}>PRESENTAZIONE</span>
           </div>
           {videoUrl ? (
+            <>
             <div className={styles.videoStage}>
               <video
                 ref={videoRef}
@@ -364,6 +365,7 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
                 ))}
               </div>
             </div>
+            </>
           ) : (
             <div className={styles.videoPlaceholder}>
               <span className={styles.playSymbol} aria-hidden="true">▶</span>
