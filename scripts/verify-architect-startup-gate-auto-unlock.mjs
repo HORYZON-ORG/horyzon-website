@@ -4,7 +4,11 @@ import { chromium } from 'playwright';
 const origin = process.env.ARCHITECT_PREVIEW_TEST_ORIGIN ?? 'http://127.0.0.1:3207';
 const path = '/candidature/architetti-patrimoniali/startup';
 const token = 'F'.repeat(43);
-const browser = await chromium.launch({ headless: true });
+const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
+const browser = await chromium.launch({
+  headless: true,
+  ...(executablePath ? { executablePath } : {}),
+});
 
 try {
   for (const width of [390, 1366]) {
@@ -22,7 +26,7 @@ try {
       });
     });
     await page.goto(origin + path + '#token=' + token, { waitUntil: 'domcontentloaded' });
-    const button = page.getByRole('button', { name: 'Ho completato la visione del video e vado avanti' });
+    const button = page.getByRole('button', { name: 'Ho completato la visione del video' });
     await button.waitFor({ state: 'visible', timeout: 15000 });
     assert.equal(await button.isDisabled(), true);
     await page.waitForTimeout(1500);
@@ -42,7 +46,7 @@ try {
     await page.getByRole('button', { name: /Verifica completamento video/ }).click();
     await page.waitForFunction(() =>
       [...document.querySelectorAll('button')].some(b =>
-        b.textContent?.includes('Ho completato la visione del video e vado avanti') && !b.disabled),
+        b.textContent?.includes('Ho completato la visione del video') && !b.disabled),
       undefined, { timeout: 15000 });
     assert.equal(await button.evaluate(el => getComputedStyle(el).backgroundColor),
       'rgb(216, 255, 66)');
