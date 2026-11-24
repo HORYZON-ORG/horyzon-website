@@ -8,6 +8,7 @@ import {
   confirmArchitectStartupInterest,
   beginArchitectStartupLead,
   getArchitectStartupVideoGate,
+  reportArchitectStartupPlayback,
 } from '../src/lib/public-leads/architect-hub-intake.ts';
 
 const candidateId = '8fb24e11-1317-449b-9496-6b8733a624e6';
@@ -55,7 +56,16 @@ const mockFetch = async (url, init) => {
   }
   if (rpc === 'architect_startup_video_gate_v1') {
     assert.match(args.p_token_hash, /^[0-9a-f]{64}$/);
-    return Response.json(661);
+    return Response.json(1);
+  }
+  if (rpc === 'architect_startup_video_progress_v2') {
+    assert.match(args.p_token_hash, /^[0-9a-f]{64}$/);
+    if (args.p_complete) {
+      assert.ok(args.p_position_seconds >= 660);
+      assert.equal(args.p_playback_rate, 1.5);
+      return Response.json({ completed: true, positionSeconds: 660.73 });
+    }
+    return Response.json({ completed: false, positionSeconds: 0 });
   }
   if (rpc === 'architect_startup_lead_confirm_v1')
     return Response.json(args.p_token_hash === draftIssued);
@@ -83,8 +93,13 @@ const minimalHref = await beginArchitectStartupLead(env, {
 }, '198.51.100.1', mockFetch);
 assert.match(minimalHref, /^\/candidature\/architetti-patrimoniali\/startup#token=[A-Za-z0-9_-]{43}$/);
 assert(!minimalHref.includes('candidate@example.invalid'));
-assert.equal(await getArchitectStartupVideoGate(env, minimalHref.split('token=')[1], mockFetch), 661);
+assert.equal(await getArchitectStartupVideoGate(env, minimalHref.split('token=')[1], mockFetch), 1);
 assert.equal(await getArchitectStartupVideoGate(env, 'invalid', mockFetch), null);
+assert.deepEqual(await reportArchitectStartupPlayback(env, minimalHref.split('token=')[1], {}, mockFetch), { completed: false, positionSeconds: 0 });
+assert.deepEqual(await reportArchitectStartupPlayback(env, minimalHref.split('token=')[1],
+  { positionSeconds: 660.73, playbackRate: 1.5, complete: true }, mockFetch),
+  { completed: true, positionSeconds: 660.73 });
+assert.equal(await reportArchitectStartupPlayback(env, 'invalid', {}, mockFetch), null);
 assert.equal(await confirmArchitectStartupInterest(env, minimalHref.split('token=')[1], mockFetch), true);
 const received = await registerArchitectCandidate(env, cvId, lead, mockFetch);
 assert.equal(received, candidateId, 'l’intake restituisce id Hub, non dati personali in URL');
@@ -101,6 +116,8 @@ assert.equal(await registerArchitectCandidate({ ...env, PATRIMONIAL_ARCHITECT_HU
 assert.deepEqual(calls.map(x => x.rpc), [
   'architect_startup_lead_begin_v1',
   'architect_startup_video_gate_v1',
+  'architect_startup_video_progress_v2',
+  'architect_startup_video_progress_v2',
   'architect_startup_lead_confirm_v1',
   'architect_candidate_intake_v1',
   'architect_candidate_startup_issue_v1',
