@@ -20,6 +20,20 @@
 .videoNote{margin-left:auto;color:#ACBDB7}
 .videoStage{position:relative;aspect-ratio:16/9;overflow:hidden;background:#07171D}
 .video{display:block;width:100%;height:100%;aspect-ratio:16/9;object-fit:contain;background:#07171D;border:0}
+.videoControls{display:flex;flex-wrap:wrap;align-items:center;gap:13px;padding:15px 17px;background:#07171D;color:#F7F4E8;border-top:1px solid rgba(247,244,232,.17)}
+.playbackActions{display:flex;align-items:center;gap:7px;flex:0 0 auto}
+.playbackButton{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:39px;padding:8px 12px;border:1px solid rgba(247,244,232,.28);border-radius:8px;background:#173039;color:#F7F4E8;font:inherit;font-size:.83rem;font-weight:700;white-space:nowrap;cursor:pointer;transition:background .2s,border-color .2s}
+.playbackButton span{display:inline-grid;place-items:center;min-width:17px;color:#D8FF42;font-size:1.05rem}
+.playbackButton:hover{background:#25454A;border-color:#D8FF42}
+.playbackButton:focus-visible,.speedButton:focus-visible{outline:3px solid #D8FF42;outline-offset:3px}
+.videoTimeline{flex:1 1 105px;min-width:66px;height:7px;border-radius:20px;overflow:hidden;background:#52636A;pointer-events:none}
+.videoTimeline span{display:block;height:100%;border-radius:inherit;background:#D8FF42;transition:width .18s linear}
+.videoClock{min-width:78px;font-size:.74rem;font-variant-numeric:tabular-nums;letter-spacing:.02em;color:#D9E2DA;white-space:nowrap;text-align:center}
+.speedControl{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:5px;margin-left:auto}
+.speedLabel{font-size:.59rem;letter-spacing:.12em;font-weight:800;color:#BECAC3;margin-right:5px}
+.speedButton{min-width:40px;min-height:35px;padding:6px 7px;border:1px solid rgba(247,244,232,.24);border-radius:7px;background:#122C33;color:#F7F4E8;font:inherit;font-size:.77rem;font-weight:730;cursor:pointer;transition:background .2s,border-color .2s}
+.speedButton:hover{background:#23434A;border-color:#D8FF42}
+.speedButtonActive,.speedButtonActive:hover{background:#D8FF42;border-color:#D8FF42;color:#07171D}
 .videoCover{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;border:0;margin:0;padding:24px 20px 20px;overflow:hidden;background:radial-gradient(ellipse at 50% 35%,#183F43 0%,#0B252D 48%,#07171D 100%);color:#F7F4E8;cursor:pointer;text-align:center;isolation:isolate}
 .videoCoverOrbit{position:absolute;z-index:-1;top:50%;left:50%;transform:translate(-50%,-50%);width:75%;aspect-ratio:1;border:1px solid #D8FF4228;border-radius:50%;pointer-events:none;box-shadow:0 0 0 80px #D8FF4208,0 0 0 165px #D8FF4205}
 .videoCoverBrand{display:flex;flex-direction:column;align-items:center;gap:10px;width:min(340px,65%);margin-bottom:clamp(16px,3vw,35px)}
@@ -93,6 +107,14 @@
   .presentation{width:calc(100% - 30px);margin-top:42px;padding-bottom:42px}
   .videoHeader{height:42px;padding:0 14px;font-size:.58rem;letter-spacing:.1em}
   .videoCoverBrand{width:min(250px,65%);gap:7px;margin-bottom:15px}
+  .videoControls{gap:9px;padding:13px 12px}
+  .playbackActions{flex:1 0 auto}
+  .playbackButton{min-height:38px;padding:8px 10px;font-size:.77rem}
+  .videoTimeline{order:2;flex-basis:calc(100% - 104px)}
+  .videoClock{order:3;min-width:88px;text-align:right}
+  .speedControl{flex:0 1 auto;gap:4px}
+  .speedLabel{font-size:.52rem;margin-right:2px}
+  .speedButton{min-width:36px;min-height:34px;padding:5px 5px;font-size:.7rem}
   .videoCover{padding:12px}
   .videoPlay{width:68px;height:68px}
   .videoPlayCaption{margin-top:12px;font-size:.58rem}
@@ -105,6 +127,12 @@
   .footerInner{align-items:flex-start;flex-direction:column;gap:26px}
 }
 @media(max-width:440px){
+  .videoControls{gap:8px}
+  .playbackActions{width:100%;justify-content:center}
+  .videoTimeline{order:2;flex-basis:calc(100% - 104px)}
+  .speedControl{order:1;width:100%;justify-content:center}
+  .videoClock{order:3}
+
   .headerTag{font-size:.52rem;letter-spacing:0;padding:8px}
   .intro h1{font-size:clamp(1.85rem,8vw,2.25rem)}
   .videoNote{display:none}
