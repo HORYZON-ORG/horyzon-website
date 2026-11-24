@@ -12,7 +12,7 @@ assert.doesNotMatch(landing,/Investi già e vuoi vedere come ragionano i grandi 
 assert.doesNotMatch(landing,/className=\{styles\.vRadar\}/,'no Radar bonus advertised');
 assert.doesNotMatch(landing,/Cos’è il Radar Patrimoniale\?/,'no FAQ promise for removed bonus');
 assert.match(landing,/BONUS 1<\/span><br \/><strong[^>]+>La lista delle domande da fare prima di firmare/);
-assert.match(landing,/BONUS 2 · SE LO DESIDERI/);
+assert.match(landing,/BONUS 2<\/span><br \/><strong[^>]+>40 minuti solo per te, con un Architetto Patrimoniale/);
 assert.doesNotMatch(landing,/quali strumenti vuoi approfondire/);
 const speaker=landing.indexOf('data-event-section="speaker"');
 const bonus=landing.indexOf('data-event-section="bonuses"');
