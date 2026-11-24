@@ -17,6 +17,7 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
   const [videoError, setVideoError] = useState(false);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const recheckGateRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     let active = true;
@@ -57,12 +58,15 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
   }, []);
 
   useEffect(() => {
+    recheckGateRef.current = () => {};
     if (!token || !videoUrl) return;
     let active = true;
-    let retry: ReturnType<typeof setTimeout> | undefined;
+    let inFlight = false;
+    let unlocked = false;
 
     async function verifyServerGate() {
-      if (!active) return;
+      if (!active || inFlight || unlocked) return;
+      inFlight = true;
       try {
         const response = await fetch('/api/architect-startup/video-gate', {
           method: 'POST',
@@ -78,30 +82,46 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
             !Number.isInteger(result.remainingSeconds) ||
             result.remainingSeconds < 0 || result.remainingSeconds > 661) {
           setGateProblem(true);
-          retry = setTimeout(() => void verifyServerGate(), 15000);
           return;
         }
         setGateProblem(false);
         if (result.remainingSeconds === 0) {
+          unlocked = true;
           setGateReady(true);
           return;
         }
         setGateReady(false);
-        // The server owns the start time. This timeout is only a UI refresh;
-        // it does not authorize confirmation or persist elapsed time.
-        retry = setTimeout(() => void verifyServerGate(),
-          result.remainingSeconds * 1000 + 1200);
       } catch {
-        if (!active) return;
-        setGateProblem(true);
-        retry = setTimeout(() => void verifyServerGate(), 15000);
+        if (active) setGateProblem(true);
+      } finally {
+        inFlight = false;
       }
     }
 
-    void verifyServerGate();
+    // The server remains authoritative. A single 11-minute setTimeout can
+    // be delayed indefinitely when video goes fullscreen, the screen locks,
+    // or the browser throttles a background tab. Re-check repeatedly and
+    // immediately on return, so a mature gate cannot remain grey indefinitely.
+    const recheck = () => { void verifyServerGate(); };
+    recheckGateRef.current = recheck;
+    const interval = setInterval(recheck, 10_000);
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') recheck();
+    };
+    window.addEventListener('focus', recheck);
+    window.addEventListener('pageshow', recheck);
+    document.addEventListener('visibilitychange', onVisibility);
+    const player = videoRef.current;
+    player?.addEventListener('ended', recheck);
+    recheck();
     return () => {
       active = false;
-      if (retry !== undefined) clearTimeout(retry);
+      recheckGateRef.current = () => {};
+      clearInterval(interval);
+      window.removeEventListener('focus', recheck);
+      window.removeEventListener('pageshow', recheck);
+      document.removeEventListener('visibilitychange', onVisibility);
+      player?.removeEventListener('ended', recheck);
     };
   }, [token, videoUrl]);
 
@@ -246,6 +266,12 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
                      gateProblem ? 'Verifica temporaneamente non disponibile. La pagina riproverà automaticamente.' :
                      'Guarda la presentazione. Il pulsante si abiliterà automaticamente quando potrai proseguire.'}
                   </p>
+                )}
+                {videoUrl && token && !gateReady && (
+                  <button className={styles.gateRefreshButton} type="button"
+                    onClick={() => recheckGateRef.current()}>
+                    <span aria-hidden="true">↻</span> Verifica se puoi proseguire
+                  </button>
                 )}
               </>
             ) : (
