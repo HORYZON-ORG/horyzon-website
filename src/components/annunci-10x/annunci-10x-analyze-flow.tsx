@@ -8,6 +8,7 @@ import { Annunci10xIdentityGate } from './annunci-10x-identity-gate';
 import { Annunci10xLoader } from './annunci-10x-loader';
 import { annunci10xProgressForAnalysisStage, type Annunci10xAnalysisStage } from '@/lib/annunci-10x/loading';
 import styles from './annunci-10x.module.css';
+import { recruitingMetaTracker } from '@/lib/recruiting-meta';
 
 type SourceMode = 'PASTED_TEXT' | 'PUBLIC_URL';
 type AnalysisStatus = 'QUEUED' | 'RUNNING' | 'READY' | 'FAILED';
@@ -208,6 +209,7 @@ export function Annunci10xAnalyzeFlow() {
       if (!response.ok || !payload.ok) throw new Error(payload.error?.message ?? 'Analisi non avviata.');
       if (cycle !== flowCycleRef.current) return;
       const nextRun = normalizeRun(payload.run);
+      void recruitingMetaTracker()?.started(nextRun.id);
       setAnalysisRun(nextRun);
       setContactSaved(Boolean(nextRun.contactSaved));
       setEmailVerified(Boolean(nextRun.emailVerified));
