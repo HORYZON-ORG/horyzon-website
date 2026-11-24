@@ -21,13 +21,14 @@ try {
     });
 
     let requests = 0;
+    let releaseGate = false;
     await page.route('**/api/architect-startup/video-gate', route => {
       requests++;
-      // The second response represents the same server-side timer after 661 s.
-      // No real waiting and no access to the production database.
+      // Server time stays locked during all initial focus/visibility checks.
+      // The test explicitly releases it before the reloaded page verifies.
       return route.fulfill({
         status: 200, contentType: 'application/json',
-        body: JSON.stringify({ ok: true, remainingSeconds: requests === 1 ? 661 : 0 }),
+        body: JSON.stringify({ ok: true, remainingSeconds: releaseGate ? 0 : 661 }),
       });
     });
 
@@ -76,6 +77,7 @@ try {
 
     await page.getByRole('button', { name: 'Vai al video Startup Horyzon' }).click();
     assert.equal(new URL(page.url()).hash, '#token=' + token, 'Header must not erase candidate token');
+    releaseGate = true;
     const secondReceipt = page.waitForResponse(r => r.url().includes('/api/architect-startup/video-gate'));
     await page.reload({ waitUntil: 'domcontentloaded' });
     await secondReceipt;
