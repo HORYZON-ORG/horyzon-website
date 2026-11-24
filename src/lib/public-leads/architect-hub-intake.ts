@@ -1,5 +1,8 @@
 import { createHash, createHmac, randomBytes } from 'node:crypto';
-import { PATRIMONIAL_PILOT_PRIVACY_VERSION, pilotForms } from '../../content/patrimonial-funnels.ts';
+import {
+  PATRIMONIAL_PILOT_PRIVACY_VERSION, pilotForms, pilotUtmKeys,
+  type PilotUtm,
+} from '../../content/patrimonial-funnels.ts';
 import type { PilotLead } from './patrimonial-funnels.ts';
 
 type ArchitectLead = Extract<PilotLead, { mode: 'architect-path' }>;
@@ -18,7 +21,7 @@ function settings(env: Env) {
 
 async function invokeHub(
   env: Env,
-  functionName: 'architect_candidate_intake_v1' | 'architect_candidate_crm_v1' | 'architect_candidate_startup_issue_v1' | 'architect_candidate_startup_confirm_v1' | 'architect_startup_lead_begin_v1' | 'architect_startup_lead_confirm_v1' | 'architect_startup_video_gate_v1' | 'architect_startup_video_progress_v2',
+  functionName: 'architect_candidate_intake_v1' | 'architect_candidate_crm_v1' | 'architect_candidate_startup_issue_v1' | 'architect_candidate_startup_confirm_v1' | 'architect_startup_lead_begin_v2' | 'architect_startup_lead_confirm_v1' | 'architect_startup_video_gate_v1' | 'architect_startup_video_progress_v2',
   params: Record<string, unknown>,
   fetchImpl: typeof fetch,
 ): Promise<unknown> {
@@ -97,11 +100,28 @@ export async function issueArchitectStartupLink(
   return `/candidature/architetti-patrimoniali/startup#token=${token}`;
 }
 
+/** Strict server boundary for the five non-sensitive attribution fields. */
+export function sanitizeArchitectStartupUtm(value: unknown): PilotUtm | null {
+  if (value === undefined) return {};
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const input = value as Record<string, unknown>;
+  if (Object.keys(input).some(key => !pilotUtmKeys.includes(key as typeof pilotUtmKeys[number]))) return null;
+  const utm: PilotUtm = {};
+  for (const key of pilotUtmKeys) {
+    const raw = input[key];
+    if (raw === undefined) continue;
+    if (typeof raw !== 'string' || raw.length > 100 || /[\r\n]/.test(raw)) return null;
+    const cleaned = raw.trim();
+    if (cleaned) utm[key] = cleaned;
+  }
+  return utm;
+}
+
 
 /** A private 7-day draft only: no candidate exists in Selezione before video confirmation. */
 export async function beginArchitectStartupLead(
   env: Env,
-  lead: { firstName: string; lastName: string; email: string; phone: string; privacyVersion: string },
+  lead: { firstName: string; lastName: string; email: string; phone: string; privacyVersion: string; utm: PilotUtm },
   sourceIp: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<string> {
@@ -112,7 +132,7 @@ export async function beginArchitectStartupLead(
   const today = new Date().toISOString().slice(0, 10);
   const ipHash = createHmac('sha256', cfg.key)
     .update(`startup-minimal-v1:${today}:${sourceIp.slice(0, 80)}`).digest('hex');
-  const ok = await invokeHub(env, 'architect_startup_lead_begin_v1', {
+  const ok = await invokeHub(env, 'architect_startup_lead_begin_v2', {
     p_token_hash: tokenHash,
     p_first_name: lead.firstName,
     p_last_name: lead.lastName,
@@ -121,6 +141,7 @@ export async function beginArchitectStartupLead(
     p_privacy_version: lead.privacyVersion,
     p_ip_hash: ipHash,
     p_consent: true,
+    p_utm: lead.utm,
   }, fetchImpl);
   if (ok !== true) throw new Error('architect_startup_draft_rejected');
   return `/candidature/architetti-patrimoniali/startup#token=${token}`;

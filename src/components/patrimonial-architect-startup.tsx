@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import header from './patrimonial-architect-header.module.css';
 import styles from './patrimonial-architect-startup.module.css';
@@ -27,12 +28,17 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
   const [videoSeconds, setVideoSeconds] = useState(0);
   const [videoEnded, setVideoEnded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const callbackButtonRef = useRef<HTMLButtonElement>(null);
   const verifiedPositionRef = useRef(0);
   const maxPlayedRef = useRef(0);
   const lastPingRef = useRef(0);
   const progressQueueRef = useRef<Promise<void>>(Promise.resolve());
   const playbackRateRef = useRef(1);
   const tokenRef = useRef('');
+
+  useEffect(() => {
+    if (watchAcknowledged) callbackButtonRef.current?.focus();
+  }, [watchAcknowledged]);
 
   useEffect(() => {
     let active = true;
@@ -252,11 +258,11 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
   return <div className={styles.page}>
     <header className={header.band}>
       <div className={header.inner}>
-        <a className={header.brand} href="/candidature/architetti-patrimoniali" aria-label="Horyzon Consulting · Benessere Patrimoniale">
+        <Link className={header.brand} href="/candidature/architetti-patrimoniali" aria-label="Horyzon Consulting · Benessere Patrimoniale">
           <span className={header.logoWrap}><Image className={header.logo} src="/horyzon-logo-canonical.png" width={1670} height={390} sizes="190px" alt="Horyzon Consulting" /></span>
           <span className={header.rule} aria-hidden="true" />
           <span className={header.division}>BENESSERE PATRIMONIALE</span>
-        </a>
+        </Link>
         <button className={styles.headerTag} type="button" onClick={() => document.getElementById('startup-video')?.scrollIntoView({ behavior: 'smooth' })} aria-label="Vai al video Startup Horyzon">STARTUP HORYZON <span aria-hidden="true">↗</span></button>
       </div>
     </header>
@@ -397,15 +403,15 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
                   type="button"
                   disabled={!videoUrl || !gateReady || !token}
                   onClick={() => setWatchAcknowledged(true)}>
-                  <span className={styles.confirmButtonText}>Ho completato la visione del video e vado avanti</span>
+                  <span className={styles.confirmButtonText}>Ho completato la visione del video</span>
                   <span className={styles.confirmArrow} aria-hidden="true">↗</span>
                 </button>
                 {gateReady && token && videoUrl ? (
-                  <p className={styles.readyNote} role="status"><span aria-hidden="true">✓</span> Puoi confermare la visione e proseguire.</p>
+                  <p className={styles.readyNote} role="status"><span aria-hidden="true">✓</span> Puoi confermare di aver completato la visione.</p>
                 ) : (
                   <p className={styles.confirmHint}>
                     {!videoUrl ? 'La presentazione non è ancora disponibile.' :
-                     !token ? 'Per proseguire completa prima il modulo di candidatura.' :
+                     !token ? <Link href="/candidature/architetti-patrimoniali#richiesta">Non hai ancora inviato i recapiti? Compila il modulo per proseguire.</Link> :
                      gateProblem ? 'Verifica della visione temporaneamente non disponibile. Puoi riprovare.' :
                      videoEnded ? 'Fine del video raggiunta. Verifica in corso: se il tasto rimane grigio, riprova qui sotto.' :
                      'Completa la presentazione per attivare il pulsante. Puoi mettere in pausa, tornare indietro e cambiare velocità.'}
@@ -424,15 +430,17 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
               <>
                 <p className={styles.readyNote} role="status"><span aria-hidden="true">✓</span> Hai confermato la visione. Ora puoi scegliere se richiedere un ricontatto.</p>
                 <button
+                  ref={callbackButtonRef}
                   className={styles.confirmButton}
                   type="button"
                   disabled={status === 'sending'}
                   onClick={() => void confirmInterest()}>
                   <span className={styles.confirmButtonText}>{status === 'sending'
                     ? 'Registrazione della richiesta…'
-                    : 'Voglio essere ricontattato da un Architetto Patrimoniale Horyzon'}</span>
+                    : 'Voglio essere ricontattato da un responsabile HORYZON'}</span>
                   <span className={styles.confirmArrow} aria-hidden="true">↗</span>
                 </button>
+                <p className={styles.confirmHint}>Un responsabile HORYZON ti contatterà per una breve chiamata di orientamento sui prossimi passi della selezione.</p>
               </>
             )}
             {status === 'error' && <p className={styles.error} role="alert">{notice}</p>}
@@ -444,14 +452,14 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
 
     <footer className={styles.footer}>
       <div className={styles.footerInner}>
-        <a className={styles.footerBrand} href="/candidature/architetti-patrimoniali" aria-label="Horyzon Consulting, pagina Architetti Patrimoniali">
+        <Link className={styles.footerBrand} href="/candidature/architetti-patrimoniali" aria-label="Horyzon Consulting, pagina Architetti Patrimoniali">
           <span className={styles.footerLogoWrap}><Image src="/horyzon-logo-canonical.png" width={1670} height={390} sizes="190px" alt="Horyzon Consulting" /></span>
           <span className={styles.footerBrandRule} aria-hidden="true" />
           <span className={styles.footerDivision}>BENESSERE PATRIMONIALE</span>
-        </a>
+        </Link>
         <nav className={styles.footerNav} aria-label="Collegamenti Startup Horyzon">
           <button type="button" onClick={() => document.getElementById('startup-video')?.scrollIntoView({ behavior: 'smooth' })}>Rivedi la presentazione <span aria-hidden="true">↗</span></button>
-          <a href="/privacy-policy">Privacy <span aria-hidden="true">↗</span></a>
+          <a href="https://www.iubenda.com/privacy-policy/64704330" target="_blank" rel="noopener noreferrer">Privacy <span aria-hidden="true">↗</span></a>
         </nav>
       </div>
       <div className={styles.footerBase}>

@@ -4,7 +4,12 @@ import { chromium } from 'playwright';
 const origin = process.env.ARCHITECT_PREVIEW_TEST_ORIGIN ?? 'http://127.0.0.1:3207';
 const startupPath = '/candidature/architetti-patrimoniali/startup';
 const token = 'A'.repeat(43);
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({
+  headless: true,
+  ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+    ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH }
+    : {}),
+});
 try {
   for (const width of [320, 390, 1366]) {
     const page = await browser.newPage({ viewport: { width, height: 860 }, reducedMotion: 'reduce' });
@@ -56,7 +61,7 @@ try {
     assert.equal(await video.evaluate(el => el.controls), false, 'Native scrubbing disabled');
     assert.equal(await page.locator('input[type="range"]').count(), 0, 'No draggable progress slider');
     assert.equal(await page.getByRole('button', { name: /avanti di 10 secondi|salta avanti/i }).count(), 0);
-    const cta = page.getByRole('button', { name: 'Ho completato la visione del video e vado avanti' });
+    const cta = page.getByRole('button', { name: 'Ho completato la visione del video' });
     await cta.waitFor({ state: 'visible' });
     assert.equal(await cta.isDisabled(), true, 'No timer-only unlock');
     assert.equal(await cta.evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(221, 225, 226)');
@@ -84,18 +89,27 @@ try {
     });
     await page.waitForFunction(() => {
       const b = [...document.querySelectorAll('button')].find(x =>
-        x.textContent?.includes('Ho completato la visione del video e vado avanti'));
+        x.textContent?.includes('Ho completato la visione del video'));
       return b && !b.disabled;
     }, undefined, { timeout: 15000 });
     assert.equal(finishReceipts, 1, 'onEnded sends exactly one completion receipt');
     assert.equal(await cta.evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(216, 255, 66)');
     await cta.click();
     assert.equal(await page.getByRole('button', {
-      name: 'Voglio essere ricontattato da un Architetto Patrimoniale Horyzon',
+      name: 'Voglio essere ricontattato da un responsabile HORYZON',
     }).isVisible(), true);
+    assert.equal(await page.getByRole('button', {
+      name: 'Voglio essere ricontattato da un responsabile HORYZON',
+    }).evaluate(el => el === document.activeElement), true, 'Focus follows the two-step decision');
     console.log('PASS Startup native video ' + width + 'px: no seeking, four speeds, back-10 and onEnded unlock');
     await page.close();
   }
+  const anonymousPage = await browser.newPage({ viewport: { width: 390, height: 860 } });
+  await anonymousPage.route('https://zbpegzd1dv3ut14o.public.blob.vercel-storage.com/**', route => route.abort());
+  await anonymousPage.goto(origin + startupPath, { waitUntil: 'domcontentloaded' });
+  const formLink = anonymousPage.getByRole('link', { name: 'Non hai ancora inviato i recapiti? Compila il modulo per proseguire.' });
+  assert.equal(await formLink.getAttribute('href'), '/candidature/architetti-patrimoniali#richiesta');
+  await anonymousPage.close();
 } finally {
   await browser.close();
 }
