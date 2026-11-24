@@ -12,6 +12,7 @@ on:
       - 'scripts/verify-architect-startup.mjs'
       - 'scripts/verify-architect-startup-ui.mjs'
       - 'scripts/verify-architect-startup-form-navigation.mjs'
+      - 'scripts/verify-architect-startup-gate-auto-unlock.mjs'
       - 'src/app/api/public-leads/cv/**'
       - 'src/components/patrimonial-architect-preview*'
       - 'src/content/patrimonial-funnels.ts'
@@ -94,6 +95,7 @@ jobs:
           ARCHITECT_PREVIEW_TEST_ORIGIN=http://127.0.0.1:3207 node scripts/verify-architect-canonical-palette.mjs
           ARCHITECT_PREVIEW_TEST_ORIGIN=http://127.0.0.1:3207 node scripts/verify-architect-startup-ui.mjs
           ARCHITECT_PREVIEW_TEST_ORIGIN=http://127.0.0.1:3207 node scripts/verify-architect-startup-form-navigation.mjs
+          ARCHITECT_PREVIEW_TEST_ORIGIN=http://127.0.0.1:3207 node scripts/verify-architect-startup-gate-auto-unlock.mjs
       - name: Archive visual comparisons
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
