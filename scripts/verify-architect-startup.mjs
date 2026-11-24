@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
 import { architectStartupEnabled, architectStartupConfirmationEnabled, architectStartupVideoUrl } from '../src/lib/public-leads/architect-startup-config.ts';
 import { architectStartupResumeCookieOptions } from '../src/lib/public-leads/architect-startup-resume.ts';
 import {
@@ -9,6 +10,7 @@ import {
   beginArchitectStartupLead,
   getArchitectStartupVideoGate,
   reportArchitectStartupPlayback,
+  sanitizeArchitectStartupUtm,
 } from '../src/lib/public-leads/architect-hub-intake.ts';
 
 const candidateId = '8fb24e11-1317-449b-9496-6b8733a624e6';
@@ -44,12 +46,13 @@ const mockFetch = async (url, init) => {
   calls.push({ rpc, args });
   assert.equal(init.headers['Content-Profile'], 'hub');
   assert.equal(init.headers['Cache-Control'], 'no-store');
-  if (rpc === 'architect_startup_lead_begin_v1') {
+  if (rpc === 'architect_startup_lead_begin_v2') {
     assert.equal(args.p_first_name, 'Persona');
     assert.equal(args.p_last_name, 'Test');
     assert.equal(args.p_email, 'candidate@example.invalid');
     assert.equal(args.p_phone, '+393331234567');
     assert.equal(args.p_consent, true);
+    assert.deepEqual(args.p_utm, { utm_source: 'indeed', utm_campaign: 'bari' });
     assert.match(args.p_ip_hash, /^[0-9a-f]{64}$/);
     draftIssued = args.p_token_hash;
     return Response.json(true);
@@ -90,7 +93,14 @@ const lead = {
 const minimalHref = await beginArchitectStartupLead(env, {
   firstName: 'Persona', lastName: 'Test', email: 'candidate@example.invalid',
   phone: '+393331234567', privacyVersion: 'patrimonial-pilot-privacy-v1',
+  utm: { utm_source: 'indeed', utm_campaign: 'bari' },
 }, '198.51.100.1', mockFetch);
+assert.deepEqual(sanitizeArchitectStartupUtm(undefined), {});
+assert.deepEqual(sanitizeArchitectStartupUtm({ utm_source: ' indeed ', utm_campaign: 'bari' }),
+  { utm_source: 'indeed', utm_campaign: 'bari' });
+assert.equal(sanitizeArchitectStartupUtm({ unknown: 'x' }), null);
+assert.equal(sanitizeArchitectStartupUtm({ utm_source: 'indeed\nspoofed' }), null);
+assert.equal(sanitizeArchitectStartupUtm({ utm_campaign: 'x'.repeat(101) }), null);
 assert.match(minimalHref, /^\/candidature\/architetti-patrimoniali\/startup#token=[A-Za-z0-9_-]{43}$/);
 assert(!minimalHref.includes('candidate@example.invalid'));
 assert.equal(await getArchitectStartupVideoGate(env, minimalHref.split('token=')[1], mockFetch), 1);
@@ -114,7 +124,7 @@ assert.equal(await confirmArchitectStartupInterest(env, 'invalid', mockFetch), f
 assert.equal(await confirmArchitectStartupInterest(env, 'z'.repeat(43), mockFetch), false);
 assert.equal(await registerArchitectCandidate({ ...env, PATRIMONIAL_ARCHITECT_HUB_INTAKE_ENABLED: 'false' }, cvId, lead, mockFetch), null);
 assert.deepEqual(calls.map(x => x.rpc), [
-  'architect_startup_lead_begin_v1',
+  'architect_startup_lead_begin_v2',
   'architect_startup_video_gate_v1',
   'architect_startup_video_progress_v2',
   'architect_startup_video_progress_v2',
@@ -126,4 +136,9 @@ assert.deepEqual(calls.map(x => x.rpc), [
   'architect_startup_lead_confirm_v1',
   'architect_candidate_startup_confirm_v1',
 ]);
+const migration = await readFile(new URL('../supabase/migrations/20261124160918_architect_startup_utm_attribution.sql', import.meta.url), 'utf8');
+assert.match(migration, /architect_startup_pending_leads\s+add column utm jsonb/i);
+assert.match(migration, /architect_startup_lead_begin_v2/);
+assert.match(migration, /v_pending\.utm/);
+assert.match(migration, /utm\s*=\s*'\{\}'::jsonb/i);
 console.log('PASS: server video gate receipt, minimal lead, candidate only after confirmed interest, legacy tokens preserved');

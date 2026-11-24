@@ -381,9 +381,16 @@ export function ArchitectLanding({ durableCandidateIntake = false, previewSubmis
   <section ref={formRef} className={[styles['m-sec'], styles.s162].filter(Boolean).join(" ")} id="richiesta">
     <div className={[styles.s163].filter(Boolean).join(" ")}>
       <div className={[styles.s087].filter(Boolean).join(" ")}>
-        <div className={[styles.s054].filter(Boolean).join(" ")}>08 · ACCEDI ALLA STARTUP</div>
-        <h2 className={[styles['m-reveal'], styles.s088].filter(Boolean).join(" ")}>Scopri Horyzon. Poi scegli se proseguire.</h2>
-        <p className={[styles.s164].filter(Boolean).join(" ")}>Conferma i tuoi recapiti per accedere alla presentazione della Startup Horyzon. Al termine del video potrai scegliere se essere ricontattato dal nostro team.</p>
+        <div className={[styles.s054].filter(Boolean).join(" ")}>08 · CANDIDATURA E STARTUP</div>
+        <h2 className={[styles['m-reveal'], styles.s088].filter(Boolean).join(" ")}>Candidati al ruolo di Consulente commerciale – benessere patrimoniale.</h2>
+        <p className={[styles.s164].filter(Boolean).join(" ")}>Nel progetto HORYZON, il percorso formativo conduce allo sviluppo della professionalità di Architetto Patrimoniale. Conferma i tuoi recapiti per accedere alla presentazione della Startup Horyzon. Al termine del video potrai scegliere liberamente se essere ricontattato dal nostro team.</p>
+        <div className={styles.s165} aria-label="Condizioni essenziali della collaborazione">
+          <div className={styles.s170}>
+            <div className={styles.s171}><span className={styles.s172}>01</span><span>Collaborazione autonoma: la partita IVA è richiesta prima dell&apos;avvio dell&apos;attività.</span></div>
+            <div className={styles.s171}><span className={styles.s172}>02</span><span>Non è previsto un compenso fisso: la remunerazione è variabile e collegata ai risultati.</span></div>
+            <div className={styles.s171}><span className={styles.s172}>03</span><span>L&apos;attività è organizzata prevalentemente da remoto, con disponibilità a spostarsi in Puglia per appuntamenti, formazione e affiancamenti.</span></div>
+          </div>
+        </div>
       </div>
 
       <PatrimonialLeadForm mode="architect-path" presentation="architect" contractVersion={durableCandidateIntake ? PATRIMONIAL_V2 : undefined} previewSubmissionsEnabled={previewSubmissionsEnabled} selectedProfile={selectedProfession} onProfileChange={chooseValue} />

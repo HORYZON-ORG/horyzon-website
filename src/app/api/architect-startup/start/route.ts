@@ -1,4 +1,7 @@
-import { beginArchitectStartupLead } from '@/lib/public-leads/architect-hub-intake';
+import {
+  beginArchitectStartupLead,
+  sanitizeArchitectStartupUtm,
+} from '@/lib/public-leads/architect-hub-intake';
 import { architectStartupEnabled } from '@/lib/public-leads/architect-startup-config';
 import { PATRIMONIAL_PILOT_PRIVACY_VERSION } from '@/content/patrimonial-funnels';
 import { normalizePhone } from '@/lib/radar/highlevel';
@@ -37,8 +40,10 @@ export async function POST(request: Request) {
   } catch { return json(400, 'Richiesta non valida.'); }
   if (!fields || typeof fields !== 'object' || Array.isArray(fields)) return json(400, 'Richiesta non valida.');
   const input = fields as Record<string, unknown>;
-  if (Object.keys(input).some(k => !['firstName','lastName','email','phone','consent','website'].includes(k)) ||
+  if (Object.keys(input).some(k => !['firstName','lastName','email','phone','consent','website','utm'].includes(k)) ||
     input.website || input.consent !== true) return json(400, 'Controlla i dati e il consenso privacy.');
+  const utm = sanitizeArchitectStartupUtm(input.utm);
+  if (utm === null) return json(400, 'I dati di provenienza non sono validi.');
   const firstName = typeof input.firstName === 'string' ? input.firstName.trim() : '';
   const lastName = typeof input.lastName === 'string' ? input.lastName.trim() : '';
   const email = typeof input.email === 'string' ? input.email.trim().toLowerCase() : '';
@@ -54,7 +59,7 @@ export async function POST(request: Request) {
     request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
   try {
     const href = await beginArchitectStartupLead(process.env, {
-      firstName, lastName, email, phone, privacyVersion: PATRIMONIAL_PILOT_PRIVACY_VERSION,
+      firstName, lastName, email, phone, privacyVersion: PATRIMONIAL_PILOT_PRIVACY_VERSION, utm,
     }, sourceIp);
     const token = href.split('#token=')[1];
     if (!token || !/^[A-Za-z0-9_-]{43}$/.test(token))

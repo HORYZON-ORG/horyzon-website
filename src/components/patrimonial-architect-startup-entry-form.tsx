@@ -1,17 +1,27 @@
 'use client';
 
-import { useEffect, useState, type FormEvent } from 'react';
-
-import Link from 'next/link';
+import { useState, useSyncExternalStore, type FormEvent } from 'react';
+import { pilotUtmKeys, type PilotUtm } from '@/content/patrimonial-funnels';
 import styles from './patrimonial-architect-preview.module.css';
+
+function currentAttribution(): PilotUtm {
+  const params = new URLSearchParams(window.location.search);
+  return Object.fromEntries(pilotUtmKeys.flatMap(key => {
+    const raw = params.get(key);
+    if (!raw) return [];
+    const value = raw.replace(/[\r\n]/g, '').trim().slice(0, 100);
+    return value ? [[key, value]] : [];
+  })) as PilotUtm;
+}
+
+const subscribeToHydration = () => () => {};
 
 /** The public funnel asks for contact details only. A Hub candidate does not exist yet. */
 export function ArchitectStartupEntryForm() {
 
-  const [hydrated, setHydrated] = useState(false);
+  const hydrated = useSyncExternalStore(subscribeToHydration, () => true, () => false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
-  useEffect(() => { setHydrated(true); }, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -34,6 +44,7 @@ export function ArchitectStartupEntryForm() {
           phone: data.get('phone'),
           consent: data.get('consent') === 'on',
           website: data.get('website') || '',
+          utm: currentAttribution(),
         }),
       });
       const body: { ok?: boolean; message?: string; nextStep?: { href?: string } } = await response.json();
@@ -72,12 +83,12 @@ export function ArchitectStartupEntryForm() {
       </div>
       <label className={styles.formConsent}>
         <input name="consent" type="checkbox" required />
-        <span>Ho letto l&apos;<Link href="/privacy-policy" target="_blank" rel="noopener">informativa privacy</Link> e acconsento all&apos;uso dei recapiti per accedere alla presentazione. Solo se confermerò il mio interesse, chiederò di essere ricontattato.</span>
+        <span>Ho letto l&apos;<a href="https://www.iubenda.com/privacy-policy/64704330" target="_blank" rel="noopener noreferrer">informativa privacy</a> e acconsento all&apos;uso dei recapiti per accedere alla presentazione. Al termine del video potrò scegliere se chiedere di essere ricontattato.</span>
       </label>
     </fieldset>
     <div hidden aria-hidden="true"><label>Sito web<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
     <button type="submit" className={styles.formSubmit} disabled={!hydrated || sending}>
-      {sending ? 'Preparazione della presentazione…' : 'Confermo la candidatura →'}
+      {sending ? 'Preparazione della presentazione…' : 'Confermo i recapiti e accedo alla startup →'}
     </button>
     {error && <p className={styles.formNotice} role="alert">{error}</p>}
   </form>;
