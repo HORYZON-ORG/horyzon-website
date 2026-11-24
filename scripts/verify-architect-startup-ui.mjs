@@ -10,7 +10,6 @@ try {
     const page = await browser.newPage({ viewport: { width, height: 860 }, reducedMotion: 'reduce' });
     await page.route('https://zbpegzd1dv3ut14o.public.blob.vercel-storage.com/**', route => route.abort());
     await page.addInitScript(() => {
-      // Test native player lifecycle deterministically without downloading 227 MB.
       HTMLMediaElement.prototype.play = function() {
         this.dispatchEvent(new Event('play'));
         return Promise.resolve();
@@ -19,28 +18,25 @@ try {
         this.dispatchEvent(new Event('pause'));
       };
     });
-
-    let requests = 0;
-    let releaseGate = false;
-    await page.route('**/api/architect-startup/video-gate', route => {
-      requests++;
-      // Server time stays locked during all initial focus/visibility checks.
-      // The test explicitly releases it before the reloaded page verifies.
+    let completed = false;
+    let finishReceipts = 0;
+    await page.route('**/api/architect-startup/video-progress', route => {
+      const input = route.request().postDataJSON();
+      if (input.complete === true) {
+        finishReceipts++;
+        completed = true;
+      }
       return route.fulfill({
         status: 200, contentType: 'application/json',
-        body: JSON.stringify({ ok: true, remainingSeconds: releaseGate ? 0 : 661 }),
+        body: JSON.stringify({ ok: true, completed, positionSeconds: completed ? 660.73 : 0 }),
       });
     });
 
-    const firstReceipt = page.waitForResponse(r => r.url().includes('/api/architect-startup/video-gate'));
     await page.goto(origin + startupPath + '#token=' + token, { waitUntil: 'domcontentloaded' });
-    assert.equal(await page.locator('video').count(), 1, 'Native HTML5 video player is used');
-    assert.equal(await page.locator('iframe[src*="drive.google.com"]').count(), 0, 'Google Drive iframe removed');
-    assert.equal(await page.getByRole('heading', { name: /Un progetto da conoscere.*Una scelta da fare consapevolmente/ }).count(), 1, 'Compact title before the video');
-    assert.equal(await page.locator('.unused-hero').count(), 0);
-    assert.equal(await page.locator('video').getAttribute('poster'), null, 'Old skyline poster removed');
-    // The video card must sit entirely on the cream canvas, with balanced space
-    // above the video and below the decision panel (before the footer).
+    assert.equal(await page.locator('video').count(), 1, 'Native HTML5 video');
+    assert.equal(await page.locator('iframe[src*="drive.google.com"]').count(), 0);
+    assert.equal(await page.getByRole('heading', { name: /Un progetto da conoscere.*Una scelta da fare consapevolmente/ }).count(), 1);
+    assert.equal(await page.locator('video').getAttribute('poster'), null, 'No old skyline poster');
     const layout = await page.evaluate(() => {
       const intro = document.querySelector('section[aria-labelledby="startup-video-title"]');
       const presentation = document.querySelector('#startup-video');
@@ -48,99 +44,57 @@ try {
       const footer = document.querySelector('footer');
       if (!intro || !blocks || blocks.length < 2 || !footer) return null;
       return {
-        topGap: blocks[0].getBoundingClientRect().top - intro.getBoundingClientRect().bottom,
-        bottomGap: footer.getBoundingClientRect().top - blocks[blocks.length - 1].getBoundingClientRect().bottom,
+        top: blocks[0].getBoundingClientRect().top - intro.getBoundingClientRect().bottom,
+        bottom: footer.getBoundingClientRect().top - blocks[blocks.length - 1].getBoundingClientRect().bottom,
       };
     });
-    assert.ok(layout, 'Startup hero, video, decision and footer are present');
-    const targetGap = width <= 750 ? 42 : 64;
-    assert.ok(Math.abs(layout.topGap - targetGap) <= 3, 'Video should be separated from hero by ' + targetGap + 'px');
-    assert.ok(Math.abs(layout.topGap - layout.bottomGap) <= 4, 'Top and bottom spacing should be visually balanced');
+    assert.ok(layout, 'Video and decision stay in cream canvas');
+    assert.ok(Math.abs(layout.top - (width <= 750 ? 42 : 64)) <= 3);
+    assert.ok(Math.abs(layout.top - layout.bottom) <= 4);
+
+    const video = page.locator('video');
+    assert.equal(await video.evaluate(el => el.controls), false, 'Native scrubbing disabled');
+    assert.equal(await page.locator('input[type="range"]').count(), 0, 'No draggable progress slider');
+    assert.equal(await page.getByRole('button', { name: /avanti di 10 secondi|salta avanti/i }).count(), 0);
+    const cta = page.getByRole('button', { name: 'Ho completato la visione del video e vado avanti' });
+    await cta.waitFor({ state: 'visible' });
+    assert.equal(await cta.isDisabled(), true, 'No timer-only unlock');
+    assert.equal(await cta.evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(221, 225, 226)');
+
+    for (const rate of ['1', '1,1', '1,25', '1,5']) {
+      await page.getByRole('button', { name: 'Riproduzione a ' + rate + ' volte' }).click();
+      const expected = Number(rate.replace(',', '.'));
+      assert.equal(await video.evaluate(el => el.playbackRate), expected);
+    }
+    assert.equal(await page.getByRole('button', { name: 'Riproduzione a 1,5 volte' }).getAttribute('aria-pressed'), 'true');
+    assert.equal(await page.getByRole('button', { name: 'Torna indietro di 10 secondi' }).isVisible(), true);
+
     const cover = page.getByRole('button', { name: 'Riproduci la presentazione Startup Horyzon' });
     await cover.waitFor({ state: 'visible' });
-    assert.equal(await page.getByRole('heading', { name: 'Ti riconosci in questo progetto?' }).count(), 1);
     await cover.click();
     await cover.waitFor({ state: 'hidden' });
-    assert.equal(await page.locator('video').evaluate(v => v.controls), true, 'Controls available while playing');
-    await page.locator('video').evaluate(v => v.pause());
+    await video.evaluate(el => el.pause());
     await cover.waitFor({ state: 'visible' });
-    assert.equal(await page.locator('video').evaluate(v => v.controls), false, 'Branded cover returns on pause');
-    await firstReceipt;
+    assert.equal(await video.evaluate(el => el.controls), false, 'Native scrubber never appears');
 
-    const button = page.getByRole('button', { name: 'Ho completato la visione del video e vado avanti' });
-    await button.waitFor({ state: 'visible', timeout: 15000 });
-    assert.equal(await button.isDisabled(), true, '661s server gate locks the CTA');
-    assert.equal(await button.evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(221, 225, 226)');
-    assert.equal(await page.getByRole('heading', { name: 'Ti riconosci in questo progetto?' }).isVisible(), true);
-    assert.equal(await page.getByRole('checkbox', { name: /terminato di vedere/i }).count(), 0, 'No manual bypass checkbox');
-    assert.equal(await page.getByRole('button', { name: 'Voglio essere ricontattato da un Architetto Patrimoniale Horyzon' }).count(), 0, 'Contact consent only after attestation');
-
-    await page.getByRole('button', { name: 'Vai al video Startup Horyzon' }).click();
-    assert.equal(new URL(page.url()).hash, '#token=' + token, 'Header must not erase candidate token');
-    releaseGate = true;
-    const secondReceipt = page.waitForResponse(r => r.url().includes('/api/architect-startup/video-gate'));
-    await page.reload({ waitUntil: 'domcontentloaded' });
-    await secondReceipt;
-    await button.waitFor({ state: 'visible' });
+    // A real onEnded event (never elapsed wall time) starts the final receipt.
+    await video.evaluate(el => {
+      Object.defineProperty(el, 'currentTime', { configurable: true, get: () => 660.73 });
+      el.dispatchEvent(new Event('ended'));
+    });
     await page.waitForFunction(() => {
-      const el = [...document.querySelectorAll('button')].find(b => b.textContent?.includes('Ho completato la visione del video e vado avanti'));
-      return el && !el.disabled;
-    });
-    assert.equal(await button.isEnabled(), true, 'Server says elapsed: CTA enabled');
-    assert.equal(await button.evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(216, 255, 66)');
-    await page.getByRole('button', { name: /Rivedi la presentazione/ }).click();
-    assert.equal(new URL(page.url()).hash, '#token=' + token, 'Footer must not erase candidate token');
-
-    await button.click();
-    const finalButton = page.getByRole('button', { name: 'Voglio essere ricontattato da un Architetto Patrimoniale Horyzon' });
-    await finalButton.waitFor();
-    assert.equal(await finalButton.isEnabled(), true);
-    assert.equal(await page.getByText('Hai confermato la visione.', { exact: false }).count(), 1);
-    console.log('PASS Startup ' + width + 'px: branded video cover/play/pause, 661s gate, contact opt-in');
-    await page.close();
-
-    const anonymous = await browser.newPage({ viewport: { width, height: 860 }, reducedMotion: 'reduce' });
-    await anonymous.route('https://zbpegzd1dv3ut14o.public.blob.vercel-storage.com/**', route => route.abort());
-    await anonymous.goto(origin + startupPath, { waitUntil: 'domcontentloaded' });
-    const anonButton = anonymous.getByRole('button', { name: 'Ho completato la visione del video e vado avanti' });
-    await anonButton.waitFor({ state: 'visible', timeout: 15000 });
-    assert.equal(await anonButton.isDisabled(), true, 'No-token visitor cannot bypass server gate');
-    await anonymous.close();
-
-    // Candidate returns later to the plain Startup URL in the same browser.
-    // A secure cookie is verified by the server (mocked here) and restores the
-    // unique bearer link without asking for contact details again.
-    const returnPage = await browser.newPage({ viewport: { width, height: 860 }, reducedMotion: 'reduce' });
-    await returnPage.route('https://zbpegzd1dv3ut14o.public.blob.vercel-storage.com/**', route => route.abort());
-    let resumeCalls = 0;
-    await returnPage.route('**/api/architect-startup/resume', route => {
-      resumeCalls++;
-      return route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ ok: true, token }),
-      });
-    });
-    await returnPage.route('**/api/architect-startup/video-gate', route => route.fulfill({
-      status: 200, contentType: 'application/json',
-      body: JSON.stringify({ ok: true, remainingSeconds: 0 }),
-    }));
-    await returnPage.goto(origin + startupPath, { waitUntil: 'domcontentloaded' });
-    await returnPage.waitForFunction((expected) =>
-      window.location.hash === '#token=' + expected, token, { timeout: 15000 });
-    assert.equal(resumeCalls, 1, 'Only one same-browser resume check is needed');
-    await returnPage.waitForFunction(() => {
-      const button = [...document.querySelectorAll('button')].find(
-        node => node.textContent?.includes('Ho completato la visione del video e vado avanti'));
-      return button && !button.disabled;
+      const b = [...document.querySelectorAll('button')].find(x =>
+        x.textContent?.includes('Ho completato la visione del video e vado avanti'));
+      return b && !b.disabled;
     }, undefined, { timeout: 15000 });
-    assert.equal(await returnPage.getByRole('button', {
-      name: 'Ho completato la visione del video e vado avanti',
-    }).isEnabled(), true, 'Recovered candidate retains completed server timer');
-    assert.equal(await returnPage.locator('input[name="email"]').count(), 0,
-      'Resume does not ask for PII a second time');
-    await returnPage.close();
-    console.log('PASS Startup same-browser return ' + width + 'px: candidate link restored without new form');
+    assert.equal(finishReceipts, 1, 'onEnded sends exactly one completion receipt');
+    assert.equal(await cta.evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(216, 255, 66)');
+    await cta.click();
+    assert.equal(await page.getByRole('button', {
+      name: 'Voglio essere ricontattato da un Architetto Patrimoniale Horyzon',
+    }).isVisible(), true);
+    console.log('PASS Startup native video ' + width + 'px: no seeking, four speeds, back-10 and onEnded unlock');
+    await page.close();
   }
 } finally {
   await browser.close();

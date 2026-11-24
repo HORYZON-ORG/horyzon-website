@@ -18,7 +18,7 @@ function settings(env: Env) {
 
 async function invokeHub(
   env: Env,
-  functionName: 'architect_candidate_intake_v1' | 'architect_candidate_crm_v1' | 'architect_candidate_startup_issue_v1' | 'architect_candidate_startup_confirm_v1' | 'architect_startup_lead_begin_v1' | 'architect_startup_lead_confirm_v1' | 'architect_startup_video_gate_v1',
+  functionName: 'architect_candidate_intake_v1' | 'architect_candidate_crm_v1' | 'architect_candidate_startup_issue_v1' | 'architect_candidate_startup_confirm_v1' | 'architect_startup_lead_begin_v1' | 'architect_startup_lead_confirm_v1' | 'architect_startup_video_gate_v1' | 'architect_startup_video_progress_v2',
   params: Record<string, unknown>,
   fetchImpl: typeof fetch,
 ): Promise<unknown> {
@@ -142,7 +142,35 @@ export async function getArchitectStartupVideoGate(
   return remaining;
 }
 
-/** Idempotent declaration of interest; not evidence of a complete video watch. */
+export type ArchitectStartupPlaybackProgress = {
+  completed: boolean;
+  positionSeconds: number;
+};
+
+/** Private server receipt: allows contiguous playback, never a wall-clock-only unlock. */
+export async function reportArchitectStartupPlayback(
+  env: Env,
+  token: string,
+  input: { positionSeconds?: number; playbackRate?: number; complete?: boolean },
+  fetchImpl: typeof fetch = fetch,
+): Promise<ArchitectStartupPlaybackProgress | null> {
+  if (!/^[A-Za-z0-9_-]{43}$/.test(token)) return null;
+  const hash = createHash('sha256').update(token).digest('hex');
+  const result = await invokeHub(env, 'architect_startup_video_progress_v2', {
+    p_token_hash: hash,
+    p_position_seconds: input.positionSeconds ?? null,
+    p_playback_rate: input.playbackRate ?? 1,
+    p_complete: input.complete ?? false,
+  }, fetchImpl);
+  if (!result || typeof result !== 'object' || Array.isArray(result)) return null;
+  const obj = result as Record<string, unknown>;
+  if (typeof obj.completed !== 'boolean' || typeof obj.positionSeconds !== 'number'
+    || !Number.isFinite(obj.positionSeconds) || obj.positionSeconds < 0
+    || obj.positionSeconds > 662) return null;
+  return { completed: obj.completed, positionSeconds: obj.positionSeconds };
+}
+
+/** Idempotent declaration of contact interest, gated by the Hub video completion receipt. */
 export async function confirmArchitectStartupInterest(
   env: Env,
   token: string,

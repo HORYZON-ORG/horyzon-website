@@ -5,6 +5,13 @@ import { useEffect, useRef, useState } from 'react';
 import header from './patrimonial-architect-header.module.css';
 import styles from './patrimonial-architect-startup.module.css';
 
+const VIDEO_DURATION_SECONDS = 660.73;
+const VIDEO_SPEEDS = [1, 1.1, 1.25, 1.5] as const;
+const displayVideoTime = (seconds: number) => {
+  const value = Math.max(0, Math.floor(Number.isFinite(seconds) ? seconds : 0));
+  return `${Math.floor(value / 60).toString().padStart(2, '0')}:${(value % 60).toString().padStart(2, '0')}`;
+};
+
 type Status = 'idle' | 'sending' | 'success' | 'error';
 
 export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string }) {
@@ -16,8 +23,16 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
   const [notice, setNotice] = useState('');
   const [videoError, setVideoError] = useState(false);
   const [videoPlaying, setVideoPlaying] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState<number>(1);
+  const [videoSeconds, setVideoSeconds] = useState(0);
+  const [videoEnded, setVideoEnded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const recheckGateRef = useRef<() => void>(() => {});
+  const verifiedPositionRef = useRef(0);
+  const maxPlayedRef = useRef(0);
+  const lastPingRef = useRef(0);
+  const progressQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const playbackRateRef = useRef(1);
+  const tokenRef = useRef('');
 
   useEffect(() => {
     let active = true;
@@ -48,6 +63,10 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
       setGateReady(false);
       setWatchAcknowledged(false);
       setGateProblem(false);
+      setVideoEnded(false);
+      setVideoSeconds(0);
+      maxPlayedRef.current = 0;
+      verifiedPositionRef.current = 0;
       setStatus('idle');
       setNotice('');
       if (!match) void resumeFromCookie();
@@ -57,83 +76,152 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
     return () => { active = false; window.removeEventListener('hashchange', readToken); };
   }, []);
 
+  useEffect(() => { tokenRef.current = token; }, [token]);
+
+  // Recover durable progress after a reload or a return within seven days.
+  // No elapsed-time countdown: only the server's completed-video receipt
+  // can enable the next step.
   useEffect(() => {
-    recheckGateRef.current = () => {};
     if (!token || !videoUrl) return;
     let active = true;
-    let inFlight = false;
-    let unlocked = false;
-
-    async function verifyServerGate() {
-      if (!active || inFlight || unlocked) return;
-      inFlight = true;
+    void (async () => {
       try {
-        const response = await fetch('/api/architect-startup/video-gate', {
+        const response = await fetch('/api/architect-startup/video-progress', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           cache: 'no-store',
           body: JSON.stringify({ token }),
           signal: AbortSignal.timeout(15000),
         });
-        const result: { ok?: boolean; remainingSeconds?: number } = await response.json();
+        const data: { ok?: boolean; completed?: boolean; positionSeconds?: number } = await response.json();
         if (!active) return;
-        if (!response.ok || result.ok !== true ||
-            typeof result.remainingSeconds !== 'number' ||
-            !Number.isInteger(result.remainingSeconds) ||
-            result.remainingSeconds < 0 || result.remainingSeconds > 661) {
+        if (!response.ok || !data.ok || typeof data.positionSeconds !== 'number') {
           setGateProblem(true);
           return;
         }
+        verifiedPositionRef.current = data.positionSeconds;
+        maxPlayedRef.current = data.positionSeconds;
+        setVideoSeconds(data.positionSeconds);
+        setGateReady(data.completed === true);
+        setVideoEnded(data.completed === true);
         setGateProblem(false);
-        if (result.remainingSeconds === 0) {
-          unlocked = true;
-          setGateReady(true);
-          return;
-        }
-        setGateReady(false);
+        const video = videoRef.current;
+        if (video && video.readyState >= 1 && !data.completed && data.positionSeconds > 1)
+          video.currentTime = Math.max(0, data.positionSeconds - 0.5);
       } catch {
         if (active) setGateProblem(true);
-      } finally {
-        inFlight = false;
       }
-    }
-
-    // The server remains authoritative. A single 11-minute setTimeout can
-    // be delayed indefinitely when video goes fullscreen, the screen locks,
-    // or the browser throttles a background tab. Re-check repeatedly and
-    // immediately on return, so a mature gate cannot remain grey indefinitely.
-    const recheck = () => { void verifyServerGate(); };
-    recheckGateRef.current = recheck;
-    const interval = setInterval(recheck, 10_000);
-    const onVisibility = () => {
-      if (document.visibilityState === 'visible') recheck();
-    };
-    window.addEventListener('focus', recheck);
-    window.addEventListener('pageshow', recheck);
-    document.addEventListener('visibilitychange', onVisibility);
-    const player = videoRef.current;
-    player?.addEventListener('ended', recheck);
-    recheck();
-    return () => {
-      active = false;
-      recheckGateRef.current = () => {};
-      clearInterval(interval);
-      window.removeEventListener('focus', recheck);
-      window.removeEventListener('pageshow', recheck);
-      document.removeEventListener('visibilitychange', onVisibility);
-      player?.removeEventListener('ended', recheck);
-    };
+    })();
+    return () => { active = false; };
   }, [token, videoUrl]);
+
+  function recordProgress(positionSeconds: number, complete = false) {
+    if (!tokenRef.current || !videoUrl) return Promise.resolve();
+    const capturedToken = tokenRef.current;
+    const position = Math.max(0, Math.min(662, positionSeconds));
+    const rate = playbackRateRef.current;
+    const send = async () => {
+      try {
+        const response = await fetch('/api/architect-startup/video-progress', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          cache: 'no-store',
+          body: JSON.stringify({
+            token: capturedToken, positionSeconds: position,
+            playbackRate: rate, complete,
+          }),
+          signal: AbortSignal.timeout(15000),
+        });
+        const data: { ok?: boolean; completed?: boolean; positionSeconds?: number } = await response.json();
+        if (tokenRef.current !== capturedToken) return;
+        if (!response.ok || !data.ok || typeof data.positionSeconds !== 'number') {
+          setGateProblem(true);
+          return;
+        }
+        verifiedPositionRef.current = Math.max(verifiedPositionRef.current, data.positionSeconds);
+        setGateReady(data.completed === true);
+        setGateProblem(false);
+      } catch {
+        if (tokenRef.current === capturedToken) setGateProblem(true);
+      }
+    };
+    // Requests are serial so the final onEnded receipt cannot overtake the
+    // previous playback checkpoint.
+    progressQueueRef.current = progressQueueRef.current.then(send, send);
+    return progressQueueRef.current;
+  }
+
+  function handleVideoTimeUpdate() {
+    const video = videoRef.current;
+    if (!video || !Number.isFinite(video.currentTime)) return;
+    if (video.seeking) return;
+    const position = video.currentTime;
+    maxPlayedRef.current = Math.max(maxPlayedRef.current, position);
+    setVideoSeconds(position);
+    if (video.paused || videoEnded) return;
+    if (position >= lastPingRef.current + 2.5) {
+      lastPingRef.current = position;
+      void recordProgress(position);
+    }
+  }
+
+  function handleVideoSeeking() {
+    const video = videoRef.current;
+    if (!video) return;
+    // Neither touch, keyboard nor browser-native seeking may jump forward.
+    // The only user-initiated time jump is the -10s button below.
+    if (video.currentTime > maxPlayedRef.current + 1.25) {
+      video.currentTime = maxPlayedRef.current;
+    }
+  }
+
+  function changeVideoSpeed(rate: number) {
+    if (!VIDEO_SPEEDS.some(value => value === rate)) return;
+    playbackRateRef.current = rate;
+    setPlaybackRate(rate);
+    if (videoRef.current) videoRef.current.playbackRate = rate;
+  }
 
   async function startPresentation() {
     const player = videoRef.current;
     if (!player || !videoUrl) return;
+    if (videoEnded && player.ended) {
+      player.currentTime = 0;
+      setVideoEnded(false);
+    }
     try {
       await player.play();
       setVideoError(false);
+      lastPingRef.current = player.currentTime;
+      void recordProgress(player.currentTime);
     } catch {
       setVideoError(true);
     }
+  }
+
+  function pausePresentation() {
+    const player = videoRef.current;
+    if (!player) return;
+    void recordProgress(player.currentTime);
+    player.pause();
+  }
+
+  function rewindPresentation() {
+    const player = videoRef.current;
+    if (!player) return;
+    void recordProgress(player.currentTime);
+    player.currentTime = Math.max(0, player.currentTime - 10);
+    setVideoSeconds(player.currentTime);
+  }
+
+  function handleVideoEnded() {
+    const player = videoRef.current;
+    if (!player) return;
+    setVideoPlaying(false);
+    setVideoEnded(true);
+    setVideoSeconds(player.duration || VIDEO_DURATION_SECONDS);
+    if (player.currentTime >= VIDEO_DURATION_SECONDS - 0.6)
+      void recordProgress(player.currentTime, true);
   }
 
   async function confirmInterest() {
@@ -189,18 +277,37 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
             <span className={styles.videoNote}>PRESENTAZIONE</span>
           </div>
           {videoUrl ? (
+            <>
             <div className={styles.videoStage}>
               <video
                 ref={videoRef}
                 key={videoUrl}
                 className={styles.video}
                 src={videoUrl}
-                controls={videoPlaying}
+                controls={false}
                 playsInline
+                disablePictureInPicture
                 preload="metadata"
+                tabIndex={-1}
+                onContextMenu={event => event.preventDefault()}
+                onKeyDown={event => {
+                  if (['ArrowRight', 'End', 'PageDown'].includes(event.key)) event.preventDefault();
+                }}
+                onLoadedMetadata={() => {
+                  const player = videoRef.current;
+                  if (player && verifiedPositionRef.current > 1 && !gateReady)
+                    player.currentTime = Math.max(0, verifiedPositionRef.current - 0.5);
+                }}
+                onTimeUpdate={handleVideoTimeUpdate}
+                onSeeking={handleVideoSeeking}
+                onRateChange={() => {
+                  const player = videoRef.current;
+                  if (player && player.playbackRate !== playbackRateRef.current)
+                    player.playbackRate = playbackRateRef.current;
+                }}
                 onPlay={() => { setVideoPlaying(true); setVideoError(false); }}
-                onPause={() => setVideoPlaying(false)}
-                onEnded={() => setVideoPlaying(false)}
+                onPause={() => { setVideoPlaying(false); void recordProgress(videoRef.current?.currentTime ?? 0); }}
+                onEnded={handleVideoEnded}
                 onError={() => { setVideoError(true); setVideoPlaying(false); }}
                 aria-label="Presentazione della Startup Horyzon Consulting">
                 Il browser non supporta la riproduzione del video.
@@ -223,6 +330,42 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
                 </button>
               )}
             </div>
+            <div className={styles.videoControls} role="group" aria-label="Comandi video Horyzon">
+              <div className={styles.playbackActions}>
+                <button type="button" className={styles.playbackButton}
+                  onClick={() => videoPlaying ? pausePresentation() : void startPresentation()}
+                  aria-label={videoPlaying ? 'Metti in pausa il video' : 'Riprendi la riproduzione'}>
+                  <span aria-hidden="true">{videoPlaying ? '❚❚' : '▶'}</span>
+                  {videoPlaying ? 'Pausa' : 'Riproduci'}
+                </button>
+                <button type="button" className={styles.playbackButton}
+                  onClick={rewindPresentation} aria-label="Torna indietro di 10 secondi">
+                  <span aria-hidden="true">↶</span> 10 s
+                </button>
+              </div>
+              <div className={styles.videoTimeline} role="progressbar"
+                aria-label="Avanzamento della presentazione"
+                aria-valuemin={0} aria-valuemax={Math.ceil(VIDEO_DURATION_SECONDS)}
+                aria-valuenow={Math.min(Math.ceil(VIDEO_DURATION_SECONDS), Math.round(videoSeconds))}>
+                <span style={{ width: `${Math.min(100, videoSeconds / VIDEO_DURATION_SECONDS * 100)}%` }} />
+              </div>
+              <span className={styles.videoClock} aria-live="off">
+                {displayVideoTime(videoSeconds)} / 11:01
+              </span>
+              <div className={styles.speedControl} role="group" aria-label="Velocità di riproduzione">
+                <span className={styles.speedLabel}>VELOCITÀ</span>
+                {VIDEO_SPEEDS.map(rate => (
+                  <button key={rate} type="button"
+                    className={`${styles.speedButton} ${playbackRate === rate ? styles.speedButtonActive : ''}`}
+                    aria-pressed={playbackRate === rate}
+                    aria-label={`Riproduzione a ${String(rate).replace('.', ',')} volte`}
+                    onClick={() => changeVideoSpeed(rate)}>
+                    {String(rate).replace('.', ',')}×
+                  </button>
+                ))}
+              </div>
+            </div>
+            </>
           ) : (
             <div className={styles.videoPlaceholder}>
               <span className={styles.playSymbol} aria-hidden="true">▶</span>
@@ -263,14 +406,17 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
                   <p className={styles.confirmHint}>
                     {!videoUrl ? 'La presentazione non è ancora disponibile.' :
                      !token ? 'Per proseguire completa prima il modulo di candidatura.' :
-                     gateProblem ? 'Verifica temporaneamente non disponibile. La pagina riproverà automaticamente.' :
-                     'Guarda la presentazione. Il pulsante si abiliterà automaticamente quando potrai proseguire.'}
+                     gateProblem ? 'Verifica della visione temporaneamente non disponibile. Puoi riprovare.' :
+                     videoEnded ? 'Fine del video raggiunta. Verifica in corso: se il tasto rimane grigio, riprova qui sotto.' :
+                     'Completa la presentazione per attivare il pulsante. Puoi mettere in pausa, tornare indietro e cambiare velocità.'}
                   </p>
                 )}
-                {videoUrl && token && !gateReady && (
+                {videoUrl && token && !gateReady && (videoEnded || gateProblem) && (
                   <button className={styles.gateRefreshButton} type="button"
-                    onClick={() => recheckGateRef.current()}>
-                    <span aria-hidden="true">↻</span> Verifica se puoi proseguire
+                    onClick={() => videoEnded
+                      ? void recordProgress(videoRef.current?.currentTime ?? VIDEO_DURATION_SECONDS, true)
+                      : void recordProgress(videoRef.current?.currentTime ?? 0)}>
+                    <span aria-hidden="true">↻</span> Verifica completamento video
                   </button>
                 )}
               </>
