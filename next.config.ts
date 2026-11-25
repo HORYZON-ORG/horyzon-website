@@ -14,6 +14,11 @@ const csp = [
  "object-src 'none'", "base-uri 'self'", "form-action 'self' mailto:",
  "frame-ancestors 'none'", ...(!isDev ? ['upgrade-insecure-requests'] : []),
 ].join('; ');
+// Scope Meta's required endpoints to the check-up, where consent gates loading.
+const recruitingMetaCsp = csp
+ .replace("script-src 'self'", "script-src 'self' https://connect.facebook.net")
+ .replace("img-src 'self'", "img-src 'self' https://www.facebook.com")
+ .replace("connect-src 'self'", "connect-src 'self' https://www.facebook.com");
 // Both representations of / must bypass HTTP caches while Next overwrites Vary.
 // This affects response caching only: the real home remains prerendered for Readable.
 const readableCacheHeaders = [
@@ -43,6 +48,9 @@ const nextConfig: NextConfig = {
    { key: 'X-Content-Type-Options', value: 'nosniff' },
    { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
    { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
+  ] }, { source: '/recruiting/check-up-annuncio', headers: [
+   { key: 'Content-Security-Policy', value: recruitingMetaCsp },
+   { key: 'Referrer-Policy', value: 'strict-origin' },
   ] }, { source: '/recruiting', headers: [
    { key: 'Content-Security-Policy', value: csp
     .replace("img-src 'self'", "img-src 'self' https://performia.com/media/mvtayfzl-1rjc49gn.webp")
