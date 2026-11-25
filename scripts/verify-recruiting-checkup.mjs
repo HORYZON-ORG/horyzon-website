@@ -44,7 +44,14 @@ assert.match(await extractCheckupFile(new File([docx], 'annuncio.docx')), /custo
 const calls = [];
 const provider = new MockAnnunci10xProvider('success');
 const originalGenerate = provider.executeStructuredTask.bind(provider);
-provider.executeStructuredTask = async (...args) => { calls.push(args[0]); return originalGenerate(...args); };
+provider.executeStructuredTask = async (...args) => {
+  calls.push(args[0]);
+  const result = await originalGenerate(...args);
+  // Reproduce the real classifier refusal: missing conditions must be evaluated.
+  return args[0].operationType === 'PRECHECK'
+    ? { ...result, output: { detectedType: 'INCOMPLETE_AD', confidence: 90, reason: 'Company and compensation are missing.', canRunFullAnalysis: false } }
+    : result;
+};
 const context = { persistence: new MemoryAnnunci10xPersistenceAdapter(), provider, configuredProvider: 'MOCK' };
 const created = await createAnonymousAnalyzeSession(context);
 const session = { sessionId: created.session.id, sessionSecret: created.sessionSecret };
@@ -109,6 +116,25 @@ const queued = await startAnnunci10xAnalysisRun({ session: queuedSession, source
 await context.persistence.updateAnalysisRun({ analysisRunId: queued.run.id, sessionSecret: queuedSession.sessionSecret, retrievalMetadata: { ...queued.run.retrievalMetadata, checkupVersion: 'recruiting-checkup-v1', checkupQueueToken: sealCheckupSession(queuedSession, queued.run.id) } });
 for (let i=0; i<6; i++) await processCheckupQueue(context, { ANNUNCI10X_SCORE_REPORT_EMAIL_ENABLED: '0', ANNUNCI10X_EMAIL_VERIFICATION_PEPPER: process.env.ANNUNCI10X_EMAIL_VERIFICATION_PEPPER });
 assert.equal((await context.persistence.getAnalysisRun(queued.run.id, queuedSession.sessionSecret)).status, 'READY');
+for (const [detectedType, canRunFullAnalysis, checkup] of [
+  ['NOT_JOB_AD', true, true], ['UNUSABLE', true, true], ['SOCIAL_TEASER', false, true], ['INCOMPLETE_AD', false, false],
+]) {
+  const rejectedProvider = new MockAnnunci10xProvider();
+  const execute = rejectedProvider.executeStructuredTask.bind(rejectedProvider);
+  rejectedProvider.executeStructuredTask = async request => {
+    const result = await execute(request);
+    return request.operationType === 'PRECHECK'
+      ? { ...result, output: { detectedType, confidence: 90, reason: 'Readiness regression case.', canRunFullAnalysis } }
+      : result;
+  };
+  const rejectedContext = { persistence: new MemoryAnnunci10xPersistenceAdapter(), provider: rejectedProvider, configuredProvider: 'MOCK' };
+  const owner = await createAnonymousAnalyzeSession(rejectedContext);
+  const rejectedSession = { sessionId: owner.session.id, sessionSecret: owner.sessionSecret };
+  const attempt = await startAnnunci10xAnalysisRun({ session: rejectedSession, source: { kind: 'PASTED_TEXT', text: ad }, context: rejectedContext, evaluationMode: 'V2_PUBLIC' });
+  if (checkup) await rejectedContext.persistence.updateAnalysisRun({ analysisRunId: attempt.run.id, sessionSecret: rejectedSession.sessionSecret, retrievalMetadata: { checkupVersion: 'recruiting-checkup-v1' } });
+  const rejected = await runAnnunci10xAnalysisRun({ session: rejectedSession, context: rejectedContext, analysisRunId: attempt.run.id });
+  assert.equal(rejected.status, 'FAILED', `${detectedType}, checkup=${checkup}: invalid sources and other flows retain their guard`);
+}
 await mkdir('output/recruiting-checkup-qa', { recursive: true });
 await writeFile('output/recruiting-checkup-qa/checkup-esempio-sintetico.pdf', await renderCheckupPdf({ ...first.report, example: true }));
 await writeFile('output/recruiting-checkup-qa/report-sintetico.json', JSON.stringify(first.report, null, 2));

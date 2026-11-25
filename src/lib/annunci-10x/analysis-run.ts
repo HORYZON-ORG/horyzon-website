@@ -224,7 +224,10 @@ async function runPrecheckStage(
     eventName: 'precheck_completed',
     metadata: { detectedType: precheck.output.detectedType, canRunFullAnalysis: precheck.output.canRunFullAnalysis },
   });
-  if (!precheck.output.canRunFullAnalysis || precheck.output.detectedType === 'NOT_JOB_AD' || precheck.output.detectedType === 'UNUSABLE') {
+  // Incompleteness is what the free check-up evaluates, not a reason to refuse it.
+  const recognizedCheckupAd = run.retrievalMetadata.checkupVersion === 'recruiting-checkup-v1'
+    && ['FULL_JOB_AD', 'INCOMPLETE_AD'].includes(precheck.output.detectedType);
+  if ((!precheck.output.canRunFullAnalysis && !recognizedCheckupAd) || precheck.output.detectedType === 'NOT_JOB_AD' || precheck.output.detectedType === 'UNUSABLE') {
     return context.persistence.updateAnalysisRun({
       analysisRunId: run.id,
       sessionSecret: session.sessionSecret,

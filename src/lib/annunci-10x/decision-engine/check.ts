@@ -123,7 +123,11 @@ function hasInventedApplicationProcess(ledger: Annunci10xTruthLedger, masterText
   const application = normalizeForDecision(factValue(ledger.roleCard.applicationInstructions));
   const explicitlyDeclared = hasSpecificApplicationInstruction(application);
   const applicationSentences = sentences(masterText).map(normalizeForDecision);
-  if (applicationSentences.some((sentence) => /\b(?:ti ricontatteremo|sarai ricontattat|colloquio|step successiv|processo di selezione)\b/.test(sentence))) return true;
+  const declaredSteps = sentences(application).map(normalizeApplicationStep);
+  const process = /\b(?:ti ricontatteremo|sarai ricontattat\w*|colloqui(?:o)?|step successiv\w*|processo di selezione)\b/;
+  // A declared interview is a fact to preserve. Additional or altered steps stay blocked.
+  if (applicationSentences.some(sentence => process.test(sentence)
+    && !declaredSteps.includes(normalizeApplicationStep(sentence)))) return true;
   if (applicationSentences.some((sentence) => /\b(?:invia|manda|allega|carica|candidati|candidatura)\b/.test(sentence)
     && /\b(?:cv|curriculum|lettera di presentazione|breve presentazione|presentazione)\b/.test(sentence)
     && !(explicitlyDeclared && /\b(?:cv|curriculum|lettera di presentazione|breve presentazione|presentazione)\b/.test(application)))) return true;
@@ -132,6 +136,13 @@ function hasInventedApplicationProcess(ledger: Annunci10xTruthLedger, masterText
     && /\b(?:esperienza|disponibilita)\b/.test(sentence))) return true;
   if (!explicitlyDeclared && applicationSentences.some((sentence) => /\blinkedin\b/.test(sentence))) return true;
   return false;
+}
+
+function normalizeApplicationStep(value: string): string {
+  return normalizeNumberText(value)
+    .replace(/^(?:candidatura|come candidarsi)\s*[:.-]?\s*/, '')
+    .replace(/[.!?]+$/, '')
+    .trim();
 }
 
 function hasSpecificApplicationInstruction(application: string): boolean {
