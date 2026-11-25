@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import header from './patrimonial-architect-header.module.css';
 import styles from './patrimonial-architect-startup.module.css';
+import { IndeedStartupCallbackForm, useIndeedCallbackSession } from './patrimonial-architect-indeed-callback';
 
 const VIDEO_DURATION_SECONDS = 660.73;
 const VIDEO_SPEEDS = [1, 1.1, 1.25, 1.5] as const;
@@ -15,7 +16,7 @@ const displayVideoTime = (seconds: number) => {
 
 type Status = 'idle' | 'sending' | 'success' | 'error';
 
-export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string }) {
+export function ArchitectStartupPresentation({ videoUrl, fromIndeed = false, indeedCallbackEnabled = false }: { videoUrl: string; fromIndeed?: boolean; indeedCallbackEnabled?: boolean }) {
   const [token, setToken] = useState('');
   const [gateReady, setGateReady] = useState(false);
   const [watchAcknowledged, setWatchAcknowledged] = useState(false);
@@ -27,6 +28,9 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
   const [playbackRate, setPlaybackRate] = useState<number>(1);
   const [videoSeconds, setVideoSeconds] = useState(0);
   const [videoEnded, setVideoEnded] = useState(false);
+  const [indeedVideoCompleted, setIndeedVideoCompleted] = useState(false);
+  const indeedSession = useIndeedCallbackSession(fromIndeed && indeedCallbackEnabled);
+  const homePath = fromIndeed ? '/candidature/architetti-patrimoniali/indeed' : '/candidature/architetti-patrimoniali';
   const videoRef = useRef<HTMLVideoElement>(null);
   const callbackButtonRef = useRef<HTMLButtonElement>(null);
   const verifiedPositionRef = useRef(0);
@@ -41,6 +45,7 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
   }, [watchAcknowledged]);
 
   useEffect(() => {
+    if (fromIndeed) return;
     let active = true;
     const resumeFromCookie = async () => {
       try {
@@ -80,7 +85,7 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
     readToken();
     window.addEventListener('hashchange', readToken);
     return () => { active = false; window.removeEventListener('hashchange', readToken); };
-  }, []);
+  }, [fromIndeed]);
 
   useEffect(() => { tokenRef.current = token; }, [token]);
 
@@ -88,7 +93,7 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
   // No elapsed-time countdown: only the server's completed-video receipt
   // can enable the next step.
   useEffect(() => {
-    if (!token || !videoUrl) return;
+    if (fromIndeed || !token || !videoUrl) return;
     let active = true;
     void (async () => {
       try {
@@ -119,10 +124,10 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
       }
     })();
     return () => { active = false; };
-  }, [token, videoUrl]);
+  }, [fromIndeed, token, videoUrl]);
 
   function recordProgress(positionSeconds: number, complete = false) {
-    if (!tokenRef.current || !videoUrl) return Promise.resolve();
+    if (fromIndeed || !tokenRef.current || !videoUrl) return Promise.resolve();
     const capturedToken = tokenRef.current;
     const position = Math.max(0, Math.min(662, positionSeconds));
     const rate = playbackRateRef.current;
@@ -226,6 +231,10 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
     setVideoPlaying(false);
     setVideoEnded(true);
     setVideoSeconds(player.duration || VIDEO_DURATION_SECONDS);
+    if (fromIndeed) {
+      setIndeedVideoCompleted(true);
+      return;
+    }
     if (player.currentTime >= VIDEO_DURATION_SECONDS - 0.6)
       void recordProgress(player.currentTime, true);
   }
@@ -258,7 +267,7 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
   return <div className={styles.page}>
     <header className={header.band}>
       <div className={header.inner}>
-        <Link className={header.brand} href="/candidature/architetti-patrimoniali" aria-label="Horyzon Consulting · Benessere Patrimoniale">
+        <Link className={header.brand} href={homePath} aria-label="Horyzon Consulting · Benessere Patrimoniale">
           <span className={header.logoWrap}><Image className={header.logo} src="/horyzon-logo-canonical.png" width={1670} height={390} sizes="190px" alt="Horyzon Consulting" /></span>
           <span className={header.rule} aria-hidden="true" />
           <span className={header.division}>BENESSERE PATRIMONIALE</span>
@@ -311,7 +320,11 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
                   if (player && player.playbackRate !== playbackRateRef.current)
                     player.playbackRate = playbackRateRef.current;
                 }}
-                onPlay={() => { setVideoPlaying(true); setVideoError(false); }}
+                onPlay={() => {
+                  setVideoPlaying(true);
+                  setVideoError(false);
+                  if (fromIndeed) void indeedSession.begin();
+                }}
                 onPause={() => { setVideoPlaying(false); void recordProgress(videoRef.current?.currentTime ?? 0); }}
                 onEnded={handleVideoEnded}
                 onError={() => { setVideoError(true); setVideoPlaying(false); }}
@@ -377,21 +390,30 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
               <span className={styles.playSymbol} aria-hidden="true">▶</span>
               <strong>Startup Horyzon</strong>
               <p>Qui sarà inserito il video ufficiale della presentazione.</p>
-              <small>La conferma sarà disponibile quando arriverà il video. I recapiti temporanei scadono dopo 7 giorni; non viene ancora creata alcuna scheda nell’Hub.</small>
+              {!fromIndeed && <small>La conferma sarà disponibile quando arriverà il video. I recapiti temporanei scadono dopo 7 giorni; non viene ancora creata alcuna scheda nell’Hub.</small>}
             </div>
           )}
         </div>
 
-        {videoError && <p className={styles.error} role="alert">Il video non è disponibile al momento. Non è stata registrata alcuna conferma.</p>}
+        {videoError && <p className={styles.error} role="alert">Il video non è disponibile al momento.{!fromIndeed && ' Non è stata registrata alcuna conferma.'}</p>}
 
         <div className={styles.confirmPanel}>
           <div className={styles.confirmIntro}>
-            <span className={styles.eyebrow}>LA TUA DECISIONE</span>
-            <h2>Ti riconosci in questo progetto?</h2>
-            <p>Prima di scegliere un percorso, conosci chi lo sta costruendo. Poi decidi se proseguire.</p>
+            <span className={styles.eyebrow}>{fromIndeed ? 'DOPO LA STARTUP' : 'LA TUA DECISIONE'}</span>
+            <h2>{fromIndeed ? 'Prepariamo il colloquio di selezione' : 'Ti riconosci in questo progetto?'}</h2>
+            <p>{fromIndeed
+              ? 'La presentazione ci aiuta a partire da una base comune sul mercato e sul progetto. Al termine puoi confermare la visione e chiedere di fissare il colloquio online.'
+              : 'Prima di scegliere un percorso, conosci chi lo sta costruendo. Poi decidi se proseguire.'}</p>
           </div>
           <div className={styles.confirmAction}>
-            {status === 'success' ? (
+            {fromIndeed ? (
+              !videoUrl ? <p className={styles.confirmHint}>La presentazione non è ancora disponibile.</p>
+                : !indeedCallbackEnabled ? <p className={styles.confirmHint}>La conferma online non è disponibile in questo momento.</p>
+                : indeedSession.sessionError ? <p className={styles.error} role="alert">Non è stato possibile preparare la conferma. Metti in pausa e riprendi la riproduzione per riprovare.</p>
+                : !indeedVideoCompleted ? <p className={styles.confirmHint}>Completa la Startup per poter confermare qui la visione. Non dovrai ricaricare il CV né tornare su Indeed.</p>
+                : !indeedSession.token ? <p className={styles.confirmHint} role="status">Preparazione della conferma…</p>
+                : <IndeedStartupCallbackForm token={indeedSession.token} />
+            ) : status === 'success' ? (
               <div className={styles.success} role="status">
                 <strong>✓ Richiesta di ricontatto registrata</strong>
                 <p>{notice}</p>
@@ -452,7 +474,7 @@ export function ArchitectStartupPresentation({ videoUrl }: { videoUrl: string })
 
     <footer className={styles.footer}>
       <div className={styles.footerInner}>
-        <Link className={styles.footerBrand} href="/candidature/architetti-patrimoniali" aria-label="Horyzon Consulting, pagina Architetti Patrimoniali">
+        <Link className={styles.footerBrand} href={homePath} aria-label="Horyzon Consulting, pagina Architetti Patrimoniali">
           <span className={styles.footerLogoWrap}><Image src="/horyzon-logo-canonical.png" width={1670} height={390} sizes="190px" alt="Horyzon Consulting" /></span>
           <span className={styles.footerBrandRule} aria-hidden="true" />
           <span className={styles.footerDivision}>BENESSERE PATRIMONIALE</span>
