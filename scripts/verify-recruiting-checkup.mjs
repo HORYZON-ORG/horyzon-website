@@ -20,6 +20,13 @@ const ad = `Cerchiamo un addetto customer care per la sede di Bari. La persona g
 const paraphrasedDuties = buildCheckupRoleCard(ad, { extractedFacts: [{ targetPath: 'responsibilities', value: 'Gestire richieste clienti, ticket e aggiornamento CRM.', source: 'EXTRACTED', evidence: '"La persona gestirà richieste clienti, ticket e aggiornamento CRM."', confidence: 0.95 }], possibleConflicts: [] });
 assert.equal(validateRoleCard(paraphrasedDuties).ok, true);
 assert.equal(paraphrasedDuties.responsibilities[0].value, 'La persona gestirà richieste clienti, ticket e aggiornamento CRM.');
+const requirementsSentence = 'Cerchiamo una persona con almeno un anno di esperienza nel servizio clienti, italiano scritto e parlato chiaro, uso di email, fogli di calcolo e CRM, precisione e capacità di organizzare le priorità.';
+const requirementsExtraction = { targetPath: 'requirements', value: 'Almeno un anno di esperienza nel servizio clienti; italiano scritto e parlato chiaro; uso di email, fogli di calcolo e CRM; precisione; capacità di organizzare le priorità.', source: 'EXTRACTED', evidence: requirementsSentence, confidence: 0.95 };
+const paraphrasedRequirements = buildCheckupRoleCard(requirementsSentence, { extractedFacts: [requirementsExtraction], possibleConflicts: [] });
+assert.equal(paraphrasedRequirements.requirements[0].label.value, requirementsSentence, 'paraphrased requirements must retain the exact original evidence');
+assert.equal(paraphrasedRequirements.requirements[0].label.publishable, true);
+const unsupportedRequirements = buildCheckupRoleCard(ad, { extractedFacts: [{ ...requirementsExtraction, evidence: 'Esperienza pluriennale richiesta.' }], possibleConflicts: [] });
+assert.equal(unsupportedRequirements.requirements.some(r => /pluriennale/.test(r.label.value)), false, 'evidence absent from the source must not become a requirement');
 const unspecifiedDuties = buildCheckupRoleCard('Cerchiamo un addetto customer care. Candidatura via email.', { extractedFacts: [], possibleConflicts: [] });
 assert.equal(validateRoleCard(unspecifiedDuties).ok, true);
 assert.equal(unspecifiedDuties.responsibilities[0].source, 'SYSTEM_INFERRED');

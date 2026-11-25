@@ -25,13 +25,14 @@ export function buildCheckupRoleCard(text: string, extraction: Annunci10xExtract
   const conditions = sentences.filter(s => /\b(?:contratto|part.time|full.time|turni|orario|retribuzione|stipendio|RAL|presenza|remoto|benefit|affiancamento)\b/i.test(s) && !/^(?:requisiti|richiediamo)/i.test(s));
   if (conditions.length) context.contractType = fact(conditions.join('\n'));
   const literalResponsibilities = values('responsibilities');
-  const evidencedResponsibilities = extraction.extractedFacts.filter(f => f.targetPath === 'responsibilities').flatMap(f => {
+  const sourceEvidence = (paths: string[]) => extraction.extractedFacts.filter(f => paths.includes(f.targetPath)).flatMap(f => {
     const evidence = typeof f.evidence === 'string' ? f.evidence.trim().replace(/^["“«]+|["”»]+$/g, '').trim() : '';
     return evidence.length > 1 && text.includes(evidence) ? [evidence] : [];
   });
-  const responsibilities = literalResponsibilities.length ? literalResponsibilities : [...new Set(evidencedResponsibilities)];
+  const responsibilities = literalResponsibilities.length ? literalResponsibilities : [...new Set(sourceEvidence(['responsibilities']))];
   const requirements = [...values('requirements'), ...values('requirements.label')];
-  const sourceRequirements = requirements.length ? requirements : base.requirements.map(r => r.label.value).filter(usable);
+  const evidencedRequirements = sourceEvidence(['requirements', 'requirements.label']);
+  const sourceRequirements = requirements.length ? requirements : evidencedRequirements.length ? evidencedRequirements : base.requirements.map(r => r.label.value).filter(usable);
   const unknown = (label: string) => createFact(`N/D - ${label} da chiarire`, 'SYSTEM_INFERRED', { publishable: false });
   const parsedRequirements: RoleCard['requirements'] = [...new Set(sourceRequirements.flatMap(r => r.split(/;|(?=\b(?:preferibil[ei]|gradit[oaie])\b)/i).map(s => s.trim()).filter(Boolean)))].map((value, index) => ({ id: `checkup-req-${index}`, label: fact(value), classification: /\b(?:preferibil[ei]|gradit[oaie]|facoltativ[oaie])\b/i.test(value) ? 'PREFERRED' : 'REQUIRED' }));
   if (!parsedRequirements.some(r => r.classification === 'REQUIRED')) parsedRequirements.push({ id: 'checkup-required-unknown', label: unknown('requisiti'), classification: 'REQUIRED' });
