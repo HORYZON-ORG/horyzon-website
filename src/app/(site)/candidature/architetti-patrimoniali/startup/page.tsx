@@ -2,6 +2,7 @@ import { pageMetadata } from '@/content/seo';
 import { PatrimonialThemeFrame } from '@/components/patrimonial-architect-preview-theme-frame';
 import { ArchitectStartupPresentation } from '@/components/patrimonial-architect-startup';
 import { architectStartupVideoUrl } from '@/lib/public-leads/architect-startup-config';
+import { indeedStartupCallbackReady } from '@/lib/public-leads/architect-indeed-callback';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,11 +16,15 @@ export const metadata = {
   referrer: 'no-referrer' as const,
 };
 
-export default function ArchitectStartupPage() {
+export default async function ArchitectStartupPage({
+  searchParams,
+}: { searchParams: Promise<{ canale?: string | string[] }> }) {
   // Solo video HTTPS MP4 o percorso pubblico locale: finché non arriva il video,
   // il pulsante finale non viene mostrato e nessuna conferma viene registrata.
   const videoUrl = architectStartupVideoUrl(process.env);
+  const fromIndeed = (await searchParams).canale === 'indeed';
   return <PatrimonialThemeFrame defaultTheme="light" showBar={false} rememberChoice={false}>
-    <ArchitectStartupPresentation videoUrl={videoUrl} />
+    <ArchitectStartupPresentation key={fromIndeed ? 'indeed' : 'direct'} videoUrl={videoUrl} fromIndeed={fromIndeed}
+      indeedCallbackEnabled={fromIndeed && indeedStartupCallbackReady(process.env)} />
   </PatrimonialThemeFrame>;
 }

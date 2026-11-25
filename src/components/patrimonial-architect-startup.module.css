@@ -64,6 +64,11 @@
 .confirmAction{display:flex;flex-direction:column;gap:12px;align-items:stretch}
 .confirmButton{display:flex;align-items:center;justify-content:space-between;gap:22px;min-height:76px;padding:17px 21px;border:1px solid #B5E142;border-radius:11px;background:#D8FF42;color:#07171D;font:inherit;font-size:1rem;line-height:1.4;font-weight:780;text-align:left;cursor:pointer;box-shadow:0 8px 24px #73992B22;transition:background .2s,box-shadow .2s,transform .2s}
 .confirmButtonText{flex:1;min-width:0}
+.indeedLink{text-decoration:none}
+.indeedCallbackForm{display:flex;min-width:0;flex-direction:column;gap:12px}
+.indeedCallbackForm label{display:grid;gap:6px;color:#112A30;font-size:.88rem;font-weight:720}
+.indeedCallbackForm input{width:100%;min-width:0;min-height:44px;box-sizing:border-box;padding:9px 12px;border:1px solid #AAB9B7;border-radius:7px;background:#fff;color:#112A30;font:inherit;font-size:1rem}
+.indeedCallbackForm input:focus-visible{outline:3px solid #507A27;outline-offset:2px}
 .confirmArrow{font-size:1.55rem;flex:0 0 auto}
 .confirmButton:hover:not(:disabled){background:#E9FF92;box-shadow:0 12px 28px #73992B35;transform:translateY(-1px)}
 .confirmButton:focus-visible{outline:3px solid #507A27;outline-offset:3px}
