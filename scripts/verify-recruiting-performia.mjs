@@ -65,6 +65,7 @@ for (const text of ['I dettagli saranno approfonditi in colloquio per i candidat
   assert.equal(outsideApplication.context.checkupProtocol.applicationExpected, false, 'mentioning candidates is not an application instruction');
 }
 assert.equal(checkupEvaluationInput({ ...input, target: { ...input.target, text: 'Invia il CV aggiornato.' } }, 'Invia il CV aggiornato.').context.checkupProtocol.applicationExpected, true);
+assert.equal(checkupEvaluationInput({ ...input, target: { ...input.target, text: 'Tecnico a Milano. Candidatura via email con CV.' } }, 'Tecnico a Milano. Candidatura via email con CV.').context.checkupProtocol.applicationExpected, true);
 assert.equal(normalizeCheckupEvaluation({ ...input, context: {} }, { checks }).checks.find(c => c.id === '20').score, 10, 'unrelated flows retain their existing protocol');
 const report = score => ({ score, checks: normalized.checks.map(c => ({ ...c, checkId: c.id, label: c.id, score: c.id === '10' ? 2 : c.score })) });
 assert.equal(buildCheckupImprovementPlan(report(60), report(80)).priorities[0].checkId, '20');

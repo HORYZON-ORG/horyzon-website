@@ -42,7 +42,7 @@ export function checkupNumericFacts(text: string): string[] {
 export function checkupLiteralIssues(original: string, candidate: string): string[] {
   const before = new Set(checkupNumericFacts(original)), after = new Set(checkupNumericFacts(candidate));
   const issues = [...before].filter(n => !after.has(n)).map(n => 'Numero originale perso: ' + n);
-  const modeDeclared = /\b(?:in presenza|da remoto|smart working|lavoro ibrido|modalit[aà] ibrida|lavoro in sede)\b/i.test(original);
+  const modeDeclared = /\b(?:in presenza|presenza in sede|da remoto|smart working|lavoro ibrido|modalit[aà] ibrida|lavoro in sede)\b/i.test(original);
   const modeAdded = /\b(?:in presenza|da remoto|smart working|lavoro ibrido|modalit[aà] ibrida)\b|\b(?:full[ -]?time|tempo pieno)\s+in\s+sede\b/i.test(candidate);
   if (!modeDeclared && modeAdded) issues.push('Modalità di lavoro non dichiarata nella fonte: una sede o il tempo pieno non autorizzano ad aggiungere presenza, remoto o lavoro ibrido.');
   issues.push(...[...after].filter(n => !before.has(n)).map(n => 'Numero non presente nell’originale: ' + n));

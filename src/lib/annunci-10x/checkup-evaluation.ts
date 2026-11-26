@@ -3,7 +3,7 @@ import type { Annunci10xEvaluateOutputV2 } from './ai/schemas-v2.ts';
 import { hasCheckupPlaceholderDestination } from './checkup-source.ts';
 
 export function checkupEvaluationInput(input: Annunci10xEvaluateInputV2, originalText: string): Annunci10xEvaluateInputV2 {
-  const applicationExpected = /(?:^|\n)\s*(?:candidatur[ae]|come candidarsi|candidati(?:\s|[.!?]))|\b(?:per candidar(?:si|ti|vi)|invia(?:re|ci|te)?\b|candidar(?:si|ti|vi)\s+(?:qui|tramite|su|a\b)|candidati\s+(?:ora|qui|tramite|su|a\b))|https?:\/\/|[\w.+-]+@[\w.-]+\.[a-z]{2,}/i.test(originalText);
+  const applicationExpected = /(?:^|[\n.!?;])\s*(?:candidatur[ae]|come candidarsi|candidati(?:\s|[.!?]))|\b(?:per candidar(?:si|ti|vi)|invia(?:re|ci|te)?\b|candidar(?:si|ti|vi)\s+(?:qui|tramite|su|a\b)|candidati\s+(?:ora|qui|tramite|su|a\b))|https?:\/\/|[\w.+-]+@[\w.-]+\.[a-z]{2,}/i.test(originalText);
   return {
     target: { ...input.target, channel: input.target.channel === 'CUSTOM' ? null : input.target.channel,
       structuredFields: null,
