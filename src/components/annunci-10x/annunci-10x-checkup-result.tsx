@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import type { CheckupReport } from '@/lib/annunci-10x/checkup';
-import { checkupCalendarUrl, CHECKUP_INVITATION } from '@/lib/annunci-10x/checkup-copy';
+import { checkupCalendarUrl, CHECKUP_INVITATION, CHECKUP_KEEP_ORIGINAL_INTRO } from '@/lib/annunci-10x/checkup-copy';
 import styles from './annunci-10x.module.css';
 import { recruitingMetaTracker } from '@/lib/recruiting-meta';
 
@@ -27,6 +27,7 @@ export function Annunci10xCheckupResult({ analysisRunId }: { analysisRunId: stri
     return () => { cancelled = true; clearTimeout(timer); };
   }, [analysisRunId, retry]);
   const report = state.report;
+  const keptOriginal = report?.rewriteSelection?.kind === 'ORIGINAL';
   const score = (n: number | null) => n === null ? 'N/D' : `${(n / 10).toLocaleString('it-IT', { maximumFractionDigits: 1 })}/10`;
   return <>
     <section className={styles.resultCard} aria-live="polite">
@@ -36,10 +37,11 @@ export function Annunci10xCheckupResult({ analysisRunId }: { analysisRunId: stri
       {(error || state.status === 'FAILED') && <p role="alert">{error || 'Non è stato generato un regalo completo. Riprova tra qualche minuto: il limite è di tre tentativi.'}</p>}
       {(error || state.status === 'FAILED' || state.status === 'EMAIL_ERROR') && <button type="button" onClick={() => setRetry(n => n + 1)}>Riprova la richiesta</button>}
       {report && <>
-        <div className={styles.fieldGrid}><div><h3>Testo attuale</h3><strong>{score(report.before.score)}</strong></div><div><h3>Proposta migliorata</h3><strong>{score(report.after.score)}</strong></div></div>
+        <div className={styles.fieldGrid}><div><h3>Testo attuale</h3><strong>{score(report.before.score)}</strong></div><div><h3>{keptOriginal ? 'Testo consigliato: originale' : report.rewriteSelection ? 'Testo consigliato' : 'Proposta migliorata'}</h3><strong>{score(report.after.score)}</strong></div></div>
         <p>{report.scoreMethod ? 'Il voto è la media dei criteri valutabili della stessa griglia di 20 controlli, senza tetti aggiuntivi. N/D è escluso dalla media e resta visibile nella copertura.' : 'Stessi 20 criteri per entrambi. Il voto su 10 è il punteggio su 100 diviso 10. Un testo già buono può mantenere il proprio voto.'}</p>
-        <p>Copertura: originale {report.before.coverage}%, proposta {report.after.coverage}%. N/D indica un criterio non valutabile.</p>
+        <p>Copertura: originale {report.before.coverage}%, {report.rewriteSelection ? 'testo consigliato' : 'proposta'} {report.after.coverage}%. N/D indica un criterio non valutabile.</p>
         <div className={styles.actions}><a href={`/api/annunci-10x/checkup/${analysisRunId}/pdf`} download onClick={() => { void recruitingMetaTracker()?.download(analysisRunId); }}>Scarica il PDF completo gratuito</a></div>
+        {report.rewriteSelection && <p>{report.rewriteSelection.explanation}</p>}
         {report.improvementPlan && <section aria-label="Come fare un salto concreto">
           <h3>Come fare un salto concreto</h3>
           <p>{report.improvementPlan.summary}</p>
@@ -50,7 +52,7 @@ export function Annunci10xCheckupResult({ analysisRunId }: { analysisRunId: stri
           </li>)}</ol>
           <p>{report.improvementPlan.nextStep}</p>
         </section>}
-        <details><summary>Confronta i due testi</summary><div className={styles.fieldGrid}><div><h3>Originale</h3><p style={{ whiteSpace: 'pre-wrap' }}>{report.originalText}</p></div><div><h3>Proposta</h3><p style={{ whiteSpace: 'pre-wrap' }}>{report.improvedText}</p></div></div></details>
+        <details><summary>Confronta i due testi</summary><div className={styles.fieldGrid}><div><h3>Originale</h3><p style={{ whiteSpace: 'pre-wrap' }}>{report.originalText}</p></div><div><h3>{keptOriginal ? 'Testo consigliato: originale' : 'Proposta'}</h3><p style={{ whiteSpace: 'pre-wrap' }}>{report.improvedText}</p></div></div></details>
         <details><summary>Modifiche e informazioni da chiarire</summary>{report.changes.length ? <ul>{report.changes.map((c, i) => <li key={i}>{c}</li>)}</ul> : <p>I punteggi sono rimasti invariati.</p>}<h3>Informazioni utili da approfondire</h3><ul>{report.missingInformation.map((c, i) => <li key={i}>{c}</li>)}</ul></details>
         <p>Valutazione automatica di chiarezza e completezza: non garantisce candidature o assunzioni. La proposta usa i fatti disponibili; verifica il testo prima di pubblicarlo.</p>
       </>}
@@ -58,7 +60,7 @@ export function Annunci10xCheckupResult({ analysisRunId }: { analysisRunId: stri
     {report && <section className={styles.checkupOffer}>
       <p>Un ulteriore miglioramento, se lo desideri</p>
       <h3>15 minuti gratuiti con Angelo</h3>
-      {CHECKUP_INVITATION.slice(0, 3).map(p => <p key={p}>{p}</p>)}
+      {CHECKUP_INVITATION.slice(0, 3).map((p, i) => <p key={p}>{keptOriginal && i === 0 ? CHECKUP_KEEP_ORIGINAL_INTRO : p}</p>)}
       <a href={checkupCalendarUrl(analysisRunId)} target="_blank" rel="noopener noreferrer" onClick={() => {
         void recruitingMetaTracker()?.bookingClick(analysisRunId);
         void fetch(`/api/annunci-10x/checkup/${analysisRunId}/booking-click`, { method: 'POST' }).catch(() => undefined);

@@ -115,9 +115,14 @@ const customerDeterministic = deterministicMaster(CUSTOMER_CARE_CANONICAL_FIXTUR
   sourceCard.attractionContext.companyDescription.value = "L'azienda offre servizi B2B in abbonamento.";
   sourceCard.mission.value = 'La persona risponderà alle richieste clienti.';
   sourceCard.outcomes[0].value = 'Dare risposte corrette e tempestive ai clienti e mantenere aggiornate le pratiche.';
+  const fullRequirement = 'Cerchiamo una persona con italiano scritto chiaro e precisione.';
+  sourceCard.requirements = [{ id: 'source-requirements', classification: 'REQUIRED', label: { ...sourceCard.mission, value: fullRequirement } }];
   const ledger = createAnnunci10xTruthLedger(sourceCard);
   const master = buildDeterministicCandidateMaster({ sessionId: 'source-sentences', roleCard: sourceCard, truthLedger: ledger, promptVersion: PROMPT_VERSION });
   const opening = master.sections.find(section => section.type === 'OPENING').body;
+  const requirements = master.sections.find(section => section.type === 'REQUIREMENTS').body;
+  assert.ok(requirements.includes(fullRequirement));
+  assert.doesNotMatch(requirements, /servono Cerchiamo/, 'a complete requirement sentence must remain grammatically independent');
   assert.doesNotMatch(opening, /Lavorerai in L'azienda|nel La persona|\.\.|\. come /, 'verbatim source sentences must not be spliced into incompatible grammatical templates');
   for (const value of [sourceCard.attractionContext.companyDescription.value, sourceCard.mission.value, sourceCard.outcomes[0].value]) {
     assert.ok(opening.includes(value), 'the readable fallback must preserve the complete source wording');

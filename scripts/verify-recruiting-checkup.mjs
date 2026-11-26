@@ -49,12 +49,16 @@ await assert.rejects(() => extractCheckupFile(new File([new Uint8Array(3_000_001
 const docx = zipSync({ '[Content_Types].xml': strToU8('<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>'), 'word/document.xml': strToU8(`<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>${ad}</w:t></w:r></w:p></w:body></w:document>`) });
 assert.match(await extractCheckupFile(new File([docx], 'annuncio.docx')), /customer care/);
 const calls = [];
+let evaluationCount = 0;
 const provider = new MockAnnunci10xProvider('success');
 const originalGenerate = provider.executeStructuredTask.bind(provider);
 provider.executeStructuredTask = async (...args) => {
   calls.push(args[0]);
   const result = await originalGenerate(...args);
-  if (args[0].operationType === 'EVALUATE') return { ...result, output: { ...result.output, checks: result.output.checks.map(c => ({ ...c, score: c.id === '10' ? 2 : 8, status: 'EVALUATED', missing: [] })) } };
+  if (args[0].operationType === 'EVALUATE') {
+    const candidate = ++evaluationCount > 1;
+    return { ...result, output: { ...result.output, checks: result.output.checks.map(c => ({ ...c, score: c.id === '10' ? 2 : candidate ? 6 : 8, status: 'EVALUATED', missing: [] })) } };
+  }
   // Reproduce the real classifier refusal: missing conditions must be evaluated.
   return args[0].operationType === 'PRECHECK'
     ? { ...result, output: { detectedType: 'INCOMPLETE_AD', confidence: 90, reason: 'Company and compensation are missing.', canRunFullAnalysis: false } }
@@ -86,6 +90,9 @@ const first = await prepareCheckup({ ...input, env, provider: flaky });
 assert.equal(first.status, 'EMAIL_ERROR'); assert.ok(first.report && first.pdfBase64);
 assert.equal(first.report.before.score, 77, 'a weak requirement classification must not cap the check-up mean at 69');
 assert.equal(first.report.after.score, 77);
+assert.equal(first.report.rewriteSelection.kind, 'ORIGINAL');
+assert.equal(first.report.rewriteSelection.evaluatedRewriteScore, 58);
+assert.equal(first.report.improvedText, ad, 'a worse candidate must not be presented as an improved text');
 assert.equal(first.report.improvementPlan.priorities[0].checkId, '10');
 const afterCalls = calls.length;
 failEmail = false;
@@ -99,6 +106,8 @@ const delivered = emailProvider.sentScoreReports[0];
 const payload = buildResendScoreReportPayload({ ...delivered, from: 'Test <noreply@example.com>' });
 assert.ok(payload.attachments[0].content.startsWith('JVBER'));
 assert.match(payload.text, /15 minuti/); assert.doesNotMatch(payload.text, /49 €|9 euro|validazione/); assert.match(payload.text, /facoltativa/);
+assert.match(payload.text, /Testo consigliato \(originale\)/);
+assert.match(payload.text, /La riscrittura valutata ha ottenuto/);
 assert.doesNotMatch(saved.receipt.report.improvedText, /€|euro|benefit|smart working|N\/D|da chiarire|di gestirà/i);
 assert.match(saved.receipt.report.improvedText, /email con CV/i);
 const unowned = await createAnonymousAnalyzeSession(context);

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { meanCheckupReport, buildCheckupImprovementPlan } from '../src/lib/annunci-10x/checkup-improvements.ts';
+import { meanCheckupReport, buildCheckupImprovementPlan, selectCheckupRecommendation } from '../src/lib/annunci-10x/checkup-improvements.ts';
 
 const ids = Array.from({ length: 20 }, (_, i) => String(i + 1).padStart(2, '0'));
 function report(classification = 2) {
@@ -27,6 +27,15 @@ assert.match(plan.priorities[0].questions.join(' '), /primo giorno/);
 assert.match(plan.priorities[0].draft, /Indispensabili: \[requisiti confermati\]/);
 assert.match(plan.summary, /base buona/);
 assert.match(plan.nextStep, /contenuti aggiunti/);
+const worse = meanCheckupReport(report(0));
+const retained = selectCheckupRecommendation('Testo originale', 'Riscrittura peggiore', before, worse);
+assert.equal(retained.selection.kind, 'ORIGINAL');
+assert.equal(retained.text, 'Testo originale');
+assert.equal(retained.report, before, 'the reported recommended score belongs to the exact original text retained');
+assert.equal(retained.selection.evaluatedRewriteScore, worse.score, 'retain the actual lower candidate score for transparent disclosure');
+assert.match(retained.selection.explanation, /Manteniamo l’originale/);
+assert.equal(selectCheckupRecommendation('Originale', 'Riscrittura migliore', before, after).selection.kind, 'REWRITE');
+assert.equal(selectCheckupRecommendation('Originale', 'Riscrittura equivalente', before, before).selection.kind, 'REWRITE');
 
 const missing = report();
 for (const c of missing.checks) if (['13', '14'].includes(c.checkId)) { c.score = 0; c.status = 'MISSING'; }

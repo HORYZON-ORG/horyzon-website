@@ -92,7 +92,7 @@ export interface ScoreReportEmailAreaInput {
 }
 
 export interface ScoreReportEmailInput {
-  checkup?: { afterScore: number | null; pdfBase64: string };
+  checkup?: { afterScore: number | null; pdfBase64: string; keptOriginal?: boolean; selectionNote?: string };
   deliveryId: string;
   analysisRunId: string;
   recipient: string;

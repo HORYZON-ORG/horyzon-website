@@ -20,6 +20,24 @@ export interface CheckupImprovementPlan {
   priorities: CheckupImprovement[];
   nextStep: string;
 }
+export interface CheckupRewriteSelection {
+  kind: 'REWRITE' | 'ORIGINAL';
+  evaluatedRewriteScore: number | null;
+  explanation: string;
+}
+
+export function selectCheckupRecommendation(originalText: string, rewrittenText: string, before: Annunci10xScoreReport, evaluatedRewrite: Annunci10xScoreReport) {
+  const keepOriginal = evaluatedRewrite.score === null || (before.score !== null && evaluatedRewrite.score < before.score - 1e-8);
+  const format = (n: number | null) => n === null ? 'N/D' : `${(n / 10).toLocaleString('it-IT', { maximumFractionDigits: 1 })}/10`;
+  const selection: CheckupRewriteSelection = {
+    kind: keepOriginal ? 'ORIGINAL' : 'REWRITE',
+    evaluatedRewriteScore: evaluatedRewrite.score,
+    explanation: keepOriginal
+      ? `La riscrittura valutata ha ottenuto ${format(evaluatedRewrite.score)}, rispetto a ${format(before.score)} dell’originale. Manteniamo l’originale come testo consigliato. Per fare un salto concreto, integra le informazioni indicate nelle priorità.`
+      : 'Il testo consigliato è la riscrittura, valutata con gli stessi 20 criteri. Le priorità indicano quali informazioni confermare per migliorarlo ancora.',
+  };
+  return { text: keepOriginal ? originalText : rewrittenText, report: keepOriginal ? before : evaluatedRewrite, selection };
+}
 
 /** A presentation score for the check-up; persisted legacy evaluations remain immutable. */
 export function meanCheckupReport(report: Annunci10xScoreReport): Annunci10xScoreReport {
@@ -114,7 +132,7 @@ export function buildCheckupImprovementPlan(before: Annunci10xScoreReport, after
     .map(c => ({ checkId: c.checkId, title: c.label, currentScore: c.score!, currentGap: c.reason, ...actions[c.checkId] }));
   const strongBase = (before.score ?? 0) >= 80;
   const summary = priorities.length
-    ? `${strongBase ? 'Il testo parte già da una base buona. ' : ''}La riscrittura usa le informazioni disponibili. Per un salto più sostanziale, completa questi punti con dati confermati dall’azienda.`
+    ? `${strongBase ? 'Il testo parte già da una base buona. ' : ''}Il testo consigliato usa le informazioni disponibili. Per un salto più sostanziale, completa questi punti con dati confermati dall’azienda.`
     : after.score === null
       ? 'La copertura non consente di scegliere priorità affidabili. Verifica ruolo, attività e condizioni prima di una nuova valutazione.'
       : 'Non emergono integrazioni fattuali prioritarie dalla griglia. Verifica che le informazioni restino complete, precise e coerenti quando aggiorni il testo.';

@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { Document, Page, Text, View, Link, Image, Svg, Path, Circle, Rect, Line, StyleSheet, renderToBuffer } from '@react-pdf/renderer';
 import type { CheckupReport } from './checkup.ts';
 import { checkupScore } from './checkup.ts';
-import { checkupCalendarUrl, CHECKUP_INVITATION } from './checkup-copy.ts';
+import { checkupCalendarUrl, CHECKUP_INVITATION, CHECKUP_KEEP_ORIGINAL_INTRO } from './checkup-copy.ts';
 import { CHECKUP_SCORE_EXPLANATION } from './checkup-improvements.ts';
 import type { Annunci10xScoreReport } from './score-report-email.ts';
 
@@ -66,17 +66,20 @@ function grid(report: Annunci10xScoreReport) {
 }
 export async function renderCheckupPdf(report: CheckupReport): Promise<Buffer> {
   const logo = await readFile(join(process.cwd(), 'public/horyzon-logo-canonical.png'));
-  const comparison = h(View, { style: s.scores }, ...[{ label: 'Testo attuale', value: report.before.score }, { label: 'Proposta migliorata', value: report.after.score }].map(({ label, value }, i) => h(View, { key: label, style: i ? [s.card, s.cardAfter] : s.card }, h(Text, null, label), h(Text, { style: s.score }, checkupScore(value)), h(View, { style: s.track }, h(View, { style: [s.bar, { width: `${Math.min(100, Math.max(0, value ?? 0))}%`, ...(i ? { backgroundColor: '#94a936' } : {}) }] })))));
+  const keptOriginal = report.rewriteSelection?.kind === 'ORIGINAL';
+  const afterLabel = keptOriginal ? 'Testo consigliato: originale' : report.rewriteSelection ? 'Testo consigliato' : 'Proposta migliorata';
+  const comparison = h(View, { style: s.scores }, ...[{ label: 'Testo attuale', value: report.before.score }, { label: afterLabel, value: report.after.score }].map(({ label, value }, i) => h(View, { key: label, style: i ? [s.card, s.cardAfter] : s.card }, h(Text, null, label), h(Text, { style: s.score }, checkupScore(value)), h(View, { style: s.track }, h(View, { style: [s.bar, { width: `${Math.min(100, Math.max(0, value ?? 0))}%`, ...(i ? { backgroundColor: '#94a936' } : {}) }] })))));
   const doc = h(Document, { title: `Check-up annuncio - ${report.roleTitle}`, author: 'HORYZON Recruiting', creationDate: new Date(report.createdAt), modificationDate: new Date(report.createdAt) },
     page(logo, 'Il check-up del tuo annuncio', 'compare', [...(report.example ? [p('FACSIMILE - Annuncio fittizio e valutazioni simulate, solo a scopo dimostrativo.')] : []), h(Text, { style: s.title }, clean(report.roleTitle)), p('Valutazione automatica, proposta e confronto'), comparison,
       h(View, { style: s.steps }, ...([['check', 'Valutazione'], ['rewrite', 'Riscrittura'], ['compare', 'Confronto']] as const).map(([name, label]) => h(View, { key: name, style: s.step }, icon(name), h(Text, null, label)))),
       p(report.scoreMethod ? CHECKUP_SCORE_EXPLANATION : 'Stessa griglia V2 di 20 controlli per entrambi i testi. Il voto su 10 è il punteggio su 100 diviso 10; N/D indica un criterio non valutabile. Le informazioni mancanti restano distinte.'),
-      p(`Copertura: originale ${report.before.coverage}%; proposta ${report.after.coverage}%.`),
-      h(View, { style: s.row }, h(Text, { style: s.label }, 'Area'), h(Text, { style: s.cell }, 'Originale'), h(Text, { style: s.cell }, 'Proposta')),
+      p(`Copertura: originale ${report.before.coverage}%; ${report.rewriteSelection ? 'testo consigliato' : 'proposta'} ${report.after.coverage}%.`),
+      h(View, { style: s.row }, h(Text, { style: s.label }, 'Area'), h(Text, { style: s.cell }, 'Originale'), h(Text, { style: s.cell }, report.rewriteSelection ? 'Consigliato' : 'Proposta')),
       ...report.before.areaScores.map((a, i) => h(View, { style: s.row, key: a.id }, h(Text, { style: s.label }, a.label), h(Text, { style: s.cell }, checkupScore(a.score)), h(Text, { style: s.cell }, checkupScore(report.after.areaScores[i].score)))),
       p('Il punteggio valuta chiarezza e completezza del testo. Non misura la qualità dell’azienda o delle persone e non garantisce candidature o assunzioni.'),
       ...(report.improvementPlan?.priorities.length ? [p(`Per il prossimo salto: ${report.improvementPlan.priorities.map(c => c.title).join('; ')}.`)] : [])]),
     ...(report.improvementPlan ? [page(logo, 'Come fare un salto concreto', 'rewrite', [
+      ...(report.rewriteSelection ? [p(report.rewriteSelection.explanation)] : []),
       p(report.improvementPlan.summary),
       ...(report.changes.length ? [h(Text, { style: s.sub }, 'Che cosa cambia con la riscrittura'), ...report.changes.map(p)] : []),
       ...report.improvementPlan.priorities.map((c, i) => h(View, { key: c.checkId, style: s.action, wrap: false },
@@ -90,14 +93,14 @@ export async function renderCheckupPdf(report: CheckupReport): Promise<Buffer> {
     ])] : []),
     page(logo, 'Il tuo annuncio originale', 'document', [p(report.originalText)]),
     page(logo, 'Valutazione del testo originale', 'check', grid(report.before)),
-    page(logo, 'La possibile versione migliorata', 'rewrite', [p(report.improvedText), p('La proposta usa i fatti disponibili: non aggiunge compensi, benefit, requisiti o promesse assenti dal testo. Verifica le informazioni prima della pubblicazione.')]),
-    page(logo, 'Valutazione della proposta', 'check', grid(report.after)),
+    page(logo, keptOriginal ? 'Il testo consigliato: originale' : 'La possibile versione migliorata', 'rewrite', [p(report.improvedText), p('La proposta usa i fatti disponibili: non aggiunge compensi, benefit, requisiti o promesse assenti dal testo. Verifica le informazioni prima della pubblicazione.')]),
+    page(logo, keptOriginal ? 'Valutazione del testo consigliato' : 'Valutazione della proposta', 'check', grid(report.after)),
     ...(!report.improvementPlan ? [page(logo, 'Che cosa cambia e che cosa approfondire', 'compare', [
       ...((report.changes.length ? report.changes : ['I punteggi restano invariati: una diversa formulazione non comporta automaticamente un voto maggiore.']).map(p)),
       h(Text, { style: s.heading }, 'Informazioni utili da chiarire'),
       ...(report.missingInformation.length ? report.missingInformation : ['Non emergono ulteriori informazioni mancanti dai controlli effettuati.']).map(p),
     ])] : []),
-    page(logo, 'Un ulteriore passo, se lo desideri', 'phone', [...CHECKUP_INVITATION.slice(0, 3).map(p),
+    page(logo, 'Un ulteriore passo, se lo desideri', 'phone', [...CHECKUP_INVITATION.slice(0, 3).map((text, i) => p(keptOriginal && i === 0 ? CHECKUP_KEEP_ORIGINAL_INTRO : text)),
       h(Link, { src: checkupCalendarUrl(report.analysisRunId), style: s.link }, CHECKUP_INVITATION[3]),
       p('È una telefonata facoltativa. Il PDF è già completo e gratuito; puoi usarlo senza prenotare e senza obbligo di acquisto.'),
       p('Angelo Ria Chetta · Analista d’azienda specializzato nelle risorse umane'),

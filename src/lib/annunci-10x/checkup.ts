@@ -1,5 +1,5 @@
-import { checkupCalendarUrl } from './checkup-copy.ts';
-import { CHECKUP_SCORE_METHOD, meanCheckupReport, buildCheckupImprovementPlan, type CheckupImprovementPlan } from './checkup-improvements.ts';
+import { checkupCalendarUrl, CHECKUP_KEEP_ORIGINAL_INTRO } from './checkup-copy.ts';
+import { CHECKUP_SCORE_METHOD, meanCheckupReport, buildCheckupImprovementPlan, selectCheckupRecommendation, type CheckupImprovementPlan, type CheckupRewriteSelection } from './checkup-improvements.ts';
 import { Annunci10xPublicError, type Annunci10xRuntimeContext, type Annunci10xSessionCookie } from './product-flow.ts';
 import { buildAnnunci10xScoreReport, type Annunci10xScoreReport } from './score-report-email.ts';
 import { createAnnunci10xEmailProvider, type Annunci10xEmailProvider } from './lead-verification.ts';
@@ -12,6 +12,7 @@ import type { GeneratedAd } from './types.ts';
 export interface CheckupReport {
   scoreMethod?: typeof CHECKUP_SCORE_METHOD;
   improvementPlan?: CheckupImprovementPlan;
+  rewriteSelection?: CheckupRewriteSelection;
   example?: boolean;
   version: typeof CHECKUP_VERSION;
   analysisRunId: string;
@@ -79,14 +80,17 @@ async function prepare(input: CheckupInput): Promise<CheckupReceipt> {
     }
     if (!isScoreResultV2(after.score)) throw new Error('checkup requires V2');
     const beforeReport = meanCheckupReport(buildAnnunci10xScoreReport({ lead, analysisRun: run, evaluation: { ...original, score: original.score }, snapshot }));
-    const afterReport = meanCheckupReport(buildAnnunci10xScoreReport({ lead, analysisRun: run, evaluation: { ...after, score: after.score }, snapshot }));
+    const evaluatedRewrite = meanCheckupReport(buildAnnunci10xScoreReport({ lead, analysisRun: run, evaluation: { ...after, score: after.score }, snapshot }));
     const master = output.generatedContent as GeneratedAd;
-    const improvedText = master.sections.map(s => [s.title, s.body].filter(Boolean).join('\n')).join('\n\n');
+    const rewrittenText = master.sections.map(s => [s.title, s.body].filter(Boolean).join('\n')).join('\n\n');
+    const recommendation = selectCheckupRecommendation(run.targetText!, rewrittenText, beforeReport, evaluatedRewrite);
+    const afterReport = recommendation.report;
     const report: CheckupReport = {
       scoreMethod: CHECKUP_SCORE_METHOD,
       improvementPlan: buildCheckupImprovementPlan(beforeReport, afterReport),
+      rewriteSelection: recommendation.selection,
       version: CHECKUP_VERSION, analysisRunId: run.id, createdAt: output.createdAt,
-      roleTitle: beforeReport.roleTitle, originalText: run.targetText!, improvedText,
+      roleTitle: beforeReport.roleTitle, originalText: run.targetText!, improvedText: recommendation.text,
       before: beforeReport, after: afterReport,
       changes: beforeReport.checks.flatMap((c, i) => {
         const next = afterReport.checks[i];
@@ -133,7 +137,7 @@ async function sendGift(input: CheckupInput, run: PersistedAnalysisRun, receipt:
     const provider = input.provider ?? createAnnunci10xEmailProvider(env);
     const sent = await provider.sendScoreReport({
       ...receipt.report.before, deliveryId: delivery.id, recipient: delivery.recipientNormalized, firstName: lead.firstName,
-      checkup: { afterScore: receipt.report.after.score, pdfBase64: receipt.pdfBase64 },
+      checkup: { afterScore: receipt.report.after.score, pdfBase64: receipt.pdfBase64, keptOriginal: receipt.report.rewriteSelection?.kind === 'ORIGINAL', selectionNote: receipt.report.rewriteSelection?.explanation },
     });
     await input.context.persistence.markEmailDeliverySent({ deliveryId: delivery.id, sessionSecret: input.session.sessionSecret, provider: provider.kind, providerRequestId: sent.providerRequestId ?? null });
 
@@ -160,11 +164,11 @@ async function ownedReadyRun(input: CheckupInput) {
 }
 function label(value: number | null) { return value === null ? 'N/D' : `${value}/10`; }
 export function checkupScore(value: number | null) { return value === null ? 'N/D' : `${(value / 10).toLocaleString('it-IT', { maximumFractionDigits: 1 })}/10`; }
-export function checkupEmail(input: { analysisRunId: string; firstName?: string | null; roleTitle: string; score: number | null; afterScore: number | null; pdfBase64: string; from: string; replyTo?: string | null }) {
+export function checkupEmail(input: { analysisRunId: string; firstName?: string | null; roleTitle: string; score: number | null; afterScore: number | null; pdfBase64: string; from: string; replyTo?: string | null; keptOriginal?: boolean; selectionNote?: string }) {
   const greeting = `Buongiorno${input.firstName ? ` ${input.firstName.replace(/[\r\n]/g, ' ')}` : ''},`;
   const calendarUrl = checkupCalendarUrl(input.analysisRunId);
-  const comparison = `Testo attuale: ${checkupScore(input.score)}. Proposta: ${checkupScore(input.afterScore)}. Stessi 20 criteri; conversione dal punteggio su 100: valore diviso 10.`;
-  const text = [greeting, '', CHECKUP_INVITATION[0], 'La valutazione è automatica e riguarda chiarezza e completezza del testo.', comparison, '', ...CHECKUP_INVITATION.slice(1, 3), '', CHECKUP_INVITATION[3], calendarUrl, '', 'Il PDF allegato è gratuito. La telefonata è facoltativa e non è necessaria per ricevere o usare il risultato.', '', 'Un saluto,', 'Angelo Ria Chetta', 'HORYZON Recruiting'].join('\n\n');
+  const comparison = `Testo attuale: ${checkupScore(input.score)}. ${input.keptOriginal ? 'Testo consigliato (originale)' : 'Proposta'}: ${checkupScore(input.afterScore)}. Stessi 20 criteri; conversione dal punteggio su 100: valore diviso 10.`;
+  const text = [greeting, '', input.keptOriginal ? CHECKUP_KEEP_ORIGINAL_INTRO : CHECKUP_INVITATION[0], 'La valutazione è automatica e riguarda chiarezza e completezza del testo.', comparison, ...(input.selectionNote ? [input.selectionNote] : []), '', ...CHECKUP_INVITATION.slice(1, 3), '', CHECKUP_INVITATION[3], calendarUrl, '', 'Il PDF allegato è gratuito. La telefonata è facoltativa e non è necessaria per ricevere o usare il risultato.', '', 'Un saluto,', 'Angelo Ria Chetta', 'HORYZON Recruiting'].join('\n\n');
   const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]!);
   return { from: input.from, to: [], ...(input.replyTo ? { reply_to: input.replyTo } : {}), subject: `Il check-up del tuo annuncio per ${input.roleTitle.replace(/[\r\n]/g, ' ')}`, text,
     html: `<div style="font:16px/1.6 Arial;color:#173334;max-width:640px;margin:auto">${text.split('\n\n').filter(p => p !== calendarUrl).map(p => p === CHECKUP_INVITATION[3] ? `<p><a href="${calendarUrl}" style="background:#d5e04d;color:#173334;padding:12px 16px;display:inline-block">${esc(p)}</a></p>` : `<p>${esc(p)}</p>`).join('')}</div>`,

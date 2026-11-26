@@ -1673,7 +1673,8 @@ function deterministicRequirementsSection(view: CandidateWriterView): GeneratedS
   const required = view.required.map((fact) => formatItalianDisplay(fact.value.trim())).filter(Boolean);
   const preferred = view.preferred.map((fact) => fact.value.trim()).filter(Boolean);
   if (required.length > 0) {
-    rows.push(`Per questo ruolo servono ${formatHumanList(required)}.`);
+    const completeSentences = required.some(value => /^(?:cerchiamo|richiediamo|requisiti(?:\s|:)|(?:è|e|sono)\s+richiest|per (?:questo|il) ruolo)/i.test(value));
+    rows.push(completeSentences ? required.map(ensureFinalPunctuation).join('\n') : `Per questo ruolo servono ${formatHumanList(required)}.`);
     sourceIds.push(...view.required.map((fact) => fact.id));
   }
   if (preferred.length > 0) {
