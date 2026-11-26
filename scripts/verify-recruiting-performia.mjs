@@ -55,6 +55,11 @@ assert.deepEqual(normalized.checks.filter(c => ['16','17'].includes(c.id)).map(c
 assert.equal(normalized.checks.find(c => c.id === '20').score, 2);
 const noCta = checkupEvaluationInput({ ...input, target: { ...input.target, text: 'Tornitore CNC. Contratto a tempo indeterminato.' } }, 'Tornitore CNC. Contratto a tempo indeterminato.');
 assert.equal(normalizeCheckupEvaluation(noCta, { checks }).checks.find(c => c.id === '20').status, 'NOT_EVALUABLE');
+for (const text of ['I dettagli saranno approfonditi in colloquio per i candidati selezionati.', 'La ricerca è rivolta a candidati nel rispetto della normativa.']) {
+  const outsideApplication = checkupEvaluationInput({ ...input, target: { ...input.target, text } }, text);
+  assert.equal(outsideApplication.context.checkupProtocol.applicationExpected, false, 'mentioning candidates is not an application instruction');
+}
+assert.equal(checkupEvaluationInput({ ...input, target: { ...input.target, text: 'Invia il CV aggiornato.' } }, 'Invia il CV aggiornato.').context.checkupProtocol.applicationExpected, true);
 assert.equal(normalizeCheckupEvaluation({ ...input, context: {} }, { checks }).checks.find(c => c.id === '20').score, 10, 'unrelated flows retain their existing protocol');
 const report = score => ({ score, checks: normalized.checks.map(c => ({ ...c, checkId: c.id, label: c.id, score: c.id === '10' ? 2 : c.score })) });
 assert.equal(buildCheckupImprovementPlan(report(60), report(80)).priorities[0].checkId, '20');
