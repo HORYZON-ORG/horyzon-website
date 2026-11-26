@@ -7,7 +7,7 @@ import type { PersistedSnapshot } from './persistence/types.ts';
 import type { GeneratedAd, GeneratedSection } from './types.ts';
 import { checkupSourceUnits, checkupLiteralIssues } from './checkup-source.ts';
 
-export const CHECKUP_WRITER_VERSION = 'checkup-performia-faithful-v3';
+export const CHECKUP_WRITER_VERSION = 'checkup-performia-faithful-v4';
 export interface CheckupStrategy { qualification: string; rhythm: string; popularity: string; technicality: string }
 export interface CheckupQuality {
   version: typeof CHECKUP_WRITER_VERSION;
@@ -50,6 +50,7 @@ export const CHECKUP_WRITER_PROMPT = [
   "Riscrivi l'intero testo: ordine e sezioni flessibili, apertura specifica, verbi concreti e periodi leggibili. Niente 'Il ruolo è', etichette di audit, sourceId nel testo, ripetizioni di mansioni, commenti sul documento o frasi come 'sono confermati'. Puoi compattare ripetizioni identiche senza perdere informazioni.",
   "Le tipologie di sezione sono opzioni, non una lista da riempire: ometti le sezioni prive di fatti. Non scrivere mai 'non dichiarato', 'non specificato', 'nel testo sorgente', N/D, dati da chiedere o commenti sulle lacune nell'annuncio riscritto. Le domande all'azienda appartengono al report separato.",
   "CONSERVA tutti i fatti: azienda e contesto distintivo; mansioni; requisiti e loro classificazione; sede, territorio e trasferte; contratto e prospettive condizionate; giorni e turni; tutti gli importi, lordo/netto, periodi, fisso/variabile e condizioni; benefit, strumenti, formazione; candidatura e passaggi già dichiarati; informativa e riferimenti normativi presenti.",
+  "Non dedurre la modalità di lavoro dalla sede o dal tipo di contratto: 'sede Milano' e 'tempo pieno' non autorizzano a scrivere 'tempo pieno in sede', 'in presenza', remoto o ibrido se non dichiarati. Conserva il territorio e l'autonomia organizzativa effettivi.",
   "Mantieni la grafia dei dati numerici e dei codici: non convertire cifre in parole o parole in cifre. Non numerare le sezioni e non aggiungere quantità riassuntive assenti dalla fonte.",
   "Non trasformare una preferenza in obbligo né un beneficio condizionato in garantito. Mantieni negazioni, soglie, esclusioni, eccezioni e parole come 'fino a', 'tipicamente', 'possibilità', 'dopo nove mesi'. Non inventare date, KPI, risultati numerici, benefit, processi, destinatari o identità del cliente di un'agenzia.",
   "Una preferenza parziale non rende facoltativo l'intero requisito: 'esperienza in produzione, preferibilmente almeno 5 anni' richiede esperienza in produzione, con 5 anni preferiti. 'Residenza in Lombardia, preferenza Milano' mantiene Lombardia obbligatoria e Milano preferita. Conserva separatamente il requisito principale e la preferenza; non spostare l'intera frase tra i preferenziali.",

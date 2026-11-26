@@ -46,6 +46,8 @@ const proposal = { strategy: { qualification: 'qualificato', rhythm: 'UNKNOWN', 
 assert.deepEqual(checkupCoverageIssues(source, proposal), []);
 assert.ok(checkupLiteralIssues(source, source.replace('35.000', '40.000')).length >= 2);
 assert.ok(checkupLiteralIssues(source, source + '\nInvia a nuovo@example.com').some(s => /non autorizzata/.test(s)));
+assert.ok(checkupLiteralIssues('Commerciale. Sede Milano. Tempo pieno.', 'Commerciale. Sede Milano. Tempo pieno in sede.').some(s => /Modalità di lavoro/.test(s)));
+assert.deepEqual(checkupLiteralIssues('Commerciale. Sede Milano. Tempo pieno in presenza.', 'Commerciale. Sede Milano. Tempo pieno in sede.'), []);
 assert.ok(checkupCoverageIssues(source, { ...proposal, sections: proposal.sections.map(s => ({ ...s, sourceIds: [] })) }).some(s => /non coperta/.test(s)));
 assert.ok(checkupCoverageIssues(source, { ...proposal, sections: [{ ...proposal.sections[0], title: 'Bonus 9999' }, proposal.sections[1]] }).some(s => /9999/.test(s)));
 
