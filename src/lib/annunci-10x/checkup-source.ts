@@ -14,7 +14,8 @@ export function checkupSourceUnits(text: string): CheckupSourceUnit[] {
     const inlineHeading = line.includes(':') ? sourceHeading(line.slice(0, line.indexOf(':'))) : null;
     if (inlineHeading) area = inlineHeading;
     // A preference about years or a narrower location does not make the main prerequisite optional.
-    const preferredItem = /^(?:preferibil\w*|preferenzial\w*|gradit\w*|facoltativ\w*|costituisc\w*|[eè] particolarmente apprezzat\w*)\b|costituir[aà]\s+(?:un\s+)?titolo preferenziale/i.test(line);
+    const partialPreference = /\([^)]*(?:preferibilmente|preferenza|preferenziale\s+(?:la|il|l[’']))/i.test(line);
+    const preferredItem = !partialPreference && /^(?:preferibil\w*|preferenzial\w*|gradit\w*|facoltativ\w*|costituisc\w*|[eè] particolarmente apprezzat\w*)\b|costituir[aà]\s+(?:un\s+)?titolo preferenziale/i.test(line);
     const actualArea = preferredItem
       && (area === 'REQUIRED' || area === 'PREFERRED' || /diploma|esperienza|titolo|provenienza|conoscenza|residenza/i.test(line)) ? 'PREFERRED'
       : /si occuper[aà]|gestir[aà]/i.test(line) && (area === 'REQUIRED' || area === 'PREFERRED') ? 'ACTIVITIES'

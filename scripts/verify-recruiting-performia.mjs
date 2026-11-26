@@ -35,6 +35,9 @@ const mixed = buildCheckupRoleCard('Tecnico\nRequisiti:\nPregressa esperienza in
 assert.equal(mixed.requirements.find(r => /contesti produttivi/.test(r.label.value)).classification, 'REQUIRED');
 assert.equal(mixed.requirements.find(r => /Residenza in Lombardia/.test(r.label.value)).classification, 'REQUIRED');
 assert.equal(mixed.requirements.find(r => /Preferibile esperienza/.test(r.label.value)).classification, 'PREFERRED');
+const sector = buildCheckupRoleCard('Commerciale\nRequisiti:\nConoscenza del tessuto imprenditoriale lombardo (costituirà titolo preferenziale la provenienza dai settori parquet, legno, edilizia).\nTitolo di studio: diploma tecnico (costituirà titolo preferenziale).', { extractedFacts: [], possibleConflicts: [] });
+assert.equal(sector.requirements.find(r => /Conoscenza del tessuto/.test(r.label.value)).classification, 'REQUIRED');
+assert.equal(sector.requirements.find(r => /Titolo di studio/.test(r.label.value)).classification, 'PREFERRED');
 const units = checkupSourceUnits(source);
 const proposal = { strategy: { qualification: 'qualificato', rhythm: 'UNKNOWN', popularity: 'UNKNOWN', technicality: 'specialistico' }, sections: [
   { type: 'TITLE', title: '', body: 'Saldatore esperto', sourceIds: [] },
