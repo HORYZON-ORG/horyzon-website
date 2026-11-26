@@ -110,6 +110,19 @@ assertWarehouseForbiddenUnexpectedEvent(
 );
 
 const customerDeterministic = deterministicMaster(CUSTOMER_CARE_CANONICAL_FIXTURE, customer.truthLedger);
+{
+  const sourceCard = structuredClone(CUSTOMER_CARE_CANONICAL_FIXTURE.roleCard);
+  sourceCard.attractionContext.companyDescription.value = "L'azienda offre servizi B2B in abbonamento.";
+  sourceCard.mission.value = 'La persona risponderà alle richieste clienti.';
+  sourceCard.outcomes[0].value = 'Dare risposte corrette e tempestive ai clienti e mantenere aggiornate le pratiche.';
+  const ledger = createAnnunci10xTruthLedger(sourceCard);
+  const master = buildDeterministicCandidateMaster({ sessionId: 'source-sentences', roleCard: sourceCard, truthLedger: ledger, promptVersion: PROMPT_VERSION });
+  const opening = master.sections.find(section => section.type === 'OPENING').body;
+  assert.doesNotMatch(opening, /Lavorerai in L'azienda|nel La persona|\.\.|\. come /, 'verbatim source sentences must not be spliced into incompatible grammatical templates');
+  for (const value of [sourceCard.attractionContext.companyDescription.value, sourceCard.mission.value, sourceCard.outcomes[0].value]) {
+    assert.ok(opening.includes(value), 'the readable fallback must preserve the complete source wording');
+  }
+}
 const customerDeterministicText = masterText(customerDeterministic);
 const customerDeterministicReport = runAnnunci10xHardFactsCheck(customer.truthLedger, customerDeterministicText);
 assert.equal(customerDeterministicReport.final, 'PASS', 'Customer Care deterministic base must pass Hard Facts');

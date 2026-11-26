@@ -1575,17 +1575,17 @@ function deterministicOpeningSection(view: CandidateWriterView): GeneratedSectio
   const mission = formatItalianDisplay(view.outcomes.find((fact) => fact.id === 'F02')?.value.trim() ?? view.outcomes[0]?.value.trim() ?? '');
   const outcome = formatItalianDisplay(view.outcomes.find((fact) => fact.id !== 'F02')?.value.trim() ?? '');
   const sentences: string[] = [];
-  if (company && role) sentences.push(`Lavorerai in ${company} come ${role}.`);
-  else if (role) sentences.push(`Il ruolo è ${role}.`);
-  else if (company) sentences.push(`Lavorerai in ${company}.`);
+  if (role) sentences.push(`Il ruolo è ${role}`);
+  if (company) sentences.push(capitalizeFirst(company));
   const normalizedRole = normalizeForHybrid(role);
   const normalizedMission = normalizeForHybrid(mission);
   if (/magazziniere|logistica/.test(normalizedRole) && /mantenere affidabili quantita/.test(normalizedMission)) {
     sentences.push("Il ruolo è centrato sull'affidabilità delle quantità, sulla preparazione degli ordini e sulla collaborazione operativa nel magazzino.");
   } else if (mission) {
-    sentences.push(`Il ruolo consiste nel ${mission}.`);
+    // Extracted facts can already be complete sentences: labels preserve their grammar.
+    sentences.push(`Attività principale: ${mission}`);
   }
-  if (outcome && !isMeaningfullyContained(mission, outcome) && !/magazziniere|logistica/.test(normalizedRole)) sentences.push(`Il risultato atteso è ${outcome}.`);
+  if (outcome && !isMeaningfullyContained(mission, outcome) && !/magazziniere|logistica/.test(normalizedRole)) sentences.push(`Risultato atteso: ${outcome}`);
   return {
     id: 'hybrid-opening',
     type: 'OPENING',
