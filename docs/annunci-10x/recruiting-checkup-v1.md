@@ -10,7 +10,7 @@ Implementazione da revisionare, non ancora pubblicata. Base: `main` 320729d43e50
 2. Nome, cognome, azienda, email, telefono, ruolo ricercato e difficoltà della ricerca. Numero normalizzato, stato ENTERED (non verificato tramite SMS). Consenso marketing facoltativo e separato dal servizio. Verifica email con l'OTP esistente.
 3. Analisi originale V2 e riscrittura con il writer e i controlli fattuali esistenti. Per il check-up, l'estrazione conserva le formulazioni effettivamente presenti nella fonte; le informazioni mancanti rimangono dati interni, esclusi dal testo per il candidato. Nessun compenso o condizione viene completato per ipotesi.
 4. Rivalutazione della proposta con la stessa griglia V2 a 20 controlli. Il voto del check-up è la media dei criteri valutabili, senza tetti aggiuntivi: N/D è escluso dalla media e resta visibile nella copertura. Nessun incremento minimo imposto.
-5. PDF con originale, due griglie complete, proposta, differenze e informazioni mancanti. Download disponibile prima del calendario. Invio di servizio tramite Resend riutilizzando la gestione esistente delle consegne e la sua chiave idempotente.
+5. PDF con originale, proposta, confronto completo dei 20 criteri con entrambi i voti e motivazioni, differenze e informazioni mancanti. Download disponibile prima del calendario. Invio di servizio tramite Resend riutilizzando la gestione esistente delle consegne e la sua chiave idempotente.
 6. Invito approvato ai 15 minuti, facoltativo, con link Calendly. Nessun checkout e nessuna promozione della guida nel regalo. Il percorso CREATE e la guida commerciale rimangono capacità separate nel codice.
 
 ## Salvataggio e ripresa
@@ -99,3 +99,11 @@ Prima delle griglie, il PDF presenta «Come fare un salto concreto»: fino a tre
 Verifica mirata: `npm run test:recruiting-checkup`. I test coprono il precedente blocco a 6,9, l’esclusione di N/D dalla media, la conservazione delle vecchie valutazioni, priorità pertinenti e deduplicazione di generazione e invio. I provider delle regressioni sono simulati; i collaudi effettivi con OpenAI, Resend e Gmail sono documentati separatamente nella cartella di lavoro privata.
 
 Il testo consigliato viene scelto dopo la seconda valutazione. Se la riscrittura ottiene un voto inferiore, il report conserva l’originale come raccomandazione, con la sua effettiva griglia; indica esplicitamente anche il punteggio della riscrittura scartata. PDF, pagina ed email spiegano la scelta. Nessun voto della riscrittura viene rialzato per farlo apparire migliore e le priorità si riferiscono al testo realmente consigliato.
+
+## PDF compatto — 26 novembre 2026
+
+Su richiesta di Angelo, la prima pagina raccoglie voti, copertura, aree e interventi prioritari. Le due griglie sono riunite in un confronto unico dei 20 criteri: entrambi i voti restano visibili, le motivazioni diverse sono affiancate e quelle identiche vengono riportate una sola volta. Restano anche le indicazioni da approfondire. Il confronto usa l’identificativo del criterio, senza dipendere dall’ordine delle due liste.
+
+Originale, testo consigliato, domande all’azienda e tracce da completare rimangono completi. Quando viene consigliato l’originale esatto, il testo non viene ripetuto una seconda volta. L’invito facoltativo ai 15 minuti chiude la griglia, senza una pagina dedicata. Il caso reale salvato e il facsimile passano da 12 a 8 pagine; la variante che mantiene l’originale occupa 7 pagine. Annunci o motivazioni più lunghi possono richiedere pagine aggiuntive: il contenuto non viene troncato.
+
+La verifica del nuovo layout riusa gli stessi dati salvati, senza una nuova valutazione OpenAI o un invio email. Controllati contenuti completi, voti invariati, link Calendly e rendering di tutte le pagine. Le ricevute già consegnate restano immutate.
