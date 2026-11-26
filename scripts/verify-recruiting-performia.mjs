@@ -135,6 +135,7 @@ for (let n=1;n<=10;n++) {
   const frozen=checkupSourceUnits(text);
   const sections=composeCheckupSections(text,{...proposal,order:frozen.map(u=>u.id).reverse()},false);
   assert.deepEqual(checkupCoverageIssues(text,sections),[],`frozen ad ${n}`);
+  const headings=sections.map(s=>s.type+':'+s.title);assert.equal(new Set(headings).size,headings.length,'no repeated editorial sections');
   assert.deepEqual(checkupLiteralIssues(text,sections.map(s=>s.title+'\n'+s.body).join('\n')),[],`frozen literals ${n}`);
 }
 // Paired grading uses one persisted operation; label order cannot decide which is the original.

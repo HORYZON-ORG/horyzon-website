@@ -55,7 +55,7 @@ provider.executeStructuredTask = async (...args) => {
   calls.push(args[0]);
   const result = await originalGenerate(...args);
   if (args[0].outputSchemaName === 'annunci10x_checkup_comparison') {
-    const modify = (output, text) => ({ checks: output.checks.map(c => ({ ...c, score: c.id === '10' ? 2 : text.includes('La tua prossima opportunità') ? 6 : 8, status: 'EVALUATED', missing: [] })) });
+    const modify = (output, text) => ({ checks: output.checks.map(c => ({ ...c, score: c.id === '10' ? 2 : text.includes('Il lavoro, in breve') ? 6 : 8, status: 'EVALUATED', missing: [] })) });
     const pair = args[0].input.checkupComparison;
     return { ...result, output: { a: modify(result.output.a,pair.a.target.text), b: modify(result.output.b,pair.b.target.text) } };
   }

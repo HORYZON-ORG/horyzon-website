@@ -7,7 +7,7 @@ import type { PersistedSnapshot } from './persistence/types.ts';
 import type { GeneratedAd, GeneratedSection } from './types.ts';
 import { checkupSourceUnits, checkupLiteralIssues, type CheckupSourceUnit } from './checkup-source.ts';
 
-export const CHECKUP_WRITER_VERSION = 'checkup-performia-source-composition-v5.1';
+export const CHECKUP_WRITER_VERSION = 'checkup-performia-source-composition-v5.2';
 export interface CheckupStrategy { qualification: string; rhythm: string; popularity: string; technicality: string }
 export interface CheckupQuality {
   version: typeof CHECKUP_WRITER_VERSION;
@@ -90,19 +90,19 @@ export function composeCheckupSections(originalText: string, proposal: CheckupCo
   const sections: GeneratedSection[] = [];
   const add = (type: GeneratedSection['type'], title: string, body: string, ids: string[]) => sections.push({ id: 'checkup-section-' + sections.length, key: 'checkup-section-' + sections.length, type, title, body, sourceFactIds: ids });
   if (title) add('TITLE', 'Posizione', title.text, [title.id]);
-  if (useOpening && proposal.opening.length) add('OPENING', 'La tua prossima opportunità', proposal.opening.map(s => s.text.trim()).join(' '), [...new Set(proposal.opening.flatMap(s => s.sourceIds))]);
+  if (useOpening && proposal.opening.length) add('OPENING', 'Il lavoro, in breve', proposal.opening.map(s => s.text.trim()).join(' '), [...new Set(proposal.opening.flatMap(s => s.sourceIds))]);
   // Keep original blocks intact. The model orders blocks, never changes requirement scope.
   const blocks: { key: string; units: CheckupSourceUnit[] }[] = [];
   for (const u of units.filter(u => u !== title)) {
     const key = (u.heading ?? '') + ':' + u.area;
-    const last = blocks.at(-1);
-    if (last?.key === key) last.units.push(u); else blocks.push({ key, units: [u] });
+    const existing = blocks.find(b => b.key === key);
+    if (existing) existing.units.push(u); else blocks.push({ key, units: [u] });
   }
   const position = new Map(proposal.order.map((id,i) => [id,i]));
   blocks.sort((a,b) => Math.min(...a.units.map(u=>position.get(u.id) ?? 100000)) - Math.min(...b.units.map(u=>position.get(u.id) ?? 100000)));
   for (const block of blocks) {
     const first = block.units[0], label = labels[first.area];
-    add(label.type, first.heading?.replace(/:$/, '') || label.title, block.units.map(u => u.text).join('\n'), block.units.map(u => u.id));
+    add(label.type, first.heading?.replace(/:$/, '') || label.title, [...new Set(block.units.map(u => u.text))].join('\n'), block.units.map(u => u.id));
   }
   return sections;
 }

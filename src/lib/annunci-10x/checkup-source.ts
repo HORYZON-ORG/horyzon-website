@@ -32,8 +32,8 @@ function sourceHeading(line: string): CheckupSourceArea | null {
   if (/^(?:requisiti(?: richiesti| indispensabili| e competenze tecniche)?|competenze richieste|esperienza|chi (?:stiamo cercando|cerchiamo)|attitudini e competenze comportamentali|cosa cerchiamo)$/.test(s)) return 'REQUIRED';
   if (/^(?:(?:principali )?responsabilita|attivita(?: principali)?|cosa farai|(?:il |il tuo )?ruolo|descrizione della posizione|mansioni|mansione)$/.test(s)) return 'ACTIVITIES';
   if (/^(?:cosa offriamo|condizioni offerte|offriamo|benefit|strumenti di lavoro|formazione continua)$/.test(s)) return 'OFFER';
-  if (/^(?:candidatur[ae]|come candidarsi|application)$/.test(s)) return 'APPLICATION';
-  if (/^(?:sede di lavoro|orario di lavoro|condizioni di lavoro)$/.test(s)) return 'CONDITIONS';
+  if (/^(?:candidatur[ae]|come candidarsi|domande di preselezione|application)$/.test(s)) return 'APPLICATION';
+  if (/^(?:sede di lavoro|orario di lavoro|disponibilita al pendolarismo\s+o al trasferimento|condizioni di lavoro)$/.test(s)) return 'CONDITIONS';
   if (/^(?:chi siamo|la nostra azienda|la nostra cultura|perche .+|il contesto)$/.test(s)) return 'CONTEXT';
   return null;
 }
