@@ -87,6 +87,8 @@ for (const mode of ['repair', 'reject', 'provider-failure']) {
   const result = await generateFaithfulCheckupMaster(args);
   assert.equal(result.quality.status, mode === 'repair' ? 'VERIFIED' : 'ORIGINAL_RETAINED');
   assert.equal(result.quality.attempts, mode === 'provider-failure' ? 1 : 2);
+  const persisted = await persistence.saveOutput({ ...session, snapshotId: snapshot.id, outputType: 'MASTER', generatedContent: { ...result.master, checkupQuality: result.quality }, validationState: result.quality.status === 'VERIFIED' ? 'READY' : 'READY_WITH_WARNINGS' });
+  assert.ok(persisted.id, 'verified and fallback masters must both satisfy the real persistence validator, including empty writer headings');
   if (mode !== 'repair') assert.equal(result.master.sections[0].body, source);
   if (mode === 'repair') {
     const repeated = await generateFaithfulCheckupMaster(args);
