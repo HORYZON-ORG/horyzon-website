@@ -26,13 +26,14 @@ export interface CheckupRewriteSelection {
   explanation: string;
 }
 
-export function selectCheckupRecommendation(originalText: string, rewrittenText: string, before: Annunci10xScoreReport, evaluatedRewrite: Annunci10xScoreReport) {
-  const keepOriginal = evaluatedRewrite.score === null || (before.score !== null && evaluatedRewrite.score < before.score - 1e-8);
+export function selectCheckupRecommendation(originalText: string, rewrittenText: string, before: Annunci10xScoreReport, evaluatedRewrite: Annunci10xScoreReport, quality?: { status: string }) {
+  const unverified = quality?.status === 'ORIGINAL_RETAINED';
+  const keepOriginal = unverified || evaluatedRewrite.score === null || (before.score !== null && evaluatedRewrite.score < before.score - 1e-8);
   const format = (n: number | null) => n === null ? 'N/D' : `${(n / 10).toLocaleString('it-IT', { maximumFractionDigits: 1 })}/10`;
   const selection: CheckupRewriteSelection = {
     kind: keepOriginal ? 'ORIGINAL' : 'REWRITE',
-    evaluatedRewriteScore: evaluatedRewrite.score,
-    explanation: keepOriginal
+    evaluatedRewriteScore: unverified ? null : evaluatedRewrite.score,
+    explanation: unverified ? 'La verifica non ha confermato una riscrittura che conservi tutte le informazioni. Manteniamo l’originale e indichiamo le integrazioni utili: il PDF resta completo e gratuito.' : keepOriginal
       ? `La riscrittura valutata ha ottenuto ${format(evaluatedRewrite.score)}, rispetto a ${format(before.score)} dell’originale. Manteniamo l’originale come testo consigliato. Per fare un salto concreto, integra le informazioni indicate nelle priorità.`
       : 'Il testo consigliato è la riscrittura, valutata con gli stessi 20 criteri. Le priorità indicano quali informazioni confermare per migliorarlo ancora.',
   };
@@ -123,11 +124,12 @@ const actions: Record<string, Action> = {
   },
 };
 const order = ['10', '14', '04', '02', '13', '12', '05', '07', '08', '15', '11', '20'];
+const unusableDestination = (c: Annunci10xScoreReport['checks'][number]) => c.checkId === '20' && /segnaposto/i.test(c.reason);
 
 export function buildCheckupImprovementPlan(before: Annunci10xScoreReport, after: Annunci10xScoreReport): CheckupImprovementPlan {
   const priorities = after.checks
     .filter(c => c.score !== null && c.score < 10 && c.status !== 'NOT_EVALUABLE' && actions[c.checkId])
-    .sort((a, b) => a.score! - b.score! || order.indexOf(a.checkId) - order.indexOf(b.checkId))
+    .sort((a, b) => Number(unusableDestination(b)) - Number(unusableDestination(a)) || a.score! - b.score! || order.indexOf(a.checkId) - order.indexOf(b.checkId))
     .slice(0, 3)
     .map(c => ({ checkId: c.checkId, title: c.label, currentScore: c.score!, currentGap: c.reason, ...actions[c.checkId] }));
   const strongBase = (before.score ?? 0) >= 80;

@@ -115,3 +115,13 @@ Su richiesta di Angelo, la prima pagina include una breve menzione con il logo P
 I dati internazionali sono stati verificati il 26 novembre su https://performia.com/en-it/about-us e https://performia.com/en-it/contact-us: fondazione nel 2001 e attività in oltre 26 Paesi. Si usa quindi «dal 2001», anziché i 30 anni inizialmente indicati. La menzione descrive il rapporto professionale e non attribuisce a Performia la certificazione del voto automatico del check-up.
 
 Il logo locale è incluso nei pacchetti delle API e della coda di preparazione PDF. Il facsimile usa la medesima menzione; le ricevute già consegnate restano immutate.
+
+## Correzione del metodo e della fedeltà — 26 novembre 2026
+
+La riscrittura del check-up usa l'annuncio originale completo come autorità, con inventario delle informazioni e strategia esplicita su quattro aree: qualificazione del ruolo, routine/cambiamento, desiderabilità effettiva e tecnicità. Riferimenti: materiale Performia `THEORY_WRITING_ADS` e chat «PRODUTTIVITÀ E ANNUNCI SELEZIONE AD». I 20 controlli e il voto rimangono una griglia HORYZON, senza attribuire a Performia una certificazione della scala numerica.
+
+La proposta conserva contesto aziendale, mansioni, requisiti obbligatori e preferenziali, importi e condizioni, benefit, strumenti, territorio, contratto e candidatura. Un controllo indipendente confronta il testo completo con la proposta; un secondo tentativo ripara omissioni o aggiunte. Se la fedeltà non è confermata, viene mantenuto l'originale senza presentarlo come riscrittura riuscita. Il PDF completo viene comunque preparato e consegnato prima dell'invito facoltativo.
+
+La scheda intermedia conserva compensi pubblici, prove testuali e intestazioni preferenziali. I controlli sul canale e sui campi del portale restano N/D quando tali elementi non sono disponibili. Un recapito segnaposto resta un difetto concreto e una priorità, senza un indirizzo inventato. Nessun incremento di voto viene preassegnato.
+
+Verifiche locali: `npm run test:recruiting-checkup` include regressioni simulate sulla fedeltà, riparazione, fallback, N/D, candidatura e deduplicazione. Il confronto reale usa nuovamente i dieci testi congelati in `.work/benchmark-annunci-reali-2026-11-26/fonti/*-valutato.txt`, esclusivamente nell'anteprima della PR 112. Esiti e decisione di pubblicazione restano separati: nessuna attivazione Meta.

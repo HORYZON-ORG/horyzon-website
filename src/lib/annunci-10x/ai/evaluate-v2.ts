@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { normalizeCheckupEvaluation } from '../checkup-evaluation.ts';
 
 import {
   ANNUNCI10X_RUBRIC_VERSION_V2,
@@ -32,6 +33,7 @@ export interface Annunci10xEvaluateContextV2 {
   roleCard?: unknown;
   roleProfile?: unknown;
   communicationStrategy?: unknown;
+  checkupProtocol?: { version: 'checkup-evidence-v1'; applicationExpected: boolean };
 }
 
 export interface Annunci10xEvaluateInputV2 {
@@ -97,6 +99,7 @@ export function projectEvaluateContextV2(context: Annunci10xEvaluateContextV2): 
     roleCard: sanitizeContextValue(context.roleCard),
     roleProfile: sanitizeContextValue(context.roleProfile),
     communicationStrategy: sanitizeContextValue(context.communicationStrategy),
+    ...(context.checkupProtocol ? { checkupProtocol: { version: context.checkupProtocol.version, applicationExpected: context.checkupProtocol.applicationExpected } } : {}),
   };
 }
 
@@ -116,7 +119,7 @@ export async function runAnnunci10xEvaluateV2(options: RunAnnunci10xEvaluateV2Op
     systemPrompt: EVALUATE_PROMPT_V2.instructions,
   });
   const firstParsed = tryValidateEvaluateOutputV2(first.output);
-  if (firstParsed.ok) return buildEvaluateResultV2(firstParsed.output, first, operationId, 0);
+  if (firstParsed.ok) return buildEvaluateResultV2(normalizeCheckupEvaluation(projectedInput, firstParsed.output), first, operationId, 0);
 
   const repair = await executeEvaluateRequestV2({
     provider: options.provider,
@@ -132,7 +135,7 @@ export async function runAnnunci10xEvaluateV2(options: RunAnnunci10xEvaluateV2Op
   });
   const repairParsed = tryValidateEvaluateOutputV2(repair.output);
   if (repairParsed.ok) {
-    return buildEvaluateResultV2(repairParsed.output, {
+    return buildEvaluateResultV2(normalizeCheckupEvaluation(projectedInput, repairParsed.output), {
       ...repair,
       latencyMs: first.latencyMs + repair.latencyMs,
       usage: mergeUsage(first.usage, repair.usage),

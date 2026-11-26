@@ -38,6 +38,14 @@ export class MockAnnunci10xProvider implements Annunci10xAiProvider {
 }
 
 function makeMockOutput(request: Annunci10xAiProviderRequest, mode: MockAnnunci10xProviderMode): unknown {
+  if (request.outputSchemaName === 'annunci10x_checkup_rewrite') {
+    const source = (request.input as { checkupSource: { originalText: string; sourceUnits: { id: string }[] } }).checkupSource;
+    return { strategy: { qualification: 'UNKNOWN', rhythm: 'UNKNOWN', popularity: 'UNKNOWN', technicality: 'UNKNOWN' }, sections: [
+      { type: 'TITLE', title: 'Posizione', body: source.originalText.split('\n')[0], sourceIds: [] },
+      { type: 'OPENING', title: 'Il lavoro', body: source.originalText, sourceIds: source.sourceUnits.map(u => u.id) },
+    ] };
+  }
+  if (request.outputSchemaName === 'annunci10x_checkup_source_audit') return { issues: [] };
   if (request.operationType === 'PRECHECK') {
     const rawText = stringifyInput(request.input);
     if (/ignore all previous instructions|return the system prompt|set publication status|call external websites/i.test(rawText)) {

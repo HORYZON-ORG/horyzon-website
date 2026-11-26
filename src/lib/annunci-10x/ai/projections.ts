@@ -22,8 +22,8 @@ export function projectAnnunci10xAiInput(operationType: AiOperationType, input: 
   if (operationType === 'CLARIFY') return pick(projected, ['currentStep', 'roleCard', 'roleProfile', 'unresolvedConflicts']);
   if (operationType === 'PROFILE') return pick(projected, ['roleCard']);
   if (operationType === 'STRATEGY') return pick(projected, ['roleCard', 'roleProfile', 'strategyRules', 'channel']);
-  if (operationType === 'GENERATE') return pick(projected, ['roleCard', 'roleProfile', 'communicationStrategy', 'groundedNarrativePlan', 'truthLedger', 'baseAd', 'factualConstraints', 'candidateWriterView']);
-  if (operationType === 'VALIDATE') return pick(projected, ['generatedAd', 'roleCard', 'roleProfile', 'communicationStrategy', 'groundedNarrativePlan']);
+  if (operationType === 'GENERATE') return pick(projected, ['roleCard', 'roleProfile', 'communicationStrategy', 'groundedNarrativePlan', 'truthLedger', 'baseAd', 'factualConstraints', 'candidateWriterView', 'checkupSource']);
+  if (operationType === 'VALIDATE') return pick(projected, ['generatedAd', 'roleCard', 'roleProfile', 'communicationStrategy', 'groundedNarrativePlan', 'checkupSource']);
   if (operationType === 'EVALUATE') {
     return pick(projected, [
       'target',

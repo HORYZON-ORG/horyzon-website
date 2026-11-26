@@ -74,7 +74,7 @@ async function prepare(input: CheckupInput): Promise<CheckupReceipt> {
     let output = await persistence.getLatestOutput(run.sessionId, input.session.sessionSecret, 'MASTER');
     let after = output?.snapshotId === snapshot.id ? await persistence.getEvaluationByOutputId(output.id, run.sessionId, input.session.sessionSecret) : null;
     if (!output || output.snapshotId !== snapshot.id || !after || !isScoreResultV2(after.score)) {
-      const generated = await generateAnnunci10xCheckupOutput({ context: input.context, session, sessionSecret: input.session.sessionSecret, snapshot, analysisRunId: run.id });
+      const generated = await generateAnnunci10xCheckupOutput({ context: input.context, session, sessionSecret: input.session.sessionSecret, snapshot, analysisRunId: run.id, originalText: run.targetText!, originalEvaluation: original });
       output = generated.masterOutput;
       after = generated.evaluation;
     }
@@ -83,7 +83,8 @@ async function prepare(input: CheckupInput): Promise<CheckupReceipt> {
     const evaluatedRewrite = meanCheckupReport(buildAnnunci10xScoreReport({ lead, analysisRun: run, evaluation: { ...after, score: after.score }, snapshot }));
     const master = output.generatedContent as GeneratedAd;
     const rewrittenText = master.sections.map(s => [s.title, s.body].filter(Boolean).join('\n')).join('\n\n');
-    const recommendation = selectCheckupRecommendation(run.targetText!, rewrittenText, beforeReport, evaluatedRewrite);
+    const quality = (output.generatedContent as GeneratedAd & { checkupQuality?: { status: string } }).checkupQuality;
+    const recommendation = selectCheckupRecommendation(run.targetText!, rewrittenText, beforeReport, evaluatedRewrite, quality);
     const afterReport = recommendation.report;
     const report: CheckupReport = {
       scoreMethod: CHECKUP_SCORE_METHOD,

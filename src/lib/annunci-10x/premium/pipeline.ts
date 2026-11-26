@@ -1,4 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { generateFaithfulCheckupMaster } from '../checkup-writer.ts';
+import { checkupEvaluationInput } from '../checkup-evaluation.ts';
 import {
   ANNUNCI10X_DATA_CONTRACT_VERSION,
   ANNUNCI10X_RUBRIC_VERSION,
@@ -863,16 +865,35 @@ async function requestAnnunci10xCreateClientRevision(input: {
   };
 }
 
-/** Reuses the factual writer and the V2 evaluator, pinned to this analysis snapshot. */
+/** Check-up source fidelity is checked against the complete original, never a reduced role card. */
 export async function generateAnnunci10xCheckupOutput(input: {
   context: Annunci10xRuntimeContext;
   session: PersistedAnnunci10xSession;
   sessionSecret: string;
   snapshot: PersistedSnapshot;
   analysisRunId: string;
+  originalText: string;
+  originalEvaluation: PersistedEvaluation;
 }) {
-  return executePremiumPipeline({ ...input, channel: preferredChannel(input.snapshot),
-    authIdentity: `recruiting-checkup-v1:${input.analysisRunId}`, skipChannelVariant: true });
+  const { master, quality } = await generateFaithfulCheckupMaster({ ...input, sessionId: input.session.id });
+  if (!input.snapshot.roleProfile || !input.snapshot.communicationStrategy) throw new Annunci10xPublicError('ANALYSIS_NOT_READY', 'Contesto della valutazione non disponibile.', 409);
+  const score = quality.status === 'ORIGINAL_RETAINED' ? input.originalEvaluation.score : (await runPersistedAnnunci10xEvaluateV2({
+    sessionId: input.session.id, sessionSecret: input.sessionSecret, provider: input.context.provider, persistence: input.context.persistence,
+    inputSnapshotId: input.snapshot.id, idempotencyInputIdentity: stableHash({ run: input.analysisRunId, version: quality.version, sections: master.sections }),
+    input: checkupEvaluationInput(buildEvaluateInputV2({
+      rawAdText: masterText(master), targetKind: 'GENERATED_MASTER', channelHint: 'CUSTOM',
+      roleCard: input.snapshot.roleCard, roleProfile: input.snapshot.roleProfile, communicationStrategy: input.snapshot.communicationStrategy,
+    }), input.originalText),
+  })).score;
+  const masterOutput = await input.context.persistence.saveOutput({
+    sessionId: input.session.id, sessionSecret: input.sessionSecret, snapshotId: input.snapshot.id, outputType: 'MASTER',
+    generatedContent: { ...master, checkupQuality: quality }, validationState: quality.status === 'VERIFIED' ? 'READY' : 'READY_WITH_WARNINGS',
+  });
+  const evaluation = await input.context.persistence.saveEvaluation({
+    sessionId: input.session.id, sessionSecret: input.sessionSecret,
+    target: { kind: 'GENERATED_MASTER', generatedAdId: master.id }, targetRef: master.id, targetOutputId: masterOutput.id, score, gate: null,
+  });
+  return { masterOutput, evaluation };
 }
 
 async function executePremiumPipeline(input: {
