@@ -1,18 +1,19 @@
 export type CheckupSourceArea = 'CONTEXT' | 'ACTIVITIES' | 'REQUIRED' | 'PREFERRED' | 'OFFER' | 'CONDITIONS' | 'APPLICATION';
-export interface CheckupSourceUnit { id: string; text: string; area: CheckupSourceArea }
+export interface CheckupSourceUnit { id: string; text: string; area: CheckupSourceArea; heading?: string }
 
 /** The original is immutable. Section labels carry factual meaning. */
 export function checkupSourceUnits(text: string): CheckupSourceUnit[] {
   let area: CheckupSourceArea = 'CONTEXT';
+  let currentHeading = '';
   const units: CheckupSourceUnit[] = [];
   const lines = text.split(/\r?\n|;\s*|(?<=[.!?])\s+(?=(?:Requisiti|Contratto|Candidatur[ae]|Sede|Retribuzione|Orario|Benefit)\b)/);
   for (const raw of lines) {
     const line = raw.trim().replace(/^[•·*]\s+|^-\s+/, '').trim();
     if (!line) continue;
     const heading = sourceHeading(line);
-    if (heading) { area = heading; continue; }
+    if (heading) { area = heading; currentHeading = line; continue; }
     const inlineHeading = line.includes(':') ? sourceHeading(line.slice(0, line.indexOf(':'))) : null;
-    if (inlineHeading) area = inlineHeading;
+    if (inlineHeading) { area = inlineHeading; currentHeading = ''; }
     // A preference about years or a narrower location does not make the main prerequisite optional.
     const partialPreference = /\([^)]*(?:preferibilmente|preferenza|preferenziale\s+(?:la|il|l[’']))/i.test(line);
     const preferredItem = !partialPreference && /^(?:preferibil\w*|preferenzial\w*|gradit\w*|facoltativ\w*|costituisc\w*|[eè] particolarmente apprezzat\w*)\b|costituir[aà]\s+(?:un\s+)?titolo preferenziale/i.test(line);
@@ -21,7 +22,7 @@ export function checkupSourceUnits(text: string): CheckupSourceUnit[] {
       : /si occuper[aà]|gestir[aà]/i.test(line) && (area === 'REQUIRED' || area === 'PREFERRED') ? 'ACTIVITIES'
       : /^(?:tipo di contratto|contratto(?: di lavoro)?|sede(?: di lavoro| di riferimento)?|orario|retribuzione|ral|range retributivo)\s*:/i.test(line) ? 'CONDITIONS'
         : /^(?:invia(?:re|ci|te)?|per candidar|candidati\b)/i.test(line) ? 'APPLICATION' : area;
-    units.push({ id: 'S' + String(units.length + 1).padStart(3, '0'), text: line, area: actualArea });
+    units.push({ id: 'S' + String(units.length + 1).padStart(3, '0'), text: line, area: actualArea, ...(currentHeading ? { heading: currentHeading } : {}) });
   }
   return units;
 }

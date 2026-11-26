@@ -27,6 +27,7 @@ export function projectAnnunci10xAiInput(operationType: AiOperationType, input: 
   if (operationType === 'EVALUATE') {
     return pick(projected, [
       'target',
+      'checkupComparison',
       'originalAd',
       'generatedAd',
       'master',

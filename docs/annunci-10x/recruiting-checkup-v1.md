@@ -127,3 +127,12 @@ La scheda intermedia conserva compensi pubblici, prove testuali e intestazioni p
 Verifiche locali: `npm run test:recruiting-checkup` include regressioni simulate sulla fedeltà, riparazione, fallback, N/D, candidatura e deduplicazione. Il confronto reale usa nuovamente i dieci testi congelati in `.work/benchmark-annunci-reali-2026-11-26/fonti/*-valutato.txt`, esclusivamente nell'anteprima della PR 112. Esiti e decisione di pubblicazione restano separati: nessuna attivazione Meta.
 
 Nel check-up le motivazioni riportano ora il giudizio specifico salvato per ciascun annuncio, dopo la pulizia del testo destinato al cliente. Gli esempi standard delle ancore (per esempio «clienti e CRM») non sostituiscono più la motivazione di un ruolo diverso. La presentazione degli altri percorsi resta separata. I dieci PDF sono stati anche reimpaginati dalle valutazioni reali già salvate: voti, selezioni e testi invariati, nessuna nuova chiamata AI o email. Questo replay di presentazione è distinto dalle dieci prove reali e dalle ricevute originali conservate.
+
+
+### Revisione del motore dalla teoria originale Performia — 26 novembre 2026
+
+Verificato `001_THEORY_WRITING_ADS.pdf`, 6 pagine, SHA-256 `dfc896a2b8afd573b975c5dd5dd84f67323f696331ad6648dd312f22170456a9`. La teoria distingue routine/cambiamento e difficoltà/popolarità del lavoro; considera formazione e supporto ricompense legittime. Non prescrive una scala ufficiale da venti controlli: la rubrica e la media numerica restano HORYZON.
+
+Il motore v5 produce una nuova apertura sostenuta da riferimenti puntuali, sottoposta a verifica indipendente, e ordina i blocchi originali. Il nucleo conserva letteralmente ogni unità, con intestazioni, qualificatori, tecnicismi, compensi, condizioni, candidatura e privacy. Una nuova apertura respinta non elimina la composizione sicura. La copertura è verificata dal programma, senza affidarsi alle sole dichiarazioni del modello.
+
+Il confronto usa un’unica valutazione dei due testi con ordine A/B variabile e stessi venti controlli. Non è un esperimento cieco su candidati umani e non prova più candidature. Il punteggio originale del confronto viene salvato separatamente dall’analisi iniziale e collegato al report; la ripresa dopo un’interruzione conserva lo stesso abbinamento. Nessun incremento minimo preassegnato. Pubblicazione e campagna Meta restano sospese fino alla revisione degli esiti reali.

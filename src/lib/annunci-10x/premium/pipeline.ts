@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { generateFaithfulCheckupMaster } from '../checkup-writer.ts';
-import { checkupEvaluationInput } from '../checkup-evaluation.ts';
+import { evaluateCheckupPair } from '../checkup-comparison.ts';
 import {
   ANNUNCI10X_DATA_CONTRACT_VERSION,
   ANNUNCI10X_RUBRIC_VERSION,
@@ -877,23 +877,26 @@ export async function generateAnnunci10xCheckupOutput(input: {
 }) {
   const { master, quality } = await generateFaithfulCheckupMaster({ ...input, sessionId: input.session.id });
   if (!input.snapshot.roleProfile || !input.snapshot.communicationStrategy) throw new Annunci10xPublicError('ANALYSIS_NOT_READY', 'Contesto della valutazione non disponibile.', 409);
-  const score = quality.status === 'ORIGINAL_RETAINED' ? input.originalEvaluation.score : (await runPersistedAnnunci10xEvaluateV2({
-    sessionId: input.session.id, sessionSecret: input.sessionSecret, provider: input.context.provider, persistence: input.context.persistence,
-    inputSnapshotId: input.snapshot.id, idempotencyInputIdentity: stableHash({ run: input.analysisRunId, version: quality.version, sections: master.sections }),
-    input: checkupEvaluationInput(buildEvaluateInputV2({
-      rawAdText: masterText(master), targetKind: 'GENERATED_MASTER', channelHint: 'CUSTOM',
-      roleCard: input.snapshot.roleCard, roleProfile: input.snapshot.roleProfile, communicationStrategy: input.snapshot.communicationStrategy,
-    }), input.originalText),
-  })).score;
+  const pair = quality.status === 'ORIGINAL_RETAINED' ? null : await evaluateCheckupPair({
+    context: input.context, sessionId: input.session.id, sessionSecret: input.sessionSecret,
+    snapshotId: input.snapshot.id, analysisRunId: input.analysisRunId, originalText: input.originalText,
+    revisedText: masterText(master), strategy: quality.strategy,
+  });
+  const originalEvaluation = pair ? await input.context.persistence.saveEvaluation({
+    sessionId: input.session.id, sessionSecret: input.sessionSecret,
+    target: { kind: 'ORIGINAL_AD', originalAdId: input.originalEvaluation.targetRef }, targetRef: input.originalEvaluation.targetRef,
+    score: pair.originalScore, gate: null,
+  }) : input.originalEvaluation;
+  const score = pair?.revisedScore ?? input.originalEvaluation.score;
   const masterOutput = await input.context.persistence.saveOutput({
     sessionId: input.session.id, sessionSecret: input.sessionSecret, snapshotId: input.snapshot.id, outputType: 'MASTER',
-    generatedContent: { ...master, checkupQuality: quality }, validationState: quality.status === 'VERIFIED' ? 'READY' : 'READY_WITH_WARNINGS',
+    generatedContent: { ...master, checkupQuality: quality, checkupComparison: { version: pair?.version ?? null, originalLabel: pair?.originalLabel ?? null, originalEvaluationId: originalEvaluation.id } }, validationState: quality.status === 'VERIFIED' ? 'READY' : 'READY_WITH_WARNINGS',
   });
   const evaluation = await input.context.persistence.saveEvaluation({
     sessionId: input.session.id, sessionSecret: input.sessionSecret,
     target: { kind: 'GENERATED_MASTER', generatedAdId: master.id }, targetRef: master.id, targetOutputId: masterOutput.id, score, gate: null,
   });
-  return { masterOutput, evaluation };
+  return { masterOutput, evaluation, originalEvaluation };
 }
 
 async function executePremiumPipeline(input: {

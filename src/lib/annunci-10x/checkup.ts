@@ -68,7 +68,7 @@ async function prepare(input: CheckupInput): Promise<CheckupReceipt> {
     const session = await persistence.getSession(run.sessionId, input.session.sessionSecret);
     const snapshotId = run.operationRefs.CONTEXT_SNAPSHOT;
     const snapshot = typeof snapshotId === 'string' ? await persistence.getSnapshotById(snapshotId, run.sessionId, input.session.sessionSecret) : null;
-    const original = await persistence.getEvaluationById(run.evaluationId!, run.sessionId, input.session.sessionSecret);
+    let original = await persistence.getEvaluationById(run.evaluationId!, run.sessionId, input.session.sessionSecret);
     if (!session || !snapshot || !original || !isScoreResultV2(original.score)) throw new Error('checkup source missing');
     // Recover a committed Master after interruption between output save and receipt save.
     let output = await persistence.getLatestOutput(run.sessionId, input.session.sessionSecret, 'MASTER');
@@ -77,8 +77,16 @@ async function prepare(input: CheckupInput): Promise<CheckupReceipt> {
       const generated = await generateAnnunci10xCheckupOutput({ context: input.context, session, sessionSecret: input.session.sessionSecret, snapshot, analysisRunId: run.id, originalText: run.targetText!, originalEvaluation: original });
       output = generated.masterOutput;
       after = generated.evaluation;
+      original = generated.originalEvaluation;
     }
-    if (!isScoreResultV2(after.score)) throw new Error('checkup requires V2');
+    const comparison = (output.generatedContent as GeneratedAd & { checkupComparison?: {originalEvaluationId?: string} }).checkupComparison;
+    if (comparison?.originalEvaluationId && comparison.originalEvaluationId !== original.id) {
+      const recoveredOriginal = await persistence.getEvaluationById(comparison.originalEvaluationId, run.sessionId, input.session.sessionSecret);
+      if (!recoveredOriginal || !isScoreResultV2(recoveredOriginal.score)) throw new Error('paired original evaluation missing');
+      original = recoveredOriginal;
+    }
+    if (run.evaluationId !== original.id) run = await persistence.updateAnalysisRun({ analysisRunId: run.id, sessionSecret: input.session.sessionSecret, evaluationId: original.id });
+    if (!isScoreResultV2(original.score) || !isScoreResultV2(after.score)) throw new Error('checkup requires V2');
     const beforeReport = meanCheckupReport(buildAnnunci10xScoreReport({ lead, analysisRun: run, evaluation: { ...original, score: original.score }, snapshot, useEvaluationReasons: true }));
     const evaluatedRewrite = meanCheckupReport(buildAnnunci10xScoreReport({ lead, analysisRun: run, evaluation: { ...after, score: after.score }, snapshot, useEvaluationReasons: true }));
     const master = output.generatedContent as GeneratedAd;

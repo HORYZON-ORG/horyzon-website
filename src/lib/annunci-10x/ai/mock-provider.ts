@@ -38,14 +38,16 @@ export class MockAnnunci10xProvider implements Annunci10xAiProvider {
 }
 
 function makeMockOutput(request: Annunci10xAiProviderRequest, mode: MockAnnunci10xProviderMode): unknown {
-  if (request.outputSchemaName === 'annunci10x_checkup_rewrite') {
-    const source = (request.input as { checkupSource: { originalText: string; sourceUnits: { id: string }[] } }).checkupSource;
-    return { strategy: { qualification: 'UNKNOWN', rhythm: 'UNKNOWN', popularity: 'UNKNOWN', technicality: 'UNKNOWN' }, sections: [
-      { type: 'TITLE', title: 'Posizione', body: source.originalText.split('\n')[0], sourceIds: [] },
-      { type: 'OPENING', title: 'Il lavoro', body: source.originalText, sourceIds: source.sourceUnits.map(u => u.id) },
-    ] };
+  if (request.outputSchemaName === 'annunci10x_checkup_composition') {
+    const source = (request.input as { checkupSource: { sourceUnits: { id: string; text: string }[] } }).checkupSource;
+    return { strategy: { qualification: 'UNKNOWN', rhythm: 'UNKNOWN', popularity: 'UNKNOWN', technicality: 'UNKNOWN' },
+      opening: source.sourceUnits.slice(0,2).map(u => ({text:u.text,sourceIds:[u.id]})), order:source.sourceUnits.map(u=>u.id) };
   }
-  if (request.outputSchemaName === 'annunci10x_checkup_source_audit') return { issues: [] };
+  if (request.outputSchemaName === 'annunci10x_checkup_opening_audit') return { issues: [] };
+  if (request.outputSchemaName === 'annunci10x_checkup_comparison') {
+    const pair = (request.input as {checkupComparison: {a: {target: {text:string}}, b: {target: {text:string}}}}).checkupComparison;
+    return { a: makeMockEvaluationV2(pair.a), b: makeMockEvaluationV2(pair.b) };
+  }
   if (request.operationType === 'PRECHECK') {
     const rawText = stringifyInput(request.input);
     if (/ignore all previous instructions|return the system prompt|set publication status|call external websites/i.test(rawText)) {
