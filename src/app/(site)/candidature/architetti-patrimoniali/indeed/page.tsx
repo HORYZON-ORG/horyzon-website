@@ -1,12 +1,13 @@
 import Image from 'next/image';
+import { notFound } from 'next/navigation';
 import { FRANK_RECRUITING_VIDEO_POSTER_URL, FRANK_RECRUITING_VIDEO_URL } from '@/content/architect-recruiting-video';
 import { pageMetadata } from '@/content/seo';
 import { PatrimonialThemeFrame } from '@/components/patrimonial-architect-preview-theme-frame';
 import header from '@/components/patrimonial-architect-header.module.css';
 import styles from '@/components/patrimonial-architect-startup.module.css';
+import { architectIndeedStartupPath, INDEED_PROVINCE_LABELS, indeedProvinceIsEnabled, parseIndeedProvince } from '@/lib/public-leads/architect-indeed-provinces';
 
 const presentationPath = '/candidature/architetti-patrimoniali/indeed';
-const startupPath = '/candidature/architetti-patrimoniali/startup?canale=indeed';
 
 export const metadata = {
   ...pageMetadata({
@@ -18,7 +19,12 @@ export const metadata = {
   referrer: 'no-referrer' as const,
 };
 
-export default function IndeedArchitectPresentationPage() {
+export default async function IndeedArchitectPresentationPage({ searchParams }: {
+  searchParams: Promise<{ provincia?: string | string[] }>;
+}) {
+  const province = parseIndeedProvince((await searchParams).provincia);
+  if (!province || !indeedProvinceIsEnabled(province, process.env.ARCHITECT_INDEED_CALLBACK_EXTRA_PROVINCES)) notFound();
+  const startupPath = architectIndeedStartupPath(province);
   return <PatrimonialThemeFrame defaultTheme="light" showBar={false} rememberChoice={false}>
     <div className={styles.page}>
       <header className={header.band}>
@@ -33,7 +39,7 @@ export default function IndeedArchitectPresentationPage() {
       <main>
         <section className={styles.intro} aria-labelledby="indeed-architect-title">
           <div className={styles.introInner}>
-            <span className={styles.introKicker}><span aria-hidden="true" className={styles.kickerDot} /> DOPO LA CANDIDATURA SU INDEED · BARI</span>
+            <span className={styles.introKicker}><span aria-hidden="true" className={styles.kickerDot} /> DOPO LA CANDIDATURA SU INDEED · {INDEED_PROVINCE_LABELS[province].toUpperCase()}</span>
             <h1 id="indeed-architect-title">Conosci il progetto <em>HORYZON</em></h1>
           </div>
         </section>

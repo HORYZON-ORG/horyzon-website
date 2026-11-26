@@ -7,11 +7,13 @@ const origin = testUrl.origin;
 const landingPath = '/candidature/architetti-patrimoniali';
 const introPath = `${landingPath}/indeed`;
 const startupPath = `${landingPath}/startup`;
-const startupSearch = '?canale=indeed';
 const callbackPath = '/api/architect-startup/indeed-callback';
 const callbackTitle = 'Ho completato la visione e chiedo di essere ricontattato';
 const sessionToken = 'fixture-session';
 const videoHost = 'zbpegzd1dv3ut14o.public.blob.vercel-storage.com';
+const cases = ['bari', 'lecce', 'brindisi', 'taranto'].flatMap(province =>
+  [390, 1366].map(width => ({ province, width })),
+);
 const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 const browser = await chromium.launch({
   headless: true,
@@ -19,8 +21,14 @@ const browser = await chromium.launch({
 });
 
 try {
-  for (const width of [390, 1366]) {
+  for (const { province, width } of cases) {
     const page = await browser.newPage({ viewport: { width, height: 850 }, reducedMotion: 'reduce' });
+    const isBari = province === 'bari';
+    const simulateRetry = isBari && width === 390;
+    const introSearch = isBari ? '' : `?provincia=${province}`;
+    const startupSearch = `?canale=indeed${isBari ? '' : `&provincia=${province}`}`;
+    const provinceFields = isBari ? {} : { province };
+    const expectedStart = { action: 'start', ...provinceFields };
     const documents = [];
     const legacyApiRequests = [];
     const callbackRequests = [];
@@ -51,7 +59,7 @@ try {
       }
       assert.equal(body.action, 'confirm');
       confirmationAttempts += 1;
-      if (width === 390 && confirmationAttempts === 1) {
+      if (simulateRetry && confirmationAttempts === 1) {
         return route.fulfill({ status: 503, json: { ok: false, message: 'Invio temporaneamente non disponibile.' } });
       }
       return route.fulfill({ status: 200, json: { ok: true } });
@@ -68,8 +76,9 @@ try {
       });
     });
 
-    await page.goto(origin + introPath, { waitUntil: 'domcontentloaded' });
+    await page.goto(origin + introPath + introSearch, { waitUntil: 'domcontentloaded' });
     await page.getByRole('heading', { name: 'Conosci il progetto HORYZON' }).waitFor();
+    await page.getByText(`DOPO LA CANDIDATURA SU INDEED · ${province.toUpperCase()}`, { exact: true }).waitFor();
     const intro = documents.find(entry => entry.url.pathname === introPath);
     assert.equal(intro?.status, 200);
     assert.match(await page.locator('video').getAttribute('src') ?? '', /\/frank-architetto-patrimoniale\.mp4$/);
@@ -100,7 +109,7 @@ try {
     const sessionStarted = page.waitForResponse(response => response.url() === origin + callbackPath && response.ok());
     await page.getByRole('button', { name: 'Riproduci la presentazione Startup Horyzon' }).click();
     await sessionStarted;
-    assert.deepEqual(callbackRequests, [{ action: 'start' }], 'Playback starts only a session with no personal data');
+    assert.deepEqual(callbackRequests, [expectedStart], 'Playback starts only a session, using a province field only outside Bari');
     await longVideo.evaluate(element => {
       Object.defineProperty(element, 'currentTime', { configurable: true, get: () => 512 });
       element.dispatchEvent(new Event('timeupdate'));
@@ -120,31 +129,42 @@ try {
     assert.equal(await page.locator('input[type="file"], a[href*="#richiesta"], a[href*="messages.indeed.com"]').count(), 0);
     await name.fill('  Candidato Test  ');
     await email.fill('qa-candidato@example.invalid');
-    assert.deepEqual(callbackRequests, [{ action: 'start' }], 'Neither completion nor field entry may request contact');
+    assert.deepEqual(callbackRequests, [expectedStart], 'Neither completion nor field entry may request contact');
 
     const confirm = callbackForm.getByRole('button', { name: callbackTitle });
     const expectedConfirm = {
       action: 'confirm', token: sessionToken, fullName: 'Candidato Test',
-      email: 'qa-candidato@example.invalid', contactRequested: true,
+      email: 'qa-candidato@example.invalid', contactRequested: true, ...provinceFields,
     };
     await confirm.click();
-    if (width === 390) {
+    if (simulateRetry) {
       await callbackForm.getByRole('alert').filter({ hasText: 'Invio temporaneamente non disponibile.' }).waitFor({ state: 'visible' });
       assert.equal(await name.inputValue(), '  Candidato Test  ');
       assert.equal(await email.inputValue(), 'qa-candidato@example.invalid');
-      assert.deepEqual(callbackRequests, [{ action: 'start' }, expectedConfirm]);
+      assert.deepEqual(callbackRequests, [expectedStart, expectedConfirm]);
       await confirm.click();
     }
     await page.getByText('Conferma inviata', { exact: true }).waitFor({ state: 'visible' });
-    assert.deepEqual(callbackRequests, width === 390
-      ? [{ action: 'start' }, expectedConfirm, expectedConfirm]
-      : [{ action: 'start' }, expectedConfirm]);
+    assert.deepEqual(callbackRequests, simulateRetry
+      ? [expectedStart, expectedConfirm, expectedConfirm]
+      : [expectedStart, expectedConfirm]);
     assert.deepEqual(legacyApiRequests, [], 'Indeed mode must not call any legacy candidate API');
     assert.equal(await page.locator('a[href*="messages.indeed.com"]').count(), 0, 'Stay on the Horyzon site');
     assert.equal(new URL(page.url()).pathname, startupPath);
-    console.log(`PASS ${width}px: Indeed intro -> Startup -> explicit callback, no duplicate application or CV`);
+    console.log(`PASS ${province} ${width}px: Indeed intro -> Startup -> explicit callback with correct province contract`);
     await page.close();
   }
+
+  const invalidProvincePage = await browser.newPage();
+  await invalidProvincePage.route(url => url.origin !== origin || url.pathname.startsWith('/api/'), route => route.abort());
+  for (const suffix of [`${introPath}?provincia=roma`, `${startupPath}?canale=indeed&provincia=roma`]) {
+    await invalidProvincePage.goto(origin + suffix, { waitUntil: 'domcontentloaded' });
+    await invalidProvincePage.getByText(/Questa pagina non esiste/).waitFor();
+    assert.equal(await invalidProvincePage.locator('video, input[name="fullName"]').count(), 0,
+      'An unknown province must not expose any application or callback flow');
+  }
+  console.log('PASS unknown province: intro and Startup reject unsupported province');
+  await invalidProvincePage.close();
 } finally {
   await browser.close();
 }

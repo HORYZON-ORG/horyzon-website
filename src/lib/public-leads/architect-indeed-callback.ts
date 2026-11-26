@@ -1,5 +1,6 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { isIP } from "node:net";
+import { INDEED_PROVINCE_LABELS, indeedProvinceIsEnabled, parseIndeedProvince, type IndeedProvince } from "./architect-indeed-provinces.ts";
 
 type Env = Record<string, string | undefined>;
 type Dependencies = { fetch?: typeof fetch; now?: () => number };
@@ -32,8 +33,8 @@ function getConfig(env: Env) {
   return { secret, from, apiKey, serviceRole };
 }
 
-export function indeedStartupCallbackReady(env: Env = process.env): boolean {
-  return getConfig(env) !== null;
+export function indeedStartupCallbackReady(env: Env = process.env, province: IndeedProvince = "bari"): boolean {
+  return getConfig(env) !== null && indeedProvinceIsEnabled(province, env.ARCHITECT_INDEED_CALLBACK_EXTRA_PROVINCES);
 }
 
 function isHoryzonSender(value: string) {
@@ -112,24 +113,24 @@ function mac(secret: string, purpose: string, value: string) {
   return createHmac("sha256", secret).update(`${purpose}\n${value}`).digest("base64url");
 }
 
-function startSession(request: Request, secret: string, now: number) {
+function startSession(request: Request, secret: string, now: number, province: IndeedProvince) {
   const browser = existingCookie(request) ?? randomBytes(16).toString("base64url");
   const payload = `v1.${now}.${randomBytes(16).toString("base64url")}`;
-  const token = `${payload}.${mac(secret, "architect-indeed-session-bari", `${payload}.${browser}`)}`;
+  const token = `${payload}.${mac(secret, `architect-indeed-session-${province}`, `${payload}.${browser}`)}`;
   const secure = new URL(request.url).protocol === "https:" ? "; Secure" : "";
   return respond({ ok: true, token }, 200, {
     "Set-Cookie": `${SESSION_COOKIE}=${browser}; Path=${COOKIE_PATH}; Max-Age=${MAX_ELAPSED_MS / 1000}; HttpOnly; SameSite=Lax${secure}`,
   });
 }
 
-function verifySession(request: Request, secret: string, token: unknown, now: number) {
+function verifySession(request: Request, secret: string, token: unknown, now: number, province: IndeedProvince) {
   const browser = existingCookie(request);
   if (!browser || typeof token !== "string" || token.length > 96) return null;
   const parts = token.split(".");
   if (parts.length !== 4) return null;
   const [version, issuedAt, nonce, signature] = parts;
   if (version !== "v1" || !/^\d{13}$/.test(issuedAt) || !NONCE.test(nonce) || !SIGNATURE.test(signature)) return null;
-  const expected = mac(secret, "architect-indeed-session-bari", `${version}.${issuedAt}.${nonce}.${browser}`);
+  const expected = mac(secret, `architect-indeed-session-${province}`, `${version}.${issuedAt}.${nonce}.${browser}`);
   if (!timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return null;
   const elapsed = now - Number(issuedAt);
   if (elapsed < 0 || elapsed > MAX_ELAPSED_MS) return null;
@@ -196,22 +197,27 @@ export async function handleIndeedStartupCallback(request: Request, env: Env = p
   if (!isAllowedOrigin(request, env)) return fail(403, "Origine della richiesta non consentita.");
   const payload = await readPayload(request);
   if (payload instanceof Response) return payload;
+  const province = parseIndeedProvince(payload.province);
+  if (!province) return fail(400, "Provincia della candidatura non valida.");
+  if (!indeedProvinceIsEnabled(province, env.ARCHITECT_INDEED_CALLBACK_EXTRA_PROVINCES)) return fail(503, UNAVAILABLE);
   const now = (dependencies.now ?? Date.now)();
-  if (payload.action === "start") return startSession(request, config.secret, now);
+  if (payload.action === "start") return startSession(request, config.secret, now, province);
   if (payload.action !== "confirm" || payload.contactRequested !== true) {
     return fail(400, "Conferma esplicitamente che desideri essere ricontattato.");
   }
   const fullName = normalizeName(payload.fullName);
   const email = normalizeEmail(payload.email);
   if (!fullName || !email) return fail(400, "Inserisci nome, cognome e un indirizzo email valido.");
-  const session = verifySession(request, config.secret, payload.token, now);
+  const session = verifySession(request, config.secret, payload.token, now, province);
   if (!session) return fail(409, "Sessione non valida o scaduta. Ricarica la pagina e avvia nuovamente il video.");
   if (session.elapsed < MIN_ELAPSED_MS) {
     return fail(409, "È troppo presto per confermare. Attendi la fine del video e riprova.");
   }
 
   const fetcher = dependencies.fetch ?? fetch;
+  const provinceLabel = INDEED_PROVINCE_LABELS[province];
   try {
+    // Keep Bari's original subjects for a shared IP, email and total quota across all provinces.
     const source = mac(config.secret, "architect-indeed-source-bari", trustedSource(request, env));
     const emailKey = mac(config.secret, "architect-indeed-email-bari", email.toLowerCase());
     // The RPC permits underscores, not hyphens, in scope names.
@@ -225,14 +231,14 @@ export async function handleIndeedStartupCallback(request: Request, env: Env = p
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${config.apiKey}`,
-        "Idempotency-Key": `architect-indeed-bari-v1-${mac(config.secret, "architect-indeed-send-bari", session.token)}`,
+        "Idempotency-Key": `architect-indeed-${province}-v1-${mac(config.secret, `architect-indeed-send-${province}`, session.token)}`,
       },
       body: JSON.stringify({
         from: config.from,
         to: [MAIL_RECIPIENT],
-        subject: "Startup HORYZON · richiesta di ricontatto da Indeed (Bari)",
+        subject: `Startup HORYZON · richiesta di ricontatto da Indeed (${provinceLabel})`,
         text: [
-          "Nuova richiesta di ricontatto dalla pagina Startup, pilota Indeed Bari.",
+          `Nuova richiesta di ricontatto dalla pagina Startup, pilota Indeed ${provinceLabel}.`,
           `Nome e cognome dichiarati: ${fullName}`,
           `Email dichiarata: ${email}`,
           "",

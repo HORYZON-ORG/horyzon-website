@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, type FormEvent } from 'react';
+import type { IndeedProvince } from '@/lib/public-leads/architect-indeed-provinces';
 import styles from './patrimonial-architect-startup.module.css';
 
 const endpoint = '/api/architect-startup/indeed-callback';
@@ -19,7 +20,7 @@ async function callbackRequest(body: Record<string, unknown>) {
   return data;
 }
 
-export function useIndeedCallbackSession(enabled: boolean) {
+export function useIndeedCallbackSession(enabled: boolean, province: IndeedProvince) {
   const tokenRef = useRef('');
   const openingRef = useRef(false);
   const [token, setToken] = useState('');
@@ -30,7 +31,7 @@ export function useIndeedCallbackSession(enabled: boolean) {
     openingRef.current = true;
     setSessionError(false);
     try {
-      const result = await callbackRequest({ action: 'start' });
+      const result = await callbackRequest({ action: 'start', ...(province === 'bari' ? {} : { province }) });
       if (typeof result.token !== 'string' || !result.token) throw new Error('Missing session');
       tokenRef.current = result.token;
       setToken(result.token);
@@ -44,7 +45,7 @@ export function useIndeedCallbackSession(enabled: boolean) {
   return { token, sessionError, begin };
 }
 
-export function IndeedStartupCallbackForm({ token }: { token: string }) {
+export function IndeedStartupCallbackForm({ token, province }: { token: string; province: IndeedProvince }) {
   const sendingRef = useRef(false);
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [error, setError] = useState('');
@@ -61,6 +62,7 @@ export function IndeedStartupCallbackForm({ token }: { token: string }) {
     try {
       await callbackRequest({
         action: 'confirm', token,
+        ...(province === 'bari' ? {} : { province }),
         fullName: String(fields.get('fullName') ?? '').trim(),
         email: String(fields.get('email') ?? '').trim(),
         contactRequested: true,
