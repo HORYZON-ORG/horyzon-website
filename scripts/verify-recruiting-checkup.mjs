@@ -54,6 +54,7 @@ const originalGenerate = provider.executeStructuredTask.bind(provider);
 provider.executeStructuredTask = async (...args) => {
   calls.push(args[0]);
   const result = await originalGenerate(...args);
+  if (args[0].operationType === 'EVALUATE') return { ...result, output: { ...result.output, checks: result.output.checks.map(c => ({ ...c, score: c.id === '10' ? 2 : 8, status: 'EVALUATED', missing: [] })) } };
   // Reproduce the real classifier refusal: missing conditions must be evaluated.
   return args[0].operationType === 'PRECHECK'
     ? { ...result, output: { detectedType: 'INCOMPLETE_AD', confidence: 90, reason: 'Company and compensation are missing.', canRunFullAnalysis: false } }
@@ -83,6 +84,9 @@ let failEmail = true;
 const flaky = { kind: 'MOCK', sendScoreReport: async data => { if (failEmail) throw Error('synthetic mail failure'); return emailProvider.sendScoreReport(data); } };
 const first = await prepareCheckup({ ...input, env, provider: flaky });
 assert.equal(first.status, 'EMAIL_ERROR'); assert.ok(first.report && first.pdfBase64);
+assert.equal(first.report.before.score, 77, 'a weak requirement classification must not cap the check-up mean at 69');
+assert.equal(first.report.after.score, 77);
+assert.equal(first.report.improvementPlan.priorities[0].checkId, '10');
 const afterCalls = calls.length;
 failEmail = false;
 const [a, b] = await Promise.all([prepareCheckup({ ...input, env, provider: flaky }), prepareCheckup({ ...input, env, provider: flaky })]);

@@ -9,7 +9,7 @@ Implementazione da revisionare, non ancora pubblicata. Base: `main` 320729d43e50
 1. Testo, URL pubblico o file PDF/DOCX/TXT. Il file viene letto senza conservarne il binario; l'utente può controllare il testo estratto. Limiti: 3 MB, 20 pagine PDF e 12.000 caratteri; scansioni e PDF protetti restituiscono un errore utile, senza simulare OCR.
 2. Nome, cognome, azienda, email, telefono, ruolo ricercato e difficoltà della ricerca. Numero normalizzato, stato ENTERED (non verificato tramite SMS). Consenso marketing facoltativo e separato dal servizio. Verifica email con l'OTP esistente.
 3. Analisi originale V2 e riscrittura con il writer e i controlli fattuali esistenti. Per il check-up, l'estrazione conserva le formulazioni effettivamente presenti nella fonte; le informazioni mancanti rimangono dati interni, esclusi dal testo per il candidato. Nessun compenso o condizione viene completato per ipotesi.
-4. Rivalutazione della proposta con la stessa griglia V2 a 20 controlli. Conversione visibile: punteggio su 100 diviso 10. Nessun incremento minimo imposto. Copertura e N/D espliciti.
+4. Rivalutazione della proposta con la stessa griglia V2 a 20 controlli. Il voto del check-up è la media dei criteri valutabili, senza tetti aggiuntivi: N/D è escluso dalla media e resta visibile nella copertura. Nessun incremento minimo imposto.
 5. PDF con originale, due griglie complete, proposta, differenze e informazioni mancanti. Download disponibile prima del calendario. Invio di servizio tramite Resend riutilizzando la gestione esistente delle consegne e la sua chiave idempotente.
 6. Invito approvato ai 15 minuti, facoltativo, con link Calendly. Nessun checkout e nessuna promozione della guida nel regalo. Il percorso CREATE e la guida commerciale rimangono capacità separate nel codice.
 
@@ -89,3 +89,11 @@ Il testo Calendly è stato aggiornato e riletto: il check-up è già completo e 
 - Nessun acquisto di dominio o modifica DNS necessario; l'autorizzazione al rilascio proviene dalla richiesta esplicita di Angelo, non da questo file.
 
 Fonti tecniche di integrazione: https://developer.calendly.com/api-docs/overview/webhooks/webhook-signatures e https://calendly.com/help/how-to-source-track-your-calendly-embed-with-utm-parameters.
+
+## Voto e interventi prioritari — 26 novembre 2026
+
+Su richiesta di Angelo, i nuovi report del check-up usano `mean-evaluable-checks-v1`: la media dei singoli criteri valutabili, senza il tetto a 6,9. Il calcolo è applicato allo stesso modo a originale, riscrittura, PDF, pagina di risultato ed email. I punteggi e le griglie delle valutazioni già persistite dal motore Annunci 10x restano immutati; i PDF già consegnati non vengono rigenerati o reinviati automaticamente.
+
+Prima delle griglie, il PDF presenta «Come fare un salto concreto»: fino a tre priorità ordinate per il punteggio della proposta e limitate agli aspetti che richiedono informazioni fattuali. Per ciascuna mostra il dato da aggiungere, il motivo, le domande da porre all’azienda e una traccia da completare con informazioni confermate. Compenso, orario e altri aspetti già completi non diventano false lacune. Le tracce restano distinte dal testo per il candidato; nessun importo, benefit o requisito viene inventato. Un annuncio senza lacune fattuali non riceve priorità artificiali né un incremento minimo garantito.
+
+Verifica mirata: `npm run test:recruiting-checkup`. I test coprono il precedente blocco a 6,9, l’esclusione di N/D dalla media, la conservazione delle vecchie valutazioni, priorità pertinenti e deduplicazione di generazione e invio. I provider delle regressioni sono simulati; i collaudi effettivi con OpenAI, Resend e Gmail sono documentati separatamente nella cartella di lavoro privata.

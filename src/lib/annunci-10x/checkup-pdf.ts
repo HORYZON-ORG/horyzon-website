@@ -5,6 +5,7 @@ import { Document, Page, Text, View, Link, Image, Svg, Path, Circle, Rect, Line,
 import type { CheckupReport } from './checkup.ts';
 import { checkupScore } from './checkup.ts';
 import { checkupCalendarUrl, CHECKUP_INVITATION } from './checkup-copy.ts';
+import { CHECKUP_SCORE_EXPLANATION } from './checkup-improvements.ts';
 import type { Annunci10xScoreReport } from './score-report-email.ts';
 
 const s = StyleSheet.create({
@@ -34,6 +35,7 @@ const s = StyleSheet.create({
   checkNumber: { width: 25, paddingVertical: 3, textAlign: 'center', fontSize: 9, backgroundColor: '#edf2e5', borderRadius: 4, fontFamily: 'Helvetica-Bold' },
   checkTitle: { flexGrow: 1, flexShrink: 1, fontSize: 10.5, fontFamily: 'Helvetica-Bold', paddingTop: 2 },
   checkScore: { width: 72, textAlign: 'right', fontSize: 9, paddingTop: 3, color: '#486467' },
+  action: { padding: 14, marginBottom: 15, borderWidth: 0.7, borderColor: '#dbe1df', borderRadius: 6, backgroundColor: '#f8faf5' },
   footer: { position: 'absolute', left: 42, right: 42, bottom: 23, height: 20, paddingTop: 7, borderTopWidth: 0.5, borderTopColor: '#dbe1df', flexDirection: 'row', justifyContent: 'space-between', fontSize: 7.5, lineHeight: 1.2, color: '#627577' },
   link: { color: '#163638', backgroundColor: '#d5e04d', padding: 14, marginTop: 12, marginBottom: 14, borderRadius: 5, fontFamily: 'Helvetica-Bold' },
 });
@@ -68,20 +70,33 @@ export async function renderCheckupPdf(report: CheckupReport): Promise<Buffer> {
   const doc = h(Document, { title: `Check-up annuncio - ${report.roleTitle}`, author: 'HORYZON Recruiting', creationDate: new Date(report.createdAt), modificationDate: new Date(report.createdAt) },
     page(logo, 'Il check-up del tuo annuncio', 'compare', [...(report.example ? [p('FACSIMILE - Annuncio fittizio e valutazioni simulate, solo a scopo dimostrativo.')] : []), h(Text, { style: s.title }, clean(report.roleTitle)), p('Valutazione automatica, proposta e confronto'), comparison,
       h(View, { style: s.steps }, ...([['check', 'Valutazione'], ['rewrite', 'Riscrittura'], ['compare', 'Confronto']] as const).map(([name, label]) => h(View, { key: name, style: s.step }, icon(name), h(Text, null, label)))),
-      p('Stessa griglia V2 di 20 controlli per entrambi i testi. Il voto su 10 è il punteggio su 100 diviso 10; N/D indica un criterio non valutabile. Le informazioni mancanti restano distinte.'),
+      p(report.scoreMethod ? CHECKUP_SCORE_EXPLANATION : 'Stessa griglia V2 di 20 controlli per entrambi i testi. Il voto su 10 è il punteggio su 100 diviso 10; N/D indica un criterio non valutabile. Le informazioni mancanti restano distinte.'),
       p(`Copertura: originale ${report.before.coverage}%; proposta ${report.after.coverage}%.`),
       h(View, { style: s.row }, h(Text, { style: s.label }, 'Area'), h(Text, { style: s.cell }, 'Originale'), h(Text, { style: s.cell }, 'Proposta')),
       ...report.before.areaScores.map((a, i) => h(View, { style: s.row, key: a.id }, h(Text, { style: s.label }, a.label), h(Text, { style: s.cell }, checkupScore(a.score)), h(Text, { style: s.cell }, checkupScore(report.after.areaScores[i].score)))),
-      p('Il punteggio valuta chiarezza e completezza del testo. Non misura la qualità dell’azienda o delle persone e non garantisce candidature o assunzioni.')]),
+      p('Il punteggio valuta chiarezza e completezza del testo. Non misura la qualità dell’azienda o delle persone e non garantisce candidature o assunzioni.'),
+      ...(report.improvementPlan?.priorities.length ? [p(`Per il prossimo salto: ${report.improvementPlan.priorities.map(c => c.title).join('; ')}.`)] : [])]),
+    ...(report.improvementPlan ? [page(logo, 'Come fare un salto concreto', 'rewrite', [
+      p(report.improvementPlan.summary),
+      ...(report.changes.length ? [h(Text, { style: s.sub }, 'Che cosa cambia con la riscrittura'), ...report.changes.map(p)] : []),
+      ...report.improvementPlan.priorities.map((c, i) => h(View, { key: c.checkId, style: s.action, wrap: false },
+        h(Text, { style: s.sub }, clean(`${i + 1}. ${c.title} - oggi ${c.currentScore}/10`)),
+        p(`Punto da migliorare: ${c.currentGap}`),
+        p(`Da aggiungere: ${c.toAdd}`),
+        p(`Perché conta: ${c.why}`),
+        p(`Chiedi all’azienda:\n${c.questions.map(q => `- ${q}`).join('\n')}`),
+        p(`Traccia da completare con dati confermati:\n${c.draft}`))),
+      p(report.improvementPlan.nextStep),
+    ])] : []),
     page(logo, 'Il tuo annuncio originale', 'document', [p(report.originalText)]),
     page(logo, 'Valutazione del testo originale', 'check', grid(report.before)),
     page(logo, 'La possibile versione migliorata', 'rewrite', [p(report.improvedText), p('La proposta usa i fatti disponibili: non aggiunge compensi, benefit, requisiti o promesse assenti dal testo. Verifica le informazioni prima della pubblicazione.')]),
     page(logo, 'Valutazione della proposta', 'check', grid(report.after)),
-    page(logo, 'Che cosa cambia e che cosa approfondire', 'compare', [
+    ...(!report.improvementPlan ? [page(logo, 'Che cosa cambia e che cosa approfondire', 'compare', [
       ...((report.changes.length ? report.changes : ['I punteggi restano invariati: una diversa formulazione non comporta automaticamente un voto maggiore.']).map(p)),
       h(Text, { style: s.heading }, 'Informazioni utili da chiarire'),
       ...(report.missingInformation.length ? report.missingInformation : ['Non emergono ulteriori informazioni mancanti dai controlli effettuati.']).map(p),
-    ]),
+    ])] : []),
     page(logo, 'Un ulteriore passo, se lo desideri', 'phone', [...CHECKUP_INVITATION.slice(0, 3).map(p),
       h(Link, { src: checkupCalendarUrl(report.analysisRunId), style: s.link }, CHECKUP_INVITATION[3]),
       p('È una telefonata facoltativa. Il PDF è già completo e gratuito; puoi usarlo senza prenotare e senza obbligo di acquisto.'),

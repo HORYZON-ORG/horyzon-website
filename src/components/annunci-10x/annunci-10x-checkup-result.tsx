@@ -37,9 +37,19 @@ export function Annunci10xCheckupResult({ analysisRunId }: { analysisRunId: stri
       {(error || state.status === 'FAILED' || state.status === 'EMAIL_ERROR') && <button type="button" onClick={() => setRetry(n => n + 1)}>Riprova la richiesta</button>}
       {report && <>
         <div className={styles.fieldGrid}><div><h3>Testo attuale</h3><strong>{score(report.before.score)}</strong></div><div><h3>Proposta migliorata</h3><strong>{score(report.after.score)}</strong></div></div>
-        <p>Stessi 20 criteri per entrambi. Il voto su 10 è il punteggio su 100 diviso 10. Un testo già buono può mantenere il proprio voto.</p>
+        <p>{report.scoreMethod ? 'Il voto è la media dei criteri valutabili della stessa griglia di 20 controlli, senza tetti aggiuntivi. N/D è escluso dalla media e resta visibile nella copertura.' : 'Stessi 20 criteri per entrambi. Il voto su 10 è il punteggio su 100 diviso 10. Un testo già buono può mantenere il proprio voto.'}</p>
         <p>Copertura: originale {report.before.coverage}%, proposta {report.after.coverage}%. N/D indica un criterio non valutabile.</p>
         <div className={styles.actions}><a href={`/api/annunci-10x/checkup/${analysisRunId}/pdf`} download onClick={() => { void recruitingMetaTracker()?.download(analysisRunId); }}>Scarica il PDF completo gratuito</a></div>
+        {report.improvementPlan && <section aria-label="Come fare un salto concreto">
+          <h3>Come fare un salto concreto</h3>
+          <p>{report.improvementPlan.summary}</p>
+          <ol>{report.improvementPlan.priorities.map(c => <li key={c.checkId}>
+            <h4>{c.title} · oggi {c.currentScore}/10</h4>
+            <p>{c.toAdd}</p>
+            <details><summary>Quali dati chiedere all’azienda</summary><p>{c.why}</p><ul>{c.questions.map(q => <li key={q}>{q}</li>)}</ul><p>Traccia da completare con dati confermati: {c.draft}</p></details>
+          </li>)}</ol>
+          <p>{report.improvementPlan.nextStep}</p>
+        </section>}
         <details><summary>Confronta i due testi</summary><div className={styles.fieldGrid}><div><h3>Originale</h3><p style={{ whiteSpace: 'pre-wrap' }}>{report.originalText}</p></div><div><h3>Proposta</h3><p style={{ whiteSpace: 'pre-wrap' }}>{report.improvedText}</p></div></div></details>
         <details><summary>Modifiche e informazioni da chiarire</summary>{report.changes.length ? <ul>{report.changes.map((c, i) => <li key={i}>{c}</li>)}</ul> : <p>I punteggi sono rimasti invariati.</p>}<h3>Informazioni utili da approfondire</h3><ul>{report.missingInformation.map((c, i) => <li key={i}>{c}</li>)}</ul></details>
         <p>Valutazione automatica di chiarezza e completezza: non garantisce candidature o assunzioni. La proposta usa i fatti disponibili; verifica il testo prima di pubblicarlo.</p>

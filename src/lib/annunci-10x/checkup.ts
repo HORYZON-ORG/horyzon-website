@@ -1,4 +1,5 @@
 import { checkupCalendarUrl } from './checkup-copy.ts';
+import { CHECKUP_SCORE_METHOD, meanCheckupReport, buildCheckupImprovementPlan, type CheckupImprovementPlan } from './checkup-improvements.ts';
 import { Annunci10xPublicError, type Annunci10xRuntimeContext, type Annunci10xSessionCookie } from './product-flow.ts';
 import { buildAnnunci10xScoreReport, type Annunci10xScoreReport } from './score-report-email.ts';
 import { createAnnunci10xEmailProvider, type Annunci10xEmailProvider } from './lead-verification.ts';
@@ -9,6 +10,8 @@ import type { PersistedAnalysisRun } from './persistence/types.ts';
 import type { GeneratedAd } from './types.ts';
 
 export interface CheckupReport {
+  scoreMethod?: typeof CHECKUP_SCORE_METHOD;
+  improvementPlan?: CheckupImprovementPlan;
   example?: boolean;
   version: typeof CHECKUP_VERSION;
   analysisRunId: string;
@@ -75,11 +78,13 @@ async function prepare(input: CheckupInput): Promise<CheckupReceipt> {
       after = generated.evaluation;
     }
     if (!isScoreResultV2(after.score)) throw new Error('checkup requires V2');
-    const beforeReport = buildAnnunci10xScoreReport({ lead, analysisRun: run, evaluation: { ...original, score: original.score }, snapshot });
-    const afterReport = buildAnnunci10xScoreReport({ lead, analysisRun: run, evaluation: { ...after, score: after.score }, snapshot });
+    const beforeReport = meanCheckupReport(buildAnnunci10xScoreReport({ lead, analysisRun: run, evaluation: { ...original, score: original.score }, snapshot }));
+    const afterReport = meanCheckupReport(buildAnnunci10xScoreReport({ lead, analysisRun: run, evaluation: { ...after, score: after.score }, snapshot }));
     const master = output.generatedContent as GeneratedAd;
     const improvedText = master.sections.map(s => [s.title, s.body].filter(Boolean).join('\n')).join('\n\n');
     const report: CheckupReport = {
+      scoreMethod: CHECKUP_SCORE_METHOD,
+      improvementPlan: buildCheckupImprovementPlan(beforeReport, afterReport),
       version: CHECKUP_VERSION, analysisRunId: run.id, createdAt: output.createdAt,
       roleTitle: beforeReport.roleTitle, originalText: run.targetText!, improvedText,
       before: beforeReport, after: afterReport,
