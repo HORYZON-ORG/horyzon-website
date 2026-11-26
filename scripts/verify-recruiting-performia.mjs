@@ -41,6 +41,10 @@ assert.equal(mixed.requirements.find(r => /Preferibile esperienza/.test(r.label.
 const sector = buildCheckupRoleCard('Commerciale\nRequisiti:\nConoscenza del tessuto imprenditoriale lombardo (costituirà titolo preferenziale la provenienza dai settori parquet, legno, edilizia).\nTitolo di studio: diploma tecnico (costituirà titolo preferenziale).', { extractedFacts: [], possibleConflicts: [] });
 assert.equal(sector.requirements.find(r => /Conoscenza del tessuto/.test(r.label.value)).classification, 'REQUIRED');
 assert.equal(sector.requirements.find(r => /Titolo di studio/.test(r.label.value)).classification, 'PREFERRED');
+const metadataScope=checkupSourceUnits('Tecnico\nSede di lavoro: In presenza\nAzienda di piccole dimensioni.\nCompetenze richieste\nProgrammazione FANUC.\nRetribuzione: 1800 euro al mese');
+assert.equal(metadataScope.find(u=>u.text==='Azienda di piccole dimensioni.').area,'CONTEXT');
+assert.equal(metadataScope.find(u=>u.text==='Programmazione FANUC.').area,'REQUIRED');
+assert.equal(metadataScope.find(u=>u.text.startsWith('Retribuzione:')).heading,undefined);
 const units = checkupSourceUnits(source);
 const proposal = { strategy: { qualification: 'qualificato', rhythm: 'UNKNOWN', popularity: 'UNKNOWN', technicality: 'specialistico' }, opening: [
   { text: 'Sai saldare secondo WPS e ISO 9606-1?', sourceIds: [units.find(u=>/Saldatura TIG/.test(u.text)).id] },

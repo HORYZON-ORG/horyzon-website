@@ -7,7 +7,7 @@ import type { PersistedSnapshot } from './persistence/types.ts';
 import type { GeneratedAd, GeneratedSection } from './types.ts';
 import { checkupSourceUnits, checkupLiteralIssues, type CheckupSourceUnit } from './checkup-source.ts';
 
-export const CHECKUP_WRITER_VERSION = 'checkup-performia-source-composition-v5';
+export const CHECKUP_WRITER_VERSION = 'checkup-performia-source-composition-v5.1';
 export interface CheckupStrategy { qualification: string; rhythm: string; popularity: string; technicality: string }
 export interface CheckupQuality {
   version: typeof CHECKUP_WRITER_VERSION;

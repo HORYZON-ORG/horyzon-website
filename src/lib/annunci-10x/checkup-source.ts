@@ -13,28 +13,28 @@ export function checkupSourceUnits(text: string): CheckupSourceUnit[] {
     const heading = sourceHeading(line);
     if (heading) { area = heading; currentHeading = line; continue; }
     const inlineHeading = line.includes(':') ? sourceHeading(line.slice(0, line.indexOf(':'))) : null;
-    if (inlineHeading) { area = inlineHeading; currentHeading = ''; }
+    const unitArea = inlineHeading ?? area;
     // A preference about years or a narrower location does not make the main prerequisite optional.
     const partialPreference = /\([^)]*(?:preferibilmente|preferenza|preferenziale\s+(?:la|il|l[’']))/i.test(line);
     const preferredItem = !partialPreference && /^(?:preferibil\w*|preferenzial\w*|gradit\w*|facoltativ\w*|costituisc\w*|[eè] particolarmente apprezzat\w*)\b|costituir[aà]\s+(?:un\s+)?titolo preferenziale/i.test(line);
     const actualArea = preferredItem
-      && (area === 'REQUIRED' || area === 'PREFERRED' || /diploma|esperienza|titolo|provenienza|conoscenza|residenza/i.test(line)) ? 'PREFERRED'
-      : /si occuper[aà]|gestir[aà]/i.test(line) && (area === 'REQUIRED' || area === 'PREFERRED') ? 'ACTIVITIES'
+      && (unitArea === 'REQUIRED' || unitArea === 'PREFERRED' || /diploma|esperienza|titolo|provenienza|conoscenza|residenza/i.test(line)) ? 'PREFERRED'
+      : /si occuper[aà]|gestir[aà]/i.test(line) && (unitArea === 'REQUIRED' || unitArea === 'PREFERRED') ? 'ACTIVITIES'
       : /^(?:tipo di contratto|contratto(?: di lavoro)?|sede(?: di lavoro| di riferimento)?|orario|retribuzione|ral|range retributivo)\s*:/i.test(line) ? 'CONDITIONS'
-        : /^(?:invia(?:re|ci|te)?|per candidar|candidati\b)/i.test(line) ? 'APPLICATION' : area;
-    units.push({ id: 'S' + String(units.length + 1).padStart(3, '0'), text: line, area: actualArea, ...(currentHeading ? { heading: currentHeading } : {}) });
+        : /^(?:invia(?:re|ci|te)?|per candidar|candidati\b)/i.test(line) ? 'APPLICATION' : unitArea;
+    units.push({ id: 'S' + String(units.length + 1).padStart(3, '0'), text: line, area: actualArea, ...(!inlineHeading && actualArea === area && currentHeading ? { heading: currentHeading } : {}) });
   }
   return units;
 }
 function sourceHeading(line: string): CheckupSourceArea | null {
   const s = line.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[:.]+$/, '').trim();
   if (/^(?:costituiscono? (?:un |titolo )?plus|qualita preferenziali|requisiti preferenziali|titoli preferenziali)$/.test(s)) return 'PREFERRED';
-  if (/^(?:requisiti(?: richiesti| indispensabili| e competenze tecniche)?|chi (?:stiamo cercando|cerchiamo)|attitudini e competenze comportamentali|cosa cerchiamo)$/.test(s)) return 'REQUIRED';
-  if (/^(?:(?:principali )?responsabilita|attivita(?: principali)?|cosa farai|(?:il )?ruolo|descrizione della posizione|mansioni|mansione)$/.test(s)) return 'ACTIVITIES';
+  if (/^(?:requisiti(?: richiesti| indispensabili| e competenze tecniche)?|competenze richieste|esperienza|chi (?:stiamo cercando|cerchiamo)|attitudini e competenze comportamentali|cosa cerchiamo)$/.test(s)) return 'REQUIRED';
+  if (/^(?:(?:principali )?responsabilita|attivita(?: principali)?|cosa farai|(?:il |il tuo )?ruolo|descrizione della posizione|mansioni|mansione)$/.test(s)) return 'ACTIVITIES';
   if (/^(?:cosa offriamo|condizioni offerte|offriamo|benefit|strumenti di lavoro|formazione continua)$/.test(s)) return 'OFFER';
   if (/^(?:candidatur[ae]|come candidarsi|application)$/.test(s)) return 'APPLICATION';
   if (/^(?:sede di lavoro|orario di lavoro|condizioni di lavoro)$/.test(s)) return 'CONDITIONS';
-  if (/^(?:chi siamo|perche .+|il contesto)$/.test(s)) return 'CONTEXT';
+  if (/^(?:chi siamo|la nostra azienda|la nostra cultura|perche .+|il contesto)$/.test(s)) return 'CONTEXT';
   return null;
 }
 export function checkupNumericFacts(text: string): string[] {
