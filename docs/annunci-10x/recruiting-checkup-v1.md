@@ -107,3 +107,11 @@ Su richiesta di Angelo, la prima pagina raccoglie voti, copertura, aree e interv
 Originale, testo consigliato, domande all’azienda e tracce da completare rimangono completi. Quando viene consigliato l’originale esatto, il testo non viene ripetuto una seconda volta. L’invito facoltativo ai 15 minuti chiude la griglia, senza una pagina dedicata. Il caso reale salvato e il facsimile passano da 12 a 8 pagine; la variante che mantiene l’originale occupa 7 pagine. Annunci o motivazioni più lunghi possono richiedere pagine aggiuntive: il contenuto non viene troncato.
 
 La verifica del nuovo layout riusa gli stessi dati salvati, senza una nuova valutazione OpenAI o un invio email. Controllati contenuti completi, voti invariati, link Calendly e rendering di tutte le pagine. Le ricevute già consegnate restano immutate.
+
+## Menzione Performia nel PDF — 26 novembre 2026
+
+Su richiesta di Angelo, la prima pagina include una breve menzione con il logo Performia originale già utilizzato nei materiali HORYZON, mantenendo HORYZON come marchio principale. Testo: «HORYZON, esclusivista Performia in Italia. Metodo e strumenti per la selezione e lo sviluppo delle persone. Performia opera dal 2001 in oltre 26 Paesi.» La dichiarazione di esclusiva proviene direttamente dal proprietario in questa chat; il sito ufficiale indica HORYZON come riferimento per l’Italia, senza dettagliare pubblicamente l’esclusiva.
+
+I dati internazionali sono stati verificati il 26 novembre su https://performia.com/en-it/about-us e https://performia.com/en-it/contact-us: fondazione nel 2001 e attività in oltre 26 Paesi. Si usa quindi «dal 2001», anziché i 30 anni inizialmente indicati. La menzione descrive il rapporto professionale e non attribuisce a Performia la certificazione del voto automatico del check-up.
+
+Il logo locale è incluso nei pacchetti delle API e della coda di preparazione PDF. Il facsimile usa la medesima menzione; le ricevute già consegnate restano immutate.

@@ -15,17 +15,17 @@ const s = StyleSheet.create({
   brand: { fontSize: 8, letterSpacing: 1.4, color: '#486467', textAlign: 'right', lineHeight: 1.6 },
   section: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 20 },
   icon: { width: 30, height: 30, padding: 6, borderRadius: 7, backgroundColor: '#edf2e5' },
-  title: { fontSize: 23, fontFamily: 'Helvetica-Bold', lineHeight: 1.16, marginBottom: 12 },
+  title: { fontSize: 23, fontFamily: 'Helvetica-Bold', lineHeight: 1.16, marginBottom: 10 },
   heading: { fontSize: 17, fontFamily: 'Helvetica-Bold', marginBottom: 12 },
   sub: { fontSize: 11, fontFamily: 'Helvetica-Bold', marginBottom: 5 },
   p: { marginBottom: 10 },
-  scores: { flexDirection: 'row', gap: 12, marginTop: 10, marginBottom: 14 },
-  card: { width: '50%', padding: 14, backgroundColor: '#f0f3ed', borderRadius: 8 },
+  scores: { flexDirection: 'row', gap: 12, marginTop: 10, marginBottom: 10 },
+  card: { width: '50%', padding: 12, backgroundColor: '#f0f3ed', borderRadius: 8 },
   cardAfter: { backgroundColor: '#edf2d7', borderWidth: 0.7, borderColor: '#c9d66a' },
   score: { fontSize: 30, lineHeight: 1.2, fontFamily: 'Helvetica-Bold' },
   track: { height: 5, backgroundColor: '#d6dfd8', borderRadius: 3, marginTop: 10 },
   bar: { height: 5, backgroundColor: '#486467', borderRadius: 3 },
-  row: { flexDirection: 'row', paddingVertical: 5, borderBottomWidth: 0.5, borderBottomColor: '#dbe1df' },
+  row: { flexDirection: 'row', paddingVertical: 3, borderBottomWidth: 0.5, borderBottomColor: '#dbe1df' },
   label: { width: '48%', paddingRight: 10 },
   cell: { width: '26%' },
   check: { marginBottom: 7, fontSize: 9.3, lineHeight: 1.3, borderBottomWidth: 0.5, borderBottomColor: '#dbe1df', paddingBottom: 7 },
@@ -38,6 +38,9 @@ const s = StyleSheet.create({
   reasons: { flexDirection: 'row', gap: 12, marginBottom: 4 },
   reason: { width: '49%' },
   summary: { fontSize: 9, marginBottom: 6 },
+  performia: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 8, marginBottom: 8, borderWidth: 0.7, borderColor: '#dbe1df', borderRadius: 6 },
+  performiaLogo: { width: 90, height: 23.4 },
+  performiaCopy: { flex: 1, fontSize: 9, lineHeight: 1.3 },
   action: { padding: 14, marginBottom: 15, borderWidth: 0.7, borderColor: '#dbe1df', borderRadius: 6, backgroundColor: '#f8faf5' },
   invitation: { marginTop: 12, paddingTop: 12, borderTopWidth: 0.7, borderTopColor: '#dbe1df' },
   footer: { position: 'absolute', left: 42, right: 42, bottom: 23, height: 20, paddingTop: 7, borderTopWidth: 0.5, borderTopColor: '#dbe1df', flexDirection: 'row', justifyContent: 'space-between', fontSize: 7.5, lineHeight: 1.2, color: '#627577' },
@@ -83,12 +86,21 @@ function comparisonGrid(before: Annunci10xScoreReport, after: Annunci10xScoreRep
   });
 }
 export async function renderCheckupPdf(report: CheckupReport): Promise<Buffer> {
-  const logo = await readFile(join(process.cwd(), 'public/horyzon-logo-canonical.png'));
+  const [logo, performiaLogo] = await Promise.all([
+    readFile(join(process.cwd(), 'public/horyzon-logo-canonical.png')),
+    readFile(join(process.cwd(), 'public/performia-logo.png')),
+  ]);
   const keptOriginal = report.rewriteSelection?.kind === 'ORIGINAL';
   const afterLabel = keptOriginal ? 'Testo consigliato: originale' : report.rewriteSelection ? 'Testo consigliato' : 'Proposta migliorata';
   const comparison = h(View, { style: s.scores }, ...[{ label: 'Testo attuale', value: report.before.score }, { label: afterLabel, value: report.after.score }].map(({ label, value }, i) => h(View, { key: label, style: i ? [s.card, s.cardAfter] : s.card }, h(Text, null, label), h(Text, { style: s.score }, checkupScore(value)), h(View, { style: s.track }, h(View, { style: [s.bar, { width: `${Math.min(100, Math.max(0, value ?? 0))}%`, ...(i ? { backgroundColor: '#94a936' } : {}) }] })))));
   const doc = h(Document, { title: `Check-up annuncio - ${report.roleTitle}`, author: 'HORYZON Recruiting', creationDate: new Date(report.createdAt), modificationDate: new Date(report.createdAt) },
-    page(logo, 'Il check-up del tuo annuncio', 'compare', [...(report.example ? [h(Text, { style: { ...s.summary, fontSize: 7.5 } }, 'FACSIMILE - Annuncio fittizio e valutazioni simulate, solo a scopo dimostrativo.')] : []), h(Text, { style: s.title }, clean(report.roleTitle)), comparison,
+    page(logo, 'Il check-up del tuo annuncio', 'compare', [...(report.example ? [h(Text, { style: { ...s.summary, fontSize: 7.5 } }, 'FACSIMILE - Annuncio fittizio e valutazioni simulate, solo a scopo dimostrativo.')] : []), h(Text, { style: s.title }, clean(report.roleTitle)),
+      h(View, { style: s.performia, wrap: false },
+        h(Image, { src: { data: performiaLogo, format: 'png' }, style: s.performiaLogo }),
+        h(View, { style: s.performiaCopy },
+          h(Text, { style: { fontFamily: 'Helvetica-Bold', marginBottom: 4 } }, 'HORYZON, esclusivista Performia in Italia'),
+          h(Text, null, 'Metodo e strumenti per la selezione e lo sviluppo delle persone. Performia opera dal 2001 in oltre 26 Paesi.'))),
+      comparison,
       h(Text, { style: s.summary }, report.scoreMethod ? CHECKUP_SCORE_EXPLANATION : 'Stessa griglia V2 di 20 controlli per entrambi i testi. Il voto su 10 è il punteggio su 100 diviso 10; N/D indica un criterio non valutabile. Le informazioni mancanti restano distinte.'),
       h(Text, { style: s.summary }, `Copertura: originale ${report.before.coverage}%; ${report.rewriteSelection ? 'testo consigliato' : 'proposta'} ${report.after.coverage}%.`),
       h(View, { style: s.row }, h(Text, { style: s.label }, 'Area'), h(Text, { style: s.cell }, 'Originale'), h(Text, { style: s.cell }, report.rewriteSelection ? 'Consigliato' : 'Proposta')),
