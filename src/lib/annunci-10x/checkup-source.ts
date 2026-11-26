@@ -13,8 +13,10 @@ export function checkupSourceUnits(text: string): CheckupSourceUnit[] {
     if (heading) { area = heading; continue; }
     const inlineHeading = line.includes(':') ? sourceHeading(line.slice(0, line.indexOf(':'))) : null;
     if (inlineHeading) area = inlineHeading;
-    const actualArea = /\b(?:preferibil\w*|preferenzial\w*|gradit\w*|facoltativ\w*|costituisc\w*.*\bplus)\b/i.test(line)
-      && (area === 'REQUIRED' || area === 'PREFERRED' || /diploma|esperienza|titolo|provenienza|conoscenza/i.test(line)) ? 'PREFERRED'
+    // A preference about years or a narrower location does not make the main prerequisite optional.
+    const preferredItem = /^(?:preferibil\w*|preferenzial\w*|gradit\w*|facoltativ\w*|costituisc\w*|[eè] particolarmente apprezzat\w*)\b|costituir[aà]\s+(?:un\s+)?titolo preferenziale/i.test(line);
+    const actualArea = preferredItem
+      && (area === 'REQUIRED' || area === 'PREFERRED' || /diploma|esperienza|titolo|provenienza|conoscenza|residenza/i.test(line)) ? 'PREFERRED'
       : /si occuper[aà]|gestir[aà]/i.test(line) && (area === 'REQUIRED' || area === 'PREFERRED') ? 'ACTIVITIES'
       : /^(?:tipo di contratto|contratto(?: di lavoro)?|sede(?: di lavoro| di riferimento)?|orario|retribuzione|ral|range retributivo)\s*:/i.test(line) ? 'CONDITIONS'
         : /^(?:invia(?:re|ci|te)?|per candidar|candidati\b)/i.test(line) ? 'APPLICATION' : area;

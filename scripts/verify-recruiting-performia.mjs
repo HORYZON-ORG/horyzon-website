@@ -31,6 +31,10 @@ assert.equal(card.requirements.find(r => /Diploma/.test(r.label.value)).classifi
 assert.equal(card.requirements.find(r => /patente/.test(r.label.value)).classification, 'REQUIRED');
 assert.match(card.responsibilities[0].value, /WPS e ISO/);
 assert.ok(card.attractionContext.attractivenessEvidence.some(f => /Alloggio.*soltanto/.test(f.value)));
+const mixed = buildCheckupRoleCard('Tecnico\nRequisiti:\nPregressa esperienza in contesti produttivi (preferibilmente almeno 5 anni)\nResidenza in Lombardia: non saranno considerate persone fuori regione. Preferenza Milano.\nPreferibile esperienza nel settore.', { extractedFacts: [], possibleConflicts: [] });
+assert.equal(mixed.requirements.find(r => /contesti produttivi/.test(r.label.value)).classification, 'REQUIRED');
+assert.equal(mixed.requirements.find(r => /Residenza in Lombardia/.test(r.label.value)).classification, 'REQUIRED');
+assert.equal(mixed.requirements.find(r => /Preferibile esperienza/.test(r.label.value)).classification, 'PREFERRED');
 const units = checkupSourceUnits(source);
 const proposal = { strategy: { qualification: 'qualificato', rhythm: 'UNKNOWN', popularity: 'UNKNOWN', technicality: 'specialistico' }, sections: [
   { type: 'TITLE', title: '', body: 'Saldatore esperto', sourceIds: [] },
