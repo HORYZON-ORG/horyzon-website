@@ -6,6 +6,7 @@ import { checkupSourceUnits, checkupLiteralIssues } from '../src/lib/annunci-10x
 import { checkupCoverageIssues, generateFaithfulCheckupMaster } from '../src/lib/annunci-10x/checkup-writer.ts';
 import { checkupEvaluationInput, normalizeCheckupEvaluation } from '../src/lib/annunci-10x/checkup-evaluation.ts';
 import { selectCheckupRecommendation, buildCheckupImprovementPlan } from '../src/lib/annunci-10x/checkup-improvements.ts';
+import { buildAnnunci10xScoreReport } from '../src/lib/annunci-10x/score-report-email.ts';
 
 const source = `Saldatore esperto — azienda di impianti alimentari
 Monza (MB)
@@ -72,6 +73,13 @@ assert.equal(buildCheckupImprovementPlan(report(60), report(80)).priorities[0].c
 const rejected = selectCheckupRecommendation(source, 'Unfaithful rewrite', report(60), report(90), { status: 'ORIGINAL_RETAINED' });
 assert.equal(rejected.text, source);
 assert.equal(rejected.selection.evaluatedRewriteScore, null);
+const reasonChecks = Array.from({length:20}, (_,i) => ({ id:String(i+1).padStart(2,'0'), score:2, status:'EVALUATED', reason:'Le attività di assistenza elettromeccanica non sono dettagliate.', evidence:[],missing:[],confidence:80 }));
+const reasonArgs = { lead:null, analysisRun:{id:'reason-test'}, evaluation:{score:{value:20,band:null,coverage:100,evaluableCheckCount:20,checks:reasonChecks}}, snapshot:null };
+const specificReport = buildAnnunci10xScoreReport({...reasonArgs,useEvaluationReasons:true});
+assert.match(specificReport.checks.find(c=>c.checkId==='03').reason,/assistenza elettromeccanica/);
+assert.doesNotMatch(specificReport.checks.find(c=>c.checkId==='03').reason,/CRM|gestione clienti/);
+assert.deepEqual(specificReport.checks.map(c=>c.score),reasonChecks.map(c=>c.score));
+assert.match(buildAnnunci10xScoreReport(reasonArgs).checks.find(c=>c.checkId==='03').reason,/CRM/, 'legacy presentation remains separate from the check-up-specific reasons');
 
 // These are deliberately simulated provider/audit responses, not real model tests.
 for (const mode of ['repair', 'reject', 'provider-failure']) {

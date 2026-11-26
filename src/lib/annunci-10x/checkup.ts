@@ -79,8 +79,8 @@ async function prepare(input: CheckupInput): Promise<CheckupReceipt> {
       after = generated.evaluation;
     }
     if (!isScoreResultV2(after.score)) throw new Error('checkup requires V2');
-    const beforeReport = meanCheckupReport(buildAnnunci10xScoreReport({ lead, analysisRun: run, evaluation: { ...original, score: original.score }, snapshot }));
-    const evaluatedRewrite = meanCheckupReport(buildAnnunci10xScoreReport({ lead, analysisRun: run, evaluation: { ...after, score: after.score }, snapshot }));
+    const beforeReport = meanCheckupReport(buildAnnunci10xScoreReport({ lead, analysisRun: run, evaluation: { ...original, score: original.score }, snapshot, useEvaluationReasons: true }));
+    const evaluatedRewrite = meanCheckupReport(buildAnnunci10xScoreReport({ lead, analysisRun: run, evaluation: { ...after, score: after.score }, snapshot, useEvaluationReasons: true }));
     const master = output.generatedContent as GeneratedAd;
     const rewrittenText = master.sections.map(s => [s.title, s.body].filter(Boolean).join('\n')).join('\n\n');
     const quality = (output.generatedContent as GeneratedAd & { checkupQuality?: { status: string } }).checkupQuality;
