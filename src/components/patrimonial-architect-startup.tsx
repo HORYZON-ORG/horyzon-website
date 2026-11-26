@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import header from './patrimonial-architect-header.module.css';
 import styles from './patrimonial-architect-startup.module.css';
 import { IndeedStartupCallbackForm, useIndeedCallbackSession } from './patrimonial-architect-indeed-callback';
+import { architectIndeedIntroPath, INDEED_PROVINCE_LABELS, type IndeedProvince } from '@/lib/public-leads/architect-indeed-provinces';
 
 const VIDEO_DURATION_SECONDS = 660.73;
 const VIDEO_SPEEDS = [1, 1.1, 1.25, 1.5] as const;
@@ -16,7 +17,9 @@ const displayVideoTime = (seconds: number) => {
 
 type Status = 'idle' | 'sending' | 'success' | 'error';
 
-export function ArchitectStartupPresentation({ videoUrl, fromIndeed = false, indeedCallbackEnabled = false }: { videoUrl: string; fromIndeed?: boolean; indeedCallbackEnabled?: boolean }) {
+export function ArchitectStartupPresentation({ videoUrl, fromIndeed = false, indeedCallbackEnabled = false, indeedProvince = 'bari' }: {
+  videoUrl: string; fromIndeed?: boolean; indeedCallbackEnabled?: boolean; indeedProvince?: IndeedProvince;
+}) {
   const [token, setToken] = useState('');
   const [gateReady, setGateReady] = useState(false);
   const [watchAcknowledged, setWatchAcknowledged] = useState(false);
@@ -29,8 +32,8 @@ export function ArchitectStartupPresentation({ videoUrl, fromIndeed = false, ind
   const [videoSeconds, setVideoSeconds] = useState(0);
   const [videoEnded, setVideoEnded] = useState(false);
   const [indeedVideoCompleted, setIndeedVideoCompleted] = useState(false);
-  const indeedSession = useIndeedCallbackSession(fromIndeed && indeedCallbackEnabled);
-  const homePath = fromIndeed ? '/candidature/architetti-patrimoniali/indeed' : '/candidature/architetti-patrimoniali';
+  const indeedSession = useIndeedCallbackSession(fromIndeed && indeedCallbackEnabled, indeedProvince);
+  const homePath = fromIndeed ? architectIndeedIntroPath(indeedProvince) : '/candidature/architetti-patrimoniali';
   const videoRef = useRef<HTMLVideoElement>(null);
   const callbackButtonRef = useRef<HTMLButtonElement>(null);
   const verifiedPositionRef = useRef(0);
@@ -399,7 +402,9 @@ export function ArchitectStartupPresentation({ videoUrl, fromIndeed = false, ind
 
         <div className={styles.confirmPanel}>
           <div className={styles.confirmIntro}>
-            <span className={styles.eyebrow}>{fromIndeed ? 'DOPO LA STARTUP' : 'LA TUA DECISIONE'}</span>
+            <span className={styles.eyebrow}>{fromIndeed
+              ? `DOPO LA STARTUP${indeedProvince === 'bari' ? '' : ` · ${INDEED_PROVINCE_LABELS[indeedProvince].toUpperCase()}`}`
+              : 'LA TUA DECISIONE'}</span>
             <h2>{fromIndeed ? 'Prepariamo il colloquio di selezione' : 'Ti riconosci in questo progetto?'}</h2>
             <p>{fromIndeed
               ? 'La presentazione ci aiuta a partire da una base comune sul mercato e sul progetto. Al termine puoi confermare la visione e chiedere di fissare il colloquio online.'
@@ -412,7 +417,7 @@ export function ArchitectStartupPresentation({ videoUrl, fromIndeed = false, ind
                 : indeedSession.sessionError ? <p className={styles.error} role="alert">Non è stato possibile preparare la conferma. Metti in pausa e riprendi la riproduzione per riprovare.</p>
                 : !indeedVideoCompleted ? <p className={styles.confirmHint}>Completa la Startup per poter confermare qui la visione. Non dovrai ricaricare il CV né tornare su Indeed.</p>
                 : !indeedSession.token ? <p className={styles.confirmHint} role="status">Preparazione della conferma…</p>
-                : <IndeedStartupCallbackForm token={indeedSession.token} />
+                : <IndeedStartupCallbackForm token={indeedSession.token} province={indeedProvince} />
             ) : status === 'success' ? (
               <div className={styles.success} role="status">
                 <strong>✓ Richiesta di ricontatto registrata</strong>

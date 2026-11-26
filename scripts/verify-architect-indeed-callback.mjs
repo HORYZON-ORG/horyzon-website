@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHmac } from "node:crypto";
 import { test } from "node:test";
 import { handleIndeedStartupCallback, indeedStartupCallbackReady } from "../src/lib/public-leads/architect-indeed-callback.ts";
 
@@ -23,6 +24,7 @@ const candidate = {
   email: "  ada@EXAMPLE.ORG  ",
   contactRequested: true,
 };
+const allProvincesEnv = { ...env, ARCHITECT_INDEED_CALLBACK_EXTRA_PROVINCES: "lecce, brindisi,taranto" };
 
 function request(payload, { headers = {}, customUrl = url, method = "POST", raw = false } = {}) {
   return new Request(customUrl, {
@@ -51,9 +53,11 @@ function tester({ settings = env, time = initial, rate, mail } = {}) {
   return { calls, handle: (req) => handleIndeedStartupCallback(req, settings, deps) };
 }
 
-async function begin() {
-  const isolated = tester();
-  const response = await isolated.handle(request({ action: "start" }));
+async function begin({ settings = env, province, reuseCookie } = {}) {
+  const isolated = tester({ settings });
+  const response = await isolated.handle(request({ action: "start", province }, {
+    headers: reuseCookie ? { Cookie: reuseCookie } : {},
+  }));
   assert.equal(response.status, 200);
   const { ok, token } = await response.json();
   assert.equal(ok, true);
@@ -194,4 +198,88 @@ test("does not trust user forwarded IP addresses; fails closed for denied or una
   assert.equal((await mailError.handle(confirm())).status, 503);
   const mailNotAccepted = tester({ time: soonEnough, mail: () => Response.json({ id: "" }) });
   assert.equal((await mailNotAccepted.handle(confirm())).status, 503);
+});
+
+test("keeps the three new provinces off until enabled and rejects malformed province values", async () => {
+  const normal = tester();
+  const { token, cookie } = await begin();
+  const confirm = (province) => request({ ...candidate, token, province }, { headers: { Cookie: cookie } });
+  for (const province of ["lecce", "brindisi", "taranto"]) {
+    assert.equal(indeedStartupCallbackReady(env, province), false);
+    assert.equal(indeedStartupCallbackReady(allProvincesEnv, province), true);
+    assert.equal((await normal.handle(request({ action: "start", province }))).status, 503);
+    assert.equal((await normal.handle(confirm(province))).status, 503);
+  }
+  assert.equal(indeedStartupCallbackReady(env, "bari"), true);
+  assert.equal(indeedStartupCallbackReady({ ...allProvincesEnv, ARCHITECT_INDEED_CALLBACK_ENABLED: "false" }, "lecce"), false);
+
+  const allEnabled = tester({ settings: allProvincesEnv, time: soonEnough });
+  for (const province of [null, ["lecce"], {}, 42, "", "Bari", " Brindisi", "foggia", "__proto__", "constructor"]) {
+    assert.equal((await allEnabled.handle(request({ action: "start", province }))).status, 400);
+    assert.equal((await allEnabled.handle(confirm(province))).status, 400);
+  }
+  assert.equal(normal.calls.length, 0);
+  assert.equal(allEnabled.calls.length, 0);
+});
+
+test("cannot use a session to confirm another province; each enabled province tells only Angelo and shares the same quotas", async () => {
+  const { token: bariToken, cookie: sharedCookie } = await begin();
+  const { handle, calls } = tester({ settings: allProvincesEnv, time: soonEnough });
+  const confirm = (token, province) => request({
+    ...candidate,
+    token,
+    province,
+    to: "another-recipient@example.org",
+  }, { headers: { Cookie: sharedCookie, "x-vercel-forwarded-for": "192.0.2.15" } });
+  assert.equal((await handle(confirm(bariToken, "brindisi"))).status, 409);
+  assert.equal(calls.length, 0);
+
+  for (const [province, label] of [["bari", "Bari"], ["brindisi", "Brindisi"], ["lecce", "Lecce"], ["taranto", "Taranto"]]) {
+    const session = province === "bari" ? { token: bariToken, cookie: sharedCookie }
+      : await begin({ settings: allProvincesEnv, province, reuseCookie: sharedCookie });
+    assert.equal(session.cookie, sharedCookie);
+    const mailCallsBefore = calls.length;
+    for (const wrongProvince of ["bari", "brindisi", "lecce", "taranto"].filter((value) => value !== province)) {
+      assert.equal((await handle(confirm(session.token, wrongProvince))).status, 409);
+    }
+    if (province !== "bari") assert.equal((await handle(confirm(session.token, undefined))).status, 409);
+    assert.equal(calls.length, mailCallsBefore);
+    const response = await handle(confirm(session.token, province));
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { ok: true });
+    const [ip, email, global, mail] = calls.slice(mailCallsBefore);
+    assert.deepEqual([ip.path, email.path, global.path, mail.path], [rpc, rpc, rpc, resend]);
+    assert.deepEqual([ip.body, email.body, global.body], calls.slice(0, 3).map(({ body }) => body));
+    assert.equal(global.body.p_limit, 50);
+    assert.deepEqual(mail.body.to, ["angelo.ria.chetta@horyzon.it"]);
+    assert.equal(mail.body.subject, `Startup HORYZON · richiesta di ricontatto da Indeed (${label})`);
+    assert.match(mail.body.text, new RegExp(`pilota Indeed ${label}`));
+    assert.match(mail.headers.get("idempotency-key"), new RegExp(`^architect-indeed-${province}-v1-[\\w-]{43}$`));
+  }
+});
+
+test("accepts legacy Bari tokens with the original idempotency key and unchanged contents", async () => {
+  const legacyCookie = "A".repeat(22);
+  const legacyPayload = `v1.${initial}.${"B".repeat(22)}`;
+  const legacyHmac = (purpose, value) => createHmac("sha256", env.ARCHITECT_INDEED_CALLBACK_SECRET)
+    .update(`${purpose}\n${value}`).digest("base64url");
+  const token = `${legacyPayload}.${legacyHmac("architect-indeed-session-bari", `${legacyPayload}.${legacyCookie}`)}`;
+  const { handle, calls } = tester({ settings: allProvincesEnv, time: soonEnough });
+  const confirmation = (province) => request({ ...candidate, token, province }, {
+    headers: { Cookie: `horyzon_architect_indeed=${legacyCookie}` },
+  });
+  assert.equal((await handle(confirmation(undefined))).status, 200);
+  assert.equal((await handle(confirmation("bari"))).status, 200);
+  const expectedKey = `architect-indeed-bari-v1-${legacyHmac("architect-indeed-send-bari", token)}`;
+  assert.equal(calls[3].headers.get("idempotency-key"), expectedKey);
+  assert.equal(calls[7].headers.get("idempotency-key"), expectedKey);
+  assert.deepEqual(calls[3].body, calls[7].body);
+  assert.equal(calls[3].body.subject, "Startup HORYZON · richiesta di ricontatto da Indeed (Bari)");
+  assert.equal(calls[3].body.text, [
+    "Nuova richiesta di ricontatto dalla pagina Startup, pilota Indeed Bari.",
+    "Nome e cognome dichiarati: Àda Esempio",
+    "Email dichiarata: ada@example.org",
+    "",
+    "La persona ha confermato di voler essere ricontattata. Verifica la candidatura su Indeed prima di smistare la richiesta.",
+  ].join("\n"));
 });
