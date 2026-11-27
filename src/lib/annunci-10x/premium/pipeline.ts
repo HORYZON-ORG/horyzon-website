@@ -1,4 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { generateFaithfulCheckupMaster } from '../checkup-writer.ts';
+import { evaluateCheckupPair } from '../checkup-comparison.ts';
 import {
   ANNUNCI10X_DATA_CONTRACT_VERSION,
   ANNUNCI10X_RUBRIC_VERSION,
@@ -863,16 +865,39 @@ async function requestAnnunci10xCreateClientRevision(input: {
   };
 }
 
-/** Reuses the factual writer and the V2 evaluator, pinned to this analysis snapshot. */
+/** Check-up source fidelity is checked against the complete original, never a reduced role card. */
 export async function generateAnnunci10xCheckupOutput(input: {
   context: Annunci10xRuntimeContext;
   session: PersistedAnnunci10xSession;
   sessionSecret: string;
   snapshot: PersistedSnapshot;
   analysisRunId: string;
+  originalText: string;
+  originalEvaluation: PersistedEvaluation;
+  retryFailedOperations?: number;
 }) {
-  return executePremiumPipeline({ ...input, channel: preferredChannel(input.snapshot),
-    authIdentity: `recruiting-checkup-v1:${input.analysisRunId}`, skipChannelVariant: true });
+  const { master, quality } = await generateFaithfulCheckupMaster({ ...input, sessionId: input.session.id });
+  if (!input.snapshot.roleProfile || !input.snapshot.communicationStrategy) throw new Annunci10xPublicError('ANALYSIS_NOT_READY', 'Contesto della valutazione non disponibile.', 409);
+  const pair = quality.status === 'ORIGINAL_RETAINED' ? null : await evaluateCheckupPair({
+    context: input.context, sessionId: input.session.id, sessionSecret: input.sessionSecret,
+    snapshotId: input.snapshot.id, analysisRunId: input.analysisRunId, originalText: input.originalText,
+    revisedText: masterText(master), strategy: quality.strategy, retryFailedOperations: input.retryFailedOperations,
+  });
+  const originalEvaluation = pair ? await input.context.persistence.saveEvaluation({
+    sessionId: input.session.id, sessionSecret: input.sessionSecret,
+    target: { kind: 'ORIGINAL_AD', originalAdId: input.originalEvaluation.targetRef }, targetRef: input.originalEvaluation.targetRef,
+    score: pair.originalScore, gate: null,
+  }) : input.originalEvaluation;
+  const score = pair?.revisedScore ?? input.originalEvaluation.score;
+  const masterOutput = await input.context.persistence.saveOutput({
+    sessionId: input.session.id, sessionSecret: input.sessionSecret, snapshotId: input.snapshot.id, outputType: 'MASTER',
+    generatedContent: { ...master, checkupQuality: quality, checkupComparison: { version: pair?.version ?? null, originalLabel: pair?.originalLabel ?? null, originalEvaluationId: originalEvaluation.id } }, validationState: quality.status === 'VERIFIED' ? 'READY' : 'READY_WITH_WARNINGS',
+  });
+  const evaluation = await input.context.persistence.saveEvaluation({
+    sessionId: input.session.id, sessionSecret: input.sessionSecret,
+    target: { kind: 'GENERATED_MASTER', generatedAdId: master.id }, targetRef: master.id, targetOutputId: masterOutput.id, score, gate: null,
+  });
+  return { masterOutput, evaluation, originalEvaluation };
 }
 
 async function executePremiumPipeline(input: {
@@ -1575,17 +1600,17 @@ function deterministicOpeningSection(view: CandidateWriterView): GeneratedSectio
   const mission = formatItalianDisplay(view.outcomes.find((fact) => fact.id === 'F02')?.value.trim() ?? view.outcomes[0]?.value.trim() ?? '');
   const outcome = formatItalianDisplay(view.outcomes.find((fact) => fact.id !== 'F02')?.value.trim() ?? '');
   const sentences: string[] = [];
-  if (company && role) sentences.push(`Lavorerai in ${company} come ${role}.`);
-  else if (role) sentences.push(`Il ruolo è ${role}.`);
-  else if (company) sentences.push(`Lavorerai in ${company}.`);
+  if (role) sentences.push(`Il ruolo è ${role}`);
+  if (company) sentences.push(capitalizeFirst(company));
   const normalizedRole = normalizeForHybrid(role);
   const normalizedMission = normalizeForHybrid(mission);
   if (/magazziniere|logistica/.test(normalizedRole) && /mantenere affidabili quantita/.test(normalizedMission)) {
     sentences.push("Il ruolo è centrato sull'affidabilità delle quantità, sulla preparazione degli ordini e sulla collaborazione operativa nel magazzino.");
   } else if (mission) {
-    sentences.push(`Il ruolo consiste nel ${mission}.`);
+    // Extracted facts can already be complete sentences: labels preserve their grammar.
+    sentences.push(`Attività principale: ${mission}`);
   }
-  if (outcome && !isMeaningfullyContained(mission, outcome) && !/magazziniere|logistica/.test(normalizedRole)) sentences.push(`Il risultato atteso è ${outcome}.`);
+  if (outcome && !isMeaningfullyContained(mission, outcome) && !/magazziniere|logistica/.test(normalizedRole)) sentences.push(`Risultato atteso: ${outcome}`);
   return {
     id: 'hybrid-opening',
     type: 'OPENING',
@@ -1673,7 +1698,8 @@ function deterministicRequirementsSection(view: CandidateWriterView): GeneratedS
   const required = view.required.map((fact) => formatItalianDisplay(fact.value.trim())).filter(Boolean);
   const preferred = view.preferred.map((fact) => fact.value.trim()).filter(Boolean);
   if (required.length > 0) {
-    rows.push(`Per questo ruolo servono ${formatHumanList(required)}.`);
+    const completeSentences = required.some(value => /^(?:cerchiamo|richiediamo|requisiti(?:\s|:)|(?:è|e|sono)\s+richiest|per (?:questo|il) ruolo)/i.test(value));
+    rows.push(completeSentences ? required.map(ensureFinalPunctuation).join('\n') : `Per questo ruolo servono ${formatHumanList(required)}.`);
     sourceIds.push(...view.required.map((fact) => fact.id));
   }
   if (preferred.length > 0) {

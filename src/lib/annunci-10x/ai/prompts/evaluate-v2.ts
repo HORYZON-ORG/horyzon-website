@@ -8,7 +8,7 @@ import { ANNUNCI10X_EVALUATE_OUTPUT_SCHEMA_V2 } from '../schemas-v2.ts';
 import { renderPrompt } from './helpers.ts';
 import type { Annunci10xPromptDefinition } from './types.ts';
 
-export const ANNUNCI10X_EVALUATE_PROMPT_VERSION_V2 = 'annunci10x.evaluate.v2.5';
+export const ANNUNCI10X_EVALUATE_PROMPT_VERSION_V2 = 'annunci10x.evaluate.v2.6';
 
 const invariants = [
   `Prompt pack: ${ANNUNCI10X_PROMPT_PACK_VERSION_V2}; rubric: ${ANNUNCI10X_RUBRIC_VERSION_V2}; score semantics: ${ANNUNCI10X_SCORE_SEMANTICS_VERSION_V2}.`,
@@ -51,6 +51,10 @@ const invariants = [
   'Check 14: if CONTEXT says KNOWN_AVAILABLE or required=true and TARGET has no compensation, return MISSING/0. If TARGET has compensation, evaluate TARGET only. CONTEXT compensation is never positive evidence for absent ORIGINAL_AD compensation.',
   'Check 16: if target.channel exists but channelPolicy is absent, NOT_EVALUABLE is allowed. Do not invent LinkedIn, Indeed, Meta, ATS, or other channel policies.',
   'Check 17: compare text, structuredFields, and applicationDestination only when more than text is available; if only text exists, NOT_EVALUABLE is allowed.',
+  'When CONTEXT.checkupProtocol is present, use the four Performia areas to interpret emphasis: qualification, routine/change, actual role desirability and technicality. UNKNOWN popularity remains unknown, not inferred from employer prestige or labour-market scarcity.',
+  'For check-ups, do not impose an elaborate workflow on simple stable work, numerical KPIs on every result, or every requirement class on every role. Qualitative observable results are valid. Assess only materially relevant gaps by the same anchors.',
+  'Benefits, compensation, training, support and stability are legitimate attraction facts. They do not imply unproductive candidates. Do not reward artificial pressure or aggressive filtering.',
+  'Application email placeholders are unusable; they cannot receive a high CTA score. When the checkupProtocol says applicationExpected=false, the outside application interface is unknown and Check 20 is N/D in both versions.',
 ] as const;
 
 export const EVALUATE_PROMPT_V2: Annunci10xPromptDefinition = {

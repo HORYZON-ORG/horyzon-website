@@ -1,4 +1,5 @@
 export const CHECKUP_VERSION = 'recruiting-checkup-v1';
+export const CHECKUP_KEEP_ORIGINAL_INTRO = 'Nel PDF trovi la valutazione del tuo annuncio, il testo consigliato e le informazioni da aggiungere per migliorarlo.';
 export const CHECKUP_CALENDAR_URL = 'https://calendly.com/angelo-ria/incontro-con-angelo-ria-revisione-annuncio';
 export const CHECKUP_INVITATION = [
   'Nel PDF trovi la valutazione del tuo annuncio e una versione migliorata, con le modifiche spiegate.',

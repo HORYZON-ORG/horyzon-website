@@ -9,8 +9,8 @@ Implementazione da revisionare, non ancora pubblicata. Base: `main` 320729d43e50
 1. Testo, URL pubblico o file PDF/DOCX/TXT. Il file viene letto senza conservarne il binario; l'utente può controllare il testo estratto. Limiti: 3 MB, 20 pagine PDF e 12.000 caratteri; scansioni e PDF protetti restituiscono un errore utile, senza simulare OCR.
 2. Nome, cognome, azienda, email, telefono, ruolo ricercato e difficoltà della ricerca. Numero normalizzato, stato ENTERED (non verificato tramite SMS). Consenso marketing facoltativo e separato dal servizio. Verifica email con l'OTP esistente.
 3. Analisi originale V2 e riscrittura con il writer e i controlli fattuali esistenti. Per il check-up, l'estrazione conserva le formulazioni effettivamente presenti nella fonte; le informazioni mancanti rimangono dati interni, esclusi dal testo per il candidato. Nessun compenso o condizione viene completato per ipotesi.
-4. Rivalutazione della proposta con la stessa griglia V2 a 20 controlli. Conversione visibile: punteggio su 100 diviso 10. Nessun incremento minimo imposto. Copertura e N/D espliciti.
-5. PDF con originale, due griglie complete, proposta, differenze e informazioni mancanti. Download disponibile prima del calendario. Invio di servizio tramite Resend riutilizzando la gestione esistente delle consegne e la sua chiave idempotente.
+4. Rivalutazione della proposta con la stessa griglia V2 a 20 controlli. Il voto del check-up è la media dei criteri valutabili, senza tetti aggiuntivi: N/D è escluso dalla media e resta visibile nella copertura. Nessun incremento minimo imposto.
+5. PDF con originale, proposta, confronto completo dei 20 criteri con entrambi i voti e motivazioni, differenze e informazioni mancanti. Download disponibile prima del calendario. Invio di servizio tramite Resend riutilizzando la gestione esistente delle consegne e la sua chiave idempotente.
 6. Invito approvato ai 15 minuti, facoltativo, con link Calendly. Nessun checkout e nessuna promozione della guida nel regalo. Il percorso CREATE e la guida commerciale rimangono capacità separate nel codice.
 
 ## Salvataggio e ripresa
@@ -89,3 +89,82 @@ Il testo Calendly è stato aggiornato e riletto: il check-up è già completo e 
 - Nessun acquisto di dominio o modifica DNS necessario; l'autorizzazione al rilascio proviene dalla richiesta esplicita di Angelo, non da questo file.
 
 Fonti tecniche di integrazione: https://developer.calendly.com/api-docs/overview/webhooks/webhook-signatures e https://calendly.com/help/how-to-source-track-your-calendly-embed-with-utm-parameters.
+
+## Voto e interventi prioritari — 26 novembre 2026
+
+Su richiesta di Angelo, i nuovi report del check-up usano `mean-evaluable-checks-v1`: la media dei singoli criteri valutabili, senza il tetto a 6,9. Il calcolo è applicato allo stesso modo a originale, riscrittura, PDF, pagina di risultato ed email. I punteggi e le griglie delle valutazioni già persistite dal motore Annunci 10x restano immutati; i PDF già consegnati non vengono rigenerati o reinviati automaticamente.
+
+Prima delle griglie, il PDF presenta «Come fare un salto concreto»: fino a tre priorità ordinate per il punteggio della proposta e limitate agli aspetti che richiedono informazioni fattuali. Per ciascuna mostra il dato da aggiungere, il motivo, le domande da porre all’azienda e una traccia da completare con informazioni confermate. Compenso, orario e altri aspetti già completi non diventano false lacune. Le tracce restano distinte dal testo per il candidato; nessun importo, benefit o requisito viene inventato. Un annuncio senza lacune fattuali non riceve priorità artificiali né un incremento minimo garantito.
+
+Verifica mirata: `npm run test:recruiting-checkup`. I test coprono il precedente blocco a 6,9, l’esclusione di N/D dalla media, la conservazione delle vecchie valutazioni, priorità pertinenti e deduplicazione di generazione e invio. I provider delle regressioni sono simulati; i collaudi effettivi con OpenAI, Resend e Gmail sono documentati separatamente nella cartella di lavoro privata.
+
+Il testo consigliato viene scelto dopo la seconda valutazione. Se la riscrittura ottiene un voto inferiore, il report conserva l’originale come raccomandazione, con la sua effettiva griglia; indica esplicitamente anche il punteggio della riscrittura scartata. PDF, pagina ed email spiegano la scelta. Nessun voto della riscrittura viene rialzato per farlo apparire migliore e le priorità si riferiscono al testo realmente consigliato.
+
+## PDF compatto — 26 novembre 2026
+
+Su richiesta di Angelo, la prima pagina raccoglie voti, copertura, aree e interventi prioritari. Le due griglie sono riunite in un confronto unico dei 20 criteri: entrambi i voti restano visibili, le motivazioni diverse sono affiancate e quelle identiche vengono riportate una sola volta. Restano anche le indicazioni da approfondire. Il confronto usa l’identificativo del criterio, senza dipendere dall’ordine delle due liste.
+
+Originale, testo consigliato, domande all’azienda e tracce da completare rimangono completi. Quando viene consigliato l’originale esatto, il testo non viene ripetuto una seconda volta. L’invito facoltativo ai 15 minuti chiude la griglia, senza una pagina dedicata. Il caso reale salvato e il facsimile passano da 12 a 8 pagine; la variante che mantiene l’originale occupa 7 pagine. Annunci o motivazioni più lunghi possono richiedere pagine aggiuntive: il contenuto non viene troncato.
+
+La verifica del nuovo layout riusa gli stessi dati salvati, senza una nuova valutazione OpenAI o un invio email. Controllati contenuti completi, voti invariati, link Calendly e rendering di tutte le pagine. Le ricevute già consegnate restano immutate.
+
+## Menzione Performia nel PDF — 26 novembre 2026
+
+Su richiesta di Angelo, la prima pagina include una breve menzione con il logo Performia originale già utilizzato nei materiali HORYZON, mantenendo HORYZON come marchio principale. Testo: «HORYZON, esclusivista Performia in Italia. Metodo e strumenti per la selezione e lo sviluppo delle persone. Performia opera dal 2001 in oltre 26 Paesi.» La dichiarazione di esclusiva proviene direttamente dal proprietario in questa chat; il sito ufficiale indica HORYZON come riferimento per l’Italia, senza dettagliare pubblicamente l’esclusiva.
+
+I dati internazionali sono stati verificati il 26 novembre su https://performia.com/en-it/about-us e https://performia.com/en-it/contact-us: fondazione nel 2001 e attività in oltre 26 Paesi. Si usa quindi «dal 2001», anziché i 30 anni inizialmente indicati. La menzione descrive il rapporto professionale e non attribuisce a Performia la certificazione del voto automatico del check-up.
+
+Il logo locale è incluso nei pacchetti delle API e della coda di preparazione PDF. Il facsimile usa la medesima menzione; le ricevute già consegnate restano immutate.
+
+## Correzione del metodo e della fedeltà — 26 novembre 2026
+
+La riscrittura del check-up usa l'annuncio originale completo come autorità, con inventario delle informazioni e strategia esplicita su quattro aree: qualificazione del ruolo, routine/cambiamento, desiderabilità effettiva e tecnicità. Riferimenti: materiale Performia `THEORY_WRITING_ADS` e chat «PRODUTTIVITÀ E ANNUNCI SELEZIONE AD». I 20 controlli e il voto rimangono una griglia HORYZON, senza attribuire a Performia una certificazione della scala numerica.
+
+La proposta conserva contesto aziendale, mansioni, requisiti obbligatori e preferenziali, importi e condizioni, benefit, strumenti, territorio, contratto e candidatura. Un controllo indipendente confronta il testo completo con la proposta; un secondo tentativo ripara omissioni o aggiunte. Se la fedeltà non è confermata, viene mantenuto l'originale senza presentarlo come riscrittura riuscita. Il PDF completo viene comunque preparato e consegnato prima dell'invito facoltativo.
+
+La scheda intermedia conserva compensi pubblici, prove testuali e intestazioni preferenziali. I controlli sul canale e sui campi del portale restano N/D quando tali elementi non sono disponibili. Un recapito segnaposto resta un difetto concreto e una priorità, senza un indirizzo inventato. Nessun incremento di voto viene preassegnato.
+
+Verifiche locali: `npm run test:recruiting-checkup` include regressioni simulate sulla fedeltà, riparazione, fallback, N/D, candidatura e deduplicazione. Il confronto reale usa nuovamente i dieci testi congelati in `.work/benchmark-annunci-reali-2026-11-26/fonti/*-valutato.txt`, esclusivamente nell'anteprima della PR 112. Esiti e decisione di pubblicazione restano separati: nessuna attivazione Meta.
+
+Nel check-up le motivazioni riportano ora il giudizio specifico salvato per ciascun annuncio, dopo la pulizia del testo destinato al cliente. Gli esempi standard delle ancore (per esempio «clienti e CRM») non sostituiscono più la motivazione di un ruolo diverso. La presentazione degli altri percorsi resta separata. I dieci PDF sono stati anche reimpaginati dalle valutazioni reali già salvate: voti, selezioni e testi invariati, nessuna nuova chiamata AI o email. Questo replay di presentazione è distinto dalle dieci prove reali e dalle ricevute originali conservate.
+
+
+### Revisione del motore dalla teoria originale Performia — 26 novembre 2026
+
+Verificato `001_THEORY_WRITING_ADS.pdf`, 6 pagine, SHA-256 `dfc896a2b8afd573b975c5dd5dd84f67323f696331ad6648dd312f22170456a9`. La teoria distingue routine/cambiamento e difficoltà/popolarità del lavoro; considera formazione e supporto ricompense legittime. Non prescrive una scala ufficiale da venti controlli: la rubrica e la media numerica restano HORYZON.
+
+Il motore v5 produce una nuova apertura sostenuta da riferimenti puntuali, sottoposta a verifica indipendente, e ordina i blocchi originali. Il nucleo conserva letteralmente ogni unità, con intestazioni, qualificatori, tecnicismi, compensi, condizioni, candidatura e privacy. Una nuova apertura respinta non elimina la composizione sicura. La copertura è verificata dal programma, senza affidarsi alle sole dichiarazioni del modello.
+
+Il confronto usa un’unica valutazione dei due testi con ordine A/B variabile e stessi venti controlli. Non è un esperimento cieco su candidati umani e non prova più candidature. Il punteggio originale del confronto viene salvato separatamente dall’analisi iniziale e collegato al report; la ripresa dopo un’interruzione conserva lo stesso abbinamento. Nessun incremento minimo preassegnato. Pubblicazione e campagna Meta restano sospese fino alla revisione degli esiti reali.
+
+
+### Esito del nuovo confronto reale — 26–27 novembre 2026
+
+Anteprima della PR 112, versione del motore `checkup-performia-source-composition-v5.2`. Stessi dieci input congelati: quattro voti maggiori, sei uguali, nessuno minore; incremento medio +0,072/10. Conservate 244/244 unità della fonte. Nove aperture nuove e una composizione senza apertura ammessa (Carsaniga). Il risultato corregge la fedeltà, ma non dimostra ancora un salto forte di valore editoriale.
+
+Dieci PDF reali ricevuti e controllati; per ogni richiesta finale un Master, un PDF e un solo invio. Quattro prove preliminari escluse, più una prima analisi Humanitas fallita senza PDF. La successiva è stata completata al terzo tentativo dopo la correzione del recupero delle sole operazioni fallite, mantenendo il riuso delle operazioni riuscite. La modifica di recupero non cambia testi o rubrica dei nove confronti già completati.
+
+Esiti completi: `.work/benchmark-performia-teoria-2026-11-26/esito-finale.json` nella cartella del progetto; report e pacchetto in `output/`. Codice finale di anteprima `7d07ebc27146e8a5062c2efbef712867d63d9c90`. PR ancora in bozza: nessuna pubblicazione né attivazione Meta. Questo confronto non ripete prenotazione e cancellazione Calendly.
+
+
+### Riscrittura integrale secondo Performia — 27 novembre 2026
+
+Il writer v6.3 sostituisce il precedente limite di apertura più riordino con la riscrittura di attività, contributo, contesto, requisiti e proposta al candidato. Le clausole economiche, i benefici condizionati e le informative sono protetti; nomi, tecnicismi, numeri, vincoli e classificazioni rimangono obbligatori. Il motore può esplicitare l’esito funzionale già implicato dalle attività, senza inventare mansioni, KPI o promesse.
+
+La verifica indipendente controlla ogni unità sorgente, con evidenze rintracciabili nel nuovo testo e ricerca di fatti aggiunti. Il controllo di trasformazione rifiuta una semplice apertura seguita dalla copia della maggioranza dei blocchi riscrivibili. Una correzione può riparare gli errori; se la fedeltà non viene confermata, il servizio mantiene l’originale e lo dichiara. La rubrica e il confronto A/B restano gli stessi: nessun aumento minimo.
+
+Il nuovo confronto usa ancora i dieci input congelati e i servizi reali nell’anteprima protetta. Protocollo e risultati in `.work/benchmark-riscrittura-incisiva-2026-11-27` nella cartella del progetto. Non pubblicare né attivare la campagna prima della revisione degli esiti.
+
+Scrittura e audit di fedeltà usano modelli dedicati (`ANNUNCI10X_CHECKUP_WRITER_MODEL` e `ANNUNCI10X_CHECKUP_AUDIT_MODEL`, default `gpt-6.2-sol`), senza modificare il modello o la rubrica del valutatore. Un titolo completo non richiede un corpo duplicato. La copertura è provata dall’audit di tutte le unità nel testo, non dalla sola presenza di riferimenti interni; le citazioni salvate devono essere rintracciabili letteralmente. Le istruzioni di candidatura rientrano fra le clausole protette.
+
+Le prove isolate sono autosufficienti e simulano riparazione, rifiuto, indisponibilità del servizio e riapertura. Il confronto reale sui dieci testi congelati è documentato separatamente con hash degli input, proposte non ritoccate, valutazioni, PDF e riscontri di consegna.
+
+### Esito reale della riscrittura integrale — 27 novembre 2026
+
+Versione collaudata `969808ae69eb3b2925ec169c95c7a6cb790c2d13`, writer `checkup-performia-full-rewrite-v6.3`. Dieci input identici e verificati tramite SHA-256; dieci riscritture integrali verificate su 244 unità sorgente, senza ritocchi manuali alle proposte. Stessi 20 controlli, stessa applicabilità e stesso valutatore per originale e proposta. Dodici prove preliminari sono escluse dalla serie finale e conservate separatamente.
+
+Esito: una proposta migliora (Carsaniga, +0,24/10), sette restano uguali, due peggiorano (2c, −0,13/10; Humanitas, −0,47/10). Differenza media delle proposte: −0,04/10. Nei due casi inferiori il servizio consiglia l’originale; l’incremento medio del testo effettivamente consigliato è +0,02/10. La riscrittura integrale è funzionante e fedele, ma il campione non dimostra un salto consistente nel valore misurato. Nessun incremento minimo è imposto.
+
+Dieci PDF scaricati e verificati anche visivamente (7–10 pagine); dieci email con allegato riscontrate nella casella di prova per oggetto, data e dimensione. Nessun confronto del digest binario degli allegati Gmail. Per ogni richiesta: un MASTER, un PDF, un record email SENT al primo tentativo, anche dopo riapertura. Le eventuali riscritture di riparazione sono operazioni interne distinte e tracciate, non ulteriori PDF o invii.
+
+Sintesi di quattro pagine e pacchetto completo salvati nel progetto locale sotto `output/`; fascicolo di prova in `.work/benchmark-riscrittura-incisiva-2026-11-27/`. Questo giro non ripete prenotazione/cancellazione Calendly o riconciliazioni CRM. Sola anteprima protetta, PR in bozza, nessun merge, pubblicazione o attivazione Meta. Il rilascio rimane subordinato alla revisione dei risultati da parte di Angelo.

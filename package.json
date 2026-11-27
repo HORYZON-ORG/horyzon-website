@@ -51,7 +51,7 @@
     "test:client-radar-crm-plan": "node --no-warnings --experimental-strip-types scripts/verify-client-radar-crm-plan.mjs",
     "test:digital-radar": "node --no-warnings --experimental-strip-types scripts/verify-digital-radar.mjs && node --no-warnings --experimental-strip-types scripts/verify-digital-funnel.mjs",
     "test:patrimonial-consolidation": "node --no-warnings --experimental-strip-types scripts/verify-patrimonial-consolidation.mjs",
-    "test:recruiting-checkup": "node --no-warnings --experimental-strip-types scripts/verify-recruiting-checkup.mjs",
+    "test:recruiting-checkup": "node --no-warnings --experimental-strip-types scripts/verify-recruiting-checkup.mjs && node --no-warnings --experimental-strip-types scripts/verify-recruiting-checkup-improvements.mjs && node --no-warnings --experimental-strip-types scripts/verify-recruiting-performia.mjs",
     "test:recruiting-meta": "node --no-warnings --experimental-strip-types scripts/verify-recruiting-meta.mjs"
   },
   "dependencies": {

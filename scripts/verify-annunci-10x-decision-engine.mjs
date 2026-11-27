@@ -822,6 +822,21 @@ const completeGoodBody = [
 }
 
 {
+  const application = 'Inviare il CV a recruiting@azienda-test.it. Primo colloquio telefonico e successivo incontro con il responsabile.';
+  const report = check(application, { application });
+  assert.equal(report.preservation.application, 'PASS');
+  assert.equal(report.violations.inventedApplicationProcess, false, 'the exact interview steps declared by the company must remain usable');
+  assert.equal(check('Candidatura\nPrimo colloquio telefonico e successivo incontro con il responsabile.', { application }).violations.inventedApplicationProcess, false, 'an application heading must not turn declared steps into invented ones');
+  for (const extra of [' Seguirà un colloquio tecnico.', ' Sono previsti due colloqui telefonici.', ' Ti ricontatteremo per un ulteriore colloquio.']) {
+    assert.equal(check(application + extra, { application }).violations.inventedApplicationProcess, true, `declaring an interview must not authorize additional steps: ${extra}`);
+  }
+  assert.equal(check('Primo colloquio in sede e successivo incontro con il responsabile.', { application }).violations.inventedApplicationProcess, true, 'declared interview mode must not change');
+  assert.equal(check('È previsto un colloquio telefonico.', { application: 'Non è previsto un colloquio telefonico.' }).violations.inventedApplicationProcess, true, 'a negative statement must not authorize a positive process promise');
+  const callback = 'Ti ricontatteremo per un colloquio telefonico.';
+  assert.equal(check(callback, { application: callback }).violations.inventedApplicationProcess, false, 'an explicitly declared callback must pass');
+}
+
+{
   const report = check('Aggiornerai il CRM.', {
     responsibilities: 'Aggiornare il CRM.',
     required: 'Precisione',

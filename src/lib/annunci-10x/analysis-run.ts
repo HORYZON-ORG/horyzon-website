@@ -13,6 +13,7 @@ import { ANNUNCI10X_EVALUATE_PROMPT_VERSION_V2 } from './ai/prompts/evaluate-v2.
 import { Annunci10xAiError, isAnnunci10xAiOperationInProgressError, sanitizeAiErrorPayload } from './ai/errors.ts';
 import { Annunci10xAiOrchestrator } from './ai/orchestrator.ts';
 import { runPersistedAnnunci10xEvaluateV2 } from './ai/evaluate-v2.ts';
+import { checkupEvaluationInput } from './checkup-evaluation.ts';
 import type {
   Annunci10xEvaluateOutput,
   Annunci10xExtractOutput,
@@ -211,7 +212,7 @@ async function runPrecheckStage(
     operationType: 'PRECHECK',
     input: {
       rawText: requireTargetText(run),
-      declaredChannel: run.declaredChannel ?? 'LINKEDIN',
+      declaredChannel: channelForRun(run),
       roleHint: null,
       companyHint: null,
       entryMode: 'ANALYZE',
@@ -224,7 +225,10 @@ async function runPrecheckStage(
     eventName: 'precheck_completed',
     metadata: { detectedType: precheck.output.detectedType, canRunFullAnalysis: precheck.output.canRunFullAnalysis },
   });
-  if (!precheck.output.canRunFullAnalysis || precheck.output.detectedType === 'NOT_JOB_AD' || precheck.output.detectedType === 'UNUSABLE') {
+  // Incompleteness is what the free check-up evaluates, not a reason to refuse it.
+  const recognizedCheckupAd = run.retrievalMetadata.checkupVersion === 'recruiting-checkup-v1'
+    && ['FULL_JOB_AD', 'INCOMPLETE_AD'].includes(precheck.output.detectedType);
+  if ((!precheck.output.canRunFullAnalysis && !recognizedCheckupAd) || precheck.output.detectedType === 'NOT_JOB_AD' || precheck.output.detectedType === 'UNUSABLE') {
     return context.persistence.updateAnalysisRun({
       analysisRunId: run.id,
       sessionSecret: session.sessionSecret,
@@ -313,6 +317,12 @@ async function runEvaluateStage(
   const roleProfile = requireRoleProfile(contextSnapshot);
   const communicationStrategy = requireCommunicationStrategy(contextSnapshot);
   if (run.evaluationMode === 'V2_PUBLIC') {
+    const baseInput = buildEvaluateInputV2({
+      rawAdText: requireTargetText(run), channelHint: channelForRun(run),
+      roleCard: contextSnapshot.roleCard, roleProfile, communicationStrategy,
+    });
+    const evaluationInput = run.retrievalMetadata.checkupVersion === 'recruiting-checkup-v1'
+      ? checkupEvaluationInput(baseInput, requireTargetText(run)) : baseInput;
     const evaluate = await runPersistedAnnunci10xEvaluateV2({
       sessionId: run.sessionId,
       sessionSecret: session.sessionSecret,
@@ -320,13 +330,7 @@ async function runEvaluateStage(
       persistence: context.persistence,
       inputSnapshotId: contextSnapshot.id,
       idempotencyInputIdentity: stageIdentity(run, 'EVALUATE'),
-      input: buildEvaluateInputV2({
-        rawAdText: requireTargetText(run),
-        channelHint: channelForRun(run),
-        roleCard: contextSnapshot.roleCard,
-        roleProfile,
-        communicationStrategy,
-      }),
+      input: evaluationInput,
     });
     const operationRefs = withRef(run.operationRefs, 'EVALUATE', evaluate.operation.id);
     const evaluation = await getOrSaveEvaluation(run, session, context, evaluate.score, null);
@@ -690,7 +694,7 @@ function originalAdForRun(run: PersistedAnalysisRun): OriginalAd {
 }
 
 function channelForRun(run: PersistedAnalysisRun): PublicationChannel {
-  return run.declaredChannel ?? 'LINKEDIN';
+  return run.declaredChannel ?? (run.retrievalMetadata.checkupVersion === 'recruiting-checkup-v1' ? 'CUSTOM' : 'LINKEDIN');
 }
 
 function requireTargetText(run: PersistedAnalysisRun): string {

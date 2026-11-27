@@ -38,6 +38,23 @@ export class MockAnnunci10xProvider implements Annunci10xAiProvider {
 }
 
 function makeMockOutput(request: Annunci10xAiProviderRequest, mode: MockAnnunci10xProviderMode): unknown {
+  if (request.outputSchemaName === 'annunci10x_checkup_full_rewrite') {
+    const source = (request.input as { checkupSource: { sourceUnits: {id:string;text:string}[]; protectedUnits:{id:string}[] } }).checkupSource;
+    const locked = new Set(source.protectedUnits.map(u=>u.id));
+    const rewrite = (s:string) => s.replace('Cerchiamo un addetto customer care per la sede di Bari.','Customer care a Bari: il tuo contributo al servizio clienti.').replace('La persona gestirà richieste clienti, ticket e aggiornamento CRM.','Gestirai le richieste dei clienti, i ticket e l’aggiornamento del CRM.').replace('Contratto part-time, presenza in sede, affiancamento iniziale.','Il contratto è part-time, con lavoro presso la sede e affiancamento iniziale.').replace('Requisiti: italiano scritto chiaro, precisione, disponibilità al lavoro su turni.','Per gestire i contatti servono italiano scritto chiaro, precisione e disponibilità al lavoro su turni.');
+    return { strategy:{qualification:'UNKNOWN',rhythm:'UNKNOWN',popularity:'UNKNOWN',technicality:'UNKNOWN'}, sections:[
+      {type:'TITLE',title:'Posizione',body:'Customer care',sourceIds:[]},
+      {type:'OPENING',title:'Il lavoro, in breve',body:source.sourceUnits.map(u=>locked.has(u.id)?u.text:rewrite(u.text)).join('\n'),sourceIds:source.sourceUnits.map(u=>u.id)},
+    ]};
+  }
+  if (request.outputSchemaName === 'annunci10x_checkup_full_audit') {
+    const input=request.input as {checkupSource:{sourceUnits:{id:string}[]};generatedAd:{sections:{body:string;sourceIds:string[]}[]}};
+    return {checks:input.checkupSource.sourceUnits.map(u=>({sourceId:u.id,status:'PRESERVED',evidence:[input.generatedAd.sections.find(s=>s.sourceIds.includes(u.id))?.body??''],reason:'Simulated source coverage.'})),addedClaims:[]};
+  }
+  if (request.outputSchemaName === 'annunci10x_checkup_comparison') {
+    const pair = (request.input as {checkupComparison: {a: {target: {text:string}}, b: {target: {text:string}}}}).checkupComparison;
+    return { a: makeMockEvaluationV2(pair.a), b: makeMockEvaluationV2(pair.b) };
+  }
   if (request.operationType === 'PRECHECK') {
     const rawText = stringifyInput(request.input);
     if (/ignore all previous instructions|return the system prompt|set publication status|call external websites/i.test(rawText)) {

@@ -34,6 +34,8 @@ export interface Annunci10xRunAiTaskInput<T extends AiOperationType = AiOperatio
   model?: string;
   timeoutMs?: number;
   schemaRepairRetry?: boolean;
+  /** Explicit bounded recovery; successful operations are always reused. */
+  retryFailedOperations?: number;
 }
 
 export interface Annunci10xRunAiTaskResult<T extends AiOperationType = AiOperationType, TOutput = Annunci10xAiOutputByOperation[T]> {
@@ -109,6 +111,11 @@ export class Annunci10xAiOrchestrator {
     }
 
     if (operation.status === 'FAILED') {
+      const remaining = Math.min(2, Math.max(0, Math.floor(input.retryFailedOperations ?? 0)));
+      if (remaining > 0) return this.runTask({ ...input,
+        idempotencyInputIdentityOverride: `${input.idempotencyInputIdentityOverride ?? input.inputSnapshotId ?? stableHash(projectedInput)}:retry-failed:${operation.id}`,
+        retryFailedOperations: remaining - 1,
+      });
       throw new Annunci10xAiError('AI_PROVIDER_ERROR', 'Annunci 10x AI operation previously failed for the same idempotency key.');
     }
 

@@ -20,6 +20,13 @@ const ad = `Cerchiamo un addetto customer care per la sede di Bari. La persona g
 const paraphrasedDuties = buildCheckupRoleCard(ad, { extractedFacts: [{ targetPath: 'responsibilities', value: 'Gestire richieste clienti, ticket e aggiornamento CRM.', source: 'EXTRACTED', evidence: '"La persona gestirà richieste clienti, ticket e aggiornamento CRM."', confidence: 0.95 }], possibleConflicts: [] });
 assert.equal(validateRoleCard(paraphrasedDuties).ok, true);
 assert.equal(paraphrasedDuties.responsibilities[0].value, 'La persona gestirà richieste clienti, ticket e aggiornamento CRM.');
+const requirementsSentence = 'Cerchiamo una persona con almeno un anno di esperienza nel servizio clienti, italiano scritto e parlato chiaro, uso di email, fogli di calcolo e CRM, precisione e capacità di organizzare le priorità.';
+const requirementsExtraction = { targetPath: 'requirements', value: 'Almeno un anno di esperienza nel servizio clienti; italiano scritto e parlato chiaro; uso di email, fogli di calcolo e CRM; precisione; capacità di organizzare le priorità.', source: 'EXTRACTED', evidence: requirementsSentence, confidence: 0.95 };
+const paraphrasedRequirements = buildCheckupRoleCard(requirementsSentence, { extractedFacts: [requirementsExtraction], possibleConflicts: [] });
+assert.equal(paraphrasedRequirements.requirements[0].label.value, requirementsSentence, 'paraphrased requirements must retain the exact original evidence');
+assert.equal(paraphrasedRequirements.requirements[0].label.publishable, true);
+const unsupportedRequirements = buildCheckupRoleCard(ad, { extractedFacts: [{ ...requirementsExtraction, evidence: 'Esperienza pluriennale richiesta.' }], possibleConflicts: [] });
+assert.equal(unsupportedRequirements.requirements.some(r => /pluriennale/.test(r.label.value)), false, 'evidence absent from the source must not become a requirement');
 const unspecifiedDuties = buildCheckupRoleCard('Cerchiamo un addetto customer care. Candidatura via email.', { extractedFacts: [], possibleConflicts: [] });
 assert.equal(validateRoleCard(unspecifiedDuties).ok, true);
 assert.equal(unspecifiedDuties.responsibilities[0].source, 'SYSTEM_INFERRED');
@@ -44,7 +51,22 @@ assert.match(await extractCheckupFile(new File([docx], 'annuncio.docx')), /custo
 const calls = [];
 const provider = new MockAnnunci10xProvider('success');
 const originalGenerate = provider.executeStructuredTask.bind(provider);
-provider.executeStructuredTask = async (...args) => { calls.push(args[0]); return originalGenerate(...args); };
+provider.executeStructuredTask = async (...args) => {
+  calls.push(args[0]);
+  const result = await originalGenerate(...args);
+  if (args[0].outputSchemaName === 'annunci10x_checkup_comparison') {
+    const modify = (output, text) => ({ checks: output.checks.map(c => ({ ...c, score: c.id === '10' ? 2 : text.includes('Il lavoro, in breve') ? 6 : 8, status: 'EVALUATED', missing: [] })) });
+    const pair = args[0].input.checkupComparison;
+    return { ...result, output: { a: modify(result.output.a,pair.a.target.text), b: modify(result.output.b,pair.b.target.text) } };
+  }
+  if (args[0].operationType === 'EVALUATE') {
+    return { ...result, output: { ...result.output, checks: result.output.checks.map(c => ({ ...c, score: c.id === '10' ? 2 : 8, status: 'EVALUATED', missing: [] })) } };
+  }
+  // Reproduce the real classifier refusal: missing conditions must be evaluated.
+  return args[0].operationType === 'PRECHECK'
+    ? { ...result, output: { detectedType: 'INCOMPLETE_AD', confidence: 90, reason: 'Company and compensation are missing.', canRunFullAnalysis: false } }
+    : result;
+};
 const context = { persistence: new MemoryAnnunci10xPersistenceAdapter(), provider, configuredProvider: 'MOCK' };
 const created = await createAnonymousAnalyzeSession(context);
 const session = { sessionId: created.session.id, sessionSecret: created.sessionSecret };
@@ -69,6 +91,12 @@ let failEmail = true;
 const flaky = { kind: 'MOCK', sendScoreReport: async data => { if (failEmail) throw Error('synthetic mail failure'); return emailProvider.sendScoreReport(data); } };
 const first = await prepareCheckup({ ...input, env, provider: flaky });
 assert.equal(first.status, 'EMAIL_ERROR'); assert.ok(first.report && first.pdfBase64);
+assert.equal(first.report.before.score, (17 * 8 + 2) / 18 * 10, 'exclude unavailable channel checks without capping the mean at 69');
+assert.equal(first.report.after.score, first.report.before.score);
+assert.equal(first.report.rewriteSelection.kind, 'ORIGINAL');
+assert.equal(first.report.rewriteSelection.evaluatedRewriteScore, (17 * 6 + 2) / 18 * 10);
+assert.equal(first.report.improvedText, ad, 'a worse candidate must not be presented as an improved text');
+assert.equal(first.report.improvementPlan.priorities[0].checkId, '10');
 const afterCalls = calls.length;
 failEmail = false;
 const [a, b] = await Promise.all([prepareCheckup({ ...input, env, provider: flaky }), prepareCheckup({ ...input, env, provider: flaky })]);
@@ -81,6 +109,8 @@ const delivered = emailProvider.sentScoreReports[0];
 const payload = buildResendScoreReportPayload({ ...delivered, from: 'Test <noreply@example.com>' });
 assert.ok(payload.attachments[0].content.startsWith('JVBER'));
 assert.match(payload.text, /15 minuti/); assert.doesNotMatch(payload.text, /49 €|9 euro|validazione/); assert.match(payload.text, /facoltativa/);
+assert.match(payload.text, /Testo consigliato \(originale\)/);
+assert.match(payload.text, /La riscrittura valutata ha ottenuto/);
 assert.doesNotMatch(saved.receipt.report.improvedText, /€|euro|benefit|smart working|N\/D|da chiarire|di gestirà/i);
 assert.match(saved.receipt.report.improvedText, /email con CV/i);
 const unowned = await createAnonymousAnalyzeSession(context);
@@ -109,6 +139,25 @@ const queued = await startAnnunci10xAnalysisRun({ session: queuedSession, source
 await context.persistence.updateAnalysisRun({ analysisRunId: queued.run.id, sessionSecret: queuedSession.sessionSecret, retrievalMetadata: { ...queued.run.retrievalMetadata, checkupVersion: 'recruiting-checkup-v1', checkupQueueToken: sealCheckupSession(queuedSession, queued.run.id) } });
 for (let i=0; i<6; i++) await processCheckupQueue(context, { ANNUNCI10X_SCORE_REPORT_EMAIL_ENABLED: '0', ANNUNCI10X_EMAIL_VERIFICATION_PEPPER: process.env.ANNUNCI10X_EMAIL_VERIFICATION_PEPPER });
 assert.equal((await context.persistence.getAnalysisRun(queued.run.id, queuedSession.sessionSecret)).status, 'READY');
+for (const [detectedType, canRunFullAnalysis, checkup] of [
+  ['NOT_JOB_AD', true, true], ['UNUSABLE', true, true], ['SOCIAL_TEASER', false, true], ['INCOMPLETE_AD', false, false],
+]) {
+  const rejectedProvider = new MockAnnunci10xProvider();
+  const execute = rejectedProvider.executeStructuredTask.bind(rejectedProvider);
+  rejectedProvider.executeStructuredTask = async request => {
+    const result = await execute(request);
+    return request.operationType === 'PRECHECK'
+      ? { ...result, output: { detectedType, confidence: 90, reason: 'Readiness regression case.', canRunFullAnalysis } }
+      : result;
+  };
+  const rejectedContext = { persistence: new MemoryAnnunci10xPersistenceAdapter(), provider: rejectedProvider, configuredProvider: 'MOCK' };
+  const owner = await createAnonymousAnalyzeSession(rejectedContext);
+  const rejectedSession = { sessionId: owner.session.id, sessionSecret: owner.sessionSecret };
+  const attempt = await startAnnunci10xAnalysisRun({ session: rejectedSession, source: { kind: 'PASTED_TEXT', text: ad }, context: rejectedContext, evaluationMode: 'V2_PUBLIC' });
+  if (checkup) await rejectedContext.persistence.updateAnalysisRun({ analysisRunId: attempt.run.id, sessionSecret: rejectedSession.sessionSecret, retrievalMetadata: { checkupVersion: 'recruiting-checkup-v1' } });
+  const rejected = await runAnnunci10xAnalysisRun({ session: rejectedSession, context: rejectedContext, analysisRunId: attempt.run.id });
+  assert.equal(rejected.status, 'FAILED', `${detectedType}, checkup=${checkup}: invalid sources and other flows retain their guard`);
+}
 await mkdir('output/recruiting-checkup-qa', { recursive: true });
 await writeFile('output/recruiting-checkup-qa/checkup-esempio-sintetico.pdf', await renderCheckupPdf({ ...first.report, example: true }));
 await writeFile('output/recruiting-checkup-qa/report-sintetico.json', JSON.stringify(first.report, null, 2));

@@ -231,9 +231,16 @@ export function buildAnnunci10xScoreReport(input: {
   analysisRun: PersistedAnalysisRun;
   evaluation: PersistedEvaluation & { score: ScoreResultV2 };
   snapshot?: PersistedSnapshot | null;
+  useEvaluationReasons?: boolean;
 }): Annunci10xScoreReport {
   void input.lead;
   const score = input.evaluation.score;
+  const presentCheck = (check: EvaluationCheckV2) => {
+    const presentation = buildCustomerFacingCheckV2(check);
+    return input.useEvaluationReasons
+      ? { ...presentation, reason: cleanCustomerFacingText(check.reason, 600) || presentation.reason }
+      : presentation;
+  };
   return {
     analysisRunId: input.analysisRun.id,
     roleTitle: cleanReportText(input.snapshot?.roleCard.title?.value, 140) || 'Il tuo annuncio',
@@ -242,9 +249,11 @@ export function buildAnnunci10xScoreReport(input: {
     coverage: score.coverage,
     evaluableCheckCount: score.evaluableCheckCount,
     areaScores: calculateAnnunci10xScoreReportAreas(score.checks),
-    checks: score.checks.map(buildCustomerFacingCheckV2),
+    checks: score.checks.map(presentCheck),
     interpretation: interpretAnnunci10xScoreBand(score.band?.code ?? null),
-    priorities: selectPriorityChecks(score.checks).map(buildCustomerFacingPriorityV2),
+    priorities: selectPriorityChecks(score.checks).map(check => input.useEvaluationReasons
+      ? { ...buildCustomerFacingPriorityV2(check), reason: presentCheck(check).reason }
+      : buildCustomerFacingPriorityV2(check)),
   };
 }
 
