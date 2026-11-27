@@ -149,8 +149,22 @@ Esiti completi: `.work/benchmark-performia-teoria-2026-11-26/esito-finale.json` 
 
 ### Riscrittura integrale secondo Performia — 27 novembre 2026
 
-Il writer v6 sostituisce il precedente limite di apertura più riordino con la riscrittura di attività, contributo, contesto, requisiti e proposta al candidato. Le clausole economiche, i benefici condizionati e le informative sono protetti; nomi, tecnicismi, numeri, vincoli e classificazioni rimangono obbligatori. Il motore può esplicitare l’esito funzionale già implicato dalle attività, senza inventare mansioni, KPI o promesse.
+Il writer v6.3 sostituisce il precedente limite di apertura più riordino con la riscrittura di attività, contributo, contesto, requisiti e proposta al candidato. Le clausole economiche, i benefici condizionati e le informative sono protetti; nomi, tecnicismi, numeri, vincoli e classificazioni rimangono obbligatori. Il motore può esplicitare l’esito funzionale già implicato dalle attività, senza inventare mansioni, KPI o promesse.
 
 La verifica indipendente controlla ogni unità sorgente, con evidenze rintracciabili nel nuovo testo e ricerca di fatti aggiunti. Il controllo di trasformazione rifiuta una semplice apertura seguita dalla copia della maggioranza dei blocchi riscrivibili. Una correzione può riparare gli errori; se la fedeltà non viene confermata, il servizio mantiene l’originale e lo dichiara. La rubrica e il confronto A/B restano gli stessi: nessun aumento minimo.
 
 Il nuovo confronto usa ancora i dieci input congelati e i servizi reali nell’anteprima protetta. Protocollo e risultati in `.work/benchmark-riscrittura-incisiva-2026-11-27` nella cartella del progetto. Non pubblicare né attivare la campagna prima della revisione degli esiti.
+
+Scrittura e audit di fedeltà usano modelli dedicati (`ANNUNCI10X_CHECKUP_WRITER_MODEL` e `ANNUNCI10X_CHECKUP_AUDIT_MODEL`, default `gpt-6.2-sol`), senza modificare il modello o la rubrica del valutatore. Un titolo completo non richiede un corpo duplicato. La copertura è provata dall’audit di tutte le unità nel testo, non dalla sola presenza di riferimenti interni; le citazioni salvate devono essere rintracciabili letteralmente. Le istruzioni di candidatura rientrano fra le clausole protette.
+
+Le prove isolate sono autosufficienti e simulano riparazione, rifiuto, indisponibilità del servizio e riapertura. Il confronto reale sui dieci testi congelati è documentato separatamente con hash degli input, proposte non ritoccate, valutazioni, PDF e riscontri di consegna.
+
+### Esito reale della riscrittura integrale — 27 novembre 2026
+
+Versione collaudata `969808ae69eb3b2925ec169c95c7a6cb790c2d13`, writer `checkup-performia-full-rewrite-v6.3`. Dieci input identici e verificati tramite SHA-256; dieci riscritture integrali verificate su 244 unità sorgente, senza ritocchi manuali alle proposte. Stessi 20 controlli, stessa applicabilità e stesso valutatore per originale e proposta. Dodici prove preliminari sono escluse dalla serie finale e conservate separatamente.
+
+Esito: una proposta migliora (Carsaniga, +0,24/10), sette restano uguali, due peggiorano (2c, −0,13/10; Humanitas, −0,47/10). Differenza media delle proposte: −0,04/10. Nei due casi inferiori il servizio consiglia l’originale; l’incremento medio del testo effettivamente consigliato è +0,02/10. La riscrittura integrale è funzionante e fedele, ma il campione non dimostra un salto consistente nel valore misurato. Nessun incremento minimo è imposto.
+
+Dieci PDF scaricati e verificati anche visivamente (7–10 pagine); dieci email con allegato riscontrate nella casella di prova per oggetto, data e dimensione. Nessun confronto del digest binario degli allegati Gmail. Per ogni richiesta: un MASTER, un PDF, un record email SENT al primo tentativo, anche dopo riapertura. Le eventuali riscritture di riparazione sono operazioni interne distinte e tracciate, non ulteriori PDF o invii.
+
+Sintesi di quattro pagine e pacchetto completo salvati nel progetto locale sotto `output/`; fascicolo di prova in `.work/benchmark-riscrittura-incisiva-2026-11-27/`. Questo giro non ripete prenotazione/cancellazione Calendly o riconciliazioni CRM. Sola anteprima protetta, PR in bozza, nessun merge, pubblicazione o attivazione Meta. Il rilascio rimane subordinato alla revisione dei risultati da parte di Angelo.

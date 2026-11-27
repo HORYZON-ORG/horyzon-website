@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { Annunci10xAiError } from '../src/lib/annunci-10x/ai/errors.ts';
 import { evaluateCheckupPair } from '../src/lib/annunci-10x/checkup-comparison.ts';
 import { randomUUID } from 'node:crypto';
@@ -137,15 +136,6 @@ for(const mode of ['repair','reject','provider-failure']){
   assert.equal(result.quality.mode,'FULL_REWRITE');assert.equal(result.quality.coverage.retained,units.length);
   await generateFaithfulCheckupMaster(args);assert.equal(writes,2);assert.equal(audits,2,'successful operations reused on reopening');
  }else assert.equal(result.master.sections[0].body,source,'an unverified rewrite cannot replace the original');
-}
-// Prove that every frozen benchmark fact survives arbitrary model ordering.
-for (let n=1;n<=10;n++) {
-  const text=readFileSync(new URL(`../../.work/benchmark-annunci-reali-2026-11-26/fonti/${String(n).padStart(2,'0')}-valutato.txt`,import.meta.url),'utf8');
-  const frozen=checkupSourceUnits(text);
-  const sections=composeCheckupSections(text,{...proposal,order:frozen.map(u=>u.id).reverse()},false);
-  assert.deepEqual(checkupCoverageIssues(text,sections),[],`frozen ad ${n}`);
-  const headings=sections.map(s=>s.type+':'+s.title);assert.equal(new Set(headings).size,headings.length,'no repeated editorial sections');
-  assert.deepEqual(checkupLiteralIssues(text,sections.map(s=>s.title+'\n'+s.body).join('\n')),[],`frozen literals ${n}`);
 }
 // Paired grading uses one persisted operation; label order cannot decide which is the original.
 {
