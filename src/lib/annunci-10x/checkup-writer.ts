@@ -4,7 +4,7 @@ import type { PersistedSnapshot } from './persistence/types.ts';
 import type { GeneratedAd, GeneratedSection } from './types.ts';
 import { checkupSourceUnits, type CheckupSourceUnit } from './checkup-source.ts';
 
-export const CHECKUP_WRITER_VERSION = 'checkup-performia-full-rewrite-v6';
+export const CHECKUP_WRITER_VERSION = 'checkup-performia-full-rewrite-v6.1';
 export interface CheckupStrategy { qualification: string; rhythm: string; popularity: string; technicality: string }
 export interface CheckupSourceAudit { sourceId: string; status: 'PRESERVED' | 'MISSING' | 'ALTERED'; evidence: string[]; reason: string }
 export interface CheckupQuality {
