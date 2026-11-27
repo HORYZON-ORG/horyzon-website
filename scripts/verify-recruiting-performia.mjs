@@ -6,7 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { MemoryAnnunci10xPersistenceAdapter, MockAnnunci10xProvider, createAnonymousAnalyzeSession } from '../src/lib/annunci-10x/index.ts';
 import { buildCheckupRoleCard } from '../src/lib/annunci-10x/checkup-facts.ts';
 import { checkupSourceUnits, checkupLiteralIssues } from '../src/lib/annunci-10x/checkup-source.ts';
-import { checkFullRewriteIssues, fullAuditIssues, fullRewriteChange } from '../src/lib/annunci-10x/checkup-editor.ts';
+import { checkFullRewriteIssues, fullAuditIssues, fullRewriteChange, validateFullCheckupRewrite } from '../src/lib/annunci-10x/checkup-editor.ts';
 import { checkupCoverageIssues, composeCheckupSections, generateFaithfulCheckupMaster } from '../src/lib/annunci-10x/checkup-writer.ts';
 import { checkupEvaluationInput, normalizeCheckupEvaluation } from '../src/lib/annunci-10x/checkup-evaluation.ts';
 import { selectCheckupRecommendation, buildCheckupImprovementPlan } from '../src/lib/annunci-10x/checkup-improvements.ts';
@@ -97,6 +97,8 @@ const rewritten = {strategy:proposal.strategy,sections:[
  {type:'OPENING',title:'Il lavoro, in breve',body:units.slice(1).map(u=>u.text==='Saldatura TIG e MIG-MAG secondo WPS e ISO 9606-1.'?'Esegui saldature TIG e MIG-MAG rispettando WPS e ISO 9606-1.':u.text==='Mensa e formazione per il rinnovo delle certificazioni.'?'La mensa è prevista; la formazione sostiene il rinnovo delle certificazioni.':u.text).join('\n'),sourceIds:units.slice(1).map(u=>u.id)},
 ]};
 assert.deepEqual(checkFullRewriteIssues(source,rewritten),[]);
+assert.doesNotThrow(()=>validateFullCheckupRewrite({...rewritten,sections:rewritten.sections.map((s,i)=>i===0?{...s,title:s.body,body:''}:s)}),'the title is complete without a duplicate body');
+assert.throws(()=>validateFullCheckupRewrite({...rewritten,sections:rewritten.sections.map((s,i)=>i===1?{...s,body:''}:s)}),'empty substantive sections remain invalid');
 assert.ok(fullRewriteChange(source,rewritten).ratio>=0.5);
 const auditFor = r => ({checks:units.map(u=>({sourceId:u.id,status:'PRESERVED',evidence:[r.sections.find(s=>s.sourceIds.includes(u.id)).body],reason:'Simulated faithful paraphrase.'})),addedClaims:[]});
 assert.deepEqual(fullAuditIssues(source,rewritten,auditFor(rewritten)),[]);

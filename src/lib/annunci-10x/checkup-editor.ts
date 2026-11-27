@@ -63,7 +63,7 @@ export function protectedCheckupUnits(units:CheckupSourceUnit[]):CheckupSourceUn
 export function validateFullCheckupRewrite(value:unknown):CheckupFullRewrite{
  const v=value as CheckupFullRewrite;
  if(!v?.strategy||strategyKeys.some(k=>typeof v.strategy[k]!=='string')||!Array.isArray(v.sections)||v.sections.length<2)throw Error('Invalid full check-up rewrite');
- for(const s of v.sections)if(!types.includes(s.type)||typeof s.title!=='string'||!s.body?.trim()||!Array.isArray(s.sourceIds)||s.sourceIds.some(id=>typeof id!=='string'))throw Error('Invalid full rewrite section');
+ for(const s of v.sections)if(!types.includes(s.type)||typeof s.title!=='string'||typeof s.body!=='string'||(!s.body.trim()&&!(s.type==='TITLE'&&s.title.trim()))||!Array.isArray(s.sourceIds)||s.sourceIds.some(id=>typeof id!=='string'))throw Error('Invalid full rewrite section');
  return v;
 }
 export function validateFullCheckupAudit(value:unknown):CheckupFullAudit{
