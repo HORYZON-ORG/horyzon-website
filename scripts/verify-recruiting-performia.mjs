@@ -6,6 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { MemoryAnnunci10xPersistenceAdapter, MockAnnunci10xProvider, createAnonymousAnalyzeSession } from '../src/lib/annunci-10x/index.ts';
 import { buildCheckupRoleCard } from '../src/lib/annunci-10x/checkup-facts.ts';
 import { checkupSourceUnits, checkupLiteralIssues } from '../src/lib/annunci-10x/checkup-source.ts';
+import { checkFullRewriteIssues, fullAuditIssues, fullRewriteChange } from '../src/lib/annunci-10x/checkup-editor.ts';
 import { checkupCoverageIssues, composeCheckupSections, generateFaithfulCheckupMaster } from '../src/lib/annunci-10x/checkup-writer.ts';
 import { checkupEvaluationInput, normalizeCheckupEvaluation } from '../src/lib/annunci-10x/checkup-evaluation.ts';
 import { selectCheckupRecommendation, buildCheckupImprovementPlan } from '../src/lib/annunci-10x/checkup-improvements.ts';
@@ -90,45 +91,46 @@ assert.doesNotMatch(specificReport.checks.find(c=>c.checkId==='03').reason,/CRM|
 assert.deepEqual(specificReport.checks.map(c=>c.score),reasonChecks.map(c=>c.score));
 assert.match(buildAnnunci10xScoreReport(reasonArgs).checks.find(c=>c.checkId==='03').reason,/CRM/, 'legacy presentation remains separate from the check-up-specific reasons');
 
-// These are deliberately simulated provider/audit responses, not real model tests.
-for (const mode of ['repair', 'reject', 'provider-failure']) {
-  const persistence = new MemoryAnnunci10xPersistenceAdapter();
-  const provider = new MockAnnunci10xProvider();
-  const context = { persistence, provider, configuredProvider: 'MOCK' };
-  const created = await createAnonymousAnalyzeSession(context);
-  const session = { sessionId: created.session.id, sessionSecret: created.sessionSecret };
-  const snapshot = await persistence.appendSnapshot({ ...session, roleCard: card, reason: 'INITIAL_EXTRACTION' });
-  const baseExecute = provider.executeStructuredTask.bind(provider);
-  let writes = 0, audits = 0;
-  provider.executeStructuredTask = async request => {
-    if (mode === 'provider-failure') throw Error('Simulated provider failure');
-    const result = await baseExecute(request);
-    if (request.outputSchemaName === 'annunci10x_checkup_composition') {
-      writes++;
-      assert.equal(request.input.checkupSource.originalText, source);
-      if (writes === 2) assert.ok(request.input.checkupSource.previousIssues.length);
-      return { ...result, output: proposal };
-    }
-    if (request.outputSchemaName === 'annunci10x_checkup_opening_audit') {
-      audits++;
-      return { ...result, output: { issues: mode === 'reject' || audits === 1 ? [{ sourceId: 'O1', reason: 'Simulated unsupported introduction' }] : [] } };
-    }
-    return result;
-  };
-  const args = { context, ...session, snapshot, analysisRunId: randomUUID(), originalText: source };
-  const result = await generateFaithfulCheckupMaster(args);
-  assert.equal(result.quality.status, mode === 'provider-failure' ? 'ORIGINAL_RETAINED' : 'VERIFIED');
-  assert.equal(result.quality.attempts, mode === 'provider-failure' ? 1 : 2);
-  const persisted = await persistence.saveOutput({ ...session, snapshotId: snapshot.id, outputType: 'MASTER', generatedContent: { ...result.master, checkupQuality: result.quality }, validationState: result.quality.status === 'VERIFIED' ? 'READY' : 'READY_WITH_WARNINGS' });
-  assert.ok(persisted.id, 'verified and fallback masters must both satisfy the real persistence validator, including empty writer headings');
-  if (mode === 'provider-failure') assert.equal(result.master.sections[0].body, source);
-  if (mode === 'reject') { assert.equal(result.quality.mode,'SOURCE_COMPOSITION'); assert.deepEqual(checkupCoverageIssues(source,result.master.sections),[]); assert.ok(!result.master.sections.some(s=>s.type==='OPENING')); }
-  if (mode === 'repair') {
-    const repeated = await generateFaithfulCheckupMaster(args);
-    assert.equal(repeated.quality.status, 'VERIFIED');
-    assert.equal(writes, 2, 'reopening uses persisted operations, no duplicate AI generation');
-    assert.equal(audits, 2);
+// Full rewriting, not just an introduction: fixtures are deliberately simulated.
+const rewritten = {strategy:proposal.strategy,sections:[
+ {type:'TITLE',title:'Posizione',body:'Saldatore esperto per un’azienda di impianti alimentari',sourceIds:[units[0].id]},
+ {type:'OPENING',title:'Il lavoro, in breve',body:units.slice(1).map(u=>u.text==='Saldatura TIG e MIG-MAG secondo WPS e ISO 9606-1.'?'Esegui saldature TIG e MIG-MAG rispettando WPS e ISO 9606-1.':u.text==='Mensa e formazione per il rinnovo delle certificazioni.'?'La mensa è prevista; la formazione sostiene il rinnovo delle certificazioni.':u.text).join('\n'),sourceIds:units.slice(1).map(u=>u.id)},
+]};
+assert.deepEqual(checkFullRewriteIssues(source,rewritten),[]);
+assert.ok(fullRewriteChange(source,rewritten).ratio>=0.5);
+const auditFor = r => ({checks:units.map(u=>({sourceId:u.id,status:'PRESERVED',evidence:[r.sections.find(s=>s.sourceIds.includes(u.id)).body],reason:'Simulated faithful paraphrase.'})),addedClaims:[]});
+assert.deepEqual(fullAuditIssues(source,rewritten,auditFor(rewritten)),[]);
+const copyOnly={...rewritten,sections:[{type:'TITLE',title:'Posizione',body:units[0].text,sourceIds:[units[0].id]},{...rewritten.sections[1],body:source}]};
+assert.ok(checkFullRewriteIssues(source,copyOnly).some(s=>s.includes('maggioranza')),'a new introduction plus copied body is not a full rewrite');
+assert.ok(checkFullRewriteIssues(source,{...rewritten,sections:rewritten.sections.map(s=>({...s,body:s.body.replace('35.000','40.000')}))}).some(s=>s.includes('Numero')));
+const fakeEvidence=auditFor(rewritten);fakeEvidence.checks[0].evidence=['A phrase never written'];assert.ok(fullAuditIssues(source,rewritten,fakeEvidence).some(s=>s.includes('rintracciabile')));
+const missingAudit=auditFor(rewritten);missingAudit.checks.pop();assert.ok(fullAuditIssues(source,rewritten,missingAudit).some(s=>s.includes('mancante')));
+for(const mode of ['repair','reject','provider-failure']){
+ const persistence=new MemoryAnnunci10xPersistenceAdapter(),provider=new MockAnnunci10xProvider(),context={persistence,provider,configuredProvider:'MOCK'};
+ const created=await createAnonymousAnalyzeSession(context),session={sessionId:created.session.id,sessionSecret:created.sessionSecret};
+ const snapshot=await persistence.appendSnapshot({...session,roleCard:card,reason:'INITIAL_EXTRACTION'}),baseExecute=provider.executeStructuredTask.bind(provider);
+ let writes=0,audits=0;
+ provider.executeStructuredTask=async request=>{
+  if(mode==='provider-failure')throw Error('Simulated provider failure');
+  const result=await baseExecute(request);
+  if(request.outputSchemaName==='annunci10x_checkup_full_rewrite'){
+   writes++;assert.equal(request.input.checkupSource.originalText,source);if(writes===2)assert.ok(request.input.checkupSource.previousIssues.length);
+   return {...result,output:rewritten};
   }
+  if(request.outputSchemaName==='annunci10x_checkup_full_audit'){
+   audits++;const audit=auditFor(rewritten);if(mode==='reject'||audits===1)audit.checks[1]={...audit.checks[1],status:'MISSING',reason:'Simulated missing material detail'};
+   return {...result,output:audit};
+  }
+  return result;
+ };
+ const args={context,...session,snapshot,analysisRunId:randomUUID(),originalText:source};
+ const result=await generateFaithfulCheckupMaster(args);
+ assert.equal(result.quality.status,mode==='repair'?'VERIFIED':'ORIGINAL_RETAINED');assert.equal(result.quality.attempts,mode==='provider-failure'?1:2);
+ await persistence.saveOutput({...session,snapshotId:snapshot.id,outputType:'MASTER',generatedContent:{...result.master,checkupQuality:result.quality},validationState:result.quality.status==='VERIFIED'?'READY':'READY_WITH_WARNINGS'});
+ if(mode==='repair'){
+  assert.equal(result.quality.mode,'FULL_REWRITE');assert.equal(result.quality.coverage.retained,units.length);
+  await generateFaithfulCheckupMaster(args);assert.equal(writes,2);assert.equal(audits,2,'successful operations reused on reopening');
+ }else assert.equal(result.master.sections[0].body,source,'an unverified rewrite cannot replace the original');
 }
 // Prove that every frozen benchmark fact survives arbitrary model ordering.
 for (let n=1;n<=10;n++) {

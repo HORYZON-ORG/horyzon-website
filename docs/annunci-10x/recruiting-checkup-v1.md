@@ -136,3 +136,21 @@ Verificato `001_THEORY_WRITING_ADS.pdf`, 6 pagine, SHA-256 `dfc896a2b8afd573b975
 Il motore v5 produce una nuova apertura sostenuta da riferimenti puntuali, sottoposta a verifica indipendente, e ordina i blocchi originali. Il nucleo conserva letteralmente ogni unità, con intestazioni, qualificatori, tecnicismi, compensi, condizioni, candidatura e privacy. Una nuova apertura respinta non elimina la composizione sicura. La copertura è verificata dal programma, senza affidarsi alle sole dichiarazioni del modello.
 
 Il confronto usa un’unica valutazione dei due testi con ordine A/B variabile e stessi venti controlli. Non è un esperimento cieco su candidati umani e non prova più candidature. Il punteggio originale del confronto viene salvato separatamente dall’analisi iniziale e collegato al report; la ripresa dopo un’interruzione conserva lo stesso abbinamento. Nessun incremento minimo preassegnato. Pubblicazione e campagna Meta restano sospese fino alla revisione degli esiti reali.
+
+
+### Esito del nuovo confronto reale — 26–27 novembre 2026
+
+Anteprima della PR 112, versione del motore `checkup-performia-source-composition-v5.2`. Stessi dieci input congelati: quattro voti maggiori, sei uguali, nessuno minore; incremento medio +0,072/10. Conservate 244/244 unità della fonte. Nove aperture nuove e una composizione senza apertura ammessa (Carsaniga). Il risultato corregge la fedeltà, ma non dimostra ancora un salto forte di valore editoriale.
+
+Dieci PDF reali ricevuti e controllati; per ogni richiesta finale un Master, un PDF e un solo invio. Quattro prove preliminari escluse, più una prima analisi Humanitas fallita senza PDF. La successiva è stata completata al terzo tentativo dopo la correzione del recupero delle sole operazioni fallite, mantenendo il riuso delle operazioni riuscite. La modifica di recupero non cambia testi o rubrica dei nove confronti già completati.
+
+Esiti completi: `.work/benchmark-performia-teoria-2026-11-26/esito-finale.json` nella cartella del progetto; report e pacchetto in `output/`. Codice finale di anteprima `7d07ebc27146e8a5062c2efbef712867d63d9c90`. PR ancora in bozza: nessuna pubblicazione né attivazione Meta. Questo confronto non ripete prenotazione e cancellazione Calendly.
+
+
+### Riscrittura integrale secondo Performia — 27 novembre 2026
+
+Il writer v6 sostituisce il precedente limite di apertura più riordino con la riscrittura di attività, contributo, contesto, requisiti e proposta al candidato. Le clausole economiche, i benefici condizionati e le informative sono protetti; nomi, tecnicismi, numeri, vincoli e classificazioni rimangono obbligatori. Il motore può esplicitare l’esito funzionale già implicato dalle attività, senza inventare mansioni, KPI o promesse.
+
+La verifica indipendente controlla ogni unità sorgente, con evidenze rintracciabili nel nuovo testo e ricerca di fatti aggiunti. Il controllo di trasformazione rifiuta una semplice apertura seguita dalla copia della maggioranza dei blocchi riscrivibili. Una correzione può riparare gli errori; se la fedeltà non viene confermata, il servizio mantiene l’originale e lo dichiara. La rubrica e il confronto A/B restano gli stessi: nessun aumento minimo.
+
+Il nuovo confronto usa ancora i dieci input congelati e i servizi reali nell’anteprima protetta. Protocollo e risultati in `.work/benchmark-riscrittura-incisiva-2026-11-27` nella cartella del progetto. Non pubblicare né attivare la campagna prima della revisione degli esiti.
