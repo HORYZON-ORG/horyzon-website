@@ -874,13 +874,14 @@ export async function generateAnnunci10xCheckupOutput(input: {
   analysisRunId: string;
   originalText: string;
   originalEvaluation: PersistedEvaluation;
+  retryFailedOperations?: number;
 }) {
   const { master, quality } = await generateFaithfulCheckupMaster({ ...input, sessionId: input.session.id });
   if (!input.snapshot.roleProfile || !input.snapshot.communicationStrategy) throw new Annunci10xPublicError('ANALYSIS_NOT_READY', 'Contesto della valutazione non disponibile.', 409);
   const pair = quality.status === 'ORIGINAL_RETAINED' ? null : await evaluateCheckupPair({
     context: input.context, sessionId: input.session.id, sessionSecret: input.sessionSecret,
     snapshotId: input.snapshot.id, analysisRunId: input.analysisRunId, originalText: input.originalText,
-    revisedText: masterText(master), strategy: quality.strategy,
+    revisedText: masterText(master), strategy: quality.strategy, retryFailedOperations: input.retryFailedOperations,
   });
   const originalEvaluation = pair ? await input.context.persistence.saveEvaluation({
     sessionId: input.session.id, sessionSecret: input.sessionSecret,

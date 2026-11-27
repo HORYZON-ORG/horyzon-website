@@ -74,7 +74,7 @@ async function prepare(input: CheckupInput): Promise<CheckupReceipt> {
     let output = await persistence.getLatestOutput(run.sessionId, input.session.sessionSecret, 'MASTER');
     let after = output?.snapshotId === snapshot.id ? await persistence.getEvaluationByOutputId(output.id, run.sessionId, input.session.sessionSecret) : null;
     if (!output || output.snapshotId !== snapshot.id || !after || !isScoreResultV2(after.score)) {
-      const generated = await generateAnnunci10xCheckupOutput({ context: input.context, session, sessionSecret: input.session.sessionSecret, snapshot, analysisRunId: run.id, originalText: run.targetText!, originalEvaluation: original });
+      const generated = await generateAnnunci10xCheckupOutput({ context: input.context, session, sessionSecret: input.session.sessionSecret, snapshot, analysisRunId: run.id, originalText: run.targetText!, originalEvaluation: original, retryFailedOperations: Math.max(0, state.attempts - 1) });
       output = generated.masterOutput;
       after = generated.evaluation;
       original = generated.originalEvaluation;

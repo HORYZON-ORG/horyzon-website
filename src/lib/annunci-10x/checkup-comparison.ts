@@ -26,7 +26,7 @@ const prompt = [
 
 export async function evaluateCheckupPair(input: {
   context: Annunci10xRuntimeContext; sessionId: string; sessionSecret: string; snapshotId: string;
-  analysisRunId: string; originalText: string; revisedText: string; strategy: CheckupStrategy | null;
+  analysisRunId: string; originalText: string; revisedText: string; strategy: CheckupStrategy | null; retryFailedOperations?: number;
 }) {
   const reversed = parseInt(createHash('sha256').update(input.analysisRunId).digest('hex').slice(0,2),16) % 2 === 1;
   const target = (text: string) => checkupEvaluationInput({ target: { kind: 'ORIGINAL_AD', text }, context: {} }, input.originalText);
@@ -36,7 +36,7 @@ export async function evaluateCheckupPair(input: {
     idempotencyInputIdentityOverride: createHash('sha256').update(input.analysisRunId + input.originalText + input.revisedText + CHECKUP_COMPARISON_VERSION).digest('hex'),
     promptVersionOverride: CHECKUP_COMPARISON_VERSION, systemPromptOverride: prompt, outputSchemaOverride: schema,
     outputSchemaNameOverride: 'annunci10x_checkup_comparison', validateOutputOverride: validateCheckupPair,
-    timeoutMs: 180000, schemaRepairRetry: true,
+    timeoutMs: 180000, schemaRepairRetry: true, retryFailedOperations: input.retryFailedOperations,
     input: { checkupComparison: { a, b, strategy: input.strategy } },
   });
   const scoreA = calculateAnnunci10xScoreV2(normalizeCheckupEvaluation(a,result.output.a).checks);

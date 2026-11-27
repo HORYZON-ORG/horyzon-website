@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { Annunci10xAiError } from '../src/lib/annunci-10x/ai/errors.ts';
 import { evaluateCheckupPair } from '../src/lib/annunci-10x/checkup-comparison.ts';
 import { randomUUID } from 'node:crypto';
 import { MemoryAnnunci10xPersistenceAdapter, MockAnnunci10xProvider, createAnonymousAnalyzeSession } from '../src/lib/annunci-10x/index.ts';
@@ -160,5 +161,19 @@ for (let n=1;n<=10;n++) {
     assert.equal(result.originalScore.checks.find(c=>c.id==='20').score,2);
     const calls=provider.calls.length;await evaluateCheckupPair(args);assert.equal(provider.calls.length,calls);
   }
+}
+// A failed comparison can be explicitly retried, while every successful attempt is cached.
+{
+ const persistence=new MemoryAnnunci10xPersistenceAdapter(),provider=new MockAnnunci10xProvider();
+ const context={persistence,provider,configuredProvider:'MOCK'};
+ const created=await createAnonymousAnalyzeSession(context),session={sessionId:created.session.id,sessionSecret:created.sessionSecret};
+ const snapshot=await persistence.appendSnapshot({...session,roleCard:card,reason:'INITIAL_EXTRACTION'});
+ const execute=provider.executeStructuredTask.bind(provider);let fails=true;
+ provider.executeStructuredTask=async request=>{if(fails)throw new Annunci10xAiError('AI_PROVIDER_ERROR','Simulated transient failure');return execute(request);};
+ const args={context,...session,snapshotId:snapshot.id,analysisRunId:randomUUID(),originalText:source,revisedText:source+'\nConfronto',strategy:proposal.strategy};
+ await assert.rejects(()=>evaluateCheckupPair(args));fails=false;
+ await assert.rejects(()=>evaluateCheckupPair(args),'failure stays closed without explicit retry');
+ await evaluateCheckupPair({...args,retryFailedOperations:1});const calls=provider.calls.length;
+ await evaluateCheckupPair({...args,retryFailedOperations:2});assert.equal(provider.calls.length,calls,'third request reuses the successful second attempt');
 }
 console.log('PASS: Performia source fidelity, required/preferred, pay/benefits/technical facts, stable N/D and CTA, semantic repair, safe fallback and AI deduplication (MOCK).');
