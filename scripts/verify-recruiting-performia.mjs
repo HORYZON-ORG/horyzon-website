@@ -107,6 +107,7 @@ const copyOnly={...rewritten,sections:[{type:'TITLE',title:'Posizione',body:unit
 assert.ok(checkFullRewriteIssues(source,copyOnly).some(s=>s.includes('maggioranza')),'a new introduction plus copied body is not a full rewrite');
 assert.ok(checkFullRewriteIssues(source,{...rewritten,sections:rewritten.sections.map(s=>({...s,body:s.body.replace('35.000','40.000')}))}).some(s=>s.includes('Numero')));
 const fakeEvidence=auditFor(rewritten);fakeEvidence.checks[0].evidence=['A phrase never written'];assert.ok(fullAuditIssues(source,rewritten,fakeEvidence).some(s=>s.includes('rintracciabile')));
+const oneValidEvidence=auditFor(rewritten);oneValidEvidence.checks[0].evidence.push('A phrase never written');assert.deepEqual(fullAuditIssues(source,rewritten,oneValidEvidence),[],'one literal supporting quote suffices; invalid extra quotes are removed from stored audit');
 const missingAudit=auditFor(rewritten);missingAudit.checks.pop();assert.ok(fullAuditIssues(source,rewritten,missingAudit).some(s=>s.includes('mancante')));
 for(const mode of ['repair','reject','provider-failure']){
  const persistence=new MemoryAnnunci10xPersistenceAdapter(),provider=new MockAnnunci10xProvider(),context={persistence,provider,configuredProvider:'MOCK'};

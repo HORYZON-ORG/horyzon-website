@@ -36,7 +36,7 @@ export const CHECKUP_FULL_REWRITE_PROMPT=[
  'Organizza le mansioni attorno al contributo e al lavoro reale; rendi visibile il nesso fra competenze e attività. Puoi spiegare l’utilità di un requisito già richiesto se il nesso è contenuto nelle attività. Non aggiungere requisiti, livelli gerarchici o una linea di riporto assente.',
  'Distingui requisiti indispensabili e preferenziali solo dove il testo li sostiene. Non inventare ciò che è apprendibile. Esperienza richiesta con una durata preferita resta richiesta, con durata preferita; regione obbligatoria con città preferita resta un vincolo regionale. Non trasformare in filtro obbligatorio una preferenza citata nell’apertura.',
  'Conserva TUTTI i dettagli: contesto aziendale distintivo e nomi, attività, competenze e certificazioni, soglie e negazioni, sede e territorio, trasferte, tempi e turni, contratto, compensi e loro basi, benefit e relative condizioni, strumenti e formazione, candidatura, passaggi di selezione già dichiarati e privacy. I dati tecnici non sono riempitivo.',
- 'protectedUnits contiene clausole economiche, benefit condizionati e informative: COPIA OGNI TESTO PROTETTO INTEGRALMENTE una volta nel corpo appropriato. Puoi migliorare l’ordine e ciò che le circonda. Non alterare numeri, percentuali, codici, importi, lordo/netto, periodi, "fino a", "tipicamente", condizioni e destinatari. Non copiare gli altri blocchi per evitare di riscriverli.',
+ 'protectedUnits contiene clausole economiche, benefit condizionati, candidature e informative: COPIA OGNI TESTO PROTETTO INTEGRALMENTE una volta nel corpo appropriato. Puoi migliorare l’ordine e ciò che le circonda. Non alterare numeri, percentuali, codici, importi, lordo/netto, periodi, "fino a", "tipicamente", condizioni e destinatari. Non copiare gli altri blocchi per evitare di riscriverli.',
  'Una sede e il tempo pieno non significano lavoro in presenza. Un’agenzia non è il datore di lavoro. Un’assunzione finalizzata alla stabilizzazione non è una promessa di tempo indeterminato. Mantieni eventuali ambiguità della fonte; non risolverle inventando una condizione. Non trasformare una possibilità o un beneficio condizionato in garanzia.',
  'Non inventare dati assenti. Le domande all’azienda sono nel report separato: nell’annuncio niente "non dichiarato", "da confermare", parentesi di analisi o segnaposto nuovi. Un recapito segnaposto già presente va conservato identico e non diventa valido. Nessuna nuova richiesta di CV, prova, colloquio, canale o contatto. Una domanda finale di interesse senza nuovi processi è ammessa.',
  'Le sezioni sono flessibili, normalmente 5–8. Non riempire etichette vuote e non ripetere gli stessi fatti in apertura e in blocchi interi. Usa verbi concreti e periodi leggibili, anche nei requisiti e nel contesto. Ogni sezione deve indicare le sourceIds rappresentate; tutte le sourceIds devono essere coperte. Mai stampare riferimenti S001 o annotazioni interne nel testo.',
@@ -58,7 +58,7 @@ const auditPrompt=[
 ].join('\n');
 const norm=(s:string)=>s.normalize('NFKC').toLocaleLowerCase('it').replace(/\s+/g,' ').trim();
 export function protectedCheckupUnits(units:CheckupSourceUnit[]):CheckupSourceUnit[]{
- return units.filter(u=>/€|%|\bRAL\b|retribuz|stipend|compens[oi]|indennit|provvig|premi[oi]|budget|stabilizz|alloggio|autovettura|fringe\s*benefit|GDPR|Regolamento UE|D\.?\s*Lgs|We may use artificial intelligence/i.test(u.text));
+ return units.filter(u=>u.area==='APPLICATION'||/€|%|\bRAL\b|retribuz|stipend|compens[oi]|indennit|provvig|premi[oi]|budget|stabilizz|alloggio|autovettura|fringe\s*benefit|GDPR|Regolamento UE|D\.?\s*Lgs|We may use artificial intelligence/i.test(u.text));
 }
 export function validateFullCheckupRewrite(value:unknown):CheckupFullRewrite{
  const v=value as CheckupFullRewrite;
@@ -95,7 +95,7 @@ export function fullAuditIssues(originalText:string,rewrite:CheckupFullRewrite,a
   if(!ids.has(c.sourceId)||seen.has(c.sourceId))issues.push('Controllo duplicato o inesistente: '+c.sourceId);
   seen.add(c.sourceId);
   if(c.status!=='PRESERVED')issues.push(c.sourceId+': '+c.status+' '+c.reason);
-  else if(!c.evidence.length||c.evidence.some(e=>!norm(e)||!text.includes(norm(e))))issues.push(c.sourceId+': prova non rintracciabile nel testo riscritto');
+  else if(!c.evidence.some(e=>norm(e)&&text.includes(norm(e))))issues.push(c.sourceId+': prova non rintracciabile nel testo riscritto');
  }
  for(const u of units)if(!seen.has(u.id))issues.push('Verifica sorgente mancante: '+u.id);
  for(const c of audit.addedClaims)issues.push('Affermazione non sostenuta: '+c.text+' — '+c.reason);
@@ -103,6 +103,7 @@ export function fullAuditIssues(originalText:string,rewrite:CheckupFullRewrite,a
 }
 
 export async function generateIncisiveCheckupMaster(input:{context:Annunci10xRuntimeContext;sessionId:string;sessionSecret:string;snapshot:PersistedSnapshot;analysisRunId:string;originalText:string;version:CheckupQuality['version']}):Promise<{master:GeneratedAd;quality:CheckupQuality}>{
+ const writerModel=process.env.ANNUNCI10X_CHECKUP_WRITER_MODEL??'gpt-6.2-sol',auditModel=process.env.ANNUNCI10X_CHECKUP_AUDIT_MODEL??'gpt-6.2-sol';
  const orchestrator=new Annunci10xAiOrchestrator(input.context),sourceUnits=checkupSourceUnits(input.originalText),protectedUnits=protectedCheckupUnits(sourceUnits);
  const identity=createHash('sha256').update(input.analysisRunId+input.originalText+input.version).digest('hex');
  let previousIssues:string[]=[],previousSections:CheckupFullRewrite['sections']=[],strategy:CheckupStrategy|null=null,attempts=0,rejectedText='';
@@ -111,20 +112,20 @@ export async function generateIncisiveCheckupMaster(input:{context:Annunci10xRun
   try{
    const generated=await orchestrator.runTask({sessionId:input.sessionId,sessionSecret:input.sessionSecret,operationType:'GENERATE',inputSnapshotId:input.snapshot.id,
     idempotencyInputIdentityOverride:identity+':full-write:'+attempt,promptVersionOverride:input.version,systemPromptOverride:CHECKUP_FULL_REWRITE_PROMPT,
-    outputSchemaOverride:schema,outputSchemaNameOverride:'annunci10x_checkup_full_rewrite',validateOutputOverride:validateFullCheckupRewrite,schemaRepairRetry:false,timeoutMs:120000,
+    model:writerModel,outputSchemaOverride:schema,outputSchemaNameOverride:'annunci10x_checkup_full_rewrite',validateOutputOverride:validateFullCheckupRewrite,schemaRepairRetry:false,timeoutMs:120000,
     input:{checkupSource:{originalText:input.originalText,sourceUnits,protectedUnits,previousIssues,previousSections}}});
    const proposal=generated.output;strategy=proposal.strategy;previousSections=proposal.sections;rejectedText=fullCheckupText(proposal);
    previousIssues=checkFullRewriteIssues(input.originalText,proposal);
    if(previousIssues.length)continue;
    const checked=await orchestrator.runTask({sessionId:input.sessionId,sessionSecret:input.sessionSecret,operationType:'VALIDATE',inputSnapshotId:input.snapshot.id,
     idempotencyInputIdentityOverride:identity+':full-audit:'+attempt,promptVersionOverride:input.version+'.source-audit',systemPromptOverride:auditPrompt,
-    outputSchemaOverride:auditSchema,outputSchemaNameOverride:'annunci10x_checkup_full_audit',validateOutputOverride:validateFullCheckupAudit,schemaRepairRetry:false,timeoutMs:120000,
+    model:auditModel,outputSchemaOverride:auditSchema,outputSchemaNameOverride:'annunci10x_checkup_full_audit',validateOutputOverride:validateFullCheckupAudit,schemaRepairRetry:false,timeoutMs:120000,
     input:{checkupSource:{originalText:input.originalText,sourceUnits},generatedAd:{sections:proposal.sections}}});
    previousIssues=fullAuditIssues(input.originalText,proposal,checked.output);
    if(previousIssues.length)continue;
    return {master:{id:randomUUID(),sessionId:input.sessionId,kind:'MASTER',sourceOfTruth:true,generatedAt:new Date().toISOString(),promptVersion:input.version,
      sections:proposal.sections.map((s,i)=>({id:'full-rewrite-'+i,key:'full-rewrite-'+i,type:s.type,title:s.title.trim()||'Il lavoro',body:s.body,sourceFactIds:s.sourceIds}))},
-    quality:{version:input.version,status:'VERIFIED',mode:'FULL_REWRITE',strategy,issues:[],attempts,coverage:{total:sourceUnits.length,retained:sourceUnits.length,method:'SEMANTIC_SOURCE_AUDIT'},sourceAudit:checked.output.checks,editorialChange:fullRewriteChange(input.originalText,proposal)}};
+    quality:{version:input.version,status:'VERIFIED',mode:'FULL_REWRITE',strategy,issues:[],attempts,coverage:{total:sourceUnits.length,retained:sourceUnits.length,method:'SEMANTIC_SOURCE_AUDIT'},sourceAudit:checked.output.checks.map(c=>({...c,evidence:c.evidence.filter(e=>norm(e)&&norm(rejectedText).includes(norm(e)))})),editorialChange:fullRewriteChange(input.originalText,proposal)}};
   }catch(error){if(isAnnunci10xAiOperationInProgressError(error))throw error;previousIssues=['La riscrittura completa non ha completato i controlli di fedeltà.'];break;}
  }
  return {master:{id:randomUUID(),sessionId:input.sessionId,kind:'MASTER',sourceOfTruth:true,generatedAt:new Date().toISOString(),promptVersion:input.version,
